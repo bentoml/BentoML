@@ -1,9 +1,9 @@
-import time
 import asyncio
-import logging
-import functools
-import traceback
 import collections
+import functools
+import logging
+import time
+import traceback
 from typing import Callable
 
 import numpy as np

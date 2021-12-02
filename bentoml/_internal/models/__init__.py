@@ -1,6 +1,4 @@
-from .model import Model
-from .model import ModelStore
-from .model import SysPathModel
+from .model import Model, ModelStore, SysPathModel
 
 EXPORTED_STORE_PREFIX = "exported"
 SAVE_NAMESPACE = "saved_model"

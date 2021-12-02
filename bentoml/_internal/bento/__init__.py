@@ -1,5 +1,3 @@
-from .bento import Bento
-from .bento import BentoStore
-from .bento import SysPathBento
+from .bento import Bento, BentoStore, SysPathBento
 
 __all__ = ["Bento", "BentoStore", "SysPathBento"]

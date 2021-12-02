@@ -5,8 +5,7 @@ import pandas as pd
 import psutil
 import pytest
 import statsmodels
-from statsmodels.tsa.holtwinters import HoltWintersResults
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
 
 import bentoml.models
 import bentoml.statsmodels
@@ -19,8 +18,7 @@ test_df2 = np.array([0, 0, 1, 1])
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model
-    from bentoml._internal.models import ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

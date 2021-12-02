@@ -2,10 +2,10 @@ import json
 import typing as t
 
 import h2o
+import h2o.automl
+import h2o.model
 import pandas as pd
 import pytest
-import h2o.model
-import h2o.automl
 
 import bentoml.h2o
 

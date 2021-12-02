@@ -2,13 +2,15 @@ import typing as t
 
 import pytest
 import sklearn
-from pycaret.datasets import get_data
+from pycaret.classification import (
+    create_model,
+    finalize_model,
+    predict_model,
+    save_model,
+)
 from pycaret.classification import setup as pycaret_setup
-from pycaret.classification import save_model
 from pycaret.classification import tune_model
-from pycaret.classification import create_model
-from pycaret.classification import predict_model
-from pycaret.classification import finalize_model
+from pycaret.datasets import get_data
 
 import bentoml.models
 import bentoml.pycaret
@@ -16,8 +18,7 @@ from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model
-    from bentoml._internal.models import ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

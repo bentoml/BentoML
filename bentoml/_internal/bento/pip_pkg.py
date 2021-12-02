@@ -1,13 +1,13 @@
-import os
 import ast
+import logging
+import os
+import pkgutil
 import sys
 import typing as t
-import logging
-import pkgutil
 import zipfile
 import zipimport
-from typing import TYPE_CHECKING
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 import importlib_metadata
 from packaging.requirements import Requirement

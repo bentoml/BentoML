@@ -1,36 +1,33 @@
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from .exceptions import BentoMLException
-from .exceptions import MissingDependencyException
-from ._internal.types import Tag
-from ._internal.types import PathType
-from ._internal.models import Model
-from ._internal.models import PKL_EXT
-from ._internal.models import SAVE_NAMESPACE
-from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
+from ._internal.runner import Runner
+from ._internal.types import PathType, Tag
+from .exceptions import BentoMLException, MissingDependencyException
 
 PYCARET_CONFIG = "pycaret_config"
 
 if TYPE_CHECKING:
+    import lightgbm
     import pandas as pd
     import sklearn
     import xgboost
-    import lightgbm
     from _internal.models import ModelStore
 
 try:
+    from pycaret.internal.tabular import (
+        load_config,
+        load_model,
+        predict_model,
+        save_config,
+        save_model,
+    )
     from pycaret.utils import version
-    from pycaret.internal.tabular import load_model
-    from pycaret.internal.tabular import save_model
-    from pycaret.internal.tabular import load_config
-    from pycaret.internal.tabular import save_config
-    from pycaret.internal.tabular import predict_model
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

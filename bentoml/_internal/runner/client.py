@@ -1,11 +1,9 @@
-from typing import Dict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from ..runner.utils import Params
 from ..configuration.containers import BentoServerContainer
+from ..runner.utils import Params
 
 if TYPE_CHECKING:
     from aiohttp import BaseConnector

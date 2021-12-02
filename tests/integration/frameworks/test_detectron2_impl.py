@@ -1,19 +1,18 @@
 import typing as t
 
-import numpy as np
-import torch
-import pytest
 import imageio
+import numpy as np
+import pytest
+import torch
 from detectron2 import model_zoo
-from detectron2.data import transforms as T
 from detectron2.config import get_cfg
+from detectron2.data import transforms as T
 from detectron2.modeling import build_model
 
 import bentoml.detectron
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import ModelInfo
-    from bentoml._internal.models import ModelStore
+    from bentoml._internal.models import ModelInfo, ModelStore
 
 if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import

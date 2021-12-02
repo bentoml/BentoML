@@ -1,6 +1,6 @@
-import shutil
 import logging
 import os.path
+import shutil
 import tempfile
 
 from ..configuration import get_debug_mode

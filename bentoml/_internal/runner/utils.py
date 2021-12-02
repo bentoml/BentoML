@@ -1,12 +1,12 @@
+import ctypes
+import itertools
+import logging
+import math
 import os
 import re
-import math
-import ctypes
 import typing as t
-import logging
-import itertools
-from typing import TYPE_CHECKING
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
 

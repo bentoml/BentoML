@@ -1,40 +1,38 @@
-import os
-import re
-import json
-import typing as t
-import logging
-import tempfile
 import functools
 import importlib.util
-from typing import TYPE_CHECKING
-from pathlib import Path
-from importlib import import_module
+import json
+import logging
+import os
+import re
+import tempfile
+import typing as t
 from contextlib import contextmanager
+from importlib import import_module
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-import requests
 import importlib_metadata
+import requests
 from filelock import FileLock
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from .exceptions import NotFound
-from .exceptions import BentoMLException
-from .exceptions import MissingDependencyException
-from ._internal.types import Tag
-from ._internal.models import Model
-from ._internal.models import JSON_EXT
-from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import JSON_EXT, Model
+from ._internal.runner import Runner
+from ._internal.types import Tag
+from .exceptions import BentoMLException, MissingDependencyException, NotFound
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from transformers import PreTrainedModel
-    from transformers import PretrainedConfig
-    from transformers import TFPreTrainedModel
-    from transformers import FlaxPreTrainedModel
-    from transformers import PreTrainedTokenizer
-    from transformers import PreTrainedTokenizerFast
+    from transformers import (
+        FlaxPreTrainedModel,
+        PretrainedConfig,
+        PreTrainedModel,
+        PreTrainedTokenizer,
+        PreTrainedTokenizerFast,
+        TFPreTrainedModel,
+    )
     from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
     from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
@@ -42,16 +40,16 @@ if TYPE_CHECKING:
 
 try:
     import transformers
-    from transformers import Pipeline
-    from transformers import AutoConfig
-    from transformers import AutoTokenizer
-    from transformers.file_utils import http_get
-    from transformers.file_utils import CONFIG_NAME
-    from transformers.file_utils import WEIGHTS_NAME
-    from transformers.file_utils import hf_bucket_url
-    from transformers.file_utils import http_user_agent
-    from transformers.file_utils import TF2_WEIGHTS_NAME
-    from transformers.file_utils import FLAX_WEIGHTS_NAME
+    from transformers import AutoConfig, AutoTokenizer, Pipeline
+    from transformers.file_utils import (
+        CONFIG_NAME,
+        FLAX_WEIGHTS_NAME,
+        TF2_WEIGHTS_NAME,
+        WEIGHTS_NAME,
+        hf_bucket_url,
+        http_get,
+        http_user_agent,
+    )
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

@@ -1,13 +1,12 @@
+import logging
 import re
 import sys
 import typing as t
-import logging
 
 from typing_extensions import Literal
 
 from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
-from ..configuration import is_pypi_installed_bentoml
+from ..configuration import BENTOML_VERSION, is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
 

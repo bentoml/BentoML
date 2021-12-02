@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import spacy
 import pytest
+import spacy
 import spacy.cli
 
 import bentoml.spacy

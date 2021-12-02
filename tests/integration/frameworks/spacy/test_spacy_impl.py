@@ -1,13 +1,13 @@
 import random
 import typing as t
-from typing import TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import yaml
-import spacy
 import pytest
-from spacy.util import minibatch
+import spacy
+import yaml
 from spacy.training import Example
+from spacy.util import minibatch
 
 import bentoml.spacy
 from bentoml.exceptions import MissingDependencyException

@@ -1,5 +1,5 @@
-import torch
 import pandas as pd
+import torch
 import torch.nn as nn
 
 test_df = pd.DataFrame([[1] * 5])

@@ -1,20 +1,20 @@
+import logging
 import sys
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 
-from ..types import Tag
-from ..runner import Runner
 from ...exceptions import BentoMLException
 from ..bento.bento import _get_default_bento_readme
-from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
+from ..runner import Runner
+from ..types import Tag
 from ..utils.validation import validate_tag_str
+from .inference_api import InferenceAPI
 
 if TYPE_CHECKING:
-    from starlette.types import ASGIApp
-    from starlette.middleware import Middleware
     from starlette.applications import Starlette
+    from starlette.middleware import Middleware
+    from starlette.types import ASGIApp
 
     from ..bento.bento import SysPathBento
 

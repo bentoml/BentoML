@@ -1,22 +1,22 @@
-import io
-import os
-import uuid
 import base64
+import io
+import logging
+import os
 import typing as t
 import urllib
-import logging
 import urllib.parse
 import urllib.request
-from typing import TYPE_CHECKING
+import uuid
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-import fs
 import attr
 import cattr
+import fs
 
 from ..exceptions import BentoMLException
-from .utils.validation import validate_tag_str
 from .utils.dataclasses import json_serializer
+from .utils.validation import validate_tag_str
 
 logger = logging.getLogger(__name__)
 

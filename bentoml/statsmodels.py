@@ -2,19 +2,14 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from .exceptions import BentoMLException
-from .exceptions import MissingDependencyException
-from ._internal.types import Tag
-from ._internal.types import PathType
-from ._internal.models import Model
-from ._internal.models import PKL_EXT
-from ._internal.models import SAVE_NAMESPACE
-from ._internal.runner import Runner
-from ._internal.utils.lazy_loader import LazyLoader
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
+from ._internal.runner import Runner
+from ._internal.types import PathType, Tag
+from ._internal.utils.lazy_loader import LazyLoader
+from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
 

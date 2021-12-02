@@ -29,7 +29,7 @@ HEADER_CHARSET = "latin1"
 JSON_CHARSET = "utf-8"
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F401
 
     PathType = t.Union[str, os.PathLike[str]]
 else:

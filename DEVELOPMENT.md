@@ -280,6 +280,8 @@ BentoML also provides git hooks that developers can install with:
 make hooks
 ```
 ## Stubs
+Refers to [Installation](https://github.com/microsoft/pyright#installation) to install pyright correctly.
+
 In order to make pyright function correctly one also need to run the following scripts alongside with the stubs provided
  in the main repository.
 ```bash

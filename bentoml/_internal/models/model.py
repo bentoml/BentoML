@@ -158,6 +158,9 @@ class SysPathModel(Model):
         return self._fs.getsyspath(item)
 
 
+SysPathModel.__name__ = "Model"
+
+
 class ModelStore(Store[SysPathModel]):
     def __init__(self, base_path: t.Union[PathType, FS]):
         super().__init__(base_path, SysPathModel)

@@ -25,7 +25,7 @@ from ._internal.utils.tensorflow import (
 )
 from .exceptions import MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
     import tensorflow.keras as keras
     from _internal.models import ModelStore

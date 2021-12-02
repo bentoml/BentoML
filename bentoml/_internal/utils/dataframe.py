@@ -9,7 +9,7 @@ from . import catch_exceptions
 from .csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
 from .lazy_loader import LazyLoader
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pandas as pd
 else:
     pd = LazyLoader("pd", globals(), "pandas")

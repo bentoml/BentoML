@@ -1,7 +1,7 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ..io_descriptors import IODescriptor
     from . import Service
 
@@ -96,13 +96,13 @@ def get_service_openapi_doc(svc: "Service"):
         }
     }
 
-    for api in svc._apis.values():
+    for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
         api_path = api.route if api.route.startswith("/") else f"/{api.route}"
 
         paths[api_path] = {
             "post": dict(
                 tags=["app"],
-                summary=f"InferenceAPI endpoints {repr(api)}",
+                summary=f"{api}",
                 description=api.doc or "",
                 operationId=f"{svc.name}__{api.name}",
                 requestBody=dict(content=api.input.openapi_request_schema()),

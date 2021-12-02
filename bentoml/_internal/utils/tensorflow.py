@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from .lazy_loader import LazyLoader
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import tensorflow as tf
     from tensorflow.python.eager.function import ConcreteFunction
     from tensorflow.python.framework.type_spec import TypeSpec

@@ -36,6 +36,10 @@ RUN npm i -g npm@^7 yarn pyright
 
 RUN python -m pip install -U pip setuptools
 
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 COPY requirements/dev-requirements.txt .
 
 COPY requirements/tests-requirements.txt .

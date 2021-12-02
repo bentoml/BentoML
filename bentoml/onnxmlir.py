@@ -3,21 +3,23 @@ import shutil
 import typing as t
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, Model
-from ._internal.runner import Runner
-from ._internal.types import Tag
 from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
     from _internal.models import ModelStore
 
 try:
-    from PyRuntime import ExecutionSession
     from PyRuntime import __spec__ as _spec  # pylint: disable=W0622
+    from PyRuntime import ExecutionSession
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

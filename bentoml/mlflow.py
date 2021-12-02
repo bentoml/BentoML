@@ -1,24 +1,26 @@
-import importlib
-import importlib.util
 import os
 import typing as t
-from pathlib import Path
+import importlib
+import importlib.util
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import yaml
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
 from ._internal.models import Model as BentoModel
 from ._internal.runner import Runner
-from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
 
     import mlflow.pyfunc
-    from _internal.models import ModelStore
     from mlflow.pyfunc import PyFuncModel
+    from _internal.models import ModelStore
 
 try:
     import mlflow

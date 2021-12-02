@@ -1,25 +1,29 @@
-import functools
-import importlib.util
-import json
-import logging
 import os
 import re
-import tempfile
+import json
 import typing as t
-from contextlib import contextmanager
-from importlib import import_module
-from pathlib import Path
+import logging
+import tempfile
+import functools
+import importlib.util
 from typing import TYPE_CHECKING
+from pathlib import Path
+from importlib import import_module
+from contextlib import contextmanager
 
 import requests
 from filelock import FileLock
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT, Model
-from ._internal.runner import Runner
+from .exceptions import NotFound
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException, NotFound
+from ._internal.models import Model
+from ._internal.models import JSON_EXT
+from ._internal.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -29,33 +33,31 @@ except ImportError:
     import importlib_metadata
 
 if TYPE_CHECKING:
-    from transformers.configuration_utils import PretrainedConfig
-    from transformers.modeling_tf_utils import TFPreTrainedModel
     from transformers.modeling_utils import PreTrainedModel
+    from transformers.modeling_tf_utils import TFPreTrainedModel
+    from transformers.tokenization_utils import PreTrainedTokenizer
+    from transformers.configuration_utils import PretrainedConfig
+    from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
     from transformers.models.auto.auto_factory import (
         _BaseAutoModelClass,  # type: ignore[reportPrivateUsage]
     )
-    from transformers.tokenization_utils import PreTrainedTokenizer
-    from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
 
     from ._internal.models import ModelStore
 
 try:
     import transformers
     from huggingface_hub.hf_api import HfFolder
-    from transformers.file_utils import (
-        CONFIG_NAME,
-        FLAX_WEIGHTS_NAME,
-        TF2_WEIGHTS_NAME,
-        WEIGHTS_NAME,
-        hf_bucket_url,
-        http_get,
-        http_user_agent,
-    )
-    from transformers.modeling_flax_utils import FlaxPreTrainedModel
-    from transformers.models.auto.configuration_auto import AutoConfig
-    from transformers.models.auto.tokenization_auto import AutoTokenizer
+    from transformers.file_utils import http_get
+    from transformers.file_utils import CONFIG_NAME
+    from transformers.file_utils import WEIGHTS_NAME
+    from transformers.file_utils import hf_bucket_url
+    from transformers.file_utils import http_user_agent
+    from transformers.file_utils import TF2_WEIGHTS_NAME
+    from transformers.file_utils import FLAX_WEIGHTS_NAME
     from transformers.pipelines.base import Pipeline
+    from transformers.modeling_flax_utils import FlaxPreTrainedModel
+    from transformers.models.auto.tokenization_auto import AutoTokenizer
+    from transformers.models.auto.configuration_auto import AutoConfig
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

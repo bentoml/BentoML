@@ -1,18 +1,20 @@
 import sys
 import typing as t
-from contextlib import contextmanager
 from types import TracebackType
 from typing import TYPE_CHECKING
+from contextlib import contextmanager
 
 import fs
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import Model
 from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ._internal.models import ModelStore, SysPathModel
+    from ._internal.models import ModelStore
+    from ._internal.models import SysPathModel
     from ._internal.runner import Runner
 
 if sys.version_info >= (3, 8):

@@ -1,17 +1,18 @@
 import typing as t
 
-import lightgbm as lgb
 import numpy as np
 import psutil
 import pytest
+import lightgbm as lgb
 
-import bentoml.lightgbm
 import bentoml.models
+import bentoml.lightgbm
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model, ModelStore
+    from bentoml._internal.models import Model
+    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

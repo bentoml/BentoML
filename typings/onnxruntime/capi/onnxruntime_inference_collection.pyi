@@ -56,7 +56,9 @@ class InferenceSession(Session):
         self,
         path_or_bytes: Union[str, os.PathLike[str], BytesIO, ModelProto],
         sess_options: Optional[C.SessionOptions] = ...,
-        providers: Optional[Union[str, List[Union[str, Tuple[str, Dict[str, Any]]]]]] = ...,
+        providers: Optional[
+            Union[str, List[Union[str, Tuple[str, Dict[str, Any]]]]]
+        ] = ...,
         provider_options: Optional[Dict[str, Any]] = ...,
         **kwargs: str
     ) -> None: ...

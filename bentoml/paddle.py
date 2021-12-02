@@ -1,20 +1,24 @@
 # type: ignore[reportMissingTypeStubs]
-import logging
 import os
 import re
 import typing as t
-from distutils.dir_util import copy_tree
+import logging
 from typing import TYPE_CHECKING
+from distutils.dir_util import copy_tree
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, Model
-from ._internal.runner import Runner
-from ._internal.runner.utils import Params
+from .exceptions import NotFound
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException, NotFound
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.runner.utils import Params
+from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -39,13 +43,13 @@ have `paddlepaddle` installed beforehand. Install `paddlehub` with
 if TYPE_CHECKING:
     import numpy as np
     import paddle
-    import paddle.inference
     import paddle.nn
     import paddlehub as hub
+    import paddle.inference
     import paddlehub.module.module as module
+    from paddle.static import InputSpec
     from _internal.models import ModelStore
     from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
-    from paddle.static import InputSpec
 else:
     hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)  # noqa: F811
     manager = LazyLoader(
@@ -58,8 +62,8 @@ else:
 
 try:
     import paddle
-    import paddle.inference
     import paddle.nn
+    import paddle.inference
     from paddle.fluid import core
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_paddle_exc)

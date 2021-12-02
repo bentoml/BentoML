@@ -1,45 +1,48 @@
 # TODO: fix this when Vocab and Doc are better typed.
 # type: ignore[reportUnknownParameterType]
-import importlib
-import logging
 import os
 import typing as t
-from distutils.dir_util import copy_tree
-from pathlib import Path
+import logging
+import importlib
 from typing import TYPE_CHECKING
+from pathlib import Path
+from distutils.dir_util import copy_tree
 
 import yaml
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 from typing_extensions import Literal
 
-from ._internal.bento.pip_pkg import packages_distributions, split_requirement
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, Model
-from ._internal.runner import Runner
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.bento.pip_pkg import split_requirement
+from ._internal.bento.pip_pkg import packages_distributions
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from spacy import Vocab
-    from spacy.tokens.doc import Doc
     from thinc.config import Config
+    from spacy.tokens.doc import Doc
 
     from ._internal.models import ModelStore
 
 try:
     import spacy
     import spacy.cli
-    from spacy.util import SimpleFrozenDict, SimpleFrozenList
-    from thinc.api import (
-        prefer_gpu,
-        require_cpu,
-        require_gpu,
-        set_active_gpu,
-        set_gpu_allocator,
-        use_pytorch_for_gpu_memory,
-        use_tensorflow_for_gpu_memory,
-    )
+    from thinc.api import prefer_gpu
+    from thinc.api import require_cpu
+    from thinc.api import require_gpu
+    from thinc.api import set_active_gpu
+    from thinc.api import set_gpu_allocator
+    from thinc.api import use_pytorch_for_gpu_memory
+    from thinc.api import use_tensorflow_for_gpu_memory
+    from spacy.util import SimpleFrozenDict
+    from spacy.util import SimpleFrozenList
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

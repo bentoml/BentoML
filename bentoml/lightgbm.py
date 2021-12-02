@@ -3,17 +3,22 @@ import os
 import typing as t
 from typing import TYPE_CHECKING
 
-import joblib
 import numpy as np
-from simple_di import Provide, inject
+import joblib
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE, TXT_EXT, Model
-from ._internal.runner import Runner
-from ._internal.runner.utils import Params
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.models import Model
+from ._internal.models import PKL_EXT
+from ._internal.models import TXT_EXT
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.runner.utils import Params
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import lightgbm.basic

@@ -1,19 +1,28 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT, SAVE_NAMESPACE, Model
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.types import AnyNDArray
+from ._internal.utils import LazyLoader
+from ._internal.models import Model
+from ._internal.models import JSON_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.types import Tag, AnyNDArray
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    import numpy as np
     from pandas.core.frame import DataFrame
 
     from ._internal.models import ModelStore
+else:
+    np = LazyLoader("np", globals(), "numpy")
+
 
 try:
     import xgboost as xgb
@@ -243,7 +252,8 @@ class _XgBoostRunner(Runner):
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
-        self, input_data: t.Union[AnyNDArray, "DataFrame", xgb.DMatrix],
+        self,
+        input_data: t.Union[AnyNDArray, "DataFrame", xgb.DMatrix],
     ) -> AnyNDArray:
         if not isinstance(input_data, xgb.DMatrix):
             input_data = xgb.DMatrix(input_data)

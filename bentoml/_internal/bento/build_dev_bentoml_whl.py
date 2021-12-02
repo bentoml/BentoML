@@ -1,9 +1,9 @@
+import os
+import uuid
+import shutil
+import logging
 import importlib
 import importlib.util
-import logging
-import os
-import shutil
-import uuid
 
 from ..configuration import is_pypi_installed_bentoml
 from ..utils.tempdir import TempDirectory

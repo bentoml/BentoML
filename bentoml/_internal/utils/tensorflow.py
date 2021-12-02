@@ -1,5 +1,5 @@
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 from ...exceptions import MissingDependencyException

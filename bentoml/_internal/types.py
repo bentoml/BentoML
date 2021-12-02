@@ -1,22 +1,22 @@
-import base64
 import io
-import logging
 import os
+import uuid
+import base64
 import typing as t
 import urllib
+import logging
 import urllib.parse
 import urllib.request
-import uuid
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from dataclasses import dataclass
 
+import fs
 import attr
 import cattr
-import fs
 
 from ..exceptions import BentoMLException
-from .utils.dataclasses import json_serializer
 from .utils.validation import validate_tag_str
+from .utils.dataclasses import json_serializer
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ JSON_CHARSET = "utf-8"
 
 if TYPE_CHECKING:
     import numpy as np
+
     PathType = t.Union[str, os.PathLike[str]]
 else:
     PathType = t.Union[str, os.PathLike]
@@ -38,6 +39,7 @@ JSONSerializable = t.NewType("JSONSerializable", object)
 
 
 AnyNDArray = t.Type["np.ndarray[t.Any, np.dtype[t.Any]]"]
+
 
 @attr.define
 class Tag:

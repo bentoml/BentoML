@@ -1,3 +1,0 @@
-import abc
-
-class BaseStringArrayMethods(abc.ABC): ...

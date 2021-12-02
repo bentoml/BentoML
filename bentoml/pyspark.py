@@ -10,7 +10,7 @@ from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from _internal.models import ModelStore
+    from ._internal.models import ModelStore
 
 try:
     ...

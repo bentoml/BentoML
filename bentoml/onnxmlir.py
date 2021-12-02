@@ -15,7 +15,8 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
-    from _internal.models import ModelStore
+
+    from ._internal.models import ModelStore
 
 try:
     from PyRuntime import __spec__ as _spec  # pylint: disable=W0622
@@ -135,10 +136,11 @@ class _ONNXMLirRunner(Runner):
     def _setup(self) -> None:
         self._session = load(self.name, self._model_store)
 
-    def _run_batch(
-        self, *args: "np.ndarray[t.Any, np.dtype[t.Any]]", **kwargs: t.Any
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
+        self, input_data: "np.ndarray[t.Any, np.dtype[t.Any]]"
     ) -> t.List["np.ndarray[t.Any, np.dtype[t.Any]]"]:
-        return self._session.run(*args)
+        return self._session.run(input_data)
 
 
 @inject

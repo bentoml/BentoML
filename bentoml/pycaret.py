@@ -21,8 +21,9 @@ if TYPE_CHECKING:
     import sklearn  # type: ignore[reportMissingTypeStubs]
     import xgboost
     import lightgbm  # type: ignore[reportMissingTypeStubs]
-    from _internal.models import ModelStore
     from pandas.core.frame import DataFrame
+
+    from ._internal.models import ModelStore
 
 try:
     from pycaret.utils import version

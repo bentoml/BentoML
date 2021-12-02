@@ -26,8 +26,9 @@ ONNX_EXT: str = ".onnx"
 if TYPE_CHECKING:
     import torch  # type: ignore[reportMissingTypeStubs]
     import tensorflow as tf  # type: ignore[reportMissingTypeStubs]
-    from _internal.models import ModelStore
     from pandas.core.frame import DataFrame
+
+    from ._internal.models import ModelStore
 else:
     # noqa: F811
     pd = LazyLoader("pd", globals(), "pandas")

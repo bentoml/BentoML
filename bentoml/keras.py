@@ -19,9 +19,10 @@ from ._internal.models import SAVE_NAMESPACE
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from _internal.models import ModelStore
     from tensorflow.python.framework.ops import Graph
     from tensorflow.python.client.session import BaseSession
+
+    from ._internal.models import ModelStore
 
 try:
     import tensorflow as tf

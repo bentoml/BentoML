@@ -22,8 +22,9 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import lightgbm.basic
-    from _internal.models import ModelStore
     from pandas.core.frame import DataFrame
+
+    from ._internal.models import ModelStore
 
 pd = LazyLoader("pd", globals(), "pandas")
 

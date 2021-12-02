@@ -20,7 +20,8 @@ if TYPE_CHECKING:
 
     import mlflow.pyfunc
     from mlflow.pyfunc import PyFuncModel
-    from _internal.models import ModelStore
+
+    from ._internal.models import ModelStore
 
 try:
     import mlflow

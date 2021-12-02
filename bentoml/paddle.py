@@ -48,8 +48,9 @@ if TYPE_CHECKING:
     import paddle.inference
     import paddlehub.module.module as module
     from paddle.static import InputSpec
-    from _internal.models import ModelStore
     from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
+
+    from ._internal.models import ModelStore
 else:
     hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)  # noqa: F811
     manager = LazyLoader(

@@ -1,28 +1,30 @@
-import asyncio
-import logging
 import os
 import sys
 import typing as t
+import asyncio
+import logging
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
 from ...exceptions import BentoMLException
-from ..configuration.containers import BentoMLContainer, BentoServerContainer
-from ..io_descriptors.multipart import Multipart
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
+from ..configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoServerContainer
+from ..io_descriptors.multipart import Multipart
 
 if TYPE_CHECKING:
-    from starlette.applications import Starlette
-    from starlette.middleware import Middleware
+    from starlette.routing import BaseRoute
     from starlette.requests import Request
     from starlette.responses import Response
-    from starlette.routing import BaseRoute
+    from starlette.middleware import Middleware
+    from starlette.applications import Starlette
 
-    from ..server.metrics.prometheus import PrometheusClient
-    from ..service.inference_api import InferenceAPI
     from ..tracing import Tracer
+    from ..service.inference_api import InferenceAPI
+    from ..server.metrics.prometheus import PrometheusClient
 
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -182,7 +184,8 @@ class ServiceAppFactory(BaseAppFactory):
         /classify
         /predict
         """
-        from starlette.routing import Mount, Route
+        from starlette.routing import Mount
+        from starlette.routing import Route
         from starlette.staticfiles import StaticFiles
 
         routes = super().routes()
@@ -269,8 +272,8 @@ class ServiceAppFactory(BaseAppFactory):
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
-        from starlette.concurrency import run_in_threadpool
         from starlette.responses import JSONResponse
+        from starlette.concurrency import run_in_threadpool
 
         async def api_func(
             request: "Request",

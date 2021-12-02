@@ -1,29 +1,29 @@
-import functools
-import logging
 import os
-import pathlib
 import re
-import typing as t
 import uuid
-from distutils.dir_util import copy_tree
+import typing as t
+import logging
+import pathlib
+import functools
 from typing import TYPE_CHECKING
+from distutils.dir_util import copy_tree
 
 import numpy as np
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.types import PathType
 from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
-from ._internal.types import PathType, Tag
-from ._internal.utils.tensorflow import (
-    cast_tensor_by_spec,
-    get_arg_names,
-    get_input_signatures,
-    get_restored_functions,
-    pretty_format_restored_model,
-)
-from .exceptions import MissingDependencyException
+from ._internal.utils.tensorflow import get_arg_names
+from ._internal.utils.tensorflow import cast_tensor_by_spec
+from ._internal.utils.tensorflow import get_input_signatures
+from ._internal.utils.tensorflow import get_restored_functions
+from ._internal.utils.tensorflow import pretty_format_restored_model
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from _internal.models import ModelStore
@@ -49,7 +49,8 @@ TF2 = tf.__version__.startswith("2")
 
 try:
     import tensorflow_hub as hub
-    from tensorflow_hub import native_module, resolve
+    from tensorflow_hub import resolve
+    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\

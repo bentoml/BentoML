@@ -1,21 +1,27 @@
-import functools
 import typing as t
-from pathlib import Path
+import functools
 from typing import TYPE_CHECKING
+from pathlib import Path
 
-import cloudpickle
 import numpy as np
-from simple_di import Provide, inject
+import cloudpickle
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE, Model
-from ._internal.types import Tag
 from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.models import H5_EXT
+from ._internal.models import PKL_EXT
+from ._internal.models import HDF5_EXT
+from ._internal.models import JSON_EXT
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from _internal.models import ModelStore
-    from tensorflow.python.client.session import BaseSession
     from tensorflow.python.framework.ops import Graph
+    from tensorflow.python.client.session import BaseSession
 
 try:
     import tensorflow as tf

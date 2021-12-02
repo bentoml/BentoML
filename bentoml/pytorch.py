@@ -1,18 +1,21 @@
-import functools
 import typing as t
 import zipfile
-from pathlib import Path
+import functools
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import cloudpickle
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PT_EXT, SAVE_NAMESPACE, Model
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.models import PT_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
-from ._internal.types import Tag
-from .exceptions import MissingDependencyException
+from ._internal.configuration.containers import BentoMLContainer
 
 _RV = t.TypeVar("_RV")
 _ModelType = t.TypeVar(

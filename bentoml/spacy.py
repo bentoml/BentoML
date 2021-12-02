@@ -13,7 +13,7 @@ from simple_di import Provide
 from distutils.dir_util import copy_tree
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING
 
 import yaml
 from simple_di import Provide, inject
@@ -320,6 +320,9 @@ class _SpacyRunner(Runner):
         disable: t.Iterable[str],
         exclude: t.Iterable[str],
         config: t.Union[t.Dict[str, t.Any], "Config"],
+        as_tuples: t.Union[Literal[True], Literal[False]],
+        batch_size: t.Optional[int],
+        component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]],
         backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = "pytorch",
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
@@ -342,6 +345,10 @@ class _SpacyRunner(Runner):
             else:
                 resource_quota["gpus"] = self._gpu_device_id
         self._configure(backend_options)
+        self._as_tuples = as_tuples
+        self._batch_size = batch_size
+        self._component_cfg = component_cfg
+        super().__init__(str(tag), resource_quota, batch_options)
 
     def _configure(self, backend_options: t.Optional[str]) -> None:
         if self._gpu_device_id is not None and thinc_util.prefer_gpu(
@@ -426,57 +433,18 @@ class _SpacyRunner(Runner):
             config=self._config,
         )
 
-    @overload  # pragma: no cover
-    def _run_batch(  # pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        args: t.Iterable[t.Union[str, "Doc"]],  # type: ignore[reportUnknownParameterType]
-        *,
-        as_tuples: Literal[False] = ...,
-        batch_size: t.Optional[int] = ...,
-        disable: t.Iterable[str] = ...,
-        component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = ...,
-        n_process: int = ...,
-    ) -> t.Iterator["Doc"]:  # type: ignore[reportUnknownParameterType]
-        ...
-
-    @overload  # pragma: no cover
-    def _run_batch(  # noqa: F811 # pylint: disable=arguments-differ
-        self,
-        args: t.Iterable[t.Tuple[t.Union[str, "Doc"], t.Any]],  # type: ignore[reportUnknownParameterType] # noqa: LN001
-        *,
-        as_tuples: Literal[True] = ...,
-        batch_size: t.Optional[int] = ...,
-        disable: t.Iterable[str] = ...,
-        component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = ...,
-        n_process: int = ...,
-    ) -> t.Iterator[t.Tuple["Doc", t.Any]]:  # type: ignore[reportUnknownVariableType] # noqa: LN001
-        ...
-
-    def _run_batch(  # noqa: F811
-        self,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]]:  # type: ignore[reportUnknownVariableType] # noqa: LN001
-        as_tuples = kwargs.pop("as_tuples", False)
-        batch_size = t.cast(t.Optional[int], kwargs.pop("batch_size", None))
-        disable = t.cast(
-            t.Iterable[str], kwargs.pop("disable", util.SimpleFrozenList())
-        )
-        component_cfg = t.cast(
-            t.Optional[t.Dict[str, t.Dict[str, t.Any]]],
-            kwargs.pop("component_cfg", None),
-        )
-        n_process = kwargs.pop("n_process", self.num_replica)
-        return t.cast(
-            t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]],
-            self._model.pipe(  # type: ignore[reportGeneralTypeIssues]
-                args,
-                as_tuples=as_tuples,
-                batch_size=batch_size,
-                disable=disable,
-                component_cfg=component_cfg,
-                n_process=n_process,
-            ),
+        *args: t.Union[t.Iterable[t.Tuple[t.Union[str, "Doc"], t.Any]], t.Union[str, "Doc"]],  # type: ignore[reportUnknownParameterType] # noqa: LN001
+    ) -> t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]]:  # type: ignore[reportUnknownParameterType] # noqa: LN001
+        return self._model.pipe(  # type: ignore[reportGeneralTypeIssues]
+            args,  # type: ignore[reportGeneralTypeIssues]
+            as_tuples=self._as_tuples,
+            batch_size=self._batch_size,
+            disable=self._disable,
+            component_cfg=self._component_cfg,
+            n_process=self.num_replica,
         )
 
 
@@ -492,6 +460,9 @@ def load_runner(
     disable: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
     exclude: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
     config: t.Union[t.Dict[str, t.Any], "Config"] = util.SimpleFrozenDict(),  # noqa
+    as_tuples: t.Union[Literal[True], Literal[False]] = False,
+    batch_size: t.Optional[int] = None,
+    component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SpacyRunner":
     return _SpacyRunner(
@@ -504,5 +475,8 @@ def load_runner(
         disable=disable,
         exclude=exclude,
         config=config,
+        as_tuples=as_tuples,
+        batch_size=batch_size,
+        component_cfg=component_cfg,
         model_store=model_store,
     )

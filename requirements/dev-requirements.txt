@@ -2,7 +2,8 @@
 -r tests-requirements.txt
 attrs>=21.1
 GitPython>=2.0
-pre-commit
+setup-cfg-fmt
+yamllint
 pydantic
 setuptools
 twine

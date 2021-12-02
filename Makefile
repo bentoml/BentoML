@@ -14,10 +14,8 @@ lint: ## Running lint checker: flake8 and pylint
 	@./scripts/tools/linter.sh
 type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
-hooks: ## Install pre-defined hooks
-	@pre-commit install
-pre-commit: ## Running pre-commit on all files
-	@pre-commit run --all-files
+hooks: __check_defined_FORCE ## Install pre-defined hooks
+	@./scripts/install_hooks.sh
 
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)

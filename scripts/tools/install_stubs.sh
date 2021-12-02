@@ -12,7 +12,7 @@ if [ ! -d /tmp/numpy ]; then
   git clone https://github.com/numpy/numpy.git /tmp/numpy
 fi
 
-mkdir -p "$GIT_ROOT/numpystubs" 
+mkdir -p "$GIT_ROOT/numpystubs"
 cd /tmp/numpy/numpy && find . -name '*.pyi' -exec cp --parents '{}' "$GIT_ROOT/numpystubs" \;
 
 if [ -d "$target_np_stubs" ]; then
@@ -21,3 +21,4 @@ fi
 
 mv -f "$GIT_ROOT/numpystubs" "$target_np_stubs"
 
+[! -d "$GIT_ROOT/typings/pandas"] && pyright --createstubs pandas

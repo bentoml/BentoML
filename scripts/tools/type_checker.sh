@@ -2,6 +2,10 @@
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
-cd "$GIT_ROOT" || exit
+cd "$GIT_ROOT" || exit 1
 
-pyright --stats
+source ./scripts/ci/helpers.sh
+
+INFO "(flake8) Typechecking codebase..."
+
+pyright -p . -w

@@ -1,19 +1,23 @@
-import errno
-import json
-import logging
-import operator
 import os
-import pathlib
-import string
 import sys
+import json
+import errno
+import string
 import typing as t
-from functools import reduce
+import logging
+import pathlib
+import operator
 from types import FunctionType
+from functools import reduce
 
 from absl import flags
-from cerberus import Validator
-from glom import Assign, Path, PathAccessError, PathAssignError, glom
+from glom import glom
+from glom import Path
+from glom import Assign
+from glom import PathAccessError
+from glom import PathAssignError
 from ruamel import yaml
+from cerberus import Validator
 
 __all__ = (
     "FLAGS",

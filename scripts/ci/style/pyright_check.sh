@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
+cd "$GIT_ROOT" || exit
+
 source ./scripts/ci/helpers.sh
 
 set_on_failed_callback "FAIL pyright errors"

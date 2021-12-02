@@ -17,6 +17,10 @@ FAIL() {
     echo -e "$RED""[FAIL]""$NC" "$*"
 }
 
+INFO() {
+    echo -e "$YELLOW""[INFO]""$NC" "$*"
+}
+
 set_on_failed_callback() {
     set -E
     trap "$*" ERR

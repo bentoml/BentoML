@@ -2,13 +2,18 @@
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
-cd "$GIT_ROOT" || exit
+cd "$GIT_ROOT" || exit 1
 
-source "$GIT_ROOT/scripts/ci/helpers.sh"
+source ./scripts/ci/helpers.sh
 
-INFO "Formatting related files..."
-black --config ./pyproject.toml bentoml tests docker
-isort --color bentoml tests docker
+INFO "(black) Formatting codebase..."
 
-INFO "Formatting stubs files..."
+black --config ./pyproject.toml bentoml/ tests/ docker/
+
+INFO "(black) Formatting stubs..."
+
 black --pyi typings/**/*.pyi
+
+INFO "(isort) Reordering imports..."
+
+isort .

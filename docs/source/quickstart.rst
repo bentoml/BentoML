@@ -28,7 +28,7 @@ required to install the preview release of BentoML:
 
 .. code-block:: bash
 
-    pip install --pre -U bentoml
+    pip install bentoml
 
 
 Download and run the notebook in this quickstart guide:

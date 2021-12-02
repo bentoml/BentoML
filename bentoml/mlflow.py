@@ -221,7 +221,7 @@ class _PyFuncRunner(Runner):
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=attribute-defined-outside-init,used-before-assignment
+    # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         path = self._model_info.info.options["mlflow_folder"]
         artifact_path = self._model_info.path_of(path)

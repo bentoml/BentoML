@@ -1,39 +1,40 @@
 #!/usr/bin/env python3
-import itertools
-import json
-import operator
 import os
 import re
+import json
 import shutil
 import typing as t
-from collections import defaultdict
+import operator
+import itertools
 from copy import deepcopy
-from functools import lru_cache
 from pathlib import Path
+from functools import lru_cache
+from collections import defaultdict
 
-from absl import app, logging
+from absl import app
+from absl import logging
+from utils import walk
+from utils import FLAGS
+from utils import pprint
+from utils import sprint
+from utils import flatten
+from utils import mapfunc
+from utils import maxkeys
+from utils import mkdir_p
+from utils import get_data
+from utils import set_data
+from utils import get_nested
+from utils import cached_property
+from utils import ColoredFormatter
+from utils import load_manifest_yaml
 from dotenv import load_dotenv
 from jinja2 import Environment
 from requests import Session
-from utils import (
-    FLAGS,
-    ColoredFormatter,
-    cached_property,
-    flatten,
-    get_data,
-    get_nested,
-    load_manifest_yaml,
-    mapfunc,
-    maxkeys,
-    mkdir_p,
-    pprint,
-    set_data,
-    sprint,
-    walk,
-)
 
 from docker import DockerClient
-from docker.errors import APIError, BuildError, ImageNotFound
+from docker.errors import APIError
+from docker.errors import BuildError
+from docker.errors import ImageNotFound
 
 # TODO: Update some of the complex type hint cases for both utils.py and this one
 if t.TYPE_CHECKING:

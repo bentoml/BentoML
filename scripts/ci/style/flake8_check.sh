@@ -2,6 +2,10 @@
 
 name=$(basename "$0")
 
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
+cd "$GIT_ROOT" || exit 1
+
 source ./scripts/ci/helpers.sh
 
 echo "Running flake8 lint..."

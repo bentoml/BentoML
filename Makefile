@@ -9,11 +9,13 @@ help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
 format: ## Running code formatter: black and isort
-	./scripts/tools/formatter.sh
+	@./scripts/tools/formatter.sh
 lint: ## Running lint checker: flake8 and pylint
-	./scripts/tools/linter.sh
+	@./scripts/tools/linter.sh
 type: ## Running type checker: pyright
-	./scripts/tools/type_checker.sh
+	@./scripts/tools/type_checker.sh
+hooks: __check_defined_FORCE ## Install pre-defined hooks
+	@./scripts/install_hooks.sh
 
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
@@ -82,9 +84,6 @@ install-spellchecker-deps: ## Inform users to install enchant depending on their
 	@echo Make sure to install enchant from your distros package manager
 	@exit 1
 endif
-
-hooks: ## Install pre-defined hooks
-	@./scripts/install_hooks.sh
 
 check_defined = $(strip $(foreach 1,$1, $(call __check_defined,$1,$(strip $(value 2)))))
 __check_defined = \

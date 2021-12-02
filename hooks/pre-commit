@@ -21,9 +21,9 @@ setup-cfg-fmt "$GIT_ROOT/setup.cfg"
 # TODO: enable isort
 # isort .
 
-xargs -0 --no-run-if-empty pylint --rcfile="$GIT_ROOT/pyproject.toml"
-
-find .github -type f -name '*.yaml' | xargs -0 --no-run-if-empty yamllint || exit
+for f in $(find .github/ -type f -name '*.yml'); do
+  yamllint -c "$GIT_ROOT"/.yamllint.yml "$f" || exit 1
+done
 
 if [ "$LOCAL_BRANCH" != "bentoml-1.0" ]; then
     if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]

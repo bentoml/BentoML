@@ -1,17 +1,21 @@
-import importlib
-import logging
 import os
 import sys
 import typing as t
+import logging
+import importlib
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import BentoMLException, NotFound
-from ..bento.bento import BENTO_PROJECT_DIR_NAME, BENTO_YAML_FILENAME, SysPathBento
-from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ..bento.bento import SysPathBento
+from ..bento.bento import BENTO_YAML_FILENAME
+from ..bento.bento import BENTO_PROJECT_DIR_NAME
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..bento import BentoStore

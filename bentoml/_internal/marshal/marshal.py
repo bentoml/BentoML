@@ -1,27 +1,35 @@
-import asyncio
-import functools
-import logging
 import time
+import asyncio
+import logging
+import functools
 import traceback
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
+from typing import TYPE_CHECKING
 
 import psutil
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
+from .utils import DataLoader
+from .utils import MARSHAL_REQUEST_HEADER
+from ..types import HTTPRequest
+from ..types import HTTPResponse
+from .dispatcher import NonBlockSema
+from .dispatcher import CorkDispatcher
 from ...exceptions import RemoteException
 
 # from ..bundle import load_bento_service_metadata
-from ..bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
+from ..bundle.config import DEFAULT_MAX_LATENCY
+from ..bundle.config import DEFAULT_MAX_BATCH_SIZE
 from ..configuration.containers import BentoMLContainer
-from ..types import HTTPRequest, HTTPResponse
-from .dispatcher import CorkDispatcher, NonBlockSema
-from .utils import MARSHAL_REQUEST_HEADER, DataLoader
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from aiohttp import BaseConnector, ClientSession
-    from aiohttp.web import Application, Request
+    from aiohttp import BaseConnector
+    from aiohttp import ClientSession
+    from aiohttp.web import Request
+    from aiohttp.web import Application
 
 
 def metrics_patch(cls):
@@ -271,7 +279,8 @@ class MarshalApp:
                 )
 
     async def request_dispatcher(self, request: "Request"):
-        from aiohttp.web import HTTPInternalServerError, Response
+        from aiohttp.web import Response
+        from aiohttp.web import HTTPInternalServerError
 
         with self.tracer.async_span(
             service_name=self.__class__.__name__,
@@ -304,8 +313,8 @@ class MarshalApp:
         return resp
 
     async def relay_handler(self, request: "Request"):
-        from aiohttp.client_exceptions import ClientConnectionError
         from aiohttp.web import Response
+        from aiohttp.client_exceptions import ClientConnectionError
 
         data = await request.read()
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
@@ -340,8 +349,8 @@ class MarshalApp:
             * Exception: other exceptions
         """
         from aiohttp import ClientTimeout
-        from aiohttp.client_exceptions import ClientConnectionError
         from aiohttp.web import Response
+        from aiohttp.client_exceptions import ClientConnectionError
 
         headers = {MARSHAL_REQUEST_HEADER: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"

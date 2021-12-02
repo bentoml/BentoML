@@ -2,14 +2,16 @@ import random
 
 import numpy as np
 import paddle
-import paddle.nn as nn
 import pandas as pd
 import pytest
+import paddle.nn as nn
 from paddle.static import InputSpec
 
 import bentoml.paddle
-from tests.utils.frameworks.paddle_utils import IN_FEATURES, LinearModel, test_df
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.paddle_utils import test_df
+from tests.utils.frameworks.paddle_utils import IN_FEATURES
+from tests.utils.frameworks.paddle_utils import LinearModel
 
 BATCH_SIZE = 8
 EPOCH_NUM = 5

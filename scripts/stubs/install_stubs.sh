@@ -17,7 +17,7 @@ verlte() {
 }
 
 verlt() {
-    [ $1 = $2 ] && return 1 || verlte $1 $2
+  [ "$1" = "$2" ] && return 1 || verlte $1 $2
 }
 
 numpy_stubs() {
@@ -50,7 +50,7 @@ get_library_version() {
 from importlib_metadata import version
 print(version("$libraries"))
 EOF
-) || FAIL "$libraries not found..."
+)
 }
 
 libraries_stubs() {
@@ -62,11 +62,13 @@ libraries_stubs() {
   local stubs_path="$GIT_ROOT"/typings/"$imports"
 
   local pypi_version=$(get_library_version "$package")
-  local lock_version=$(grep "$package" "$LOCK_FILE" | sed 's/==/ /' | cut -d " " -f2)
-  if [[ -n "$lock_version" ]] && verlt "$pypi_version" "$lock_version"; then
-    FAIL "You need to upgrade $package before generating stubs..."
-    FAIL "One can try \`pip install -U $package\`. If $package requires additional setups refers to Google :)"
-    exit 1
+  local lock_version=$(grep "$package" "$LOCK_FILE" | head -n1 | sed 's/==/ /' | cut -d " " -f2)
+  if ! [[ -n "$lock_version" ]]; then
+    if verlt "$pypi_version" "$lock_version"; then
+      FAIL "You need to upgrade $package before generating stubs..."
+      FAIL "One can try \`pip install -U $package\`. If $package requires additional setups refers to Google :)"
+      exit 1
+    fi
   fi
 
   if ! grep -F "$package" "$LOCK_FILE" &>/dev/null || ! verlte "$pypi_version" "$lock_version"; then
@@ -74,12 +76,14 @@ libraries_stubs() {
   fi
   if [ "$needs_generate" -eq 1 ]; then
     INFO "Processing $package stubs..."
-    "$RM_BIN" -rf "$stubs_path"
+    if [ -d "$stubs_path" ]; then
+      "$RM_BIN" -rf "$stubs_path"
+    fi
     pyright --createstub "$imports"
     rpl="s/$package==$lock_version/$package==$pypi_version/g"
     grep -q "$package" "$LOCK_FILE" && sed -i "$rpl" "$LOCK_FILE" || echo "$package==$pypi_version" >>"$LOCK_FILE"
   else
-    INFO "$package stubs already exists and up-to-date, skipping..."
+    PASS "$package stubs already exists and up-to-date, skipping..."
   fi
 
 }
@@ -99,7 +103,7 @@ main() {
     "$RM_BIN" -rf "$GIT_ROOT"/typings/multipart/multipart
   fi
 
-  INFO "Due to bash permission, make sure to run \`black --config $GIT_ROOT/pyproject.toml --pyi typings/**/*.pyi\` after the generating stubs."
+  INFO "Due to bash permission, make sure to run the following command in the terminal: \nblack --config $GIT_ROOT/pyproject.toml --pyi typings/**/*.pyi\n"
 }
 
 main "$@"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-LIBRARIES=(pandas)
+LIBRARIES=(cloudpickle deepmerge fs huggingface_hub importlib_metadata joblib multipart pandas pathspec PIL starlette transformers xgboost yaml)
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 cd "$GIT_ROOT" || exit

@@ -16,3 +16,7 @@ onnx                onnx
 tensorflow          tensorflow
 torch               torch
 circus              circus
+lightgbm            lightgbm
+mlflow              mlflow
+paddle              paddlepaddle
+statsmodels         statsmodels

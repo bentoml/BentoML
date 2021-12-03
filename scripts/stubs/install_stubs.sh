@@ -17,7 +17,7 @@ verlte() {
 }
 
 verlt() {
-    [ "$1" = "$2" ] && return 1 || verlte $1 $2
+    [ $1 = $2 ] && return 1 || verlte $1 $2
 }
 
 numpy_stubs() {
@@ -50,7 +50,7 @@ get_library_version() {
 from importlib_metadata import version
 print(version("$libraries"))
 EOF
-)
+) || FAIL "$libraries not found..."
 }
 
 libraries_stubs() {
@@ -63,7 +63,7 @@ libraries_stubs() {
 
   local pypi_version=$(get_library_version "$package")
   local lock_version=$(grep "$package" "$LOCK_FILE" | sed 's/==/ /' | cut -d " " -f2)
-  if verlt "$pypi_version" "$lock_version"; then
+  if [[ -n "$lock_version" ]] && verlt "$pypi_version" "$lock_version"; then
     FAIL "You need to upgrade $package before generating stubs..."
     FAIL "One can try \`pip install -U $package\`. If $package requires additional setups refers to Google :)"
     exit 1

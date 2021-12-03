@@ -16,3 +16,7 @@ python_multipart==0.0.5
 deepmerge==0.3.0
 circus==0.17.1
 importlib_metadata==4.8.2
+lightgbm==3.3.1
+mlflow==1.21.0
+paddlepaddle==2.2.0
+statsmodels==0.12.2

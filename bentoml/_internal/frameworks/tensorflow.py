@@ -13,20 +13,21 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
-from .exceptions import MissingDependencyException
-from ._internal.types import Tag
-from ._internal.types import PathType
-from ._internal.models import Model
-from ._internal.runner import Runner
-from ._internal.runner.utils import Params
-from ._internal.utils.tensorflow import get_arg_names
-from ._internal.utils.tensorflow import cast_tensor_by_spec
-from ._internal.utils.tensorflow import get_input_signatures
-from ._internal.utils.tensorflow import get_restored_functions
-from ._internal.utils.tensorflow import pretty_format_restored_model
-from ._internal.configuration.containers import BentoMLContainer
+from ..types import Tag
+from ..types import PathType
+from ..models import Model
+from ..runner import Runner
+from ...exceptions import MissingDependencyException
+from ..runner.utils import Params
+from ..utils.tensorflow import get_arg_names
+from ..utils.tensorflow import get_tf_version
+from ..utils.tensorflow import cast_tensor_by_spec
+from ..utils.tensorflow import get_input_signatures
+from ..utils.tensorflow import get_restored_functions
+from ..utils.tensorflow import pretty_format_restored_model
+from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from _internal.models import ModelStore
 
 try:
@@ -46,7 +47,8 @@ except ImportError:  # pragma: no cover
     import tensorflow_core.python.training.tracking.tracking as tracking
 
 logger = logging.getLogger(__name__)
-TF2 = tf.__version__.startswith("2")
+_tf_version = get_tf_version()
+TF2 = _tf_version.startswith("2")
 
 try:
     import tensorflow_hub as hub
@@ -237,7 +239,7 @@ def load(
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
-                    f" Current version: {tf.__version__}"
+                    f" Current version: {_tf_version}"
                 )
             # tf.compat.v1.saved_model.load_v2() is TF2 tf.saved_model.load() before TF2
             obj = tf.compat.v1.saved_model.load_v2(
@@ -273,7 +275,7 @@ def import_from_tfhub(
             """  # noqa
         )
     context: t.Dict[str, t.Any] = {
-        "tensorflow": tf.__version__,
+        "tensorflow": _tf_version,
         "tensorflow_hub": hub.__version__,
     }
     if name is None:
@@ -355,7 +357,7 @@ def save(
         tag = bentoml.transformers.save("my_tensorflow_model", model)
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"tensorflow": tf.__version__}
+    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
     _model = Model.create(
         name,
         module=__name__,
@@ -376,7 +378,7 @@ def save(
             if options:
                 logger.warning(
                     f"Parameter 'options: {str(options)}' is ignored when "
-                    f"using tensorflow {tf.__version__}"
+                    f"using tensorflow {_tf_version}"
                 )
             tf.saved_model.save(model, _model.path, signatures=signatures)
 
@@ -396,17 +398,15 @@ class _TensorflowRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(
-            display_name=str(tag),
-            resource_quota=resource_quota,
-            batch_options=batch_options,
-        )
+        in_store_tag = model_store.get(tag).tag
+        self._tag = in_store_tag
+        super().__init__(str(in_store_tag), resource_quota, batch_options)
+
         self._device_id = device_id
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
         self._partial_kwargs = partial_kwargs if partial_kwargs is not None else dict()
-        self._tag = model_store.get(tag).tag
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:

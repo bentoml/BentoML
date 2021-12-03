@@ -1,5 +1,6 @@
 # Dev dependencies
 -r tests-requirements.txt
+python-minifier==2.5.0
 attrs>=21.1
 GitPython>=2.0
 setup-cfg-fmt

@@ -1,58 +1,77 @@
 import typing as t
-from contextlib import contextmanager
 from typing import TYPE_CHECKING
+from contextlib import contextmanager
 
 import fs
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import Model
 from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ._internal.models import ModelStore, SysPathModel
+    from ._internal.models import ModelStore
     from ._internal.runner import Runner
 
 
 @inject
-def list(
+def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
+    *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.List["SysPathModel"]:
+) -> t.List["Model"]:
     return _model_store.list(tag)
 
 
 @inject
 def get(
     tag: t.Union[Tag, str],
+    *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "SysPathModel":
+) -> "Model":
     return _model_store.get(tag)
 
 
 @inject
 def delete(
     tag: t.Union[Tag, str],
+    *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
     _model_store.delete(tag)
 
 
-def import_model(path: str) -> Model:
-    return Model.from_fs(fs.open_fs(path))
+@inject
+def import_model(
+    path: str, *, _model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
+) -> Model:
+    return Model.from_fs(fs.open_fs(path)).save(_model_store)
 
 
-def export_model(tag: t.Union[Tag, str], path: str):
-    model = get(tag)
+def export_model(
+    tag: t.Union[Tag, str],
+    path: str,
+    *,
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+):
+    model = get(tag, _model_store=_model_store)
     model.export(path)
 
 
-def push(tag: t.Union[Tag, str]):
-    model = get(tag)
-    model.push()
+def push(
+    tag: t.Union[Tag, str],
+    *,
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+):
+    raise NotImplementedError
 
 
-def pull() -> Model:
+def pull(
+    tag: t.Union[Tag, str],
+    *,
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> Model:
     raise NotImplementedError
 
 
@@ -67,7 +86,7 @@ def create(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Model:
+) -> t.Iterator[Model]:
     res = Model.create(
         name,
         module=module,
@@ -82,8 +101,13 @@ def create(
         res.save(_model_store)
 
 
-def load_runner(tag: t.Union[Tag, str]) -> "Runner":
-    model = get(tag)
+@inject
+def load_runner(
+    tag: t.Union[Tag, str],
+    *,
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> "Runner":
+    model = get(tag, _model_store=_model_store)
     return model.load_runner()
 
 

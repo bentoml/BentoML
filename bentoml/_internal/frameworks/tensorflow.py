@@ -1,31 +1,31 @@
 # type: ignore[reportMissingTypeStubs]
-import functools
-import logging
 import os
-import pathlib
 import re
-import typing as t
 import uuid
-from distutils.dir_util import copy_tree
+import typing as t
+import logging
+import pathlib
+import functools
 from typing import TYPE_CHECKING
+from distutils.dir_util import copy_tree
 
 import numpy as np
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import MissingDependencyException
-from ..configuration.containers import BentoMLContainer
+from ..types import Tag
+from ..types import PathType
 from ..models import Model
 from ..runner import Runner
+from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
-from ..types import PathType, Tag
-from ..utils.tensorflow import (
-    cast_tensor_by_spec,
-    get_arg_names,
-    get_input_signatures,
-    get_restored_functions,
-    get_tf_version,
-    pretty_format_restored_model,
-)
+from ..utils.tensorflow import get_arg_names
+from ..utils.tensorflow import get_tf_version
+from ..utils.tensorflow import cast_tensor_by_spec
+from ..utils.tensorflow import get_input_signatures
+from ..utils.tensorflow import get_restored_functions
+from ..utils.tensorflow import pretty_format_restored_model
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
     from _internal.models import ModelStore
@@ -52,7 +52,8 @@ TF2 = _tf_version.startswith("2")
 
 try:
     import tensorflow_hub as hub
-    from tensorflow_hub import native_module, resolve
+    from tensorflow_hub import resolve
+    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -397,7 +398,10 @@ class _TensorflowRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        in_store_tag = model_store.get(tag).tag
+        self._tag = in_store_tag
+        super().__init__(str(in_store_tag), resource_quota, batch_options)
+
         self._device_id = device_id
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
@@ -417,7 +421,7 @@ class _TensorflowRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_store.get(self.name).tag]
+        return [self._tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -437,7 +441,7 @@ class _TensorflowRunner(Runner):
         self._session = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto)
         )
-        self._model = load(self.name, model_store=self._model_store)
+        self._model = load(self._tag, model_store=self._model_store)
         if not TF2:
             raw_predict_fn = self._model.signatures["serving_default"]
         else:

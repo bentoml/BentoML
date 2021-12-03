@@ -3,17 +3,22 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import joblib
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE, TXT_EXT, Model
-from ._internal.runner import Runner
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.models import Model
+from ._internal.models import PKL_EXT
+from ._internal.models import TXT_EXT
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import lightgbm as lgb
     import numpy as np
+    import lightgbm as lgb
     from _internal.models import ModelStore
 
 try:
@@ -64,7 +69,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Union["lgb.basic.Booster", _LightGBMModelType]:
@@ -213,6 +218,7 @@ class _LightGBMRunner(Runner):
         self._model_file = model_file
         self._booster_params = booster_params
         self._infer_api_callback = infer_api_callback
+        self._tag = model_store.get(tag).tag
 
     def _is_gpu(self):
         try:
@@ -239,7 +245,7 @@ class _LightGBMRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
         self._model = load(
-            tag=self.name,
+            tag=self._tag,
             booster_params=self._booster_params,
             model_store=self._model_store,
         )

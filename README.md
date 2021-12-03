@@ -1,4 +1,4 @@
-[<img src="https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
+[<img src="https://raw.githubusercontent.com/bentoml/BentoML/0.13-LTS/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
 
 ## Model Serving Made Easy  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20Machine%20Learning%20Model%20Serving%20Made%20Easy%20&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
 
@@ -43,11 +43,11 @@ Join our community
 
 BentoML documentation: [https://docs.bentoml.org/](https://docs.bentoml.org/)
 
-* [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html), try it out [on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb) 
-* [Core Concepts](https://docs.bentoml.org/en/latest/concepts.html)
-* [API References](https://docs.bentoml.org/en/latest/api/index.html)
-* [FAQ](https://docs.bentoml.org/en/latest/faq.html)
-* Example projects: [bentoml/Gallery](https://github.com/bentoml/gallery)
+* [Quickstart Guide](https://docs.bentoml.org/en/0.13-lts/quickstart.html), try it out [on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/0.13-LTS/guides/quick-start/bentoml-quick-start-guide.ipynb) 
+* [Core Concepts](https://docs.bentoml.org/en/0.13-lts/concepts.html)
+* [API References](https://docs.bentoml.org/en/0.13-lts/api/index.html)
+* [FAQ](https://docs.bentoml.org/en/0.13-lts/faq.html)
+* Example projects: [bentoml/Gallery](https://github.com/bentoml/gallery/tree/0.13-LTS)
 
 
 ### Key Features
@@ -78,53 +78,53 @@ Standardize model serving and deployment workflow for teams:
 
 ### ML Frameworks
 
-* Scikit-Learn - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#scikit-learn) | [Examples](https://github.com/bentoml/gallery#scikit-learn)
-* PyTorch - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#pytorch) | [Examples](https://github.com/bentoml/gallery#pytorch)
-* Tensorflow 2 - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#tensorflow-2-0) | [Examples](https://github.com/bentoml/gallery#tensorflow-20)
-* Tensorflow Keras - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#tensorflow-keras) | [Examples](https://github.com/bentoml/gallery#tensorflow-keras)
-* XGBoost - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#xgboost) | [Examples](https://github.com/bentoml/gallery#xgboost)
-* LightGBM - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#lightgbm) | [Examples](https://github.com/bentoml/gallery#lightgbm)
-* FastText - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#fasttext) | [Examples](https://github.com/bentoml/gallery#fasttext)
-* FastAI - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#fastai) | [Examples](https://github.com/bentoml/gallery#fastai)
-* H2O - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#h2o) | [Examples](https://github.com/bentoml/gallery#h2o)
-* ONNX - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx) | [Examples](https://github.com/bentoml/gallery#onnx)
-* Spacy - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#spacy) | [Examples](https://github.com/bentoml/gallery#spacy)
-* Statsmodels - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#statsmodels) | [Examples](https://github.com/bentoml/gallery#statsmodels)
-* CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
-* Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
-* Gluon - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#gluon)
-* Detectron - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#detectron)
-* PaddlePaddle - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#paddle) | [Example](https://github.com/bentoml/gallery#paddlepaddle)
-* EvalML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#evalml)
-* EasyOCR -[Docs](https://docs.bentoml.org/en/latest/frameworks.html#easyocr)
-* ONNX-MLIR - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx-mlir)
+* Scikit-Learn - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#scikit-learn) | [Examples](https://github.com/bentoml/gallery#scikit-learn)
+* PyTorch - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#pytorch) | [Examples](https://github.com/bentoml/gallery#pytorch)
+* Tensorflow 2 - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#tensorflow-2-0) | [Examples](https://github.com/bentoml/gallery#tensorflow-20)
+* Tensorflow Keras - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#tensorflow-keras) | [Examples](https://github.com/bentoml/gallery#tensorflow-keras)
+* XGBoost - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#xgboost) | [Examples](https://github.com/bentoml/gallery#xgboost)
+* LightGBM - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#lightgbm) | [Examples](https://github.com/bentoml/gallery#lightgbm)
+* FastText - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#fasttext) | [Examples](https://github.com/bentoml/gallery#fasttext)
+* FastAI - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#fastai) | [Examples](https://github.com/bentoml/gallery#fastai)
+* H2O - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#h2o) | [Examples](https://github.com/bentoml/gallery#h2o)
+* ONNX - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#onnx) | [Examples](https://github.com/bentoml/gallery#onnx)
+* Spacy - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#spacy) | [Examples](https://github.com/bentoml/gallery#spacy)
+* Statsmodels - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#statsmodels) | [Examples](https://github.com/bentoml/gallery#statsmodels)
+* CoreML - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#coreml)
+* Transformers - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#transformers)
+* Gluon - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#gluon)
+* Detectron - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#detectron)
+* PaddlePaddle - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#paddle) | [Example](https://github.com/bentoml/gallery#paddlepaddle)
+* EvalML - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#evalml)
+* EasyOCR -[Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#easyocr)
+* ONNX-MLIR - [Docs](https://docs.bentoml.org/en/0.13-lts/frameworks.html#onnx-mlir)
 
 
 ### Deployment Options
 
-Be sure to check out [deployment overview doc](https://docs.bentoml.org/en/latest/deployment/index.html)
+Be sure to check out [deployment overview doc](https://docs.bentoml.org/en/0.13-lts/deployment/index.html)
 to understand which deployment option is best suited for your use case.
 
 * One-click deployment with BentoML:
-  - [AWS Lambda](https://docs.bentoml.org/en/latest/deployment/aws_lambda.html)
-  - [AWS SageMaker](https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html)
-  - [AWS EC2](https://docs.bentoml.org/en/latest/deployment/aws_ec2.html)
-  - [Azure Functions](https://docs.bentoml.org/en/latest/deployment/azure_functions.html)
+  - [AWS Lambda](https://docs.bentoml.org/en/0.13-lts/deployment/aws_lambda.html)
+  - [AWS SageMaker](https://docs.bentoml.org/en/0.13-lts/deployment/aws_sagemaker.html)
+  - [AWS EC2](https://docs.bentoml.org/en/0.13-lts/deployment/aws_ec2.html)
+  - [Azure Functions](https://docs.bentoml.org/en/0.13-lts/deployment/azure_functions.html)
 
 * Deploy with open-source platforms:
-  - [Docker](https://docs.bentoml.org/en/latest/deployment/docker.html)
-  - [Kubernetes](https://docs.bentoml.org/en/latest/deployment/kubernetes.html)
-  - [Knative](https://docs.bentoml.org/en/latest/deployment/knative.html)
-  - [Kubeflow](https://docs.bentoml.org/en/latest/deployment/kubeflow.html)
-  - [KFServing](https://docs.bentoml.org/en/latest/deployment/kfserving.html)
-  - [Clipper](https://docs.bentoml.org/en/latest/deployment/clipper.html)
+  - [Docker](https://docs.bentoml.org/en/0.13-lts/deployment/docker.html)
+  - [Kubernetes](https://docs.bentoml.org/en/0.13-lts/deployment/kubernetes.html)
+  - [Knative](https://docs.bentoml.org/en/0.13-lts/deployment/knative.html)
+  - [Kubeflow](https://docs.bentoml.org/en/0.13-lts/deployment/kubeflow.html)
+  - [KFServing](https://docs.bentoml.org/en/0.13-lts/deployment/kfserving.html)
+  - [Clipper](https://docs.bentoml.org/en/0.13-lts/deployment/clipper.html)
 
 * Manual cloud deployment guides:
-  - [AWS ECS](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
-  - [Google Cloud Run](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
-  - [Google Cloud AI Platform Unified](https://docs.bentoml.org/en/latest/deployment/google_cloud_ai_platform.html)
-  - [Azure container instance](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
-  - [Heroku](https://docs.bentoml.org/en/latest/deployment/heroku.html)
+  - [AWS ECS](https://docs.bentoml.org/en/0.13-lts/deployment/aws_ecs.html)
+  - [Google Cloud Run](https://docs.bentoml.org/en/0.13-lts/deployment/google_cloud_run.html)
+  - [Google Cloud AI Platform Unified](https://docs.bentoml.org/en/0.13-lts/deployment/google_cloud_ai_platform.html)
+  - [Azure container instance](https://docs.bentoml.org/en/0.13-lts/deployment/azure_container_instance.html)
+  - [Heroku](https://docs.bentoml.org/en/0.13-lts/deployment/heroku.html)
 
 
 ## Introduction
@@ -213,13 +213,13 @@ and you can think of it as where you'd store your bentos 🍱. Yatai provides CL
 and Python API for accessing BentoML bundles you have created, and you can start a Yatai
 server for your team to manage all models on cloud storage(S3, GCS, MinIO etc) and build
 CI/CD workflow around it. 
-[Learn more about it here](https://docs.bentoml.org/en/latest/concepts.html#model-management).
+[Learn more about it here](https://docs.bentoml.org/en/0.13-lts/concepts.html#model-management).
 
-![Yatai UI](https://github.com/bentoml/BentoML/blob/master/docs/source/_static/img/yatai-service-web-ui-repository.png)
+![Yatai UI](https://github.com/bentoml/BentoML/blob/0.13-LTS/docs/source/_static/img/yatai-service-web-ui-repository.png)
 
-Read the [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html) 
+Read the [Quickstart Guide](https://docs.bentoml.org/en/0.13-lts/quickstart.html) 
 to learn more about the basic functionalities of BentoML. You can also try it out 
-[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
+[here on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/0.13-LTS/guides/quick-start/bentoml-quick-start-guide.ipynb).
 
 
 ## Why BentoML
@@ -240,10 +240,10 @@ infrastructure needs and performance optimizations in the process. This allows D
 team to seamlessly work with data science side-by-side, deploy and operate their models
 packaged in BentoML format in production.
 
-Check out [Frequently Asked Questions](https://docs.bentoml.org/en/latest/faq.html) page
+Check out [Frequently Asked Questions](https://docs.bentoml.org/en/0.13-lts/faq.html) page
 on how does BentoML compares to Tensorflow-serving, Clipper, AWS SageMaker, MLFlow, etc.
 
-<img src="https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-overview.png" width="600">
+<img src="https://raw.githubusercontent.com/bentoml/BentoML/0.13-LTS/docs/source/_static/img/bentoml-overview.png" width="600">
 
 
 ## Contributing
@@ -252,8 +252,8 @@ Have questions or feedback? Post a [new github issue](https://github.com/bentoml
 or discuss in our Slack channel: [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
 Want to help build BentoML? Check out our
-[contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md) and the
-[development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
+[contributing guide](https://github.com/bentoml/BentoML/blob/0.13-LTS/CONTRIBUTING.md) and the
+[development guide](https://github.com/bentoml/BentoML/blob/0.13-LTS/DEVELOPMENT.md).
 
 
 ## Releases
@@ -269,7 +269,7 @@ Read more about the latest updates from the [releases page](https://github.com/b
 
 BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com).
 It only collects BentoML library's own actions and parameters, no user or model data will be collected.
-[Here is the code that does it](https://github.com/bentoml/BentoML/blob/master/bentoml/utils/usage_stats.py).
+[Here is the code that does it](https://github.com/bentoml/BentoML/blob/0.13-LTS/bentoml/utils/usage_stats.py).
 
 This helps BentoML team to understand how the community is using this tool and what to build next. You can
 easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.
@@ -287,6 +287,6 @@ or by setting the `BENTOML_DO_NOT_TRACK` environment variable to `True`.
 
 ## License
 
-[Apache License 2.0](https://github.com/bentoml/BentoML/blob/master/LICENSE)
+[Apache License 2.0](https://github.com/bentoml/BentoML/blob/0.13-LTS/LICENSE)
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

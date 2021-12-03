@@ -1,3 +1,4 @@
+import pickle
 import typing as t
 import zipfile
 import functools
@@ -15,6 +16,8 @@ from ._internal.models import PT_EXT
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
+from ._internal.runner.container import Payload
+from ._internal.runner.container import DataContainer
 from ._internal.configuration.containers import BentoMLContainer
 
 _RV = t.TypeVar("_RV")
@@ -318,3 +321,38 @@ def load_runner(
         batch_options=batch_options,
         model_store=model_store,
     )
+
+
+class PytorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
+    @classmethod
+    def singles_to_batch(cls, singles, batch_axis=0):
+        return torch.stack(singles, dim=batch_axis)
+
+    @classmethod
+    def batch_to_singles(cls, batch, batch_axis=0):
+        return [
+            torch.squeeze(tensor, dim=batch_axis)
+            for tensor in torch.split(batch, 1, dim=batch_axis)
+        ]
+
+    @classmethod
+    @inject
+    def single_to_payload(
+        cls,
+        single_data,
+    ) -> Payload:
+        return cls.create_payload(
+            pickle.dumps(single_data),
+            {"plasma": False},
+        )
+
+    @classmethod
+    @inject
+    def payload_to_single(
+        cls,
+        payload: Payload,
+    ):
+        return pickle.loads(payload.data)
+
+    batch_to_payload = single_to_payload
+    payload_to_batch = payload_to_single

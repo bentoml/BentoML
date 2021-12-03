@@ -1,15 +1,17 @@
 import math
 
 import numpy as np
+import torch
 import pandas as pd
 import psutil
 import pytest
-import torch
 import torch.nn as nn
 
 import bentoml.pytorch
-from tests.utils.frameworks.pytorch_utils import LinearModel, test_df
+from bentoml.pytorch import PytorchTensorContainer
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.pytorch_utils import test_df
+from tests.utils.frameworks.pytorch_utils import LinearModel
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):
@@ -120,3 +122,20 @@ def test_pytorch_runner_with_partial_kwargs(modelstore, bias_pair):
     # tensor to float may introduce larger errors, so we bump rel_tol
     # from 1e-9 to 1e-6 just in case
     assert math.isclose(res1 - res2, bias1 - bias2, rel_tol=1e-6)
+
+
+@pytest.mark.parametrize("batch_axis", [0, 1])
+def test_pytorch_container(batch_axis):
+
+    single_tensor = torch.arange(6).reshape(2, 3)
+    singles = [single_tensor, single_tensor + 1]
+    batch_tensor = torch.stack(singles, dim=batch_axis)
+
+    assert (
+        PytorchTensorContainer.singles_to_batch(singles, batch_axis=batch_axis)
+        == batch_tensor
+    ).all()
+    assert (
+        PytorchTensorContainer.batch_to_singles(batch_tensor, batch_axis=batch_axis)[0]
+        == single_tensor
+    ).all()

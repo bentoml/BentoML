@@ -16,6 +16,8 @@ type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
 hooks: __check_defined_FORCE ## Install pre-defined hooks
 	@./scripts/install_hooks.sh
+stubs: __check_defined_FORCE ## Install stubs
+	@./scripts/stubs/install_stubs.sh
 
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)

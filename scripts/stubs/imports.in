@@ -9,11 +9,12 @@ pandas              pandas
 pathspec            pathspec
 PIL                 Pillow
 starlette           starlette
+yaml                PyYAML
 transformers        transformers
 xgboost             xgboost
-yaml                PyYAML
 onnx                onnx
 tensorflow          tensorflow
+tensorflow_hub      tensorflow_hub
 torch               torch
 circus              circus
 lightgbm            lightgbm

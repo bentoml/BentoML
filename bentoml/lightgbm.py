@@ -247,27 +247,19 @@ class _LightGBMRunner(Runner):
         )
         self._predict_fn = getattr(self._model, self._infer_api_callback)
 
-    def _run_batch(
-        self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
-        **kwargs: t.Any,
+    # pytlint: disable=arguments-differ
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
+        self, input_data: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]](
-            *args, **kwargs
-        )
-
-        def _mapping(item: t.Any) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-            if isinstance(item, pd.DataFrame):
-                return item.to_numpy()
-            elif isinstance(item, np.ndarray):
-                return item  # type: ignore[reportUnknownVariableType]
-            else:
-                raise TypeError(
-                    f"Only accept type np.ndarray or pd.DataFrame, got {type(item)} instead."
-                )
-
-        params = params.map(_mapping)
-        return self._predict_fn(*params.args, **params.kwargs)
+        if isinstance(input_data, pd.DataFrame):
+            return input_data.to_numpy()
+        elif isinstance(input_data, np.ndarray):
+            return input_data
+        else:
+            raise TypeError(
+                f"Only accept type np.ndarray or pd.DataFrame, got {type(item)} instead."
+            )
+        return self._predict_fn(input_data)
 
 
 @inject

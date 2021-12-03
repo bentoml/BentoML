@@ -9,13 +9,11 @@ from typing import (
     Collection,
     Iterator,
     List,
-    NamedTuple,
     Optional,
     Text,
     Tuple,
     Type,
 )
-
 from .base import FS
 from .info import Info
 
@@ -27,13 +25,8 @@ searching etc. See :ref:`walking` for details.
 """
 if typing.TYPE_CHECKING:
     OnError = Callable[[Text, Exception], bool]
-
-_F = typing.TypeVar("_F", bound="FS")
-
-class Step(NamedTuple):
-    path: Text
-    dirs: List[Info]
-    files: List[Info]
+_F = ...
+Step = ...
 
 class Walker:
     """A walker object recursively lists directories in a filesystem."""
@@ -325,7 +318,7 @@ class BoundWalker(typing.Generic[_F]):
 
         """
         ...
-    __call__ = walk
+    __call__ = ...
     def files(self, path: Text = ..., **kwargs: Any) -> Iterator[Text]:
         """Walk a filesystem, yielding absolute paths to files.
 
@@ -445,8 +438,8 @@ class BoundWalker(typing.Generic[_F]):
         """
         ...
 
-default_walker = Walker()
-walk = default_walker.walk
-walk_files = default_walker.files
-walk_info = default_walker.info
-walk_dirs = default_walker.dirs
+default_walker = ...
+walk = ...
+walk_files = ...
+walk_info = ...
+walk_dirs = ...

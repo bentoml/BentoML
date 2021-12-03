@@ -6,7 +6,6 @@ import sys
 import types
 import typing
 from enum import Enum
-
 from starlette.convertors import Convertor
 from starlette.datastructures import URLPath
 from starlette.types import ASGIApp, Receive, Scope, Send

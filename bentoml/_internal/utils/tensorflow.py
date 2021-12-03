@@ -68,7 +68,9 @@ def get_tf_version() -> str:
     return _tf_version
 
 
-def _isinstance_wrapper(obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]) -> bool:
+def _isinstance_wrapper(
+    obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]
+) -> bool:
     """
     `isinstance` wrapper to check tensor spec
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+LIBRARIES=(pandas yaml xgboost transformers transformers starlette PIL huggingface_hub)
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 cd "$GIT_ROOT" || exit
@@ -21,4 +22,6 @@ fi
 
 mv -f "$GIT_ROOT/numpystubs" "$target_np_stubs"
 
-[! -d "$GIT_ROOT/typings/pandas"] && pyright --createstubs pandas
+for lib in "$LIBRARIES[@]"; do
+  pyright --createstubs "$lib"
+done

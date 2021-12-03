@@ -300,7 +300,7 @@ class BentoServerContainerClass:
         )
 
     # Mapping from runner name to RunnerApp file descriptor
-    remote_runner_mapping = providers.Static[t.Dict[str, int]](dict())
+    remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())
     plasma_db = providers.Static[t.Optional["PlasmaClient"]](None)  # type: ignore
 
 

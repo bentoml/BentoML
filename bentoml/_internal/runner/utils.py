@@ -19,6 +19,9 @@ _drv = None
 if TYPE_CHECKING:
     from _ctypes import _SimpleCData
     from aiohttp import MultipartWriter
+    from starlette.requests import Request
+
+    from bentoml._internal.runner.container import Payload
 
 T = t.TypeVar("T")
 To = t.TypeVar("To")
@@ -51,25 +54,62 @@ class Params(t.Generic[T]):
         except StopIteration:
             pass
 
-    def to_http_multipart(self) -> "MultipartWriter":
-        raise NotImplementedError()
-
-    def to_dict(self) -> t.Dict[t.Union[int, str], T]:
-        return dict(enumerate(self.args), **self.kwargs)
-
-    @classmethod
-    def from_dict(cls, d: t.Dict[t.Union[int, str], To]) -> "Params[To]":
-        args = tuple(
-            v for _, v in sorted((k, v) for k, v in d.items() if isinstance(k, int))
-        )
-        kwargs = {k: v for k, v in d.items() if not isinstance(k, int)}
-        return Params[To](*args, **kwargs)
+    def items(self) -> t.Iterator[t.Tuple[t.Union[int, str], T]]:
+        return itertools.chain(enumerate(self.args), self.kwargs.items())
 
     @property
     def sample(self) -> T:
         if self.args:
             return self.args[0]
         return next(iter(self.kwargs.values()))
+
+
+PAYLOAD_META_HEADER = "Bento-Payload-Meta"
+
+
+def payload_params_to_multipart(params: Params["Payload"]) -> "MultipartWriter":
+    import json
+
+    from aiohttp.multipart import MultipartWriter
+    from multidict import CIMultiDict
+
+    multipart = MultipartWriter(subtype="form-data")
+    for key, payload in params.items():
+        multipart.append(
+            payload.data,
+            headers=CIMultiDict(
+                (
+                    (PAYLOAD_META_HEADER, json.dumps(payload.meta)),
+                    ("Content-Disposition", f'form-data; name="{key}"'),
+                )
+            ),
+        )
+    return multipart
+
+
+async def multipart_to_payload_params(request: "Request") -> Params["Payload"]:
+    import json
+
+    from bentoml._internal.runner.container import Payload
+    from bentoml._internal.utils.formparser import populate_multipart_requests
+
+    parts = await populate_multipart_requests(request)
+    max_arg_index = -1
+    kwargs: t.Dict[str, Payload] = {}
+    args_map: t.Dict[int, Payload] = {}
+    for field_name, req in parts.items():
+        payload = Payload(
+            data=await req.body(),
+            meta=json.loads(req.headers[PAYLOAD_META_HEADER]),
+        )
+        if field_name.isdigit():
+            arg_index = int(field_name)
+            args_map[arg_index] = payload
+            max_arg_index = max(max_arg_index, arg_index)
+        else:
+            kwargs[field_name] = payload
+    args = tuple(args_map[i] for i in range(max_arg_index + 1))
+    return Params(*args, **kwargs)
 
 
 class TypeRef:
@@ -97,7 +137,7 @@ class TypeRef:
 
         if hasattr(t, "_eval_type"):  # python3.7, 3.8 & 3.9
             _eval_type = getattr(t, "_eval_type")
-            return t.cast(t.Type, _eval_type(ref, globals(), localns))
+            return t.cast(type, _eval_type(ref, globals(), localns))
 
         raise SystemError("unsupported Python version")
 

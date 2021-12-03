@@ -1,18 +1,22 @@
-import logging
 import os
 import re
 import typing as t
-from distutils.dir_util import copy_tree
+import logging
 from typing import TYPE_CHECKING
+from distutils.dir_util import copy_tree
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, Model
-from ._internal.runner import Runner
+from .exceptions import NotFound
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException, NotFound
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -29,23 +33,22 @@ Instruction for installing `paddlepaddle`:
 if TYPE_CHECKING:
     import numpy as np
     import paddle
-    import paddle.inference
     import paddle.nn
     import paddlehub as hub
+    import paddle.inference
     import paddlehub.module.module as module
+    from paddle.static import InputSpec
     from _internal.models import ModelStore
     from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
-    from paddle.static import InputSpec
 
 try:
     import paddle
-    import paddle.inference
     import paddle.nn
+    import paddle.inference
     from paddle.fluid import core
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_paddle_exc)
 
-_supports_gpu = paddle.is_compiled_with_cuda()
 
 _hub_exc = (
     """\
@@ -399,16 +402,20 @@ class _PaddlePaddleRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        if enable_gpu and not _supports_gpu:
+        import paddle
+
+        if enable_gpu and not paddle.is_compiled_with_cuda():
             raise BentoMLException(
                 "`enable_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
                 " Make sure to install `paddlepaddle-gpu` and try again."
             )
-        super().__init__(str(tag), resource_quota, batch_options)
+        in_store_tag = model_store.get(tag).tag
+
+        super().__init__(str(in_store_tag), resource_quota, batch_options)
         self._infer_api_callback = infer_api_callback
         self._model_store = model_store
         self._enable_gpu = enable_gpu
-        self._model_info = model_store.get(tag)
+        self._tag = in_store_tag
         self._setup_runner_config(device, enable_gpu, gpu_mem_pool_mb, config=config)
 
     # pylint: disable=attribute-defined-outside-init
@@ -420,7 +427,7 @@ class _PaddlePaddleRunner(Runner):
         config: t.Optional["paddle.inference.Config"],
     ) -> None:
         _config = (
-            _load_paddle_bentoml_default_config(self._model_info)
+            _load_paddle_bentoml_default_config(self._model_store.get(self._tag))
             if not config
             else config
         )
@@ -447,7 +454,7 @@ class _PaddlePaddleRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -465,7 +472,7 @@ class _PaddlePaddleRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
         self._model = load(
-            self.name, config=self._runner_config, model_store=self._model_store
+            self._tag, config=self._runner_config, model_store=self._model_store
         )
         self._infer_func = getattr(self._model, self._infer_api_callback)
 
@@ -477,7 +484,8 @@ class _PaddlePaddleRunner(Runner):
         return_argmax: bool = False,
         **kwargs: str,
     ) -> t.Union[t.Any, t.List["np.ndarray"]]:  # type: ignore[override]
-        if "paddlehub" in self._model_info.info.context:
+        model_info = self._model_store.get(self._tag)
+        if "paddlehub" in model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:
             assert input_data is not None

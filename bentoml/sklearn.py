@@ -125,7 +125,7 @@ class _SklearnRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(f"{tag}-{function_name}", resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._model_info = model_info

@@ -12,6 +12,10 @@ IMPORTS="$DIRNAME"/imports.in
 LOCK_FILE="$DIRNAME"/imports.lock
 NUMPY_HASH_FILE="$DIRNAME"/numpy.lock
 
+if [[ ! -f "$LOCK_FILE" ]]; then
+  touch "$LOCK_FILE"
+fi
+
 verlte() {
   [  "$1" = $(echo -e "$1\n$2" | sort -V | head -n1) ]
 }
@@ -71,7 +75,7 @@ libraries_stubs() {
     fi
   fi
 
-  if ! grep -F "$package" "$LOCK_FILE" &>/dev/null || ! verlte "$pypi_version" "$lock_version"; then
+  if ! grep -F "$package" "$LOCK_FILE" &>/dev/null || ! [[ -n "$lock_version" ]] || ! verlte "$pypi_version" "$lock_version"; then
     needs_generate=1
   fi
   if [ "$needs_generate" -eq 1 ]; then

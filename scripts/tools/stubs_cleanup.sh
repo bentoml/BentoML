@@ -28,15 +28,16 @@ for file in $(find typings/ -type f -iname '*.pyi'); do
     INFO "Removing pyright bugs..."
     sed -i "s/],:/]/g" "$file"
     sed -i "s/,,/,/g" "$file"
+    sed -i "s/]\n    .../]: .../g" "$file"
     # sed -i "s/]$/]:/g" "$file"
     cp "$file" "$file".bak
-    if ! pyminify "${MINIFY_OPTS[@]}" "$file".bak &>> "$file"; then
+    if ! pyminify "${MINIFY_OPTS[@]}" "$file".bak &>>| "$file"; then
       FAIL "unable to processed $file, reverting to previous state, opening editor to fix..."
       rm "$file"
       mv "$file".bak "$file"
       "$EDITOR" "$file" || exit
       cp "$file" "$file".bak
-      if ! pyminify "${MINIFY_OPTS[@]}" "$file".bak &>> "$file"; then
+      if ! pyminify "${MINIFY_OPTS[@]}" "$file".bak &>>| "$file"; then
         FAIL "Failed to fix $files. One can also use https://python-minifier.com/ to test where the problem may be. Make sure to match ${MINIFY_OPTS[@]}\nExitting now..."
         rm "$file"
         mv "$file".bak "$file"

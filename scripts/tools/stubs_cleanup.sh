@@ -19,7 +19,7 @@ need_cmd black || (echo "make sure to run \`make install-dev-deps\`"; exit 1);
 
 INFO "(pyminify) reducing stubs size..."
 
-for file in $(find typings/ -type f -iname '*.pyi'); do
+for file in $(git ls-files | grep -e "**.pyi$"); do
   if [ ! -z $(grep "$file" "$PROCESSED_TXT") ]; then
     PASS "$file already minified, skipping..."
     continue

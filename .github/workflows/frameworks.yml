@@ -115,7 +115,7 @@ jobs:
               - tests/integration/frameworks/test_onnxmlir_impl.py
             paddle:
               - *runner
-             - bentoml/paddle.py
+              - bentoml/paddle.py
               - tests/integration/frameworks/paddle
             pycaret:
               - *runner
@@ -167,6 +167,8 @@ jobs:
               - *runner
               - bentoml/xgboost.py
               - tests/integration/frameworks/test_xgboost_impl.py
+
+
   catboost_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
@@ -184,6 +186,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -196,6 +199,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-catboost
         shell: bash
@@ -226,6 +230,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -238,6 +243,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-detectron2
         shell: bash
@@ -268,6 +274,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -280,6 +287,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-easyocr
         shell: bash
@@ -316,6 +324,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -328,6 +337,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-gluon
         shell: bash
@@ -358,6 +368,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -370,6 +381,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-h2o
         shell: bash
@@ -400,6 +412,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -412,6 +425,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-keras_tf1
         shell: bash
@@ -442,6 +456,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -454,6 +469,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-keras_tf2
         shell: bash
@@ -484,6 +500,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -496,6 +513,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-lightgbm
         shell: bash
@@ -526,6 +544,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -538,6 +557,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-mlflow
         shell: bash
@@ -568,6 +588,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -580,6 +601,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-onnx
         shell: bash
@@ -620,6 +642,7 @@ jobs:
           pip install -e .
           pip install -r requirements/tests-requirements.txt
           make tests-onnxmlir
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnxmlir == 'true' }}
         uses: codecov/codecov-action@v2
@@ -646,6 +669,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -658,6 +682,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-paddle
         shell: bash
@@ -688,6 +713,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -700,6 +726,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-pycaret
         shell: bash
@@ -732,6 +759,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -744,6 +772,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-pytorch
         shell: bash
@@ -774,6 +803,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -786,6 +816,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -820,6 +851,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -832,6 +864,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-sklearn
         shell: bash
@@ -862,6 +895,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -874,6 +908,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-spacy
         shell: bash
@@ -904,6 +939,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -916,6 +952,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-statsmodels
         shell: bash
@@ -946,6 +983,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -958,6 +996,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-tf1
         shell: bash
@@ -988,6 +1027,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -1000,6 +1040,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-tf2
         shell: bash
@@ -1030,6 +1071,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -1042,6 +1084,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-transformers
         shell: bash
@@ -1072,6 +1115,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -1084,6 +1128,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-xgboost
         shell: bash

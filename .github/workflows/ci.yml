@@ -30,8 +30,8 @@ jobs:
           base: 'bentoml-1.0'
           filters: |
             related: &related
-              - codecov.yml
               - .github/workflows/ci.yml
+              - codecov.yml
               - setup.cfg
               - pyproject.toml
               - scripts/ci/config.yml
@@ -46,6 +46,7 @@ jobs:
               - *related
               - requirements/docs-requirements.txt
               - "docs/**"
+
   codestyle_check:
     runs-on: ubuntu-latest
     defaults:
@@ -69,6 +70,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Setup node
         uses: actions/setup-node@v2
         with:
@@ -76,6 +78,7 @@ jobs:
       - name: install pyright
         run: |
           npm install -g npm@^7 pyright
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -87,6 +90,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/dev-requirements.txt
+
       - name: Format check
         run: make ci-format
       - name: Lint check
@@ -117,6 +121,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -128,9 +133,11 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/docs-requirements.txt
+
       - name: Install libenchant
         run: |
           sudo apt-get update && sudo apt-get install -y libenchant-dev
+
       - name: Run spellcheck script
         run: make spellcheck-docs
         shell: bash
@@ -154,7 +161,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        ith:
+        with:
           fetch-depth: 0 # fetch all tags and branches
 
       - name: Setup python
@@ -167,6 +174,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -178,14 +186,16 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run unit tests
         if: ${{ matrix.os != 'windows-latest' }}
         run: make tests-unit
 
       - name: Run unit tests (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          pytest tests/unit --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"unit.xml"
+        run: make tests-unit
+        shell: bash
+
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
@@ -230,6 +240,7 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -241,6 +252,7 @@ jobs:
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
+
       - name: Run tests and generate coverage report
         run: make tests-general_features
 
@@ -254,4 +266,4 @@ jobs:
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: truew
+  cancel-in-progress: true

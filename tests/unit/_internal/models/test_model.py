@@ -16,26 +16,26 @@ from bentoml._internal.configuration import BENTOML_VERSION
 if TYPE_CHECKING:
     from pathlib import Path
 
-expected_yaml = (
-    "name: test\n"
-    "version: version\n"
-    "bentoml_version: {bentoml_version}\n"
-    "creation_time: {creation_time}\n"
-    "api_version: v1\n"
-    "module: testmodule\n"
-    "context:\n"
-    "  ctx: 1\n"
-    "labels:\n"
-    "  label: stringvalue\n"
-    "options:\n"
-    "  option:\n"
-    "    dictkey: dictvalue\n"
-    "metadata:\n"
-    "  metadatakey:\n"
-    "  - list\n"
-    "  - of\n"
-    "  - str\n"
-)
+expected_yaml = """\
+name: test
+version: version
+bentoml_version: {bentoml_version}
+creation_time: {creation_time}
+api_version: v1
+module: testmodule
+context:
+  ctx: 1
+labels:
+  label: stringvalue
+options:
+  option:
+    dictkey: dictvalue
+metadata:
+  metadatakey:
+  - list
+  - of
+  - str
+"""
 
 
 def test_model_info(tmpdir: "Path"):

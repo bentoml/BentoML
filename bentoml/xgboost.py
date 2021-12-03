@@ -1,19 +1,28 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT, SAVE_NAMESPACE, Model
-from ._internal.runner import Runner
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.types import AnyNDArray
+from ._internal.utils import LazyLoader
+from ._internal.models import Model
+from ._internal.models import JSON_EXT
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import pandas as pd
+    import numpy as np
+    from pandas.core.frame import DataFrame
 
     from ._internal.models import ModelStore
+else:
+    np = LazyLoader("np", globals(), "numpy")
+
 
 try:
     import xgboost as xgb
@@ -24,6 +33,12 @@ except ImportError:  # pragma: no cover
         https://xgboost.readthedocs.io/en/latest/install.html
         """
     )
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_xgboost_version = importlib_metadata.version("xgboost")
 
 
 # TODO: support xgb.DMatrix runner io container
@@ -60,12 +75,15 @@ def _get_model_info(
             f" failed loading with {__name__}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}")
-    _booster_params = dict() if not booster_params else booster_params
+    _booster_params: t.Dict[str, t.Union[str, int]] = (
+        dict() if not booster_params else booster_params
+    )
     for key, value in model.info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value  # pragma: no cover
     if "nthread" not in _booster_params:
-        _booster_params["nthread"] = -1  # apply default nthread parameter
+        # apply default nthread parameter
+        _booster_params["nthread"] = -1
 
     return model, model_file, _booster_params
 
@@ -151,7 +169,7 @@ def save(
         bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
         bst = bentoml.xgboost.load(tag)
     """  # noqa
-    context: t.Dict[str, t.Any] = {"xgboost": xgb.__version__}
+    context: t.Dict[str, t.Any] = {"xgboost": _xgboost_version}
 
     _model = Model.create(
         name,
@@ -206,7 +224,7 @@ class _XgBoostRunner(Runner):
     @property
     def num_replica(self) -> int:
         if self.resource_quota.on_gpu:
-            return len(self.resource_quota.gpus)
+            return len(self.resource_quota.gpus)  # type: int
         return 1
 
     def _setup_booster_params(
@@ -224,8 +242,8 @@ class _XgBoostRunner(Runner):
 
         return booster_params
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,
@@ -233,13 +251,14 @@ class _XgBoostRunner(Runner):
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
-    ) -> "np.ndarray":
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
+        self,
+        input_data: t.Union[AnyNDArray, "DataFrame", xgb.DMatrix],
+    ) -> AnyNDArray:
         if not isinstance(input_data, xgb.DMatrix):
             input_data = xgb.DMatrix(input_data)
         res = self._predict_fn(input_data)
-        return np.asarray(res)
+        return np.asarray(res)  # type: ignore[reportUnknownMemberType]
 
 
 @inject

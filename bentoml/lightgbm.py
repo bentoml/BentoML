@@ -1,23 +1,35 @@
+# type: ignore[reportMissingTypeStubs]
 import os
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
 import joblib
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE, TXT_EXT, Model
-from ._internal.runner import Runner
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.utils import LazyLoader
+from ._internal.models import Model
+from ._internal.models import PKL_EXT
+from ._internal.models import TXT_EXT
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.runner.utils import Params
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import lightgbm as lgb
-    import numpy as np
-    from _internal.models import ModelStore
+    import lightgbm.basic
+    from pandas.core.frame import DataFrame
+
+    from ._internal.models import ModelStore
+
+pd = LazyLoader("pd", globals(), "pandas")
 
 try:
-    import lightgbm as lgb  # noqa: F811
+    import lightgbm as lgb
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """lightgbm is required in order to use module `bentoml.lightgbm`, install
@@ -26,12 +38,9 @@ except ImportError:  # pragma: no cover
         """
     )
 
-_LightGBMModelType = t.TypeVar(
-    "_LightGBMModelType",
-    bound=t.Union[
-        "lgb.LGBMModel", "lgb.LGBMClassifier", "lgb.LGBMRegressor", "lgb.LGBMRanker"
-    ],
-)
+_LightGBMModelType = t.Union[
+    "lgb.LGBMModel", "lgb.LGBMClassifier", "lgb.LGBMRegressor", "lgb.LGBMRanker"
+]
 
 
 def _get_model_info(
@@ -53,7 +62,7 @@ def _get_model_info(
     )
     model_file = model.path_of(_fname)
     _booster_params: t.Dict[str, t.Union[str, int]] = (
-        dict() if not booster_params else booster_params
+        dict() if booster_params is None else booster_params
     )
     for key, value in model.info.options.items():
         if key not in _booster_params:
@@ -67,7 +76,7 @@ def load(
     tag: str,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["lgb.basic.Booster", _LightGBMModelType]:
+) -> t.Union["lightgbm.basic.Booster", _LightGBMModelType]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -81,7 +90,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `LightGBMModelType` or `"lgb.basic.Booster"` from BentoML modelstore.
+        an instance of `LightGBMModelType` or `"lightgbm.basic.Booster"` from BentoML modelstore.
 
     Examples:
         import bentoml.lightgbm
@@ -98,7 +107,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Union["lgb.basic.Booster", _LightGBMModelType],
+    model: t.Union["lightgbm.basic.Booster", _LightGBMModelType],
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -110,7 +119,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union["lgb.basic.Booster", LightGBMModelType]`):
+        model (`t.Union["lightgbm.basic.Booster", LightGBMModelType]`):
             Instance of model to be saved
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
@@ -173,14 +182,8 @@ def save(
     )
 
     _model.info.options["sklearn_api"] = False
-    if any(
-        isinstance(model, _)
-        for _ in [
-            lgb.LGBMModel,
-            lgb.LGBMClassifier,
-            lgb.LGBMRegressor,
-            lgb.LGBMRanker,
-        ]
+    if isinstance(
+        model, (lgb.LGBMModel, lgb.LGBMClassifier, lgb.LGBMRegressor, lgb.LGBMRanker)
     ):
         joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
         _model.info.options["sklearn_api"] = True
@@ -214,11 +217,11 @@ class _LightGBMRunner(Runner):
         self._booster_params = booster_params
         self._infer_api_callback = infer_api_callback
 
-    def _is_gpu(self):
-        try:
-            return "gpu" in self._booster_params["device"]
-        except KeyError:
+    def _is_gpu(self) -> bool:
+        device = self._booster_params.get("device")
+        if device is None or isinstance(device, int):
             return False
+        return "gpu" == device
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -236,8 +239,8 @@ class _LightGBMRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         self._model = load(
             tag=self.name,
             booster_params=self._booster_params,
@@ -245,9 +248,27 @@ class _LightGBMRunner(Runner):
         )
         self._predict_fn = getattr(self._model, self._infer_api_callback)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":  # type: ignore[override]
-        return self._predict_fn(input_data)
+    def _run_batch(
+        self,
+        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
+        **kwargs: t.Any,
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]](
+            *args, **kwargs
+        )
+
+        def _mapping(item: t.Any) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+            if isinstance(item, pd.DataFrame):
+                return item.to_numpy()
+            elif isinstance(item, np.ndarray):
+                return item  # type: ignore[reportUnknownVariableType]
+            else:
+                raise TypeError(
+                    f"Only accept type np.ndarray or pd.DataFrame, got {type(item)} instead."
+                )
+
+        params = params.map(_mapping)
+        return self._predict_fn(*params.args, **params.kwargs)
 
 
 @inject
@@ -289,7 +310,7 @@ def load_runner(
 
         runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
         runner.run_batch(X_test, num_iteration=gbm.best_iteration)
-    """  # noqa
+    """  # noqa: LN001
     return _LightGBMRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,

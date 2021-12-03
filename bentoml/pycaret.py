@@ -1,33 +1,37 @@
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.types import PathType
+from ._internal.models import Model
+from ._internal.models import PKL_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.types import PathType, Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.configuration.containers import BentoMLContainer
 
 PYCARET_CONFIG = "pycaret_config"
 
 if TYPE_CHECKING:
-    import lightgbm
-    import pandas as pd
-    import sklearn
+    import sklearn  # type: ignore[reportMissingTypeStubs]
     import xgboost
-    from _internal.models import ModelStore
+    import lightgbm  # type: ignore[reportMissingTypeStubs]
+    from pandas.core.frame import DataFrame
+
+    from ._internal.models import ModelStore
 
 try:
-    from pycaret.internal.tabular import (
-        load_config,
-        load_model,
-        predict_model,
-        save_config,
-        save_model,
-    )
     from pycaret.utils import version
+    from pycaret.internal.tabular import load_model
+    from pycaret.internal.tabular import save_model
+    from pycaret.internal.tabular import load_config
+    from pycaret.internal.tabular import save_config
+    from pycaret.internal.tabular import predict_model
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -80,7 +84,7 @@ def load(
     """  # noqa
     _, model_file, pycaret_config = _get_model_info(tag, model_store)
     load_config(pycaret_config)
-    return load_model(model_file)
+    return t.cast(t.Any, load_model(model_file))
 
 
 @inject
@@ -90,7 +94,7 @@ def save(
         "sklearn.pipeline.Pipeline", "xgboost.Booster", "lightgbm.basic.Booster"
     ],
     *,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
@@ -171,18 +175,18 @@ class _PycaretRunner(Runner):
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         load_config(self._pycaret_config)
         self._model = load_model(self._model_file)
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":  # type: ignore[override] # noqa # pylint: disable
+    def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> "DataFrame":
         logger.warning(
             "PyCaret is not designed to be ran"
             " in parallel. See https://github.com/pycaret/pycaret/issues/758"  # noqa # pylint: disable
         )
-        output = predict_model(self._model, input_data)  # type: pd.DataFrame
+        output = t.cast("DataFrame", predict_model(self._model, *args, **kwargs))
         return output
 
 
@@ -210,7 +214,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        Runner instances for `bentoml.pycaret` model
 
     Examples:
         import bentoml.pycaret

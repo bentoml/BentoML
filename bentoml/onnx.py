@@ -1,28 +1,48 @@
-import logging
+# type: ignore[reportUnknownVariableType]
+import sys
 import shutil
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, Model
-from ._internal.runner import Runner
-from ._internal.runner.utils import Params, _get_gpu_memory
-from ._internal.types import PathType, Tag
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.types import PathType
 from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.runner.utils import Params
+from ._internal.runner.utils import _get_gpu_memory  # type: ignore[reportPrivateUsage]
+from ._internal.configuration.containers import BentoMLContainer
 
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
 if TYPE_CHECKING:
-    import pandas as pd
-    from _internal.models import ModelStore
+    import torch  # type: ignore[reportMissingTypeStubs]
+    import tensorflow as tf  # type: ignore[reportMissingTypeStubs]
+    from pandas.core.frame import DataFrame
+
+    from ._internal.models import ModelStore
+else:
+    # noqa: F811
+    pd = LazyLoader("pd", globals(), "pandas")
+    torch = LazyLoader("torch", globals(), "torch")
+    tf = LazyLoader("tf", globals(), "tensorflow")
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 try:
+    import onnx  # type: ignore[reportMissingTypeStubs]
     import numpy as np
-    import onnx
     import onnxruntime as ort
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -34,11 +54,27 @@ more information.
         """
     )
 
-pd = LazyLoader("pd", globals(), "pandas")  # noqa: F811
-torch = LazyLoader("torch", globals(), "torch")  # noqa: F811
-tf = LazyLoader("tf", globals(), "tensorflow")  # noqa: F811
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_PACKAGE = ["onnxruntime", "onnxruntime-gpu"]
+for p in _PACKAGE:
+    try:
+        _onnxruntime_version = importlib_metadata.version(p)
+        break
+    except importlib_metadata.PackageNotFoundError:
+        pass
+_onnx_version = importlib_metadata.version("onnx")
 
 _ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
+_GPUProviderType = t.List[
+    t.Tuple[
+        Literal["CUDAExecutionProvider"],
+        t.Union[t.Dict[str, t.Union[int, str, bool]], str],
+    ]
+]
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +113,7 @@ def _get_model_info(
 def load(
     tag: t.Union[str, Tag],
     backend: t.Optional[str] = "onnxruntime",
-    providers: t.Optional[_ProviderType] = None,
+    providers: t.Optional[t.Union[_ProviderType, _GPUProviderType]] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "ort.InferenceSession":
@@ -99,7 +135,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of Onnx model from BentoML modelstore.
+        an instance of ONNX model from BentoML modelstore.
 
     Examples::
     """  # noqa
@@ -116,7 +152,7 @@ def load(
         providers = ort.get_available_providers()
 
     return ort.InferenceSession(
-        model_file, sess_options=session_options, providers=providers
+        model_file, sess_options=session_options, providers=providers  # type: ignore[reportGeneralTypeIssues] # noqa: LN001
     )
 
 
@@ -148,8 +184,8 @@ def save(
     Examples::
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "onnx": onnx.__version__,
-        "onnxruntime": ort.__version__,
+        "onnx": _onnx_version,
+        "onnxruntime": _onnxruntime_version,
     }
 
     _model = Model.create(
@@ -162,6 +198,7 @@ def save(
     if isinstance(model, onnx.ModelProto):
         onnx.save_model(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
     else:
+        assert isinstance(model, str)
         shutil.copyfile(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
 
     _model.save(model_store)
@@ -177,7 +214,7 @@ class _ONNXRunner(Runner):
         backend: str,
         gpu_device_id: int,
         disable_copy_in_default_stream: bool,
-        providers: t.Optional[_ProviderType],
+        providers: t.Optional[t.Union[_ProviderType, _GPUProviderType]],
         session_options: t.Optional["ort.SessionOptions"],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -212,7 +249,7 @@ class _ONNXRunner(Runner):
     @staticmethod
     def _get_default_providers(
         gpu_device_id: int, disable_copy_in_default_stream: bool
-    ) -> _ProviderType:
+    ) -> t.Union[_ProviderType, _GPUProviderType]:
         if gpu_device_id != -1:
             _, free = _get_gpu_memory(gpu_device_id)
             gpu_ = {
@@ -234,7 +271,7 @@ class _ONNXRunner(Runner):
             ]
         else:
             providers = ort.get_available_providers()
-        return providers  # type: ignore[return-value]
+        return providers  # type: ignore[reportGeneralTypeIssues]
 
     def _get_default_session_options(
         self, session_options: t.Optional["ort.SessionOptions"]
@@ -267,8 +304,8 @@ class _ONNXRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         self._model = load(
             self._model_info.tag,
             backend=self._backend,
@@ -280,11 +317,31 @@ class _ONNXRunner(Runner):
 
     def _run_batch(
         self,
-        *args: t.Union[np.ndarray, "pd.DataFrame"],
+        *args: t.Union[
+            "np.ndarray[t.Any, np.dtype[t.Any]]",
+            "DataFrame",
+            "torch.Tensor",
+            "tf.Tensor",
+        ],
+        **kwargs: t.Any,
     ) -> t.Any:
-        params = Params[t.Union[np.ndarray, "pd.DataFrame"]](*args)
+        params = Params[
+            t.Union[
+                "torch.Tensor",
+                "tf.Tensor",
+                "np.ndarray[t.Any, np.dtype[t.Any]]",
+                "DataFrame",
+            ]
+        ](*args, **kwargs)
 
-        def _mapping(item) -> t.Any:
+        def _mapping(
+            item: t.Union[
+                "torch.Tensor",
+                "tf.Tensor",
+                "DataFrame",
+                "np.ndarray[t.Any, np.dtype[t.Any]]",
+            ]
+        ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
             if isinstance(item, np.ndarray):
                 item = item.astype(np.float32)
             elif isinstance(item, pd.DataFrame):
@@ -314,8 +371,8 @@ def load_runner(
     backend: str = "onnxruntime",
     gpu_device_id: int = -1,
     disable_copy_in_default_stream: bool = False,
-    providers: t.Optional[_ProviderType] = None,
-    session_options: t.Optional["ort.SessionOptions"] = None,
+    providers: t.Optional[t.Union[_ProviderType, _GPUProviderType]] = None,
+    session_options: t.Optional[ort.SessionOptions] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -352,7 +409,7 @@ def load_runner(
         Runner instances for `bentoml.onnx` model
 
     Examples::
-    """  # noqa
+    """  # noqa: LN001
     return _ONNXRunner(
         tag=tag,
         backend=backend,

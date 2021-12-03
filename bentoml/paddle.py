@@ -1,18 +1,24 @@
-import logging
+# type: ignore[reportMissingTypeStubs]
 import os
 import re
 import typing as t
-from distutils.dir_util import copy_tree
+import logging
 from typing import TYPE_CHECKING
+from distutils.dir_util import copy_tree
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, Model
-from ._internal.runner import Runner
+from .exceptions import NotFound
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException, NotFound
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from ._internal.runner.utils import Params
+from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -25,36 +31,61 @@ Instruction for installing `paddlepaddle`:
 - GPU support: (latest version): `python -m pip install paddlepaddle-gpu==2.1.3.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html`.
     For other version of CUDA or different platforms refer to https://www.paddlepaddle.org.cn/ for more information
 """  # noqa: LN001
+_hub_exc = (
+    """\
+`paddlehub` is required to use `bentoml.paddle.import_from_paddlehub()`. Make sure
+have `paddlepaddle` installed beforehand. Install `paddlehub` with
+`pip install paddlehub`.
+"""
+    + _paddle_exc
+)
 
 if TYPE_CHECKING:
     import numpy as np
     import paddle
-    import paddle.inference
     import paddle.nn
     import paddlehub as hub
+    import paddle.inference
     import paddlehub.module.module as module
-    from _internal.models import ModelStore
-    from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
     from paddle.static import InputSpec
+    from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
+
+    from ._internal.models import ModelStore
+else:
+    hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)  # noqa: F811
+    manager = LazyLoader(
+        "manager", globals(), "paddlehub.module.manager", exc_msg=_hub_exc
+    )
+    server = LazyLoader(
+        "server", globals(), "paddlehub.server.server", exc_msg=_hub_exc
+    )
+    np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 
 try:
     import paddle
-    import paddle.inference
     import paddle.nn
+    import paddle.inference
     from paddle.fluid import core
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_paddle_exc)
 
-_supports_gpu = paddle.is_compiled_with_cuda()
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 
-_hub_exc = (
-    """\
-`paddlehub` is required to use `bentoml.paddle.import_from_paddlehub()`. Make sure
- have `paddlepaddle` installed beforehand. Install `paddlehub` with
- `pip install paddlehub`.
-"""
-    + _paddle_exc
-)
+
+_PACKAGE = ["paddlepaddle", "paddlepaddle-gpu"]
+for p in _PACKAGE:
+    try:
+        _paddle_version = importlib_metadata.version(p)
+        break
+    except importlib_metadata.PackageNotFoundError:
+        pass
+
+_paddlehub_version = importlib_metadata.version("paddlehub")
+
+_supports_gpu = paddle.is_compiled_with_cuda()  # pylint: disable=used-before-assignment
 
 # TODO: supports for PIL.Image and pd.DataFrame?
 # try:
@@ -76,11 +107,6 @@ _hub_exc = (
 # `pandas` is optionally required to use `bentoml.paddle._PaddlePaddleRunner._run_batch`.
 # Instruction: `pip install -U pandas`
 # """
-
-hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)  # noqa: F811
-manager = LazyLoader("manager", globals(), "paddlehub.module.manager", exc_msg=_hub_exc)
-server = LazyLoader("server", globals(), "paddlehub.server.server", exc_msg=_hub_exc)
-np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 
 
 def device_count() -> int:  # pragma: no cover
@@ -166,9 +192,9 @@ def _save(
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
 ) -> Tag:
-    context: t.Dict[str, t.Any] = {"paddlepaddle": paddle.__version__}
+    context: t.Dict[str, t.Any] = {"paddlepaddle": _paddle_version}
     if isinstance(model, str):
-        context["paddlehub"] = hub.__version__
+        context["paddlehub"] = _paddlehub_version
         if not os.path.isdir(model):
             try:  # pragma: no cover
                 # NOTE: currently there is no need to test this feature.
@@ -237,7 +263,6 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
 
             directory = _local_manager._get_normalized_path(user_module_cls.name)
             target = _model.path_of(user_module_cls.name)
-            print(target)
 
             _model.info.options = {}
             _model.info.options.update(hub.Module.load_module_info(directory))
@@ -462,8 +487,8 @@ class _PaddlePaddleRunner(Runner):
             return count
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         self._model = load(
             self.name, config=self._runner_config, model_store=self._model_store
         )
@@ -472,32 +497,42 @@ class _PaddlePaddleRunner(Runner):
     # pylint: disable=arguments-differ
     def _run_batch(
         self,
-        input_data: t.Optional[t.Any],
         *args: str,
-        return_argmax: bool = False,
         **kwargs: str,
-    ) -> t.Union[t.Any, t.List["np.ndarray"]]:  # type: ignore[override]
+    ) -> t.Union[t.Any, t.List["np.ndarray[t.Any, np.dtype[t.Any]]"]]:
         if "paddlehub" in self._model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:
-            assert input_data is not None
-            res = list()
-            if isinstance(input_data, paddle.Tensor):
-                input_data = input_data.numpy()
-            # TODO: supports for PIL.Image and DataFrame?
-            # else:
-            #     if PIL is not None:
-            #         if isinstance(input_data, PIL.Image.Image):
-            #             input_data = input_data.fromarray(input_data)
-            #     else:
-            #         logger.warning(_PIL_warning)
-            #     if pd is not None:
-            #         if isinstance(input_data, pd.DataFrame):
-            #             input_data = input_data.to_numpy(dtype=np.float32)
-            #         else:
-            #             logger.warning(_pd_warning)
+            res: t.List["np.ndarray[t.Any, np.dtype[t.Any]]"] = list()
+            params = Params[
+                t.Union[paddle.Tensor, "np.ndarray[t.Any, np.dtype[t.Any]]"]
+            ](*args, **kwargs)
+            return_argmax = t.cast(bool, params.kwargs.pop("return_argmax", False))
 
+            def _mapping(
+                item: t.Union[paddle.Tensor, "np.ndarray[t.Any, np.dtype[t.Any]]"]
+            ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+                if isinstance(item, paddle.Tensor):
+                    item = input_data.numpy()
+                # TODO: supports for PIL.Image and DataFrame?
+                # else:
+                #     if PIL is not None:
+                #         if isinstance(input_data, PIL.Image.Image):
+                #             input_data = input_data.fromarray(input_data)
+                #     else:
+                #         logger.warning(_PIL_warning)
+                #     if pd is not None:
+                #         if isinstance(input_data, pd.DataFrame):
+                #             input_data = input_data.to_numpy(dtype=np.float32)
+                #         else:
+                #             logger.warning(_pd_warning)
+                return item
+
+            params = params.map(_mapping)
+
+            input_data = params.args[0]
             input_names = self._model.get_input_names()
+            output_names = self._model.get_output_names()
 
             for i, name in enumerate(input_names):
                 input_tensor = self._model.get_input_handle(name)
@@ -506,7 +541,6 @@ class _PaddlePaddleRunner(Runner):
 
             self._infer_func()
 
-            output_names = self._model.get_output_names()
             for i, name in enumerate(output_names):
                 output_tensor = self._model.get_output_handle(name)
                 output_data = output_tensor.copy_to_cpu()

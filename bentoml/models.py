@@ -1,4 +1,6 @@
+import sys
 import typing as t
+from types import TracebackType
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
@@ -13,6 +15,13 @@ from ._internal.configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from ._internal.models import ModelStore
     from ._internal.runner import Runner
+
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+else:
+    from typing_extensions import Protocol
+
+_T = t.TypeVar("_T")
 
 
 @inject
@@ -75,6 +84,30 @@ def pull(
     raise NotImplementedError
 
 
+# fmt: off
+class _CreateModelProtocol(Protocol):
+    def __call__(  # noqa: E704
+        self,
+        name: str,
+        *,
+        module: str = ...,
+        labels: t.Optional[t.Dict[str, t.Any]] = ...,
+        options: t.Optional[t.Dict[str, t.Any]] = ...,
+        metadata: t.Optional[t.Dict[str, t.Any]] = ...,
+        framework_context: t.Optional[t.Dict[str, t.Any]] = ...,
+        _model_store: "ModelStore" = ...,
+    ) -> Model: ...
+    def __next__(self) -> t.Iterator[Model]: ...  # noqa: E704
+    def __enter__(self) -> Model: ...  # noqa: E704
+    def __exit__(  # noqa: E704,E301
+        self,
+        exc_type: t.Optional[t.Type[BaseException]],
+        exc_val: t.Optional[BaseException],
+        exc_tb: t.Optional[TracebackType],
+    ) -> None: ...
+# fmt: on
+
+
 @inject
 @contextmanager
 def create(
@@ -86,7 +119,7 @@ def create(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Iterator[Model]:
+) -> _CreateModelProtocol:
     res = Model.create(
         name,
         module=module,

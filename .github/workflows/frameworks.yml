@@ -148,14 +148,14 @@ jobs:
               - tests/integration/frameworks/test_statsmodels_impl.py
             tf1: &tf
               - *runner
-              - bentoml/tensorflow.py
+              - bentoml/_internal/frameworks/tensorflow.py
               - tests/integration/frameworks/test_tensorflow_impl.py
             tf2:
               - *tf
             keras_tf1: &keras
               - *runner
               - *tf
-              - bentoml/keras.py
+              - bentoml/_internal/frameworks/keras.py
               - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
               - *keras

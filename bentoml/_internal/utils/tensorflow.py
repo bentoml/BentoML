@@ -1,9 +1,13 @@
-# type: ignore[reportMissingTypeStubs]
-import logging
+import importlib.util
 import typing as t
 from typing import TYPE_CHECKING
 
 from .lazy_loader import LazyLoader
+
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 
 if TYPE_CHECKING:
     import tensorflow as tf
@@ -23,8 +27,6 @@ else:
         exc_msg=f"tensorflow is required to use {__name__}",
     )
 
-logger = logging.getLogger(__name__)
-
 TF_KERAS_DEFAULT_FUNCTIONS = {
     "_default_save_signature",
     "call_and_return_all_conditional_losses",
@@ -39,9 +41,34 @@ TENSOR_CLASS_NAMES = (
 )
 
 
-def _isinstance_wrapper(
-    obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]
-) -> bool:
+def get_tf_version() -> str:
+    # courtesy of huggingface/transformers
+    _tf_version = ""
+    _tf_available = importlib.util.find_spec("tensorflow") is not None
+    if _tf_available:
+        candidates = (
+            "tensorflow",
+            "tensorflow-cpu",
+            "tensorflow-gpu",
+            "tf-nightly",
+            "tf-nightly-cpu",
+            "tf-nightly-gpu",
+            "intel-tensorflow",
+            "intel-tensorflow-avx512",
+            "tensorflow-rocm",
+            "tensorflow-macos",
+        )
+        # For the metadata, we have to look for both tensorflow and tensorflow-cpu
+        for pkg in candidates:
+            try:
+                _tf_version = importlib_metadata.version(pkg)
+                break
+            except importlib_metadata.PackageNotFoundError:
+                pass
+    return _tf_version
+
+
+def _isinstance_wrapper(obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]) -> bool:
     """
     `isinstance` wrapper to check tensor spec
 

@@ -12,14 +12,7 @@ cd "$GIT_ROOT" || exit
 setup-cfg-fmt "$GIT_ROOT/setup.cfg"
 
 # Run format scripts
-
-# TODO: enable black
-# black --config ./pyproject.toml bentoml/ tests/ docker/
-
-# black --config ./pyproject.toml --pyi typings/**/*.pyi
-
-# TODO: enable isort
-# isort .
+# ./scripts/tools/formatter.sh || exit 1
 
 for f in $(find .github/ -type f -name '*.yml'); do
   yamllint -c "$GIT_ROOT"/.yamllint.yml "$f" || exit 1

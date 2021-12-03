@@ -10,9 +10,9 @@ INFO "(black) Formatting codebase..."
 
 black --config ./pyproject.toml bentoml/ tests/ docker/
 
-INFO "(black) Formatting stubs..."
+INFO "(black) Formatting VCS stubs..."
 
-black --pyi typings/**/*.pyi
+git ls-files | grep -e "^typings/**" | xargs --delimiter='\n' -I {} black --config ./pyproject.toml --pyi {}
 
 INFO "(isort) Reordering imports..."
 

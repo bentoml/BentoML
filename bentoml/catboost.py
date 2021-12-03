@@ -260,7 +260,6 @@ class _CatBoostRunner(Runner):
         self,
         inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame", cbt.Pool],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        # TODO: Take a batch type and containers
         res = self._predict_fn(inputs)
         return np.asarray(res)
 

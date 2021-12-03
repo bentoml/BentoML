@@ -30,8 +30,8 @@ jobs:
           base: 'bentoml-1.0'
           filters: |
             related: &related
-              - codecov.yml
               - .github/workflows/ci.yml
+              - codecov.yml
               - setup.cfg
               - pyproject.toml
               - scripts/ci/config.yml
@@ -193,8 +193,8 @@ jobs:
 
       - name: Run unit tests (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          pytest tests/unit --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"unit.xml"
+        run: make tests-unit
+        shell: bash
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2

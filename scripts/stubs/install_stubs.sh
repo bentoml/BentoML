@@ -102,10 +102,14 @@ main() {
     libraries_stubs "$p"
   done <"$IMPORTS"
 
+  INFO "Cleaning up duplication..."
   if [ -d "$GIT_ROOT"/typings/multipart/multipart ]; then
-    INFO "Cleaning up duplication..."
     "$RM_BIN" -rf "$GIT_ROOT"/typings/multipart/multipart
   fi
+  cd "$GIT_ROOT"/typings/transformers/models
+  find . -type d -not -name 'auto' -not -name '.' -print0 | xargs -0 -I {} "$RM_BIN" -rf {}
+  "$RM_BIN" -rf "$GIT_ROOT"/typings/transformers/benchmarks
+  cd "$GIT_ROOT"
 
   INFO "Due to bash permission, make sure to run the following command in the terminal: \nblack --config $GIT_ROOT/pyproject.toml --pyi typings/**/*.pyi\n"
 }

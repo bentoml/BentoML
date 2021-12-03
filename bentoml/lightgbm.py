@@ -1,4 +1,3 @@
-# type: ignore[reportMissingTypeStubs]
 import os
 import typing as t
 from typing import TYPE_CHECKING

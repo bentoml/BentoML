@@ -29,11 +29,13 @@ HEADER_CHARSET = "latin1"
 JSON_CHARSET = "utf-8"
 
 if TYPE_CHECKING:
+    import numpy as np  # noqa: F401
     PathType = t.Union[str, os.PathLike[str]]
 else:
     PathType = t.Union[str, os.PathLike]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
+AnyNDArray = t.Type["np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 
 @attr.define
@@ -126,7 +128,8 @@ class Tag:
         return fs.path.combine(self.name, "latest")
 
 
-cattr.register_structure_hook(Tag, lambda d, t: Tag.from_str(d))
+str_to_tag: t.Callable[[str, t.Any], Tag] = lambda d, t: Tag.from_str(d)
+cattr.register_structure_hook(Tag, str_to_tag)
 
 
 @json_serializer(fields=["uri", "name"], compat=True)
@@ -199,16 +202,16 @@ class FileLike:
             return io.BytesIO()
         return self._stream
 
-    def read(self, size: int = -1):
+    def read(self, size: int = -1) -> bytes:
         # TODO: also write to log
         return self.stream.read(size)
 
-    def seek(self, pos: int):
+    def seek(self, pos: int) -> int:
         return self.stream.seek(pos)
 
     def tell(self):
         return self.stream.tell()
 
-    def close(self):
+    def close(self) -> None:
         if self._stream is not None:
             self._stream.close()

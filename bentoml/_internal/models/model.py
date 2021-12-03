@@ -9,6 +9,7 @@ import attr
 import yaml
 import fs.errors
 import fs.mirror
+import cloudpickle
 from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 MODEL_YAML_FILENAME = "model.yaml"
+CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 
 @attr.define(repr=False)
@@ -35,6 +37,7 @@ class Model(StoreItem):
     _fs: FS
 
     info: "ModelInfo"
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None
 
     @property
     def tag(self) -> Tag:
@@ -53,6 +56,7 @@ class Model(StoreItem):
         module: str = "",
         labels: t.Optional[t.Dict[str, t.Any]] = None,
         options: t.Optional[t.Dict[str, t.Any]] = None,
+        custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> "Model":
@@ -75,6 +79,7 @@ class Model(StoreItem):
                 metadata=metadata,
                 context=framework_context,
             ),
+            custom_objects,
         )
 
         return res
@@ -84,6 +89,7 @@ class Model(StoreItem):
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "Model":
         self.flush_info()
+        self.flush_custom_objects()
 
         if not self.validate():
             logger.warning(f"Failed to create Model for {self.tag}, not saving.")
@@ -102,11 +108,16 @@ class Model(StoreItem):
         try:
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
+            if item_fs.isfile(CUSTOM_OBJECTS_FILENAME):
+                with item_fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
+                    custom_objects = cloudpickle.load(cofile)
+            else:
+                custom_objects = None
         except fs.errors.ResourceNotFound:
             logger.warning(f"Failed to import Model from {item_fs}.")
             raise BentoMLException("Failed to create Model because it was invalid")
 
-        res = cls(info.tag, item_fs, info)
+        res = cls(info.tag, item_fs, info, custom_objects)
         if not res.validate():
             logger.warning(f"Failed to import Model from {item_fs}.")
             raise BentoMLException("Failed to create Model because it was invalid")
@@ -124,6 +135,10 @@ class Model(StoreItem):
         with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
             self.info.dump(model_yaml)
 
+    def flush_custom_objects(self):
+        with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
+            cloudpickle.dump(self.custom_objects, cofile)
+
     @property
     def creation_time(self) -> datetime:
         return self.info.creation_time
@@ -131,6 +146,7 @@ class Model(StoreItem):
     def export(self, path: str):
         out_fs = fs.open_fs(path, create=True, writeable=True)
         self.flush_info()
+        self.flush_custom_objects()
         fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
         out_fs.close()
 

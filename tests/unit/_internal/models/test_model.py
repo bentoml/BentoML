@@ -38,6 +38,14 @@ metadata:
 """
 
 
+class AdditionClass:
+    def __init__(self, x):
+        self.x = x
+
+    def __call__(self, y):
+        return self.x + y
+
+
 def test_model_info(tmpdir: "Path"):
     start = datetime.now(timezone.utc)
     modelinfo_a = ModelInfo(Tag("tag"), "module", {}, {}, {}, {})
@@ -81,12 +89,16 @@ def test_model(tmpdir: "Path"):
     assert start <= model_a.creation_time <= end
     assert str(model_a) == f'Model(tag="{model_a.tag}", path="{model_a.path}")'
 
+    add_num_1 = 5
     model_b = Model.create(
         "testmodel1",
         module="test",
         labels={"label": "text"},
         options={"option": "value"},
         framework_context={"ctx": "val"},
+        custom_objects={
+            "add": AdditionClass(add_num_1),
+        },
     )
 
     # note: models are currently considered to be equal if their tag is equal;
@@ -124,6 +136,7 @@ def test_model(tmpdir: "Path"):
         model_b_from_export._fs.readtext("sys_written/file")  # type: ignore
         == sys_written_content
     )
+    assert model_b_from_export.custom_objects["add"](4) == add_num_1 + 4  # type: ignore
 
     with pytest.raises(fs.errors.NoSysPath):
         assert model_b_from_export.path

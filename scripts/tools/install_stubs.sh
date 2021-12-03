@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-LIBRARIES=(pandas yaml xgboost transformers transformers starlette PIL huggingface_hub)
+LIBRARIES=(pandas)
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 cd "$GIT_ROOT" || exit

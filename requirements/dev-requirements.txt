@@ -5,7 +5,6 @@ attrs>=21.1
 GitPython>=2.0
 setup-cfg-fmt
 yamllint
-pydantic
 setuptools
 twine
 types-chardet

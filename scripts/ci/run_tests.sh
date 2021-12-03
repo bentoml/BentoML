@@ -122,6 +122,7 @@ parse_config() {
     fname="test_""$target""_impl.py"
   elif [[ "$is_dir" == "true" ]]; then
     fname=""
+    shift
   else
     fname="$target"
   fi
@@ -170,7 +171,7 @@ main() {
   #  validate_yaml
   parse_config "$argv"
 
-  OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg --cov-report=xml:"$target.xml")
+  OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg --cov-report=xml:"$target.xml" --cov-report=term-missing)
 
   if [ -n "${PYTESTARGS[*]}" ]; then
     # shellcheck disable=SC2206

@@ -5,8 +5,6 @@ Make sure to have [Git](https://git-scm.com/) and [Python3.7+](https://www.pytho
 Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using UNIX-based system for better developer experience.
 If you don't want to use `make` then refers to [Makefile](./Makefile) for specific commands on given make target.
 
-We are also using [docker](https://www.docker.com/) for our code style scripts that will be mentioned below for better devex.
-
 ```bash
 python --version
 
@@ -110,7 +108,7 @@ By default, each of our frameworks tests file with have the format: `test_<frame
 
 When `type_tests` is set to `e2e`, `./scripts/ci/run_tests.sh` will change current directory into given `root_test_dir` and will run testsuite from there.
 
-The reason why we encourage developers to use the scripts in CI is that under the hood when we uses pytest, we will create a custom reports for given tests. This report then 
+The reason why we encourage developers to use the scripts in CI is that under the hood when we uses pytest, we will create a custom reports for given tests. This report then
  can be used as carryforward flags on codecov for consistent reporting.
 
 Example:
@@ -196,8 +194,6 @@ linter: [flake8](https://flake8.pycqa.org/en/latest/), [pylint](https://pylint.o
 
 type checker: [pyright](https://github.com/microsoft/pyright)
 
-### [Required]: Docker
-
 Run linter/format script:
 ```bash
 make format
@@ -208,25 +204,6 @@ make lint
 Run type checker:
 ```bash
 make type
-```
-
-### Without Docker
-
-Make sure to install all dev dependencies:
-```bash
-pip install -r requirements/dev-requirements.txt
-```
-
-Run linter/format script:
-```bash
-./scripts/tools/formatter.sh
-
-./scripts/tools/linter.sh
-```
-
-Run type checker:
-```bash
-./scripts/tools/type_checker.sh
 ```
 
 ## Documentations
@@ -284,7 +261,7 @@ brew install fswatch
 Make sure you have `inotifywait` installed
 ```shell script
 sudo apt install inotify-tools
-``` 
+```
 
 ## Python tools ecosystem
 
@@ -302,6 +279,17 @@ BentoML also provides git hooks that developers can install with:
 ```bash
 make hooks
 ```
+## Stubs
+Refers to [Installation](https://github.com/microsoft/pyright#installation) to install pyright correctly.
+
+In order to make pyright function correctly one also need to run the following scripts alongside with the stubs provided
+ in the main repository.
+```bash
+./script/tools/install_stubs.sh
+```
+
+One can also keep a [copy](https://github.com/bentoml/stubs) of all dependencies stubs used by BentoML as an alternative
+
 
 ## Creating Pull Request on GitHub
 

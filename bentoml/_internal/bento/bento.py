@@ -133,7 +133,7 @@ class Bento(StoreItem):
 
         model_tags = build_config.additional_models
         # Add Runner required models to models list
-        for runner in svc.runners.values():  # type: ignore[reportPrivateUsage]
+        for runner in svc.runners.values():
             model_tags += runner.required_models
 
         models: t.List[Model] = []

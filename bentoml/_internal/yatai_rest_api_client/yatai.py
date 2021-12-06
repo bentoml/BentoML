@@ -14,7 +14,6 @@ from .schemas import CreateModelSchema
 from .schemas import OrganizationSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
-from .schemas import OrganizationListSchema
 from .schemas import FinishUploadBentoSchema
 from .schemas import FinishUploadModelSchema
 from .schemas import CreateBentoRepositorySchema

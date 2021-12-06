@@ -1,12 +1,12 @@
-import ctypes
-import itertools
-import logging
-import math
 import os
 import re
+import math
+import ctypes
 import typing as t
-from functools import lru_cache
+import logging
+import itertools
 from typing import TYPE_CHECKING
+from functools import lru_cache
 
 from ...exceptions import BentoMLException
 
@@ -57,6 +57,30 @@ class Params(t.Generic[T]):
     def items(self) -> t.Iterator[t.Tuple[t.Union[int, str], T]]:
         return itertools.chain(enumerate(self.args), self.kwargs.items())
 
+    @classmethod
+    def agg(
+        cls,
+        params_list: t.Sequence["Params[T]"],
+        agg_func: t.Callable[[t.Sequence[T]], To] = lambda i: i,
+    ) -> "Params[To]":
+        if not params_list:
+            return t.cast(Params[To], [])
+
+        args: t.List[To] = []
+        kwargs: t.Dict[str, To] = {}
+
+        for j, _ in enumerate(params_list[0].args):
+            arg: t.List[T] = []
+            for params in params_list:
+                arg.append(params.args[j])
+            args.append(agg_func(arg))
+        for k in params_list[0].kwargs:
+            kwarg: t.List[T] = []
+            for params in params_list:
+                kwarg.append(params.kwargs[k])
+            kwargs[k] = agg_func(kwarg)
+        return Params(*tuple(args), **kwargs)
+
     @property
     def sample(self) -> T:
         if self.args:
@@ -70,8 +94,8 @@ PAYLOAD_META_HEADER = "Bento-Payload-Meta"
 def payload_params_to_multipart(params: Params["Payload"]) -> "MultipartWriter":
     import json
 
-    from aiohttp.multipart import MultipartWriter
     from multidict import CIMultiDict
+    from aiohttp.multipart import MultipartWriter
 
     multipart = MultipartWriter(subtype="form-data")
     for key, payload in params.items():

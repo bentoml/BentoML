@@ -1,5 +1,4 @@
-from .model import Model
-from .model import ModelStore
+from .model import Model, ModelStore, copy_model
 
 EXPORTED_STORE_PREFIX = "exported"
 SAVE_NAMESPACE = "saved_model"
@@ -15,4 +14,4 @@ TXT_EXT = ".txt"
 YAML_EXT = ".yaml"
 MODEL_EXT = ".model"
 
-__all__ = ["Model", "ModelStore"]
+__all__ = ["Model", "ModelStore", "copy_model"]

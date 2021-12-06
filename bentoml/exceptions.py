@@ -78,3 +78,7 @@ class MissingDependencyException(BentoMLException):
 
 class CLIException(BentoMLException):
     """Raise when CLI encounters an issue"""
+
+
+class YataiRESTApiClientError(BentoMLException):
+    pass

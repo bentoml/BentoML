@@ -1,25 +1,23 @@
-import typing as t
 import logging
-from typing import TYPE_CHECKING
+import typing as t
 from datetime import datetime
 from datetime import timezone
+from typing import TYPE_CHECKING
 
-import fs
 import attr
-import yaml
+import fs
 import fs.errors
 import fs.mirror
 import cloudpickle
+import yaml
 from fs.base import FS
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from ..store import Store
-from ..store import StoreItem
-from ..types import Tag
-from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..store import Store, StoreItem
+from ..types import PathType, Tag
+from ...exceptions import BentoMLException, NotFound
 
 if TYPE_CHECKING:
     from ..types import PathType
@@ -227,6 +225,20 @@ class ModelInfo:
         # Validate model.yml file schema, content, bentoml version, etc
         # add tests when implemented
         ...
+
+
+def copy_model(model_tag: t.Union[Tag, str], *, src_model_store: ModelStore, target_model_store: ModelStore):
+    """copy a model from src model store to target modelstore, and do nothing if the model tag
+    already exist in target model store
+    """
+    try:
+        target_model_store.get(model_tag)  # if model tag already found in target
+        return
+    except NotFound:
+        pass
+
+    model = src_model_store.get(model_tag)
+    model.save(target_model_store)
 
 
 def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:

@@ -57,7 +57,7 @@ class Model(StoreItem):
         if self._custom_objects is False:
             return None
         else:
-            return self._custom_objects # type: ignore
+            return self._custom_objects  # type: ignore
 
     def __eq__(self, other: "Model") -> bool:
         return self._tag == other._tag
@@ -76,6 +76,24 @@ class Model(StoreItem):
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> "Model":
+        """Create a new Model instance in temporary filesystem used for serializing model artifacts and save to model
+        store
+
+        Args:
+            name: model name in target model store, model version will be automatically generated
+            module: import path of module used for saving/loading this model, e.g. "bentoml.tensorflow"
+            labels:  user-defined labels for managing models, e.g. team=nlp, stage=dev, owner=foo
+            options: default options for loading this model, defined by runner implementation, e.g. xgboost
+                booster_params
+            custom_objects: user-defined additional python objects to be saved alongside the model, e.g. a tokenizer
+                instance, preprocessor function, model configuration json
+            metadata: user-defined metadata for storing model training context information or model evaluation metrics,
+                e.g. dataset version, training parameters, model scores
+            framework_context: Framework context managed by BentoML for loading model, e.g. {"tensorflow": _tf_version}
+
+        Returns:
+            object: Model instance created in temporary filesystem
+        """
         tag = Tag(name).make_new_version()
         labels = {} if labels is None else labels
         options = {} if options is None else options

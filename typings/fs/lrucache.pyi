@@ -7,10 +7,10 @@ from collections import OrderedDict
 
 """Least Recently Used cache mapping.
 """
-_K = ...
-_V = ...
+_K = typing.TypeVar("_K")
+_V = typing.TypeVar("_V")
 
-class LRUCache(OrderedDict, typing.Generic[_K, _V]):
+class LRUCache(OrderedDict[_K, _V], typing.Generic[_K, _V]):
     """A dictionary-like container that stores a given maximum items.
 
     If an additional item is added when the LRUCache is full, the least

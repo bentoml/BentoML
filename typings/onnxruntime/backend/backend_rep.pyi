@@ -1,6 +1,0 @@
-from typing import Any, Tuple
-from onnx.backend.base import BackendRep
-
-class OnnxRuntimeBackendRep(BackendRep):
-    def __init__(self, session) -> None: ...
-    def run(self, inputs: Any, **kwargs: Any) -> Tuple[Any, ...]: ...

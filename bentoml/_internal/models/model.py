@@ -146,8 +146,7 @@ class Model(StoreItem):
             logger.warning(f"Failed to import Model from {item_fs}.")
             raise BentoMLException("Failed to create Model because it was invalid")
 
-        # set _custom_objects to None for lazy loading
-        res = cls(info.tag, item_fs, info, None)
+        res = cls(info.tag, item_fs, info)
         if not res.validate():
             logger.warning(f"Failed to import Model from {item_fs}.")
             raise BentoMLException("Failed to create Model because it was invalid")

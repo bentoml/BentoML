@@ -116,13 +116,15 @@ class _ONNXMLirRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        in_store_tag = model_store.get(tag).tag
+        super().__init__(str(in_store_tag), resource_quota, batch_options)
+
         self._model_store = model_store
-        self._model_info = model_store.get(tag)
+        self._tag = in_store_tag
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -134,7 +136,7 @@ class _ONNXMLirRunner(Runner):
 
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
-        self._session = load(self.name, self._model_store)
+        self._session = load(self._tag, self._model_store)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]

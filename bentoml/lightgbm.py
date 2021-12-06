@@ -16,7 +16,6 @@ from ._internal.models import PKL_EXT
 from ._internal.models import TXT_EXT
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.runner.utils import Params
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -72,7 +71,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Union["lightgbm.basic.Booster", _LightGBMModelType]:
@@ -215,6 +214,7 @@ class _LightGBMRunner(Runner):
         self._model_file = model_file
         self._booster_params = booster_params
         self._infer_api_callback = infer_api_callback
+        self._tag = model_store.get(tag).tag
 
     def _is_gpu(self) -> bool:
         device = self._booster_params.get("device")
@@ -241,7 +241,7 @@ class _LightGBMRunner(Runner):
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         self._model = load(
-            tag=self.name,
+            tag=self._tag,
             booster_params=self._booster_params,
             model_store=self._model_store,
         )
@@ -249,7 +249,8 @@ class _LightGBMRunner(Runner):
 
     # pytlint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
-        self, input_data: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
+        self,
+        input_data: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         if isinstance(input_data, pd.DataFrame):
             return input_data.to_numpy()

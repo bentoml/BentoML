@@ -1,4 +1,3 @@
-# type: ignore[reportMissingTypeStubs]
 import os
 import re
 import typing as t
@@ -13,11 +12,11 @@ from .exceptions import NotFound
 from .exceptions import BentoMLException
 from .exceptions import MissingDependencyException
 from ._internal.types import Tag
+from ._internal.runner.utils import Params
 from ._internal.utils import LazyLoader
 from ._internal.models import Model
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.runner.utils import Params
 from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -56,9 +55,7 @@ else:
     manager = LazyLoader(
         "manager", globals(), "paddlehub.module.manager", exc_msg=_hub_exc
     )
-    server = LazyLoader(
-        "server", globals(), "paddlehub.server.server", exc_msg=_hub_exc
-    )
+    server = LazyLoader("server", globals(), "paddlehub.server.server", exc_msg=_hub_exc)
     np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 
 try:
@@ -422,18 +419,23 @@ class _PaddlePaddleRunner(Runner):
         config: t.Optional["paddle.inference.Config"],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
+        return_argmax: bool,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        if enable_gpu and not _supports_gpu:
+        assert paddle is not None, MissingDependencyException(_paddle_exc)
+        if enable_gpu and not paddle.is_compiled_with_cuda():
             raise BentoMLException(
                 "`enable_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
                 " Make sure to install `paddlepaddle-gpu` and try again."
             )
-        super().__init__(str(tag), resource_quota, batch_options)
+        in_store_tag = model_store.get(tag).tag
+
+        super().__init__(str(in_store_tag), resource_quota, batch_options)
         self._infer_api_callback = infer_api_callback
         self._model_store = model_store
         self._enable_gpu = enable_gpu
-        self._model_info = model_store.get(tag)
+        self._tag = in_store_tag
+        self._return_argmax = return_argmax
         self._setup_runner_config(device, enable_gpu, gpu_mem_pool_mb, config=config)
 
     # pylint: disable=attribute-defined-outside-init
@@ -445,7 +447,7 @@ class _PaddlePaddleRunner(Runner):
         config: t.Optional["paddle.inference.Config"],
     ) -> None:
         _config = (
-            _load_paddle_bentoml_default_config(self._model_info)
+            _load_paddle_bentoml_default_config(self._model_store.get(self._tag))
             if not config
             else config
         )
@@ -472,7 +474,7 @@ class _PaddlePaddleRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -488,26 +490,24 @@ class _PaddlePaddleRunner(Runner):
         return 1
 
     # pylint: disable=attribute-defined-outside-init
-    def _setup(self) -> None:
+    def _setup(self) -> None:  # type: ignore[reportImcompatibleMethodOverride]
         self._model = load(
-            self.name, config=self._runner_config, model_store=self._model_store
+            self._tag, config=self._runner_config, model_store=self._model_store
         )
         self._infer_func = getattr(self._model, self._infer_api_callback)
 
     # pylint: disable=arguments-differ
     def _run_batch(
         self,
-        *args: str,
-        **kwargs: str,
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> t.Union[t.Any, t.List["np.ndarray[t.Any, np.dtype[t.Any]]"]]:
-        if "paddlehub" in self._model_info.info.context:
+        model_info = self._model_store.get(self._tag)
+        if "paddlehub" in model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:
             res: t.List["np.ndarray[t.Any, np.dtype[t.Any]]"] = list()
-            params = Params[
-                t.Union[paddle.Tensor, "np.ndarray[t.Any, np.dtype[t.Any]]"]
-            ](*args, **kwargs)
-            return_argmax = t.cast(bool, params.kwargs.pop("return_argmax", False))
+            params = Params[t.Union[paddle.Tensor, "np.ndarray[t.Any, np.dtype[t.Any]]"]](*args, **kwargs)
 
             def _mapping(
                 item: t.Union[paddle.Tensor, "np.ndarray[t.Any, np.dtype[t.Any]]"]
@@ -545,7 +545,7 @@ class _PaddlePaddleRunner(Runner):
                 output_tensor = self._model.get_output_handle(name)
                 output_data = output_tensor.copy_to_cpu()
                 res.append(np.asarray(output_data))
-            if return_argmax:
+            if self._return_argmax:
                 return np.argmax(res, dims=-1)  # type: ignore[call-overload]
             return res
 
@@ -559,6 +559,7 @@ def load_runner(
     enable_gpu: bool = False,
     gpu_mem_pool_mb: int = 0,
     config: t.Optional["paddle.inference.Config"] = None,
+    return_argmax: bool = False,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -608,4 +609,5 @@ def load_runner(
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
+        return_argmax=return_argmax
     )

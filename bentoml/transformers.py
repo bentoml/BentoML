@@ -12,6 +12,7 @@ from importlib import import_module
 from contextlib import contextmanager
 
 import requests
+import importlib_metadata
 from filelock import FileLock
 from simple_di import inject
 from simple_di import Provide
@@ -706,7 +707,10 @@ class _TransformersRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
         **pipeline_kwargs: t.Any,
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        in_store_tag = model_store.get(tag).tag
+        self._tag = in_store_tag
+        super().__init__(str(in_store_tag), resource_quota, batch_options)
+
         try:
             _ = transformers.pipelines.check_task(tasks)
         except KeyError as e:
@@ -730,7 +734,7 @@ class _TransformersRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_store.get(self.name).tag]
+        return [self._tag]
 
     @property
     def num_concurrency(self) -> int:
@@ -744,9 +748,9 @@ class _TransformersRunner(Runner):
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         try:
-            _ = self._model_store.get(self.name)
+            _ = self._model_store.get(self._tag)
             self._config, self._model, self._tokenizer = load(
-                self.name,
+                self._tag,
                 model_store=self._model_store,
                 from_flax=False,
                 from_tf="tf" in self._framework,

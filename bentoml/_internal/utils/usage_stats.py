@@ -1,9 +1,9 @@
-import json
-import logging
 import os
-import platform
 import sys
+import json
 import uuid
+import logging
+import platform
 from functools import lru_cache
 
 from bentoml import __version__ as BENTOML_VERSION

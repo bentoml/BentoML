@@ -1,16 +1,17 @@
-import importlib
-import inspect
-import logging
-import modulefinder
 import os
 import re
 import sys
-from typing import List, Tuple
+import inspect
+import logging
+import importlib
+import modulefinder
+from typing import List
+from typing import Tuple
 from unittest.mock import patch
 
-from ...exceptions import BentoMLException
 from ..types import PathType
 from .pip_pkg import get_all_pip_installed_modules
+from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 

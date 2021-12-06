@@ -3,10 +3,10 @@ import click
 from bentoml import __version__
 
 from .yatai import add_login_command
-from .bento_management import add_bento_management_commands
-from .bento_server import add_serve_command
 from .click_utils import BentoMLCommandGroup
+from .bento_server import add_serve_command
 from .containerize import add_containerize_command
+from .bento_management import add_bento_management_commands
 from .model_management import add_model_management_commands
 
 

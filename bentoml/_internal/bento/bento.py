@@ -1,27 +1,32 @@
-import logging
 import os
 import shutil
 import typing as t
-from datetime import datetime, timezone
+import logging
 from typing import TYPE_CHECKING
+from datetime import datetime
+from datetime import timezone
 
-import attr
 import fs
-import fs.errors
-import fs.mirror
+import attr
+import yaml
 import fs.osfs
 import pathspec
-import yaml
+import fs.errors
+import fs.mirror
 from fs.copy import copy_file
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
+from ..store import Store
+from ..store import StoreItem
+from ..types import Tag
+from ..types import PathType
+from ..models import ModelStore
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..models import ModelStore
-from ..store import StoreItem, Store
-from ..types import PathType, Tag
-from ...exceptions import BentoMLException, InvalidArgument
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -133,7 +138,7 @@ class Bento(StoreItem):
         ctx_fs = fs.open_fs(build_ctx)
 
         assert build_config.additional_models is not None
-        
+
         model_tags = build_config.additional_models
         # Add Runner required models to models list
         for runner in svc.runners.values():

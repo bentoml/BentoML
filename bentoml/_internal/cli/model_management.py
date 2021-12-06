@@ -1,16 +1,20 @@
-import json
 import sys
-
+import json
 import typing as t
-import click
+
 import yaml
-from rich.console import Console
+import click
+from simple_di import inject
+from simple_di import Provide
 from rich.table import Table
-from simple_di import Provide, inject
+from rich.console import Console
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from .click_utils import _is_valid_bento_name, _is_valid_bento_tag
-from ..utils import calc_dir_size, human_readable_size
+
+from ..utils import calc_dir_size
+from ..utils import human_readable_size
+from .click_utils import _is_valid_bento_tag
+from .click_utils import _is_valid_bento_name
 from ..yatai_client import yatai_client
 
 if t.TYPE_CHECKING:
@@ -39,10 +43,10 @@ def parse_delete_targets_argument_callback(
 
 @inject
 def add_model_management_commands(
-        cli,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    cli,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
-    @cli.group(name='model')
+    @cli.group(name="model")
     def model_cli():
         """Model Management"""
 
@@ -85,13 +89,18 @@ def add_model_management_commands(
         > bentoml model list FraudDetector
         """
         models = model_store.list(model_name)
-        res = [{
-            "tag": str(model.tag),
-            "module": model.info.module,
-            "path": model.path,
-            "size": human_readable_size(calc_dir_size(model.path)),
-            "creation_time": model.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
-        } for model in sorted(models, key=lambda x: x.info.creation_time, reverse=True)]
+        res = [
+            {
+                "tag": str(model.tag),
+                "module": model.info.module,
+                "path": model.path,
+                "size": human_readable_size(calc_dir_size(model.path)),
+                "creation_time": model.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for model in sorted(
+                models, key=lambda x: x.info.creation_time, reverse=True
+            )
+        ]
         if output == "json":
             info = json.dumps(res, indent=2)
             print(info)
@@ -157,7 +166,9 @@ def add_model_management_commands(
         """
         pass
 
-    @model_cli.command(name="import", help="Import a previously exported Model tar file")
+    @model_cli.command(
+        name="import", help="Import a previously exported Model tar file"
+    )
     @click.argument(
         "model_path", type=click.File("rb"), default=sys.stdin, required=False
     )
@@ -195,7 +206,5 @@ def add_model_management_commands(
     def push(model_tag: str, force: bool):
         model_obj = model_store.get(model_tag)
         if not model_obj:
-            raise click.ClickException(
-                f"Model {model_tag} not found in local store"
-            )
+            raise click.ClickException(f"Model {model_tag} not found in local store")
         yatai_client.push_model(model_obj, force=force)

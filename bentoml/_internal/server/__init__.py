@@ -1,12 +1,13 @@
-import logging
 import os
-import shutil
 import sys
-import tempfile
 import time
+import shutil
 import typing as t
+import logging
+import tempfile
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
 from bentoml import load
 
@@ -27,11 +28,9 @@ def serve_development(
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
+    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
+    from circus.util import DEFAULT_ENDPOINT_DEALER
     from circus.arbiter import Arbiter  # type: ignore
-    from circus.util import (  # type: ignore
-        DEFAULT_ENDPOINT_DEALER,
-        DEFAULT_ENDPOINT_SUB,
-    )
     from circus.watcher import Watcher  # type: ignore
 
     env = dict(os.environ)
@@ -104,12 +103,10 @@ def serve_production(
 
     import json
 
+    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
+    from circus.util import DEFAULT_ENDPOINT_DEALER
     from circus.arbiter import Arbiter  # type: ignore
     from circus.sockets import CircusSocket  # type: ignore
-    from circus.util import (  # type: ignore
-        DEFAULT_ENDPOINT_DEALER,
-        DEFAULT_ENDPOINT_SUB,
-    )
     from circus.watcher import Watcher  # type: ignore
 
     uds_path = tempfile.mkdtemp()

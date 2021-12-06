@@ -1,16 +1,20 @@
-import json
 import sys
-
+import json
 import typing as t
-import click
+
 import yaml
-from simple_di import Provide, inject
-from rich.console import Console
+import click
+from simple_di import inject
+from simple_di import Provide
 from rich.table import Table
+from rich.console import Console
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from .click_utils import _is_valid_bento_name, _is_valid_bento_tag
-from ..utils import calc_dir_size, human_readable_size
+
+from ..utils import calc_dir_size
+from ..utils import human_readable_size
+from .click_utils import _is_valid_bento_tag
+from .click_utils import _is_valid_bento_name
 from ..yatai_client import yatai_client
 
 if t.TYPE_CHECKING:
@@ -39,8 +43,8 @@ def parse_delete_targets_argument_callback(
 
 @inject
 def add_bento_management_commands(
-        cli,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    cli,
+    bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
     @cli.command(help="Get Bento information")
     @click.argument("bento_tag", type=click.STRING)
@@ -81,13 +85,18 @@ def add_bento_management_commands(
         > bentoml list FraudDetector
         """
         bentos = bento_store.list(bento_name)
-        res = [{
-            "tag": str(bento.tag),
-            "service": bento.info.service,
-            "path": bento.path,
-            "size": human_readable_size(calc_dir_size(bento.path)),
-            "creation_time": bento.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
-        } for bento in sorted(bentos, key=lambda x: x.info.creation_time, reverse=True)]
+        res = [
+            {
+                "tag": str(bento.tag),
+                "service": bento.info.service,
+                "path": bento.path,
+                "size": human_readable_size(calc_dir_size(bento.path)),
+                "creation_time": bento.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for bento in sorted(
+                bentos, key=lambda x: x.info.creation_time, reverse=True
+            )
+        ]
         if output == "json":
             info = json.dumps(res, indent=2)
             print(info)
@@ -191,7 +200,5 @@ def add_bento_management_commands(
     def push(bento_tag: str, force: bool):
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
-            raise click.ClickException(
-                f"Bento {bento_tag} not found in local store"
-            )
+            raise click.ClickException(f"Bento {bento_tag} not found in local store")
         yatai_client.push_bento(bento_obj, force=force)

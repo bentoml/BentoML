@@ -33,7 +33,9 @@ class LocalRunner(RunnerImpl):
                     batch_axis=self._runner.batch_options.input_batch_axis,
                 )
             )
-            batch_result = self._runner._run_batch(*params.args, **params.kwargs)  # type: ignore[reportPrivateUsage]
+            batch_result = self._runner._run_batch(  # type: ignore[reportPrivateUsage]
+                *params.args, **params.kwargs
+            )
             single_results = AutoContainer.batch_to_singles(
                 batch_result,
                 batch_axis=self._runner.batch_options.output_batch_axis,

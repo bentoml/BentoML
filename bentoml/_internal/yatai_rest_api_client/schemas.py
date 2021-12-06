@@ -1,15 +1,18 @@
 import json
+from enum import Enum
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Type
+from typing import TypeVar
+from typing import Optional
+from datetime import datetime
 
 import attr
 import cattr
-from datetime import datetime
-from enum import Enum
-from typing import Optional, List, Dict, Any, TypeVar, Type
-
 from dateutil.parser import parse
 
-
-time_format = '%Y-%m-%d %H:%M:%S.%f'
+time_format = "%Y-%m-%d %H:%M:%S.%f"
 
 
 def datetime_encoder(time_obj: Optional[datetime]) -> Optional[str]:
@@ -30,7 +33,7 @@ converter.register_unstructure_hook(datetime, datetime_encoder)
 converter.register_structure_hook(datetime, datetime_decoder)
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def schema_from_json(json_content: str, cls: Type[T]) -> T:
@@ -59,13 +62,13 @@ class BaseListSchema:
 
 
 class ResourceType(Enum):
-    USER = 'user'
-    ORG = 'organization'
-    CLUSTER = 'cluster'
-    BENTO_REPOSITORY = 'bento_repository'
-    BENTO = 'bento'
-    MODEL_REPOSITORY = 'model_repository'
-    MODEL = 'model'
+    USER = "user"
+    ORG = "organization"
+    CLUSTER = "cluster"
+    BENTO_REPOSITORY = "bento_repository"
+    BENTO = "bento"
+    MODEL_REPOSITORY = "model_repository"
+    MODEL = "model"
 
 
 @attr.define
@@ -90,7 +93,7 @@ class UserSchema:
     def get_name(self) -> str:
         if not self.first_name and not self.last_name:
             return self.name
-        return f'{self.first_name} {self.last_name}'.strip()
+        return f"{self.first_name} {self.last_name}".strip()
 
 
 @attr.define
@@ -115,17 +118,17 @@ class CreateBentoRepositorySchema:
 
 
 class BentoImageBuildStatus(Enum):
-    PENDING = 'pending'
-    BUILDING = 'building'
-    SUCCESS = 'success'
-    FAILED = 'failed'
+    PENDING = "pending"
+    BUILDING = "building"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 class BentoUploadStatus(Enum):
-    PENDING = 'pending'
-    BUILDING = 'uploading'
-    SUCCESS = 'success'
-    FAILED = 'failed'
+    PENDING = "pending"
+    BUILDING = "uploading"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 @attr.define
@@ -180,6 +183,7 @@ class FinishUploadBentoSchema:
     status: Optional[BentoUploadStatus]
     reason: Optional[str]
 
+
 @attr.define
 class CreateModelRepositorySchema:
     name: str
@@ -187,17 +191,17 @@ class CreateModelRepositorySchema:
 
 
 class ModelImageBuildStatus(Enum):
-    PENDING = 'pending'
-    BUILDING = 'building'
-    SUCCESS = 'success'
-    FAILED = 'failed'
+    PENDING = "pending"
+    BUILDING = "building"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 class ModelUploadStatus(Enum):
-    PENDING = 'pending'
-    BUILDING = 'uploading'
-    SUCCESS = 'success'
-    FAILED = 'failed'
+    PENDING = "pending"
+    BUILDING = "uploading"
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 @attr.define

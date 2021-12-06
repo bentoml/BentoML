@@ -1,6 +1,6 @@
 import os
-import subprocess
 import sys
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -9,8 +9,8 @@ import pytest
 import tensorflow as tf
 
 import bentoml.onnxmlir
-from tests.utils.frameworks.tensorflow_utils import NativeModel
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.tensorflow_utils import NativeModel
 
 try:
     # this has to be able to find the arch and OS specific PyRuntime .so file

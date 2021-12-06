@@ -1,8 +1,8 @@
-import contextlib
-import functools
+import uuid
 import socket
 import typing as t
-import uuid
+import functools
+import contextlib
 from pathlib import Path
 
 from ..types import PathType
@@ -40,12 +40,12 @@ def validate_or_create_dir(*path: PathType) -> None:
 
 
 def calc_dir_size(path: PathType) -> int:
-    return sum(f.stat().st_size for f in Path(path).glob('**/*') if f.is_file())
+    return sum(f.stat().st_size for f in Path(path).glob("**/*") if f.is_file())
 
 
 def human_readable_size(size: int, decimal_places: int = 2) -> str:
-    for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']:
-        if size < 1024.0 or unit == 'PiB':
+    for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
+        if size < 1024.0 or unit == "PiB":
             break
         size /= 1024.0
     return f"{size:.{decimal_places}f} {unit}"

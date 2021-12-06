@@ -1,5 +1,5 @@
-import importlib.util
 import typing as t
+import importlib.util
 from typing import TYPE_CHECKING
 
 from ...exceptions import MissingDependencyException

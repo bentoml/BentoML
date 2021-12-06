@@ -1,24 +1,23 @@
-import logging
 import os
-from pathlib import Path
+import logging
 from typing import List
+from pathlib import Path
 
 import attr
-import cattr
 import yaml
+import cattr
 
+from bentoml.exceptions import YataiRESTApiClientError
 from bentoml._internal.configuration.containers import BENTOML_HOME
 from bentoml._internal.yatai_rest_api_client.yatai import YataiRESTApiClient
-from bentoml.exceptions import YataiRESTApiClientError
-
 
 logger = logging.getLogger(__name__)
 
-default_context_name = 'default'
+default_context_name = "default"
 
 
 def get_config_path() -> Path:
-    return Path(BENTOML_HOME) / '.yatai.yaml'
+    return Path(BENTOML_HOME) / ".yatai.yaml"
 
 
 @attr.define
@@ -40,14 +39,16 @@ class YataiClientConfig:
         for ctx in self.contexts:
             if ctx.name == self.current_context_name:
                 return ctx
-        raise YataiRESTApiClientError(f'Not found {self.current_context_name} yatai context, please login!')
+        raise YataiRESTApiClientError(
+            f"Not found {self.current_context_name} yatai context, please login!"
+        )
 
 
 _config: YataiClientConfig = YataiClientConfig()
 
 
 def store_config(config: YataiClientConfig) -> None:
-    with open(get_config_path(), 'w') as f:
+    with open(get_config_path(), "w") as f:
         dct = cattr.unstructure(config)
         yaml.dump(dct, stream=f)
 
@@ -61,7 +62,7 @@ def init_config() -> YataiClientConfig:
 def get_config() -> YataiClientConfig:
     if not os.path.exists(get_config_path()):
         return init_config()
-    with open(get_config_path(), 'r') as f:
+    with open(get_config_path(), "r") as f:
         dct = yaml.safe_load(f)
         return cattr.structure(dct, YataiClientConfig)
 

@@ -15,9 +15,11 @@ from ._internal.models import Model
 from ._internal.models import PT_EXT
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.runner.utils import Params, TypeRef
+from ._internal.runner.utils import Params
+from ._internal.runner.utils import TypeRef
 from ._internal.runner.container import Payload
-from ._internal.runner.container import DataContainer, DataContainerRegistry
+from ._internal.runner.container import DataContainer
+from ._internal.runner.container import DataContainerRegistry
 from ._internal.configuration.containers import BentoMLContainer
 
 _RV = t.TypeVar("_RV")
@@ -356,6 +358,7 @@ class PytorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
 
     batch_to_payload = single_to_payload
     payload_to_batch = payload_to_single
+
 
 DataContainerRegistry.register_container(
     TypeRef("torch", "Tensor"),

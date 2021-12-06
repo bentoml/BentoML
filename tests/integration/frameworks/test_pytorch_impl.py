@@ -156,7 +156,6 @@ def test_pytorch_container(modelstore, batch_axis):
         == single_tensor
     ).all()
 
-
     model = LinearModelWithBatchAxis()
     tag = bentoml.pytorch.save("pytorch_test_container", model, model_store=modelstore)
     batch_options = {
@@ -167,7 +166,8 @@ def test_pytorch_container(modelstore, batch_axis):
         tag,
         model_store=modelstore,
         batch_options=batch_options,
-        partial_kwargs=dict(batch_axis=batch_axis))
+        partial_kwargs=dict(batch_axis=batch_axis),
+    )
 
     single_tensor = torch.arange(5, dtype=torch.float32)
     singles = [single_tensor, single_tensor]

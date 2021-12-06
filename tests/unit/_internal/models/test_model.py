@@ -39,10 +39,10 @@ metadata:
 
 
 class AdditionClass:
-    def __init__(self, x):
+    def __init__(self, x: int):
         self.x = x
 
-    def __call__(self, y):
+    def __call__(self, y: int) -> int:
         return self.x + y
 
 

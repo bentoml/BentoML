@@ -45,7 +45,8 @@ class RunnerAppFactory(BaseAppFactory):
 
         TooManyRequests = partial(Response, status_code=427)
 
-        if self.runner.batch_options.enabled:
+        options = self.runner.batch_options
+        if options.enabled:
             options = self.runner.batch_options
             self.dispatcher = CorkDispatcher(
                 max_latency_in_ms=options.max_latency_ms,
@@ -54,6 +55,8 @@ class RunnerAppFactory(BaseAppFactory):
             )
         else:
             self.dispatcher = None
+        self.input_batch_axis = options.input_batch_axis
+        self.output_batch_axis = options.output_batch_axis
 
     @property
     def name(self) -> str:
@@ -109,10 +112,17 @@ class RunnerAppFactory(BaseAppFactory):
         params_list = [
             params.map(AutoContainer.payload_to_single) for params in params_list
         ]
-        params = Params.agg(params_list, AutoContainer.singles_to_batch)
-        ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
-        batch_payload = AutoContainer.payload_to_batch(ret)
-        payloads = AutoContainer.batch_to_singles(batch_payload)
+        params = Params.agg(
+            params_list,
+            lambda i: AutoContainer.singles_to_batch(
+                i, batch_axis=self.input_batch_axis
+            ),
+        )
+        batch_ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
+        rets = AutoContainer.batch_to_singles(
+            batch_ret, batch_axis=self.output_batch_axis
+        )
+        payloads = map(AutoContainer.single_to_payload, rets)
         return [
             Response(
                 payload.data,

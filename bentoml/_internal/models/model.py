@@ -37,11 +37,29 @@ class Model(StoreItem):
     _fs: FS
 
     info: "ModelInfo"
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None
+    _custom_objects: t.Union[t.Optional[t.Dict[str, t.Any]], bool] = None
 
     @property
     def tag(self) -> Tag:
         return self._tag
+
+    @property
+    def custom_objects(self) -> t.Optional[t.Dict[str, t.Any]]:
+        # self._custom_objects is None only when the property has not
+        # been accessed
+        if self._custom_objects is None:
+            if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
+                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
+                    self._custom_objects = cloudpickle.load(cofile)
+            else:
+                # we need to distinguish the case of property not
+                # accessed and model has no custom objects
+                self._custom_objects = False
+
+        if self._custom_objects is False:
+            return None
+        else:
+            return self._custom_objects # type: ignore
 
     def __eq__(self, other: "Model") -> bool:
         return self._tag == other._tag
@@ -108,16 +126,12 @@ class Model(StoreItem):
         try:
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
-            if item_fs.isfile(CUSTOM_OBJECTS_FILENAME):
-                with item_fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
-                    custom_objects = cloudpickle.load(cofile)
-            else:
-                custom_objects = None
         except fs.errors.ResourceNotFound:
             logger.warning(f"Failed to import Model from {item_fs}.")
             raise BentoMLException("Failed to create Model because it was invalid")
 
-        res = cls(info.tag, item_fs, info, custom_objects)
+        # set _custom_objects to None for lazy loading
+        res = cls(info.tag, item_fs, info, None)
         if not res.validate():
             logger.warning(f"Failed to import Model from {item_fs}.")
             raise BentoMLException("Failed to create Model because it was invalid")
@@ -136,6 +150,8 @@ class Model(StoreItem):
             self.info.dump(model_yaml)
 
     def flush_custom_objects(self):
+        if self.custom_objects is None:
+            return
         with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
             cloudpickle.dump(self.custom_objects, cofile)
 

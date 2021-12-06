@@ -36,14 +36,14 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @classmethod
     @abc.abstractmethod
     def singles_to_batch(
-        cls, singles: t.Sequence[SingleType], batch_axis: t.Optional[int] = None
+        cls, singles: t.Sequence[SingleType], batch_axis: int = 0
     ) -> BatchType:
         ...
 
     @classmethod
     @abc.abstractmethod
     def batch_to_singles(
-        cls, batch: BatchType, batch_axis: t.Optional[int] = None
+        cls, batch: BatchType, batch_axis: int = 0
     ) -> t.List[SingleType]:
         ...
 
@@ -69,7 +69,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
     @classmethod
     def payloads_to_batch(
-        cls, payload_list: t.Sequence[Payload], batch_axis: t.Optional[int] = None
+        cls, payload_list: t.Sequence[Payload], batch_axis: int = 0
     ) -> BatchType:
         return cls.singles_to_batch(
             [cls.payload_to_single(i) for i in payload_list], batch_axis=batch_axis
@@ -77,7 +77,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
     @classmethod
     def batch_to_payloads(
-        cls, batch: BatchType, batch_axis: t.Optional[int] = None
+        cls, batch: BatchType, batch_axis: int = 0
     ) -> t.List[Payload]:
         return [
             cls.single_to_payload(i)
@@ -95,14 +95,14 @@ class NdarrayContainer(
     def singles_to_batch(
         cls,
         singles: t.Sequence["tnp.ndarray[t.Any, tnp.dtype[t.Any]]"],
-        batch_axis: t.Optional[int] = 0,
+        batch_axis: int = 0,
     ) -> "tnp.ndarray[t.Any, tnp.dtype[t.Any]]":
         import numpy as np
 
         return np.stack(singles, axis=batch_axis)
 
     @classmethod
-    def batch_to_singles(cls, batch, batch_axis: t.Optional[int] = 0):
+    def batch_to_singles(cls, batch, batch_axis: int = 0):
         import numpy as np
 
         return [
@@ -152,7 +152,7 @@ class PandasDataFrameContainer(
     def singles_to_batch(
         cls,
         singles: t.Sequence[t.Union["pd.DataFrame", "pd.Series"]],
-        batch_axis: t.Optional[int] = 0,
+        batch_axis: int = 0,
     ) -> "pd.DataFrame":
         import pandas as pd
 
@@ -172,7 +172,7 @@ class PandasDataFrameContainer(
 
     @classmethod
     def batch_to_singles(
-        cls, batch: "pd.DataFrame", batch_axis: t.Optional[int] = 0
+        cls, batch: "pd.DataFrame", batch_axis: int = 0
     ) -> t.List["pd.Series"]:
 
         assert batch_axis == 0, "PandasDataFrameContainer requires batch_axis = 0"
@@ -217,12 +217,12 @@ class PandasDataFrameContainer(
 
 class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @classmethod
-    def singles_to_batch(cls, singles, batch_axis: t.Optional[int] = 0):
+    def singles_to_batch(cls, singles, batch_axis: int = 0):
         assert batch_axis == 0
         return singles
 
     @classmethod
-    def batch_to_singles(cls, batch, batch_axis: t.Optional[int] = 0):
+    def batch_to_singles(cls, batch, batch_axis: int = 0):
         assert batch_axis == 0
         return batch
 
@@ -304,14 +304,12 @@ register_builtin_containers()
 
 class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
-    def singles_to_batch(cls, singles: t.Any, batch_axis: t.Optional[int] = 0):
+    def singles_to_batch(cls, singles: t.Any, batch_axis: int = 0):
         container_cls = DataContainerRegistry.find_by_single_type(type(singles[0]))
         return container_cls.singles_to_batch(singles, batch_axis=batch_axis)
 
     @classmethod
-    def batch_to_singles(
-        cls, batch: t.Any, batch_axis: t.Optional[int] = None
-    ) -> t.List[t.Any]:
+    def batch_to_singles(cls, batch: t.Any, batch_axis: int = 0) -> t.List[t.Any]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
         return container_cls.batch_to_singles(batch, batch_axis=batch_axis)
 
@@ -341,17 +339,13 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.batch_to_payload(batch)
 
     @classmethod
-    def payloads_to_batch(
-        cls, payload_list: t.Sequence[Payload], batch_axis: t.Optional[int] = None
-    ):
+    def payloads_to_batch(cls, payload_list: t.Sequence[Payload], batch_axis: int = 0):
         container_cls = DataContainerRegistry.find_by_name(
             str(payload_list[0].meta.get("container"))
         )
         return container_cls.payloads_to_batch(payload_list, batch_axis=batch_axis)
 
     @classmethod
-    def batch_to_payloads(
-        cls, batch, batch_axis: t.Optional[int] = None
-    ) -> t.List[Payload]:
+    def batch_to_payloads(cls, batch, batch_axis: int = None) -> t.List[Payload]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
         return container_cls.batch_to_payloads(batch, batch_axis=batch_axis)

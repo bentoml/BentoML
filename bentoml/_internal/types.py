@@ -94,7 +94,7 @@ class Tag:
         if ":" not in tag_str:
             return cls(tag_str, None)
         try:
-            name, version = tag_str.split(":")
+            name, _, version = tag_str.partition(":")
             if not version:
                 # in case users mistakenly define "bento:"
                 raise BentoMLException(

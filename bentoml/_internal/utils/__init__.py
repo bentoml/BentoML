@@ -39,6 +39,18 @@ def validate_or_create_dir(*path: PathType) -> None:
             path_obj.mkdir(parents=True)
 
 
+def calc_dir_size(path: PathType) -> int:
+    return sum(f.stat().st_size for f in Path(path).glob('**/*') if f.is_file())
+
+
+def human_readable_size(size: int, decimal_places: int = 2) -> str:
+    for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']:
+        if size < 1024.0 or unit == 'PiB':
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f} {unit}"
+
+
 class catch_exceptions(t.Generic[_T_co], object):
     def __init__(
         self,

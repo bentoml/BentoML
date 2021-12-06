@@ -20,6 +20,22 @@ def predict_df(model: nn.Module, df: pd.DataFrame):
     return model(input_tensor).unsqueeze(dim=0).item()
 
 
+class LinearModelWithBatchAxis(nn.Module):
+    def __init__(self):
+        super(LinearModelWithBatchAxis, self).__init__()
+        self.linear = nn.Linear(5, 1, bias=False)
+        torch.nn.init.ones_(self.linear.weight)
+
+    def forward(self, x, batch_axis=0):
+        if batch_axis == 1:
+            x = x.permute([1, 0])
+        res = self.linear(x)
+        if batch_axis == 1:
+            res = res.permute([0, 1])
+
+        return res
+
+
 class ExtendedModel(nn.Module):
     def __init__(self, D_in, H, D_out):
         """
@@ -125,7 +141,7 @@ def test_pytorch_runner_with_partial_kwargs(modelstore, bias_pair):
 
 
 @pytest.mark.parametrize("batch_axis", [0, 1])
-def test_pytorch_container(batch_axis):
+def test_pytorch_container(modelstore, batch_axis):
 
     single_tensor = torch.arange(6).reshape(2, 3)
     singles = [single_tensor, single_tensor + 1]
@@ -139,3 +155,22 @@ def test_pytorch_container(batch_axis):
         PytorchTensorContainer.batch_to_singles(batch_tensor, batch_axis=batch_axis)[0]
         == single_tensor
     ).all()
+
+
+    model = LinearModelWithBatchAxis()
+    tag = bentoml.pytorch.save("pytorch_test_container", model, model_store=modelstore)
+    batch_options = {
+        "input_batch_axis": batch_axis,
+        "output_batch_axis": batch_axis,
+    }
+    runner = bentoml.pytorch.load_runner(
+        tag,
+        model_store=modelstore,
+        batch_options=batch_options,
+        partial_kwargs=dict(batch_axis=batch_axis))
+
+    single_tensor = torch.arange(5, dtype=torch.float32)
+    singles = [single_tensor, single_tensor]
+    batch_tensor = torch.stack(singles, dim=batch_axis)
+    assert runner.run_batch(batch_tensor)[0][0] == 10.0
+    assert runner.run(single_tensor)[0] == 10.0

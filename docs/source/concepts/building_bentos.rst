@@ -19,23 +19,23 @@ Bento follows the directory structure below. We will look into each file and dir
     - README.md
     - bento.yaml
     - /apis/
-    - openapi.yaml
+        - openapi.yaml
     - /env/
-    - /python
-        - python_version.txt
-        - requirements.txt
-        - /wheels
-    - /docker
-        - Dockerfile
-        - docker-entrypoint.sh
-    - bentoml-init.sh
-    - /conda
-        - environment.yml
-    - /svc
-    - bento.py
-    - /common
-        - my_lib.py
-    - my_config.json
+        - /python
+            - python_version.txt
+            - requirements.txt
+            - /wheels
+        - /docker
+            - Dockerfile
+            - docker-entrypoint.sh
+            - bentoml-init.sh
+        - /conda
+            - environment.yml
+    - /src
+        - bento.py
+        - /common
+            - my_lib.py
+        - my_config.json
     - /models
         - /iris_classifier
             - /yftvuwkbbbi6zcphca6rzl235

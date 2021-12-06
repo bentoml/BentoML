@@ -25,9 +25,9 @@ common model serving scenarios.
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_array: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
-    result = await runner.run(input_array)
-    # Define post-processing logic
-    return result
+        result = await runner.run(input_array)
+        # Define post-processing logic
+        return result
 
 Synchronous APIs fall short when we want to maximize the performance and throughput of the service. 
 Asynchronous APIs are preferred if the processing logic is IO-bound or invokes multiple runners 
@@ -53,11 +53,11 @@ two runners simultaneously, and returns the better result.
         async with session.get('https://features/get', params=input_array[0]) as resp:
         features = get_features(await resp.text())
         # Invoke both model runners simultaneously and return the better result
-    results = await asyncio.gather(
-        runner1.async_run(input_array, features),
-        runner2.async_run(input_array, features),
-    )
-    return compare_results(results)
+        results = await asyncio.gather(
+            runner1.async_run(input_array, features),
+            runner2.async_run(input_array, features),
+        )
+        return compare_results(results)
 
 The asynchronous API implementation is more efficient because while the coroutine is awaiting for 
 results from the feature store or the model runners, the event loop is freed up to serve another request. 
@@ -83,9 +83,9 @@ function signature.
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_array: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
-    result = await runner.run(input_array)
-    # Define post-processing logic
-    return result
+        result = await runner.run(input_array)
+        # Define post-processing logic
+        return result
 
 The IO descriptors help automatically generate an OpenAPI specifications of the service based on the 
 types of IO descriptors selected. We can further customize the IO descriptors by providing the `dtype` 
@@ -102,14 +102,14 @@ disable validation through the `validate` argument.
 
     # Create API function with pre- and post- processing logic
     @svc.api(
-    input=NumpyNdarray(schema=np.dtype(int, 4), validate=True),
-    output=NumpyNdarray(schema=np.dtype(int), validate=True),
+        input=NumpyNdarray(schema=np.dtype(int, 4), validate=True),
+        output=NumpyNdarray(schema=np.dtype(int), validate=True),
     )
     def predict(input_array: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
-    result = await runner.run(input_array)
-    # Define post-processing logic
-    return result
+        result = await runner.run(input_array)
+        # Define post-processing logic
+        return result
 
 .. todo::
 
@@ -148,10 +148,10 @@ descriptor can be customized with independent schema and validation logic.
     from bentoml.io import NumpyNdarray, Json
 
     class FooModel(BaseModel):
-    """Foo model documentation"""
-    field1: int
-    field2: float
-    field3: str
+        """Foo model documentation"""
+        field1: int
+        field2: float
+        field3: str
 
     my_np_input = NumpyNdarray.from_sample(np.ndarray(...))
 

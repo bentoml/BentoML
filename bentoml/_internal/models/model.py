@@ -38,29 +38,22 @@ class Model(StoreItem):
     _fs: FS
 
     info: "ModelInfo"
-    _custom_objects: t.Union[t.Optional[t.Dict[str, t.Any]], bool] = None
+    _custom_objects: t.Optional[t.Dict[str, t.Any]] = None
 
     @property
     def tag(self) -> Tag:
         return self._tag
 
     @property
-    def custom_objects(self) -> t.Optional[t.Dict[str, t.Any]]:
-        # self._custom_objects is None only when the property has not
-        # been accessed
+    def custom_objects(self) -> t.Dict[str, t.Any]:
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
                     self._custom_objects = cloudpickle.load(cofile)
             else:
-                # we need to distinguish the case of property not
-                # accessed and model has no custom objects
-                self._custom_objects = False
+                self._custom_objects = {}
 
-        if self._custom_objects is False:
-            return None
-        else:
-            return self._custom_objects  # type: ignore
+        return self._custom_objects
 
     def __eq__(self, other: "Model") -> bool:
         return self._tag == other._tag
@@ -173,10 +166,10 @@ class Model(StoreItem):
             self.info.dump(model_yaml)
 
     def flush_custom_objects(self):
-        if self.custom_objects is None:
-            return
-        with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
-            cloudpickle.dump(self.custom_objects, cofile)
+        # pickle custom_objects if it is not None and not empty
+        if self.custom_objects:
+            with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
+                cloudpickle.dump(self.custom_objects, cofile)
 
     @property
     def creation_time(self) -> datetime:
@@ -258,8 +251,8 @@ def copy_model(
     src_model_store: ModelStore,
     target_model_store: ModelStore,
 ):
-    """copy a model from src model store to target modelstore, and do nothing if the model tag
-    already exist in target model store
+    """copy a model from src model store to target modelstore, and do nothing if the
+    model tag already exist in target model store
     """
     try:
         target_model_store.get(model_tag)  # if model tag already found in target

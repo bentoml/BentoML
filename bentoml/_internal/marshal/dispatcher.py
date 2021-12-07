@@ -5,7 +5,6 @@ import logging
 import functools
 import traceback
 import collections
-from typing import Callable
 
 import numpy as np
 
@@ -86,6 +85,10 @@ class Optimizer:
         )
 
 
+T_IN = t.TypeVar("T_IN")
+T_OUT = t.TypeVar("T_OUT")
+
+
 class CorkDispatcher:
     """
     A decorator that:
@@ -99,7 +102,7 @@ class CorkDispatcher:
         max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
-        fallback: t.Optional[Callable[[], t.Any]] = None,
+        fallback: t.Optional[t.Callable[[], t.Any]] = None,
     ):
         """
         params:
@@ -139,7 +142,12 @@ class CorkDispatcher:
     def _wake_event(self):
         return asyncio.Condition()
 
-    def __call__(self, callback):
+    def __call__(
+        self,
+        callback: t.Callable[
+            [t.Iterable[T_IN]], t.Coroutine[None, None, t.Iterable[T_OUT]]
+        ],
+    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
         self.callback = callback
 
         @functools.wraps(callback)

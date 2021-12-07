@@ -55,8 +55,6 @@ class RunnerAppFactory(BaseAppFactory):
             )
         else:
             self.dispatcher = None
-        self.input_batch_axis = options.input_batch_axis
-        self.output_batch_axis = options.output_batch_axis
 
     @property
     def name(self) -> str:
@@ -112,12 +110,14 @@ class RunnerAppFactory(BaseAppFactory):
         params = Params.agg(
             params_list,
             lambda i: AutoContainer.payloads_to_batch(
-                i, batch_axis=self.input_batch_axis
+                i,
+                batch_axis=self.runner.batch_options.input_batch_axis,
             ),
         )
         batch_ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
         payloads = AutoContainer.batch_to_payloads(
-            batch_ret, batch_axis=self.output_batch_axis
+            batch_ret,
+            batch_axis=self.runner.batch_options.input_batch_axis,
         )
         return [
             Response(

@@ -6,10 +6,10 @@ import pytest
 from bentoml._internal.models import ModelStore
 
 if TYPE_CHECKING:
-    from _pytest.config import Config
-    from _pytest.config.argparsing import Parser
     from _pytest.nodes import Item
+    from _pytest.config import Config
     from _pytest.tmpdir import TempPathFactory
+    from _pytest.config.argparsing import Parser
 
 
 def pytest_addoption(parser: "Parser") -> None:

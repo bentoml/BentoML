@@ -14,7 +14,7 @@ from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import pandas as pd
+    from pandas.core.frame import DataFrame
 
     from ._internal.models import ModelStore
 
@@ -28,6 +28,12 @@ except ImportError:  # pragma: no cover
         """
     )
 
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_catboost_version = importlib_metadata.version("catboost")
 
 # TODO: support cbt.Pool runner io container
 
@@ -44,7 +50,7 @@ CatBoostModelType = t.TypeVar(
 
 
 def _get_model_info(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
     model_store: "ModelStore",
 ) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
@@ -88,7 +94,7 @@ def _load_helper(
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> CatBoostModelType:
@@ -192,7 +198,7 @@ def save(
     if "model_type" not in model_params:
         model_params["model_type"] = "classifier"
 
-    context = {"catboost": cbt.__version__}
+    context = {"catboost": _catboost_version}
     _model = Model.create(
         name,
         module=__name__,
@@ -218,7 +224,7 @@ class _CatBoostRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
@@ -247,24 +253,23 @@ class _CatBoostRunner(Runner):
     def num_replica(self) -> int:
         return int(round(self.resource_quota.cpu))
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._model = _load_helper(self._model_file, self._model_params)  # type: ignore[var-annotated] # noqa: LN001 # pylint: disable
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
+        self._model = _load_helper(self._model_file, self._model_params)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame", cbt.Pool]
-    ) -> np.ndarray:
-        # Take a batch type
-        # Take a containers
-        res = self._predict_fn(input_data)
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
+        self,
+        inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame", cbt.Pool],
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        res = self._predict_fn(inputs)
         return np.asarray(res)
 
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     predict_fn_name: str = "predict",
     *,
     model_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,

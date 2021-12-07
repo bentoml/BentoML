@@ -14,17 +14,20 @@ from ._internal.models import PTH_EXT
 from ._internal.models import YAML_EXT
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
+from ._internal.runner.utils import Params
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.models import ModelStore
 try:
+    # pylint: disable=unused-import;
     import torch
-    import torch.nn as nn
-    import detectron2
+    import detectron2  # noqa F401
     import detectron2.config as config
     import detectron2.modeling as modeling
     import detectron2.checkpoint as checkpoint
+    from detectron2.checkpoint import DetectionCheckpointer
+
 
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -36,12 +39,21 @@ except ImportError:  # pragma: no cover
     )
 
 
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_detectron2_version = importlib_metadata.version("detectron2")
+_torch_version = importlib_metadata.version("torch")
+
+
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     device: str = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "nn.Module":
+) -> "torch.nn.Module":
     """
     Load a model from BentoML local modelstore with given tag.
 
@@ -62,20 +74,20 @@ def load(
         import bentoml.detectron
         model = bentoml.detectron.load(
             "my_detectron_model:20201012_DE43A2")
-    """  # noqa
+    """  # noqa: LN001
 
-    model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
+    model_info = model_store.get(tag)
+    if model_info.info.module != __name__:  # pragma: no cover
+        raise BentoMLException(
             f"Model {tag} was saved with"
-            f" module {model.info.module},"
+            f" module {model_info.info.module},"
             f" failed loading with {__name__}."
         )
 
     cfg: config.CfgNode = config.get_cfg()
 
-    weight_path = model.path_of(f"{SAVE_NAMESPACE}{PTH_EXT}")
-    yaml_path = model.path_of(f"{SAVE_NAMESPACE}{YAML_EXT}")
+    weight_path = model_info.path_of(f"{SAVE_NAMESPACE}{PTH_EXT}")
+    yaml_path = model_info.path_of(f"{SAVE_NAMESPACE}{YAML_EXT}")
 
     if os.path.isfile(yaml_path):
         cfg.merge_from_file(yaml_path)
@@ -83,15 +95,13 @@ def load(
     if device:
         cfg.MODEL.DEVICE = device
 
-    model: "nn.Module" = modeling.build_model(cfg)
+    model: "torch.nn.Module" = modeling.build_model(cfg)
     if device:
         model.to(device)
 
     model.eval()
 
-    checkpointer: checkpoint.DetectionCheckpointer = checkpoint.DetectionCheckpointer(
-        model
-    )
+    checkpointer: "DetectionCheckpointer" = checkpoint.DetectionCheckpointer(model)
 
     checkpointer.load(weight_path)
     return model
@@ -100,7 +110,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: "nn.Module",
+    model: "torch.nn.Module",
     *,
     model_config: t.Optional[config.CfgNode] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -158,7 +168,10 @@ def save(
 
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"detectron": detectron2.__version__}
+    context: t.Dict[str, t.Any] = {
+        "detectron2": _detectron2_version,
+        "torch": _torch_version,
+    }
     options: t.Dict[str, t.Any] = dict()
 
     _model = Model.create(
@@ -186,9 +199,10 @@ def save(
 
 class _DetectronRunner(Runner):
     @inject
+    # TODO add partial_kwargs @larme
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -213,8 +227,8 @@ class _DetectronRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         if self.resource_quota.on_gpu:
             device = "cuda"
         else:
@@ -222,16 +236,24 @@ class _DetectronRunner(Runner):
         self._model = load(self._tag, device, self._model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, torch.Tensor]
-    ) -> np.ndarray:
-        images = np.split(input_data, input_data.shape[0], 0)
-        images = [image.squeeze(axis=0) for image in images]
-        if isinstance(input_data, np.ndarray):
-            images = [torch.from_numpy(image) for image in images]
+    def _run_batch(
+        self,
+        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](
+            *args
+        )
 
-        inputs = [dict(image=image) for image in images]
+        def _mapping(
+            item: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]
+        ) -> torch.Tensor:
+            if isinstance(item, np.ndarray):
+                return torch.from_numpy(item)
+            return item
+
+        params = params.map(_mapping)
+
+        inputs = [{"image": image} for image in params.args]
 
         res = self._predict_fn(inputs)
         return np.asarray(res, dtype=object)
@@ -239,7 +261,7 @@ class _DetectronRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     predict_fn_name: str = "__call__",
     *,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,

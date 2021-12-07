@@ -1,5 +1,8 @@
 import typing as t
+from typing import TYPE_CHECKING
 
+import numpy as np
+import psutil
 import pytest
 import catboost as cbt
 from catboost.core import CatBoost
@@ -10,16 +13,14 @@ import bentoml.models
 import bentoml.catboost
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
-from bentoml._internal.models import Model
 from tests.utils.frameworks.sklearn_utils import test_df
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from bentoml._internal.store import Tag
     from bentoml._internal.models import ModelStore
 
-TEST_MODEL_NAME = __name__.split(".")[-1]
 
-
-def catboost_model() -> cbt.core.CatBoostClassifier:
+def create_catboost_model() -> cbt.core.CatBoostClassifier:
     from sklearn.datasets import load_breast_cancer
 
     cancer = load_breast_cancer()
@@ -41,47 +42,47 @@ def catboost_model() -> cbt.core.CatBoostClassifier:
     return clf
 
 
-@pytest.fixture(scope="module")
-def save_proc(
-    modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
-    def _(model_params, metadata) -> "Model":
-        model = catboost_model()
-        tag = bentoml.catboost.save(
-            TEST_MODEL_NAME,
-            model,
-            model_params=model_params,
-            metadata=metadata,
-            model_store=modelstore,
-        )
-        model = modelstore.get(tag)
-        return model
-
-    return _
+def save_procedure(
+    model_params: t.Dict[str, t.Any],
+    metadata: t.Dict[str, t.Any],
+    _modelstore: "ModelStore",
+) -> "Tag":
+    catboost_model = create_catboost_model()
+    tag_info = bentoml.catboost.save(
+        "test_catboost_model",
+        catboost_model,
+        model_params=model_params,
+        metadata=metadata,
+        model_store=_modelstore,
+    )
+    return tag_info
 
 
-def wrong_module(modelstore: "ModelStore"):
-    model = catboost_model()
+def forbidden_procedure(_modelstore: "ModelStore"):
+    catboost_model = create_catboost_model()
     with bentoml.models.create(
-        "wrong_module",
+        "invalid_module",
         module=__name__,
         labels=None,
         options=None,
         framework_context=None,
         metadata=None,
-    ) as _model:
-        model.save_model(_model.path_of("saved_model.model"))
-
-        return str(_model.path)
+        _model_store=_modelstore,
+    ) as ctx:
+        catboost_model.save_model(ctx.path_of("saved_model.model"))
+        return ctx.tag
 
 
 @pytest.mark.parametrize(
     "model_params, metadata", [(dict(model_type="classifier"), {"acc": 0.876})]
 )
-def test_catboost_save_load(model_params, metadata, modelstore, save_proc):
-
-    model = catboost_model()
-    _model = save_proc(model_params, metadata)
+def test_catboost_save_load(
+    model_params: t.Dict[str, t.Any],
+    metadata: t.Dict[str, t.Any],
+    modelstore: "ModelStore",
+) -> None:
+    tag = save_procedure(model_params, metadata, _modelstore=modelstore)
+    _model = bentoml.models.get(tag, _model_store=modelstore)
     assert _model.info.metadata is not None
     assert_have_file_extension(_model.path, ".cbm")
 
@@ -89,14 +90,13 @@ def test_catboost_save_load(model_params, metadata, modelstore, save_proc):
         _model.tag, model_params=model_params, model_store=modelstore
     )
     assert isinstance(cbt_loaded, CatBoostClassifier)
-    assert cbt_loaded.predict(test_df) == model.predict(test_df)
+    assert cbt_loaded.predict(test_df) == np.array([1])
 
 
-@pytest.mark.parametrize("exc", [BentoMLException])
-def test_catboost_load_exc(exc, modelstore):
-    tag = wrong_module(modelstore)
-    with pytest.raises(exc):
-        bentoml.catboost.load(tag, model_store=modelstore)
+def test_catboost_load_exc(modelstore: "ModelStore") -> None:
+    tag = forbidden_procedure(_modelstore=modelstore)
+    with pytest.raises(BentoMLException):
+        _ = bentoml.catboost.load(tag, model_store=modelstore)
 
 
 @pytest.mark.parametrize(
@@ -107,11 +107,25 @@ def test_catboost_load_exc(exc, modelstore):
         ("", CatBoost),
     ],
 )
-def test_catboost_model_type(model_type, expected_model, modelstore, save_proc):
-    model_params = dict(model_type=model_type)
-    info = save_proc(model_params, None)
+def test_catboost_model_type(
+    model_type: str,
+    expected_model: t.Union[CatBoost, CatBoostClassifier, CatBoostRegressor],
+    modelstore: "ModelStore",
+) -> None:
+    model_params = {"model_type": model_type}
+    info = save_procedure(model_params, {}, _modelstore=modelstore)
     cbt_loaded = bentoml.catboost.load(
-        info.tag, model_params=model_params, model_store=modelstore
+        info, model_params=model_params, model_store=modelstore
     )
 
     assert isinstance(cbt_loaded, expected_model)
+
+
+def test_catboost_runner_setup_run_batch(modelstore: "ModelStore") -> None:
+    tag = save_procedure({}, {}, _modelstore=modelstore)
+    runner = bentoml.catboost.load_runner(tag, model_store=modelstore)
+
+    assert tag in runner.required_models
+    assert runner.num_concurrency_per_replica == 1
+    assert runner.num_replica == psutil.cpu_count()
+    assert runner.run_batch(test_df) == np.array([1])

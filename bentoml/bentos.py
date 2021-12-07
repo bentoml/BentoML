@@ -10,8 +10,6 @@ import fs
 from simple_di import inject
 from simple_di import Provide
 
-import docker
-
 from .exceptions import InvalidArgument
 from ._internal.bento import Bento
 from ._internal.types import Tag
@@ -192,6 +190,8 @@ def _docker_build_logs(resp: t.Iterator):
             When errors occurs during build process. Usually
             this comes when generated Dockerfile are incorrect.
     """
+    import docker
+
     output: str = ""
     try:
         while True:
@@ -217,6 +217,8 @@ def containerize(
     *,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
+    import docker
+
     # TODO: Add extra docker build args
     bento = _bento_store.get(tag)
     if docker_tag is None:

@@ -5,9 +5,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml.pytorch import (
-    _PyTorchRunner as _PyTorchLightningRunner,  # type: ignore[reportPrivateUsage]
-)
+from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage]
 
 from .exceptions import MissingDependencyException
 from ._internal.types import Tag
@@ -67,8 +65,8 @@ def load(
         booster = bentoml.pytorch_lightning.load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa: LN001
-    model_info = model_store.get(tag)
-    weight_file = model_info.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+    bentoml_model = model_store.get(tag)
+    weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
     return model
 

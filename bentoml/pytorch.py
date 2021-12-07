@@ -48,7 +48,6 @@ _ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule"]  # type: ignor
 _torch_version = importlib_metadata.version("torch")
 
 
-
 def _is_gpu_available() -> bool:  # pragma: no cover
     return torch.cuda.is_available()
 
@@ -78,8 +77,8 @@ def load(
         booster = bentoml.pytorch.load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
-    model_info = model_store.get(tag)
-    weight_file = model_info.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+    bentoml_model = model_store.get(tag)
+    weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     # TorchScript Models are saved as zip files
     if zipfile.is_zipfile(weight_file):
         model: "torch.jit.ScriptModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
@@ -237,13 +236,15 @@ class _PyTorchRunner(Runner):
                 device_id=self._device_id,
             )
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
-        self._predict_fn: t.Callable[..., torch.Tensor] = functools.partial(raw_predict_fn, **self._partial_kwargs)
+        self._predict_fn: t.Callable[..., torch.Tensor] = functools.partial(
+            raw_predict_fn, **self._partial_kwargs
+        )
 
     @torch.no_grad()
     def _run_batch(
         self,
         *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
-        **kwargs: t.Any,
+        **kwargs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
     ) -> torch.Tensor:
 
         params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](

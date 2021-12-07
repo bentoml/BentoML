@@ -125,12 +125,25 @@ Build and Deploy Bentos
 
 Once we are happy with the service definition, we can :ref:`build <building-bentos-page>` the model and service into a bento. 
 Bentos are the distribution format of the service that can be deployed and contains all the information required for running 
-the service, from models to the dependencies. By default, the built will automatically infer the dependent PyPI packages by 
-recursive walking through all the modules. Use the `bentoml build` CLI command in the current working directory to build a bento.
+the service, from models to the dependencies.
+
+To build a Bento, first create a `bentofile.yaml` in your project directory:
+
+```yaml
+# bentofile.yaml
+service: "iris_classifier:svc"
+include:
+- "*.py"
+python:
+  packages:
+    - scikit-learn
+```
+
+Next, use the `bentoml build` CLI command in the same directory to build a bento.
 
 .. code-block:: bash
 
-    > bentoml build ./bento.py:svc
+    > bentoml build
     
     [INFO] Building BentoML Service "iris_classifier" with models "iris_clf:yftvuwkbbbi6zcphca6rzl235"
     [INFO] Bento is successfully built and saved to ~/bentoml/bentos/iris_classifier/v5mgcacfgzi6zdz7vtpeqaare

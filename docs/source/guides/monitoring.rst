@@ -37,7 +37,7 @@ Preface
 
 	metrics_client = BentoMLContainer.metircs_client.get()
 
-        REQUEST_TIME = metrics_clint.Summary('request_processing_time', 'Time spend processing request')
+        REQUEST_TIME = metrics_client.Summary('request_processing_time', 'Time spend processing request')
 
         @artifacts([KerasModelArtifact('model'), PickleModel('tokenizer')])
         class TensorflowService(BentoService):

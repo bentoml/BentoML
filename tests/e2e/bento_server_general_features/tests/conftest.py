@@ -27,6 +27,15 @@ def bin_file(tmpdir) -> str:
     return str(bin_file_)
 
 
+def pytest_configure(config):
+    import os
+    import sys
+    import subprocess
+
+    cmd = f"{sys.executable} {os.path.join(os.getcwd(), 'train.py')}"
+    subprocess.run(cmd, shell=True)
+
+
 @pytest.fixture(scope="session")
 def host() -> t.Generator[str, None, None]:
     import bentoml

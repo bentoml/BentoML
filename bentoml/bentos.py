@@ -2,7 +2,7 @@
 User facing python APIs for managing local bentos and build new bentos
 """
 import os
-import json
+import subprocess
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -191,41 +191,28 @@ def containerize(
     *,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
-    import docker
-
-    # TODO: Add extra docker build args
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
-    docker_client = docker.from_env()
-    resp = docker_client.api.build(
-        path=bento.path,
-        dockerfile=os.path.join(bento.path, "env", "docker", "Dockerfile"),
-        nocache=no_cache,
-        tag=docker_image_tag,
-        buildargs=build_args or {},
-        labels=labels or {},
-        quiet=False,
-    )
 
-    console = Console()
-    with console.status("[bold green] Building docker image..."):
-        while True:
-            try:
-                for line in next(resp).decode("utf-8").splitlines():
-                    try:
-                        msg = json.loads(line)
-                        if "stream" in msg:
-                            console.log(msg["stream"].strip("\r\n"))
-                        else:
-                            console.log(msg)
-                    except ValueError:
-                        console.log(line)
-            except StopIteration:
-                break
-            except docker.errors.BuildError as e:
-                logger.error(f"Failed to build container : {e.msg}")
-                raise
+    docker_build_cmd = ["docker", "build", "."]
+    dockerfile_path = os.path.join("env", "docker", "Dockerfile")
+    docker_build_cmd += ["-f", dockerfile_path]
+    docker_build_cmd += ["-t", docker_image_tag]
+
+    if no_cache:
+        docker_build_cmd.append("--no-cache")
+
+    if build_args:
+        for key, value in build_args.items():
+            docker_build_cmd += ["--build-arg", f"{key}={value}"]
+
+    if labels:
+        for key, value in labels.items():
+            docker_build_cmd += ["--label", f"{key}={value}"]
+
+    logger.info(f"Building docker image for {bento}...")
+    return subprocess.check_output(docker_build_cmd, cwd=bento.path)
 
 
 __all__ = [

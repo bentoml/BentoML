@@ -19,11 +19,11 @@ def add_containerize_command(cli):
         callback=validate_tag,
     )
     @click.option(
-        "--build-args", multiple=True, help="pass through docker image build arguments"
+        "--build-arg", multiple=True, help="pass through docker image build arguments"
     )
     @click.option("--no-cache", is_flag=True, default=False)
     @click.option("--label", multiple=True)
-    def containerize(bento_tag, docker_image_tag, build_args, no_cache, label):
+    def containerize(bento_tag, docker_image_tag, build_arg, no_cache, label):
         """Containerize specified Bento.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -47,9 +47,15 @@ def add_containerize_command(cli):
         provided by Docker daemon.
         """
         labels = {}
-        for label_str in label:
-            key, value = label_str.split("=")
-            labels[key] = value
+        if label:
+            for label_str in label:
+                key, value = label_str.split("=")
+                labels[key] = value
+        build_args = {}
+        if build_arg:
+            for build_arg_str in build_arg:
+                key, value = build_arg_str.split("=")
+                build_args[key] = value
 
         return containerize_bento(
             bento_tag,

@@ -1,15 +1,18 @@
-import datetime
 import os
 import typing as t
-from abc import ABC, abstractmethod
+import datetime
+from abc import ABC
+from abc import abstractmethod
 from contextlib import contextmanager
 
 import fs
 import fs.errors
 from fs.base import FS
 
-from ..exceptions import BentoMLException, NotFound
-from .types import PathType, Tag
+from .types import Tag
+from .types import PathType
+from ..exceptions import NotFound
+from ..exceptions import BentoMLException
 
 T = t.TypeVar("T")
 
@@ -18,17 +21,17 @@ class StoreItem(ABC):
     @property
     @abstractmethod
     def tag(self) -> Tag:
-        ...
+        raise NotImplementedError
 
     @classmethod
     @abstractmethod
     def from_fs(cls: t.Type[T], item_fs: FS) -> T:
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def creation_time(self) -> datetime.datetime:
-        pass
+        raise NotImplementedError
 
     def __repr__(self):
         return f'{self.__class__.__name__}(tag="{self.tag}")'
@@ -63,6 +66,11 @@ class Store(ABC, t.Generic[Item]):
 
         _tag = Tag.from_taglike(tag)
         if _tag.version is None:
+            if not self._fs.isdir(_tag.name):
+                raise NotFound(
+                    f"no {self._item_type.__name__}s with name '{_tag.name}' found"
+                )
+
             tags = sorted(
                 [
                     Tag(_tag.name, f.name)
@@ -103,7 +111,7 @@ class Store(ABC, t.Generic[Item]):
         counts = matches.count().directories
         if counts == 0:
             raise NotFound(
-                f"{self._item_type.__name__} '{tag}' is not found in BentoML store {self._fs}."
+                f"{self._item_type.__name__} '{tag}' is not found in BentoML store {self._fs}"
             )
         elif counts == 1:
             match = next(iter(matches))
@@ -130,11 +138,18 @@ class Store(ABC, t.Generic[Item]):
             yield self._fs.getsyspath(item_path)
         finally:
             # item generation is most likely successful, link latest path
-            with self._fs.open(_tag.latest_path(), "w") as latest_file:
-                latest_file.write(_tag.version)
+            if (
+                not self._fs.exists(_tag.latest_path())
+                or self.get(_tag).creation_time > self.get(_tag.name).creation_time
+            ):
+                with self._fs.open(_tag.latest_path(), "w") as latest_file:
+                    latest_file.write(_tag.version)
 
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)
+
+        if not self._fs.exists(_tag.path()):
+            raise NotFound(f"{self._item_type.__name__} '{tag}' not found")
 
         self._fs.removetree(_tag.path())
         if self._fs.isdir(_tag.name):
@@ -143,6 +158,7 @@ class Store(ABC, t.Generic[Item]):
                 # if we've removed all versions, remove the directory
                 self._fs.removetree(_tag.name)
             else:
-                new_latest = sorted(versions, key=lambda x: x.creation_time)[0]
+                new_latest = sorted(versions, key=lambda x: x.creation_time)[-1]
                 # otherwise, update the latest version
-                self._fs.writetext(_tag.latest_path(), new_latest.tag.name)
+                assert new_latest.tag.version is not None
+                self._fs.writetext(_tag.latest_path(), new_latest.tag.version)

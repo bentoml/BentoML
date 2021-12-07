@@ -1,20 +1,22 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-import catboost as cbt
 import numpy as np
 import psutil
 import pytest
-from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
+import catboost as cbt
+from catboost.core import CatBoost
+from catboost.core import CatBoostRegressor
+from catboost.core import CatBoostClassifier
 
 import bentoml.catboost
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.sklearn_utils import test_df
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import test_df
 
 if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
     from bentoml._internal.store import Tag
+    from bentoml._internal.models import ModelStore
 
 
 def create_catboost_model() -> cbt.core.CatBoostClassifier:

@@ -29,4 +29,4 @@ EXPOSE 5000
 USER bentoml
 RUN chmod +x ./env/docker/entrypoint.sh
 ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
-CMD ["bentoml", "serve", "."]  # TODO: add --production flag
+CMD ["bentoml", "serve", ".", "--production"]

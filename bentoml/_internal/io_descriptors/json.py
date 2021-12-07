@@ -1,19 +1,21 @@
-import dataclasses
 import json
 import typing as t
+import dataclasses
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BadInput, MissingDependencyException
+from .base import JSONType
+from .base import IODescriptor
+from ...exceptions import BadInput
+from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
-from .base import IODescriptor, JSONType
 
 if TYPE_CHECKING:
     import numpy as np
-    from pandas.core.frame import DataFrame
     from pydantic import BaseModel
+    from pandas.core.frame import DataFrame  # noqa: F401
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
 

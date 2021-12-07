@@ -1,11 +1,13 @@
-import logging
 import os
 import sys
-import tempfile
 import time
+import shutil
 import typing as t
+import logging
+import tempfile
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
 from bentoml import load
 
@@ -25,23 +27,23 @@ def serve_development(
     reload_delay: float = 0.25,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir)
 
-    from circus.arbiter import Arbiter
-    from circus.util import DEFAULT_ENDPOINT_DEALER, DEFAULT_ENDPOINT_SUB
-    from circus.watcher import Watcher
+    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
+    from circus.util import DEFAULT_ENDPOINT_DEALER
+    from circus.arbiter import Arbiter  # type: ignore
+    from circus.watcher import Watcher  # type: ignore
 
     env = dict(os.environ)
 
-    watchers = []
-    for _, runner in svc._runners.items():
-        runner._setup()
-
+    watchers: t.List[Watcher] = []
     if with_ngrok:
+        cmd_ngrok = """
+import bentoml._internal.server
+bentoml._internal.server.start_ngrok_server()"""
         watchers.append(
             Watcher(
                 name="ngrok",
-                cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_ngrok_server()"',
+                cmd=f"{sys.executable} -c '{cmd_ngrok}'",
                 env=env,
                 numprocesses=1,
                 stop_children=True,
@@ -49,11 +51,20 @@ def serve_development(
             )
         )
 
-    dev_server_cmd = f'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_identifier}", {port}, working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))'
+    cmd_api_server = f"""
+import bentoml._internal.server
+bentoml._internal.server.start_dev_api_server(
+    "{bento_identifier}",
+    {port},
+    working_dir="{working_dir}",
+    reload={reload},
+    reload_delay={reload_delay},
+    instance_id=$(CIRCUS.WID),
+)"""
     watchers.append(
         Watcher(
-            name="ngrok",
-            cmd=f"{sys.executable} -c '{dev_server_cmd}'",
+            name="api_server",
+            cmd=f"{sys.executable} -c '{cmd_api_server}'",
             env=env,
             numprocesses=1,
             stop_children=True,
@@ -70,68 +81,84 @@ def serve_development(
     arbiter.start()
 
 
-def _start_ngrok_server() -> None:
+def start_ngrok_server() -> None:
     from bentoml._internal.utils.flask_ngrok import start_ngrok
 
     time.sleep(1)
     start_ngrok(BentoServerContainer.config.port.get())
 
 
+MAX_AF_UNIX_PATH_LENGTH = 103
+
+
 @inject
 def serve_production(
-    bento_path_or_tag: str,
+    bento_identifier: str,
     working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
     app_workers: t.Optional[int] = None,
-    runner_workers: t.Optional[int] = None,
 ) -> None:
-    return serve_development(
-        bento_path_or_tag, working_dir, port=port
-    )  # TODO(jiang): remove me # noqa: F811
-
-    svc = load(bento_path_or_tag, working_dir=working_dir)
-
+    svc = load(bento_identifier, working_dir=working_dir)
     env = dict(os.environ)
 
     import json
 
-    from circus.arbiter import Arbiter
-    from circus.sockets import CircusSocket
-    from circus.util import DEFAULT_ENDPOINT_DEALER, DEFAULT_ENDPOINT_SUB
-    from circus.watcher import Watcher
+    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
+    from circus.util import DEFAULT_ENDPOINT_DEALER
+    from circus.arbiter import Arbiter  # type: ignore
+    from circus.sockets import CircusSocket  # type: ignore
+    from circus.watcher import Watcher  # type: ignore
 
     uds_path = tempfile.mkdtemp()
+    watchers: t.List[Watcher] = []
+    sockets_map: t.Dict[str, CircusSocket] = {}
 
-    watchers = []
-    sockets_map = {}
-
-    for runner_name, runner in svc._runners.items():
-        uds_name = f"runner_{runner_name}"
+    for runner_name, runner in svc.runners.items():
+        sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
+        assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
         sockets_map[runner_name] = CircusSocket(
-            name=uds_name, path=os.path.join(uds_path, f"{uds_name}.sock")
+            name=runner_name,
+            path=sockets_path,
+            umask=0,
         )
-
+        cmd_runner = f"""import bentoml._internal.server
+bentoml._internal.server.start_prod_runner_server(
+    "{bento_identifier}",
+    "{runner_name}",
+    working_dir="{working_dir}",
+    instance_id=$(CIRCUS.WID),
+    fd=$(circus.sockets.{runner_name}),
+)"""
         watchers.append(
             Watcher(
                 name=f"runner_{runner_name}",
-                cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_runner_server({bento_path_or_tag}, {runner_name}, instance_id=$(CIRCUS.WID), fd=$(circus.sockets.{uds_name}))"',
+                cmd=f"{sys.executable} -c '{cmd_runner}'",
                 env=env,
                 numprocesses=runner.num_replica,
                 stop_children=True,
+                use_sockets=True,
             )
         )
 
-    cmd_runner_arg = json.dumps(
-        {k: f"$(circus.sockets.{v.name})" for k, v in sockets_map.items()}
-    )
+    cmd_runner_arg = json.dumps({k: f"{v.path}" for k, v in sockets_map.items()})
+    cmd_api_server = f"""
+import bentoml._internal.server
+bentoml._internal.server.start_prod_api_server(
+    "{bento_identifier}",
+    port={port},
+    working_dir="{working_dir}",
+    instance_id=$(CIRCUS.WID),
+    runner_map={cmd_runner_arg},
+)"""
     watchers.append(
         Watcher(
             name="api_server",
-            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_api_server({bento_path_or_tag}, instance_id=$(CIRCUS.WID), runner_fd_map={cmd_runner_arg})"',
+            cmd=f"{sys.executable} -c '{cmd_api_server}'",
             env=env,
-            numprocesses=1,
+            numprocesses=app_workers or 1,
             stop_children=True,
+            use_sockets=True,
         )
     )
 
@@ -142,21 +169,25 @@ def serve_production(
         sockets=[s for s in sockets_map.values()],
     )
 
-    arbiter.start()
+    try:
+        arbiter.start()
+    finally:
+
+        shutil.rmtree(uds_path)
 
 
-def _start_dev_api_server(
-    bento_path_or_tag: str,
+def start_dev_api_server(
+    bento_identifier: str,
     port: int,
-    working_dir: str = None,
+    working_dir: t.Optional[str] = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
     instance_id: t.Optional[int] = None,
 ):
-    import uvicorn
+    import uvicorn  # type: ignore
 
     log_level = "debug" if get_debug_mode() else "info"
-    svc = load(bento_path_or_tag, working_dir=working_dir)
+    svc = load(bento_identifier, working_dir=working_dir)
     uvicorn_options = {
         "port": port,
         "log_level": log_level,
@@ -174,24 +205,44 @@ def _start_dev_api_server(
         uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
 
-"""
-def _start_prod_api_server(bento_path_or_tag: str, instance_id: int, runners_map: str):
-    import uvicorn
-
-    svc = load(bento_path_or_tag)
-
-    uvicorn.run(svc.asgi_app, log_level="info")
-
-
-def _start_prod_runner_server(
-    bento_path_or_tag: str, name: str, instance_id: int, fd: int
+def start_prod_api_server(
+    bento_identifier: str,
+    port: int,
+    runner_map: t.Dict[str, str],
+    working_dir: t.Optional[str] = None,
+    reload: bool = False,
+    reload_delay: t.Optional[float] = None,
+    instance_id: t.Optional[int] = None,
 ):
-    import uvicorn
+    import uvicorn  # type: ignore
 
-    from bentoml._internal.server.runner_app import RunnerApp
+    log_level = "info"
+    BentoServerContainer.remote_runner_mapping.set(runner_map)
+    svc = load(bento_identifier, working_dir=working_dir)
+    uvicorn_options = {
+        "host": "0.0.0.0",
+        "port": port,
+        "log_level": log_level,
+        "reload": reload,
+        "reload_delay": reload_delay,
+    }
 
-    svc = load(bento_path_or_tag)
-    runner = svc._runners.get(name)
+    uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
-    uvicorn.run(RunnerApp(runner), fd=fd, log_level="info")
-"""
+
+def start_prod_runner_server(
+    bento_identifier: str,
+    name: str,
+    fd: int,
+    working_dir: t.Optional[str] = None,
+    instance_id: t.Optional[int] = None,
+):
+    import uvicorn  # type: ignore
+
+    from bentoml._internal.server.runner_app import RunnerAppFactory
+
+    svc = load(bento_identifier, working_dir=working_dir)
+    runner = svc.runners[name]
+    app = RunnerAppFactory(runner, instance_id=instance_id)()
+
+    uvicorn.run(app, fd=fd, log_level="info")  # type: ignore

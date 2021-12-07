@@ -1,25 +1,26 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-from multipart.multipart import parse_options_header
 from starlette.requests import Request
+from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from ...exceptions import BentoMLException, InvalidArgument
-from ..utils.formparser import (
-    concat_to_multipart_responses,
-    populate_multipart_requests,
-)
-from .base import IODescriptor, IOType
+from .base import IOType
+from .base import IODescriptor
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
+from ..utils.formparser import populate_multipart_requests
+from ..utils.formparser import concat_to_multipart_responses
 
 if TYPE_CHECKING:
     # noqa: F811
     from .file import File
-    from .image import Image
     from .json import JSON
-    from .numpy import NumpyNdarray
-    from .pandas import PandasDataFrame, PandasSeries
     from .text import Text
+    from .image import Image
+    from .numpy import NumpyNdarray
+    from .pandas import PandasSeries
+    from .pandas import PandasDataFrame
 
 
 MultipartIO = t.Dict[str, IOType]

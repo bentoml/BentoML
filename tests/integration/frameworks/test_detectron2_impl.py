@@ -2,13 +2,13 @@ import sys
 import typing as t
 from typing import TYPE_CHECKING
 
-import imageio
 import numpy as np
-import pytest
 import torch
+import pytest
+import imageio
 from detectron2 import model_zoo
-from detectron2.config import get_cfg
 from detectron2.data import transforms as T
+from detectron2.config import get_cfg
 from detectron2.modeling import build_model
 
 import bentoml.detectron
@@ -16,8 +16,8 @@ import bentoml.detectron
 if TYPE_CHECKING:
     from detectron2.config import CfgNode
 
-    from bentoml._internal.models import ModelStore
     from bentoml._internal.types import Tag
+    from bentoml._internal.models import ModelStore
 
 
 if sys.version_info >= (3, 8):

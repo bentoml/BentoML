@@ -3,24 +3,31 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PTH_EXT, SAVE_NAMESPACE, YAML_EXT, Model
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.models import PTH_EXT
+from ._internal.models import YAML_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
-from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.models import ModelStore
 try:
-    # pylint: disable=unused-import
-    import detectron2.checkpoint as checkpoint
+    # pylint: disable=unused-import;
+    import torch
+    import detectron2  # noqa F401
     import detectron2.config as config
     import detectron2.modeling as modeling
-    import torch
+    import detectron2.checkpoint as checkpoint
     from detectron2.checkpoint import DetectionCheckpointer
+
 
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(

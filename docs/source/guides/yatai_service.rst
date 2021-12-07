@@ -1,5 +1,12 @@
+.. _yatai-service-page:
+
 Deploy Yatai server behind NGINX
 ================================
+
+.. todo::
+
+    Update with the latest Yatai documentation
+
 
 The control service of yatai server is currently using insecure gRPC,
 which is actually a HTTP/2 Cleartext (H2C) service. Normally:

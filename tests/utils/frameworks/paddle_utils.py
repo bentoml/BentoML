@@ -1,6 +1,6 @@
 import paddle
-import paddle.nn as nn
 import pandas as pd
+import paddle.nn as nn
 from paddle.static import InputSpec
 
 IN_FEATURES = 13

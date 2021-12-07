@@ -1,8 +1,25 @@
 import sys
+import json
+import typing as t
 
+import yaml
 import click
+from simple_di import inject
+from simple_di import Provide
+from rich.table import Table
+from rich.console import Console
 
-from .click_utils import _is_valid_bento_name, _is_valid_bento_tag
+from bentoml.bentos import build_bentofile
+
+from ..utils import calc_dir_size
+from ..utils import human_readable_size
+from .click_utils import _is_valid_bento_tag
+from .click_utils import _is_valid_bento_name
+from ..yatai_client import yatai_client
+from ..configuration.containers import BentoMLContainer
+
+if t.TYPE_CHECKING:
+    from bentoml._internal.bento import BentoStore
 
 
 def parse_delete_targets_argument_callback(
@@ -25,7 +42,11 @@ def parse_delete_targets_argument_callback(
     return delete_targets
 
 
-def add_bento_management_commands(cli):
+@inject
+def add_bento_management_commands(
+    cli,
+    bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+):
     @cli.command(help="Get Bento information")
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
@@ -64,7 +85,42 @@ def add_bento_management_commands(cli):
         # show all verions of bento with the name FraudDetector
         > bentoml list FraudDetector
         """
-        pass
+        bentos = bento_store.list(bento_name)
+        res = [
+            {
+                "tag": str(bento.tag),
+                "service": bento.info.service,
+                "path": bento.path,
+                "size": human_readable_size(calc_dir_size(bento.path)),
+                "creation_time": bento.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for bento in sorted(
+                bentos, key=lambda x: x.info.creation_time, reverse=True
+            )
+        ]
+        if output == "json":
+            info = json.dumps(res, indent=2)
+            print(info)
+        elif output == "yaml":
+            info = yaml.safe_dump(res, indent=2)
+            print(info)
+        else:
+            table = Table(box=None)
+            table.add_column("Tag")
+            table.add_column("Service")
+            table.add_column("Path")
+            table.add_column("Size")
+            table.add_column("Creation Time")
+            for bento in res:
+                table.add_row(
+                    bento["tag"],
+                    bento["service"],
+                    bento["path"],
+                    bento["size"],
+                    bento["creation_time"],
+                )
+            console = Console()
+            console.print(table)
 
     @cli.command()
     @click.argument(
@@ -122,19 +178,38 @@ def add_bento_management_commands(cli):
     @cli.command(
         help="Pull Bento from a yatai server",
     )
-    @click.argument("bento", type=click.STRING)
+    @click.argument("bento_tag", type=click.STRING)
     @click.option(
-        "--yatai",
-        help='Yatai URL or name (when previous configured). Example: "--yatai=http://localhost:50050"',
+        "-f",
+        "--force",
+        is_flag=True,
+        default=False,
+        help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    def pull(bento, yatai):
-        pass
+    def pull(bento_tag: str, force: bool):
+        yatai_client.pull_bento(bento_tag, force=force)
 
     @cli.command(help="Push Bento to a yatai server")
-    @click.argument("bento", type=click.STRING)
+    @click.argument("bento_tag", type=click.STRING)
     @click.option(
-        "--yatai",
-        help='Yatai URL or name (when previous configured). Example: "--yatai=http://localhost:50050"',
+        "-f",
+        "--force",
+        is_flag=True,
+        default=False,
+        help="Forced push to yatai even if it exists in yatai",
     )
-    def push(bento, yatai):
-        pass
+    def push(bento_tag: str, force: bool):
+        bento_obj = bento_store.get(bento_tag)
+        if not bento_obj:
+            raise click.ClickException(f"Bento {bento_tag} not found in local store")
+        yatai_client.push_bento(bento_obj, force=force)
+
+    @cli.command(help="Build a new Bento from current directory")
+    @click.argument("build_ctx", type=click.Path(), default=".")
+    @click.option("-f", "--bentofile", type=click.STRING, default="bentofile.yaml")
+    @click.option("--version", type=click.STRING, default=None)
+    def build(build_ctx, bentofile, version):
+        if sys.path[0] != build_ctx:
+            sys.path.insert(0, build_ctx)
+
+        build_bentofile(bentofile, build_ctx=build_ctx, version=version)

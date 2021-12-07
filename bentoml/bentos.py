@@ -2,9 +2,9 @@
 User facing python APIs for managing local bentos and build new bentos
 """
 import os
-import subprocess
 import typing as t
 import logging
+import subprocess
 from typing import TYPE_CHECKING
 
 import fs

@@ -98,6 +98,8 @@ def serve_production(
     port: int = Provide[BentoServerContainer.config.port],
     app_workers: t.Optional[int] = None,
 ) -> None:
+    working_dir = os.path.realpath(os.path.expanduser(working_dir))
+
     svc = load(bento_identifier, working_dir=working_dir)
     env = dict(os.environ)
 
@@ -116,19 +118,19 @@ def serve_production(
     for runner_name, runner in svc.runners.items():
         sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
         assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
-
-        sockets_map[runner_name] = CircusSocket(
+        runner_socket = CircusSocket(
             name=runner_name,
             path=sockets_path,
             umask=0,
         )
+        sockets_map[runner_name] = runner_socket
         cmd_runner = f"""import bentoml._internal.server
 bentoml._internal.server.start_prod_runner_server(
     "{bento_identifier}",
     "{runner_name}",
     working_dir="{working_dir}",
     instance_id=$(CIRCUS.WID),
-    fd=$(circus.sockets.{runner_name}),
+    fd={runner_socket.fileno()},
 )"""
         watchers.append(
             Watcher(
@@ -138,8 +140,10 @@ bentoml._internal.server.start_prod_runner_server(
                 numprocesses=runner.num_replica,
                 stop_children=True,
                 use_sockets=True,
+                working_dir=working_dir,
             )
         )
+    logger.debug("Runner sockets_map: %s", sockets_map)
 
     cmd_runner_arg = json.dumps({k: f"{v.path}" for k, v in sockets_map.items()})
     cmd_api_server = f"""
@@ -159,6 +163,7 @@ bentoml._internal.server.start_prod_api_server(
             numprocesses=app_workers or 1,
             stop_children=True,
             use_sockets=True,
+            working_dir=working_dir,
         )
     )
 

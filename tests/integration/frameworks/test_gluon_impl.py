@@ -2,7 +2,7 @@ import mxnet
 import pytest
 from mxnet import gluon
 
-import bentoml.gluon
+import bentoml
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

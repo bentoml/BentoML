@@ -4,7 +4,7 @@ import pytest
 import paddle.nn as nn
 from paddle.static import InputSpec
 
-import bentoml.paddle
+import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.paddle_utils import test_df
 from tests.utils.frameworks.paddle_utils import IN_FEATURES

@@ -3,7 +3,7 @@ import psutil
 import pytest
 import paddle.inference
 
-import bentoml.paddle
+import bentoml
 
 from .test_paddle_impl import test_df  # noqa: F401
 

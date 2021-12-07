@@ -5,8 +5,8 @@ import psutil
 import pytest
 import lightgbm as lgb
 
+import bentoml
 import bentoml.models
-import bentoml.lightgbm
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 

@@ -7,7 +7,7 @@ import pytest
 import h2o.model
 import h2o.automl
 
-import bentoml.h2o
+import bentoml
 
 H2O_PORT = 54323
 

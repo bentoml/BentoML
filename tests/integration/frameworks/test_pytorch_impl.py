@@ -7,7 +7,7 @@ import psutil
 import pytest
 import torch.nn as nn
 
-import bentoml.pytorch
+import bentoml
 from bentoml.pytorch import PytorchTensorContainer
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.pytorch_utils import test_df

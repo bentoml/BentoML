@@ -10,8 +10,8 @@ from pycaret.classification import create_model
 from pycaret.classification import predict_model
 from pycaret.classification import finalize_model
 
+import bentoml
 import bentoml.models
-import bentoml.pycaret
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 

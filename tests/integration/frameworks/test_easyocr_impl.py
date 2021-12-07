@@ -5,7 +5,7 @@ import pytest
 import easyocr
 import imageio
 
-import bentoml.easyocr
+import bentoml
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models import Model

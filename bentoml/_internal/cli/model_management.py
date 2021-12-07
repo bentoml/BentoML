@@ -46,7 +46,7 @@ def add_model_management_commands(
     cli,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
-    @cli.group(name="model")
+    @cli.group(name="models")
     def model_cli():
         """Model Management"""
 

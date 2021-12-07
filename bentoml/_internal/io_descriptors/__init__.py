@@ -8,8 +8,6 @@ from .pandas import PandasSeries
 from .pandas import PandasDataFrame
 from .multipart import Multipart
 
-# TODO: add IO descriptors for audio and video files
-
 __all__ = [
     "File",
     "Image",

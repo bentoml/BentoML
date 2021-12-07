@@ -9,13 +9,14 @@ from simple_di import Provide
 from rich.table import Table
 from rich.console import Console
 
-from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml.bentos import build_bentofile
 
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
 from .click_utils import _is_valid_bento_tag
 from .click_utils import _is_valid_bento_name
 from ..yatai_client import yatai_client
+from ..configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from bentoml._internal.bento import BentoStore
@@ -202,3 +203,13 @@ def add_bento_management_commands(
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
         yatai_client.push_bento(bento_obj, force=force)
+
+    @cli.command(help="Build a new Bento from current directory")
+    @click.argument("build_ctx", type=click.Path(), default=".")
+    @click.option("-f", "--bentofile", type=click.STRING, default="bentofile.yaml")
+    @click.option("--version", type=click.STRING, default=None)
+    def build(build_ctx, bentofile, version):
+        if sys.path[0] != build_ctx:
+            sys.path.insert(0, build_ctx)
+
+        build_bentofile(bentofile, build_ctx=build_ctx, version=version)

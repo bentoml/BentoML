@@ -13,12 +13,12 @@ if TYPE_CHECKING:
     import tensorflow as tf
     from tensorflow.python.eager.function import ConcreteFunction
     from tensorflow.python.framework.type_spec import TypeSpec
-    from tensorflow.python.saved_model.function_deserialization import RestoredFunction
+    from tensorflow.python.training.tracking.base import Trackable
+    from tensorflow.python.training.tracking.tracking import AutoTrackable
     from tensorflow.python.saved_model.signature_serialization import (
         _SignatureMap,  # type: ignore[reportPrivateUsage]
     )
-    from tensorflow.python.training.tracking.base import Trackable
-    from tensorflow.python.training.tracking.tracking import AutoTrackable
+    from tensorflow.python.saved_model.function_deserialization import RestoredFunction
 else:
     tf = LazyLoader(
         "tf",

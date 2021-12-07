@@ -25,6 +25,7 @@ from ..models import ModelStore
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
+from .build_config import _copy_file_to_fs_folder
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
@@ -215,11 +216,18 @@ class Bento(StoreItem):
             build_config.conda.write_to_bento(bento_fs, build_ctx)
 
         # Create `readme.md` file
-        with bento_fs.open(BENTO_README_FILENAME, "w") as f:
-            if build_config.description is None:
+        if build_config.description is None:
+            with bento_fs.open(BENTO_README_FILENAME, "w") as f:
                 f.write(_get_default_bento_readme(svc))
+        else:
+            if build_config.description.startswith("file:"):
+                file_name = build_config.description[5:].strip()
+                _copy_file_to_fs_folder(
+                    file_name, bento_fs, dst_filename=BENTO_README_FILENAME
+                )
             else:
-                f.write(build_config.description)
+                with bento_fs.open(BENTO_README_FILENAME, "w") as f:
+                    f.write(build_config.description)
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")

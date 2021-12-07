@@ -1,5 +1,3 @@
-import functools
-import logging
 import os
 import re
 import uuid
@@ -10,7 +8,6 @@ import functools
 from typing import TYPE_CHECKING
 from distutils.dir_util import copy_tree
 
-import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
@@ -456,7 +453,7 @@ class _TensorflowRunner(Runner):
         *args: t.Union[
             t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
         ],
-        **kwargs:t.Union[
+        **kwargs: t.Union[
             t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
         ],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":

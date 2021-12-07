@@ -33,7 +33,7 @@ Preface
 
     .. code-block:: python
 
-        from bentoml.configuratoin.containers import BentoMLContainer
+        from bentoml.configuration.containers import BentoMLContainerClass
 
 	metrics_client = BentoMLContainer.metircs_client.get()
 

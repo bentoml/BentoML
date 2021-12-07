@@ -152,11 +152,11 @@ class _SklearnRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        return 1
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        return int(round(self.resource_quota.cpu))
+        return 1
 
     @property
     def required_models(self) -> t.List[Tag]:

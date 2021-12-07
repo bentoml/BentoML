@@ -90,8 +90,8 @@ def test_sklearn_runner_setup_run_batch(modelstore: "ModelStore") -> None:
     runner = bentoml.sklearn.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == 1
-    assert runner.num_replica == psutil.cpu_count()
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
 
     res = runner.run_batch(data)
     assert (res == res_arr).all()

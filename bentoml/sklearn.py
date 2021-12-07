@@ -17,6 +17,8 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
+    from sklearn.base import BaseEstimator
+    from sklearn.pipeline import Pipeline
     from pandas.core.frame import DataFrame
 
     from ._internal.models import ModelStore
@@ -65,7 +67,7 @@ def _get_model_info(
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Any:
+) -> t.Union["BaseEstimator", "Pipeline"]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -90,7 +92,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: t.Union["BaseEstimator", "Pipeline"],
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

@@ -227,7 +227,7 @@ def load(
         assert all(
             i is not None for i in [hub, resolve, native_module]
         ), MissingDependencyException(
-            "`tensorflow_hub is required to load a tfhub module."
+            "`tensorflow_hub` is required to load a tfhub module."
         )
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
@@ -456,7 +456,9 @@ class _TensorflowRunner(Runner):
         *args: t.Union[
             t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
         ],
-        **kwargs: t.Any,
+        **kwargs:t.Union[
+            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
+        ],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         params = Params[
             t.Union[

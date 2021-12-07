@@ -183,6 +183,9 @@ async def test_image(host, img_file):
     )
 
 
+# SklearnRunner is not suppose to take multiple arguments
+# TODO: move e2e tests to use a new bentoml.PickleModel module
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_multipart_image_io(host, img_file):
     import PIL.Image

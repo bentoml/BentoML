@@ -2,7 +2,7 @@ import typing as t
 import importlib.util
 from typing import TYPE_CHECKING
 
-from ...exceptions import MissingDependencyException
+from .lazy_loader import LazyLoader
 
 try:
     import importlib.metadata as importlib_metadata
@@ -10,7 +10,22 @@ except ImportError:
     import importlib_metadata
 
 if TYPE_CHECKING:
+    import tensorflow as tf
+    from tensorflow.python.eager.function import ConcreteFunction
     from tensorflow.python.framework.type_spec import TypeSpec
+    from tensorflow.python.saved_model.function_deserialization import RestoredFunction
+    from tensorflow.python.saved_model.signature_serialization import (
+        _SignatureMap,  # type: ignore[reportPrivateUsage]
+    )
+    from tensorflow.python.training.tracking.base import Trackable
+    from tensorflow.python.training.tracking.tracking import AutoTrackable
+else:
+    tf = LazyLoader(
+        "tf",
+        globals(),
+        "tensorflow",
+        exc_msg=f"tensorflow is required to use {__name__}",
+    )
 
 TF_KERAS_DEFAULT_FUNCTIONS = {
     "_default_save_signature",
@@ -24,8 +39,6 @@ TENSOR_CLASS_NAMES = (
     "EagerTensor",
     "Tensor",
 )
-
-ST = t.TypeVar("ST")
 
 
 def get_tf_version() -> str:
@@ -55,7 +68,9 @@ def get_tf_version() -> str:
     return _tf_version
 
 
-def _isinstance_wrapper(obj: ST, sobj: t.Union[str, type, t.Sequence]) -> bool:
+def _isinstance_wrapper(
+    obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]
+) -> bool:
     """
     `isinstance` wrapper to check tensor spec
 
@@ -77,12 +92,10 @@ def _isinstance_wrapper(obj: ST, sobj: t.Union[str, type, t.Sequence]) -> bool:
     return isinstance(obj, sobj)
 
 
-def normalize_spec(value: ST) -> "TypeSpec":
+def normalize_spec(value: t.Any) -> "TypeSpec":
     """normalize tensor spec"""
     if not _isinstance_wrapper(value, TENSOR_CLASS_NAMES):
         return value
-
-    import tensorflow as tf
 
     if _isinstance_wrapper(value, "RaggedTensor"):
         return tf.RaggedTensorSpec.from_value(value)
@@ -95,7 +108,9 @@ def normalize_spec(value: ST) -> "TypeSpec":
     return value
 
 
-def get_input_signatures(func):
+def get_input_signatures(
+    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
+) -> t.Tuple[t.Any, ...]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         if func.function_spec.input_signature:
             return ((func.function_spec.input_signature, {}),)
@@ -122,7 +137,9 @@ def get_input_signatures(func):
     return tuple()
 
 
-def get_arg_names(func):
+def get_arg_names(
+    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
+) -> t.Tuple[t.Any, ...]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         return func.function_spec.arg_names
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
@@ -130,7 +147,9 @@ def get_arg_names(func):
     return tuple()
 
 
-def get_output_signature(func):
+def get_output_signature(
+    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
+) -> t.Tuple[t.Any, ...]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
         return get_output_signature(func.concrete_functions[0])
@@ -148,7 +167,7 @@ def get_output_signature(func):
     return tuple()
 
 
-def get_restored_functions(m):
+def get_restored_functions(m: "Trackable") -> t.Dict[str, t.Any]:
     function_map = {k: getattr(m, k, None) for k in dir(m)}
     return {
         k: v
@@ -157,28 +176,19 @@ def get_restored_functions(m):
     }
 
 
-def get_serving_default_function(m):
-    try:
-        import tensorflow as tf
-    except ImportError:
-        raise MissingDependencyException(
-            "Tensorflow package is required to use TfSavedModelArtifact"
-        )
-
-    return m.signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
+def get_serving_default_function(
+    m: "Trackable",
+) -> t.Callable[..., t.Any]:
+    if not hasattr(m, "signatures"):
+        raise EnvironmentError(f"{type(m)} is not a valid SavedModel format.")
+    signatures: "_SignatureMap" = m.signatures
+    return signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
 
 
-def cast_tensor_by_spec(_input, spec):
+def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tensor":
     """
     transform dtype & shape following spec
     """
-    try:
-        import tensorflow as tf
-    except ImportError:
-        raise MissingDependencyException(
-            "Tensorflow package is required to use TfSavedModelArtifact"
-        )
-
     if not _isinstance_wrapper(spec, "TensorSpec"):
         return _input
 
@@ -190,7 +200,7 @@ def cast_tensor_by_spec(_input, spec):
         return tf.constant(_input, dtype=spec.dtype, name=spec.name)
 
 
-def _pretty_format_function_call(base, name, arg_names):
+def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]):
     if arg_names:
         part_sigs = ", ".join(f"{k}" for k in arg_names)
     else:
@@ -201,25 +211,27 @@ def _pretty_format_function_call(base, name, arg_names):
     return f"{base}.{name}({part_sigs})"
 
 
-def _pretty_format_positional(positional):
+def _pretty_format_positional(positional: t.List[t.Any]) -> str:
     return f'Positional arguments ({len(positional)} total):\n    * \n{"    * ".join(str(a) for a in positional)}'  # noqa
 
 
-def pretty_format_function(function, obj="<object>", name="<function>"):
+def pretty_format_function(
+    function: t.Callable[..., t.Any], obj: str = "<object>", name: str = "<function>"
+) -> str:
     ret = ""
     outs = get_output_signature(function)
     sigs = get_input_signatures(function)
     arg_names = get_arg_names(function)
 
     if hasattr(function, "function_spec"):
-        arg_names = function.function_spec.arg_names
+        arg_names = getattr(function, "function_spec").arg_names
     else:
-        arg_names = function._arg_keywords
+        arg_names = function._arg_keywords  # type: ignore[reportFunctionMemberAccess]
 
     ret += _pretty_format_function_call(obj, name, arg_names)
     ret += "\n------------\n"
 
-    signature_descriptions = []
+    signature_descriptions = []  # type: t.List[str]
 
     for index, sig in enumerate(sigs):
         positional, keyword = sig
@@ -234,7 +246,7 @@ def pretty_format_function(function, obj="<object>", name="<function>"):
     return ret
 
 
-def pretty_format_restored_model(model):
+def pretty_format_restored_model(model: "AutoTrackable") -> str:
     part_functions = ""
 
     restored_functions = get_restored_functions(model)

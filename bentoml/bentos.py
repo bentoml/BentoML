@@ -1,8 +1,8 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
-import json
 import os
+import json
 import typing as t
 import logging
 from typing import TYPE_CHECKING

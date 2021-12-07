@@ -32,7 +32,6 @@ If models are already saved to file, they can also be brought to BentoML with th
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
-    import bentoml.sklearn
     bentoml.sklearn.save("iris_clf", clf)
     # [INFO] Scikit-learn model 'iris_clf:yftvuwkbbbi6zcphca6rzl235' is successfully saved to BentoML local model store under "~/bentoml/models/iris_clf/yftvuwkbbbi6zcphca6rzl235"
 

@@ -199,6 +199,7 @@ def save(
 
 class _DetectronRunner(Runner):
     @inject
+    # TODO add partial_kwargs @larme
     def __init__(
         self,
         tag: t.Union[str, Tag],
@@ -238,10 +239,9 @@ class _DetectronRunner(Runner):
     def _run_batch(
         self,
         *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
-        **kwargs: t.Any,
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](
-            *args, **kwargs
+            *args
         )
 
         def _mapping(
@@ -255,7 +255,7 @@ class _DetectronRunner(Runner):
 
         inputs = [{"image": image} for image in params.args]
 
-        res = self._predict_fn(inputs, **params.kwargs)
+        res = self._predict_fn(inputs)
         return np.asarray(res, dtype=object)
 
 

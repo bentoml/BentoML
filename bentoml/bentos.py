@@ -1,6 +1,7 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
+import os
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -8,6 +9,8 @@ from typing import TYPE_CHECKING
 import fs
 from simple_di import inject
 from simple_di import Provide
+
+import docker
 
 from .exceptions import InvalidArgument
 from ._internal.bento import Bento
@@ -139,7 +142,7 @@ def build(
 
 
 @inject
-def build_from_bentofile_yaml(
+def build_bentofile(
     bentofile: str = "bentofile.yaml",
     *,
     version: t.Optional[str] = None,
@@ -178,6 +181,58 @@ def build_from_bentofile_yaml(
     return bento
 
 
+def _docker_build_logs(resp: t.Iterator):
+    """
+    Stream build logs to stderr.
+    Args:
+        resp (:obj:`Iterator`):
+            blocking generator from docker.api.build
+    Raises:
+        docker.errors.BuildErrors:
+            When errors occurs during build process. Usually
+            this comes when generated Dockerfile are incorrect.
+    """
+    output: str = ""
+    try:
+        while True:
+            try:
+                # output logs to stdout
+                # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
+                output = next(resp).decode("utf-8")
+                logger.info(output)
+            except StopIteration:
+                break
+    except docker.errors.BuildError as e:
+        print(f"Failed to build container :\n{e.msg}")
+        for line in e.build_log:
+            if "stream" in line:
+                logger.debug(line["stream"].strip())
+
+
+@inject
+def containerize(
+    tag: t.Union[Tag, str],
+    docker_tag: t.Optional[str] = None,
+    build_args: t.Optional[t.Dict[str, str]] = None,
+    *,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+):
+    # TODO: Add extra docker build args
+    bento = _bento_store.get(tag)
+    if docker_tag is None:
+        docker_tag = str(bento.tag)
+    docker_client = docker.from_env()
+    resp = docker_client.api.build(
+        path=bento.path,
+        dockerfile=os.path.join(bento.path, "env", "docker", "Dockerfile"),
+        nocache=False,
+        tag=docker_tag,
+        buildargs=dict(build_args or {}),
+        quiet=False,
+    )
+    _docker_build_logs(resp)
+
+
 __all__ = [
     "list",
     "get",
@@ -187,4 +242,6 @@ __all__ = [
     "push",
     "pull",
     "build",
+    "build_bentofile",
+    "containerize",
 ]

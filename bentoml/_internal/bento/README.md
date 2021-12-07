@@ -70,7 +70,7 @@ bentoml.build(
 Alternatively, user may put all build options in a `bentofile.yaml` in the same directory
 ```yaml
 service: "iris_classifier:svc"
-description: "./readme.md"
+description: "file: ./readme.md"
 labels:
   foo: bar
   team: abc

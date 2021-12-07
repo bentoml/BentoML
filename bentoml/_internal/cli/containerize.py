@@ -1,5 +1,7 @@
 import click
 
+from bentoml.bentos import containerize as containerize_bento
+
 from ..utils.docker import validate_tag
 
 
@@ -10,16 +12,16 @@ def add_containerize_command(cli):
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-t",
-        "--tag",
+        "--docker-image-tag",
         help="Optional image tag. If not specified, Bento will generate one from "
         "the name of the Bento.",
         required=False,
         callback=validate_tag,
     )
     @click.option(
-        "--build-arg", multiple=True, help="pass through docker image build arguments"
+        "--build-args", multiple=True, help="pass through docker image build arguments"
     )
-    def containerize(bento_tag, tag, build_arg):
+    def containerize(bento_tag, docker_image_tag, build_args):
         """Containerize specified Bento.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -42,4 +44,4 @@ def add_containerize_command(cli):
         By default, the `containerize` command will use the current credentials
         provided by Docker daemon.
         """
-        pass
+        return containerize_bento(bento_tag, docker_image_tag, build_args)

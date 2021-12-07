@@ -32,6 +32,7 @@ from ..models import Model
 from ..models import copy_model
 from ..models import ModelStore
 from ...exceptions import NotFound
+from ...exceptions import CLIException
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
 from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
@@ -188,10 +189,11 @@ class YataiClient:
                 bento_repository_name=name
             )
         if not bento_repository:
-            bento_repository = yatai_rest_client.create_bento_repository(
-                req=CreateBentoRepositorySchema(name=name, description="")
-            )
-        with self.spin(text=f"Fetching bento {version}"):
+            with self.spin(text=f"Creating bento repository {name}"):
+                bento_repository = yatai_rest_client.create_bento_repository(
+                    req=CreateBentoRepositorySchema(name=name, description="")
+                )
+        with self.spin(text=f"Fetching bento {bento.tag}"):
             remote_bento = yatai_rest_client.get_bento(
                 bento_repository_name=name, version=version
             )
@@ -212,24 +214,26 @@ class YataiClient:
                 for key, value in info.labels.items()
             ]
             apis: t.Dict[str, BentoApiSchema] = {}
-            yatai_rest_client.create_bento(
-                bento_repository_name=bento_repository.name,
-                req=CreateBentoSchema(
-                    description="",
-                    version=version,
-                    build_at=info.creation_time,
-                    manifest=BentoManifestSchema(
-                        service=info.service,
-                        bentoml_version=info.bentoml_version,
-                        apis=apis,
-                        models=info.models,
+            with self.spin(text=f"Creating bento {bento.tag}"):
+                yatai_rest_client.create_bento(
+                    bento_repository_name=bento_repository.name,
+                    req=CreateBentoSchema(
+                        description="",
+                        version=version,
+                        build_at=info.creation_time,
+                        manifest=BentoManifestSchema(
+                            service=info.service,
+                            bentoml_version=info.bentoml_version,
+                            apis=apis,
+                            models=info.models,
+                        ),
+                        labels=labels,
                     ),
-                    labels=labels,
-                ),
+                )
+        with self.spin(text=f"Presign bento {bento.tag} upload url"):
+            remote_bento = yatai_rest_client.presign_bento_upload_url(
+                bento_repository_name=bento_repository.name, version=version
             )
-        remote_bento = yatai_rest_client.presign_bento_upload_url(
-            bento_repository_name=bento_repository.name, version=version
-        )
         with io.BytesIO() as tar_io:
             bento_dir_path = bento.path
             with self.spin(text=f"Taring bento {bento.tag}"):
@@ -279,11 +283,12 @@ class YataiClient:
                     status=BentoUploadStatus.FAILED,
                     reason=str(e),
                 )
-            yatai_rest_client.finish_upload_bento(
-                bento_repository_name=bento_repository.name,
-                version=version,
-                req=finish_req,
-            )
+            with self.spin(text=f"Finishing upload bento {bento.tag}"):
+                yatai_rest_client.finish_upload_bento(
+                    bento_repository_name=bento_repository.name,
+                    version=version,
+                    req=finish_req,
+                )
             if finish_req.status != BentoUploadStatus.SUCCESS:
                 self.log_progress.add_task(
                     f"[bold red]Upload bento {bento.tag} failed: {finish_req.reason}"
@@ -338,9 +343,12 @@ class YataiClient:
             pass
         _tag = Tag.from_taglike(tag)
         yatai_rest_client = get_current_yatai_rest_api_client()
-        remote_bento = yatai_rest_client.get_bento(
-            bento_repository_name=_tag.name, version=_tag.version
-        )
+        with self.spin(text=f"Fetching bento {_tag}"):
+            remote_bento = yatai_rest_client.get_bento(
+                bento_repository_name=_tag.name, version=_tag.version
+            )
+        if not remote_bento:
+            raise CLIException(f"Bento {_tag} not found")
         with ThreadPoolExecutor(
             max_workers=max(len(remote_bento.manifest.models), 1)
         ) as executor:
@@ -358,9 +366,10 @@ class YataiClient:
 
             futures = executor.map(pull_model, remote_bento.manifest.models)
             list(futures)
-        remote_bento = yatai_rest_client.presign_bento_download_url(
-            _tag.name, _tag.version
-        )
+        with self.spin(text=f"Presign bento {_tag} download url"):
+            remote_bento = yatai_rest_client.presign_bento_download_url(
+                _tag.name, _tag.version
+            )
         url = remote_bento.presigned_download_url
         response = requests.get(url, stream=True)
         if response.status_code != 200:
@@ -414,15 +423,16 @@ class YataiClient:
         name = model.tag.name
         version = model.tag.version
         info = model.info
-        with self.spin(text=f"Fetching model {model.tag}"):
+        with self.spin(text=f"Fetching model repository {name}"):
             model_repository = yatai_rest_client.get_model_repository(
                 model_repository_name=name
             )
         if not model_repository:
-            model_repository = yatai_rest_client.create_model_repository(
-                req=CreateModelRepositorySchema(name=name, description="")
-            )
-        with self.spin(text=f"Fetching model version {version}"):
+            with self.spin(text=f"Creating model repository {name}"):
+                model_repository = yatai_rest_client.create_model_repository(
+                    req=CreateModelRepositorySchema(name=name, description="")
+                )
+        with self.spin(text=f"Fetching model {model.tag}"):
             remote_model = yatai_rest_client.get_model(
                 model_repository_name=name, version=version
             )
@@ -442,26 +452,28 @@ class YataiClient:
                 LabelItemSchema(key=key, value=value)
                 for key, value in info.labels.items()
             ]
-            yatai_rest_client.create_model(
-                model_repository_name=model_repository.name,
-                req=CreateModelSchema(
-                    description="",
-                    version=version,
-                    build_at=info.creation_time,
-                    manifest=ModelManifestSchema(
-                        module=info.module,
-                        metadata=info.metadata,
-                        context=info.context,
-                        options=info.options,
-                        api_version=info.api_version,
-                        bentoml_version=info.bentoml_version,
+            with self.spin(text=f"Creating model {model.tag}"):
+                yatai_rest_client.create_model(
+                    model_repository_name=model_repository.name,
+                    req=CreateModelSchema(
+                        description="",
+                        version=version,
+                        build_at=info.creation_time,
+                        manifest=ModelManifestSchema(
+                            module=info.module,
+                            metadata=info.metadata,
+                            context=info.context,
+                            options=info.options,
+                            api_version=info.api_version,
+                            bentoml_version=info.bentoml_version,
+                        ),
+                        labels=labels,
                     ),
-                    labels=labels,
-                ),
+                )
+        with self.spin(text=f"Presign model {model.tag} upload url"):
+            remote_model = yatai_rest_client.presign_model_upload_url(
+                model_repository_name=model_repository.name, version=version
             )
-        remote_model = yatai_rest_client.presign_model_upload_url(
-            model_repository_name=model_repository.name, version=version
-        )
         with io.BytesIO() as tar_io:
             bento_dir_path = model.path
             with self.spin(text=f"Taring model {model.tag}"):
@@ -501,11 +513,12 @@ class YataiClient:
                     status=ModelUploadStatus.FAILED,
                     reason=str(e),
                 )
-            yatai_rest_client.finish_upload_model(
-                model_repository_name=model_repository.name,
-                version=version,
-                req=finish_req,
-            )
+            with self.spin(text=f"Finishing upload model {model.tag}"):
+                yatai_rest_client.finish_upload_model(
+                    model_repository_name=model_repository.name,
+                    version=version,
+                    req=finish_req,
+                )
             if finish_req.status != ModelUploadStatus.SUCCESS:
                 self.log_progress.add_task(
                     f"[bold red]Upload model {model.tag} failed: {finish_req.reason}"
@@ -554,9 +567,12 @@ class YataiClient:
             pass
         yatai_rest_client = get_current_yatai_rest_api_client()
         _tag = Tag.from_taglike(tag)
-        remote_model = yatai_rest_client.presign_model_download_url(
-            _tag.name, _tag.version
-        )
+        with self.spin(text=f"Presign model {_tag} download url"):
+            remote_model = yatai_rest_client.presign_model_download_url(
+                _tag.name, _tag.version
+            )
+        if not remote_model:
+            raise CLIException(f"Model {_tag} not found from yatai")
         url = remote_model.presigned_download_url
         response = requests.get(url, stream=True)
         if response.status_code != 200:

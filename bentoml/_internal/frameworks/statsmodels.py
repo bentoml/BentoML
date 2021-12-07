@@ -5,14 +5,14 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..types import PathType
 from ..models import Model
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from ..configuration.containers import BentoMLContainer
 

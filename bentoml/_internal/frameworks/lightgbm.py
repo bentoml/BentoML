@@ -6,19 +6,20 @@ import joblib
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..models import Model
 from ..models import PKL_EXT
 from ..models import TXT_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
     import lightgbm as lgb
+
     from ..models import ModelStore
 
 try:

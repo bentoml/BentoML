@@ -9,12 +9,12 @@ import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..runner.utils import TypeRef
 from ..runner.container import Payload

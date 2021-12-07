@@ -5,13 +5,13 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..models import Model
 from ..models import JSON_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..configuration.containers import BentoMLContainer
 

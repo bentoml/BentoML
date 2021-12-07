@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import MissingDependencyException
 from ..runner import Runner
+from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:

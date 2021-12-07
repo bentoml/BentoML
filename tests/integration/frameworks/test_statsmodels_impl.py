@@ -114,7 +114,9 @@ def test_statsmodels_save_load(
 def test_get_model_info_exc(exc, modelstore, holt_model):
     tag = wrong_module(modelstore, holt_model)
     with pytest.raises(exc):
-        bentoml._internal.frameworks.statsmodels._get_model_info(tag, model_store=modelstore)
+        bentoml._internal.frameworks.statsmodels._get_model_info(
+            tag, model_store=modelstore
+        )
 
 
 def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):

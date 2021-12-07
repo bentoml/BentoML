@@ -8,14 +8,14 @@ from distutils.dir_util import copy_tree
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -38,8 +38,9 @@ if TYPE_CHECKING:
     import paddle.inference
     import paddlehub.module.module as module
     from paddle.static import InputSpec
-    from ..models import ModelStore
     from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
+
+    from ..models import ModelStore
 
 try:
     import paddle

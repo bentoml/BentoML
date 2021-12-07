@@ -17,13 +17,13 @@ from filelock import FileLock
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..models import Model
 from ..models import JSON_EXT
 from ..runner import Runner
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)

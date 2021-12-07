@@ -69,6 +69,7 @@ def test_mlflow_load_runner(modelstore):
     tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
     runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
     from bentoml._internal.frameworks.mlflow import _PyFuncRunner
+
     assert isinstance(runner, _PyFuncRunner)
 
     assert tag in runner.required_models

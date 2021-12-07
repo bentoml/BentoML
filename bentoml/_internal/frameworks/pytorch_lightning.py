@@ -4,13 +4,12 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from .pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
-
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
+from .pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
+from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 _PL_IMPORT_ERROR = f"""\

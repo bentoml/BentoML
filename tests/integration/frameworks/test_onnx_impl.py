@@ -110,7 +110,9 @@ def test_onnx_save_load(metadata, save_proc, modelstore, sklearn_onnx_model):
 @pytest.mark.parametrize("exc", [BentoMLException])
 def test_get_model_info_exc(exc, modelstore, wrong_module):
     with pytest.raises(exc):
-        bentoml._internal.frameworks.onnx._get_model_info(wrong_module, model_store=modelstore)
+        bentoml._internal.frameworks.onnx._get_model_info(
+            wrong_module, model_store=modelstore
+        )
 
 
 @pytest.mark.parametrize(

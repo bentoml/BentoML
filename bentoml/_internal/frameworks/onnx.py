@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..types import PathType
 from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..runner.utils import _get_gpu_memory
 from ..configuration.containers import BentoMLContainer
@@ -23,6 +23,7 @@ ONNX_EXT: str = ".onnx"
 
 if TYPE_CHECKING:
     import pandas as pd
+
     from ..models import ModelStore
 
 try:

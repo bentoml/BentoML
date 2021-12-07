@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..types import Tag
 from ..types import PathType
 from ..models import Model
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 PYCARET_CONFIG = "pycaret_config"
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     import sklearn
     import xgboost
     import lightgbm
+
     from ..models import ModelStore
 
 try:

@@ -1,18 +1,26 @@
-import functools
+import pickle
 import typing as t
 import zipfile
-from pathlib import Path
+import functools
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import cloudpickle
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PT_EXT, SAVE_NAMESPACE, Model
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.models import PT_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
-from ._internal.types import Tag
-from .exceptions import MissingDependencyException
+from ._internal.runner.utils import TypeRef
+from ._internal.runner.container import Payload
+from ._internal.runner.container import DataContainer
+from ._internal.runner.container import DataContainerRegistry
+from ._internal.configuration.containers import BentoMLContainer
 
 _RV = t.TypeVar("_RV")
 _ModelType = t.TypeVar(
@@ -171,7 +179,9 @@ class _PyTorchRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        in_store_tag = model_store.get(tag).tag
+
+        super().__init__(str(in_store_tag), resource_quota, batch_options)
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         if "cuda" in device_id:
@@ -184,10 +194,11 @@ class _PyTorchRunner(Runner):
                 ]
         self._device_id = device_id
         self._partial_kwargs = partial_kwargs or dict()
+        self._tag = in_store_tag
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_store.get(self.name).tag]
+        return [self._tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -215,7 +226,7 @@ class _PyTorchRunner(Runner):
         if self.resource_quota.on_gpu and _is_gpu_available():
             self._model = parallel.DataParallel(
                 load(
-                    self.name,
+                    self._tag,
                     model_store=self._model_store,
                     device_id=self._device_id,
                 ),
@@ -223,7 +234,7 @@ class _PyTorchRunner(Runner):
             torch.cuda.empty_cache()
         else:
             self._model = load(
-                self.name,
+                self._tag,
                 model_store=self._model_store,
                 device_id=self._device_id,
             )
@@ -312,3 +323,45 @@ def load_runner(
         batch_options=batch_options,
         model_store=model_store,
     )
+
+
+class PytorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
+    @classmethod
+    def singles_to_batch(cls, singles, batch_axis=0):
+        return torch.stack(singles, dim=batch_axis)
+
+    @classmethod
+    def batch_to_singles(cls, batch, batch_axis=0):
+        return [
+            torch.squeeze(tensor, dim=batch_axis)
+            for tensor in torch.split(batch, 1, dim=batch_axis)
+        ]
+
+    @classmethod
+    @inject
+    def single_to_payload(
+        cls,
+        single_data,
+    ) -> Payload:
+        return cls.create_payload(
+            pickle.dumps(single_data),
+            {"plasma": False},
+        )
+
+    @classmethod
+    @inject
+    def payload_to_single(
+        cls,
+        payload: Payload,
+    ):
+        return pickle.loads(payload.data)
+
+    batch_to_payload = single_to_payload
+    payload_to_batch = payload_to_single
+
+
+DataContainerRegistry.register_container(
+    TypeRef("torch", "Tensor"),
+    TypeRef("torch", "Tensor"),
+    PytorchTensorContainer,
+)

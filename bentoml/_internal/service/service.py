@@ -1,20 +1,20 @@
-import logging
 import sys
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
+from ..types import Tag
+from ..runner import Runner
 from ...exceptions import BentoMLException
 from ..bento.bento import _get_default_bento_readme
-from ..io_descriptors import IODescriptor
-from ..runner import Runner
-from ..types import Tag
-from ..utils.validation import validate_tag_str
 from .inference_api import InferenceAPI
+from ..io_descriptors import IODescriptor
+from ..utils.validation import validate_tag_str
 
 if TYPE_CHECKING:
-    from starlette.applications import Starlette
-    from starlette.middleware import Middleware
     from starlette.types import ASGIApp
+    from starlette.middleware import Middleware
+    from starlette.applications import Starlette
 
     from ..bento.bento import SysPathBento
 
@@ -37,7 +37,6 @@ class Service:
     """
 
     _apis: t.Dict[str, InferenceAPI] = {}
-    _runners: t.Dict[str, Runner] = {}
 
     # Name of the service, it is a required parameter for __init__
     name: str
@@ -66,7 +65,9 @@ class Service:
             assert all(
                 isinstance(r, Runner) for r in runners
             ), "Service runners list must only contain runner instances"
-            self._runners = {r.name: r for r in runners}
+            self.runners = {r.name: r for r in runners}
+        else:
+            self.runners: t.Dict[str, Runner] = {}
 
         self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
         self._middlewares: t.List[t.Tuple[t.Type["Middleware"], t.Any]] = []
@@ -177,7 +178,7 @@ class Service:
         else:
             return (
                 f'bentoml.Service(name="{self.name}", '
-                f'runners=[{",".join(self._runners.keys())}])'
+                f'runners=[{",".join(self.runners.keys())}])'
             )
 
     def __repr__(self):

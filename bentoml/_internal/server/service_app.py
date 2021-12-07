@@ -1,28 +1,30 @@
-import asyncio
-import logging
 import os
 import sys
 import typing as t
+import asyncio
+import logging
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
 from ...exceptions import BentoMLException
-from ..configuration.containers import BentoMLContainer, BentoServerContainer
-from ..io_descriptors.multipart import Multipart
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
+from ..configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoServerContainer
+from ..io_descriptors.multipart import Multipart
 
 if TYPE_CHECKING:
-    from starlette.applications import Starlette
-    from starlette.middleware import Middleware
+    from starlette.routing import BaseRoute
     from starlette.requests import Request
     from starlette.responses import Response
-    from starlette.routing import BaseRoute
+    from starlette.middleware import Middleware
+    from starlette.applications import Starlette
 
-    from ..server.metrics.prometheus import PrometheusClient
-    from ..service.inference_api import InferenceAPI
     from ..tracing import Tracer
+    from ..service.inference_api import InferenceAPI
+    from ..server.metrics.prometheus import PrometheusClient
 
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -127,15 +129,18 @@ class ServiceAppFactory(BaseAppFactory):
     ) -> None:
         self.bento_service = bento_service
 
-        self.app_name = bento_service.name
         self.enable_metrics = enable_metrics
         self.tracer = tracer
         self.metrics_client = metrics_client
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
 
+    @property
+    def name(self) -> str:
+        return self.bento_service.name
+
     async def index_view_func(
-        self, request
+        self, _: "Request"
     ) -> "Response":  # pylint: disable=unused-argument
         """
         The default index view for BentoML API server. This includes the readme
@@ -151,7 +156,8 @@ class ServiceAppFactory(BaseAppFactory):
 
     @inject
     async def metrics_view_func(
-        self, request
+        self,
+        _: "Request",
     ) -> "Response":  # pylint: disable=unused-argument
         from starlette.responses import Response
 
@@ -161,13 +167,14 @@ class ServiceAppFactory(BaseAppFactory):
         )
 
     async def docs_view_func(
-        self, request
+        self, _: "Request"
     ) -> "Response":  # pylint: disable=unused-argument
         from starlette.responses import JSONResponse
 
         docs = self.bento_service.openapi_doc()
         return JSONResponse(docs)
 
+    @property
     def routes(self) -> t.List["BaseRoute"]:
         """
         Setup routes for bento model server, including:
@@ -182,10 +189,12 @@ class ServiceAppFactory(BaseAppFactory):
         /classify
         /predict
         """
-        from starlette.routing import Mount, Route
+        from starlette.routing import Mount
+        from starlette.routing import Route
         from starlette.staticfiles import StaticFiles
 
-        routes = super().routes()
+        routes = super().routes
+
         routes.append(Route(path="/", name="home", endpoint=self.index_view_func))
         routes.append(
             Route(
@@ -212,7 +221,7 @@ class ServiceAppFactory(BaseAppFactory):
         )
 
         for _, api in self.bento_service._apis.items():
-            api_route_endpoint = self.create_api_endpoint(api)
+            api_route_endpoint = self._create_api_endpoint(api)
             routes.append(
                 Route(
                     path="/{}".format(api.route),
@@ -224,10 +233,11 @@ class ServiceAppFactory(BaseAppFactory):
 
         return routes
 
+    @property
     def middlewares(self) -> t.List["Middleware"]:
-        from starlette.middleware import Middleware
+        middlewares = super().middlewares
 
-        middlewares = super().middlewares()
+        from starlette.middleware import Middleware
 
         for middleware_cls, options in self.bento_service._middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
@@ -245,32 +255,38 @@ class ServiceAppFactory(BaseAppFactory):
 
         return middlewares
 
-    def __call__(self) -> "Starlette":
-        from starlette.applications import Starlette
+    @property
+    def on_startup(self) -> t.List[t.Callable[[], None]]:
+        on_startup = super().on_startup
+        on_startup.insert(0, self.bento_service._on_asgi_app_startup)
+        return on_startup
 
-        app = Starlette(
-            debug=True,  # TDOO: inject this from `debug=True` or `--production` flag
-            routes=self.routes(),
-            middleware=self.middlewares(),
-            on_shutdown=[self.bento_service._on_asgi_app_shutdown],
-            on_startup=[self.bento_service._on_asgi_app_startup, self.mark_as_ready],
-        )
+    @property
+    def on_shutdown(self) -> t.List[t.Callable[[], None]]:
+        on_shutdown = super().on_shutdown
+        on_shutdown.insert(0, self.bento_service._on_asgi_app_shutdown)
+        return on_shutdown
+
+    def __call__(self) -> "Starlette":
+        app = super().__call__()
 
         for mount_app, path, name in self.bento_service._mount_apps:
-            app.mount(app=mount_app, path=path, name=name)
+            app.mount(
+                app=mount_app, path=path, name=name
+            )  # TODO(jiang): mount wsgi app ?
 
         return app
 
     @staticmethod
-    def create_api_endpoint(
+    def _create_api_endpoint(
         api: "InferenceAPI",
     ) -> t.Callable[["Request"], t.Coroutine[t.Any, t.Any, "Response"]]:
         """
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
-        from starlette.concurrency import run_in_threadpool
         from starlette.responses import JSONResponse
+        from starlette.concurrency import run_in_threadpool
 
         async def api_func(
             request: "Request",

@@ -1,5 +1,5 @@
-import logging
 import re
+import logging
 
 from ...exceptions import BentoMLException
 

@@ -8,7 +8,22 @@ VALID_BRANCH_REGEX="^(style|chore|refactor|feat|internal|bugfix|improvement|libr
 
 cd "$GIT_ROOT" || exit
 
-make format && git add . || exit
+# format setup.cfg
+setup-cfg-fmt "$GIT_ROOT/setup.cfg"
+
+# Run format scripts
+
+# TODO: enable black
+# black --config ./pyproject.toml bentoml/ tests/ docker/
+
+# black --config ./pyproject.toml --pyi typings/**/*.pyi
+
+# TODO: enable isort
+# isort .
+
+for f in $(find .github/ -type f -name '*.yml'); do
+  yamllint -c "$GIT_ROOT"/.yamllint.yml "$f" || exit 1
+done
 
 if [ "$LOCAL_BRANCH" != "bentoml-1.0" ]; then
     if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]

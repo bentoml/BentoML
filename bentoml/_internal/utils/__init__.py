@@ -1,13 +1,15 @@
-import contextlib
-import functools
+import uuid
 import socket
 import typing as t
-import uuid
+import functools
+import contextlib
 from pathlib import Path
 
 from ..types import PathType
 from .lazy_loader import LazyLoader
 
+C = t.TypeVar("C")
+T = t.TypeVar("T")
 _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 
@@ -37,6 +39,18 @@ def validate_or_create_dir(*path: PathType) -> None:
             path_obj.mkdir(parents=True)
 
 
+def calc_dir_size(path: PathType) -> int:
+    return sum(f.stat().st_size for f in Path(path).glob("**/*") if f.is_file())
+
+
+def human_readable_size(size: int, decimal_places: int = 2) -> str:
+    for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
+        if size < 1024.0 or unit == "PiB":
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f} {unit}"
+
+
 class catch_exceptions(t.Generic[_T_co], object):
     def __init__(
         self,
@@ -51,14 +65,6 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._msg = msg
         self._fallback = fallback
         self._raises = raises
-
-    @t.overload  # noqa: F811
-    def __call__(self, func: t.Any) -> t.Callable[..., _T_co]:  # noqa: F811
-        ...
-
-    @t.overload  # noqa: F811
-    def __call__(self, func: t.Any) -> t.Any:  # noqa: F811
-        ...
 
     # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
     def __call__(  # noqa: F811
@@ -99,10 +105,6 @@ def get_free_port(host: str = "localhost") -> int:
     return port
 
 
-C = t.TypeVar("C")
-T = t.TypeVar("T")
-
-
 class cached_property(t.Generic[C, T]):
     """A property that is only computed once per instance and then replaces
     itself with an ordinary attribute. Deleting the attribute resets the
@@ -116,6 +118,7 @@ class cached_property(t.Generic[C, T]):
             pass
         self.func = func
 
+    # pylint: disable=attribute-defined-outside-init
     def __set_name__(self, owner, name):
         self.name = name
 

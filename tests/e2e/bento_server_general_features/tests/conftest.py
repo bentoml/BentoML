@@ -29,5 +29,11 @@ def bin_file(tmpdir) -> str:
 
 @pytest.fixture(scope="session")
 def host() -> t.Generator[str, None, None]:
-    with run_api_server(bento="service:svc", config_file="bentoml_config.yml") as host:
+    import bentoml
+
+    bentoml.build("service:svc")
+
+    with run_api_server(
+        bento="general:latest", config_file="bentoml_config.yml"
+    ) as host:
         yield host

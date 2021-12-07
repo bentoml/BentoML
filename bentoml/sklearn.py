@@ -2,13 +2,18 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.types import PathType
+from ._internal.models import Model
+from ._internal.models import PKL_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.types import PathType, Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.configuration.containers import BentoMLContainer
 
 _MT = t.TypeVar("_MT")
 
@@ -125,7 +130,7 @@ class _SklearnRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(f"{tag}-{function_name}", resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._model_info = model_info

@@ -1,21 +1,39 @@
 import math
 
 import numpy as np
+import torch
 import pandas as pd
 import psutil
 import pytest
-import torch
 import torch.nn as nn
 
 import bentoml.pytorch
-from tests.utils.frameworks.pytorch_utils import LinearModel, test_df
+from bentoml.pytorch import PytorchTensorContainer
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.pytorch_utils import test_df
+from tests.utils.frameworks.pytorch_utils import LinearModel
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):
     input_data = df.to_numpy().astype(np.float32)
     input_tensor = torch.from_numpy(input_data)
     return model(input_tensor).unsqueeze(dim=0).item()
+
+
+class LinearModelWithBatchAxis(nn.Module):
+    def __init__(self):
+        super(LinearModelWithBatchAxis, self).__init__()
+        self.linear = nn.Linear(5, 1, bias=False)
+        torch.nn.init.ones_(self.linear.weight)
+
+    def forward(self, x, batch_axis=0):
+        if batch_axis == 1:
+            x = x.permute([1, 0])
+        res = self.linear(x)
+        if batch_axis == 1:
+            res = res.permute([0, 1])
+
+        return res
 
 
 class ExtendedModel(nn.Module):
@@ -120,3 +138,39 @@ def test_pytorch_runner_with_partial_kwargs(modelstore, bias_pair):
     # tensor to float may introduce larger errors, so we bump rel_tol
     # from 1e-9 to 1e-6 just in case
     assert math.isclose(res1 - res2, bias1 - bias2, rel_tol=1e-6)
+
+
+@pytest.mark.parametrize("batch_axis", [0, 1])
+def test_pytorch_container(modelstore, batch_axis):
+
+    single_tensor = torch.arange(6).reshape(2, 3)
+    singles = [single_tensor, single_tensor + 1]
+    batch_tensor = torch.stack(singles, dim=batch_axis)
+
+    assert (
+        PytorchTensorContainer.singles_to_batch(singles, batch_axis=batch_axis)
+        == batch_tensor
+    ).all()
+    assert (
+        PytorchTensorContainer.batch_to_singles(batch_tensor, batch_axis=batch_axis)[0]
+        == single_tensor
+    ).all()
+
+    model = LinearModelWithBatchAxis()
+    tag = bentoml.pytorch.save("pytorch_test_container", model, model_store=modelstore)
+    batch_options = {
+        "input_batch_axis": batch_axis,
+        "output_batch_axis": batch_axis,
+    }
+    runner = bentoml.pytorch.load_runner(
+        tag,
+        model_store=modelstore,
+        batch_options=batch_options,
+        partial_kwargs=dict(batch_axis=batch_axis),
+    )
+
+    single_tensor = torch.arange(5, dtype=torch.float32)
+    singles = [single_tensor, single_tensor]
+    batch_tensor = torch.stack(singles, dim=batch_axis)
+    assert runner.run_batch(batch_tensor)[0][0] == 10.0
+    assert runner.run(single_tensor)[0] == 10.0

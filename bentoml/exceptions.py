@@ -63,6 +63,14 @@ class NotFound(BentoMLException):
     error_code = HTTPStatus.NOT_FOUND
 
 
+class TooManyRequests(BentoMLException):
+    """
+    Raise when incoming requests exceeds the capacity of a server
+    """
+
+    error_code = HTTPStatus.TOO_MANY_REQUESTS
+
+
 class BentoMLConfigException(BentoMLException):
     """Raise when BentoML is mis-configured or when required configuration is missing"""
 
@@ -78,3 +86,7 @@ class MissingDependencyException(BentoMLException):
 
 class CLIException(BentoMLException):
     """Raise when CLI encounters an issue"""
+
+
+class YataiRESTApiClientError(BentoMLException):
+    pass

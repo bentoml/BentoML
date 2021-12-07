@@ -1,14 +1,14 @@
-import logging
 import typing as t
+import logging
 from io import BytesIO
 
-from multipart.multipart import parse_options_header
 from starlette.requests import Request
+from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from ...exceptions import BentoMLException
-from ..types import FileLike
 from .base import IODescriptor
+from ..types import FileLike
+from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -54,20 +54,21 @@ class File(IODescriptor[FileLike]):
         IO Descriptor that represents file-like objects.
     """  # noqa: LN001
 
-    def __init__(self, media_type: t.Optional[str] = None):
-        self._media_type = media_type or "application/octet-stream"
+    def __init__(self, mime_type: t.Optional[str] = None):
+        self._mime_type = (
+            mime_type if mime_type is not None else "application/octet-stream"
+        )
 
-    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
-        # TODO: supports multipart OpenAPI
-        return {self._media_type: dict(schema=dict(type="string", format="binary"))}
+    def openapi_schema_type(self) -> t.Dict[str, str]:
+        return {"type": "string", "format": "binary"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> FileLike:
         content_type, _ = parse_options_header(request.headers["content-type"])
@@ -89,5 +90,5 @@ class File(IODescriptor[FileLike]):
         if isinstance(obj, bytes):
             obj = FileLike(bytes_=obj)
         return Response(
-            t.cast(BytesIO, obj.stream).getvalue(), media_type=self._media_type
+            t.cast(BytesIO, obj.stream).getvalue(), media_type=self._mime_type
         )

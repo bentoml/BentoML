@@ -10,7 +10,6 @@ MIME_TYPE = "text/plain"
 
 class Text(IODescriptor[str]):
     """
-
     `Text` defines API specification for the inputs/outputs of a Service. `Text`
       represents strings for all incoming requests/outcoming responses as specified in
       your API function signature.
@@ -56,17 +55,16 @@ class Text(IODescriptor[str]):
         IO Descriptor that represents strings type.
     """
 
-    @staticmethod
-    def openapi_schema() -> t.Dict[str, t.Dict[str, t.Any]]:
-        return {MIME_TYPE: {"schema": {"type": "string"}}}
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return {"type": "string"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {MIME_TYPE: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {MIME_TYPE: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()

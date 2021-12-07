@@ -1,17 +1,24 @@
 import io
-import typing as t
 import uuid
+import typing as t
 
 import multipart.multipart as multipart
-from starlette.datastructures import Headers, MutableHeaders
-from starlette.formparsers import _user_safe_decode  # type: ignore
-from starlette.formparsers import MultiPartMessage
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.formparsers import MultiPartMessage
+from starlette.datastructures import Headers
+from starlette.datastructures import MutableHeaders
 
 from ...exceptions import BentoMLException
 
 _ItemsBody = t.List[t.Tuple[str, t.List[t.Tuple[bytes, bytes]], bytes]]
+
+
+def user_safe_decode(src: bytes, codec: str) -> str:
+    try:
+        return src.decode(codec)
+    except (UnicodeDecodeError, LookupError):
+        return src.decode("latin-1")
 
 
 class MultiPartParser:
@@ -83,7 +90,6 @@ class MultiPartParser:
         parser = multipart.MultipartParser(boundary, callbacks)
         header_field = b""
         header_value = b""
-        content_disposition = None
         field_name = ""
 
         data = b""
@@ -98,7 +104,7 @@ class MultiPartParser:
             self.messages.clear()
             for message_type, message_bytes in messages:
                 if message_type == MultiPartMessage.PART_BEGIN:
-                    content_disposition = None
+                    field_name = ""
                     data = b""
                     headers = list()
                 elif message_type == MultiPartMessage.HEADER_FIELD:  # type: ignore
@@ -108,18 +114,19 @@ class MultiPartParser:
                 elif message_type == MultiPartMessage.HEADER_END:  # type: ignore
                     field = header_field.lower()
                     if field == b"content-disposition":
-                        content_disposition = header_value
+                        _, options = multipart.parse_options_header(header_value)
+                        options = t.cast(t.Dict[bytes, bytes], options)
+                        field_name = user_safe_decode(options[b"name"], charset)
+                    elif field == b"bentoml-payload-field":
+                        field_name = user_safe_decode(header_value, charset)
                     else:
                         headers.append((field, header_value))
                     header_field = b""
                     header_value = b""
                 elif message_type == MultiPartMessage.HEADERS_FINISHED:  # type: ignore
                     assert (
-                        content_disposition is not None
+                        field_name
                     ), "`Content-Disposition` is not available in headers"
-                    _, options = multipart.parse_options_header(content_disposition)
-                    options = t.cast(t.Dict[bytes, bytes], options)
-                    field_name = _user_safe_decode(options[b"name"], charset)
                 elif message_type == MultiPartMessage.PART_DATA:  # type: ignore
                     data += message_bytes
                 elif message_type == MultiPartMessage.PART_END:  # type: ignore
@@ -132,7 +139,7 @@ class MultiPartParser:
 async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     content_type_header = request.headers.get("Content-Type")
     content_type, _ = multipart.parse_options_header(content_type_header)
-    assert content_type == b"multipart/form-data"
+    assert content_type in (b"multipart/form-data", b"multipart/mixed")
     stream = t.cast(t.AsyncGenerator[bytes, None], request.stream())
     multipart_parser = MultiPartParser(request.headers, stream)
     try:

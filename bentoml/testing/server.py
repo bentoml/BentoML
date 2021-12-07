@@ -1,25 +1,27 @@
 # pylint: disable=redefined-outer-name # pragma: no cover
-import contextlib
-import logging
 import os
-import subprocess
 import sys
-import threading
 import time
 import typing as t
 import urllib
+import logging
+import threading
+import contextlib
+import subprocess
 import urllib.request
-from contextlib import contextmanager
 from typing import TYPE_CHECKING
+from contextlib import contextmanager
 
-from bentoml._internal.utils import cached_contextmanager, reserve_free_port
+from .._internal.utils import reserve_free_port
+from .._internal.utils import cached_contextmanager
 
 logger = logging.getLogger("bentoml.tests")
 
 
 if TYPE_CHECKING:
     from aiohttp.typedefs import LooseHeaders
-    from starlette.datastructures import FormData, Headers
+    from starlette.datastructures import Headers
+    from starlette.datastructures import FormData
 
     import docker
 
@@ -221,7 +223,7 @@ def build_api_server_docker_image(
 
 
 @cached_contextmanager("{image.id}")
-def run_api_server_in_docker(image, config_file=None, timeout=60):
+def run_api_server_in_docker(image, config_file=None, timeout=90):
     """
     Launch a bentoml service container from a docker image, yields the host URL.
     """
@@ -273,7 +275,7 @@ def run_api_server(
     workdir=None,
     config_file=None,
     dev_server=False,
-    timeout=40,
+    timeout=90,
 ):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.

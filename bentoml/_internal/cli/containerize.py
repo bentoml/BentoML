@@ -13,17 +13,14 @@ def add_containerize_command(cli):
     @click.option(
         "-t",
         "--docker-image-tag",
-        help="Optional image tag. If not specified, Bento will generate one from "
-        "the name of the Bento.",
+        help="Docker image tag, default to same as the Bento tag",
         required=False,
         callback=validate_tag,
     )
-    @click.option(
-        "--build-arg", multiple=True, help="pass through docker image build arguments"
-    )
+    @click.option("--build-arg", multiple=True, help="docker image build args")
+    @click.option("--label", multiple=True, help="docker image label")
     @click.option("--no-cache", is_flag=True, default=False)
-    @click.option("--label", multiple=True)
-    def containerize(bento_tag, docker_image_tag, build_arg, no_cache, label):
+    def containerize(bento_tag, docker_image_tag, build_arg, label, no_cache):
         """Containerize specified Bento.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -61,6 +58,6 @@ def add_containerize_command(cli):
             bento_tag,
             docker_image_tag=docker_image_tag,
             build_args=build_args,
-            no_cache=no_cache,
             labels=labels,
+            no_cache=no_cache,
         )

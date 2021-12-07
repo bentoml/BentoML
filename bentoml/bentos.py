@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from ._internal.bento import SysPathBento
     from ._internal.models import ModelStore
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -184,10 +183,10 @@ def build_bentofile(
 def containerize(
     tag: t.Union[Tag, str],
     docker_image_tag: t.Optional[str] = None,
-    no_cache: bool = False,
+    *,
     build_args: t.Optional[t.Dict[str, str]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
-    *,
+    no_cache: bool = False,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
     bento = _bento_store.get(tag)
@@ -210,8 +209,11 @@ def containerize(
         for key, value in labels.items():
             docker_build_cmd += ["--label", f"{key}={value}"]
 
+    env = os.environ.copy()
+    env["DOCKER_SCAN_SUGGEST"] = "false"
     logger.info(f"Building docker image for {bento}...")
-    return subprocess.check_output(docker_build_cmd, cwd=bento.path)
+    subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
+    logger.info(f'Successfully built docker image "{docker_image_tag}"')
 
 
 __all__ = [

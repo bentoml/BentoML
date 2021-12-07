@@ -184,8 +184,10 @@ def build_bentofile(
 @inject
 def containerize(
     tag: t.Union[Tag, str],
-    docker_tag: t.Optional[str] = None,
+    docker_image_tag: t.Optional[str] = None,
+    no_cache: bool = False,
     build_args: t.Optional[t.Dict[str, str]] = None,
+    labels: t.Optional[t.Dict[str, str]] = None,
     *,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
@@ -193,15 +195,16 @@ def containerize(
 
     # TODO: Add extra docker build args
     bento = _bento_store.get(tag)
-    if docker_tag is None:
-        docker_tag = str(bento.tag)
+    if docker_image_tag is None:
+        docker_image_tag = str(bento.tag)
     docker_client = docker.from_env()
     resp = docker_client.api.build(
         path=bento.path,
         dockerfile=os.path.join(bento.path, "env", "docker", "Dockerfile"),
-        nocache=False,
-        tag=docker_tag,
-        buildargs=dict(build_args or {}),
+        nocache=no_cache,
+        tag=docker_image_tag,
+        buildargs=build_args or {},
+        labels=labels or {},
         quiet=False,
     )
 

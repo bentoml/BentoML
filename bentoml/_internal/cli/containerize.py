@@ -21,7 +21,9 @@ def add_containerize_command(cli):
     @click.option(
         "--build-args", multiple=True, help="pass through docker image build arguments"
     )
-    def containerize(bento_tag, docker_image_tag, build_args):
+    @click.option("--no-cache", is_flag=True, default=False)
+    @click.option("--label", multiple=True)
+    def containerize(bento_tag, docker_image_tag, build_args, no_cache, label):
         """Containerize specified Bento.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -44,4 +46,15 @@ def add_containerize_command(cli):
         By default, the `containerize` command will use the current credentials
         provided by Docker daemon.
         """
-        return containerize_bento(bento_tag, docker_image_tag, build_args)
+        labels = {}
+        for label_str in label:
+            key, value = label_str.split("=")
+            labels[key] = value
+
+        return containerize_bento(
+            bento_tag,
+            docker_image_tag=docker_image_tag,
+            build_args=build_args,
+            no_cache=no_cache,
+            labels=labels,
+        )

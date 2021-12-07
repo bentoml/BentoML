@@ -7,7 +7,7 @@ cd "$GIT_ROOT" || exit 1
 
 source ./scripts/ci/helpers.sh
 
-need_cmd vim || FAIL "You will need to install vim to use this script, or use any editor of choice\nrequires to set \$EDITOR=<your_text_editor>"
+need_cmd "$EDITOR" || FAIL "You will need to install vim to use this script, or use any editor of choice\nrequires to set \$EDITOR=<your_text_editor>"
 PROCESSED_TXT="$GIT_ROOT"/typings/processed.txt
 EDITOR=$(echo "$EDITOR") || /usr/bin/vim
 

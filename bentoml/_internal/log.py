@@ -71,7 +71,7 @@ def get_logging_config_dict(
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "console": {"format": "%(message)s"},
+            "console": {"format": "%(message)s", "datefmt": "[%X]"},
             "prediction": {
                 "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "format": "%(request_id)s %(request)s %(response)s",

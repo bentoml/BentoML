@@ -136,6 +136,7 @@ class Model(StoreItem):
             self._fs.close()
             self._fs = out_fs
 
+        logger.info(f"Successfully saved {self}")
         return self
 
     @classmethod

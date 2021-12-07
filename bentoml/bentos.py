@@ -1,6 +1,7 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
+import json
 import os
 import typing as t
 import logging
@@ -199,14 +200,17 @@ def _docker_build_logs(resp: t.Iterator):
                 # output logs to stdout
                 # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
                 output = next(resp).decode("utf-8")
-                logger.info(output)
+                for line in output.splitlines():
+                    msg = json.loads(line)
+                    if "stream" in msg:
+                        logger.info(msg["stream"].strip("\r\n"))
+                    else:
+                        logger.debug("Unexpected docker build output: %s", line)
             except StopIteration:
                 break
     except docker.errors.BuildError as e:
-        print(f"Failed to build container :\n{e.msg}")
-        for line in e.build_log:
-            if "stream" in line:
-                logger.debug(line["stream"].strip())
+        logger.error(f"Failed to build container : {e.msg}")
+        raise
 
 
 @inject

@@ -1,11 +1,10 @@
 import typing as t
-import functools
 from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage]
+from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
 
 from .exceptions import MissingDependencyException
 from ._internal.types import Tag
@@ -27,7 +26,7 @@ if TYPE_CHECKING:
 
 try:
     import torch
-    import pytorch_lightning as pl
+    import pytorch_lightning as pl  # noqa: F811
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 

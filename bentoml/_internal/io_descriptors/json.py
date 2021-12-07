@@ -15,7 +15,7 @@ from ..utils.lazy_loader import LazyLoader
 if TYPE_CHECKING:
     import numpy as np
     from pydantic import BaseModel
-    from pandas.core.frame import DataFrame
+    from pandas.core.frame import DataFrame  # noqa: F401
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
 

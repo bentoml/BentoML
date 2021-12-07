@@ -226,15 +226,13 @@ class _PyTorchRunner(Runner):
                 device_id=self._device_id,
             )
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
-        self._predict_fn: t.Callable[..., torch.Tensor] = functools.partial(
-            raw_predict_fn, **self._partial_kwargs
-        )
+        self._predict_fn: t.Callable[..., torch.Tensor] = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
     @torch.no_grad()
     def _run_batch(
         self,
         *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
-        **kwargs: str,
+        **kwargs: t.Any,
     ) -> torch.Tensor:
 
         params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](

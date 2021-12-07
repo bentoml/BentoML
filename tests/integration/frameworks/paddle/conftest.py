@@ -49,8 +49,8 @@ def train_paddle_model() -> "LinearModel":
     )
 
     model.train()
-    for epoch_id in range(EPOCH_NUM):
-        for batch_id, (feature, label) in enumerate(loader()):
+    for _ in range(EPOCH_NUM):
+        for _, (feature, label) in enumerate(loader()):
             out = model(feature)
             loss_fn = loss(out, label)
             loss_fn.backward()

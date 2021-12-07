@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import fs
 from simple_di import inject
 from simple_di import Provide
+from rich.console import Console
 
 from .exceptions import InvalidArgument
 from ._internal.bento import Bento
@@ -180,39 +181,6 @@ def build_bentofile(
     return bento
 
 
-def _docker_build_logs(resp: t.Iterator):
-    """
-    Stream build logs to stderr.
-    Args:
-        resp (:obj:`Iterator`):
-            blocking generator from docker.api.build
-    Raises:
-        docker.errors.BuildErrors:
-            When errors occurs during build process. Usually
-            this comes when generated Dockerfile are incorrect.
-    """
-    import docker
-
-    output: str = ""
-    try:
-        while True:
-            try:
-                # output logs to stdout
-                # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
-                output = next(resp).decode("utf-8")
-                for line in output.splitlines():
-                    msg = json.loads(line)
-                    if "stream" in msg:
-                        logger.info(msg["stream"].strip("\r\n"))
-                    else:
-                        logger.debug("Unexpected docker build output: %s", line)
-            except StopIteration:
-                break
-    except docker.errors.BuildError as e:
-        logger.error(f"Failed to build container : {e.msg}")
-        raise
-
-
 @inject
 def containerize(
     tag: t.Union[Tag, str],
@@ -236,7 +204,25 @@ def containerize(
         buildargs=dict(build_args or {}),
         quiet=False,
     )
-    _docker_build_logs(resp)
+
+    console = Console()
+    with console.status("[bold green] Building docker image..."):
+        while True:
+            try:
+                for line in next(resp).decode("utf-8").splitlines():
+                    try:
+                        msg = json.loads(line)
+                        if "stream" in msg:
+                            console.log(msg["stream"].strip("\r\n"))
+                        else:
+                            console.log(msg)
+                    except ValueError:
+                        console.log(line)
+            except StopIteration:
+                break
+            except docker.errors.BuildError as e:
+                logger.error(f"Failed to build container : {e.msg}")
+                raise
 
 
 __all__ = [

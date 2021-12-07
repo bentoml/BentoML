@@ -12,7 +12,7 @@ black --config ./pyproject.toml bentoml/ tests/ docker/
 
 INFO "(black) Formatting VCS stubs..."
 
-git ls-files | grep -e "^typings/**" | xargs --delimiter='\n' -I {} black --config ./pyproject.toml --pyi {}
+git ls-files -z -cm typings/** | xargs -0 -I {} black --config ./pyproject.toml --pyi {}
 
 INFO "(isort) Reordering imports..."
 

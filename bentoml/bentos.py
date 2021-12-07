@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 import fs
 from simple_di import inject
 from simple_di import Provide
-from rich.console import Console
 
 from .exceptions import InvalidArgument
 from ._internal.bento import Bento

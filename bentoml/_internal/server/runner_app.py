@@ -109,20 +109,16 @@ class RunnerAppFactory(BaseAppFactory):
         params_list = await asyncio.gather(
             *tuple(multipart_to_payload_params(r) for r in requests)
         )
-        params_list = [
-            params.map(AutoContainer.payload_to_single) for params in params_list
-        ]
         params = Params.agg(
             params_list,
-            lambda i: AutoContainer.singles_to_batch(
+            lambda i: AutoContainer.payloads_to_batch(
                 i, batch_axis=self.input_batch_axis
             ),
         )
         batch_ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
-        rets = AutoContainer.batch_to_singles(
+        payloads = AutoContainer.batch_to_payloads(
             batch_ret, batch_axis=self.output_batch_axis
         )
-        payloads = map(AutoContainer.single_to_payload, rets)
         return [
             Response(
                 payload.data,

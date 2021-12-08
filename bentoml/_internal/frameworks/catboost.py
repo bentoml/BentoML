@@ -5,17 +5,18 @@ from simple_di import inject
 from simple_di import Provide
 
 from ..types import Tag
+from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
-from ..utils import LazyLoader
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from pandas.core.frame import DataFrame
     import numpy as np
+    from pandas.core.frame import DataFrame
+
     from ..models import ModelStore
 else:
     np = LazyLoader("np", globals(), "numpy")

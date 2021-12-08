@@ -6,7 +6,7 @@ import yaml
 import spacy
 import pytest
 
-import bentoml.spacy
+import bentoml
 from bentoml.exceptions import MissingDependencyException
 
 if TYPE_CHECKING:

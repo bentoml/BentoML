@@ -5,18 +5,12 @@ import logging
 import importlib
 from typing import TYPE_CHECKING
 from pathlib import Path
+from functools import partial
 from distutils.dir_util import copy_tree
 
 import yaml
 from simple_di import inject
 from simple_di import Provide
-from distutils.dir_util import copy_tree
-from functools import partial
-from pathlib import Path
-from typing import TYPE_CHECKING
-
-import yaml
-from simple_di import Provide, inject
 
 from .exceptions import BentoMLException
 from .exceptions import MissingDependencyException
@@ -126,13 +120,14 @@ def load(
             " `bentoml.spacy.load_project()` instead."
         )
     required = model.info.options["pip_package"]
-    print(required)
+
     try:
         _ = importlib.import_module(required)
     except ModuleNotFoundError:
         try:
             from spacy.cli.download import download
 
+            # TODO move this to runner on startup hook
             download(required)
         except (SystemExit, Exception):  # pylint: disable=broad-except
             logger.warning(
@@ -231,8 +226,8 @@ def projects(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
-    from spacy.cli.project.clone import project_clone
     from spacy.cli.project.pull import project_pull
+    from spacy.cli.project.clone import project_clone
 
     if repo_or_store is None:
         repo_or_store = getattr(spacy.about, "__projects__")

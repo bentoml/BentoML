@@ -1,9 +1,10 @@
 import sys
-from typing import TYPE_CHECKING, Dict
+from typing import Dict
+from typing import TYPE_CHECKING
 
+import spacy
 import psutil
 import pytest
-import spacy
 
 import bentoml.spacy
 from tests.integration.frameworks.spacy.test_spacy_impl import test_json

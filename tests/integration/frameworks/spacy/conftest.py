@@ -1,10 +1,10 @@
 import random
 import typing as t
 
-import pytest
 import spacy
-from spacy.training import Example
+import pytest
 from spacy.util import minibatch
+from spacy.training import Example
 
 train_data: t.List[t.Tuple[str, t.Dict[str, t.List[t.Tuple[int, int, str]]]]] = [
     ("Google has changed the logo of its apps", {"entities": [(0, 6, "ORG")]}),

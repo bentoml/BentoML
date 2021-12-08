@@ -17,11 +17,13 @@ logger = logging.getLogger(__name__)
 _drv = None
 
 if TYPE_CHECKING:
-    from _ctypes import _SimpleCData
+    from ctypes import _PointerLike  # type: ignore[reportPrivateUsage]
+    from ctypes import _SimpleCData  # type: ignore[reportPrivateUsage]
+
     from aiohttp import MultipartWriter
     from starlette.requests import Request
 
-    from bentoml._internal.runner.container import Payload
+    from ..runner.container import Payload
 
 T = t.TypeVar("T")
 To = t.TypeVar("To")
@@ -189,7 +191,7 @@ def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
     if isinstance(cpu, (int, float)):
         return float(cpu)
 
-    if isinstance(cpu, str):
+    if isinstance(cpu, str):  # type: ignore[reportUnecessaryIsInstance]
         milli_match = re.match("([0-9]+)m", cpu)
         if milli_match:
             return int(milli_match[1]) / 1000.0
@@ -201,7 +203,7 @@ def _mem_converter(mem: t.Union[int, str]) -> int:
     if isinstance(mem, int):
         return mem
 
-    if isinstance(mem, str):
+    if isinstance(mem, str):  # type: ignore[reportUnecessaryIsInstance]
         unit_match = re.match("([0-9]+)([A-Za-z]{1,2})", mem)
         mem_multipliers = {
             "k": 1000,
@@ -292,7 +294,7 @@ def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
     # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
     # TODO: add threads_per_core, cores, Compute Capability
     global _drv
-    err: "_SimpleCData[bytes]" = ctypes.c_char_p()  # noqa
+    err: "_PointerLike" = ctypes.c_char_p()
     plc = {
         "err": err,
         "device": ctypes.c_int(),
@@ -308,8 +310,8 @@ def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
         res = _drv.cuInit(0)
         if res != CUDA_SUCCESS:
             _drv.cuGetErrorString(res, ctypes.byref(err))
-            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")
-        return _drv, plc
+            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")  # type: ignore
+        return _drv, plc  # type: ignore
     except OSError as e:
         raise BentoMLException(
             f"{e}\nMake sure to have CUDA "

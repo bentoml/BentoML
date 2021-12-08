@@ -292,7 +292,7 @@ def _cuda_lib() -> "ctypes.CDLL":
 def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
     # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
     # TODO: add threads_per_core, cores, Compute Capability
-    global _drv  # pylint: disable=global-statement
+    global _drv
     err: "_PointerLike" = ctypes.c_char_p()
     plc = {
         "err": err,
@@ -309,7 +309,7 @@ def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
         res = _drv.cuInit(0)
         if res != CUDA_SUCCESS:
             _drv.cuGetErrorString(res, ctypes.byref(err))
-            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")  # type: ignore # noqa: LN001
+            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")  # type: ignore
         return _drv, plc  # type: ignore
     except OSError as e:
         raise BentoMLException(

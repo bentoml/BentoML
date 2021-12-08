@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from bentoml import onnx
     from bentoml import gluon
     from bentoml import keras
+    from bentoml import spacy
     from bentoml import mlflow
     from bentoml import paddle
     from bentoml import easyocr
@@ -46,7 +47,6 @@ if TYPE_CHECKING:
     from bentoml import statsmodels
     from bentoml import transformers
     from bentoml import pytorch_lightning
-    from bentoml import spacy
 else:
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")

@@ -139,14 +139,15 @@ def save(
         # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "torch": _torch_version,
-        "pytorch_lightning": _pl_version,
+        "framework": "torch",
+        "torch_version": _torch_version,
+        "pytorch_lightning_version": _pl_version,
     }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

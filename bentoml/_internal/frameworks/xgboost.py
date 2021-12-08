@@ -155,13 +155,16 @@ def save(
         bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
         bst = bentoml.xgboost.load(tag)
     """  # noqa
-    context: t.Dict[str, t.Any] = {"xgboost": xgb.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "xgboost",
+        "xgboost_version": xgb.__version__
+    }
 
     _model = Model.create(
         name,
         module=__name__,
         options=booster_params,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

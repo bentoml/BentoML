@@ -278,8 +278,10 @@ def import_from_tfhub(
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
-        "tensorflow": _tf_version,
-        "tensorflow_hub": _tfhub_version,
+
+        "framework": "tensorflow",
+        "tensorflow_version": _tf_version,
+        "tensorflow_hub_version": _tfhub_version,
     }
     if name is None:
         if isinstance(identifier, str):
@@ -293,7 +295,7 @@ def import_from_tfhub(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     if isinstance(identifier, str):
@@ -355,12 +357,15 @@ def save(
         tag = bentoml.transformers.save("my_tensorflow_model", model)
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
+    context: t.Dict[str, t.Any] = {
+        "framework": "tensorflow",
+        "tensorflow_version": _tf_version,
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

@@ -192,12 +192,15 @@ def save(
 
         bentoml.spacy.save("spacy_roberta", nlp)
     """  # noqa
-    context: t.Dict[str, t.Any] = {"spacy": _spacy_version}
+    context: t.Dict[str, t.Any] = {
+        "framework": "spacy",
+        "spacy_version": _spacy_version
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 
@@ -245,14 +248,15 @@ def projects(
         """
         )
     context: t.Dict[str, t.Any] = {
-        "spacy": _spacy_version,
+        "framework": "spacy",
+        "spacy_version": _spacy_version,
         "tasks": tasks,
     }
     _model = Model.create(
         save_name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     output_path = _model.path_of(SAVE_NAMESPACE)

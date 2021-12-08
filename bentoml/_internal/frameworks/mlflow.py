@@ -160,13 +160,16 @@ def import_from_uri(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
-    context: t.Dict[str, t.Any] = {"mlflow": mlflow.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "mlflow",
+        "mlflow_version": mlflow.__version__
+    }
 
     _model = BentoModel.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

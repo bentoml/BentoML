@@ -401,7 +401,10 @@ def _save(
     **transformers_options_kwargs: str,
 ) -> Tag:
     _check_flax_supported()  # pragma: no cover
-    context: t.Dict[str, t.Any] = {"transformers": transformers.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "transformers",
+        "transformers_version": transformers.__version__
+    }
 
     if isinstance(model_identifier, str):
         try:
@@ -421,7 +424,7 @@ def _save(
     _model = Model.create(
         name,
         module=__name__,
-        framework_context=context,
+        context=context,
         options=None,
         metadata=metadata,
     )

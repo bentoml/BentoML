@@ -145,12 +145,15 @@ def save(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """  # noqa
-    context: t.Dict[str, t.Any] = dict(torch=_torch_version)
+    context: t.Dict[str, t.Any] = {
+        "framework": "torch",
+        "torch_version": _torch_version,
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")

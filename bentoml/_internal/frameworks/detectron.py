@@ -169,8 +169,9 @@ def save(
     """  # noqa
 
     context: t.Dict[str, t.Any] = {
-        "detectron2": _detectron2_version,
-        "torch": _torch_version,
+        "framework": "detectron2",
+        "detectron2_version": _detectron2_version,
+        "torch_version": _torch_version,
     }
     options: t.Dict[str, t.Any] = dict()
 
@@ -178,7 +179,7 @@ def save(
         name,
         module=__name__,
         options=options,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

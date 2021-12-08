@@ -70,7 +70,7 @@ def wrong_module(modelstore: "ModelStore"):
         "wrong_module",
         module=__name__,
         options=None,
-        framework_context=None,
+        context=None,
         metadata=None,
     ) as ctx:
         model.save_model(os.path.join(ctx.path, "saved_model.model"))

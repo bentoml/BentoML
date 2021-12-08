@@ -81,7 +81,7 @@ def wrong_module(modelstore, sklearn_onnx_model):
         labels=None,
         options=None,
         metadata=None,
-        framework_context=None,
+        context=None,
     ) as _model:
         onnx.save(model, _model.path_of("saved_model.onnx"))
         return _model.path

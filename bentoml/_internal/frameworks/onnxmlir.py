@@ -90,13 +90,16 @@ def save(
 
     Examples::
     """  # noqa
-    context: t.Dict[str, t.Any] = {"onnxmlir": _spec.origin}
+    context: t.Dict[str, t.Any] = {
+        "framework": "onnxmlir",
+        "onnxmlir_version": _spec.origin
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
     fpath = _model.path_of(f"{SAVE_NAMESPACE}{ONNXMLIR_EXTENSION}")
     _model.info.options["compiled_path"] = os.path.relpath(fpath, _model.path)

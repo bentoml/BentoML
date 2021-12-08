@@ -95,7 +95,7 @@ def test_model(tmpdir: "Path"):
         module="test",
         labels={"label": "text"},
         options={"option": "value"},
-        framework_context={"ctx": "val"},
+        context={"ctx": "val"},
         custom_objects={
             "add": AdditionClass(add_num_1),
         },

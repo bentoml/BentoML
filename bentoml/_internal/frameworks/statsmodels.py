@@ -111,12 +111,15 @@ def save(
 
     Examples::
     """  # noqa
-    context: t.Dict[str, t.Any] = {"statsmodels": statsmodels.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "statsmodels",
+        "statsmodels_version": statsmodels.__version__
+    }
     _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
 
     model.save(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))

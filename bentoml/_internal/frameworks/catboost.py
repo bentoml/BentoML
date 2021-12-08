@@ -208,13 +208,16 @@ def save(
     if "model_type" not in model_params:
         model_params["model_type"] = "classifier"
 
-    context = {"catboost": _catboost_version}
+    context = {
+        "framework": "catboost",
+        "framework_version": _catboost_version
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=model_params,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
 
     path = _model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")

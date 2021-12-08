@@ -104,14 +104,17 @@ def save(
 
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"h2o": h2o.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "h2o",
+        "h2o_version": h2o.__version__
+    }
     options: t.Dict[str, t.Any] = dict()
 
     _model = Model.create(
         name,
         module=__name__,
         options=options,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

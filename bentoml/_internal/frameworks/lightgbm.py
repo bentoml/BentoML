@@ -168,13 +168,16 @@ def save(
         # load the booster back:
         gbm = bentoml.lightgbm.load("my_lightgbm_model:latest")
     """  # noqa
-    context: t.Dict[str, t.Any] = {"lightgbm": lgb.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "lightgbm",
+        "lightgbm_version": lgb.__version__
+    }
 
     _model = Model.create(
         name,
         module=__name__,
         options=booster_params,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

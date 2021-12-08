@@ -117,13 +117,16 @@ def save(
     Examples:
 
     """  # noqa
-    context = {"sklearn": _sklearn_version}
+    context = {
+        "framework": "sklearn",
+        "sklearn_version": _sklearn_version
+    }
 
     _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
 
     joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))

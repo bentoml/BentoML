@@ -94,7 +94,7 @@ def wrong_module(lightgbm_model, modelstore: "ModelStore"):
         module=__name__,
         labels=None,
         options=None,
-        framework_context=None,
+        context=None,
         metadata=None,
     ) as _model:
         lightgbm_model.save_model(_model.path_of("saved_model.txt"))

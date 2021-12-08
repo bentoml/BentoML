@@ -170,7 +170,10 @@ def _save(
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
 ) -> Tag:
-    context: t.Dict[str, t.Any] = {"paddlepaddle": paddle.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "paddlepaddle",
+        "paddlepaddle_version": paddle.__version__
+    }
     if isinstance(model, str):
         context["paddlehub"] = hub.__version__
         if not os.path.isdir(model):
@@ -210,7 +213,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
     _model = Model.create(
         name,
         module=__name__,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     if isinstance(model, str):

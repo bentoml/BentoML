@@ -100,13 +100,16 @@ def save(
 
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"gluon": mxnet.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "gluon",
+        "gluon_version": mxnet.__version__
+    }
     options: t.Dict[str, t.Any] = dict()
     _model = Model.create(
         name,
         module=__name__,
         options=options,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

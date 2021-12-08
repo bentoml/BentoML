@@ -138,7 +138,10 @@ def save(
 
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"easyocr": easyocr.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework": "easyocr",
+        "easyocr_version": easyocr.__version__
+    }
     if lang_list is None:
         lang_list = ["en"]
     options: t.Dict[str, t.Any] = dict(
@@ -150,7 +153,7 @@ def save(
         name,
         module=__name__,
         options=options,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

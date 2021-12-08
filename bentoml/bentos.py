@@ -187,6 +187,7 @@ def containerize(
     build_args: t.Optional[t.Dict[str, str]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
     no_cache: bool = False,
+    platform: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
     bento = _bento_store.get(tag)
@@ -208,6 +209,9 @@ def containerize(
     if labels:
         for key, value in labels.items():
             docker_build_cmd += ["--label", f"{key}={value}"]
+
+    if platform:
+        docker_build_cmd += ["--platform", platform]
 
     env = os.environ.copy()
     env["DOCKER_SCAN_SUGGEST"] = "false"

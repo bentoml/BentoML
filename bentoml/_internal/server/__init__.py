@@ -156,19 +156,18 @@ def serve_production(
     for runner_name, runner in svc.runners.items():
         sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
         assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
-        runner_socket = CircusSocket(
+        sockets_map[runner_name] = CircusSocket(
             name=runner_name,
             path=sockets_path,
             umask=0,
         )
-        sockets_map[runner_name] = runner_socket
         cmd_runner = f"""import bentoml._internal.server
 bentoml._internal.server.start_prod_runner_server(
     "{bento_identifier}",
     "{runner_name}",
     working_dir="{working_dir}",
     instance_id=$(CIRCUS.WID),
-    fd={runner_socket.fileno()},
+    fd=$(circus.sockets.{runner_name}),
 )"""
         watchers.append(
             Watcher(

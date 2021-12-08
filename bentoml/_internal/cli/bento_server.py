@@ -88,6 +88,13 @@ def add_serve_command(cli) -> None:
             sys.path.insert(0, working_dir)
 
         if production:
+            if run_with_ngrok:
+                logger.warning(
+                    "--run-with-ngrok option is not supported in production server"
+                )
+            if reload:
+                logger.warning("--reload option is not supported in production server")
+
             from ..server import serve_production
 
             serve_production(

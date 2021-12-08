@@ -228,7 +228,7 @@ def start_dev_api_server(
     working_dir: t.Optional[str] = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
-    instance_id: t.Optional[int] = None,
+    instance_id: t.Optional[int] = None,  # pylint: disable=unused-argument
 ):
     import uvicorn  # type: ignore
 
@@ -260,7 +260,7 @@ def start_prod_api_server(
     runner_map: t.Dict[str, str],
     backlog: int,
     working_dir: t.Optional[str] = None,
-    instance_id: t.Optional[int] = None,
+    instance_id: t.Optional[int] = None,  # pylint: disable=unused-argument
 ):
     import uvicorn  # type: ignore
 

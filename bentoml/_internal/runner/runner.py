@@ -2,9 +2,9 @@ import os
 import re
 import enum
 import typing as t
-from typing import TYPE_CHECKING
 from abc import ABC
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 import attr
 import psutil
@@ -18,12 +18,14 @@ from ..configuration.containers import BentoServerContainer
 
 if TYPE_CHECKING:
     import platform
+
     if platform.system() == "Darwin":
         from psutil._psosx import svmem
     elif platform.system() == "Linux":
         from psutil._pslinux import svmem
     else:
         from psutil._pswindows import svmem
+
 
 @attr.define
 class ResourceQuota:
@@ -32,7 +34,7 @@ class ResourceQuota:
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus: t.List[str]= attr.field(converter=_gpu_converter, default=None)
+    gpus: t.List[str] = attr.field(converter=_gpu_converter, default=None)
 
     @cpu.default  # type: ignore
     def _get_default_cpu(self) -> float:

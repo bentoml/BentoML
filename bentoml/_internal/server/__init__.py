@@ -22,6 +22,7 @@ def serve_development(
     bento_identifier: str,
     working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
+    host: str = Provide[BentoServerContainer.config.host],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
@@ -55,7 +56,8 @@ bentoml._internal.server.start_ngrok_server()"""
 import bentoml._internal.server
 bentoml._internal.server.start_dev_api_server(
     "{bento_identifier}",
-    {port},
+    port={port},
+    host="{host}",
     working_dir="{working_dir}",
     reload={reload},
     reload_delay={reload_delay},
@@ -96,6 +98,7 @@ def serve_production(
     bento_identifier: str,
     working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
+    host: str = Provide[BentoServerContainer.config.host],
     app_workers: t.Optional[int] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
@@ -151,6 +154,7 @@ import bentoml._internal.server
 bentoml._internal.server.start_prod_api_server(
     "{bento_identifier}",
     port={port},
+    host="{host}",
     working_dir="{working_dir}",
     instance_id=$(CIRCUS.WID),
     runner_map={cmd_runner_arg},
@@ -184,6 +188,7 @@ bentoml._internal.server.start_prod_api_server(
 def start_dev_api_server(
     bento_identifier: str,
     port: int,
+    host: str,
     working_dir: t.Optional[str] = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
@@ -194,6 +199,7 @@ def start_dev_api_server(
     log_level = "debug" if get_debug_mode() else "info"
     svc = load(bento_identifier, working_dir=working_dir)
     uvicorn_options = {
+        "host": host,
         "port": port,
         "log_level": log_level,
         "reload": reload,
@@ -213,6 +219,7 @@ def start_dev_api_server(
 def start_prod_api_server(
     bento_identifier: str,
     port: int,
+    host: str,
     runner_map: t.Dict[str, str],
     working_dir: t.Optional[str] = None,
     reload: bool = False,
@@ -225,7 +232,7 @@ def start_prod_api_server(
     BentoServerContainer.remote_runner_mapping.set(runner_map)
     svc = load(bento_identifier, working_dir=working_dir)
     uvicorn_options = {
-        "host": "0.0.0.0",
+        "host": host,
         "port": port,
         "log_level": log_level,
         "reload": reload,

@@ -34,6 +34,14 @@ def add_serve_command(cli) -> None:
         show_default=True,
     )
     @click.option(
+        "--host",
+        type=click.STRING,
+        default=BentoServerContainer.config.host.get(),
+        help="The host to bind for the REST api server",
+        envvar="BENTOML_HOST",
+        show_default=True,
+    )
+    @click.option(
         "--reload",
         type=click.BOOL,
         is_flag=True,
@@ -60,6 +68,7 @@ def add_serve_command(cli) -> None:
         bento,
         working_dir,
         port,
+        host,
         reload,
         reload_delay,
         run_with_ngrok,
@@ -101,6 +110,7 @@ def add_serve_command(cli) -> None:
                 bento,
                 working_dir=working_dir,
                 port=port,
+                host=host,
             )
         else:
             from ..server import serve_development
@@ -110,6 +120,7 @@ def add_serve_command(cli) -> None:
                 working_dir=working_dir,
                 with_ngrok=run_with_ngrok,
                 port=port,
+                host=host,
                 reload=reload,
                 reload_delay=reload_delay,
             )

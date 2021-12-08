@@ -48,10 +48,23 @@ validate_or_create_dir(DEFAULT_MODELS_PATH)
 _larger_than_zero: t.Callable[[int], bool] = lambda val: val > 0
 _is_upper: t.Callable[[str], bool] = lambda string: string.isupper()
 _check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
+
+
+def _is_ip_address(addr: str) -> bool:
+    import socket
+
+    try:
+        socket.inet_aton(addr)
+        return True
+    except socket.error:
+        return False
+
+
 SCHEMA = Schema(
     {
         "bento_server": {
             "port": And(int, _larger_than_zero),
+            "host": And(str, _is_ip_address),
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),

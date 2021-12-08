@@ -29,7 +29,7 @@ def test_spacy_runner_setup_run_batch(
     assert runner.num_replica == 1
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
 
-    res = runner.run_batch(test_json["text"])
+    res = runner.run_batch([test_json["text"]])
     for i in res:
         assert i.text == test_json["text"]
 

@@ -5,7 +5,7 @@ import spacy
 import pytest
 import spacy.cli
 
-import bentoml.spacy
+import bentoml
 from bentoml.exceptions import BentoMLException
 
 if TYPE_CHECKING:

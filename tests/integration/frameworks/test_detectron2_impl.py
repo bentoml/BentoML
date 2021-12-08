@@ -11,7 +11,7 @@ from detectron2.data import transforms as T
 from detectron2.config import get_cfg
 from detectron2.modeling import build_model
 
-import bentoml.detectron
+import bentoml
 
 if TYPE_CHECKING:
     from detectron2.config import CfgNode

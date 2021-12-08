@@ -9,8 +9,8 @@ from catboost.core import CatBoost
 from catboost.core import CatBoostRegressor
 from catboost.core import CatBoostClassifier
 
+import bentoml
 import bentoml.models
-import bentoml.catboost
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import test_df

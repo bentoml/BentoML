@@ -6,7 +6,7 @@ import spacy
 import psutil
 import pytest
 
-import bentoml.spacy
+import bentoml
 from tests.integration.frameworks.spacy.test_spacy_impl import test_json
 
 if TYPE_CHECKING:

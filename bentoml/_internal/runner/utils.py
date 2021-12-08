@@ -309,7 +309,7 @@ def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
         res = _drv.cuInit(0)
         if res != CUDA_SUCCESS:
             _drv.cuGetErrorString(res, ctypes.byref(err))
-            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")  # type: ignore
+            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")  # type: ignore # noqa: LN001
         return _drv, plc  # type: ignore
     except OSError as e:
         raise BentoMLException(

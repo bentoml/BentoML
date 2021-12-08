@@ -34,6 +34,21 @@ def add_serve_command(cli) -> None:
         show_default=True,
     )
     @click.option(
+        "--host",
+        type=click.STRING,
+        default=BentoServerContainer.config.host.get(),
+        help="The host to bind for the REST api server",
+        envvar="BENTOML_HOST",
+        show_default=True,
+    )
+    @click.option(
+        "--backlog",
+        type=click.INT,
+        default=BentoServerContainer.config.backlog.get(),
+        help="The maximum number of pending connections.",
+        show_default=True,
+    )
+    @click.option(
         "--reload",
         type=click.BOOL,
         is_flag=True,
@@ -60,6 +75,8 @@ def add_serve_command(cli) -> None:
         bento,
         working_dir,
         port,
+        host,
+        backlog,
         reload,
         reload_delay,
         run_with_ngrok,
@@ -88,12 +105,21 @@ def add_serve_command(cli) -> None:
             sys.path.insert(0, working_dir)
 
         if production:
+            if run_with_ngrok:
+                logger.warning(
+                    "--run-with-ngrok option is not supported in production server"
+                )
+            if reload:
+                logger.warning("--reload option is not supported in production server")
+
             from ..server import serve_production
 
             serve_production(
                 bento,
                 working_dir=working_dir,
                 port=port,
+                host=host,
+                backlog=backlog,
             )
         else:
             from ..server import serve_development
@@ -103,6 +129,7 @@ def add_serve_command(cli) -> None:
                 working_dir=working_dir,
                 with_ngrok=run_with_ngrok,
                 port=port,
+                host=host,
                 reload=reload,
                 reload_delay=reload_delay,
             )

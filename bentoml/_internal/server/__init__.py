@@ -16,12 +16,47 @@ from ..configuration.containers import BentoServerContainer
 
 logger = logging.getLogger(__name__)
 
+UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": "%(message)s",
+            "use_colors": False,
+            "datefmt": "[%X]",
+        },
+        "access": {
+            "()": "uvicorn.logging.AccessFormatter",
+            "fmt": '%(client_addr)s - "%(request_line)s" %(status_code)s',  # noqa: E501
+            "use_colors": False,
+            "datefmt": "[%X]",
+        },
+    },
+    "handlers": {
+        "default": {
+            "formatter": "default",
+            "class": "rich.logging.RichHandler",
+        },
+        "access": {
+            "formatter": "access",
+            "class": "rich.logging.RichHandler",
+        },
+    },
+    "loggers": {
+        "uvicorn": {"handlers": [], "level": "INFO"},
+        "uvicorn.error": {"handlers": ["default"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
+    },
+}
+
 
 @inject
 def serve_development(
     bento_identifier: str,
     working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
+    host: str = Provide[BentoServerContainer.config.host],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
@@ -29,7 +64,7 @@ def serve_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
     from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER
+    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
     from circus.arbiter import Arbiter  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
@@ -55,7 +90,8 @@ bentoml._internal.server.start_ngrok_server()"""
 import bentoml._internal.server
 bentoml._internal.server.start_dev_api_server(
     "{bento_identifier}",
-    {port},
+    port={port},
+    host="{host}",
     working_dir="{working_dir}",
     reload={reload},
     reload_delay={reload_delay},
@@ -96,6 +132,8 @@ def serve_production(
     bento_identifier: str,
     working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
+    host: str = Provide[BentoServerContainer.config.host],
+    backlog: int = Provide[BentoServerContainer.config.backlog],
     app_workers: t.Optional[int] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
@@ -106,7 +144,7 @@ def serve_production(
     import json
 
     from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER
+    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
     from circus.arbiter import Arbiter  # type: ignore
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -151,9 +189,11 @@ import bentoml._internal.server
 bentoml._internal.server.start_prod_api_server(
     "{bento_identifier}",
     port={port},
+    host="{host}",
     working_dir="{working_dir}",
     instance_id=$(CIRCUS.WID),
     runner_map={cmd_runner_arg},
+    backlog={backlog},
 )"""
     watchers.append(
         Watcher(
@@ -184,25 +224,28 @@ bentoml._internal.server.start_prod_api_server(
 def start_dev_api_server(
     bento_identifier: str,
     port: int,
+    host: str,
     working_dir: t.Optional[str] = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
-    instance_id: t.Optional[int] = None,
+    instance_id: t.Optional[int] = None,  # pylint: disable=unused-argument
 ):
     import uvicorn  # type: ignore
 
     log_level = "debug" if get_debug_mode() else "info"
     svc = load(bento_identifier, working_dir=working_dir)
     uvicorn_options = {
+        "host": host,
         "port": port,
         "log_level": log_level,
         "reload": reload,
         "reload_delay": reload_delay,
+        "log_config": UVICORN_LOGGING_CONFIG,
     }
 
     if reload:
         # When reload=True, the app parameter in uvicorn.run(app) must be the import str
-        asgi_app_import_str = f"{svc._import_str}.asgi_app"
+        asgi_app_import_str = f"{svc._import_str}.asgi_app"  # type: ignore[reportPrivateUsage]
         # TODO: use svc.build_args.include/exclude as default files to watch
         # TODO: watch changes in model store when "latest" model tag is used
         uvicorn.run(asgi_app_import_str, **uvicorn_options)
@@ -213,11 +256,11 @@ def start_dev_api_server(
 def start_prod_api_server(
     bento_identifier: str,
     port: int,
+    host: str,
     runner_map: t.Dict[str, str],
+    backlog: int,
     working_dir: t.Optional[str] = None,
-    reload: bool = False,
-    reload_delay: t.Optional[float] = None,
-    instance_id: t.Optional[int] = None,
+    instance_id: t.Optional[int] = None,  # pylint: disable=unused-argument
 ):
     import uvicorn  # type: ignore
 
@@ -225,11 +268,11 @@ def start_prod_api_server(
     BentoServerContainer.remote_runner_mapping.set(runner_map)
     svc = load(bento_identifier, working_dir=working_dir)
     uvicorn_options = {
-        "host": "0.0.0.0",
+        "host": host,
         "port": port,
         "log_level": log_level,
-        "reload": reload,
-        "reload_delay": reload_delay,
+        "backlog": backlog,
+        "log_config": UVICORN_LOGGING_CONFIG,
     }
 
     uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
@@ -250,4 +293,6 @@ def start_prod_runner_server(
     runner = svc.runners[name]
     app = RunnerAppFactory(runner, instance_id=instance_id)()
 
-    uvicorn.run(app, fd=fd, log_level="info")  # type: ignore
+    uvicorn.run(
+        app, fd=fd, log_level="info", log_config=UVICORN_LOGGING_CONFIG  # type: ignore
+    )

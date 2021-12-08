@@ -16,6 +16,40 @@ from ..configuration.containers import BentoServerContainer
 
 logger = logging.getLogger(__name__)
 
+UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": "%(message)s",
+            "use_colors": False,
+            "datefmt": "[%X]",
+        },
+        "access": {
+            "()": "uvicorn.logging.AccessFormatter",
+            "fmt": '%(client_addr)s - "%(request_line)s" %(status_code)s',  # noqa: E501
+            "use_colors": False,
+            "datefmt": "[%X]",
+        },
+    },
+    "handlers": {
+        "default": {
+            "formatter": "default",
+            "class": "rich.logging.RichHandler",
+        },
+        "access": {
+            "formatter": "access",
+            "class": "rich.logging.RichHandler",
+        },
+    },
+    "loggers": {
+        "uvicorn": {"handlers": [], "level": "INFO"},
+        "uvicorn.error": {"handlers": ["default"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
+    },
+}
+
 
 @inject
 def serve_development(
@@ -30,7 +64,7 @@ def serve_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
     from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER
+    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
     from circus.arbiter import Arbiter  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
@@ -109,7 +143,7 @@ def serve_production(
     import json
 
     from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER
+    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
     from circus.arbiter import Arbiter  # type: ignore
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -204,11 +238,12 @@ def start_dev_api_server(
         "log_level": log_level,
         "reload": reload,
         "reload_delay": reload_delay,
+        "log_config": UVICORN_LOGGING_CONFIG,
     }
 
     if reload:
         # When reload=True, the app parameter in uvicorn.run(app) must be the import str
-        asgi_app_import_str = f"{svc._import_str}.asgi_app"
+        asgi_app_import_str = f"{svc._import_str}.asgi_app"  # type: ignore[reportPrivateUsage]
         # TODO: use svc.build_args.include/exclude as default files to watch
         # TODO: watch changes in model store when "latest" model tag is used
         uvicorn.run(asgi_app_import_str, **uvicorn_options)
@@ -237,6 +272,7 @@ def start_prod_api_server(
         "log_level": log_level,
         "reload": reload,
         "reload_delay": reload_delay,
+        "log_config": UVICORN_LOGGING_CONFIG,
     }
 
     uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
@@ -257,4 +293,6 @@ def start_prod_runner_server(
     runner = svc.runners[name]
     app = RunnerAppFactory(runner, instance_id=instance_id)()
 
-    uvicorn.run(app, fd=fd, log_level="info")  # type: ignore
+    uvicorn.run(
+        app, fd=fd, log_level="info", log_config=UVICORN_LOGGING_CONFIG  # type: ignore
+    )

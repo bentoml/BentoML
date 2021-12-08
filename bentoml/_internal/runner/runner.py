@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import attr
 import psutil
 
-from .utils import _cpu_converter  # type: ignore[reportPrivateUsage]
-from .utils import _gpu_converter  # type: ignore[reportPrivateUsage]
-from .utils import _mem_converter  # type: ignore[reportPrivateUsage]
-from .utils import _query_cgroup_cpu_count  # type: ignore[reportPrivateUsage]
+from .utils import cpu_converter
+from .utils import gpu_converter
+from .utils import mem_converter
+from .utils import query_cgroup_cpu_count
 from ..types import Tag
 from ..configuration.containers import BentoServerContainer
 
@@ -29,18 +29,18 @@ if TYPE_CHECKING:
 
 @attr.define
 class ResourceQuota:
-    cpu: float = attr.field(converter=_cpu_converter)
-    mem: int = attr.field(converter=_mem_converter)
+    cpu: float = attr.field(converter=cpu_converter)
+    mem: int = attr.field(converter=mem_converter)
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus: t.List[str] = attr.field(converter=_gpu_converter, default=None)
+    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
 
     @cpu.default  # type: ignore
     def _get_default_cpu(self) -> float:
         # Default to the total CPU count available in current node or cgroup
         if psutil.POSIX:
-            return _query_cgroup_cpu_count()
+            return query_cgroup_cpu_count()
         else:
             cpu_count = os.cpu_count()
             if cpu_count is not None:

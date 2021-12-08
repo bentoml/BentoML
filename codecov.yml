@@ -205,39 +205,39 @@ flags:
   catboost:
     carryforward: true
     paths:
-      - bentoml/catboost.py
+      - bentoml/_internal/frameworks/catboost.py
   detectron:
     carryforward: true
     paths:
-      - bentoml/detectron.py
+      - bentoml/_internal/frameworks/detectron.py
   easyocr:
     carryforward: true
     paths:
-      - bentoml/easyocr.py
+      - bentoml/_internal/frameworks/easyocr.py
   evalml:
     carryforward: true
     paths:
-      - bentoml/evalml.py
+      - bentoml/_internal/frameworks/evalml.py
   fastai:
     carryforward: true
     paths:
-      - bentoml/fastai.py
+      - bentoml/_internal/frameworks/fastai.py
   fasttext:
     carryforward: true
     paths:
-      - bentoml/fasttext.py
+      - bentoml/_internal/frameworks/fasttext.py
   flax:
     carryforward: true
     paths:
-      - bentoml/flax.py
+      - bentoml/_internal/frameworks/flax.py
   gluon:
     carryforward: true
     paths:
-      - bentoml/gluon.py
+      - bentoml/_internal/frameworks/gluon.py
   h2o:
     carryforward: true
     paths:
-      - bentoml/h2o.py
+      - bentoml/_internal/frameworks/h2o.py
   keras:
     carryforward: true
     paths:
@@ -245,51 +245,51 @@ flags:
   lightgbm:
     carryforward: true
     paths:
-      - bentoml/lightgbm.py
+      - bentoml/_internal/frameworks/lightgbm.py
   mlflow:
     carryforward: true
     paths:
-      - bentoml/mlflow.py
+      - bentoml/_internal/frameworks/mlflow.py
   onnx:
     carryforward: true
     paths:
-      - bentoml/onnx.py
+      - bentoml/_internal/frameworks/onnx.py
   onnxmlir:
     carryforward: true
     paths:
-      - bentoml/onnxmlir.py
+      - bentoml/_internal/frameworks/onnxmlir.py
   paddle:
     carryforward: true
     paths:
-      - bentoml/paddle.py
+      - bentoml/_internal/frameworks/paddle.py
   pycaret:
     carryforward: true
     paths:
-      - bentoml/pycaret.py
+      - bentoml/_internal/frameworks/pycaret.py
   pyspark:
     carryforward: true
     paths:
-      - bentoml/pyspark.py
+      - bentoml/_internal/frameworks/pyspark.py
   pytorch:
     carryforward: true
     paths:
-      - bentoml/pytorch.py
+      - bentoml/_internal/frameworks/pytorch.py
   pytorch_lightning:
     carryforward: true
     paths:
-      - bentoml/pytorch_lightning.py
+      - bentoml/_internal/frameworks/pytorch_lightning.py
   sklearn:
     carryforward: true
     paths:
-      - bentoml/sklearn.py
+      - bentoml/_internal/frameworks/sklearn.py
   spacy:
     carryforward: true
     paths:
-      - bentoml/spacy.py
+      - bentoml/_internal/frameworks/spacy.py
   statsmodels:
     carryforward: true
     paths:
-      - bentoml/statsmodels.py
+      - bentoml/_internal/frameworks/statsmodels.py
   tensorflow:
     carryforward: true
     paths:
@@ -297,11 +297,11 @@ flags:
   transformers:
     carryforward: true
     paths:
-      - bentoml/transformers.py
+      - bentoml/_internal/frameworks/transformers.py
   xgboost:
     carryforward: true
     paths:
-      - bentoml/xgboost.py
+      - bentoml/_internal/frameworks/xgboost.py
   e2e-tests:
     carryforward: true
     paths:

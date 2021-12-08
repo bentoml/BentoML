@@ -102,7 +102,7 @@ def save(
 
     context: t.Dict[str, t.Any] = {
         "framework": "gluon",
-        "gluon_version": mxnet.__version__
+        "gluon_version": mxnet.__version__,
     }
     options: t.Dict[str, t.Any] = dict()
     _model = Model.create(

@@ -140,7 +140,7 @@ def save(
 
     context: t.Dict[str, t.Any] = {
         "framework": "easyocr",
-        "easyocr_version": easyocr.__version__
+        "easyocr_version": easyocr.__version__,
     }
     if lang_list is None:
         lang_list = ["en"]

@@ -278,7 +278,6 @@ def import_from_tfhub(
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
-
         "framework": "tensorflow",
         "tensorflow_version": _tf_version,
         "tensorflow_hub_version": _tfhub_version,

@@ -208,10 +208,7 @@ def save(
     if "model_type" not in model_params:
         model_params["model_type"] = "classifier"
 
-    context = {
-        "framework": "catboost",
-        "framework_version": _catboost_version
-    }
+    context = {"framework": "catboost", "framework_version": _catboost_version}
     _model = Model.create(
         name,
         module=__name__,

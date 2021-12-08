@@ -172,7 +172,7 @@ def _save(
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
         "framework": "paddlepaddle",
-        "paddlepaddle_version": paddle.__version__
+        "paddlepaddle_version": paddle.__version__,
     }
     if isinstance(model, str):
         context["paddlehub"] = hub.__version__

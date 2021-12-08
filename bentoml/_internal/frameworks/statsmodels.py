@@ -113,7 +113,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework": "statsmodels",
-        "statsmodels_version": statsmodels.__version__
+        "statsmodels_version": statsmodels.__version__,
     }
     _model = Model.create(
         name,

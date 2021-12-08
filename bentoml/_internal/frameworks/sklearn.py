@@ -117,10 +117,7 @@ def save(
     Examples:
 
     """  # noqa
-    context = {
-        "framework": "sklearn",
-        "sklearn_version": _sklearn_version
-    }
+    context = {"framework": "sklearn", "sklearn_version": _sklearn_version}
 
     _model = Model.create(
         name,

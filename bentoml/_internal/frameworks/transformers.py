@@ -403,7 +403,7 @@ def _save(
     _check_flax_supported()  # pragma: no cover
     context: t.Dict[str, t.Any] = {
         "framework": "transformers",
-        "transformers_version": transformers.__version__
+        "transformers_version": transformers.__version__,
     }
 
     if isinstance(model_identifier, str):

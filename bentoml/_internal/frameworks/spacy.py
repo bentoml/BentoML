@@ -194,7 +194,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework": "spacy",
-        "spacy_version": _spacy_version
+        "spacy_version": _spacy_version,
     }
     _model = Model.create(
         name,

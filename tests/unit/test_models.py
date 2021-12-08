@@ -1,8 +1,8 @@
 import os
 import random
 import string
-from typing import TYPE_CHECKING
 from sys import version_info as pyver
+from typing import TYPE_CHECKING
 
 try:
     import importlib.metadata as importlib_metadata

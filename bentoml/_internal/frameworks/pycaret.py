@@ -133,10 +133,7 @@ def save(
         # NOTE: pycaret setup config will be saved with the model
         bentoml.pycaret.save("my_model", final_model)
     """  # noqa
-    context: t.Dict[str, t.Any] = {
-        "framework": "pycaret",
-        "pycaret_version": version()
-    }
+    context: t.Dict[str, t.Any] = {"framework": "pycaret", "pycaret_version": version()}
     _model = Model.create(
         name,
         module=__name__,

@@ -170,7 +170,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework": "lightgbm",
-        "lightgbm_version": lgb.__version__
+        "lightgbm_version": lgb.__version__,
     }
 
     _model = Model.create(

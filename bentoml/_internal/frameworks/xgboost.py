@@ -157,7 +157,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework": "xgboost",
-        "xgboost_version": xgb.__version__
+        "xgboost_version": xgb.__version__,
     }
 
     _model = Model.create(

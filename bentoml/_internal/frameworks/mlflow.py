@@ -162,7 +162,7 @@ def import_from_uri(
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
         "framework": "mlflow",
-        "mlflow_version": mlflow.__version__
+        "mlflow_version": mlflow.__version__,
     }
 
     _model = BentoModel.create(

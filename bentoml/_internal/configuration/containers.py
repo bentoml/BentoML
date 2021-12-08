@@ -45,9 +45,12 @@ validate_or_create_dir(BENTOML_HOME)
 validate_or_create_dir(DEFAULT_BENTOS_PATH)
 validate_or_create_dir(DEFAULT_MODELS_PATH)
 
-_larger_than_zero: t.Callable[[int], bool] = lambda val: val > 0
 _is_upper: t.Callable[[str], bool] = lambda string: string.isupper()
 _check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
+_larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
+    lambda target: lambda val: val > target
+)
+_larger_than_zero: t.Callable[[int], bool] = _larger_than(0)
 
 
 def _is_ip_address(addr: str) -> bool:
@@ -65,6 +68,7 @@ SCHEMA = Schema(
         "bento_server": {
             "port": And(int, _larger_than_zero),
             "host": And(str, _is_ip_address),
+            "backlog": And(int, _larger_than(64)),
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),

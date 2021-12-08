@@ -42,6 +42,13 @@ def add_serve_command(cli) -> None:
         show_default=True,
     )
     @click.option(
+        "--backlog",
+        type=click.INT,
+        default=BentoServerContainer.config.backlog.get(),
+        help="The maximum number of pending connections.",
+        show_default=True,
+    )
+    @click.option(
         "--reload",
         type=click.BOOL,
         is_flag=True,
@@ -69,6 +76,7 @@ def add_serve_command(cli) -> None:
         working_dir,
         port,
         host,
+        backlog,
         reload,
         reload_delay,
         run_with_ngrok,
@@ -111,6 +119,7 @@ def add_serve_command(cli) -> None:
                 working_dir=working_dir,
                 port=port,
                 host=host,
+                backlog=backlog,
             )
         else:
             from ..server import serve_development

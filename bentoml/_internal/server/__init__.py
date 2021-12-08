@@ -133,6 +133,7 @@ def serve_production(
     working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
     host: str = Provide[BentoServerContainer.config.host],
+    backlog: int = Provide[BentoServerContainer.config.backlog],
     app_workers: t.Optional[int] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
@@ -192,6 +193,7 @@ bentoml._internal.server.start_prod_api_server(
     working_dir="{working_dir}",
     instance_id=$(CIRCUS.WID),
     runner_map={cmd_runner_arg},
+    backlog={backlog},
 )"""
     watchers.append(
         Watcher(
@@ -256,9 +258,8 @@ def start_prod_api_server(
     port: int,
     host: str,
     runner_map: t.Dict[str, str],
+    backlog: int,
     working_dir: t.Optional[str] = None,
-    reload: bool = False,
-    reload_delay: t.Optional[float] = None,
     instance_id: t.Optional[int] = None,
 ):
     import uvicorn  # type: ignore
@@ -270,8 +271,7 @@ def start_prod_api_server(
         "host": host,
         "port": port,
         "log_level": log_level,
-        "reload": reload,
-        "reload_delay": reload_delay,
+        "backlog": backlog,
         "log_config": UVICORN_LOGGING_CONFIG,
     }
 

@@ -1,11 +1,11 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from ..types import Tag
+from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
@@ -14,9 +14,12 @@ from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    import numpy as np
     from pandas.core.frame import DataFrame
 
     from ..models import ModelStore
+else:
+    np = LazyLoader("np", globals(), "numpy")
 
 try:
     import catboost as cbt
@@ -38,15 +41,6 @@ _catboost_version = importlib_metadata.version("catboost")
 # TODO: support cbt.Pool runner io container
 
 CATBOOST_EXT = "cbm"
-
-CatBoostModelType = t.TypeVar(
-    "CatBoostModelType",
-    bound=t.Union[
-        cbt.core.CatBoost,
-        cbt.core.CatBoostClassifier,
-        cbt.core.CatBoostRegressor,
-    ],
-)
 
 
 def _get_model_info(
@@ -74,7 +68,11 @@ def _get_model_info(
 
 def _load_helper(
     model_file: str, model_params: t.Optional[t.Dict[str, t.Union[str, int]]]
-) -> CatBoostModelType:
+) -> t.Union[
+    cbt.core.CatBoost,
+    cbt.core.CatBoostClassifier,
+    cbt.core.CatBoostRegressor,
+]:
 
     if model_params is not None:
         model_type = model_params["model_type"]
@@ -88,7 +86,11 @@ def _load_helper(
     else:
         model = cbt.core.CatBoost()
 
-    _m = model.load_model(model_file)  # type: CatBoostModelType
+    _m: t.Union[
+        cbt.core.CatBoost,
+        cbt.core.CatBoostClassifier,
+        cbt.core.CatBoostRegressor,
+    ] = model.load_model(model_file)
     return _m
 
 
@@ -97,7 +99,11 @@ def load(
     tag: t.Union[str, Tag],
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> CatBoostModelType:
+) -> t.Union[
+    cbt.core.CatBoost,
+    cbt.core.CatBoostClassifier,
+    cbt.core.CatBoostRegressor,
+]:
 
     """
     Load a model from BentoML local modelstore with given name.
@@ -130,7 +136,11 @@ def load(
 @inject
 def save(
     name: str,
-    model: CatBoostModelType,
+    model: t.Union[
+        cbt.core.CatBoost,
+        cbt.core.CatBoostClassifier,
+        cbt.core.CatBoostRegressor,
+    ],
     *,
     model_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]] = None,
     model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
@@ -231,11 +241,10 @@ class _CatBoostRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
         model_info, model_file, _model_params = _get_model_info(
             tag, model_params, model_store
         )
-
+        super().__init__(model_info.tag.name, resource_quota, batch_options)
         self._model_info = model_info
         self._model_file = model_file
         self._predict_fn_name = predict_fn_name

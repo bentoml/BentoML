@@ -109,3 +109,4 @@ tests/integration/data
 
 # setuptools_scm generated version file
 bentoml/_version.py
+typings

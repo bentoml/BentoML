@@ -199,7 +199,7 @@ class Bento(StoreItem):
                     cur_exclude_specs.append((ignore_path, _spec))
 
             for f in files:
-                _path = fs.path.combine(dir_path, f.name)
+                _path = fs.path.combine(dir_path, f.name).lstrip("/")
                 if spec.match_file(_path) and not exclude_spec.match_file(_path):
                     if not any(
                         _spec.match_file(fs.path.relativefrom(ignore_path, _path))

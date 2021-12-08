@@ -54,7 +54,7 @@ class BentoMLCommandGroup(click.Group):
     command for each group defined
     """
 
-    NUMBER_OF_COMMON_PARAMS = 2
+    NUMBER_OF_COMMON_PARAMS = 4
 
     @staticmethod
     def bentoml_common_params(func):

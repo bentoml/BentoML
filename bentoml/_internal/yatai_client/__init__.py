@@ -248,7 +248,7 @@ class YataiClient:
                 for key, value in info.labels.items()
             ]
             apis: t.Dict[str, BentoApiSchema] = {}
-            with self.spin(text=f"Creating bento {bento.tag}"):
+            with self.spin(text=f'Registering Bento "{bento.tag}" metadata..'):
                 yatai_rest_client.create_bento(
                     bento_repository_name=bento_repository.name,
                     req=CreateBentoSchema(
@@ -264,7 +264,7 @@ class YataiClient:
                         labels=labels,
                     ),
                 )
-        with self.spin(text=f"Presign bento {bento.tag} upload url"):
+        with self.spin(text=f'Getting presigned upload url for "{bento.tag}" ..'):
             remote_bento = yatai_rest_client.presign_bento_upload_url(
                 bento_repository_name=bento_repository.name, version=version
             )
@@ -272,7 +272,7 @@ class YataiClient:
             bento_dir_path = bento.path
             if bento_dir_path is None:
                 raise CLIException(f"Bento {bento.tag} path cannot be None")
-            with self.spin(text=f"Taring bento {bento.tag}"):
+            with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
 
                     def filter_(
@@ -616,7 +616,7 @@ class YataiClient:
         name = _tag.name
         version = _tag.version
         if version is None:
-            raise CLIException(f"Model {_tag} version cannot be None")
+            raise BentoMLException(f'Model "{_tag}" version cannot be None')
         with self.spin(text=f"Presign model {_tag} download url"):
             remote_model = yatai_rest_client.presign_model_download_url(name, version)
         if not remote_model:

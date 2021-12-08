@@ -387,7 +387,9 @@ class _SpacyRunner(Runner):
 
     def _get_tensorflow_gpu_count(self) -> t.Optional[int]:
         assert self._backend_options == "tensorflow"
-        from tensorflow.python.client import device_lib  # type: ignore
+        from tensorflow.python.client import (
+            device_lib,  # type: ignore; pylint: disable=E0611
+        )
 
         try:
             return len(
@@ -417,7 +419,7 @@ class _SpacyRunner(Runner):
             return num_devices if num_devices is not None else 1
         return 1
 
-    # pylint: disable=attribute-defined-outside-init
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
         self._model = load(
             self._tag,

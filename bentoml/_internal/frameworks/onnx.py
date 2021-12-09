@@ -1,4 +1,3 @@
-import sys
 import shutil
 import typing as t
 import logging
@@ -22,21 +21,6 @@ from ..configuration.containers import BentoMLContainer
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
-if TYPE_CHECKING:
-    import numpy as np
-    import torch
-    import pandas as pd
-    from pandas.core.frame import DataFrame
-    from tensorflow.python.framework.ops import Tensor as TFTensor
-
-    from ..models import ModelStore
-else:
-    pd = LazyLoader("pd", globals(), "pandas")
-    np = LazyLoader("np", globals(), "numpy")
-    torch = LazyLoader("torch", globals(), "torch")
-    tf = LazyLoader("tf", globals(), "tensorflow")
-
-
 try:
     import onnx
     import onnxruntime as ort
@@ -50,10 +34,23 @@ more information.
         """
     )
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+if TYPE_CHECKING:
+    import numpy as np
+    import torch
+    from pandas.core.frame import DataFrame
+    from tensorflow.python.framework.ops import Tensor as TFTensor
+
+    from ..models import ModelStore
+
+    _ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
+    _GPUProviderType = t.List[
+        t.Tuple[
+            t.Literal["CUDAExecutionProvider"],
+            t.Union[t.Dict[str, t.Union[int, str, bool]], str],
+        ]
+    ]
+
+
 try:
     import importlib.metadata as importlib_metadata
 except ImportError:
@@ -68,13 +65,6 @@ for p in _PACKAGE:
         pass
 _onnx_version = importlib_metadata.version("onnx")
 
-_ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
-_GPUProviderType = t.List[
-    t.Tuple[
-        Literal["CUDAExecutionProvider"],
-        t.Union[t.Dict[str, t.Union[int, str, bool]], str],
-    ]
-]
 
 logger = logging.getLogger(__name__)
 
@@ -341,6 +331,12 @@ class _ONNXRunner(Runner):
                 "DataFrame",
             ]
         ) -> t.Any:
+            # TODO: check if imported before actual eval
+            import numpy as np
+            import torch
+            import pandas as pd
+            import tensorflow as tf
+
             if isinstance(item, np.ndarray):
                 item = item.astype(np.float32)
             elif isinstance(item, pd.DataFrame):

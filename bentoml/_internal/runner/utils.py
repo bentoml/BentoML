@@ -8,13 +8,14 @@ import itertools
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
+from simple_di.providers import SingletonFactory
+
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
 # Some constants taken from cuda.h
 
-_drv = None
 
 if TYPE_CHECKING:
     from ctypes import c_int
@@ -290,7 +291,7 @@ def query_cgroup_cpu_count() -> float:
     return float(min(limit_count, os_cpu_count))
 
 
-@lru_cache(maxsize=1)
+@SingletonFactory
 def _cuda_lib() -> "ctypes.CDLL":
     libs = ("libcuda.so", "cuda.dll")
     for lib in libs:
@@ -301,11 +302,10 @@ def _cuda_lib() -> "ctypes.CDLL":
     raise OSError(f"could not load any of: {' '.join(libs)}")
 
 
-@lru_cache(maxsize=1)
+@SingletonFactory
 def _init_var() -> t.Tuple["ctypes.CDLL", "PlcType"]:
     # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
     # TODO: add threads_per_core, cores, Compute Capability
-    global _drv
     err = ctypes.c_char_p()
     plc: PlcType = {
         "err": err,
@@ -317,8 +317,7 @@ def _init_var() -> t.Tuple["ctypes.CDLL", "PlcType"]:
     }
 
     try:
-        if _drv is None:
-            _drv = _cuda_lib()
+        _drv = _cuda_lib.get()
         res = _drv.cuInit(0)
         if res != CUDA_SUCCESS:
             _drv.cuGetErrorString(res, ctypes.byref(err))
@@ -334,7 +333,7 @@ def _init_var() -> t.Tuple["ctypes.CDLL", "PlcType"]:
 
 def gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
     if gpus is not None:
-        drv, plc = _init_var()
+        drv, plc = _init_var.get()
 
         res = drv.cuDeviceGetCount(ctypes.byref(plc["num_gpus"]))
         if res != CUDA_SUCCESS:
@@ -372,7 +371,7 @@ def gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[st
 
 def get_gpu_memory(dev: int) -> t.Tuple[int, int]:
     """Return Total Memory and Free Memory in given GPU device. in MiB"""
-    drv, plc = _init_var()
+    drv, plc = _init_var.get()
 
     res = drv.cuDeviceGet(ctypes.byref(plc["device"]), dev)
     if res != CUDA_SUCCESS:

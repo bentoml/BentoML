@@ -8,7 +8,6 @@ from simple_di import Provide
 
 from ..types import Tag
 from ..types import PathType
-from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
@@ -103,7 +102,7 @@ def _get_model_info(
 def load(
     tag: t.Union[str, Tag],
     backend: t.Optional[str] = "onnxruntime",
-    providers: t.Optional[t.Union[_ProviderType, _GPUProviderType]] = None,
+    providers: t.Optional[t.Union["_ProviderType", "_GPUProviderType"]] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "ort.InferenceSession":
@@ -203,7 +202,7 @@ class _ONNXRunner(Runner):
         backend: str,
         gpu_device_id: int,
         disable_copy_in_default_stream: bool,
-        providers: t.Optional[_ProviderType],
+        providers: t.Optional["_ProviderType"],
         session_options: t.Optional["ort.SessionOptions"],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -238,7 +237,7 @@ class _ONNXRunner(Runner):
     @staticmethod
     def _get_default_providers(
         gpu_device_id: int, disable_copy_in_default_stream: bool
-    ) -> _ProviderType:
+    ) -> "_ProviderType":
         if gpu_device_id != -1:
             _, free = get_gpu_memory(gpu_device_id)
             gpu_ = {
@@ -366,7 +365,7 @@ def load_runner(
     backend: str = "onnxruntime",
     gpu_device_id: int = -1,
     disable_copy_in_default_stream: bool = False,
-    providers: t.Optional[_ProviderType] = None,
+    providers: t.Optional["_ProviderType"] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,

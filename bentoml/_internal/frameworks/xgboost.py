@@ -10,6 +10,7 @@ from ..models import Model
 from ..models import JSON_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
@@ -29,6 +30,7 @@ except ImportError:  # pragma: no cover
         """
     )
 
+_xgboost_version = get_pkg_version("xgboost")
 
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
@@ -156,8 +158,8 @@ def save(
         bst = bentoml.xgboost.load(tag)
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "framework": "xgboost",
-        "xgboost_version": xgb.__version__,
+        "framework_name": "xgboost",
+        "pip_dependencies": [f"xgboost=={_xgboost_version}"],
     }
 
     _model = Model.create(

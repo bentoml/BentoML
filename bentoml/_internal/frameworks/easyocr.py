@@ -11,6 +11,7 @@ from ..types import Tag
 from ..models import Model
 from ..models import PTH_EXT
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
@@ -32,6 +33,8 @@ except ImportError:  # pragma: no cover
         https://www.jaided.ai/easyocr/install/
         """
     )
+
+_easyocr_version = get_pkg_version("easyocr")
 
 
 @inject
@@ -139,8 +142,8 @@ def save(
     """  # noqa
 
     context: t.Dict[str, t.Any] = {
-        "framework": "easyocr",
-        "easyocr_version": easyocr.__version__,
+        "framework_name": "easyocr",
+        "pip_dependencies": [f"easyocr=={_easyocr_version}"],
     }
     if lang_list is None:
         lang_list = ["en"]

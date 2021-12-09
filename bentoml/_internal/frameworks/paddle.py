@@ -13,6 +13,7 @@ from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
@@ -50,6 +51,7 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_paddle_exc)
 
+_paddle_version = get_pkg_version("paddlepaddle")
 
 _hub_exc = (
     """\
@@ -171,8 +173,8 @@ def _save(
     model_store: "ModelStore",
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
-        "framework": "paddlepaddle",
-        "paddlepaddle_version": paddle.__version__,
+        "framework_name": "paddle",
+        "pip_dependencies": [f"paddlepaddle=={_paddle_version}"],
     }
     if isinstance(model, str):
         context["paddlehub"] = hub.__version__

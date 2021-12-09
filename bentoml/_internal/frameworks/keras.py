@@ -155,8 +155,8 @@ def save(
     """  # noqa
     tf.compat.v1.keras.backend.get_session()
     context: t.Dict[str, t.Any] = {
-        "framework": "tensorflow",
-        "tensorflow_version": _tf_version,
+        "framework_name": "tensorflow",
+        "pip_dependencies": [f"tensorflow=={_tf_version}"],
     }
     options = {
         "store_as_json": store_as_json,

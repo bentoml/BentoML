@@ -12,6 +12,7 @@ from simple_di import Provide
 from ..types import Tag
 from ..models import Model as BentoModel
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
     from mlflow.pyfunc import PyFuncModel
 
     from ..models import ModelStore
+
 
 try:
     import mlflow
@@ -35,6 +37,8 @@ except ImportError:
         Instruction: `pip install -U mlflow`
         """
     )
+
+_mlflow_version = get_pkg_version("mlflow")
 
 
 def _strike(text: str) -> str:
@@ -161,8 +165,8 @@ def import_from_uri(
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
-        "framework": "mlflow",
-        "mlflow_version": mlflow.__version__,
+        "framework_name": "mlflow",
+        "pip_dependencies": [f"mlflow=={_mlflow_version}"],
     }
 
     _model = BentoModel.create(

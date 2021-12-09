@@ -12,6 +12,7 @@ from ..models import PTH_EXT
 from ..models import YAML_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
@@ -38,14 +39,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_detectron2_version = importlib_metadata.version("detectron2")
-_torch_version = importlib_metadata.version("torch")
+_detectron2_version = get_pkg_version("detectron2")
+_torch_version = get_pkg_version("torch")
 
 
 @inject
@@ -169,9 +164,11 @@ def save(
     """  # noqa
 
     context: t.Dict[str, t.Any] = {
-        "framework": "detectron2",
-        "detectron2_version": _detectron2_version,
-        "torch_version": _torch_version,
+        "framework_name": "detectron2",
+        "pip_dependencies": [
+            f"detectron2=={_detectron2_version}",
+            f"torch_version=={_torch_version}",
+        ],
     }
     options: t.Dict[str, t.Any] = dict()
 

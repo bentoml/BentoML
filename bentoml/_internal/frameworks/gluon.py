@@ -10,6 +10,7 @@ from ..models import Model
 from ..models import JSON_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
@@ -28,6 +29,8 @@ except ImportError:  # pragma: no cover
         mxnet with `pip install mxnet`. For more information, refers
         to https://mxnet.apache.org/versions/master/get_started?  """
     )
+
+_mxnet_version = get_pkg_version("mxnet")
 
 
 @inject
@@ -101,8 +104,8 @@ def save(
     """  # noqa
 
     context: t.Dict[str, t.Any] = {
-        "framework": "gluon",
-        "gluon_version": mxnet.__version__,
+        "framework_name": "gluon",
+        "pip_dependencies": [f"mxnet=={_mxnet_version}"],
     }
     options: t.Dict[str, t.Any] = dict()
     _model = Model.create(

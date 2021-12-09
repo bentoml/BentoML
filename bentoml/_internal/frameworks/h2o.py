@@ -9,6 +9,7 @@ from ..types import Tag
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
@@ -29,6 +30,8 @@ except ImportError:  # pragma: no cover
         https://docs.h2o.ai/h2o/latest-stable/h2o-docs/downloading.html#install-in-python
         """
     )
+
+_h2o_version = get_pkg_version("h2o")
 
 
 @inject
@@ -104,7 +107,10 @@ def save(
 
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"framework": "h2o", "h2o_version": h2o.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "h2o",
+        "pip_dependencies": [f"h2o=={_h2o_version}"],
+    }
     options: t.Dict[str, t.Any] = dict()
 
     _model = Model.create(

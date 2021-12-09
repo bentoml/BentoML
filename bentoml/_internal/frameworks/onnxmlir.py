@@ -91,7 +91,7 @@ def save(
     Examples::
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "framework": "onnxmlir",
+        "framework_name": "onnxmlir",
         "onnxmlir_version": _spec.origin,
     }
     _model = Model.create(

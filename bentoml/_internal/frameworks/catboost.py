@@ -9,6 +9,7 @@ from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
@@ -31,12 +32,7 @@ except ImportError:  # pragma: no cover
         """
     )
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_catboost_version = importlib_metadata.version("catboost")
+_catboost_version = get_pkg_version("catboost")
 
 # TODO: support cbt.Pool runner io container
 
@@ -208,7 +204,10 @@ def save(
     if "model_type" not in model_params:
         model_params["model_type"] = "classifier"
 
-    context = {"framework": "catboost", "framework_version": _catboost_version}
+    context = {
+        "framework_name": "catboost",
+        "pip_dependencies": [f"catboost=={_catboost_version}"],
+    }
     _model = Model.create(
         name,
         module=__name__,

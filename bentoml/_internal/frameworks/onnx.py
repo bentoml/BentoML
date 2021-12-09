@@ -11,6 +11,7 @@ from ..types import PathType
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
@@ -173,9 +174,11 @@ def save(
     Examples::
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "framework": "onnx",
-        "onnx_version": onnx.__version__,
-        "onnxruntime_version": ort.__version__,
+        "framework_name": "onnx",
+        "pip_dependencies": [
+            f"onnx=={_onnx_version}",
+            f"onnxruntime=={_ort_version}",
+        ],
     }
 
     _model = Model.create(

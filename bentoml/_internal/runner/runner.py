@@ -4,45 +4,55 @@ import enum
 import typing as t
 from abc import ABC
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 import attr
 import psutil
 
-from .utils import _cpu_converter
-from .utils import _gpu_converter
-from .utils import _mem_converter
-from .utils import _query_cgroup_cpu_count
+from .utils import cpu_converter
+from .utils import gpu_converter
+from .utils import mem_converter
+from .utils import query_cgroup_cpu_count
 from ..types import Tag
 from ..configuration.containers import BentoServerContainer
 
+if TYPE_CHECKING:
+    import platform
 
-@attr.s
+    if platform.system() == "Darwin":
+        from psutil._psosx import svmem
+    elif platform.system() == "Linux":
+        from psutil._pslinux import svmem
+    else:
+        from psutil._pswindows import svmem
+
+
+@attr.define
 class ResourceQuota:
-    cpu = attr.ib(converter=_cpu_converter, type=float)
-    mem = attr.ib(converter=_mem_converter, type=int)
+    cpu: float = attr.field(converter=cpu_converter)
+    mem: int = attr.field(converter=mem_converter)
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus = attr.ib(
-        converter=_gpu_converter,
-        type=t.List[str],
-        default=None,
-    )
+    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
 
-    @cpu.default
+    @cpu.default  # type: ignore
     def _get_default_cpu(self) -> float:
         # Default to the total CPU count available in current node or cgroup
         if psutil.POSIX:
-            return _query_cgroup_cpu_count()
+            return query_cgroup_cpu_count()
         else:
-            return float(os.cpu_count())
+            cpu_count = os.cpu_count()
+            if cpu_count is not None:
+                return float(cpu_count)
+            raise ValueError("CPU count is NoneType")
 
-    @mem.default
+    @mem.default  # type: ignore
     def _get_default_mem(self) -> int:
         # Default to the total memory available
         from psutil import virtual_memory
 
-        mem = virtual_memory()
+        mem: "svmem" = virtual_memory()
         return mem.total
 
     @property
@@ -119,7 +129,7 @@ class _BaseRunner:
         return []
 
     @abstractmethod
-    def _setup(self, **kwargs: t.Any) -> None:
+    def _setup(self) -> None:
         ...
 
     @property

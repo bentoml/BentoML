@@ -8,29 +8,22 @@ from simple_di import Provide
 
 from ..types import Tag
 from ..types import PathType
-from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
-from ..runner.utils import _get_gpu_memory
+from ..runner.utils import get_gpu_memory
 from ..configuration.containers import BentoMLContainer
 
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
-if TYPE_CHECKING:
-    import pandas as pd
-
-    from ..models import ModelStore
-
 try:
     import onnx
-    import numpy as np
     import onnxruntime as ort
-except ImportError:  # pragma: no cover
+except ImportError:
     raise MissingDependencyException(
         """\
 `onnx` is required in order to use the module `bentoml.onnx`, do `pip install onnx`.
@@ -40,11 +33,37 @@ more information.
         """
     )
 
-pd = LazyLoader("pd", globals(), "pandas")  # noqa: F811
-torch = LazyLoader("torch", globals(), "torch")  # noqa: F811
-tf = LazyLoader("tf", globals(), "tensorflow")  # noqa: F811
+if TYPE_CHECKING:
+    import numpy as np
+    import torch
+    from pandas.core.frame import DataFrame
+    from tensorflow.python.framework.ops import Tensor as TFTensor
 
-_ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
+    from ..models import ModelStore
+
+    _ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
+    _GPUProviderType = t.List[
+        t.Tuple[
+            t.Literal["CUDAExecutionProvider"],
+            t.Union[t.Dict[str, t.Union[int, str, bool]], str],
+        ]
+    ]
+
+
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_PACKAGE = ["onnxruntime", "onnxruntime-gpu"]
+for p in _PACKAGE:
+    try:
+        _onnxruntime_version = importlib_metadata.version(p)
+        break
+    except importlib_metadata.PackageNotFoundError:
+        pass
+_onnx_version = importlib_metadata.version("onnx")
+
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +102,7 @@ def _get_model_info(
 def load(
     tag: t.Union[str, Tag],
     backend: t.Optional[str] = "onnxruntime",
-    providers: t.Optional[_ProviderType] = None,
+    providers: t.Optional[t.Union["_ProviderType", "_GPUProviderType"]] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "ort.InferenceSession":
@@ -122,7 +141,7 @@ def load(
         providers = ort.get_available_providers()
 
     return ort.InferenceSession(
-        model_file, sess_options=session_options, providers=providers
+        model_file, sess_options=session_options, providers=providers  # type: ignore[reportGeneralTypeIssues] # noqa: LN001
     )
 
 
@@ -154,8 +173,8 @@ def save(
     Examples::
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "onnx": onnx.__version__,
-        "onnxruntime": ort.__version__,
+        "onnx": _onnx_version,
+        "onnxruntime": _onnxruntime_version,
     }
 
     _model = Model.create(
@@ -183,7 +202,7 @@ class _ONNXRunner(Runner):
         backend: str,
         gpu_device_id: int,
         disable_copy_in_default_stream: bool,
-        providers: t.Optional[_ProviderType],
+        providers: t.Optional["_ProviderType"],
         session_options: t.Optional["ort.SessionOptions"],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -218,9 +237,9 @@ class _ONNXRunner(Runner):
     @staticmethod
     def _get_default_providers(
         gpu_device_id: int, disable_copy_in_default_stream: bool
-    ) -> _ProviderType:
+    ) -> "_ProviderType":
         if gpu_device_id != -1:
-            _, free = _get_gpu_memory(gpu_device_id)
+            _, free = get_gpu_memory(gpu_device_id)
             gpu_ = {
                 "device_id": gpu_device_id,
                 "arena_extend_strategy": "kNextPowerOfTwo",
@@ -274,7 +293,7 @@ class _ONNXRunner(Runner):
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         self._model = load(
             self._model_info.tag,
             backend=self._backend,
@@ -284,13 +303,39 @@ class _ONNXRunner(Runner):
         )
         self._infer_func = getattr(self._model, "run")
 
-    def _run_batch(
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        *args: t.Union[np.ndarray, "pd.DataFrame"],
+        *args: t.Union[
+            "np.ndarray[t.Any, np.dtype[t.Any]]",
+            "DataFrame",
+            "torch.Tensor",
+            "TFTensor",
+        ],
     ) -> t.Any:
-        params = Params[t.Union[np.ndarray, "pd.DataFrame"]](*args)
+        params = Params[
+            t.Union[
+                "torch.Tensor",
+                "TFTensor",
+                "np.ndarray[t.Any, np.dtype[t.Any]]",
+                "DataFrame",
+            ]
+        ](*args)
 
-        def _mapping(item) -> t.Any:
+        def _mapping(
+            item: t.Union[
+                "torch.Tensor",
+                "TFTensor",
+                "np.ndarray[t.Any, np.dtype[t.Any]]",
+                "DataFrame",
+            ]
+        ) -> t.Any:
+            # TODO: check if imported before actual eval
+            import numpy as np
+            import torch
+            import pandas as pd
+            import tensorflow as tf
+
             if isinstance(item, np.ndarray):
                 item = item.astype(np.float32)
             elif isinstance(item, pd.DataFrame):
@@ -320,7 +365,7 @@ def load_runner(
     backend: str = "onnxruntime",
     gpu_device_id: int = -1,
     disable_copy_in_default_stream: bool = False,
-    providers: t.Optional[_ProviderType] = None,
+    providers: t.Optional["_ProviderType"] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,

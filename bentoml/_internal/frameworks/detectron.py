@@ -167,7 +167,7 @@ def save(
         "framework_name": "detectron2",
         "pip_dependencies": [
             f"detectron2=={_detectron2_version}",
-            f"torch_version=={_torch_version}",
+            f"torch=={_torch_version}",
         ],
     }
     options: t.Dict[str, t.Any] = dict()

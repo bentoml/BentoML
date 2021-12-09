@@ -10,7 +10,7 @@ PASS() {
 }
 
 INFO() {
-    echo -e "$YELLOW""[INFO]""$NC" "$*"
+    echo -e "${YELLOW}[INFO]${NC}" "$*"
 }
 
 FAIL() {

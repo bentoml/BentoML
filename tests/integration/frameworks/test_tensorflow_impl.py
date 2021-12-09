@@ -269,9 +269,7 @@ def test_import_from_tfhub(modelstore, identifier, name, tags, is_module_v1, wra
 
     tag = bentoml.tensorflow.import_from_tfhub(identifier, name, model_store=modelstore)
     model = modelstore.get(tag)
-    assert (
-        f"tensorflow_hub=={_tf_hub_version}" in model.info.context["pip_dependencies"]
-    )
+    assert model.info.context["import_from_tfhub"]
     module = bentoml.tensorflow.load(
         tag, tfhub_tags=tags, load_as_wrapper=wrapped, model_store=modelstore
     )

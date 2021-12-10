@@ -26,7 +26,7 @@ else:
     from typing_extensions import Protocol
 
 
-IMAGE_URL = "http://images.cocodataset.org/val2017/000000439715.jpg"
+IMAGE_URL: str = "./tests/utils/_static/detectron2_sample.jpg"
 
 
 def extract_result(raw_result: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:

@@ -2,7 +2,7 @@ import os
 
 import cv2
 
-import bentoml.paddle
+import bentoml
 
 text = ["这部电影太差劲了"]
 

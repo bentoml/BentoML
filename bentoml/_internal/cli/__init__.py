@@ -2,11 +2,12 @@ import click
 
 from bentoml import __version__
 
-from .bento_management import add_bento_management_commands
-from .bento_server import add_serve_command
+from .yatai import add_login_command
 from .click_utils import BentoMLCommandGroup
+from .bento_server import add_serve_command
 from .containerize import add_containerize_command
-from .model_store import models
+from .bento_management import add_bento_management_commands
+from .model_management import add_model_management_commands
 
 
 def create_bentoml_cli():
@@ -16,12 +17,11 @@ def create_bentoml_cli():
         """BentoML CLI"""
 
     # Add top-level CLI commands
+    add_login_command(cli)
     add_bento_management_commands(cli)
+    add_model_management_commands(cli)
     add_serve_command(cli)
     add_containerize_command(cli)
-
-    # Add "models" sub commands
-    cli.add_command(models)
 
     return cli
 

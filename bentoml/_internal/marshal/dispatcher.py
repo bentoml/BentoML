@@ -1,10 +1,10 @@
-import asyncio
-import collections
-import functools
-import logging
 import time
+import typing as t
+import asyncio
+import logging
+import functools
 import traceback
-from typing import Callable
+import collections
 
 import numpy as np
 
@@ -85,6 +85,10 @@ class Optimizer:
         )
 
 
+T_IN = t.TypeVar("T_IN")
+T_OUT = t.TypeVar("T_OUT")
+
+
 class CorkDispatcher:
     """
     A decorator that:
@@ -97,8 +101,8 @@ class CorkDispatcher:
         self,
         max_latency_in_ms: int,
         max_batch_size: int,
-        shared_sema: NonBlockSema = None,
-        fallback: Callable = None,
+        shared_sema: t.Optional[NonBlockSema] = None,
+        fallback: t.Optional[t.Callable[[], t.Any]] = None,
     ):
         """
         params:
@@ -120,7 +124,7 @@ class CorkDispatcher:
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
-    async def shutdown(self):
+    def shutdown(self):
         if self._controller is not None:
             self._controller.cancel()
         try:
@@ -138,7 +142,12 @@ class CorkDispatcher:
     def _wake_event(self):
         return asyncio.Condition()
 
-    def __call__(self, callback):
+    def __call__(
+        self,
+        callback: t.Callable[
+            [t.Iterable[T_IN]], t.Coroutine[None, None, t.Iterable[T_OUT]]
+        ],
+    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
         self.callback = callback
 
         @functools.wraps(callback)
@@ -200,9 +209,9 @@ class CorkDispatcher:
                 logger.error(traceback.format_exc())
 
     async def inbound_call(self, data):
-        t = time.time()
+        now = time.time()
         future = self._loop.create_future()
-        input_info = (t, data, future)
+        input_info = (now, data, future)
         self._queue.append(input_info)
         async with self._wake_event:
             self._wake_event.notify_all()

@@ -8,12 +8,10 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 import bentoml
-from tests.utils.frameworks.tensorflow_utils import (
-    CustomLayer,
-    KerasSequentialModel,
-    custom_activation,
-)
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.tensorflow_utils import CustomLayer
+from tests.utils.frameworks.tensorflow_utils import custom_activation
+from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
 
 if TYPE_CHECKING:
     from bentoml._internal.models import ModelStore

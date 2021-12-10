@@ -35,6 +35,8 @@ napoleon_include_private_with_doc = False
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
+todo_include_todos = True
+
 # mock any heavy imports, eg: imports from frameworks library
 autodoc_mock_imports = [
     "catboost",

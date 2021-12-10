@@ -68,86 +68,108 @@ jobs:
             catboost:
               - *runner
               - bentoml/catboost.py
+              - bentoml/_internal/frameworks/catboost.py
               - tests/integration/frameworks/test_catboost_impl.py
             detectron2:
               - *runner
               - bentoml/detectron.py
+              - bentoml/_internal/frameworks/detectron.py
               - tests/integration/frameworks/test_detectron2_impl.py
             easyocr:
               - *runner
               - bentoml/easyocr.py
+              - bentoml/_internal/frameworks/easyocr.py
               - tests/integration/frameworks/test_easyocr_impl.py
             evalml:
               - *runner
               - bentoml/evalml.py
+              - bentoml/_internal/frameworks/evalml.py
               - tests/integration/frameworks/test_evalml_impl.py
             fastai:
               - *runner
               - bentoml/fastai.py
+              - bentoml/_internal/frameworks/fastai.py
               - tests/integration/frameworks/test_fastai_impl.py
             fasttext:
               - *runner
               - bentoml/fasttext.py
+              - bentoml/_internal/frameworks/fasttext.py
               - tests/integration/frameworks/test_fasttext_impl.py
             gluon:
               - *runner
               - bentoml/gluon.py
+              - bentoml/_internal/frameworks/gluon.py
               - tests/integration/frameworks/test_gluon_impl.py
             h2o:
               - *runner
               - bentoml/h2o.py
+              - bentoml/_internal/frameworks/h2o.py
               - tests/integration/frameworks/test_h2o_impl.py
             lightgbm:
               - *runner
               - bentoml/lightgbm.py
+              - bentoml/_internal/frameworks/lightgbm.py
               - tests/integration/frameworks/test_lightgbm_impl.py
             mlflow:
               - *runner
               - bentoml/mlflow.py
+              - bentoml/_internal/frameworks/mlflow.py
               - tests/integration/frameworks/mlflow
             onnx:
               - *runner
               - bentoml/onnx.py
+              - bentoml/_internal/frameworks/onnx.py
               - tests/integration/frameworks/test_onnx_impl.py
             onnxmlir:
               - *runner
               - bentoml/onnxmlir.py
+              - bentoml/_internal/frameworks/onnxmlir.py
               - tests/integration/frameworks/test_onnxmlir_impl.py
             paddle:
               - *runner
               - bentoml/paddle.py
+              - bentoml/_internal/frameworks/paddle.py
               - tests/integration/frameworks/paddle
             pycaret:
               - *runner
               - bentoml/pycaret.py
+              - bentoml/_internal/frameworks/pycaret.py
               - tests/integration/frameworks/test_pycaret_impl.py
             pyspark_mllib:
               - *runner
               - bentoml/pyspark.py
+              - bentoml/_internal/frameworks/pyspark.py
               - tests/integration/frameworks/test_pyspark_impl.py
             pytorch:
               - *runner
               - bentoml/pytorch.py
+              - bentoml/_internal/frameworks/pytorch.py
               - tests/integration/frameworks/test_pytorch_impl.py
             pytorch_lightning:
               - *runner
               - bentoml/pytorch.py
               - bentoml/pytorch_lightning.py
+              - bentoml/_internal/frameworks/pytorch.py
+              - bentoml/_internal/frameworks/pytorch_lightning.py
               - tests/integration/frameworks/test_pytorch_lightning_impl.py
             sklearn:
               - *runner
               - bentoml/sklearn.py
+              - bentoml/_internal/frameworks/sklearn.py
               - tests/integration/frameworks/test_sklearn_impl.py
             spacy:
               - *runner
               - bentoml/spacy.py
+              - bentoml/_internal/frameworks/spacy.py
               - tests/integration/frameworks/spacy
             statsmodels:
               - *runner
               - bentoml/statsmodels.py
+              - bentoml/_internal/frameworks/statsmodels.py
               - tests/integration/frameworks/test_statsmodels_impl.py
             tf1: &tf
               - *runner
+              - bentoml/tensorflow.py
               - bentoml/_internal/frameworks/tensorflow.py
               - tests/integration/frameworks/test_tensorflow_impl.py
             tf2:
@@ -155,6 +177,7 @@ jobs:
             keras_tf1: &keras
               - *runner
               - *tf
+              - bentoml/keras.py
               - bentoml/_internal/frameworks/keras.py
               - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
@@ -162,10 +185,12 @@ jobs:
             transformers:
               - *runner
               - bentoml/transformers.py
+              - bentoml/_internal/frameworks/transformers.py
               - tests/integration/frameworks/test_transformers_impl.py
             xgboost:
               - *runner
               - bentoml/xgboost.py
+              - bentoml/_internal/frameworks/xgboost.py
               - tests/integration/frameworks/test_xgboost_impl.py
 
 

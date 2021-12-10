@@ -3,11 +3,12 @@
 
 import io
 
-import aiohttp
 import numpy as np
 import pytest
+import aiohttp
 
-from bentoml.testing.utils import async_request, parse_multipart_form
+from bentoml.testing.utils import async_request
+from bentoml.testing.utils import parse_multipart_form
 
 
 @pytest.fixture()
@@ -182,6 +183,9 @@ async def test_image(host, img_file):
     )
 
 
+# SklearnRunner is not suppose to take multiple arguments
+# TODO: move e2e tests to use a new bentoml.PickleModel module
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_multipart_image_io(host, img_file):
     import PIL.Image

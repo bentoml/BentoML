@@ -1,13 +1,13 @@
 import math
 
+import torch
 import pandas as pd
 import psutil
 import pytest
-import pytorch_lightning as pl
-import torch
 import torch.nn as nn
+import pytorch_lightning as pl
 
-import bentoml.pytorch_lightning
+import bentoml
 from tests.utils.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[5, 4, 3, 2]])

@@ -5,10 +5,10 @@ import numpy as np
 import psutil
 import pytest
 
-import bentoml.mlflow
+import bentoml
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 
 current_file = Path(__file__).parent
 
@@ -68,7 +68,9 @@ def test_mlflow_load_runner(modelstore):
     print(uri)
     tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
     runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
-    assert isinstance(runner, bentoml.mlflow._PyFuncRunner)
+    from bentoml._internal.frameworks.mlflow import _PyFuncRunner
+
+    assert isinstance(runner, _PyFuncRunner)
 
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()

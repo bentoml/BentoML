@@ -11,7 +11,6 @@ from ..types import PathType
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
-from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params

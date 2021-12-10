@@ -37,9 +37,9 @@ A BentoML service is composed of three components.
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_array: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
-    result = runner.run(input_array)
-    # Define post-processing logic
-    return result
+        result = runner.run(input_array)
+        # Define post-processing logic
+        return result
 
 APIs
 ----
@@ -52,9 +52,9 @@ Inference APIs define how the service functionality can be accessed remotely and
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_array: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
-    result = runner.run(input_array)
-    # Define post-processing logic
-    return result
+        result = runner.run(input_array)
+        # Define post-processing logic
+        return result
 
 By decorating a function with `@svc.api`, we declare that the function is a part of the APIs that can be accessed remotely. 
 A service can have one or many APIs. The `input` and `output` arguments of the `@svc.api` decorator further defines the expect 

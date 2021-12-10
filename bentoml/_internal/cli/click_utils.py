@@ -1,8 +1,8 @@
-import functools
-import logging
 import os
 import re
 import time
+import logging
+import functools
 
 import click
 from click import ClickException
@@ -10,7 +10,9 @@ from click import ClickException
 from ...exceptions import BentoMLException
 
 # from bentoml import configure_logging
-from ..configuration import CONFIG_ENV_VAR, load_global_config, set_debug_mode
+from ..configuration import CONFIG_ENV_VAR
+from ..configuration import set_debug_mode
+from ..configuration import load_global_config
 from ..utils.usage_stats import track
 
 # Available CLI colors for _echo:
@@ -52,7 +54,7 @@ class BentoMLCommandGroup(click.Group):
     command for each group defined
     """
 
-    NUMBER_OF_COMMON_PARAMS = 2
+    NUMBER_OF_COMMON_PARAMS = 4
 
     @staticmethod
     def bentoml_common_params(func):

@@ -1,4 +1,5 @@
 from .model import Model
+from .model import copy_model
 from .model import ModelStore
 
 EXPORTED_STORE_PREFIX = "exported"
@@ -15,4 +16,4 @@ TXT_EXT = ".txt"
 YAML_EXT = ".yaml"
 MODEL_EXT = ".model"
 
-__all__ = ["Model", "ModelStore"]
+__all__ = ["Model", "ModelStore", "copy_model"]

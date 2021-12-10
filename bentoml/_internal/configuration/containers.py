@@ -1,18 +1,25 @@
-import logging
-import multiprocessing
 import os
 import typing as t
-from dataclasses import dataclass  # TODO: simple-di required this. remove it
+import logging
+import multiprocessing
 from typing import TYPE_CHECKING
+from dataclasses import dataclass  # TODO: simple-di required this. remove it
 
 import yaml
+from schema import Or
+from schema import And
+from schema import Use
+from schema import Schema
+from schema import Optional
+from schema import SchemaError
 from deepmerge import always_merger
-from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import Provide, providers
+from simple_di import Provide
+from simple_di import providers
 
-from ...exceptions import BentoMLConfigException
-from ..utils import get_free_port, validate_or_create_dir
 from . import expand_env_var
+from ..utils import get_free_port
+from ..utils import validate_or_create_dir
+from ...exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
@@ -38,13 +45,30 @@ validate_or_create_dir(BENTOML_HOME)
 validate_or_create_dir(DEFAULT_BENTOS_PATH)
 validate_or_create_dir(DEFAULT_MODELS_PATH)
 
-_larger_than_zero: t.Callable[[int], bool] = lambda val: val > 0
 _is_upper: t.Callable[[str], bool] = lambda string: string.isupper()
 _check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
+_larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
+    lambda target: lambda val: val > target
+)
+_larger_than_zero: t.Callable[[int], bool] = _larger_than(0)
+
+
+def _is_ip_address(addr: str) -> bool:
+    import socket
+
+    try:
+        socket.inet_aton(addr)
+        return True
+    except socket.error:
+        return False
+
+
 SCHEMA = Schema(
     {
         "bento_server": {
             "port": And(int, _larger_than_zero),
+            "host": And(str, _is_ip_address),
+            "backlog": And(int, _larger_than(64)),
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),
@@ -300,7 +324,7 @@ class BentoServerContainerClass:
         )
 
     # Mapping from runner name to RunnerApp file descriptor
-    remote_runner_mapping = providers.Static[t.Dict[str, int]](dict())
+    remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())
     plasma_db = providers.Static[t.Optional["PlasmaClient"]](None)  # type: ignore
 
 

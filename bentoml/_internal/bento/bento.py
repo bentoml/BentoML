@@ -1,27 +1,33 @@
-import logging
 import os
 import shutil
 import typing as t
-from datetime import datetime, timezone
+import logging
 from typing import TYPE_CHECKING
+from datetime import datetime
+from datetime import timezone
 
-import attr
 import fs
-import fs.errors
-import fs.mirror
+import attr
+import yaml
 import fs.osfs
 import pathspec
-import yaml
+import fs.errors
+import fs.mirror
 from fs.copy import copy_file
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import BentoMLException, InvalidArgument
+from ..store import Store
+from ..store import StoreItem
+from ..types import Tag
+from ..types import PathType
+from ..models import ModelStore
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
+from .build_config import BentoBuildConfig
+from .build_config import _copy_file_to_fs_folder
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..models import ModelStore
-from ..store import Store, StoreItem
-from ..types import PathType, Tag
-from .build_config import BentoBuildConfig
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -33,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
-BENTO_READEME_FILENAME = "README.md"
+BENTO_README_FILENAME = "README.md"
 
 
 def _get_default_bento_readme(svc: "Service"):
@@ -97,9 +103,10 @@ class Bento(StoreItem):
     def tag(self) -> Tag:
         return self._tag
 
-    @staticmethod
+    @classmethod
     @inject
     def create(
+        cls,
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
@@ -131,9 +138,11 @@ class Bento(StoreItem):
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
 
+        assert build_config.additional_models is not None
+
         model_tags = build_config.additional_models
         # Add Runner required models to models list
-        for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
+        for runner in svc.runners.values():
             model_tags += runner.required_models
 
         models: t.List[Model] = []
@@ -190,7 +199,7 @@ class Bento(StoreItem):
                     cur_exclude_specs.append((ignore_path, _spec))
 
             for f in files:
-                _path = fs.path.combine(dir_path, f.name)
+                _path = fs.path.combine(dir_path, f.name).lstrip("/")
                 if spec.match_file(_path) and not exclude_spec.match_file(_path):
                     if not any(
                         _spec.match_file(fs.path.relativefrom(ignore_path, _path))
@@ -207,11 +216,18 @@ class Bento(StoreItem):
             build_config.conda.write_to_bento(bento_fs, build_ctx)
 
         # Create `readme.md` file
-        with bento_fs.open(BENTO_READEME_FILENAME, "w") as f:
-            if build_config.description is None:
+        if build_config.description is None:
+            with bento_fs.open(BENTO_README_FILENAME, "w") as f:
                 f.write(_get_default_bento_readme(svc))
+        else:
+            if build_config.description.startswith("file:"):
+                file_name = build_config.description[5:].strip()
+                _copy_file_to_fs_folder(
+                    file_name, bento_fs, dst_filename=BENTO_README_FILENAME
+                )
             else:
-                f.write(build_config.description)
+                with bento_fs.open(BENTO_README_FILENAME, "w") as f:
+                    f.write(build_config.description)
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
@@ -256,7 +272,7 @@ class Bento(StoreItem):
         if self._doc is not None:
             return self._doc
 
-        with self._fs.open(BENTO_READEME_FILENAME, "r") as readme_md:
+        with self._fs.open(BENTO_README_FILENAME, "r") as readme_md:
             self._doc = str(readme_md.read())
             return self._doc
 
@@ -288,9 +304,6 @@ class Bento(StoreItem):
         out_fs = fs.open_fs(path, create=True, writeable=True)
         fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
 
-    def push(self):
-        pass
-
     def validate(self):
         return self._fs.isfile(BENTO_YAML_FILENAME)
 
@@ -312,6 +325,7 @@ class SysPathBento(Bento):
     def path(self) -> str:
         return self._fs.getsyspath("/")
 
+    @inject
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
     ) -> "SysPathBento":

@@ -1,5 +1,7 @@
 import click
 
+from bentoml.bentos import containerize as containerize_bento
+
 from ..utils.docker import validate_tag
 
 
@@ -10,16 +12,16 @@ def add_containerize_command(cli):
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-t",
-        "--tag",
-        help="Optional image tag. If not specified, Bento will generate one from "
-        "the name of the Bento.",
+        "--docker-image-tag",
+        help="Docker image tag, default to same as the Bento tag",
         required=False,
         callback=validate_tag,
     )
-    @click.option(
-        "--build-arg", multiple=True, help="pass through docker image build arguments"
-    )
-    def containerize(bento_tag, tag, build_arg):
+    @click.option("--build-arg", multiple=True, help="docker image build args")
+    @click.option("--label", multiple=True, help="docker image label")
+    @click.option("--no-cache", is_flag=True, default=False)
+    @click.option("--platform", default=None)
+    def containerize(bento_tag, docker_image_tag, build_arg, label, no_cache, platform):
         """Containerize specified Bento.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -42,4 +44,22 @@ def add_containerize_command(cli):
         By default, the `containerize` command will use the current credentials
         provided by Docker daemon.
         """
-        pass
+        labels = {}
+        if label:
+            for label_str in label:
+                key, value = label_str.split("=")
+                labels[key] = value
+        build_args = {}
+        if build_arg:
+            for build_arg_str in build_arg:
+                key, value = build_arg_str.split("=")
+                build_args[key] = value
+
+        return containerize_bento(
+            bento_tag,
+            docker_image_tag=docker_image_tag,
+            build_args=build_args,
+            labels=labels,
+            no_cache=no_cache,
+            platform=platform,
+        )

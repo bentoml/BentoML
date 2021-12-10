@@ -1,22 +1,28 @@
 # type: ignore[reportMissingTypeStubs]
-import functools
 import typing as t
-from pathlib import Path
+import functools
 from typing import TYPE_CHECKING
+from pathlib import Path
 
-import cloudpickle
 import numpy as np
-from simple_di import Provide, inject
+import cloudpickle
+from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import MissingDependencyException
-from ..configuration.containers import BentoMLContainer
-from ..models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE, Model
 from ..types import Tag
+from ..models import Model
+from ..models import H5_EXT
+from ..models import PKL_EXT
+from ..models import HDF5_EXT
+from ..models import JSON_EXT
+from ..models import SAVE_NAMESPACE
+from ...exceptions import MissingDependencyException
 from ..utils.tensorflow import get_tf_version
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
-    from tensorflow.python.client.session import BaseSession
     from tensorflow.python.framework.ops import Graph
+    from tensorflow.python.client.session import BaseSession
 
     from ..models import ModelStore
 
@@ -206,7 +212,7 @@ class _KerasRunner(_TensorflowRunner):
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         self._session.config = self._config_proto
-        self._model = load(self.name, model_store=self._model_store)
+        self._model = load(self._tag, model_store=self._model_store)
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 

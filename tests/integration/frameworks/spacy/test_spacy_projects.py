@@ -1,11 +1,11 @@
-from pathlib import Path
 from typing import TYPE_CHECKING
+from pathlib import Path
 
-import pytest
 import spacy
+import pytest
 import spacy.cli
 
-import bentoml.spacy
+import bentoml
 from bentoml.exceptions import BentoMLException
 
 if TYPE_CHECKING:

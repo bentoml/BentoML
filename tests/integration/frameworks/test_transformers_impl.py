@@ -2,7 +2,8 @@ import pytest
 import requests
 import transformers.pipelines
 from transformers import set_seed
-from transformers.file_utils import CONFIG_NAME, hf_bucket_url
+from transformers.file_utils import CONFIG_NAME
+from transformers.file_utils import hf_bucket_url
 from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID
 
 import bentoml.transformers
@@ -46,7 +47,7 @@ def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
 )
 def test_load_autoclass(autoclass, exc):
     with pytest.raises(exc):
-        bentoml.transformers._load_autoclass(**autoclass)
+        bentoml._internal.frameworks.transformers._load_autoclass(**autoclass)
 
 
 @pytest.mark.parametrize(
@@ -76,7 +77,7 @@ def test_load_autoclass(autoclass, exc):
 )
 def test_download_from_hub(kwargs, exc):
     with pytest.raises(exc):
-        bentoml.transformers._download_from_hub(**kwargs)
+        bentoml._internal.frameworks.transformers._download_from_hub(**kwargs)
 
 
 @pytest.mark.parametrize(

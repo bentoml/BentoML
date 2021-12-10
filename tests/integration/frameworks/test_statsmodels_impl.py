@@ -5,10 +5,11 @@ import pandas as pd
 import psutil
 import pytest
 import statsmodels
-from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
+from statsmodels.tsa.holtwinters import HoltWintersResults
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
+import bentoml
 import bentoml.models
-import bentoml.statsmodels
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
@@ -18,7 +19,8 @@ test_df2 = np.array([0, 0, 1, 1])
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model, ModelStore
+    from bentoml._internal.models import Model
+    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -112,7 +114,9 @@ def test_statsmodels_save_load(
 def test_get_model_info_exc(exc, modelstore, holt_model):
     tag = wrong_module(modelstore, holt_model)
     with pytest.raises(exc):
-        bentoml.statsmodels._get_model_info(tag, model_store=modelstore)
+        bentoml._internal.frameworks.statsmodels._get_model_info(
+            tag, model_store=modelstore
+        )
 
 
 def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):

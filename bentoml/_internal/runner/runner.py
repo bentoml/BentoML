@@ -1,51 +1,58 @@
-import enum
 import os
+import re
+import enum
 import typing as t
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 import attr
 import psutil
-from simple_di import Provide, inject
 
-from ..configuration.containers import BentoServerContainer
-from ..runner.container import AutoContainer
-from ..runner.utils import Params
+from .utils import cpu_converter
+from .utils import gpu_converter
+from .utils import mem_converter
+from .utils import query_cgroup_cpu_count
 from ..types import Tag
-from .utils import (
-    _cpu_converter,
-    _gpu_converter,
-    _mem_converter,
-    _query_cgroup_cpu_count,
-)
+from ..configuration.containers import BentoServerContainer
+
+if TYPE_CHECKING:
+    import platform
+
+    if platform.system() == "Darwin":
+        from psutil._psosx import svmem
+    elif platform.system() == "Linux":
+        from psutil._pslinux import svmem
+    else:
+        from psutil._pswindows import svmem
 
 
-@attr.s
+@attr.define
 class ResourceQuota:
-    cpu = attr.ib(converter=_cpu_converter, type=float)
-    mem = attr.ib(converter=_mem_converter, type=int)
+    cpu: float = attr.field(converter=cpu_converter)
+    mem: int = attr.field(converter=mem_converter)
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus = attr.ib(
-        converter=_gpu_converter,
-        type=t.List[str],
-        default=None,
-    )
+    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
 
-    @cpu.default
+    @cpu.default  # type: ignore
     def _get_default_cpu(self) -> float:
         # Default to the total CPU count available in current node or cgroup
         if psutil.POSIX:
-            return _query_cgroup_cpu_count()
+            return query_cgroup_cpu_count()
         else:
-            return float(os.cpu_count())
+            cpu_count = os.cpu_count()
+            if cpu_count is not None:
+                return float(cpu_count)
+            raise ValueError("CPU count is NoneType")
 
-    @mem.default
+    @mem.default  # type: ignore
     def _get_default_mem(self) -> int:
         # Default to the total memory available
         from psutil import virtual_memory
 
-        mem = virtual_memory()
+        mem: "svmem" = virtual_memory()
         return mem.total
 
     @property
@@ -77,20 +84,37 @@ class BatchOptions:
     output_batch_axis = attr.ib(type=int, default=0)
 
 
+VARNAME_RE = re.compile(r"\W|^(?=\d)")
+
+
 class _BaseRunner:
-    name: str
-    resource_quota: "ResourceQuota"
-    batch_options: "BatchOptions"
+    EXIST_NAMES: t.Set[str] = set()
 
     def __init__(
         self,
-        name: str,
+        display_name: t.Union[str, Tag],
         resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
         batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     ):
+        # probe an unique name
+        if isinstance(display_name, Tag):
+            display_name = display_name.name
+        if not display_name.isidentifier():
+            display_name = VARNAME_RE.sub("_", display_name)
+        i = 0
+        while True:
+            name = display_name if i == 0 else f"{display_name}_{i}"
+            if name not in self.EXIST_NAMES:
+                self.EXIST_NAMES.add(name)
+                break
+            else:
+                i += 1
         self.name = name
-        self.resource_quota = ResourceQuota(**resource_quota if resource_quota else {})
-        self.batch_options = BatchOptions(**batch_options if batch_options else {})
+
+        self.resource_quota = ResourceQuota(
+            **(resource_quota if resource_quota else {})
+        )
+        self.batch_options = BatchOptions(**(batch_options if batch_options else {}))
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -105,33 +129,24 @@ class _BaseRunner:
         return []
 
     @abstractmethod
-    def _setup(self, **kwargs: t.Any) -> None:
+    def _setup(self) -> None:
         ...
 
-    @inject
-    def _impl_ref(
-        self,
-        remote_runner_mapping: t.Dict[str, int] = Provide[
-            BentoServerContainer.remote_runner_mapping
-        ],
-    ) -> "RunnerImpl":
-        # TODO(jiang): cache impl
-        if self.name in remote_runner_mapping:
-            return RemoteRunner(self)
-        else:
-            return LocalRunner(self)
+    @property
+    def _impl(self) -> "RunnerImpl":
+        return RunnerImplPool.get_by_runner(self)
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._impl_ref().async_run(*args, **kwargs)
+        return await self._impl.async_run(*args, **kwargs)
 
     async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._impl_ref().async_run_batch(*args, **kwargs)
+        return await self._impl.async_run_batch(*args, **kwargs)
 
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self._impl_ref().run(*args, **kwargs)
+        return self._impl.run(*args, **kwargs)
 
     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self._impl_ref().run_batch(*args, **kwargs)
+        return self._impl.run_batch(*args, **kwargs)
 
 
 class Runner(_BaseRunner, ABC):
@@ -169,6 +184,7 @@ class Runner(_BaseRunner, ABC):
     Note: for pandas.DataFrame and List, the batch_axis must be 0
     """
 
+    @abstractmethod
     def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
@@ -184,7 +200,7 @@ class SimpleRunner(_BaseRunner, ABC):
     """
 
     @abstractmethod
-    def _run(self, *args, **kwargs):
+    def _run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
 
@@ -199,87 +215,43 @@ class RunnerImpl:
         self._runner = runner
         self._state: RunnerState = RunnerState.INIT
 
+    def setup(self) -> None:
+        pass
+
     @abstractmethod
-    async def async_run(self, *args, **kwargs):
+    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
     @abstractmethod
-    async def async_run_batch(self, *args, **kwargs):
+    async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
     @abstractmethod
-    def run(self, *args, **kwargs):
+    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
     @abstractmethod
-    def run_batch(self, *args, **kwargs):
+    def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
 
-class RemoteRunner(RunnerImpl):
-    @property
-    @inject
-    def _client(
-        self, remote_runner_mapping=Provide[BentoServerContainer.remote_runner_mapping]
-    ):
-        from .client import RunnerClient
+class RunnerImplPool:
+    _runner_map: t.Dict[str, RunnerImpl] = {}
 
-        uds = remote_runner_mapping.get(self._runner.name)
-        return RunnerClient(uds)  # TODO(jiang): timeout
+    @classmethod
+    def get_by_runner(cls, runner: _BaseRunner) -> RunnerImpl:
+        if runner.name in cls._runner_map:
+            return cls._runner_map[runner.name]
 
-    async def async_run(self, *args, **kwargs):
-        return await self._client.async_run(*args, **kwargs)
+        remote_runner_mapping = BentoServerContainer.remote_runner_mapping.get()
+        if runner.name in remote_runner_mapping:
+            from .remote import RemoteRunnerClient
 
-    async def async_run_batch(self, *args, **kwargs):
-        return await self._client.async_run_batch(*args, **kwargs)
+            impl = RemoteRunnerClient(runner)
+        else:
+            from .local import LocalRunner
 
-    def run(self, *args, **kwargs):
-        return self._client.run(*args, **kwargs)
+            impl = LocalRunner(runner)
 
-    def run_batch(self, *args, **kwargs):
-        return self._client.run_batch(*args, **kwargs)
-
-
-class LocalRunner(RunnerImpl):
-    def _setup(self) -> None:
-        self._state = RunnerState.SETTING
-        self._runner._setup()  # noqa
-        self._state = RunnerState.SET
-
-    async def async_run(self, *args, **kwargs):
-        return self.run(*args, **kwargs)
-
-    async def async_run_batch(self, *args, **kwargs):
-        if self._state is RunnerState.INIT:
-            self._setup()
-        if isinstance(self._runner, Runner):
-            return self._runner._run_batch(*args, **kwargs)
-        if isinstance(self._runner, SimpleRunner):
-            raise RuntimeError("shall not call async_run_batch on a simple runner")
-
-    def run(self, *args, **kwargs):
-        if self._state is RunnerState.INIT:
-            self._setup()
-        if isinstance(self._runner, Runner):
-            params = Params(*args, **kwargs)
-            params = params.map(
-                lambda i: AutoContainer.singles_to_batch(
-                    [i], batch_axis=self._runner.batch_options.input_batch_axis
-                )
-            )
-            batch_result = self._runner._run_batch(*params.args, **params.kwargs)
-            return AutoContainer.batch_to_singles(
-                batch_result,
-                batch_axis=self._runner.batch_options.output_batch_axis,
-            )[0]
-
-        if isinstance(self._runner, SimpleRunner):
-            return self._runner._run(*args, **kwargs)
-
-    def run_batch(self, *args, **kwargs):
-        if self._state is RunnerState.INIT:
-            self._setup()
-        if isinstance(self._runner, Runner):
-            return self._runner._run_batch(*args, **kwargs)
-        if isinstance(self._runner, SimpleRunner):
-            raise RuntimeError("shall not call run_batch on a simple runner")
+        cls._runner_map[runner.name] = impl
+        return impl

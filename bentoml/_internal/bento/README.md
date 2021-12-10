@@ -8,16 +8,19 @@ and dependencies.
 ## Building a Bento
 
 To build a Bento from your service definition code, simply run the following command
-from CLI by providing the service import path:
+from CLI by providing the path to bentofile.yaml config file:
 
 ```bash
-bentoml build fraud_detector:svc
+bentoml build -f ./bentofile.yaml
 ```
 
 There is an equivalent Python API for building Bento as well:
 ```python
 import bentoml
-bentoml.build('fraud_detector:svc')
+bentoml.build(
+    'fraud_detector:svc',
+    # Other build options
+)
 ```
 
 By default, `build` will include all files in current working directory, besides the
@@ -70,7 +73,7 @@ bentoml.build(
 Alternatively, user may put all build options in a `bentofile.yaml` in the same directory
 ```yaml
 service: "iris_classifier:svc"
-description: "./readme.md"
+description: "file: ./readme.md"
 labels:
   foo: bar
   team: abc
@@ -155,35 +158,36 @@ Inside a Bento archive, you will find the following file structure:
 
 ```bash
 /example_bento
- - README.md
- - bento.yaml
- - /apis
-     - openapi.yaml # openapi spec
- - /env
-     - /python
-         - version.txt
-         - requirements.txt
-         - requirements.lock.txt
-         - /wheels
-         - pip_args.txt
-     - /docker
-         - Dockerfile
-         - entrypoint.sh
-         - init.sh
-         - setup_script
-     - /conda
-         - environment.yml
+- README.md
+- bento.yaml
+- /apis
+  - openapi.yaml # openapi spec
+- /env
+  - /python
+    - version.txt
+      - requirements.txt
+      - requirements.lock.txt
+      - pip_args.txt
+      - /wheels
+    - /docker
+      - Dockerfile
+      - entrypoint.sh
+      - init.sh
+      - setup_script
+    - /conda
+      - environment.yml
 
- - /FraudDetector  # this folder is mostly identical to user's development directory
-    - bento.py
-    - /common
-       - my_lib.py
-    - my_config.json
+- /FraudDetector  # this folder is mostly identical to user's development directory
+  - bento.py
+  - /common
+      - my_lib.py
+  - my_config.json
 
- - /models
-    - /my_nlp_model
-       - bentoml_model.yml
-       - model.pkl
+- /models
+  - /my_nlp_model
+    - /zhjw7ssxf3i6zcmf2ie5eubhd
+      - bentoml_model.yml
+      - model.pkl
     - latest
 ```
 

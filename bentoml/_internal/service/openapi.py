@@ -2,8 +2,8 @@ import typing as t
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..io_descriptors import IODescriptor
     from . import Service
+    from ..io_descriptors import IODescriptor
 
 
 HEALTHZ_DESC = (

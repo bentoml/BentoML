@@ -1,9 +1,10 @@
+import os
 import logging
 import logging.config
-import os
 from pathlib import Path
 
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
 from .configuration import get_debug_mode
 from .configuration.containers import BentoMLContainer
@@ -70,7 +71,7 @@ def get_logging_config_dict(
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "console": {"format": "%(message)s"},
+            "console": {"format": "%(message)s", "datefmt": "[%X]"},
             "prediction": {
                 "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "format": "%(request_id)s %(request)s %(response)s",

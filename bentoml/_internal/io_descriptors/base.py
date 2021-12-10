@@ -1,5 +1,6 @@
 import typing as t
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -10,8 +11,8 @@ from ..types import FileLike
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np  # noqa: F401
     import pandas as pd  # noqa: F401
-    import PIL.Image  # noqa: F401
     import pydantic  # noqa: F401
+    import PIL.Image  # noqa: F401
 
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]

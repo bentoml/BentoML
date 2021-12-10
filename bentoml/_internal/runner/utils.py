@@ -1,12 +1,14 @@
-import ctypes
-import itertools
-import logging
-import math
 import os
 import re
+import math
+import ctypes
 import typing as t
-from functools import lru_cache
+import logging
+import itertools
 from typing import TYPE_CHECKING
+from functools import lru_cache
+
+from simple_di.providers import SingletonFactory
 
 from ...exceptions import BentoMLException
 
@@ -14,11 +16,28 @@ logger = logging.getLogger(__name__)
 
 # Some constants taken from cuda.h
 
-_drv = None
 
 if TYPE_CHECKING:
-    from _ctypes import _SimpleCData
+    from ctypes import c_int
+    from ctypes import c_char_p
+    from ctypes import c_size_t
+    from ctypes import c_void_p
+
+    CDataType = t.Union[c_int, c_void_p, c_size_t, c_char_p]
+
     from aiohttp import MultipartWriter
+    from starlette.requests import Request
+
+    from ..runner.container import Payload
+
+    class PlcType(t.TypedDict):
+        err: c_char_p
+        device: c_int
+        num_gpus: c_int
+        context: c_void_p
+        free_mem: c_size_t
+        total_mem: c_size_t
+
 
 T = t.TypeVar("T")
 To = t.TypeVar("To")
@@ -51,25 +70,86 @@ class Params(t.Generic[T]):
         except StopIteration:
             pass
 
-    def to_http_multipart(self) -> "MultipartWriter":
-        raise NotImplementedError()
-
-    def to_dict(self) -> t.Dict[t.Union[int, str], T]:
-        return dict(enumerate(self.args), **self.kwargs)
+    def items(self) -> t.Iterator[t.Tuple[t.Union[int, str], T]]:
+        return itertools.chain(enumerate(self.args), self.kwargs.items())
 
     @classmethod
-    def from_dict(cls, d: t.Dict[t.Union[int, str], To]) -> "Params[To]":
-        args = tuple(
-            v for _, v in sorted((k, v) for k, v in d.items() if isinstance(k, int))
-        )
-        kwargs = {k: v for k, v in d.items() if not isinstance(k, int)}
-        return Params[To](*args, **kwargs)
+    def agg(
+        cls,
+        params_list: t.Sequence["Params[T]"],
+        agg_func: t.Callable[[t.Sequence[T]], To] = lambda i: i,
+    ) -> "Params[To]":
+        if not params_list:
+            return t.cast(Params[To], [])
+
+        args: t.List[To] = []
+        kwargs: t.Dict[str, To] = {}
+
+        for j, _ in enumerate(params_list[0].args):
+            arg: t.List[T] = []
+            for params in params_list:
+                arg.append(params.args[j])
+            args.append(agg_func(arg))
+        for k in params_list[0].kwargs:
+            kwarg: t.List[T] = []
+            for params in params_list:
+                kwarg.append(params.kwargs[k])
+            kwargs[k] = agg_func(kwarg)
+        return Params(*tuple(args), **kwargs)
 
     @property
     def sample(self) -> T:
         if self.args:
             return self.args[0]
         return next(iter(self.kwargs.values()))
+
+
+PAYLOAD_META_HEADER = "Bento-Payload-Meta"
+
+
+def payload_params_to_multipart(params: Params["Payload"]) -> "MultipartWriter":
+    import json
+
+    from multidict import CIMultiDict
+    from aiohttp.multipart import MultipartWriter
+
+    multipart = MultipartWriter(subtype="form-data")
+    for key, payload in params.items():
+        multipart.append(
+            payload.data,
+            headers=CIMultiDict(
+                (
+                    (PAYLOAD_META_HEADER, json.dumps(payload.meta)),
+                    ("Content-Disposition", f'form-data; name="{key}"'),
+                )
+            ),
+        )
+    return multipart
+
+
+async def multipart_to_payload_params(request: "Request") -> Params["Payload"]:
+    import json
+
+    from bentoml._internal.runner.container import Payload
+    from bentoml._internal.utils.formparser import populate_multipart_requests
+
+    parts = await populate_multipart_requests(request)
+    max_arg_index = -1
+    kwargs: t.Dict[str, Payload] = {}
+    args_map: t.Dict[int, Payload] = {}
+    for field_name, req in parts.items():
+        payload = Payload(
+            data=await req.body(),
+            meta=json.loads(req.headers[PAYLOAD_META_HEADER]),
+        )
+        if field_name.isdigit():
+            arg_index = int(field_name)
+            args_map[arg_index] = payload
+            max_arg_index = max(max_arg_index, arg_index)
+        else:
+            kwargs[field_name] = payload
+    args = tuple(args_map[i] for i in range(max_arg_index + 1))
+    return Params(*args, **kwargs)
 
 
 class TypeRef:
@@ -97,7 +177,7 @@ class TypeRef:
 
         if hasattr(t, "_eval_type"):  # python3.7, 3.8 & 3.9
             _eval_type = getattr(t, "_eval_type")
-            return t.cast(t.Type, _eval_type(ref, globals(), localns))
+            return t.cast(type, _eval_type(ref, globals(), localns))
 
         raise SystemError("unsupported Python version")
 
@@ -121,7 +201,7 @@ class TypeRef:
         return f'TypeRef("{self.module}", "{self.qualname}")'
 
 
-def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
+def cpu_converter(cpu: t.Union[int, float, str]) -> float:
     if isinstance(cpu, (int, float)):
         return float(cpu)
 
@@ -133,7 +213,7 @@ def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
     raise ValueError(f"Invalid CPU resource limit '{cpu}'")
 
 
-def _mem_converter(mem: t.Union[int, str]) -> int:
+def mem_converter(mem: t.Union[int, str]) -> int:
     if isinstance(mem, int):
         return mem
 
@@ -163,14 +243,14 @@ def _mem_converter(mem: t.Union[int, str]) -> int:
 
 
 @lru_cache(maxsize=1)
-def _query_cgroup_cpu_count() -> float:
+def query_cgroup_cpu_count() -> float:
     # Query active cpu processor count using cgroup v1 API, based on OpenJDK
     # implementation for `active_processor_count` using cgroup v1:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupSubsystem_linux.cpp
     # For cgroup v2, see:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupV2Subsystem_linux.cpp
     def _read_integer_file(filename: str) -> int:
-        with open(filename, "r") as f:
+        with open(filename, "r", encoding="utf-8") as f:
             return int(f.read().rstrip())
 
     cgroup_root = "/sys/fs/cgroup/"
@@ -211,7 +291,7 @@ def _query_cgroup_cpu_count() -> float:
     return float(min(limit_count, os_cpu_count))
 
 
-@lru_cache(maxsize=1)
+@SingletonFactory
 def _cuda_lib() -> "ctypes.CDLL":
     libs = ("libcuda.so", "cuda.dll")
     for lib in libs:
@@ -219,17 +299,15 @@ def _cuda_lib() -> "ctypes.CDLL":
             return ctypes.CDLL(lib)
         except OSError:
             continue
-    else:
-        raise OSError(f"could not load any of: {' '.join(libs)}")
+    raise OSError(f"could not load any of: {' '.join(libs)}")
 
 
-@lru_cache(maxsize=1)
-def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
+@SingletonFactory
+def _init_var() -> t.Tuple["ctypes.CDLL", "PlcType"]:
     # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
     # TODO: add threads_per_core, cores, Compute Capability
-    global _drv
-    err: "_SimpleCData[bytes]" = ctypes.c_char_p()  # noqa
-    plc = {
+    err = ctypes.c_char_p()
+    plc: PlcType = {
         "err": err,
         "device": ctypes.c_int(),
         "num_gpus": ctypes.c_int(),
@@ -239,12 +317,11 @@ def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
     }
 
     try:
-        if _drv is None:
-            _drv = _cuda_lib()
+        _drv = _cuda_lib.get()
         res = _drv.cuInit(0)
         if res != CUDA_SUCCESS:
             _drv.cuGetErrorString(res, ctypes.byref(err))
-            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")
+            logger.error(f"cuInit failed with error code {res}: {str(err.value)}")
         return _drv, plc
     except OSError as e:
         raise BentoMLException(
@@ -254,16 +331,15 @@ def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
         )
 
 
-def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
+def gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
     if gpus is not None:
-        drv, plc = _init_var()
+        drv, plc = _init_var.get()
 
         res = drv.cuDeviceGetCount(ctypes.byref(plc["num_gpus"]))
         if res != CUDA_SUCCESS:
             drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
             logger.error(
-                "cuDeviceGetCount failed "
-                f"with error code {res}: {plc['err'].value.decode()}"
+                f"cuDeviceGetCount failed with error code {res}: {str(plc['err'].value)}"
             )
 
         def _validate_dev(dev_id: t.Union[int, str]) -> bool:
@@ -272,7 +348,7 @@ def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[s
                 drv.cuGetErrorString(_res, ctypes.byref(plc["err"]))
                 logger.warning(
                     "cuDeviceGet failed "
-                    f"with error code {_res}: {plc['err'].value.decode()}"
+                    f"with error code {_res}: {str(plc['err'].value)}"
                 )
                 return False
             return True
@@ -288,20 +364,20 @@ def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[s
                 )
         else:
             return list(
-                itertools.chain.from_iterable([_gpu_converter(gpu) for gpu in gpus])
+                itertools.chain.from_iterable([gpu_converter(gpu) for gpu in gpus])
             )
     return list()
 
 
-def _get_gpu_memory(dev: int) -> t.Tuple[int, int]:
+def get_gpu_memory(dev: int) -> t.Tuple[int, int]:
     """Return Total Memory and Free Memory in given GPU device. in MiB"""
-    drv, plc = _init_var()
+    drv, plc = _init_var.get()
 
     res = drv.cuDeviceGet(ctypes.byref(plc["device"]), dev)
     if res != CUDA_SUCCESS:
         drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
         logger.error(
-            "cuDeviceGet failed " f"with error code {res}: {plc['err'].value.decode()}"
+            "cuDeviceGet failed " f"with error code {res}: {str(plc['err'].value)}"
         )
     try:
         res = drv.cuCtxCreate_v2(ctypes.byref(plc["context"]), 0, plc["device"])
@@ -310,7 +386,7 @@ def _get_gpu_memory(dev: int) -> t.Tuple[int, int]:
     if res != CUDA_SUCCESS:
         drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
         logger.error(
-            f"cuCtxCreate failed with error code {res}: {plc['err'].value.decode()}"
+            f"cuCtxCreate failed with error code {res}: {str(plc['err'].value)}"
         )
 
     try:
@@ -324,8 +400,7 @@ def _get_gpu_memory(dev: int) -> t.Tuple[int, int]:
     if res != CUDA_SUCCESS:
         drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
         logger.error(
-            f"cuMemGetInfo failed with error code {res}: "
-            f"{plc['err'].value.decode()}"
+            f"cuMemGetInfo failed with error code {res}: " f"{str(plc['err'].value)}"
         )
     _total_mem = plc["total_mem"].value
     _free_mem = plc["free_mem"].value

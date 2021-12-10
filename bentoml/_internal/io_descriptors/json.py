@@ -1,27 +1,28 @@
-import dataclasses
+import sys
 import json
 import typing as t
+import dataclasses
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BadInput, MissingDependencyException
+from .base import JSONType
+from .base import IODescriptor
+from ...exceptions import BadInput
+from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
-from .base import IODescriptor, JSONType
 
 if TYPE_CHECKING:
     import numpy as np
-    from pandas.core.frame import DataFrame
-    from pydantic import BaseModel
-else:  # pragma: no cover
-    np = LazyLoader("np", globals(), "numpy")
-
-try:
     import pandas as pd
     import pydantic
-except ImportError:
-    pydantic, pd = None, None
+    from pydantic import BaseModel
+    from pandas.core.frame import DataFrame  # noqa: F401
+else:  # pragma: no cover
+    np = LazyLoader("np", globals(), "numpy")
+    pd = LazyLoader("pd", globals(), "pandas")
+    pydantic = LazyLoader("pydantic", globals(), "pydantic")
 
 
 MIME_TYPE_JSON = "application/json"
@@ -36,20 +37,23 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 
-        if isinstance(o, np.generic):
-            return o.item()
+        if "numpy" in sys.modules:
+            if isinstance(o, np.generic):
+                return o.item()
 
-        if isinstance(o, np.ndarray):
-            return o.tolist()
+            if isinstance(o, np.ndarray):
+                return o.tolist()
 
-        if pd is not None and isinstance(o, (pd.DataFrame, pd.Series)):
-            return o.to_dict()
+        if "pandas" in sys.modules:
+            if isinstance(o, (pd.DataFrame, pd.Series)):
+                return o.to_dict()  # type: ignore
 
-        if pydantic is not None and isinstance(o, pydantic.BaseModel):
-            obj_dict = o.dict()
-            if "__root__" in obj_dict:
-                obj_dict = obj_dict.get("__root__")
-            return obj_dict
+        if "pydantic" in sys.modules:
+            if pydantic is not None and isinstance(o, pydantic.BaseModel):
+                obj_dict = o.dict()
+                if "__root__" in obj_dict:
+                    obj_dict = obj_dict.get("__root__")
+                return obj_dict
 
         return super().default(o)
 

@@ -1,24 +1,27 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
-import logging
+import os
 import typing as t
+import logging
+import subprocess
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ._internal.bento import Bento
-from ._internal.bento.build_config import BentoBuildConfig
-from ._internal.bento.utils import resolve_user_filepath
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.types import Tag
 from .exceptions import InvalidArgument
+from ._internal.bento import Bento
+from ._internal.types import Tag
+from ._internal.bento.utils import resolve_user_filepath
+from ._internal.bento.build_config import BentoBuildConfig
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ._internal.bento import BentoStore, SysPathBento
+    from ._internal.bento import BentoStore
+    from ._internal.bento import SysPathBento
     from ._internal.models import ModelStore
-
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +140,7 @@ def build(
 
 
 @inject
-def build_from_bentofile_yaml(
+def build_bentofile(
     bentofile: str = "bentofile.yaml",
     *,
     version: t.Optional[str] = None,
@@ -176,6 +179,47 @@ def build_from_bentofile_yaml(
     return bento
 
 
+@inject
+def containerize(
+    tag: t.Union[Tag, str],
+    docker_image_tag: t.Optional[str] = None,
+    *,
+    build_args: t.Optional[t.Dict[str, str]] = None,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    no_cache: bool = False,
+    platform: t.Optional[str] = None,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+):
+    bento = _bento_store.get(tag)
+    if docker_image_tag is None:
+        docker_image_tag = str(bento.tag)
+
+    docker_build_cmd = ["docker", "build", "."]
+    dockerfile_path = os.path.join("env", "docker", "Dockerfile")
+    docker_build_cmd += ["-f", dockerfile_path]
+    docker_build_cmd += ["-t", docker_image_tag]
+
+    if no_cache:
+        docker_build_cmd.append("--no-cache")
+
+    if build_args:
+        for key, value in build_args.items():
+            docker_build_cmd += ["--build-arg", f"{key}={value}"]
+
+    if labels:
+        for key, value in labels.items():
+            docker_build_cmd += ["--label", f"{key}={value}"]
+
+    if platform:
+        docker_build_cmd += ["--platform", platform]
+
+    env = os.environ.copy()
+    env["DOCKER_SCAN_SUGGEST"] = "false"
+    logger.info(f"Building docker image for {bento}...")
+    subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
+    logger.info(f'Successfully built docker image "{docker_image_tag}"')
+
+
 __all__ = [
     "list",
     "get",
@@ -185,4 +229,6 @@ __all__ = [
     "push",
     "pull",
     "build",
+    "build_bentofile",
+    "containerize",
 ]

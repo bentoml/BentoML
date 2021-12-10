@@ -177,7 +177,7 @@ def save(
         "framework_name": "onnx",
         "pip_dependencies": [
             f"onnx=={_onnx_version}",
-            f"onnxruntime=={_ort_version}",
+            f"onnxruntime=={_onnxruntime_version}",
         ],
     }
 

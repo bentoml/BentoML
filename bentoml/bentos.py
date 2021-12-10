@@ -14,13 +14,12 @@ from simple_di import Provide
 from .exceptions import InvalidArgument
 from ._internal.bento import Bento
 from ._internal.types import Tag
-from ._internal.bento.utils import resolve_user_filepath
+from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.bento import BentoStore
-    from ._internal.bento import SysPathBento
     from ._internal.models import ModelStore
 
 logger = logging.getLogger(__name__)
@@ -30,40 +29,63 @@ logger = logging.getLogger(__name__)
 def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> "t.List[SysPathBento]":
+) -> "t.List[Bento]":
     return _bento_store.list(tag)
 
 
 @inject
 def get(
     tag: t.Union[Tag, str],
+    *,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     return _bento_store.get(tag)
 
 
+@inject
 def delete(
     tag: t.Union[Tag, str],
+    *,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
     _bento_store.delete(tag)
 
 
-def import_bento(path: str) -> Bento:
+@inject
+def import_bento(
+    path: str,
+    *,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+) -> Bento:
     return Bento.from_fs(fs.open_fs(path))
 
 
-def export_bento(tag: t.Union[Tag, str], path: str):
-    bento = get(tag)
+@inject
+def export_bento(
+    tag: t.Union[Tag, str],
+    path: str,
+    *,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+):
+    bento = get(tag, _bento_store=_bento_store)
     bento.export(path)
 
 
-def push(tag: t.Union[Tag, str]):
-    bento = get(tag)
-    bento.push()
+@inject
+def push(
+    tag: t.Union[Tag, str],
+    *,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+):
+    raise NotImplementedError
 
 
-def pull(tag: t.Union[Tag, str]):
+@inject
+def pull(
+    tag: t.Union[Tag, str],
+    *,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+):
     raise NotImplementedError
 
 
@@ -83,7 +105,7 @@ def build(
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "SysPathBento":
+) -> "Bento":
     """
     User-facing API for building a Bento, the available build options are symmetrical to
     the content of a valid bentofile.yaml file, for building Bento from CLI.
@@ -147,7 +169,7 @@ def build_bentofile(
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "SysPathBento":
+) -> "Bento":
     """
     Build a Bento base on options specified in a bentofile.yaml file.
 
@@ -166,7 +188,7 @@ def build_bentofile(
     except FileNotFoundError:
         raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
-    with open(bentofile, "r") as f:
+    with open(bentofile, "r", encoding="utf-8") as f:
         build_config = BentoBuildConfig.from_yaml(f)
 
     bento = Bento.create(

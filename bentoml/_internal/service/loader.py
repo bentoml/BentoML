@@ -9,10 +9,10 @@ import fs
 from simple_di import inject
 from simple_di import Provide
 
+from ..bento import Bento
 from ..models import ModelStore
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
-from ..bento.bento import SysPathBento
 from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..configuration.containers import BentoMLContainer
@@ -198,7 +198,7 @@ def load_bento_dir(path: str) -> "Service":
         load_bento_dir("~/bentoml/bentos/iris_classifier/4tht2icroji6zput3suqi5nl2")
     """
     bento_fs = fs.open_fs(path)
-    bento = SysPathBento.from_fs(bento_fs)
+    bento = Bento.from_fs(bento_fs)
     logger.debug(
         'Loading bento "%s" from directory: %s',
         bento.tag,
@@ -207,7 +207,7 @@ def load_bento_dir(path: str) -> "Service":
     return _load_bento(bento)
 
 
-def _load_bento(bento: SysPathBento) -> "Service":
+def _load_bento(bento: Bento) -> "Service":
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 

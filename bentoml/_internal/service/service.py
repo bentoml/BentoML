@@ -16,7 +16,8 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from starlette.applications import Starlette
 
-    from ..bento.bento import SysPathBento
+    from ..bento import Bento
+
 
 WSGI_APP = t.Callable[
     [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
@@ -42,7 +43,7 @@ class Service:
     name: str
     # Tag/Bento/Version are only applicable if the service was load from a bento
     tag: t.Optional[Tag] = None
-    bento: t.Optional["SysPathBento"] = None
+    bento: t.Optional["Bento"] = None
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
@@ -88,7 +89,7 @@ class Service:
 
     def api(
         self,
-        input: IODescriptor[t.Any],  # noqa
+        input: IODescriptor[t.Any],  # noqa # pylint: disable=redefined-builtin
         output: IODescriptor[t.Any],
         name: t.Optional[str] = None,
         doc: t.Optional[str] = None,
@@ -116,7 +117,7 @@ class Service:
     def _add_inference_api(
         self,
         func: t.Callable[..., t.Any],
-        input: IODescriptor[t.Any],  # noqa
+        input: IODescriptor[t.Any],  # noqa # pylint: disable=redefined-builtin
         output: IODescriptor[t.Any],
         name: t.Optional[str],
         doc: t.Optional[str],

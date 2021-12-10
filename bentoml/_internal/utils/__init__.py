@@ -1,12 +1,21 @@
+import os
 import uuid
 import socket
 import typing as t
 import functools
 import contextlib
+from typing import TYPE_CHECKING
 from pathlib import Path
+
+import fs
+import fs.copy
 
 from ..types import PathType
 from .lazy_loader import LazyLoader
+
+if TYPE_CHECKING:
+    from fs import FS
+
 
 C = t.TypeVar("C")
 T = t.TypeVar("T")
@@ -103,6 +112,42 @@ def get_free_port(host: str = "localhost") -> int:
     port: int = sock.getsockname()[1]
     sock.close()
     return port
+
+
+def copy_file_to_fs_folder(
+    src_path: str,
+    dst_fs: "FS",
+    dst_folder_path: str = ".",
+    dst_filename: t.Optional[str] = None,
+):
+    """Copy the given file at src_path to dst_fs filesystem, under its dst_folder_path
+    folder with dst_filename as file name. When dst_filename is None, keep the original
+    file name.
+    """
+    src_path = os.path.realpath(os.path.expanduser(src_path))
+    dir_name, file_name = os.path.split(src_path)
+    src_fs = fs.open_fs(dir_name)
+    dst_filename = file_name if dst_filename is None else dst_filename
+    dst_path = fs.path.join(dst_folder_path, dst_filename)
+    fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
+
+
+def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
+    """Resolve the abspath of a filepath provided by user, which may contain "~" or may
+    be a relative path base on ctx dir.
+    """
+    # Return if filepath exist after expanduser
+    _path = os.path.expanduser(filepath)
+    if os.path.exists(_path):
+        return os.path.realpath(_path)
+
+    # Try finding file in ctx if provided
+    if ctx:
+        _path = os.path.expanduser(os.path.join(ctx, filepath))
+        if os.path.exists(_path):
+            return os.path.realpath(_path)
+
+    raise FileNotFoundError(f"file {filepath} not found")
 
 
 class cached_property(t.Generic[C, T]):

@@ -3,6 +3,7 @@ import re
 import typing as t
 import logging
 from sys import version_info as pyver
+from typing import TYPE_CHECKING
 
 import fs
 import attr
@@ -10,14 +11,17 @@ import yaml
 import cattr
 import fs.copy
 from fs.base import FS
-from fs.copy import copy_file
 from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 
-from .utils import resolve_user_filepath
 from ..types import Tag
+from ..utils import resolve_user_filepath
+from ..utils import copy_file_to_fs_folder
 from .docker import ImageProvider
 from ...exceptions import InvalidArgument
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
+
+if TYPE_CHECKING:
+    DistroString = t.Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]
 
 logger = logging.getLogger(__name__)
 
@@ -58,13 +62,13 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
 @attr.frozen
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
-    distro: t.Optional[str] = attr.ib(
+    distro: "t.Optional[DistroString]" = attr.field(
         validator=attr.validators.optional(
             attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
         ),
         default=None,
     )
-    python_version: t.Optional[str] = attr.ib(
+    python_version: t.Optional[str] = attr.field(
         converter=_convert_python_version,
         default=None,
         validator=attr.validators.optional(
@@ -118,6 +122,8 @@ class DockerOptions:
         if self.base_image is None:
             # TODO: remove this after 1.0 images published
             # Override to a fixed image for development purpose
+            if self.distro is None:
+                raise KeyError("distro not set, can't get base image tag")
             base_image = repr(ImageProvider(self.distro, self.python_version, self.gpu))
             base_image = "bentoml/model-server:0.13.1-slim-py37"
             return base_image
@@ -128,10 +134,10 @@ class DockerOptions:
         docker_folder = fs.path.join("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile = fs.path.join(docker_folder, "Dockerfile")
-        tempalte_file = os.path.join(
+        template_file = os.path.join(
             os.path.dirname(__file__), "docker", "Dockerfile.template"
         )
-        with open(tempalte_file, "r") as f:
+        with open(template_file, "r", encoding="utf-8") as f:
             dockerfile_template = f.read()
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
@@ -140,7 +146,7 @@ class DockerOptions:
             )
 
         for filename in ["init.sh", "entrypoint.sh"]:
-            _copy_file_to_fs_folder(
+            copy_file_to_fs_folder(
                 os.path.join(os.path.dirname(__file__), "docker", filename),
                 bento_fs,
                 docker_folder,
@@ -151,7 +157,7 @@ class DockerOptions:
                 setup_script = resolve_user_filepath(self.setup_script, build_ctx)
             except FileNotFoundError as e:
                 raise InvalidArgument(f"Invalid setup_script file: {e}")
-            _copy_file_to_fs_folder(
+            copy_file_to_fs_folder(
                 setup_script, bento_fs, docker_folder, "setup_script"
             )
 
@@ -186,24 +192,6 @@ class CondaOptions:
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str):
         ...
-
-
-def _copy_file_to_fs_folder(
-    src_path: str,
-    dst_fs: FS,
-    dst_folder_path: str = ".",
-    dst_filename: t.Optional[str] = None,
-):
-    """Copy the given file at src_path to dst_fs filesystem, under its dst_folder_path
-    folder with dst_filename as file name. When dst_filename is None, keep the original
-    file name.
-    """
-    src_path = os.path.realpath(os.path.expanduser(src_path))
-    dir_name, file_name = os.path.split(src_path)
-    src_fs = fs.open_fs(dir_name)
-    dst_filename = file_name if dst_filename is None else dst_filename
-    dst_path = fs.path.join(dst_folder_path, dst_filename)
-    copy_file(src_fs, file_name, dst_fs, dst_path)
 
 
 @attr.frozen
@@ -244,7 +232,7 @@ class PythonOptions:
         if self.wheels is not None:
             for whl_file in self.wheels:
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
-                _copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
+                copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
         # If BentoML is installed in editable mode, build bentoml whl and save to Bento
         build_bentoml_whl_to_target_if_in_editable_mode(
@@ -255,7 +243,7 @@ class PythonOptions:
             requirements_txt_file = resolve_user_filepath(
                 self.requirements_txt, build_ctx
             )
-            _copy_file_to_fs_folder(
+            copy_file_to_fs_folder(
                 requirements_txt_file,
                 bento_fs,
                 py_folder,
@@ -330,7 +318,7 @@ class PythonOptions:
         return attr.evolve(self, **update_defaults)
 
 
-def _python_options_structure_hook(d: t.Any, t: t.Type[PythonOptions]):
+def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]):
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
         if field in d and isinstance(d[field], str):
@@ -366,7 +354,7 @@ def _additional_models_converter(
     return list(map(Tag.from_taglike, tags))
 
 
-@attr.frozen
+@attr.define(frozen=True)
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
     provide all the options for building a Bento. All optional build options should be
@@ -381,24 +369,24 @@ class BentoBuildConfig:
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
     exclude: t.Optional[t.List[str]] = None
-    additional_models: t.Optional[t.List[Tag]] = attr.ib(
+    additional_models: t.Optional[t.List[Tag]] = attr.field(
         converter=_additional_models_converter,
         default=None,
     )
-    docker: t.Optional[DockerOptions] = attr.ib(
+    docker: t.Optional[DockerOptions] = attr.field(
         default=None,
         converter=_dict_arg_converter(DockerOptions),
     )
-    python: t.Optional[PythonOptions] = attr.ib(
+    python: t.Optional[PythonOptions] = attr.field(
         default=None,
         converter=_dict_arg_converter(PythonOptions),
     )
-    conda: t.Optional[CondaOptions] = attr.ib(
+    conda: t.Optional[CondaOptions] = attr.field(
         default=None,
         converter=_dict_arg_converter(CondaOptions),
     )
 
-    def with_defaults(self) -> "BentoBuildConfig":
+    def with_defaults(self) -> "FilledBentoBuildConfig":
         """Convert from user provided options to actual build options will defaults
         values filled in
 
@@ -406,26 +394,17 @@ class BentoBuildConfig:
             BentoBuildConfig: a new copy of self, with default values filled
         """
 
-        update_defaults: t.Dict[str, t.Any] = {}
-        if self.labels is None:
-            update_defaults["labels"] = {}
-        if self.include is None:
-            update_defaults["include"] = ["*"]
-        if self.exclude is None:
-            update_defaults["exclude"] = []
-        if self.additional_models is None:
-            update_defaults["additional_models"] = []
-
-        docker_options = DockerOptions() if self.docker is None else self.docker
-        update_defaults["docker"] = docker_options.with_defaults()
-
-        python_options = PythonOptions() if self.python is None else self.python
-        update_defaults["python"] = python_options.with_defaults()
-
-        if self.conda is None:
-            update_defaults["conda"] = CondaOptions()
-
-        return attr.evolve(self, **update_defaults)
+        return FilledBentoBuildConfig(
+            self.service,
+            self.description,
+            {} if self.labels is None else self.labels,
+            ["*"] if self.include is None else self.include,
+            [] if self.exclude is None else self.exclude,
+            [] if self.additional_models is None else self.additional_models,
+            (DockerOptions() if self.docker is None else self.docker).with_defaults(),
+            (PythonOptions() if self.python is None else self.python).with_defaults(),
+            CondaOptions() if self.conda is None else self.conda,
+        )
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
@@ -448,4 +427,16 @@ class BentoBuildConfig:
     def to_yaml(self, stream: t.TextIO):
         # TODO: Save BentoBuildOptions to a yaml file
         # This is reserved for building iteractive build file creation CLI
-        ...
+        raise NotImplementedError
+
+
+class FilledBentoBuildConfig(BentoBuildConfig):
+    service: str
+    description: t.Optional[str]
+    labels: t.Dict[str, t.Any]
+    include: t.List[str]
+    exclude: t.List[str]
+    additional_models: t.List[Tag]
+    docker: DockerOptions
+    python: PythonOptions
+    conda: CondaOptions

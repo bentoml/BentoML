@@ -211,7 +211,7 @@ def load(
     Examples::
     """  # noqa: LN001
     model = model_store.get(tag)
-    if "tensorflow_hub" in model.info.context:
+    if model.info.context["import_from_tfhub"]:
         assert load_as_wrapper is not None, (
             "You have to specified `load_as_wrapper=True | False`"
             " to load a `tensorflow_hub` module. If True is chosen,"
@@ -278,8 +278,12 @@ def import_from_tfhub(
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
-        "tensorflow": _tf_version,
-        "tensorflow_hub": _tfhub_version,
+        "framework_name": "tensorflow",
+        "pip_dependencies": [
+            f"tensorflow=={_tf_version}",
+            f"tensorflow_hub=={_tfhub_version}",
+        ],
+        "import_from_tfhub": True,
     }
     if name is None:
         if isinstance(identifier, str):
@@ -293,7 +297,7 @@ def import_from_tfhub(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     if isinstance(identifier, str):
@@ -355,12 +359,16 @@ def save(
         tag = bentoml.transformers.save("my_tensorflow_model", model)
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "tensorflow",
+        "pip_dependencies": [f"tensorflow=={_tf_version}"],
+        "import_from_tfhub": False,
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

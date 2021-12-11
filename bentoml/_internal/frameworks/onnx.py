@@ -173,15 +173,18 @@ def save(
     Examples::
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "onnx": _onnx_version,
-        "onnxruntime": _onnxruntime_version,
+        "framework_name": "onnx",
+        "pip_dependencies": [
+            f"onnx=={_onnx_version}",
+            f"onnxruntime=={_onnxruntime_version}",
+        ],
     }
 
     _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
 
     if isinstance(model, onnx.ModelProto):

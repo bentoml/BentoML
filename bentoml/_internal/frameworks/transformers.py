@@ -12,7 +12,6 @@ from importlib import import_module
 from contextlib import contextmanager
 
 import requests
-import importlib_metadata
 from filelock import FileLock
 from simple_di import inject
 from simple_di import Provide
@@ -21,6 +20,7 @@ from ..types import Tag
 from ..models import Model
 from ..models import JSON_EXT
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
@@ -59,6 +59,8 @@ except ImportError:  # pragma: no cover
         Instruction: Install transformers with `pip install transformers`.
         """
     )
+
+_transformers_version = get_pkg_version("transformers")
 
 try:
     from huggingface_hub import HfFolder
@@ -143,7 +145,7 @@ def _clean_name(name: str) -> str:
 
 
 def _check_flax_supported() -> None:  # pragma: no cover
-    _supported: bool = transformers.__version__.startswith("4")
+    _supported: bool = _transformers_version.startswith("4")
     _flax_available = (
         importlib.util.find_spec("jax") is not None
         and importlib.util.find_spec("flax") is not None
@@ -151,15 +153,15 @@ def _check_flax_supported() -> None:  # pragma: no cover
     if not _supported:
         logger.warning(
             "Detected transformers version: "
-            f"{transformers.__version__}, which "
+            f"{_transformers_version}, which "
             "doesn't have supports for Flax. "
             "Update `transformers` to 4.x and "
             "above to have Flax supported."
         )
     else:
         if _flax_available:
-            _jax_version = importlib_metadata.version("jax")
-            _flax_version = importlib_metadata.version("flax")
+            _jax_version = get_pkg_version("jax")
+            _flax_version = get_pkg_version("flax")
             logger.info(
                 f"JAX version {_jax_version}, "
                 f"Flax version {_flax_version} available."
@@ -401,7 +403,10 @@ def _save(
     **transformers_options_kwargs: str,
 ) -> Tag:
     _check_flax_supported()  # pragma: no cover
-    context: t.Dict[str, t.Any] = {"transformers": transformers.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "transformers",
+        "pip_dependencies": [f"transformers=={_transformers_version}"],
+    }
 
     if isinstance(model_identifier, str):
         try:
@@ -421,7 +426,7 @@ def _save(
     _model = Model.create(
         name,
         module=__name__,
-        framework_context=context,
+        context=context,
         options=None,
         metadata=metadata,
     )

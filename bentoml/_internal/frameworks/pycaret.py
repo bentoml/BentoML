@@ -11,6 +11,7 @@ from ..models import Model
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
     from ..models import ModelStore
 
 try:
-    from pycaret.utils import version
     from pycaret.internal.tabular import load_model
     from pycaret.internal.tabular import save_model
     from pycaret.internal.tabular import load_config
@@ -41,6 +41,8 @@ except ImportError:  # pragma: no cover
          https://pycaret.readthedocs.io/en/latest/installation.html
         """
     )
+
+_pycaret_version = get_pkg_version("pycaret")
 
 logger = logging.getLogger(__name__)
 
@@ -133,12 +135,15 @@ def save(
         # NOTE: pycaret setup config will be saved with the model
         bentoml.pycaret.save("my_model", final_model)
     """  # noqa
-    context: t.Dict[str, t.Any] = {"pycaret": version()}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "pycaret",
+        "pip_dependencies": [f"pycaret=={_pycaret_version}"],
+    }
     _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
     save_model(model, _model.path_of(SAVE_NAMESPACE))
     save_config(_model.path_of(f"{PYCARET_CONFIG}{PKL_EXT}"))

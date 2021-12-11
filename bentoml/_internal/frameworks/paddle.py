@@ -13,6 +13,7 @@ from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
@@ -50,6 +51,7 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_paddle_exc)
 
+_paddle_version = get_pkg_version("paddlepaddle")
 
 _hub_exc = (
     """\
@@ -170,7 +172,10 @@ def _save(
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
 ) -> Tag:
-    context: t.Dict[str, t.Any] = {"paddlepaddle": paddle.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "paddle",
+        "pip_dependencies": [f"paddlepaddle=={_paddle_version}"],
+    }
     if isinstance(model, str):
         context["paddlehub"] = hub.__version__
         if not os.path.isdir(model):
@@ -210,7 +215,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
     _model = Model.create(
         name,
         module=__name__,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     if isinstance(model, str):

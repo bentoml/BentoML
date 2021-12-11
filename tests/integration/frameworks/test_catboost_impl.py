@@ -65,7 +65,7 @@ def forbidden_procedure(_modelstore: "ModelStore"):
         module=__name__,
         labels=None,
         options=None,
-        framework_context=None,
+        context=None,
         metadata=None,
         _model_store=_modelstore,
     ) as ctx:

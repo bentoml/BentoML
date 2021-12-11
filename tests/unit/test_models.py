@@ -1,7 +1,13 @@
 import os
 import random
 import string
+from sys import version_info as pyver
 from typing import TYPE_CHECKING
+
+try:
+    import importlib.metadata as importlib_metadata
+except ModuleNotFoundError:
+    import importlib_metadata
 
 import pytest
 
@@ -11,6 +17,9 @@ from bentoml._internal.models import ModelStore
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
+BENTOML_VERSION: str = importlib_metadata.version("bentoml")
 
 
 def createfile(filepath: str) -> str:
@@ -77,7 +86,11 @@ def test_models(tmpdir: "Path"):
         testmodel1tag,
         anothermodeltag,
     }
-    assert bentoml.models.get("testmodel", _model_store=store).tag == testmodel1tag
+
+    retrieved_testmodel1 = bentoml.models.get("testmodel", _model_store=store)
+    assert retrieved_testmodel1.tag == testmodel1tag
+    assert retrieved_testmodel1.info.context["python_version"] == PYTHON_VERSION
+    assert retrieved_testmodel1.info.context["bentoml_version"] == BENTOML_VERSION
 
     bentoml.models.import_model(export_path, _model_store=store)
 

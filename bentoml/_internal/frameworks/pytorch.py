@@ -14,6 +14,7 @@ from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..runner.utils import TypeRef
@@ -38,14 +39,9 @@ except ImportError:  # pragma: no cover
         """  # noqa
     )
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
 _ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule"]  # type: ignore[reportPrivateUsage]
 
-_torch_version = importlib_metadata.version("torch")
+_torch_version = get_pkg_version("torch")
 
 
 def _is_gpu_available() -> bool:  # pragma: no cover
@@ -145,12 +141,15 @@ def save(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """  # noqa
-    context: t.Dict[str, t.Any] = dict(torch=_torch_version)
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "torch",
+        "pip_dependencies": [f"torch=={_torch_version}"],
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")

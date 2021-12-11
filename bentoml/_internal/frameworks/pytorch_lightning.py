@@ -9,6 +9,7 @@ from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from .pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
+from ..utils.pkg import get_pkg_version
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
@@ -29,13 +30,8 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_torch_version = importlib_metadata.version("torch")
-_pl_version = importlib_metadata.version("pytorch_lightning")
+_torch_version = get_pkg_version("torch")
+_pl_version = get_pkg_version("pytorch_lightning")
 
 
 @inject
@@ -139,14 +135,17 @@ def save(
         # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "torch": _torch_version,
-        "pytorch_lightning": _pl_version,
+        "framework_name": "torch",
+        "pip_dependencies": [
+            f"torch=={_torch_version}",
+            f"pytorch_lightning=={_pl_version}",
+        ],
     }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

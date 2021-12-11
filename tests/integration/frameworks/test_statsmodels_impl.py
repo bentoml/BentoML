@@ -49,7 +49,7 @@ def wrong_module(modelstore: "ModelStore", holt_model):
         "wrong_module",
         module=__name__,
         options=None,
-        framework_context=None,
+        context=None,
         metadata=None,
     ) as _model:
         holt_model.save(_model.path_of("saved_model.pkl"))

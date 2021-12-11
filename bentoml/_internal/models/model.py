@@ -1,5 +1,6 @@
 import typing as t
 import logging
+from sys import version_info as pyver
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
@@ -70,7 +72,7 @@ class Model(StoreItem):
         options: t.Optional[t.Dict[str, t.Any]] = None,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
-        framework_context: t.Optional[t.Dict[str, t.Any]] = None,
+        context: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> "Model":
         """Create a new Model instance in temporary filesystem used for serializing
         model artifacts and save to model store
@@ -89,8 +91,8 @@ class Model(StoreItem):
             metadata: user-defined metadata for storing model training context
                 information or model evaluation metrics, e.g. dataset version,
                 training parameters, model scores
-            framework_context: Framework context managed by BentoML for loading model,
-                e.g. {"tensorflow": _tf_version}
+            context: Environment context managed by BentoML for loading model,
+                e.g. {"framework:" "tensorflow", "framework_version": _tf_version}
 
         Returns:
             object: Model instance created in temporary filesystem
@@ -99,7 +101,9 @@ class Model(StoreItem):
         labels = {} if labels is None else labels
         options = {} if options is None else options
         metadata = {} if metadata is None else metadata
-        framework_context = {} if framework_context is None else framework_context
+        context = {} if context is None else context
+        context["bentoml_version"] = BENTOML_VERSION
+        context["python_version"] = PYTHON_VERSION
 
         model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
 
@@ -112,7 +116,7 @@ class Model(StoreItem):
                 labels=labels,
                 options=options,
                 metadata=metadata,
-                context=framework_context,
+                context=context,
             ),
             custom_objects,
         )

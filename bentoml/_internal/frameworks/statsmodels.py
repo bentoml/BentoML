@@ -11,6 +11,7 @@ from ..models import Model
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
 
 
 try:
-    import statsmodels
     import statsmodels.api as sm
     from statsmodels.tools.parallel import parallel_func
 except ImportError:  # pragma: no cover
@@ -36,6 +36,8 @@ except ImportError:  # pragma: no cover
          https://www.statsmodels.org/stable/install.html
          """
     )
+
+_statsmodels_version = get_pkg_version("statsmodels")
 
 _exc_msg = """\
 `pandas` is required by `bentoml.statsmodels`, install pandas with
@@ -111,12 +113,15 @@ def save(
 
     Examples::
     """  # noqa
-    context: t.Dict[str, t.Any] = {"statsmodels": statsmodels.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "statsmodels",
+        "pip_dependencies": [f"statsmodels=={_statsmodels_version}"],
+    }
     _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
 
     model.save(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))

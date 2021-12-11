@@ -84,7 +84,7 @@ def create(
     labels: t.Optional[t.Dict[str, t.Any]] = None,
     options: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    framework_context: t.Optional[t.Dict[str, t.Any]] = None,
+    context: t.Optional[t.Dict[str, t.Any]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Iterator[Model]:
     res = Model.create(
@@ -93,7 +93,7 @@ def create(
         labels=labels,
         options=options,
         metadata=metadata,
-        framework_context=framework_context,
+        context=context,
     )
     try:
         yield res

@@ -8,6 +8,7 @@ import tensorflow_hub as hub
 
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
+from bentoml._internal.utils.pkg import get_pkg_version
 from tests.utils.frameworks.tensorflow_utils import NativeModel
 from tests.utils.frameworks.tensorflow_utils import MultiInputModel
 from tests.utils.frameworks.tensorflow_utils import NativeRaggedModel
@@ -15,6 +16,8 @@ from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
 
 MODEL_NAME = __name__.split(".")[-1]
 TF2 = tf.__version__.startswith("2")
+
+_tf_hub_version = get_pkg_version("tensorflow_hub")
 
 test_data = [[1.1, 2.2]]
 test_tensor = tf.constant(test_data)
@@ -266,7 +269,7 @@ def test_import_from_tfhub(modelstore, identifier, name, tags, is_module_v1, wra
 
     tag = bentoml.tensorflow.import_from_tfhub(identifier, name, model_store=modelstore)
     model = modelstore.get(tag)
-    assert "tensorflow_hub" in model.info.context
+    assert model.info.context["import_from_tfhub"]
     module = bentoml.tensorflow.load(
         tag, tfhub_tags=tags, load_as_wrapper=wrapped, model_store=modelstore
     )

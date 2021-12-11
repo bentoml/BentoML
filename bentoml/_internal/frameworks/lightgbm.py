@@ -12,13 +12,13 @@ from ..models import PKL_EXT
 from ..models import TXT_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
-    import lightgbm as lgb
 
     from ..models import ModelStore
 
@@ -31,6 +31,8 @@ except ImportError:  # pragma: no cover
         https://github.com/microsoft/LightGBM/tree/master/python-package
         """
     )
+
+_lightgbm_version = get_pkg_version("lightgbm")
 
 _LightGBMModelType = t.TypeVar(
     "_LightGBMModelType",
@@ -168,13 +170,16 @@ def save(
         # load the booster back:
         gbm = bentoml.lightgbm.load("my_lightgbm_model:latest")
     """  # noqa
-    context: t.Dict[str, t.Any] = {"lightgbm": lgb.__version__}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "lightgbm",
+        "pip_dependencies": [f"lightgbm=={_lightgbm_version}"],
+    }
 
     _model = Model.create(
         name,
         module=__name__,
         options=booster_params,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

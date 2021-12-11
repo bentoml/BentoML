@@ -66,7 +66,7 @@ def wrong_module(pycaret_model, modelstore: "ModelStore"):
         "wrong_module",
         module=__name__,
         options=None,
-        framework_context=None,
+        context=None,
         metadata=None,
     ) as _model:
         save_model(pycaret_model, _model.path_of("saved_model.pkl"))

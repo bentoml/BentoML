@@ -11,6 +11,7 @@ from ..models import Model
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
@@ -38,12 +39,7 @@ except ImportError:  # pragma: no cover
             """
         )
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_sklearn_version = importlib_metadata.version("scikit-learn")
+_sklearn_version = get_pkg_version("scikit-learn")
 
 np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 pd = LazyLoader("pd", globals(), "pandas")
@@ -117,13 +113,16 @@ def save(
     Examples:
 
     """  # noqa
-    context = {"sklearn": _sklearn_version}
+    context = {
+        "framework_name": "sklearn",
+        "pip_dependencies": [f"scikit-learn=={_sklearn_version}"],
+    }
 
     _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
-        framework_context=context,
+        context=context,
     )
 
     joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))

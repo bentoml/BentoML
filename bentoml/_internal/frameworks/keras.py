@@ -154,7 +154,10 @@ def save(
     Examples::
     """  # noqa
     tf.compat.v1.keras.backend.get_session()
-    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "keras",
+        "pip_dependencies": [f"tensorflow=={_tf_version}"],
+    }
     options = {
         "store_as_json": store_as_json,
         "custom_objects": True if custom_objects is not None else False,
@@ -163,7 +166,7 @@ def save(
         name,
         module=__name__,
         options=options,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 

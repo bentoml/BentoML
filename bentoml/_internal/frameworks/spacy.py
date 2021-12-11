@@ -17,6 +17,7 @@ from ..utils import LazyLoader
 from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..runner import Runner
+from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..bento.pip_pkg import split_requirement
@@ -31,10 +32,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from ..models import ModelStore
 
 if sys.version_info >= (3, 8):
-    import importlib.metadata as importlib_metadata
     from typing import Literal
 else:  # pragma: no cover
-    import importlib_metadata
     from typing_extensions import Literal
 
 try:
@@ -47,7 +46,7 @@ except ImportError:  # pragma: no cover
         """
     )
 
-_spacy_version = importlib_metadata.version("spacy")
+_spacy_version = get_pkg_version("spacy")
 
 _check_compat = _spacy_version.startswith("3")
 if not _check_compat:  # pragma: no cover
@@ -192,12 +191,15 @@ def save(
 
         bentoml.spacy.save("spacy_roberta", nlp)
     """  # noqa
-    context: t.Dict[str, t.Any] = {"spacy": _spacy_version}
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "spacy",
+        "pip_dependencies": [f"spacy=={_spacy_version}"],
+    }
     _model = Model.create(
         name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
 
@@ -245,14 +247,15 @@ def projects(
         """
         )
     context: t.Dict[str, t.Any] = {
-        "spacy": _spacy_version,
+        "framework_name": "spacy",
+        "pip_dependencies": [f"spacy=={_spacy_version}"],
         "tasks": tasks,
     }
     _model = Model.create(
         save_name,
         module=__name__,
         options=None,
-        framework_context=context,
+        context=context,
         metadata=metadata,
     )
     output_path = _model.path_of(SAVE_NAMESPACE)

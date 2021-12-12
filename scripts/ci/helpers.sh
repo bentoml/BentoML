@@ -9,6 +9,10 @@ PASS() {
     echo -e "$GREEN""[PASS]""$NC" "$*"
 }
 
+INFO() {
+    echo -e "${YELLOW}[INFO]${NC}" "$*"
+}
+
 FAIL() {
     echo -e "$RED""[FAIL]""$NC" "$*"
 }

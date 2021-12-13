@@ -62,7 +62,7 @@ ENV ENV /root/.shinit
 
 CMD [ "/bin/sh" ]
 
-# we will install python from conda.
+# Installing miniconda
 RUN apk add --no-cache --virtual .build-dependencies ca-certificates wget \
     && wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
     && chmod +x ~/miniconda.sh \

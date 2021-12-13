@@ -12,8 +12,6 @@ ARG PYTHON_VERSION
 FROM bento-server:base-python$PYTHON_VERSION-slim as build_image
 
 WORKDIR /
-RUN git clone https://github.com/bentoml/BentoML.git && \
-    cd BentoML && \
-    pip install --editable . && \
+RUN pip install -U git+https://github.com/bentoml/bentoml.git@main && \
     apt-get purge --auto-remove -y curl && \
     rm -rf /var/lib/apt/lists/*

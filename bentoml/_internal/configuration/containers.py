@@ -167,9 +167,6 @@ class BentoMLConfiguration:
                         " the required schema."
                     ) from e
 
-        # TODO:
-        # Find local yatai configurations and merge with it
-
     def override(self, keys: t.List[str], value: t.Any):
         if keys is None:
             raise BentoMLConfigException("Configuration override key is None.")

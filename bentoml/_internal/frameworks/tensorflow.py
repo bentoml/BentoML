@@ -13,10 +13,10 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Runner
+from bentoml.exceptions import MissingDependencyException
 
 from ..types import PathType
 from ..models import Model
-from bentoml.exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..utils.tensorflow import get_arg_names
 from ..utils.tensorflow import get_tf_version

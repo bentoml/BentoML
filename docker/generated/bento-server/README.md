@@ -57,6 +57,10 @@ Example image tags:
 
 
 ## Latest tags for `bento-server 1.0.0`
+
+
+### Debian
+
 - [`1.0.0-python3.7-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
 - [`1.0.0-python3.7-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
 - [`1.0.0-python3.8-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)

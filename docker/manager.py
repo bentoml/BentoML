@@ -442,8 +442,6 @@ class GenerateMixin(object):
         for package in self.packages.keys():
             output_readme = Path("generated", package)
             set_data(_readme_context, package, "bentoml_package")
-            _readme_context["oss"] = maxkeys(self.packages[package])
-
             self.render(
                 input_path=README_TEMPLATE,
                 output_path=output_readme,

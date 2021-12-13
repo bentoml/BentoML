@@ -68,15 +68,14 @@ Example image tags:
 
 
 ## Latest tags for `{{ metadata.bentoml_package }} {{ metadata.bentoml_release_version }}`
+
 {% for distros, tags_path in metadata.release_info.items() %}
-    {% if distros in metadata.oss %}
-        {% print"\n### " %}{% print sentence_case(distros) %}{% print "\n" %}
-        {% if 'centos' in distros.lower() %}
+    {% print"\n### " %}{% print sentence_case(distros) %}{% print "\n" %}
+    {% if 'centos' in distros.lower() %}
 *WARNING*: POSSIBLE MISSING IMAGE TAGS
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 
-        {% endif %}
     {% endif %}
     {% for (tag, path) in tags_path %}
         {% if metadata.bentoml_package in tag %}

@@ -88,7 +88,7 @@ class LogsMixin(object):
                 blocking generator from docker.api.build
             image_tag (:obj:`str`):
                 given model server tags.
-                Ex: bento-server:0.13.0-python3.8-slim-runtime
+                Ex: bento-server:0.13.0-python3.8-debian-runtime
 
         Raises:
             docker.errors.BuildErrors:
@@ -422,9 +422,7 @@ class GenerateMixin(object):
 
         # check if given distro is supported per package.
         for distro_version in self.releases.keys():
-            if "debian" in distro_version:
-                _os_tag = "slim"
-            elif "amazonlinux" in distro_version:
+            if "amazonlinux" in distro_version:
                 _os_tag = "ami"
             else:
                 _os_tag = distro_version

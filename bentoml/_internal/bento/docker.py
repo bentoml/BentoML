@@ -5,29 +5,27 @@ import logging
 
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
-from ..configuration import is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
 SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
-SUPPORTED_BASE_DISTROS: t.List[str] = ["slim", "centos7", "centos8"]
-SUPPORTED_GPU_DISTROS: t.List[str] = SUPPORTED_BASE_DISTROS
+SUPPORTED_DEVEL_DISTROS: t.List[str] = ["debian", "centos7", "centos8"]
+SUPPORTED_GPU_DISTROS: t.List[str] = ["debian", "centos7", "centos8"]
+SUPPORTED_RUNTIME_DISTROS: t.List[str] = [
+    "debian",
+    "centos7",
+    "centos8",
+    "ami2",
+    "alpine3.14",
+]
 
 SUPPORTED_RELEASES_COMBINATION: t.Dict[str, t.List[str]] = {
-    "cudnn": SUPPORTED_BASE_DISTROS,
-    "devel": SUPPORTED_BASE_DISTROS,
-    "runtime": SUPPORTED_BASE_DISTROS + ["ami2", "alpine3.14"],
+    "cudnn": SUPPORTED_GPU_DISTROS,
+    "devel": SUPPORTED_DEVEL_DISTROS,
+    "runtime": SUPPORTED_RUNTIME_DISTROS,
 }
 
 SEMVER_REGEX = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$")
-
-BACKWARD_COMPATIBILITY_WARNING: str = """\
-Since 1.0.0, we changed the format of docker tags, thus {classname}
-will only supports image tag from 1.0.0 forward, while detected bentoml_version
-is {bentoml_version}.
-Refers to https://hub.docker.com/r/bentoml/model-server/
-if you need older version of bentoml. Using default devel image instead...
-"""  # noqa: E501
 
 RELEASE_FORMAT = (
     "bentoml/bento-server:{release_type}-python{python_version}-{distro}{suffix}"
@@ -61,7 +59,7 @@ class ImageProvider(object):
 
         Example results:
 
-        * bentoml/bento-server:`devel-python3.7-slim`
+        * bentoml/bento-server:`devel-python3.7-debian`
         * bentoml/bento-server:`0.14.0-python3.8-centos8-cudnn`
         * bentoml/bento-server:`0.14.0-python3.7-ami2-runtime`
 
@@ -84,23 +82,28 @@ class ImageProvider(object):
 
     def __init__(
         self,
-        distro: t.Optional[
-            't.Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]'
-        ] = None,
+        distro: 't.Literal["debian", "amazonlinux2", "alpine", "centos7", "centos8"]',
         python_version: t.Optional[str] = None,
         gpu: t.Optional[bool] = None,
+        devel: t.Optional[bool] = None,
     ) -> None:
-        if distro is None:
-            distro = "slim"
         if gpu is None:
             gpu = False
 
-        if is_pypi_installed_bentoml():
-            self._release_type = BENTOML_VERSION
-            self._suffix = "cudnn" if gpu else "runtime"
-        else:
+        if devel:
+            # Use `devel` nightly built base image
+            if gpu:
+                raise BentoMLException("`devel` base image does not support GPU")
+            if distro not in SUPPORTED_DEVEL_DISTROS:
+                raise BentoMLException(
+                    f"`devel` base image does not support distro=`{distro}`"
+                )
+
             self._release_type: str = "devel"
             self._suffix = ""
+        else:
+            self._release_type = BENTOML_VERSION
+            self._suffix = "cudnn" if gpu else "runtime"
 
         if python_version:
             assert re.match(r"^[2,3]\.[0-9]{1,2}$", python_version), (
@@ -126,12 +129,6 @@ class ImageProvider(object):
                 f"distro '{distro}' with GPU={gpu} is not supported. "
                 f"GPU-supported distros are: {SUPPORTED_GPU_DISTROS} "
             )
-
-        if (
-            distro not in SUPPORTED_RELEASES_COMBINATION["devel"]
-            and self._release_type == "devel"
-        ):
-            raise BentoMLException(f"{distro} doesn't support devel tags.")
 
         if self._suffix and distro not in SUPPORTED_RELEASES_COMBINATION[self._suffix]:
             raise BentoMLException(

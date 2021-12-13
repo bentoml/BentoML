@@ -120,12 +120,10 @@ class DockerOptions:
 
     def get_base_image_tag(self):
         if self.base_image is None:
-            # TODO: remove this after 1.0 images published
             # Override to a fixed image for development purpose
             if self.distro is None:
                 raise KeyError("distro not set, can't get base image tag")
             base_image = repr(ImageProvider(self.distro, self.python_version, self.gpu))
-            base_image = "bentoml/model-server:0.13.1-slim-py37"
             return base_image
         else:
             return self.base_image

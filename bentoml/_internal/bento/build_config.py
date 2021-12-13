@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 PYTHON_MINOR_VERSION: str = f"{pyver.major}.{pyver.minor}"
-PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.7", "3.8", "3.9", "3.10"]
+PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.7", "3.8", "3.9"]
 DOCKER_SUPPORTED_DISTROS: t.List[str] = [
     "slim",
     "amazonlinux2",
@@ -120,7 +120,6 @@ class DockerOptions:
 
     def get_base_image_tag(self):
         if self.base_image is None:
-            # Override to a fixed image for development purpose
             if self.distro is None:
                 raise KeyError("distro not set, can't get base image tag")
             base_image = repr(ImageProvider(self.distro, self.python_version, self.gpu))

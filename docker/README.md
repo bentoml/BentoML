@@ -89,7 +89,7 @@ manager_images --bentoml_version 1.0.0 --generate images --releases runtime
 manager_images --bentoml_version 1.0.0 --push images --releases cudnn
 
 # Or bring generation and pushing together
-manager_images --bentoml_version 1.0.0 --generate images --push images --releases cudnn
+manager_images --bentoml_version 1.0.0 --generate images --push --releases cudnn
 ```
 
 ### Run Locally Built Images

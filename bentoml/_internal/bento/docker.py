@@ -139,7 +139,7 @@ class ImageProvider(object):
 
     def __repr__(self):
         bentoml_version = "devel" if self._release_type == "devel" else BENTOML_VERSION
-        suffix = "" if self._release_type is "devel" else "-" + self._release_type
+        suffix = "" if self._release_type == "devel" else "-" + self._release_type
         return RELEASE_FORMAT.format(
             bentoml_version=bentoml_version,
             python_version=self._python_version,

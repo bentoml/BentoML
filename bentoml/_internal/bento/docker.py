@@ -9,7 +9,7 @@ from ..configuration import is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.6", "3.7", "3.8", "3.9"]
 SUPPORTED_BASE_DISTROS: t.List[str] = ["slim", "centos7", "centos8"]
 SUPPORTED_GPU_DISTROS: t.List[str] = SUPPORTED_BASE_DISTROS
 

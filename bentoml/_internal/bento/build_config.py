@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 PYTHON_MINOR_VERSION: str = f"{pyver.major}.{pyver.minor}"
-PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.7", "3.8", "3.9", "3.10"]
+PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.6", "3.7", "3.8", "3.9", "3.10"]
 DOCKER_SUPPORTED_DISTROS: t.List[str] = [
     "slim",
     "amazonlinux2",

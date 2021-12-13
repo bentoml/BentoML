@@ -20,7 +20,6 @@ from utils import sprint
 from utils import flatten
 from utils import mapfunc
 from utils import maxkeys
-from utils import mkdir_p
 from utils import get_data
 from utils import set_data
 from utils import get_nested
@@ -36,9 +35,9 @@ from docker.errors import APIError
 from docker.errors import BuildError
 from docker.errors import ImageNotFound
 
-# TODO: Update some of the complex type hint cases for both utils.py and this one
 if t.TYPE_CHECKING:
     from docker.models.images import Image  # pylint: disable=unused-import
+
 
 README_TEMPLATE: Path = Path("./templates/docs/README.md.j2")
 
@@ -446,7 +445,7 @@ class GenerateMixin(object):
         }
 
         for package in self.packages.keys():
-            output_readme = Path("docs", package)
+            output_readme = Path(package)
             shutil.rmtree(package, ignore_errors=True)
 
             set_data(_readme_context, package, "bentoml_package")
@@ -477,7 +476,7 @@ class GenerateMixin(object):
             # Consider generated directory ephemeral
             log.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
             shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
-            mkdir_p(FLAGS.dockerfile_dir)
+            Path(FLAGS.dockerfile_dir).mkdir(exist_ok=True)
 
         for tags_ctx in self._tags.values():
             for inp in tags_ctx["input_paths"]:
@@ -532,7 +531,8 @@ class BuildMixin(object):
         """Generate build tags."""
         # We will build and push if args is parsed.
         # NOTE: type hint is a bit janky here as well
-        if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
+        print("######", FLAGS.releases)
+        if FLAGS.releases and (FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY):
             build_tags = itertools.chain(
                 self.paths["base"].items(), self.paths[FLAGS.releases].items()
             )
@@ -575,7 +575,7 @@ class PushMixin(object):
 
             for package, registry_url in registry_spec["registry"].items():
                 _, _url = registry_url.split("/", maxsplit=1)
-                readme_path = Path("docs", package, "README.md")
+                readme_path = Path(package, "README.md")
                 repo_url: str = (
                     f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
                 )
@@ -762,7 +762,6 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
                 ouf.write(json.dumps(self._tags, indent=2))
             ouf.close()
 
-    @cached_property  # type: ignore
     def paths(self) -> t.Dict[str, dict]:
         return {
             h: {k: self._paths[k] for k in self._paths.keys() if h in k}
@@ -786,7 +785,7 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
 
 def main(argv: str) -> None:
     if len(argv) > 1:
-        raise RuntimeError("Too much arguments")
+        raise RuntimeError(f"Too much arguments {argv}")
 
     # validate releases args.
     if FLAGS.releases and FLAGS.releases not in DOCKERFILE_BUILD_HIERARCHY:

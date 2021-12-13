@@ -20,9 +20,9 @@ specs:
 
   # Each of our distros releases will follow the following:
   releases: &base_spec
-    templates_dir:
-    base_image:
-    add_to_tags:
+    templates_dir: _
+    base_image: _
+    add_to_tags: _
     multistage_image: True
     header: |
       # syntax = docker/dockerfile:1.2
@@ -38,7 +38,7 @@ specs:
       - PYTHONDONTWRITEBYTECODE=1
     cuda:
       <<: *cuda_spec
-    cuda_prefix_url:
+    cuda_prefix_url: _
     cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
 
   # Docker tag validation can be defined with the following:

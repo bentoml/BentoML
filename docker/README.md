@@ -1,18 +1,19 @@
 ![bentoml-docker](tools/bentoml-docker.png)
 
 ## Table of Content
-- [Using pre-built base images](#using-pre-built-base-images)
-- [Developing BentoML base images](#development)
+- [Overview](#overview)
+- [Basic Usage](#usage)
+- [Development](#development)
 
-## Using pre-built base images
+# Overview
 
-For each linux distributions, there will be three type of releases:
+There are three type of base imaged:
 
-| Release Type | Functionality | Supported OS |
-|--------------|---------------| -------------|
-| `devel`      | nightly build directly from `master` branch | `debian buster`, `centos{7,8}` |
-| `cudnn`      | runtime + CUDA and CUDNN  for GPU support | devel supported OS |
-| `runtime`    | contains BentoML latest releases from PyPI | devel supported OS + `amazonlinux2`, `alpine3.14` |
+| Release Type | Functionality                              | Supported OS                                                 |
+|--------------|--------------------------------------------|--------------------------------------------------------------|
+| `runtime`    | contains BentoML latest releases from PyPI | `debian buster`, `centos{7,8}`, `amazonlinux2`, `alpine3.14` |
+| `devel`      | nightly build from development branch      | `debian buster`, `centos{7,8}`                               |
+| `cudnn`      | runtime + CUDA and CUDNN  for GPU support  | `debian buster`, `centos{7,8}`                               |
 
 Image tags will have the following format:
 
@@ -25,32 +26,23 @@ Image tags will have the following format:
    └─>  Release type: devel or official BentoML release (e.g: 1.0.0)                                           
 ```
 
-_example of available [tags](https://hub.docker.com/repository/docker/bentoml/bento-server/tags?page=1&ordering=last_updated)_:
+Example of available tags:
 - `bento-server:devel-python3.7-slim`
 - `bento-server:1.0.0-python3.8-centos8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
+See all available tags [here](https://hub.docker.com/repository/docker/bentoml/bento-server/tags).
 
-# Development
-
-This section covers how BentoML manages its BentoServer docker base image releases.
-
-1. [TLDR](#tldr) get started with building base images locally
-2. [Image Manifests](#image-manifest) explains the YAML file that control our Docker releases.
-3. [Workflow](#workflow) demonstrates scripts' logics and its implementation.
+# Usage
 
 Before starting:
 
-* Set up the development environment, see `./docker/README.md`'s [developing section](https://github.com/bentoml/BentoML/tree/master/docker#developing).
 * Don't edit ephemeral directory: [`generated`](./generated) and [`docs`](./docs)
 * Dockerfiles in `./generated` directory must have their build context set to **the directory of this README.md** directory to  add `entrypoint.sh` as well as other helpers files. 
 * Every Dockerfile is managed via `manifest.yml` and maintained via `manager.py`, which will render the Dockerfile from `Jinja` templates under `./templates`.
 
-## TLDR
+Follow the instructions below to re-generate dockerfiles and build new base images:
 
-To add new distros support or new CUDA version, you first have to update `manifest.yml`, add templates with correct format under `./templates`, then run `manager.py` to re-generate new Dockerfiles.
-
-You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/master/docker/Dockerfile) to have a fully installed environment.
 ```shell
 
 # Build the helper docker images. Refers to Makefile for more information.
@@ -74,7 +66,7 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 
 » alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py "
 
-» alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
+» alias manager_images="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
 
 # Check manager flags
 » manager_dockerfiles --helpfull
@@ -136,6 +128,11 @@ Without `-v` your work will be wiped once container exists, where `-u` will have
              --device /dev/nvidia-modeset --device /dev/nvidia-uvm \
              --device /dev/nvidia-uvm-tools -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
 ```
+
+
+# Development
+
+This section covers how BentoML internally manages its docker base image releases.
 
 
 ## Image Manifest

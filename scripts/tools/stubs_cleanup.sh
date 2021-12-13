@@ -33,7 +33,6 @@ for file in $(git ls-files | grep -e "**.pyi$"); do
     INFO "Processing $file ..."
     INFO "Removing pyright bugs..."
     sed "${SED_OPTS[@]}" "s/],:/]/g; s/,,/,/g; s/]\\\n    .../]: .../g" "$file"
-    # sed -i "s/]$/]:/g" "$file"
     cp "$file" "$file".bak && rm "$file"
     if ! pyminify "${MINIFY_OPTS[@]}" "$file".bak > "$file"; then
       FAIL "Unable to processed $file, reverting to previous state. One can also use https://python-minifier.com/ to test where the problem may be. Make sure to match ${MINIFY_OPTS[@]}\nExitting now..."

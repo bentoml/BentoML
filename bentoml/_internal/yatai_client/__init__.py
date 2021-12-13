@@ -27,7 +27,6 @@ from rich.progress import TransferSpeedColumn
 
 from ..bento import Bento
 from ..bento import BentoStore
-from ..bento import SysPathBento
 from ..types import Tag
 from ..models import Model
 from ..models import copy_model
@@ -444,7 +443,7 @@ class YataiClient:
                     if p.parent != Path("."):
                         temp_fs.makedirs(str(p.parent), recreate=True)
                     temp_fs.writebytes(member.name, f.read())
-                bento = SysPathBento.from_Bento(Bento.from_fs(temp_fs))
+                bento = Bento.from_fs(temp_fs)
                 for model_tag in remote_bento.manifest.models:
                     with self.spin(text=f'Copying model "{model_tag}" to bento'):
                         copy_model(

@@ -3,17 +3,15 @@ import sys
 import typing as t
 import logging
 
-from typing_extensions import Literal
-
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration import is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_PYTHON_VERSION: t.List = ["3.7", "3.8", "3.9"]
-SUPPORTED_BASE_DISTROS: t.List = ["slim", "centos7", "centos8"]
-SUPPORTED_GPU_DISTROS: t.List = SUPPORTED_BASE_DISTROS
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
+SUPPORTED_BASE_DISTROS: t.List[str] = ["slim", "centos7", "centos8"]
+SUPPORTED_GPU_DISTROS: t.List[str] = SUPPORTED_BASE_DISTROS
 
 SUPPORTED_RELEASES_COMBINATION: t.Dict[str, t.List[str]] = {
     "cudnn": SUPPORTED_BASE_DISTROS,
@@ -87,7 +85,7 @@ class ImageProvider(object):
     def __init__(
         self,
         distro: t.Optional[
-            Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]
+            't.Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]'
         ] = None,
         python_version: t.Optional[str] = None,
         gpu: t.Optional[bool] = None,

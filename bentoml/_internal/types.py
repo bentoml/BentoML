@@ -8,6 +8,7 @@ import logging
 import urllib.parse
 import urllib.request
 from typing import TYPE_CHECKING
+from datetime import datetime
 from dataclasses import dataclass
 
 import fs
@@ -126,7 +127,11 @@ class Tag:
         return fs.path.combine(self.name, "latest")
 
 
-cattr.register_structure_hook(Tag, lambda d, t: Tag.from_str(d))
+cattr.register_structure_hook(Tag, lambda d, t: Tag.from_taglike(d))
+
+cattr.register_structure_hook(
+    datetime, lambda d, t: d if isinstance(d, datetime) else datetime.fromisoformat(d)
+)
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

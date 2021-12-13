@@ -15,6 +15,7 @@ from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
+from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -188,6 +189,12 @@ def load_bento(
         bento.tag,
         bento._fs.getsyspath("/"),
     )
+
+    # not in validate as it's only really necessary when getting bentos from disk
+    if bento.info.bentoml_version != BENTOML_VERSION:
+        logger.warning(
+            f'Bento "{bento.tag}" was built with BentoML version {bento.info.bentoml_version}, which does not match the current BentoML version {BENTOML_VERSION}'
+        )
     return _load_bento(bento)
 
 

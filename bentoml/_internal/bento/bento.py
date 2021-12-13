@@ -263,12 +263,6 @@ class Bento(StoreItem):
             logger.warning(f"Failed to import Bento from {item_fs}.")
             raise BentoMLException("Failed to create Bento because it was invalid")
 
-        # not in validate as it's only really necessary when getting bentos from disk
-        if info.bentoml_version != BENTOML_VERSION:
-            logger.warning(
-                f"Bento {res.tag} was built with BentoML version {info.bentoml_version}, which does not match the current BentoML version {BENTOML_VERSION}"
-            )
-
         return res
 
     @property

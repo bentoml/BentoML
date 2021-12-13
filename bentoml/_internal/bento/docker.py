@@ -28,7 +28,7 @@ SUPPORTED_RELEASES_COMBINATION: t.Dict[str, t.List[str]] = {
 SEMVER_REGEX = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$")
 
 RELEASE_FORMAT = (
-    "bentoml/bento-server:{release_type}-python{python_version}-{distro}{suffix}"
+    "bentoml/bento-server:{bentoml_version}-python{python_version}-{distro}{suffix}"
 )
 
 
@@ -100,10 +100,23 @@ class ImageProvider(object):
                 )
 
             self._release_type: str = "devel"
-            self._suffix = ""
         else:
-            self._release_type = BENTOML_VERSION
-            self._suffix = "cudnn" if gpu else "runtime"
+            self._release_type = "cudnn" if gpu else "runtime"
+
+        if gpu and distro not in SUPPORTED_GPU_DISTROS:
+            raise BentoMLException(
+                f"distro '{distro}' with GPU={gpu} is not supported. "
+                f"GPU-supported distros are: {SUPPORTED_GPU_DISTROS} "
+            )
+
+        if distro not in SUPPORTED_RELEASES_COMBINATION[self._release_type]:
+            raise BentoMLException(
+                f"{distro} is not yet supported. "
+                "Supported distros: "
+                f"{SUPPORTED_RELEASES_COMBINATION[self._release_type]}"
+            )
+
+        self._distro: str = distro
 
         if python_version:
             assert re.match(r"^[2,3]\.[0-9]{1,2}$", python_version), (
@@ -124,26 +137,12 @@ class ImageProvider(object):
 
         self._python_version: str = python_version
 
-        if gpu and distro not in SUPPORTED_GPU_DISTROS:
-            raise BentoMLException(
-                f"distro '{distro}' with GPU={gpu} is not supported. "
-                f"GPU-supported distros are: {SUPPORTED_GPU_DISTROS} "
-            )
-
-        if self._suffix and distro not in SUPPORTED_RELEASES_COMBINATION[self._suffix]:
-            raise BentoMLException(
-                f"{distro} is not yet supported. "
-                "Supported distros: "
-                f"{SUPPORTED_RELEASES_COMBINATION[self._suffix]}"
-            )
-
-        self._distro: str = distro
-
     def __repr__(self):
-        actual_suffix = "-" + self._suffix if self._suffix else ""
+        bentoml_version = "devel" if self._release_type == "devel" else BENTOML_VERSION
+        suffix = "" if self._release_type is "devel" else "-" + self._release_type
         return RELEASE_FORMAT.format(
-            release_type=self._release_type,
+            bentoml_version=bentoml_version,
             python_version=self._python_version,
             distro=self._distro,
-            suffix=actual_suffix,
+            suffix=suffix,
         )

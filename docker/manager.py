@@ -46,7 +46,8 @@ DOCKERFILE_TEMPLATE_SUFFIX: str = ".Dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY: t.List[str] = ["base", "runtime", "cudnn", "devel"]
 DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r"(?:nvidia|cuda|cudnn)+")
 
-SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9", "3.10"]
+# TODO: look into Python 3.10 installation issue with conda
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
 
 NVIDIA_REPO_URL: str = (
     "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"

@@ -7,11 +7,12 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
-from ..types import Tag
+from bentoml import Tag
+from bentoml import Runner
+from bentoml.exceptions import MissingDependencyException
+
 from ..models import Model
 from ..models import SAVE_NAMESPACE
-from ..runner import Runner
-from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:

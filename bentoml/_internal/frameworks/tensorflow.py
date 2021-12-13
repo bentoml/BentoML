@@ -11,11 +11,12 @@ from distutils.dir_util import copy_tree
 from simple_di import inject
 from simple_di import Provide
 
-from ..types import Tag
+from bentoml import Tag
+from bentoml import Runner
+
 from ..types import PathType
 from ..models import Model
-from ..runner import Runner
-from ...exceptions import MissingDependencyException
+from bentoml.exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..utils.tensorflow import get_arg_names
 from ..utils.tensorflow import get_tf_version

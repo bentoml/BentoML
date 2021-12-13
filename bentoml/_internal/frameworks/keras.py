@@ -9,14 +9,15 @@ import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
-from ..types import Tag
+from bentoml import Tag
+from bentoml.exceptions import MissingDependencyException
+
 from ..models import Model
 from ..models import H5_EXT
 from ..models import PKL_EXT
 from ..models import HDF5_EXT
 from ..models import JSON_EXT
 from ..models import SAVE_NAMESPACE
-from ...exceptions import MissingDependencyException
 from ..utils.tensorflow import get_tf_version
 from ..configuration.containers import BentoMLContainer
 

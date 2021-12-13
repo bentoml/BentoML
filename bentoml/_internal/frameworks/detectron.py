@@ -6,15 +6,16 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
-from ..types import Tag
+from bentoml import Tag
+from bentoml import Runner
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import MissingDependencyException
+
 from ..models import Model
 from ..models import PTH_EXT
 from ..models import YAML_EXT
 from ..models import SAVE_NAMESPACE
-from ..runner import Runner
 from ..utils.pkg import get_pkg_version
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..configuration.containers import BentoMLContainer
 

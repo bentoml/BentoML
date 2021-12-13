@@ -7,27 +7,29 @@
 
 # Overview
 
-There are three type of base imaged:
+There are three type of BentoServer base image:
 
-| Release Type | Functionality                              | Supported OS                                                 |
-|--------------|--------------------------------------------|--------------------------------------------------------------|
-| `runtime`    | contains BentoML latest releases from PyPI | `debian buster`, `centos{7,8}`, `amazonlinux2`, `alpine3.14` |
-| `devel`      | nightly build from development branch      | `debian buster`, `centos{7,8}`                               |
-| `cudnn`      | runtime + CUDA and CUDNN  for GPU support  | `debian buster`, `centos{7,8}`                               |
+| Image Type | Description                                | Supported OS                                          | Usage                             |
+|------------|--------------------------------------------|-------------------------------------------------------|-----------------------------------|
+| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `centos{7,8}`, `amazonlinux2`, `alpine3.14` | production ready                  |
+| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `centos{7,8}`                               | production ready with GPU support |
+| `devel`    | nightly build from development branch      | `debian`, `centos{7,8}`                               | for development use only          |
 
-Image tags will have the following format:
+* Note: currently there's no nightly devel image with GPU support.
+
+The final docker image tags will have the following format:
 
 ```markdown
 <release_type>-<python_version>-<distros>-<suffix>
    │             │                │        │
    │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
-   │             │                └─> formatted <dist><dist_version>, e.g: ami2, slim, centos7
+   │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, centos7
    │             └─> Supported Python version: python3.7 | python3.8 | python3.9
    └─>  Release type: devel or official BentoML release (e.g: 1.0.0)                                           
 ```
 
-Example of available tags:
-- `bento-server:devel-python3.7-slim`
+Example image tags:
+- `bento-server:devel-python3.7-debian`
 - `bento-server:1.0.0-python3.8-centos8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
@@ -66,7 +68,7 @@ Follow the instructions below to re-generate dockerfiles and build new base imag
 
 » alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py "
 
-» alias manager_images="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
+» alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
 
 # Check manager flags
 » manager_dockerfiles --helpfull

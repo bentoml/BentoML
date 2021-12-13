@@ -531,7 +531,6 @@ class BuildMixin(object):
         """Generate build tags."""
         # We will build and push if args is parsed.
         # NOTE: type hint is a bit janky here as well
-        print("######", FLAGS.releases)
         if FLAGS.releases and (FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY):
             build_tags = itertools.chain(
                 self.paths["base"].items(), self.paths[FLAGS.releases].items()
@@ -762,6 +761,7 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
                 ouf.write(json.dumps(self._tags, indent=2))
             ouf.close()
 
+    @cached_property
     def paths(self) -> t.Dict[str, dict]:
         return {
             h: {k: self._paths[k] for k in self._paths.keys() if h in k}
@@ -785,7 +785,7 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
 
 def main(argv: str) -> None:
     if len(argv) > 1:
-        raise RuntimeError(f"Too much arguments {argv}")
+        raise RuntimeError("Too much arguments")
 
     # validate releases args.
     if FLAGS.releases and FLAGS.releases not in DOCKERFILE_BUILD_HIERARCHY:

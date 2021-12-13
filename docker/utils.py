@@ -389,6 +389,7 @@ class MetadataSpecValidator(Validator):
         else:
             self._error(field, f"Unable to parse field type {type(others)}")
 
+
 class _Missing(object):
     def __repr__(self) -> str:
         return "no value"
@@ -449,7 +450,6 @@ class ColoredFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
-
 
 
 def flatten(arr: t.Iterable) -> t.Generator:  # TODO: better type hint

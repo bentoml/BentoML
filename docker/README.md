@@ -211,8 +211,8 @@ Each of our distros releases will contain the following configs:
 | Keys | Type | defintions |
 |------|------|------------|
 |`templates_dir`| `<str>`|input templates for our distros, can be found [templates/*](../templates)| 
-|`base_image`| `<str>`| base distro image: centos:7, debian:buster-slim, etc.| 
-|`add_to_tags`| `<str>`|tags suffix to recognize given distro: slim (debian), alpine, ami (amazonlinux)| 
+|`base_image`| `<str>`| base distro image: centos:7, debian:buster-debian, etc.| 
+|`add_to_tags`| `<str>`|tags suffix to recognize given distro: debian, alpine, ami (amazonlinux)| 
 |`multistage_image`| `<bool>`|Enable multistage build (DEFAULT: True)| 
 |`header`| `<str>`|headers to be included in our Dockerfile| 
 |`envars`| `<list[str]>`|List of environment variables that can be used to build the container images. This will also be checked by our Validator| 

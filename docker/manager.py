@@ -88,7 +88,7 @@ class LogsMixin(object):
                 blocking generator from docker.api.build
             image_tag (:obj:`str`):
                 given model server tags.
-                Ex: bento-server:0.13.0-python3.8-slim-runtime
+                Ex: bento-server:0.13.0-python3.8-debian-runtime
 
         Raises:
             docker.errors.BuildErrors:
@@ -219,7 +219,6 @@ class GenerateMixin(object):
             build_tag (:obj:`t.Optional[str]`):
                 strictly use for FROM args for base image.
         """
-
         if DOCKERFILE_TEMPLATE_SUFFIX not in input_path.name:
             output_name = input_path.stem
         else:
@@ -421,23 +420,18 @@ class GenerateMixin(object):
         _release_context: t.MutableMapping = defaultdict(list)
 
         # check if given distro is supported per package.
-        for distro_version in self.releases.keys():
-            if "debian" in distro_version:
-                _os_tag = "slim"
-            elif "amazonlinux" in distro_version:
-                _os_tag = "ami"
-            else:
-                _os_tag = distro_version
-
+        distros = [
+            self.releases[release]["add_to_tags"] for release in self.releases.keys()
+        ]
+        for distro_version in distros:
             _release_context[distro_version] = sorted(
                 [
                     (release_tags, gen_path)
                     for release_tags, gen_path in paths.items()
-                    if _os_tag in release_tags and "base" not in release_tags
+                    if distro_version in release_tags and "base" not in release_tags
                 ],
                 key=operator.itemgetter(0),
             )
-
         _readme_context: t.Dict = {
             "ephemeral": False,
             "bentoml_package": "",
@@ -447,11 +441,7 @@ class GenerateMixin(object):
 
         for package in self.packages.keys():
             output_readme = Path("generated", package)
-            shutil.rmtree(package, ignore_errors=True)
-
             set_data(_readme_context, package, "bentoml_package")
-            _readme_context["oss"] = maxkeys(self.packages[package])
-
             self.render(
                 input_path=README_TEMPLATE,
                 output_path=output_readme,

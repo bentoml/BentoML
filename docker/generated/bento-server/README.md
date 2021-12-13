@@ -51,24 +51,25 @@ The final docker image tags will have the following format:
 ```
 
 Example image tags:
-- `bento-server:devel-python3.7-slim`
+- `bento-server:devel-python3.7-debian`
 - `bento-server:1.0.0-python3.8-centos8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
 
 ## Latest tags for `bento-server 1.0.0`
 
-### Debian10
 
-- [`1.0.0-python3.7-slim-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0-python3.7-slim-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`1.0.0-python3.8-slim-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0-python3.8-slim-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`1.0.0-python3.9-slim-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0-python3.9-slim-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`devel-python3.7-slim`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
-- [`devel-python3.8-slim`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
-- [`devel-python3.9-slim`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+### Debian
+
+- [`1.0.0-python3.7-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`1.0.0-python3.7-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0-python3.8-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`1.0.0-python3.8-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0-python3.9-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`1.0.0-python3.9-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`devel-python3.7-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+- [`devel-python3.8-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+- [`devel-python3.9-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
 
 ### Centos8
 
@@ -104,6 +105,9 @@ Centos upstream images often fail security scans, thus there might be some image
 
 ### Amazonlinux2
 
+- [`1.0.0-python3.7-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`1.0.0-python3.8-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`1.0.0-python3.9-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 
 ### Alpine3.14
 

@@ -22,6 +22,8 @@ from .bentos import export_bento
 from .bentos import import_bento
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader as _LazyLoader
+from ._internal.runner import Runner
+from ._internal.runner import SimpleRunner
 from ._internal.service import Service
 from ._internal.service.loader import load
 
@@ -79,6 +81,8 @@ __all__ = [
     "Service",
     "models",
     "Tag",
+    "Runner",
+    "SimpleRunner",
     # bento APIs
     "list",
     "get",

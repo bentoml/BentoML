@@ -51,7 +51,7 @@ Follow the instructions below to re-generate dockerfiles and build new base imag
 » DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .
 
 # Run the built container with correct users permission for the generated file.
-» docker run --user $(id -u):$(id -g) -it -v $(pwd):/bentoml bentoml-docker bash 
+docker run --user $(id -u):$(id -g) -it -v $(pwd):/bentoml bentoml-docker bash 
 
 # Use the provided alias below depending on each tasks.
 #
@@ -66,30 +66,30 @@ Follow the instructions below to re-generate dockerfiles and build new base imag
 #
 # To run verbosely you can choose logs level via -v <loglevel> (eg: -v 5)
 
-» alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py "
+alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py "
 
-» alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
+alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
 
 # Check manager flags
-» manager_dockerfiles --helpfull
+manager_dockerfiles --helpfull
 
 # To validate generation schema.
-» manager_dockerfiles --bentoml_version 1.0.0 --validate
+manager_dockerfiles --bentoml_version 1.0.0 --validate
 
 # Generate all dockerfiles from templates, and dump all build metadata to metadata.json
-» manager_dockerfiles --bentoml_version 1.0.0 --generate dockerfiles --dump_metadata --overwrite
+manager_dockerfiles --bentoml_version 1.0.0 --generate dockerfiles --dump_metadata --overwrite
 
 # Build all images
-» manager_images --bentoml_version 1.0.0 --generate images
+manager_images --bentoml_version 1.0.0 --generate images
 
 # Build images for specific releases
-» manager_images --bentoml_version 1.0.0 --generate images --releases runtime
+manager_images --bentoml_version 1.0.0 --generate images --releases runtime
 
 # Push all images to defined registries under manifest.yml.
-» manager_images --bentoml_version 1.0.0 --push images --releases cudnn
+manager_images --bentoml_version 1.0.0 --push images --releases cudnn
 
 # Or bring generation and pushing together
-» manager_images --bentoml_version 1.0.0 --generate images --push images --releases cudnn
+manager_images --bentoml_version 1.0.0 --generate images --push --releases cudnn
 ```
 
 ### Run Locally Built Images
@@ -98,19 +98,19 @@ To build each distros releases locally you also need to build a `base` images. T
 BentoML before building specific distros images:
 
 ```shell
-» export PYTHON_VERSION=3.8
+export PYTHON_VERSION=3.8
 
 # with tags for base images, replace the python version to your corresponding python version.
-» docker build -f ./generated/bento-server/amazonlinux2/Dockerfile \
-          --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bento-server:base-python3.8-ami2 .
+docker build -f ./generated/bento-server/amazonlinux2/Dockerfile \
+          --build-arg PYTHON_VERSION=${PYTHON_VERSION} -t bento-server:base-python3.8-ami2 .
 ```
 
 An example to generate BentoML's AMI base image with `python3.8` that can be used to install `BentoService` and run on AWS Sagemaker:
 
 ```shell
 # DOCKER_BUILDKIT=1 is optional
-» DOCKER_BUILDKIT=1 docker build -f ./generated/bento-server/amazonlinux2/runtime/Dockerfile \
-                            --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-ami2 . 
+DOCKER_BUILDKIT=1 docker build -f ./generated/bento-server/amazonlinux2/runtime/Dockerfile \
+                          --build-arg PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-ami2 . 
 ```
 
 After building the image with tag `bentoml-ami2` (for example), use `docker run` to run the images.
@@ -122,11 +122,11 @@ Without `-v` your work will be wiped once container exists, where `-u` will have
 # -v and -u are recommended to use.
 
 # CPU-based images
-» docker run -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
+docker run -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
 
 # GPU-based images
 # See https://docs.bentoml.org/en/latest/guides/gpu_serving.html#general-workaround-recommended
-» docker run --gpus all --device /dev/nvidia0 --device /dev/nvidiactl \
+docker run --gpus all --device /dev/nvidia0 --device /dev/nvidiactl \
              --device /dev/nvidia-modeset --device /dev/nvidia-uvm \
              --device /dev/nvidia-uvm-tools -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
 ```

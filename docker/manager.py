@@ -46,7 +46,8 @@ DOCKERFILE_TEMPLATE_SUFFIX: str = ".Dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY: t.List[str] = ["base", "runtime", "cudnn", "devel"]
 DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r"(?:nvidia|cuda|cudnn)+")
 
-SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9", "3.10"]
+# TODO: look into Python 3.10 installation issue with conda
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
 
 NVIDIA_REPO_URL: str = (
     "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
@@ -445,7 +446,7 @@ class GenerateMixin(object):
         }
 
         for package in self.packages.keys():
-            output_readme = Path(package)
+            output_readme = Path("generated", package)
             shutil.rmtree(package, ignore_errors=True)
 
             set_data(_readme_context, package, "bentoml_package")
@@ -574,7 +575,7 @@ class PushMixin(object):
 
             for package, registry_url in registry_spec["registry"].items():
                 _, _url = registry_url.split("/", maxsplit=1)
-                readme_path = Path(package, "README.md")
+                readme_path = Path("generated", package, "README.md")
                 repo_url: str = (
                     f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
                 )

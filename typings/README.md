@@ -11,7 +11,7 @@ If you want to contribute stubs that is not yet existed in our VCS, make sure to
 
 4. Edit changes and get a diff files:
 ```bash
-git diff HEAD upstream/bentoml-1.0 > <imports_library>.diff
+git diff HEAD upstream/main > <imports_library>.diff
 ```
 
 5. Commit the diff files

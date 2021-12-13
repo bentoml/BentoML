@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM bento-server:base-python$PYTHON_VERSION-slim as build_image
+FROM bento-server:base-python$PYTHON_VERSION-debian as build_image
 
 ENV BENTOML_VERSION=1.0.0
 

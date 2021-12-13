@@ -218,22 +218,6 @@ class CondaOptions:
         with bento_fs.open(fs.path.join(conda_folder, "environment_yml"), "w") as f:
             yaml.dump(yaml_content, f)
 
-    def write_to_file(self, path):
-
-        deps_list = [] if self.dependencies is None else self.dependencies
-        if self.pip is not None:
-            deps_list.append(dict(pip=self.pip))  # type: ignore
-
-        if not deps_list:
-            return
-
-        yaml_content = dict(dependencies=deps_list)
-        yaml_content["channels"] = (
-            ["defaults"] if self.channels is None else self.channels
-        )
-        with open(path, "w") as f:
-            yaml.dump(yaml_content, f)
-
     def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
         update_defaults = {}

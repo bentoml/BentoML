@@ -12,8 +12,4 @@ ARG PYTHON_VERSION
 FROM bento-server:base-python$PYTHON_VERSION-centos8 as build_image
 
 WORKDIR /
-RUN git clone https://github.com/bentoml/BentoML.git && \
-    cd BentoML && \
-    pip install --editable . && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+RUN pip install -U git+https://github.com/bentoml/bentoml.git@main

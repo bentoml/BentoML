@@ -44,4 +44,4 @@ FROM build_image as release_image
 
 ENV BENTOML_VERSION=1.0.0
 
-RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

@@ -28,6 +28,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install miniconda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
@@ -41,6 +42,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     apt-get clean && apt-get autoremove -y && \
     apt-get purge -y wget
 
+# Install python via conda
 RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
     /opt/conda/bin/conda clean -afy
 

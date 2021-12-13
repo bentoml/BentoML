@@ -11,4 +11,4 @@ RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \
     && apk add --no-cache bash git build-base
 
-RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

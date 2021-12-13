@@ -1,4 +1,3 @@
----
 specs:
   repository: &repository_spec
     user: HUB_USERNAME
@@ -19,10 +18,11 @@ specs:
       libcufft:
       libcusolver:
 
-  releases: &tmpl_spec
-    templates_dir: templates/debian
-    base_image: debian:buster-slim
-    add_to_tags: "slim"
+  # Each of our distros releases will follow the following:
+  releases: &base_spec
+    templates_dir: _
+    base_image: _
+    add_to_tags: _
     multistage_image: True
     header: |
       # syntax = docker/dockerfile:1.2
@@ -38,9 +38,10 @@ specs:
       - PYTHONDONTWRITEBYTECODE=1
     cuda:
       <<: *cuda_spec
-    cuda_prefix_url: "ubuntu2004"
+    cuda_prefix_url: _
     cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
 
+  # Docker tag validation can be defined with the following:
   tag:
     fmt: "{release_type}-python{python_version}-{suffixes}"
     release_type:
@@ -64,49 +65,63 @@ cuda:
     libcufft: 10.4.2.109-1
     libcusolver: 11.1.2.109-1
 
+releases:
+  debian10:
+    <<: *base_spec
+    templates_dir: templates/debian
+    base_image: debian:buster-slim
+    add_to_tags: "slim"
+    cuda:
+      <<: *cuda11_3_1
+    cuda_prefix_url: "ubuntu2004"
+
+  centos8:
+    <<: *base_spec
+    templates_dir: templates/rhel
+    base_image: centos:8
+    add_to_tags: "centos8"
+    cuda:
+      <<: *cuda11_3_1
+    cuda_prefix_url: "rhel8"
+
+  centos7:
+    <<: *base_spec
+    templates_dir: templates/rhel
+    base_image: centos:7
+    add_to_tags: "centos7"
+    cuda:
+      <<: *cuda11_3_1
+    cuda_prefix_url: "rhel7"
+
+  amazonlinux2:
+    <<: *base_spec
+    templates_dir: templates/rhel
+    base_image: amazonlinux:2
+    add_to_tags: "amazonlinux2"
+
+  alpine3.14:
+    <<: *base_spec
+    templates_dir: templates/alpine
+    base_image: alpine:3.14
+    add_to_tags: "alpine3.14"
+
+
+# Linux distros for each package are defined below:
+# * currently there's only one package `bento-server`
+# * distros are defined as <distro_releases><distro_version>
 packages:
   bento-server:
-    devel: &default_specs
+    devel:
       - debian10
       - centos8
       - centos7
     runtime:
-      - *default_specs
+      - debian10
+      - centos8
+      - centos7
       - amazonlinux2
       - alpine3.14
     cudnn:
-      - *default_specs
-
-releases:
-  debian10: &cuda_base
-    <<: *tmpl_spec
-    cuda:
-      <<: *cuda11_3_1
-
-  centos8: &centos
-    <<: *cuda_base
-    templates_dir: templates/rhel
-    base_image: centos:8
-    add_to_tags: "centos8"
-    cuda_prefix_url: "rhel8"
-
-  centos7:
-    <<: *centos
-    base_image: centos:7
-    add_to_tags: "centos7"
-    cuda_prefix_url: "rhel7"
-
-  amazonlinux2: &no_cuda
-    <<: *tmpl_spec
-    templates_dir: templates/rhel
-    base_image: amazonlinux:2
-    add_to_tags: "amazonlinux2"
-    cuda_prefix_url:
-    cuda_requires:
-    cuda:
-
-  alpine3.14:
-    <<: *no_cuda
-    templates_dir: templates/alpine
-    base_image: alpine:3.14
-    add_to_tags: "alpine3.14"
+      - debian10
+      - centos8
+      - centos7

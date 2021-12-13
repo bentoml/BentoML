@@ -1,7 +1,5 @@
-import os
 import sys
 import json
-import errno
 import string
 import typing as t
 import logging
@@ -23,7 +21,6 @@ __all__ = (
     "FLAGS",
     "cached_property",
     "ColoredFormatter",
-    "mkdir_p",
     "flatten",
     "mapfunc",
     "maxkeys",
@@ -453,14 +450,6 @@ class ColoredFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
-
-
-def mkdir_p(path: str) -> None:
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
 
 
 def flatten(arr: t.Iterable) -> t.Generator:  # TODO: better type hint

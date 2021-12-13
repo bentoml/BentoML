@@ -7,4 +7,4 @@ FROM {{ metadata.package }}:{{ build_tag }} as build_image
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN pip install bentoml[model_server]==${BENTOML_VERSION} {{ pip_options|join(' ') }}
+RUN pip install bentoml==${BENTOML_VERSION} {{ pip_options|join(' ') }}

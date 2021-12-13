@@ -446,7 +446,7 @@ class GenerateMixin(object):
         }
 
         for package in self.packages.keys():
-            output_readme = Path(package)
+            output_readme = Path('generated', package)
             shutil.rmtree(package, ignore_errors=True)
 
             set_data(_readme_context, package, "bentoml_package")
@@ -575,7 +575,7 @@ class PushMixin(object):
 
             for package, registry_url in registry_spec["registry"].items():
                 _, _url = registry_url.split("/", maxsplit=1)
-                readme_path = Path(package, "README.md")
+                readme_path = Path('generated', package, "README.md")
                 repo_url: str = (
                     f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
                 )

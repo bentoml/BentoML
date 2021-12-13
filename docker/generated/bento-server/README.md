@@ -46,15 +46,12 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 
 ### Debian10
 
-- [`1.0.0-python3.10-slim-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0-python3.10-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/runtime/Dockerfile)
 - [`1.0.0-python3.7-slim-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/cudnn/Dockerfile)
 - [`1.0.0-python3.7-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/runtime/Dockerfile)
 - [`1.0.0-python3.8-slim-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/cudnn/Dockerfile)
 - [`1.0.0-python3.8-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/runtime/Dockerfile)
 - [`1.0.0-python3.9-slim-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/cudnn/Dockerfile)
 - [`1.0.0-python3.9-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`devel-python3.10-slim`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/devel/Dockerfile)
 - [`devel-python3.7-slim`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/devel/Dockerfile)
 - [`devel-python3.8-slim`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/devel/Dockerfile)
 - [`devel-python3.9-slim`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/debian10/devel/Dockerfile)
@@ -65,15 +62,12 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 
-- [`1.0.0-python3.10-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/cudnn/Dockerfile)
-- [`1.0.0-python3.10-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/runtime/Dockerfile)
 - [`1.0.0-python3.7-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/cudnn/Dockerfile)
 - [`1.0.0-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/runtime/Dockerfile)
 - [`1.0.0-python3.8-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/cudnn/Dockerfile)
 - [`1.0.0-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/runtime/Dockerfile)
 - [`1.0.0-python3.9-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/cudnn/Dockerfile)
 - [`1.0.0-python3.9-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/runtime/Dockerfile)
-- [`devel-python3.10-centos8`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/devel/Dockerfile)
 - [`devel-python3.7-centos8`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/devel/Dockerfile)
 - [`devel-python3.8-centos8`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/devel/Dockerfile)
 - [`devel-python3.9-centos8`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos8/devel/Dockerfile)
@@ -84,15 +78,12 @@ Centos upstream images often fail security scans, thus there might be some image
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 
-- [`1.0.0-python3.10-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/cudnn/Dockerfile)
-- [`1.0.0-python3.10-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/runtime/Dockerfile)
 - [`1.0.0-python3.7-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/cudnn/Dockerfile)
 - [`1.0.0-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/runtime/Dockerfile)
 - [`1.0.0-python3.8-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/cudnn/Dockerfile)
 - [`1.0.0-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/runtime/Dockerfile)
 - [`1.0.0-python3.9-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/cudnn/Dockerfile)
 - [`1.0.0-python3.9-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/runtime/Dockerfile)
-- [`devel-python3.10-centos7`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/devel/Dockerfile)
 - [`devel-python3.7-centos7`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/devel/Dockerfile)
 - [`devel-python3.8-centos7`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/devel/Dockerfile)
 - [`devel-python3.9-centos7`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/centos7/devel/Dockerfile)
@@ -102,7 +93,6 @@ Centos upstream images often fail security scans, thus there might be some image
 
 ### Alpine3.14
 
-- [`1.0.0-python3.10-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
 - [`1.0.0-python3.7-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
 - [`1.0.0-python3.8-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
 - [`1.0.0-python3.9-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)

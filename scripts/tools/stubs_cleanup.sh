@@ -15,7 +15,7 @@ if [[ ! -f "$PROCESSED_TXT" ]]; then
   touch "$PROCESSED_TXT"
 fi
 
-need_cmd black || (echo "make sure to run \`make install-dev-deps\`"; exit 1);
+need_cmd black || (echo "black command not found, install dev dependencies with \`make install-dev-deps\`"; exit 1);
 
 if [[ $(uname) == "Darwin" ]]; then
   SED_OPTS=( -E -i '' )

@@ -1,9 +1,9 @@
 import typing as t
 
+import numpy as np
 import pytest
 import pydantic
 
-import numpy as np
 from bentoml.io import File
 from bentoml.io import JSON
 from bentoml.io import Text

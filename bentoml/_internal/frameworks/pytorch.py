@@ -29,10 +29,9 @@ if TYPE_CHECKING:
     from ..models import ModelStore
 
 try:
+    import numpy as np
     import torch
     import torch.nn.parallel as parallel
-
-    import numpy as np
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """

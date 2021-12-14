@@ -28,9 +28,8 @@ from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import tensorflow.keras as keras
-
     import numpy as np
+    import tensorflow.keras as keras
 
     from ..models import ModelStore
 

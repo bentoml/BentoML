@@ -1,11 +1,11 @@
 import random
 
+import numpy as np
 import paddle
 import pandas as pd
 import pytest
 import paddle.nn as nn
 
-import numpy as np
 from tests.utils.frameworks.paddle_utils import LinearModel
 
 BATCH_SIZE = 8

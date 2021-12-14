@@ -15,9 +15,8 @@ BatchType = t.TypeVar("BatchType")
 IndexType = t.Union[None, int]
 
 if TYPE_CHECKING:
-    import pandas as pd
-
     import numpy as tnp  # noqa
+    import pandas as pd
 
 
 class Payload(t.NamedTuple):

@@ -1,12 +1,12 @@
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
 import psutil
 import pytest
 import tensorflow as tf
 import tensorflow.keras as keras
 
-import numpy as np
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.tensorflow_utils import CustomLayer

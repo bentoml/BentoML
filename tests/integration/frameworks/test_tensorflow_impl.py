@@ -1,11 +1,11 @@
 import tempfile
 
+import numpy as np
 import psutil
 import pytest
 import tensorflow as tf
 import tensorflow_hub as hub
 
-import numpy as np
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from bentoml._internal.utils.pkg import get_pkg_version

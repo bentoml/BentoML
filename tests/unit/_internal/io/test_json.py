@@ -2,10 +2,9 @@ import json
 import typing as t
 from dataclasses import dataclass
 
+import numpy as np
 import pytest
 import pydantic
-
-import numpy as np
 
 
 @dataclass

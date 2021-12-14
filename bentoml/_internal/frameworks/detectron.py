@@ -2,10 +2,10 @@ import os
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
-import numpy as np
 from bentoml import Tag
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException

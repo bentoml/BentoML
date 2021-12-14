@@ -132,22 +132,29 @@ parse_config() {
 }
 
 install_yq() {
+  set -x
   target_dir="$HOME/.local/bin"
 
   mkdir -p "$target_dir"
   export PATH=$target_dir:$PATH
 
-  YQ_VERSION=4.14.2
+  YQ_VERSION=4.16.1
   echo "Trying to install yq..."
-  __shell=$(uname | tr '[:upper:]' '[:lower:]')
-  if [[ "$__shell" =~ "mingw64*" ]]; then
-    __shell="windows"
+  shell=$(uname | tr '[:upper:]' '[:lower:]')
+  extensions=".tar.gz"
+  if [[ "$shell" =~ "mingw64" ]]; then
+    shell="windows"
+    extensions=".zip"
   fi
-  YQ_BINARY=yq_"$__shell"_amd64
-  curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
-  echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
-  tar -zvxf "$YQ_BINARY.tar.gz" "./$YQ_BINARY" && mv "./$YQ_BINARY" "$target_dir"/yq
-  rm -f ./"$YQ_BINARY".tar.gz
+
+  YQ_BINARY=yq_"$shell"_amd64
+  if [[ "$shell" == "windows" ]]; then
+    YQ_BINARY=yq_"$shell"_amd64.exe
+  fi
+  curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY""$extensions"
+  echo "tar $YQ_BINARY$extensions and move to /usr/bin/yq..."
+  tar -zvxf "$YQ_BINARY$extensions" "./$YQ_BINARY" && mv "./$YQ_BINARY" "$target_dir"/yq
+  rm -f ./"$YQ_BINARY""$extensions"
 }
 
 

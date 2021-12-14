@@ -40,6 +40,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.detectron"
+
 _detectron2_version = get_pkg_version("detectron2")
 _torch_version = get_pkg_version("torch")
 
@@ -73,11 +75,9 @@ def load(
     """  # noqa: LN001
 
     model_info = model_store.get(tag)
-    if model_info.info.module != __name__:  # pragma: no cover
+    if model_info.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with"
-            f" module {model_info.info.module},"
-            f" failed loading with {__name__}."
+            f"Model {tag} was saved with module {model_info.info.module}, failed loading with {MODULE_NAME}."
         )
 
     cfg: config.CfgNode = config.get_cfg()
@@ -175,7 +175,7 @@ def save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,

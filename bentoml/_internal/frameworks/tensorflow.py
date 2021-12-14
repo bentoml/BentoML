@@ -13,6 +13,7 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Runner
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import PathType
@@ -29,7 +30,8 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     import numpy as np
     import tensorflow.keras as keras
-    from _internal.models import ModelStore
+
+    from ..models import ModelStore
 
 try:
     import tensorflow as tf
@@ -55,6 +57,8 @@ except ImportError:
 _tf_version = get_tf_version()
 logger = logging.getLogger(__name__)
 TF2 = _tf_version.startswith("2")
+
+MODULE_NAME = "bentoml.tensorflow"
 
 try:
     import tensorflow_hub as hub
@@ -212,6 +216,10 @@ def load(
     Examples::
     """  # noqa: LN001
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     if model.info.context["import_from_tfhub"]:
         assert load_as_wrapper is not None, (
             "You have to specified `load_as_wrapper=True | False`"
@@ -267,7 +275,7 @@ def load(
         # pretty format loaded model
         logger.info(pretty_format_restored_model(tf_model))
         if hasattr(tf_model, "keras_api"):
-            logger.warning(KERAS_MODEL_WARNING.format(name=__name__))
+            logger.warning(KERAS_MODEL_WARNING.format(name=MODULE_NAME))
         return tf_model
 
 
@@ -296,7 +304,7 @@ def import_from_tfhub(
             name = f"{identifier.__class__.__name__}_{uuid.uuid4().hex[:5].upper()}"
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
@@ -367,7 +375,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,

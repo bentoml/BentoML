@@ -204,7 +204,7 @@ def save(
     return _model.tag
 
 
-class _LightGBMRunner(Runner):
+class LightGBMRunner(Runner):
     @inject
     def __init__(
         self,
@@ -215,19 +215,18 @@ class _LightGBMRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        model_info, model_file, booster_params = _get_model_info(
-            tag, booster_params, model_store
-        )
+        self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
 
         self._model_store = model_store
-        self._model_info = model_info
-        self._model_file = model_file
         self._booster_params = booster_params
         self._infer_api_callback = infer_api_callback
-        self._tag = model_store.get(tag).tag
 
-    def _is_gpu(self):
+        self._model = None
+
+    def _is_gpu(self) -> bool:
         try:
             return "gpu" in self._booster_params["device"]
         except KeyError:
@@ -235,7 +234,7 @@ class _LightGBMRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -251,9 +250,12 @@ class _LightGBMRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        _, _, booster_params = _get_model_info(
+            self._model_tag, self._booster_params, self._model_store
+        )
         self._model = load(
-            tag=self._tag,
-            booster_params=self._booster_params,
+            tag=self._model_tag,
+            booster_params=booster_params,
             model_store=self._model_store,
         )
         self._predict_fn = getattr(self._model, self._infer_api_callback)
@@ -272,7 +274,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_LightGBMRunner":
+) -> "LightGBMRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.lightgbm.load_runner` implements a Runner class that
@@ -303,7 +305,7 @@ def load_runner(
         runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
         runner.run_batch(X_test, num_iteration=gbm.best_iteration)
     """  # noqa
-    return _LightGBMRunner(
+    return LightGBMRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,
         booster_params=booster_params,

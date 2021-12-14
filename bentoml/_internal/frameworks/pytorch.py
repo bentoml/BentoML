@@ -164,7 +164,7 @@ def save(
     return _model.tag
 
 
-class _PyTorchRunner(Runner):
+class PyTorchRunner(Runner):
     @inject
     def __init__(
         self,
@@ -176,11 +176,11 @@ class _PyTorchRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        in_store_tag = model_store.get(tag).tag
-
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
-        self._predict_fn_name = predict_fn_name
         self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+        self._predict_fn_name = predict_fn_name
         if "cuda" in device_id:
             try:
                 _, dev = device_id.split(":")
@@ -191,11 +191,10 @@ class _PyTorchRunner(Runner):
                 ]
         self._device_id = device_id
         self._partial_kwargs = partial_kwargs or dict()
-        self._tag = in_store_tag
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -223,7 +222,7 @@ class _PyTorchRunner(Runner):
         if self.resource_quota.on_gpu and _is_gpu_available():
             self._model = parallel.DataParallel(
                 load(
-                    self._tag,
+                    self._model_tag,
                     model_store=self._model_store,
                     device_id=self._device_id,
                 ),
@@ -231,7 +230,7 @@ class _PyTorchRunner(Runner):
             torch.cuda.empty_cache()
         else:
             self._model = load(
-                self._tag,
+                self._model_tag,
                 model_store=self._model_store,
                 device_id=self._device_id,
             )
@@ -281,7 +280,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_PyTorchRunner":
+) -> "PyTorchRunner":
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
@@ -311,7 +310,7 @@ def load_runner(
         runner = bentoml.pytorch.load_runner("ngrams:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
-    return _PyTorchRunner(
+    return PyTorchRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,

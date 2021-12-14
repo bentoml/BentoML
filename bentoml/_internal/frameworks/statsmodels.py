@@ -131,7 +131,7 @@ def save(
     return _model.tag
 
 
-class _StatsModelsRunner(Runner):
+class StatsModelsRunner(Runner):
     @inject
     def __init__(
         self,
@@ -141,16 +141,15 @@ class _StatsModelsRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        model_info, model_file = _get_model_info(tag, model_store)
-        self._predict_fn_name = predict_fn_name
-        self._model_info = model_info
-        self._model_file = model_file
         self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+        self._predict_fn_name = predict_fn_name
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -164,7 +163,8 @@ class _StatsModelsRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        self._model = sm.load(self._model_file)
+        _, model_file = _get_model_info(self._model_tag, self._model_store)
+        self._model = sm.load(model_file)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
@@ -186,7 +186,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_StatsModelsRunner":
+) -> "StatsModelsRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.statsmodels.load_runner` implements a Runner class that
@@ -209,7 +209,7 @@ def load_runner(
 
     Examples::
     """  # noqa
-    return _StatsModelsRunner(
+    return StatsModelsRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         resource_quota=resource_quota,

@@ -1,52 +1,31 @@
-import os
-import shutil
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml import Tag
-from bentoml import Runner
-from bentoml.exceptions import MissingDependencyException
-
-from ..models import Model
-from ..models import SAVE_NAMESPACE
+from ..types import Tag
+from ..runner import Runner
+from ...exceptions import MissingDependencyException
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import ModelStore
 
-try:
-    from PyRuntime import __spec__ as _spec  # pylint: disable=W0622
-    from PyRuntime import ExecutionSession
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        """\
-PyRuntime is not found in PYTHONPATH. Refers to
- https://github.com/onnx/onnx-mlir#installation-on-unix for
- more information.
-    """
-    )
 
-ONNXMLIR_EXTENSION: str = ".so"
+try:
+    ...
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException("")
 
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "ExecutionSession":
+):
     """
     Load a model from BentoML local modelstore with given name.
-
-    onnx-mlir is a compiler technology that can take an onnx model and lower it
-    (using llvm) to an inference library that is optimized and has little external
-    dependencies.
-
-    The PyRuntime interface is created during the build of onnx-mlir using pybind.
-    See the onnx-mlir supporting documentation for detail.
 
     Args:
         tag (`str`):
@@ -59,9 +38,6 @@ def load(
 
     Examples::
     """  # noqa
-    model = model_store.get(tag)
-    compiled_path = model.path_of(model.info.options["compiled_path"])
-    return ExecutionSession(compiled_path, "run_main_graph")
 
 
 @inject
@@ -69,17 +45,17 @@ def save(
     name: str,
     model: t.Any,
     *,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Tag:
+) -> str:
     """
     Save a model instance to BentoML modelstore.
 
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`str`):
-            Path to compiled model by MLir
+        model (`xgboost.core.Booster`):
+            Instance of model to be saved
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -91,32 +67,15 @@ def save(
 
     Examples::
     """  # noqa
-    context: t.Dict[str, t.Any] = {
-        "framework_name": "onnxmlir",
-        "onnxmlir_version": _spec.origin,
-    }
-    _model = Model.create(
-        name,
-        module=__name__,
-        options=None,
-        metadata=metadata,
-        context=context,
-    )
-    fpath = _model.path_of(f"{SAVE_NAMESPACE}{ONNXMLIR_EXTENSION}")
-    _model.info.options["compiled_path"] = os.path.relpath(fpath, _model.path)
-    shutil.copyfile(model, fpath)
-
-    _model.save(model_store)
-    return _model.tag
 
 
-class ONNXMLirRunner(Runner):
+class FlaxRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
+        tag: str,
+        resource_quota: t.Dict[str, t.Any],
+        batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         self._model_store = model_store
@@ -126,33 +85,32 @@ class ONNXMLirRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+        ...
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        return int(round(self.resource_quota.cpu))
+        ...
 
     @property
     def num_replica(self) -> int:
-        return 1
+        ...
+
+    def _setup(self) -> None:
+        ...
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._session = load(self._model_tag, self._model_store)
-
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: np.ndarray) -> np.ndarray:  # type: ignore[override] # noqa: LN001
-        return self._session.run(input_data)
+    def _run_batch(self, input_data) -> t.Any:
+        ...
 
 
 @inject
 def load_runner(
-    tag: t.Union[str, Tag],
+    tag: str,
     *,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
+    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
+    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "ONNXMLirRunner":
+) -> "FlaxRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
@@ -173,9 +131,75 @@ def load_runner(
 
     Examples::
     """  # noqa
-    return ONNXMLirRunner(
+    return FlaxRunner(
         tag=tag,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
+
+
+# import typing as t
+#
+# import bentoml._internal.constants as _const
+#
+# from ._internal.models.base import Model
+# from ._internal.types import GenericDictType, PathType
+# from ._internal.utils import LazyLoader
+#
+# _exc = _const.IMPORT_ERROR_MSG.format(
+#     fwr="flax",
+#     module=__name__,
+#     inst="Refers to https://flax.readthedocs.io/en/latest/installation.html",
+# )
+#
+#
+# if t.TYPE_CHECKING:  # pragma: no cover
+#     # pylint: disable=unused-import
+#     import flax
+#     import jax
+# else:
+#     jax = LazyLoader("jax", globals(), "jax", exc_msg=_exc)
+#     flax = LazyLoader("flax", globals(), "flax", exc_msg=_exc)
+#
+#
+# class FlaxModel(Model):
+#     """
+#     Model class for saving/loading :obj:`flax` models
+#
+#     Args:
+#         model (`flax.linen.Module`):
+#             Every Flax model is of type :obj:`flax.linen.Module`
+#         metadata (`GenericDictType`,  `optional`, default to `None`):
+#             Class metadata
+#
+#     Raises:
+#         MissingDependencyException:
+#             :obj:`jax` and :obj:`flax` are required by FlaxModel
+#
+#     Example usage under :code:`train.py`::
+#
+#         TODO:
+#
+#     One then can define :code:`bento_service.py`::
+#
+#         TODO:
+#
+#     Pack bundle under :code:`bento_packer.py`::
+#
+#         TODO:
+#     """
+#
+#     def __init__(
+#         self,
+#         model: "flax.linen.Module",
+#         metadata: t.Optional[GenericDictType] = None,
+#     ):
+#         super(FlaxModel, self).__init__(model, metadata=metadata)
+#
+#     @classmethod
+#     def load(cls, path: PathType) -> "flax.linen.Module":
+#         ...
+#
+#     def save(self, path: PathType) -> None:
+#         ...

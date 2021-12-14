@@ -177,7 +177,7 @@ def save(
     return _model.tag
 
 
-class _XgBoostRunner(Runner):
+class XgBoostRunner(Runner):
     @inject
     def __init__(
         self,
@@ -188,21 +188,18 @@ class _XgBoostRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        model_info, model_file, booster_params = _get_model_info(
-            tag, booster_params, model_store
-        )
-
         self._model_store = model_store
-        self._model_info = model_info
-        self._model_file = model_file
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+
         self._predict_fn_name = predict_fn_name
-        booster_params = dict() if booster_params is None else booster_params
+        booster_params = {} if booster_params is None else booster_params
         self._booster_params = self._setup_booster_params(booster_params)
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -236,16 +233,19 @@ class _XgBoostRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        _, model_file, booster_params = _get_model_info(
+            self._model_tag, self._booster_params, self._model_store
+        )
         self._model = xgb.core.Booster(
-            params=self._booster_params,
-            model_file=self._model_file,
+            params=booster_params,
+            model_file=model_file,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
-    ) -> "np.ndarray":
+        self, input_data: t.Union["np.ndarray", "pd.DataFrame", xgb.DMatrix]
+    ) -> "np.ndarray[t.Any, t.Any]":
         if not isinstance(input_data, xgb.DMatrix):
             input_data = xgb.DMatrix(input_data)
         res = self._predict_fn(input_data)
@@ -261,7 +261,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_XgBoostRunner":
+) -> "XgBoostRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
@@ -296,7 +296,7 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """  # noqa
-    return _XgBoostRunner(
+    return XgBoostRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,

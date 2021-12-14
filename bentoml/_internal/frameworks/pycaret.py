@@ -153,7 +153,7 @@ def save(
     return _model.tag
 
 
-class _PycaretRunner(Runner):
+class PycaretRunner(Runner):
     @inject
     def __init__(
         self,
@@ -162,16 +162,14 @@ class _PycaretRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        model_info, model_file, pycaret_config = _get_model_info(tag, model_store)
-
-        self._model_info = model_info
-        self._model_file = model_file
-        self._pycaret_config = pycaret_config
+        self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -183,8 +181,11 @@ class _PycaretRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        load_config(self._pycaret_config)
-        self._model = load_model(self._model_file)
+        _, model_file, pycaret_config = _get_model_info(
+            self._model_tag, self._model_store
+        )
+        load_config(pycaret_config)
+        self._model = load_model(model_file)
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":  # type: ignore[override] # noqa # pylint: disable
@@ -203,7 +204,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_PycaretRunner":
+) -> "PycaretRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.pycaret.load_runner` implements a Runner class that
@@ -243,7 +244,7 @@ def load_runner(
         prediction = runner._run_batch(input_data=data_unseen)
         print(prediction)
     """  # noqa
-    return _PycaretRunner(
+    return PycaretRunner(
         tag=tag,
         resource_quota=resource_quota,
         batch_options=batch_options,

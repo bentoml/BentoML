@@ -21,16 +21,14 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import ModelStore
+
 try:
-    # pylint: disable=unused-import;
     import torch
     import detectron2  # noqa F401
     import detectron2.config as config
     import detectron2.modeling as modeling
     import detectron2.checkpoint as checkpoint
     from detectron2.checkpoint import DetectionCheckpointer
-
-
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """detectron2 is required in order to use module `bentoml.detectron`,
@@ -196,7 +194,7 @@ def save(
     return _model.tag
 
 
-class _DetectronRunner(Runner):
+class DetectronRunner(Runner):
     @inject
     # TODO add partial_kwargs @larme
     def __init__(
@@ -207,14 +205,16 @@ class _DetectronRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
-        self._tag = tag
-        self._predict_fn_name = predict_fn_name
         self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+
+        self._predict_fn_name = predict_fn_name
 
     @property
-    def required_models(self) -> t.List[str]:
-        return [self._tag]
+    def required_models(self) -> t.List[Tag]:
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -232,7 +232,7 @@ class _DetectronRunner(Runner):
             device = "cuda"
         else:
             device = "cpu"
-        self._model = load(self._tag, device, self._model_store)
+        self._model = load(self._model_tag, device, self._model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(
@@ -266,7 +266,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> _DetectronRunner:
+) -> DetectronRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.detectron.load_runner` implements a Runner class that
@@ -290,7 +290,7 @@ def load_runner(
     Examples:
         TODO
     """  # noqa
-    return _DetectronRunner(
+    return DetectronRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         resource_quota=resource_quota,

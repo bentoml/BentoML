@@ -393,7 +393,7 @@ def save(
     return _model.tag
 
 
-class _TensorflowRunner(Runner):
+class TensorflowRunner(Runner):
     @inject
     def __init__(
         self,
@@ -405,18 +405,17 @@ class _TensorflowRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        in_store_tag = model_store.get(tag).tag
-        self._tag = in_store_tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
 
         self._device_id = device_id
-        self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
         self._partial_kwargs: t.Dict[str, t.Any] = (
             partial_kwargs if partial_kwargs is not None else dict()
         )
-        self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
         if TF2 and "GPU" in device_id:
@@ -430,7 +429,7 @@ class _TensorflowRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -446,11 +445,12 @@ class _TensorflowRunner(Runner):
 
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
+        self._configure(self._device_id)
         # setup a global session for model runner
         self._session = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto)
         )
-        self._model = load(self._tag, model_store=self._model_store)
+        self._model = load(self._model_tag, model_store=self._model_store)
         if not TF2:
             raw_predict_fn = self._model.signatures["serving_default"]
         else:
@@ -512,7 +512,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_TensorflowRunner":
+) -> "TensorflowRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.tensorflow.load_runner` implements a Runner class that
@@ -536,7 +536,7 @@ def load_runner(
         Runner instances for `bentoml.tensorflow` model
     Examples::
     """  # noqa
-    return _TensorflowRunner(
+    return TensorflowRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,

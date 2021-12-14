@@ -10,7 +10,7 @@ from bentoml.exceptions import MissingDependencyException
 from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
-from .pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
+from .pytorch import _PyTorchRunner as PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
 from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
@@ -167,7 +167,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_PyTorchLightningRunner":
+) -> "PyTorchLightningRunner":
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.pytorch_lightning.load_runner` implements a Runner class that
@@ -197,7 +197,7 @@ def load_runner(
         runner = bentoml.pytorch_lightning.load_runner("lit_classifier:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
-    return _PyTorchLightningRunner(
+    return PyTorchLightningRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,

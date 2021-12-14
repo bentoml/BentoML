@@ -129,7 +129,7 @@ def save(
     return _model.tag
 
 
-class _H2ORunner(Runner):
+class H2ORunner(Runner):
     @inject
     def __init__(
         self,
@@ -140,16 +140,20 @@ class _H2ORunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-
-        self._tag = Tag.from_taglike(tag)
-        self._predict_fn_name = predict_fn_name
-        self._init_params = init_params
         self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+
+        self._predict_fn_name = predict_fn_name
+        self._init_params = {} if init_params is None else init_params
+
+        self._model: h2o.model.ModelBase
+        self._predict_fn: t.Callable[..., t.Any]
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -163,17 +167,19 @@ class _H2ORunner(Runner):
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         self._model = load(
-            self._tag, init_params=self._init_params, model_store=self._model_store
+            self._model_tag,
+            init_params=self._init_params,
+            model_store=self._model_store,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame", h2o.H2OFrame]
-    ) -> np.ndarray:
+        self,
+        input_data: t.Union["np.ndarray[t.Any, t.Any]", "pd.DataFrame", h2o.H2OFrame],
+    ) -> "np.ndarray[t.Any, t.Any]":
         if not isinstance(input_data, h2o.H2OFrame):
             input_data = h2o.H2OFrame(input_data)
         res = self._predict_fn(input_data)
@@ -192,7 +198,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> _H2ORunner:
+) -> H2ORunner:
     """Runner represents a unit of serving logic that can be scaled
     horizontally to maximize throughput. `bentoml.h2o.load_runner`
     implements a Runner class that wrap around a h2o model, which
@@ -220,7 +226,7 @@ def load_runner(
         TODO
 
     """  # noqa
-    return _H2ORunner(
+    return H2ORunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         init_params=init_params,

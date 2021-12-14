@@ -40,7 +40,7 @@ _easyocr_version = get_pkg_version("easyocr")
 
 @inject
 def load(
-    tag: str,
+    tag: Tag,
     gpu: bool = True,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> easyocr.Reader:
@@ -189,15 +189,19 @@ class _EasyOCRRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        self._tag = Tag.from_taglike(tag)
+        self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+
         self._predict_fn_name = predict_fn_name
         self._predict_params = predict_params
-        self._model_store = model_store
+
+        self._model = None
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -211,13 +215,13 @@ class _EasyOCRRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        self._model = load(self._tag, self.resource_quota.on_gpu, self._model_store)
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        model = load(self._model_tag, self.resource_quota.on_gpu, self._model_store)
+        self._predict_fn = getattr(model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self, input_data: np.ndarray
-    ) -> "np.ndarray":
+        self, input_data: np.ndarray[t.Any, t.Any]
+    ) -> "np.ndarray[t.Any, t.Any]":
         res = self._predict_fn(input_data, **self._predict_params)
         return np.asarray(res, dtype=object)
 

@@ -24,6 +24,9 @@ if TYPE_CHECKING:
     from pandas.core.frame import DataFrame
 
     from ..models import ModelStore
+else:
+    np = LazyLoader("np", globals(), "numpy")  # noqa: F811
+    pd = LazyLoader("pd", globals(), "pandas")
 
 try:
     import joblib
@@ -41,9 +44,6 @@ except ImportError:  # pragma: no cover
         )
 
 _sklearn_version = get_pkg_version("scikit-learn")
-
-np = LazyLoader("np", globals(), "numpy")  # noqa: F811
-pd = LazyLoader("pd", globals(), "pandas")
 
 
 def _get_model_info(
@@ -132,7 +132,7 @@ def save(
     return _model.tag
 
 
-class _SklearnRunner(Runner):
+class SklearnRunner(Runner):
     @inject
     def __init__(
         self,
@@ -142,11 +142,10 @@ class _SklearnRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(f"{tag}-{function_name}", resource_quota, batch_options)
-        model_info, model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
-        self._model_info = model_info
-        self._model_file = model_file
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
         self._backend = "loky"
         self._function_name = function_name
 
@@ -160,11 +159,12 @@ class _SklearnRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
-        self._model = joblib.load(filename=self._model_file)
+        _, model_file = _get_model_info(self._model_tag, self._model_store)
+        self._model = joblib.load(filename=model_file)
         self._infer_func = getattr(self._model, self._function_name)
 
     # pylint: disable=arguments-differ
@@ -184,7 +184,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_SklearnRunner":
+) -> "SklearnRunner":
 
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -217,7 +217,7 @@ def load_runner(
         runner = bentoml.sklearn.load_runner("my_model:20201012_DE43A2")
         runner.run(input_data)
     """  # noqa
-    return _SklearnRunner(
+    return SklearnRunner(
         tag=tag,
         function_name=function_name,
         resource_quota=resource_quota,

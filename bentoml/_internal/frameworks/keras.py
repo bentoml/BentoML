@@ -43,7 +43,7 @@ except ImportError:  # pragma: no cover
         """
     )
 
-from .tensorflow import _TensorflowRunner  # type: ignore[reportPrivateUsage]
+from .tensorflow import TensorflowRunner  # type: ignore[reportPrivateUsage]
 
 _tf_version = get_tf_version()
 TF2 = _tf_version.startswith("2")
@@ -186,7 +186,7 @@ def save(
     return _model.tag
 
 
-class _KerasRunner(_TensorflowRunner):
+class KerasRunner(TensorflowRunner):
     @inject
     def __init__(
         self,
@@ -249,7 +249,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_KerasRunner":
+) -> "KerasRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.tensorflow.load_runner` implements a Runner class that
@@ -276,7 +276,7 @@ def load_runner(
 
     Examples::
     """  # noqa: LN001
-    return _KerasRunner(
+    return KerasRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,

@@ -197,7 +197,7 @@ def import_from_uri(
     return _model.tag
 
 
-class _PyFuncRunner(Runner):
+class PyFuncRunner(Runner):
     @inject
     def __init__(
         self,
@@ -206,13 +206,14 @@ class _PyFuncRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
         self._model_store = model_store
-        self._model_info = self._model_store.get(tag)
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -224,8 +225,9 @@ class _PyFuncRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        path = self._model_info.info.options["mlflow_folder"]
-        artifact_path = self._model_info.path_of(path)
+        model_info = self._model_store.get(self._model_tag)
+        path = model_info.info.options["mlflow_folder"]
+        artifact_path = model_info.path_of(path)
         self._model = mlflow.pyfunc.load_model(artifact_path, suppress_warnings=False)
 
     # pylint: disable=arguments-differ
@@ -239,7 +241,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_PyFuncRunner":
+) -> "PyFuncRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.mlflow.load_runner` implements a Runner class that
@@ -262,7 +264,7 @@ def load_runner(
 
     Examples::
     """  # noqa
-    return _PyFuncRunner(
+    return PyFuncRunner(
         tag,
         resource_quota=resource_quota,
         batch_options=batch_options,

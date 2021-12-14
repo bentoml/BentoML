@@ -88,28 +88,17 @@ VARNAME_RE = re.compile(r"\W|^(?=\d)")
 
 
 class _BaseRunner:
-    EXIST_NAMES: t.Set[str] = set()
-
     def __init__(
         self,
         display_name: t.Union[str, Tag],
         resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
         batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     ):
-        # probe an unique name
         if isinstance(display_name, Tag):
             display_name = display_name.name
         if not display_name.isidentifier():
             display_name = VARNAME_RE.sub("_", display_name)
-        i = 0
-        while True:
-            name = display_name if i == 0 else f"{display_name}_{i}"
-            if name not in self.EXIST_NAMES:
-                self.EXIST_NAMES.add(name)
-                break
-            else:
-                i += 1
-        self.name = name
+        self.name = display_name
 
         self.resource_quota = ResourceQuota(
             **(resource_quota if resource_quota else {})

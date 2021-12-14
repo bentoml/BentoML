@@ -307,7 +307,7 @@ def projects(
     return _model.tag
 
 
-class _SpacyRunner(Runner):
+class SpacyRunner(Runner):
     @inject
     def __init__(
         self,
@@ -325,16 +325,15 @@ class _SpacyRunner(Runner):
         backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = "pytorch",
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        in_store_tag = model_store.get(tag).tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
-        self._tag = in_store_tag
+        self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
 
         self._vocab: t.Union["Vocab", bool] = vocab
         self._disable = disable
         self._exclude = exclude
         self._config = config
 
-        self._model_store = model_store
         self._backend_options = backend_options
         self._gpu_device_id = gpu_device_id
 
@@ -343,11 +342,11 @@ class _SpacyRunner(Runner):
                 resource_quota = dict(gpus=self._gpu_device_id)
             else:
                 resource_quota["gpus"] = self._gpu_device_id
+        super().__init__(name, resource_quota, batch_options)
         self._configure(backend_options)
         self._as_tuples = as_tuples
         self._batch_size = batch_size
         self._component_cfg = component_cfg
-        super().__init__(str(tag), resource_quota, batch_options)
 
     def _configure(self, backend_options: t.Optional[str]) -> None:
         if self._gpu_device_id is not None and thinc_util.prefer_gpu(
@@ -366,7 +365,7 @@ class _SpacyRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -426,7 +425,7 @@ class _SpacyRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
         self._model = load(
-            self._tag,
+            self._model_tag,
             model_store=self._model_store,
             vocab=self._vocab,
             exclude=self._exclude,
@@ -465,8 +464,8 @@ def load_runner(
     batch_size: t.Optional[int] = None,
     component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_SpacyRunner":
-    return _SpacyRunner(
+) -> "SpacyRunner":
+    return SpacyRunner(
         tag=tag,
         gpu_device_id=gpu_device_id,
         backend_options=backend_options,

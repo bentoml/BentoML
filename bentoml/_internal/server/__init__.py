@@ -182,7 +182,7 @@ bentoml._internal.server.start_prod_runner_server(
         )
     logger.debug("Runner sockets_map: %s", sockets_map)
 
-    cmd_runner_arg = json.dumps({k: f"{v.path}" for k, v in sockets_map.items()})
+    cmd_runner_arg = json.dumps({k: v.location for k, v in sockets_map.items()})
     cmd_api_server = f"""
 import bentoml._internal.server
 bentoml._internal.server.start_prod_api_server(

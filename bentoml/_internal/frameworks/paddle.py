@@ -71,7 +71,7 @@ _hub_exc = (
 #     PIL = None
 #     PIL.Image = None
 # _PIL_warning = """\
-# `Pillow` is optionally required to use `bentoml.paddle._PaddlePaddleRunner._run_batch`.
+# `Pillow` is optionally required to use `bentoml.paddle.PaddlePaddleRunner._run_batch`.
 # Instruction: `pip install -U Pillow`
 # """
 #
@@ -80,7 +80,7 @@ _hub_exc = (
 # except ImportError:
 #     pd = None
 # _pd_warning = """\
-# `pandas` is optionally required to use `bentoml.paddle._PaddlePaddleRunner._run_batch`.
+# `pandas` is optionally required to use `bentoml.paddle.PaddlePaddleRunner._run_batch`.
 # Instruction: `pip install -U pandas`
 # """
 
@@ -206,11 +206,11 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
  https://paddlehub.readthedocs.io/en/release-v2.1/api/module.html for more information.
                         """
                     )
-                    _tag = _model.tag
+                    _model_tag = _model.tag
                     server.CacheUpdater(
                         "update_cache", module=model, version=version
                     ).start()
-                    return _tag
+                    return _model_tag
             except (FileNotFoundError, NotFound):
                 pass
     _model = Model.create(
@@ -394,7 +394,7 @@ def import_from_paddlehub(
     )
 
 
-class _PaddlePaddleRunner(Runner):
+class PaddlePaddleRunner(Runner):
     @inject
     def __init__(
         self,
@@ -416,25 +416,30 @@ class _PaddlePaddleRunner(Runner):
                 "`enable_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
                 " Make sure to install `paddlepaddle-gpu` and try again."
             )
-        in_store_tag = model_store.get(tag).tag
-
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
-        self._infer_api_callback = infer_api_callback
         self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+
+        self._infer_api_callback = infer_api_callback
         self._enable_gpu = enable_gpu
-        self._tag = in_store_tag
-        self._setup_runner_config(device, enable_gpu, gpu_mem_pool_mb, config=config)
+        self._config_kwargs = dict(
+            device=device,
+            enable_gpu=enable_gpu,
+            gpu_mem_pool_mb=gpu_mem_pool_mb,
+            config=config,
+        )
 
     # pylint: disable=attribute-defined-outside-init
-    def _setup_runner_config(
+    def _build_model_config(
         self,
         device: str,
         enable_gpu: bool,
         gpu_mem_pool_mb: int,
         config: t.Optional["paddle.inference.Config"],
-    ) -> None:
+    ):
         _config = (
-            _load_paddle_bentoml_default_config(self._model_store.get(self._tag))
+            _load_paddle_bentoml_default_config(self._model_store.get(self._model_tag))
             if not config
             else config
         )
@@ -457,11 +462,11 @@ class _PaddlePaddleRunner(Runner):
             _config.enable_mkldnn()
             _config.disable_gpu()
         paddle.set_device(device)
-        self._runner_config = _config
+        return _config
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -478,8 +483,9 @@ class _PaddlePaddleRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        model_config = self._build_model_config(**self._config_kwargs)
         self._model = load(
-            self._tag, config=self._runner_config, model_store=self._model_store
+            self._model_tag, config=model_config, model_store=self._model_store
         )
         self._infer_func = getattr(self._model, self._infer_api_callback)
 
@@ -491,7 +497,7 @@ class _PaddlePaddleRunner(Runner):
         return_argmax: bool = False,
         **kwargs: str,
     ) -> t.Union[t.Any, t.List["np.ndarray"]]:  # type: ignore[override]
-        model_info = self._model_store.get(self._tag)
+        model_info = self._model_store.get(self._model_tag)
         if "paddlehub" in model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:
@@ -543,7 +549,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_PaddlePaddleRunner":
+) -> "PaddlePaddleRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.paddle.load_runner` implements a Runner class that
@@ -579,7 +585,7 @@ def load_runner(
 
     Examples::
     """
-    return _PaddlePaddleRunner(
+    return PaddlePaddleRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,
         device=device,

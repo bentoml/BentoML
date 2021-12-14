@@ -198,7 +198,7 @@ def save(
     return _model.tag
 
 
-class _ONNXRunner(Runner):
+class ONNXRunner(Runner):
     @inject
     def __init__(
         self,
@@ -217,9 +217,10 @@ class _ONNXRunner(Runner):
             if "gpus" not in resource_quota:
                 resource_quota["gpus"] = gpu_device_id
 
-        super().__init__(str(tag), resource_quota, batch_options)
-        self._model_info, self._model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
         self._backend = backend
 
         if backend not in SUPPORTED_ONNX_BACKEND:
@@ -236,7 +237,7 @@ class _ONNXRunner(Runner):
                 gpu_device_id, disable_copy_in_default_stream
             )
         self._providers = providers
-        self._session_options = self._get_default_session_options(session_options)
+        self._session_options = session_options
 
     @staticmethod
     def _get_default_providers(
@@ -281,7 +282,7 @@ class _ONNXRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -298,11 +299,12 @@ class _ONNXRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
+        session_options = self._get_default_session_options(self._session_options)
         self._model = load(
-            self._model_info.tag,
+            self._model_tag,
             backend=self._backend,
             providers=self._providers,
-            session_options=self._session_options,
+            session_options=session_options,
             model_store=self._model_store,
         )
         self._infer_func = getattr(self._model, "run")
@@ -374,7 +376,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_ONNXRunner":
+) -> "ONNXRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.onnx.load_runner` implements a Runner class that
@@ -408,7 +410,7 @@ def load_runner(
 
     Examples::
     """  # noqa
-    return _ONNXRunner(
+    return ONNXRunner(
         tag=tag,
         backend=backend,
         gpu_device_id=gpu_device_id,

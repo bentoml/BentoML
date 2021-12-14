@@ -30,22 +30,19 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from transformers import PreTrainedModel
-    from transformers import PretrainedConfig
-    from transformers import TFPreTrainedModel
-    from transformers import FlaxPreTrainedModel
-    from transformers import PreTrainedTokenizer
-    from transformers import PreTrainedTokenizerFast
+    from transformers.tokenization_utils import PreTrainedTokenizer
+    from transformers.configuration_utils import PretrainedConfig
+    from transformers.utils.dummy_pt_objects import PreTrainedModel
+    from transformers.utils.dummy_tf_objects import TFPreTrainedModel
     from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
     from transformers.models.auto.auto_factory import _BaseAutoModelClass
+    from transformers.utils.dummy_flax_objects import FlaxPreTrainedModel
+    from transformers.utils.dummy_tokenizers_objects import PreTrainedTokenizerFast
 
     from ..models import ModelStore
 
 try:
     import transformers
-    from transformers import Pipeline
-    from transformers import AutoConfig
-    from transformers import AutoTokenizer
     from transformers.file_utils import http_get
     from transformers.file_utils import CONFIG_NAME
     from transformers.file_utils import WEIGHTS_NAME
@@ -53,6 +50,9 @@ try:
     from transformers.file_utils import http_user_agent
     from transformers.file_utils import TF2_WEIGHTS_NAME
     from transformers.file_utils import FLAX_WEIGHTS_NAME
+    from transformers.pipelines.base import Pipeline
+    from transformers.models.auto.tokenization_auto import AutoTokenizer
+    from transformers.models.auto.configuration_auto import AutoConfig
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -711,7 +711,7 @@ def import_from_huggingface_hub(
     )
 
 
-class _TransformersRunner(Runner):
+class TransformersRunner(Runner):
     @inject
     def __init__(
         self,
@@ -726,9 +726,10 @@ class _TransformersRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
         **pipeline_kwargs: t.Any,
     ):
-        in_store_tag = model_store.get(tag).tag
-        self._tag = in_store_tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
 
         try:
             transformers.pipelines.check_task(tasks)
@@ -737,7 +738,6 @@ class _TransformersRunner(Runner):
                 f"{e}, as `{tasks}` is not recognized by transformers."
             )
         self._tasks = tasks
-        self._model_store = model_store
         self._framework = framework
         self._lm_head = lm_head
         self._device = device
@@ -757,9 +757,12 @@ class _TransformersRunner(Runner):
         )  # type: t.Dict[str, t.Any]
         self._kwargs = pipeline_kwargs
 
+        self._model = None
+        self._tokenizer = None
+
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency(self) -> int:
@@ -773,9 +776,9 @@ class _TransformersRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
         try:
-            _ = self._model_store.get(self._tag)
+            _ = self._model_store.get(self._model_tag)
             self._config, self._model, self._tokenizer = load(
-                self._tag,
+                self._model_tag,
                 model_store=self._model_store,
                 from_flax=False,
                 from_tf="tf" in self._framework,
@@ -816,7 +819,7 @@ def load_runner(
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **pipeline_kwargs: t.Any,
-) -> "_TransformersRunner":
+) -> "TransformersRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.transformers.load_runner` implements a Runner class
@@ -860,7 +863,7 @@ def load_runner(
                                                   framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
     """
-    return _TransformersRunner(
+    return TransformersRunner(
         tag=tag,
         tasks=tasks,
         framework=framework,

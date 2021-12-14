@@ -124,7 +124,7 @@ def save(
     return _model.tag
 
 
-class _GluonRunner(Runner):
+class GluonRunner(Runner):
     @inject
     def __init__(
         self,
@@ -134,15 +134,20 @@ class _GluonRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        self._tag = Tag.from_taglike(tag)
-        self._predict_fn_name = predict_fn_name
         self._model_store = model_store
+        self._model_tag = Tag.from_taglike(tag)
+        name = f"{self.__class__.__name__}_{self._model_tag.name}"
+        super().__init__(name, resource_quota, batch_options)
+
+        self._predict_fn_name = predict_fn_name
         self._ctx = None
+
+        self._model: "gluon.Block"
+        self._predict_fn: t.Callable[..., t.Any]
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -154,23 +159,22 @@ class _GluonRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         if self.resource_quota.on_gpu:
             ctx = mxnet.gpu()
         else:
             ctx = mxnet.cpu()
         self._ctx = ctx
-        self._model = load(self._tag, ctx, self._model_store)
+        self._model = load(self._model_tag, ctx, self._model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(
         self,
-        *args: t.Union[np.ndarray, mxnet.ndarray.NDArray],
-        **kwargs: t.Union[np.ndarray, mxnet.ndarray.NDArray],
-    ) -> np.ndarray:
-        params = Params[t.Union[np.ndarray, mxnet.ndarray.NDArray]](*args, **kwargs)
+        *args: t.Union[np.ndarray[t.Any, t.Any], mxnet.ndarray.NDArray],
+        **kwargs: t.Union[np.ndarray[t.Any, t.Any], mxnet.ndarray.NDArray],
+    ) -> np.ndarray[t.Any, t.Any]:
+        params = Params(*args, **kwargs)
         if isinstance(params.sample, np.ndarray):
             params = params.map(lambda i: mxnet.nd.array(i, ctx=self._ctx))
         elif isinstance(params.sample, mxnet.ndarray.NDArray):
@@ -192,7 +196,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> _GluonRunner:
+) -> GluonRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.detectron.load_runner` implements a Runner class that
@@ -216,7 +220,7 @@ def load_runner(
     Examples:
         TODO
     """  # noqa
-    return _GluonRunner(
+    return GluonRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         resource_quota=resource_quota,

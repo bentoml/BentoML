@@ -62,16 +62,27 @@ class Service:
         validate_tag_str(lower_name)
         self.name = lower_name
 
+        self.runners: t.Dict[str, Runner] = {}
+
         if runners is not None:
             assert all(
                 isinstance(r, Runner) for r in runners
             ), "Service runners list must only contain runner instances"
-            self.runners = {r.name: r for r in runners}
-        else:
-            self.runners: t.Dict[str, Runner] = {}
+            self._set_runners(runners)
 
         self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
         self._middlewares: t.List[t.Tuple[t.Type["Middleware"], t.Any]] = []
+
+    def _set_runners(self, runners: t.Sequence[Runner]) -> None:
+        for runner in runners:
+            i = 0
+            while True:
+                name = runner.name if i == 0 else f"{runner.name}_{i}"
+                if name not in self.runners:
+                    self.runners[name] = runner
+                    break
+                else:
+                    i += 1
 
     def _on_asgi_app_startup(self) -> None:
         # TODO: initialize Local Runner instances or Runner Clients here

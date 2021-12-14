@@ -21,21 +21,21 @@ from ...exceptions import InvalidArgument
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
 if TYPE_CHECKING:
-    DistroString = t.Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]
+    DistroString = t.Literal["debian", "amazonlinux2", "alpine", "centos7", "centos8"]
 
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 PYTHON_MINOR_VERSION: str = f"{pyver.major}.{pyver.minor}"
-PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.6", "3.7", "3.8", "3.9", "3.10"]
+PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.6", "3.7", "3.8", "3.9"]
 DOCKER_SUPPORTED_DISTROS: t.List[str] = [
-    "slim",
+    "debian",
     "amazonlinux2",
     "alpine",
     "centos7",
     "centos8",
 ]
-DOCKER_DEFAULT_DISTRO = "slim"
+DOCKER_DEFAULT_DISTRO = "debian"
 
 if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
     logger.warning(
@@ -76,6 +76,7 @@ class DockerOptions:
         ),
     )
     gpu: t.Optional[bool] = None
+    devel: t.Optional[bool] = None
 
     # A python or shell script that executes during docker build time
     setup_script: t.Optional[str] = None
@@ -120,12 +121,11 @@ class DockerOptions:
 
     def get_base_image_tag(self):
         if self.base_image is None:
-            # TODO: remove this after 1.0 images published
-            # Override to a fixed image for development purpose
             if self.distro is None:
                 raise KeyError("distro not set, can't get base image tag")
-            base_image = repr(ImageProvider(self.distro, self.python_version, self.gpu))
-            base_image = "bentoml/model-server:0.13.1-slim-py37"
+            base_image = repr(
+                ImageProvider(self.distro, self.python_version, self.gpu, self.devel)
+            )
             return base_image
         else:
             return self.base_image

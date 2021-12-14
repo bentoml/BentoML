@@ -1,6 +1,7 @@
 import os
 import typing as t
 import logging
+from functools import lru_cache
 
 try:
     import importlib.metadata as importlib_metadata
@@ -42,17 +43,24 @@ def expand_env_var(env_var: str) -> str:
 BENTOML_VERSION: str = importlib_metadata.version("bentoml")
 
 
+@lru_cache(maxsize=1)
 def is_pypi_installed_bentoml() -> bool:
-    """Returns true if BentoML is installed via PyPI
+    """Returns true if BentoML installation is from an official PyPI release"""
+    try:
+        import importlib.metadata as importlib_metadata
+    except ImportError:
+        import importlib_metadata
 
-    Notes: this assumes developer did not tag their branch with semver branch names
-    """
-    is_installed_package = len(version_mod.version_tuple) == 3
+    is_installed_package = (
+        importlib_metadata.distribution("bentoml")
+        .locate_file(f"bentoml-{BENTOML_VERSION}.dist-info")
+        .is_dir()
+    )
     # In a git repo with no tag, setuptools_scm generated version starts with "0.1."
     is_tagged = not BENTOML_VERSION.startswith("0.1.")
     is_clean = not version_mod.version_tuple[-1].split(".")[-1].startswith("d")
-    is_modified = BENTOML_VERSION != BENTOML_VERSION.split("+")[0]
-    return is_installed_package and is_tagged and is_clean and is_modified
+    not_been_modified = BENTOML_VERSION == BENTOML_VERSION.split("+")[0]
+    return is_installed_package and is_tagged and is_clean and not_been_modified
 
 
 def get_bentoml_config_file_from_env() -> t.Optional[str]:

@@ -58,16 +58,16 @@ def _get_default_bento_readme(svc: "Service"):
 ## Customize This Message
 
 This is the default generated `bentoml.Service` doc. You may customize it in your Bento
-build file:
+build file, e.g.:
 
 ```yaml
 service: "image_classifier.py:svc"
-description: "./readme.md"
+description: "file: ./readme.md"
 labels:
   foo: bar
   team: abc
 docker:
-  distro: slim
+  distro: debian
   gpu: True
 python:
   packages:

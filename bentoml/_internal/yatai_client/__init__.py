@@ -246,6 +246,7 @@ class YataiClient:
                 for key, value in info.labels.items()
             ]
             apis: t.Dict[str, BentoApiSchema] = {}
+            models = [str(m) for m in info.models]
             with self.spin(text=f'Registering Bento "{bento.tag}" with Yatai..'):
                 yatai_rest_client.create_bento(
                     bento_repository_name=bento_repository.name,
@@ -257,7 +258,7 @@ class YataiClient:
                             service=info.service,
                             bentoml_version=info.bentoml_version,
                             apis=apis,
-                            models=info.models,
+                            models=models,
                         ),
                         labels=labels,
                     ),

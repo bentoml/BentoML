@@ -21,11 +21,12 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 VERSION_STR="v$BENTOML_VERSION"
 DOCKER_DIR="$GIT_ROOT"/docker
 
+cd "$DOCKER_DIR" || exit
+
 manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py"
 
 manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py"
 
-cd "$DOCKER_DIR" || exit
 
 log "Creating new Manager container if one doesn't exist."
 if [[ $(docker images --filter=reference='bentoml-docker' -q) == "" ]] | [[ $(git diff "$DOCKER_DIR"/Dockerfile) != "" ]]; then
@@ -41,10 +42,10 @@ fi
 log "Generating new Dockerfiles for BentoML $VERSION_STR..."
 $manager_dockerfiles --bentoml_version "$BENTOML_VERSION" --generate dockerfiles
 
-if [[ ! -f "$DOCKER_DIR"/.env ]];
+if [[ ! -f "$DOCKER_DIR"/.env ]]; then
   warn "Make sure to create a $DOCKER_DIR/.env to setup docker registry correctly. Refers to manifest.yml to see which envars you need to setup."
   exit 1
 fi
 
 log "Building docker image for BentoML $VERSION_STR and perform push to registries..."
-$manager_images --bentoml_version "$BENTOML_VERSION" --generate images --push_to_hub
+$manager_images --bentoml_version "$BENTOML_VERSION" --generate images --push

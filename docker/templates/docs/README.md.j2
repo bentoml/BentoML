@@ -9,65 +9,78 @@ The files are maintained by `manager.py`, which generates Dockerfile from `templ
 Refers to [main README](../README.md) for more information.
 
 {% else %}
-## BentoML
+## Model Serving Made Easy  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20Machine%20Learning%20Model%20Serving%20Made%20Easy%20&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
 
-[![pypi status](https://img.shields.io/pypi/v/bentoml.svg?style=flat-square)](https://pypi.org/project/BentoML) [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml) [![Actions Status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions) [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square)](https://docs.bentoml.org/) [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+[![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
+[![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
+[![actions_status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
+[![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
+[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
-BentoML is a flexible, high-performance framework for serving, managing, and deploying machine learning models.
+BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
--   Supports **Multiple ML frameworks**, including Tensorflow, PyTorch, Keras, XGBoost and [more](https://docs.bentoml.org/en/latest/frameworks.html#frameworks-page)
--   **Cloud native deployment** with Docker, Kubernetes, AWS, Azure and [many more](https://docs.bentoml.org/en/latest/deployment/index.html#deployments-page)
--   **High-Performance** online API serving and offline batch serving
--   Web dashboards and APIs for model registry and deployment management
+👉 Join our [slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
-BentoML bridges the gap between Data Science and DevOps. By providing a standard interface for describing a prediction service, BentoML abstracts away how to run model inference efficiently and how model serving workloads can integrate with cloud infrastructures. [See how it works!](https://github.com/bentoml/BentoML#introduction)
 
-💻 Get started with BentoML: [Quickstart Guide](https://docs.bentoml.org/en/latest/quickstart.html#getting-started-page) | [Quickstart on Google Colab](https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb)
+## Why BentoML
 
-👩‍💻 Star/Watch/Fork the [BentoML Github Repository](https://github.com/bentoml/BentoML).
+- The easiest way to get your ML models into production.
+- High performance model serving, all in Python.
+- Package your model once and deploy it anywhere.
+- Support all major ML model training [frameworks](https://docs.bentoml.org/en/latest/frameworks.html).
 
-👉 Join the [community Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg) and [discussions on Github](https://github.com/bentoml/BentoML/discussions).
+## Getting Started
 
-## Announcement
+- [Quickstart guide](https://docs.bentoml.org/en/latest/quickstart.html) will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
+- [Main concepts](https://docs.bentoml.org/en/latest/concepts.html) will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
+- Playground notebook gets your hands dirty in a notebook environment, for you to try out all the core features in BentoML.
+- [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks.html) lays out best practices and example usages by the ML framework used for training models.
+- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) show cases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
 
-The `latest` tag for `{{ metadata.bentoml_package }}` has been deprecated on Docker Hub.
 
-Tags also have new formats, therefore current format will also be deprecated.
+## BentoServer base images
 
-With the removal of `latest` tags, the following usecase is **NOT A BUG**:
+There are three type of BentoServer docker base image:
 
-```shell
-» docker pull bentoml/{{ metadata.bentoml_package }}
-Using default tag: latest
-Error response from daemon: manifest for bentoml/bento-server:latest
-not found: manifest unknown: manifest unknown
+| Image Type | Description                                | Supported OS                                          | Usage                             |
+|------------|--------------------------------------------|-------------------------------------------------------|-----------------------------------|
+| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `centos{7,8}`, `amazonlinux2`, `alpine3.14` | production ready                  |
+| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `centos{7,8}`                               | production ready with GPU support |
+| `devel`    | nightly build from development branch      | `debian`, `centos{7,8}`                               | for development use only          |
+
+* Note: currently there's no nightly devel image with GPU support.
+
+The final docker image tags will have the following format:
+
+```markdown
+<release_type>-<python_version>-<distros>-<suffix>
+   │             │                │        │
+   │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
+   │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, centos7
+   │             └─> Supported Python version: python3.7 | python3.8 | python3.9
+   └─>  Release type: devel or official BentoML release (e.g: 1.0.0)
 ```
 
-## Overview of Images Types
+Example image tags:
+- `bento-server:devel-python3.7-debian`
+- `bento-server:1.0.0-python3.8-centos8-cudnn`
+- `bento-server:1.0.0-python3.7-ami2-runtime`
 
-- `runtime`: Includes BentoML latest PyPI releases for `{{ metadata.bentoml_package }}`.
-- `devel`: Nightly releases from `master` branch.
-- `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries.
-
-## Notes
-
-In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [BentoML's GPU Serving guides](https://docs.bentoml.org/en/latest/guides/gpu_serving.html) on how to use BentoML's CUDA images.
 
 ## Latest tags for `{{ metadata.bentoml_package }} {{ metadata.bentoml_release_version }}`
+
 {% for distros, tags_path in metadata.release_info.items() %}
-    {% if distros in metadata.oss %}
-        {% print"\n### " %}{% print sentence_case(distros) %}{% print "\n" %}
-        {% if 'centos' in distros.lower() %}
+    {% print"\n### " %}{% print sentence_case(distros) %}{% print "\n" %}
+    {% if 'centos' in distros.lower() %}
 *WARNING*: POSSIBLE MISSING IMAGE TAGS
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 
-        {% endif %}
     {% endif %}
     {% for (tag, path) in tags_path %}
         {% if metadata.bentoml_package in tag %}
         {% set tagname = tag.split(':')[1] %}
-        {% print "- [`" %}{% print tagname %}{% print "`](https://github.com/bentoml/BentoML/tree/master/docker/" %}{% print path %}{% print ")\n" %}
+        {% print "- [`" %}{% print tagname %}{% print "`](https://github.com/bentoml/BentoML/tree/main/docker/" %}{% print path %}{% print ")\n" %}
         {% endif %}
     {% endfor %}
 {% endfor %}

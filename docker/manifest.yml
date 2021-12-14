@@ -70,7 +70,7 @@ releases:
     <<: *base_spec
     templates_dir: templates/debian
     base_image: debian:buster-slim
-    add_to_tags: "slim"
+    add_to_tags: "debian"
     cuda:
       <<: *cuda11_3_1
     cuda_prefix_url: "ubuntu2004"

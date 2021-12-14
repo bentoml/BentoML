@@ -3,13 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - master
-      - bentoml-1.0
       - main
   pull_request:
     branches:
-      - master
-      - bentoml-1.0
       - main
   schedule:
     - cron: '0 0 * * 1/2'
@@ -27,7 +23,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          base: 'bentoml-1.0'
+          base: 'main'
           filters: |
             related: &related
               - .github/workflows/ci.yml

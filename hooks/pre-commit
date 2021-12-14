@@ -18,13 +18,11 @@ for f in $(find .github/ -type f -name '*.yml'); do
   yamllint -c "$GIT_ROOT"/.yamllint.yml "$f" || exit 1
 done
 
-if [ "$LOCAL_BRANCH" != "bentoml-1.0" ]; then
-    if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]
-    then
-        printf "Branch name %s doesn't follow the predefined format...\n" "$LOCAL_BRANCH"
-        printf "We aren't going to abort the commit, but we recommend that branch name should adhere to the following format:\n\t%s.\n" "$VALID_BRANCH_REGEX"
-        printf "To rename your branch to follow the format do \`git branch -m 'feature/%s'\`\n" "$LOCAL_BRANCH"
-    fi
-    exit 0
+if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]
+then
+    printf "Branch name %s doesn't follow the predefined format...\n" "$LOCAL_BRANCH"
+    printf "We aren't going to abort the commit, but we recommend that branch name should adhere to the following format:\n\t%s.\n" "$VALID_BRANCH_REGEX"
+    printf "To rename your branch to follow the format do \`git branch -m 'feature/%s'\`\n" "$LOCAL_BRANCH"
 fi
+exit 0
 

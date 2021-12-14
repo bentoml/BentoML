@@ -1,7 +1,5 @@
 import os
 import typing as t
-import importlib
-import importlib.util
 from typing import TYPE_CHECKING
 from pathlib import Path
 
@@ -19,16 +17,13 @@ from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import mlflow.pyfunc
     from mlflow.pyfunc import PyFuncModel
 
     from ..models import ModelStore
 
 
 try:
-    import mlflow
-    from mlflow.models import Model
-    from mlflow.models.model import MLMODEL_FILE_NAME
+    import mlflow.pyfunc
     from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 except ImportError:
     raise MissingDependencyException(
@@ -75,8 +70,6 @@ def load(
 
     Examples::
     """  # noqa
-    import mlflow.pyfunc
-
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(

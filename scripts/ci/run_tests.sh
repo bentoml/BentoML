@@ -2,7 +2,7 @@
 
 # Prerequisite:
 # This scripts assumes BentoML and all its test dependencies are already installed:
-#  
+#
 #  pip install -e .
 #  pip install requirements/tests-requirements.txt
 
@@ -140,6 +140,9 @@ install_yq() {
   YQ_VERSION=4.14.2
   echo "Trying to install yq..."
   __shell=$(uname | tr '[:upper:]' '[:lower:]')
+  if [[ "$__shell" =~ "mingw64*" ]]; then
+    __shell="windows"
+  fi
   YQ_BINARY=yq_"$__shell"_amd64
   curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
   echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."

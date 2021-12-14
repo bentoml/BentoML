@@ -5,7 +5,6 @@ import json
 import shutil
 import typing as t
 import operator
-import itertools
 from copy import deepcopy
 from pathlib import Path
 from functools import lru_cache

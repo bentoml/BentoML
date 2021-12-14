@@ -3,7 +3,7 @@ import sys
 import typing as t
 import logging
 
-from bentoml._version import version_tuple
+from bentoml._version import version
 
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
@@ -147,7 +147,7 @@ class ImageProvider(object):
             bentoml_version = BENTOML_VERSION
         else:
             # find the last official bentoml release version
-            bentoml_version = ".".join(version_tuple[0:3])
+            bentoml_version = ".".join(version.split(".")[0:3])
 
         suffix = "" if self._release_type == "devel" else "-" + self._release_type
         return RELEASE_FORMAT.format(

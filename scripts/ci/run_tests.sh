@@ -132,7 +132,7 @@ parse_config() {
 }
 
 install_yq() {
-  set -x
+  set -ex
   target_dir="$HOME/.local/bin"
 
   mkdir -p "$target_dir"
@@ -148,12 +148,13 @@ install_yq() {
   fi
 
   YQ_BINARY=yq_"$shell"_amd64
+  YQ_EXTRACT="./$YQ_BINARY"
   if [[ "$shell" == "windows" ]]; then
-    YQ_BINARY=yq_"$shell"_amd64.exe
+    YQ_EXTRACT="$YQ_BINARY".exe
   fi
   curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY""$extensions"
   echo "tar $YQ_BINARY$extensions and move to /usr/bin/yq..."
-  tar -zvxf "$YQ_BINARY$extensions" "./$YQ_BINARY" && mv "./$YQ_BINARY" "$target_dir"/yq
+  tar -zvxf "$YQ_BINARY$extensions" "$YQ_EXTRACT" && mv "$YQ_EXTRACT" "$target_dir"/yq
   rm -f ./"$YQ_BINARY""$extensions"
 }
 

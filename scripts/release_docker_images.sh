@@ -29,14 +29,8 @@ manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/
 
 
 log "Creating new Manager container if one doesn't exist."
-if [[ $(docker images --filter=reference='bentoml-docker' -q) == "" ]] | [[ $(git diff "$DOCKER_DIR"/Dockerfile) != "" ]]; then
+if [[ $(docker images --filter=reference='bentoml-docker' -q) == "" ]]; then
 		DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .
-fi
-
-# We will always run this scripts after release_pypi.sh, so the branch of new releases will exist.
-if git rev-parse "$VERSION_STR" >/dev/null 2>&1; then
-  # Tags already exists
-  git checkout "$VERSION_STR"
 fi
 
 log "Generating new Dockerfiles for BentoML $VERSION_STR..."

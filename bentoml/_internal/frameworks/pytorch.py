@@ -16,7 +16,8 @@ from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
-from ...exceptions import MissingDependencyException, BentoMLException
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
 from ..runner.utils import TypeRef
 from ..runner.container import Payload

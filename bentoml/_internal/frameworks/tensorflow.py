@@ -13,7 +13,8 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Runner
-from bentoml.exceptions import MissingDependencyException, BentoMLException
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import MissingDependencyException
 
 from ..types import PathType
 from ..models import Model
@@ -29,6 +30,7 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     import numpy as np
     import tensorflow.keras as keras
+
     from ..models import ModelStore
 
 try:

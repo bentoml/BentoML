@@ -10,7 +10,8 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml.exceptions import MissingDependencyException, BentoMLException
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import MissingDependencyException
 
 from ..models import Model
 from ..models import H5_EXT

@@ -2,7 +2,7 @@
 
 # Prerequisite:
 # This scripts assumes BentoML and all its test dependencies are already installed:
-#  
+#
 #  pip install -e .
 #  pip install requirements/tests-requirements.txt
 
@@ -132,19 +132,36 @@ parse_config() {
 }
 
 install_yq() {
+  set -ex
   target_dir="$HOME/.local/bin"
 
   mkdir -p "$target_dir"
   export PATH=$target_dir:$PATH
 
-  YQ_VERSION=4.14.2
+  YQ_VERSION=4.16.1
   echo "Trying to install yq..."
-  __shell=$(uname | tr '[:upper:]' '[:lower:]')
-  YQ_BINARY=yq_"$__shell"_amd64
-  curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
-  echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
-  tar -zvxf "$YQ_BINARY.tar.gz" "./$YQ_BINARY" && mv "./$YQ_BINARY" "$target_dir"/yq
-  rm -f ./"$YQ_BINARY".tar.gz
+  shell=$(uname | tr '[:upper:]' '[:lower:]')
+  extensions=".tar.gz"
+  if [[ "$shell" =~ "mingw64" ]]; then
+    shell="windows"
+    extensions=".zip"
+  fi
+
+  YQ_BINARY=yq_"$shell"_amd64
+  YQ_EXTRACT="./$YQ_BINARY"
+  if [[ "$shell" == "windows" ]]; then
+    YQ_EXTRACT="$YQ_BINARY.exe"
+  fi
+  curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY""$extensions"
+  echo "tar $YQ_BINARY$extensions and move to /usr/bin/yq..."
+  if [[ $(uname | tr '[:upper:]' '[:lower:]') =~ "mingw64" ]]; then
+    unzip -qq "$YQ_BINARY$extensions" -d yq_dir && cd yq_dir
+    mv "$YQ_EXTRACT" "$target_dir"/yq && cd ..
+    rm -rf yq_dir
+  else
+    tar -zvxf "$YQ_BINARY$extensions" "$YQ_EXTRACT" && mv "$YQ_EXTRACT" "$target_dir"/yq
+  fi
+  rm -f ./"$YQ_BINARY""$extensions"
 }
 
 

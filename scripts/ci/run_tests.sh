@@ -150,7 +150,7 @@ install_yq() {
   YQ_BINARY=yq_"$shell"_amd64
   YQ_EXTRACT="./$YQ_BINARY"
   if [[ "$shell" == "windows" ]]; then
-    YQ_EXTRACT="$YQ_BINARY".exe
+    YQ_EXTRACT="$YQ_BINARY.exe"
   fi
   curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY""$extensions"
   echo "tar $YQ_BINARY$extensions and move to /usr/bin/yq..."

@@ -19,7 +19,6 @@ from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-
     import mlflow.pyfunc
     from mlflow.pyfunc import PyFuncModel
 
@@ -38,6 +37,8 @@ except ImportError:
         Instruction: `pip install -U mlflow`
         """
     )
+
+MODULE_NAME = "bentoml.mlflow"
 
 _mlflow_version = get_pkg_version("mlflow")
 
@@ -74,15 +75,15 @@ def load(
 
     Examples::
     """  # noqa
+    import mlflow.pyfunc
+
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     mlflow_folder = model.path_of(model.info.options["mlflow_folder"])
-    mlmodel_fpath = Path(mlflow_folder, MLMODEL_FILE_NAME)
-    if not mlmodel_fpath.exists():
-        raise BentoMLException(f"{MLMODEL_FILE_NAME} cannot be found.")
-    flavors = Model.load(mlmodel_fpath).flavors  # pragma: no cover
-    module = list(flavors.values())[0]["loader_module"]
-    loader_module = importlib.import_module(module)
-    return loader_module.load_model(mlflow_folder)  # noqa
+    return mlflow.pyfunc.load_model(mlflow_folder, suppress_warnings=False)
 
 
 def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
@@ -172,7 +173,7 @@ def import_from_uri(
 
     _model = BentoModel.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
@@ -208,11 +209,11 @@ class _PyFuncRunner(Runner):
     ):
         super().__init__(str(tag), resource_quota, batch_options)
         self._model_store = model_store
-        self._model_info = self._model_store.get(tag)
+        self._model_tag = tag
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._model_tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -224,9 +225,7 @@ class _PyFuncRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        path = self._model_info.info.options["mlflow_folder"]
-        artifact_path = self._model_info.path_of(path)
-        self._model = mlflow.pyfunc.load_model(artifact_path, suppress_warnings=False)
+        self._model = load(self._model_tag, model_store=self._model_store)
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]

@@ -150,7 +150,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,

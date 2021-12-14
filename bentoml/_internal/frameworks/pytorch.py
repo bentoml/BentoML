@@ -78,9 +78,12 @@ def load(
     """  # noqa
     bentoml_model = model_store.get(tag)
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
-        )
+        import bentoml._internal.frameworks.pytorch_lightning as pl
+
+        if bentoml_model.info.module not in (pl.MODULE_NAME, pl.__name__):
+            raise BentoMLException(
+                f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+            )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     # TorchScript Models are saved as zip files
     if zipfile.is_zipfile(weight_file):

@@ -3,8 +3,9 @@ import sys
 import typing as t
 import logging
 
+from bentoml._version import version_tuple
 from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
+from ..configuration import BENTOML_VERSION, is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +139,14 @@ class ImageProvider(object):
         self._python_version: str = python_version
 
     def __repr__(self):
-        bentoml_version = "devel" if self._release_type == "devel" else BENTOML_VERSION
+        if self._release_type == "devel":
+            bentoml_version = "devel"
+        elif is_pypi_installed_bentoml():
+            bentoml_version = BENTOML_VERSION
+        else:
+            # find the last official bentoml release version
+            bentoml_version = ".".join(version_tuple[0:3])
+
         suffix = "" if self._release_type == "devel" else "-" + self._release_type
         return RELEASE_FORMAT.format(
             bentoml_version=bentoml_version,

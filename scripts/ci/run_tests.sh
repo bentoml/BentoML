@@ -150,11 +150,17 @@ install_yq() {
   YQ_BINARY=yq_"$shell"_amd64
   YQ_EXTRACT="./$YQ_BINARY"
   if [[ "$shell" == "windows" ]]; then
-    YQ_EXTRACT="$YQ_BINARY.exe"
+    YQ_EXTRACT=""
   fi
   curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY""$extensions"
   echo "tar $YQ_BINARY$extensions and move to /usr/bin/yq..."
-  tar -zvxf "$YQ_BINARY$extensions" "$YQ_EXTRACT" && mv "$YQ_EXTRACT" "$target_dir"/yq
+  if [[ $(uname | tr '[:upper:]' '[:lower:]') =~ "mingw64" ]]; then
+    unzip -qq "$YQ_BINARY$extensions" -d yq_dir && cd yq_dir
+    mv "$YQ_EXTRACT" "$target_dir"/yq && cd ..
+    rm -rf yq_dir
+  else
+    tar -zvxf "$YQ_BINARY$extensions" "$YQ_EXTRACT" && mv "$YQ_EXTRACT" "$target_dir"/yq
+  fi
   rm -f ./"$YQ_BINARY""$extensions"
 }
 

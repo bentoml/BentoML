@@ -1,4 +1,3 @@
-import sys
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -18,12 +17,6 @@ if TYPE_CHECKING:
 
     from bentoml._internal.types import Tag
     from bentoml._internal.models import ModelStore
-
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
 
 
 IMAGE_URL: str = "./tests/utils/_static/detectron2_sample.jpg"
@@ -70,11 +63,6 @@ def detectron_model_and_config() -> t.Tuple[torch.nn.Module, "CfgNode"]:
     return model, cfg
 
 
-class ImageArray(Protocol):
-    def __call__(self) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        ...
-
-
 @pytest.fixture(scope="module", name="image_array")
 def fixture_image_array() -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     return np.asarray(imageio.imread(IMAGE_URL))
@@ -95,7 +83,7 @@ def save_procedure(metadata: t.Dict[str, t.Any], _modelstore: "ModelStore") -> "
 @pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_detectron2_save_load(
     metadata: t.Dict[str, t.Any],
-    image_array: ImageArray,
+    image_array: "np.ndarray[t.Any, np.dtype[t.Any]]",
     modelstore: "ModelStore",
 ) -> None:
     tag = save_procedure(metadata, _modelstore=modelstore)
@@ -120,7 +108,7 @@ def test_detectron2_save_load(
 
 
 def test_detectron2_setup_run_batch(
-    image_array: ImageArray, modelstore: "ModelStore"
+    image_array: "np.ndarray[t.Any, np.dtype[t.Any]]", modelstore: "ModelStore"
 ) -> None:
     tag = save_procedure({}, _modelstore=modelstore)
     runner = bentoml.detectron.load_runner(tag, model_store=modelstore)

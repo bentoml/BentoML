@@ -29,7 +29,7 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     import numpy as np
     import tensorflow.keras as keras
-    from _internal.models import ModelStore
+    from ..models import ModelStore
 
 try:
     import tensorflow as tf

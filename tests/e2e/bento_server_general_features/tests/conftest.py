@@ -3,9 +3,9 @@
 
 import typing as t
 
-import numpy as np
 import pytest
 
+import numpy as np
 from bentoml.testing.server import run_api_server
 
 

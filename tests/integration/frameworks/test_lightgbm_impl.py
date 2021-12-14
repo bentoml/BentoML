@@ -1,10 +1,10 @@
 import typing as t
 
-import numpy as np
 import psutil
 import pytest
 import lightgbm as lgb
 
+import numpy as np
 import bentoml
 import bentoml.models
 from bentoml.exceptions import BentoMLException

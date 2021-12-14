@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 
-import numpy as np
 import psutil
 import pytest
 
+import numpy as np
 import bentoml
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension

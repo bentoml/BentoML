@@ -1,8 +1,8 @@
 import typing as t
 
-import numpy as np
 import pandas as pd
 
+import numpy as np
 from bentoml._internal.types import FileLike
 from bentoml._internal.types import JSONSerializable
 

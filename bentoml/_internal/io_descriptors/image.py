@@ -17,8 +17,9 @@ from ...exceptions import InternalServerError
 
 if TYPE_CHECKING:
     import PIL
-    import numpy as np
     import PIL.Image
+
+    import numpy as np
 else:
     np = LazyLoader("np", globals(), "numpy")
 

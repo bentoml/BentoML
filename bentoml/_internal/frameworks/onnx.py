@@ -35,10 +35,11 @@ more information.
     )
 
 if TYPE_CHECKING:
-    import numpy as np
     import torch
     from pandas.core.frame import DataFrame
     from tensorflow.python.framework.ops import Tensor as TFTensor
+
+    import numpy as np
 
     from ..models import ModelStore
 
@@ -335,10 +336,11 @@ class _ONNXRunner(Runner):
             ]
         ) -> t.Any:
             # TODO: check if imported before actual eval
-            import numpy as np
             import torch
             import pandas as pd
             import tensorflow as tf
+
+            import numpy as np
 
             if isinstance(item, np.ndarray):
                 item = item.astype(np.float32)

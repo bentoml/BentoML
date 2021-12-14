@@ -14,11 +14,12 @@ from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
-    import numpy as np
     import pandas as pd
     import pydantic
     from pydantic import BaseModel
     from pandas.core.frame import DataFrame  # noqa: F401
+
+    import numpy as np
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
     pd = LazyLoader("pd", globals(), "pandas")

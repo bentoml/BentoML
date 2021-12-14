@@ -2,7 +2,6 @@ import sys
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 import torch
 import pytest
 import imageio
@@ -11,6 +10,7 @@ from detectron2.data import transforms as T
 from detectron2.config import get_cfg
 from detectron2.modeling import build_model
 
+import numpy as np
 import bentoml
 
 if TYPE_CHECKING:

@@ -4,11 +4,11 @@ import functools
 from typing import TYPE_CHECKING
 from pathlib import Path
 
-import numpy as np
 import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
+import numpy as np
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException

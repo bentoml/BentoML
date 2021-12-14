@@ -1,9 +1,9 @@
-import numpy as np
 import pandas as pd
 from fastai.learner import Learner
 from fastai.data.block import DataBlock
 from fastai.torch_core import Module
 
+import numpy as np
 from bentoml.fastai import FastAIModel
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.pytorch_utils import test_df

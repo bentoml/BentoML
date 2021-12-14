@@ -1,6 +1,5 @@
 import typing as t
 
-import numpy as np
 import pandas as pd
 import psutil
 import pytest
@@ -8,6 +7,7 @@ import statsmodels
 from statsmodels.tsa.holtwinters import HoltWintersResults
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
+import numpy as np
 import bentoml
 import bentoml.models
 from bentoml.exceptions import BentoMLException

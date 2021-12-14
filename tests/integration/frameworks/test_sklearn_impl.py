@@ -1,11 +1,11 @@
 import typing as t
 
-import numpy as np
 import joblib
 import psutil
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 
+import numpy as np
 import bentoml
 import bentoml.models
 from bentoml.exceptions import BentoMLException

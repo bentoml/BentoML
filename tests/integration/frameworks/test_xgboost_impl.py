@@ -2,12 +2,12 @@ import os
 import json
 import typing as t
 
-import numpy as np
 import pandas as pd
 import psutil
 import pytest
 import xgboost as xgb
 
+import numpy as np
 import bentoml.models
 import bentoml.xgboost
 from bentoml.exceptions import BentoMLException

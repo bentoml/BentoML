@@ -1,12 +1,12 @@
 import math
 
-import numpy as np
 import torch
 import pandas as pd
 import psutil
 import pytest
 import torch.nn as nn
 
+import numpy as np
 import bentoml
 from bentoml.pytorch import PytorchTensorContainer
 from tests.utils.helpers import assert_have_file_extension

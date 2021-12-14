@@ -1,10 +1,10 @@
 import typing as t
 
-import numpy as np
 import pytest
 import easyocr
 import imageio
 
+import numpy as np
 import bentoml
 
 if t.TYPE_CHECKING:

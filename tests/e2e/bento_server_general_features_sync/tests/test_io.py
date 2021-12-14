@@ -3,10 +3,10 @@
 
 import io
 
-import numpy as np
 import pytest
 import aiohttp
 
+import numpy as np
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form
 

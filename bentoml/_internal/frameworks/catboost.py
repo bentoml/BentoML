@@ -16,8 +16,9 @@ from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import numpy as np
     from pandas.core.frame import DataFrame
+
+    import numpy as np
 
     from ..models import ModelStore
 else:

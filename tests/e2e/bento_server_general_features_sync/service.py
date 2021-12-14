@@ -1,11 +1,11 @@
 import typing as t
 
-import numpy as np
 import pandas as pd
 import pydantic
 from PIL.Image import Image as PILImage
 from PIL.Image import fromarray
 
+import numpy as np
 import bentoml
 import bentoml.sklearn
 from bentoml.io import File

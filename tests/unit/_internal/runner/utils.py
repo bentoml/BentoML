@@ -1,5 +1,4 @@
 import numpy as np
-
 from bentoml._internal.runner.utils import TypeRef
 
 

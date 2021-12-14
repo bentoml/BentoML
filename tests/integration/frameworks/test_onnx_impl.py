@@ -2,7 +2,6 @@ import os
 import math
 
 import onnx
-import numpy as np
 import torch
 import psutil
 import pytest
@@ -10,6 +9,7 @@ import torch.nn as nn
 import onnxruntime as ort
 from sklearn.ensemble import RandomForestClassifier
 
+import numpy as np
 import bentoml
 import bentoml.models
 from bentoml.exceptions import BentoMLException

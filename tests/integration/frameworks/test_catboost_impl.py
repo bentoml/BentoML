@@ -1,7 +1,6 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 import psutil
 import pytest
 import catboost as cbt
@@ -9,6 +8,7 @@ from catboost.core import CatBoost
 from catboost.core import CatBoostRegressor
 from catboost.core import CatBoostClassifier
 
+import numpy as np
 import bentoml
 import bentoml.models
 from bentoml.exceptions import BentoMLException

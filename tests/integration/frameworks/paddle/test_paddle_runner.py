@@ -1,8 +1,8 @@
-import numpy as np
 import psutil
 import pytest
 import paddle.inference
 
+import numpy as np
 import bentoml
 
 from .test_paddle_impl import test_df  # noqa: F401

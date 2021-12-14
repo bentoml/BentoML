@@ -35,7 +35,6 @@ Instruction for installing `paddlepaddle`:
 """  # noqa: LN001
 
 if TYPE_CHECKING:
-    import numpy as np
     import paddle
     import paddle.nn
     import paddlehub as hub
@@ -43,6 +42,8 @@ if TYPE_CHECKING:
     import paddlehub.module.module as module
     from paddle.static import InputSpec
     from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
+
+    import numpy as np
 
     from ..models import ModelStore
 

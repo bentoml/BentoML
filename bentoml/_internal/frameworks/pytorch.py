@@ -16,7 +16,7 @@ from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
-from ...exceptions import MissingDependencyException
+from ...exceptions import MissingDependencyException, BentoMLException
 from ..runner.utils import Params
 from ..runner.utils import TypeRef
 from ..runner.container import Payload
@@ -41,6 +41,8 @@ except ImportError:  # pragma: no cover
     )
 
 _ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule"]  # type: ignore[reportPrivateUsage]
+
+MODULE_NAME = "bentoml.pytorch"
 
 _torch_version = get_pkg_version("torch")
 
@@ -75,6 +77,10 @@ def load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
     bentoml_model = model_store.get(tag)
+    if bentoml_model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+        )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     # TorchScript Models are saved as zip files
     if zipfile.is_zipfile(weight_file):
@@ -148,7 +154,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,

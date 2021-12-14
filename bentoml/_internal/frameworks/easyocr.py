@@ -35,6 +35,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.easyocr"
+
 _easyocr_version = get_pkg_version("easyocr")
 
 
@@ -66,11 +68,9 @@ def load(
     """  # noqa
 
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with"
-            f" module {model.info.module},"
-            f" failed loading with {__name__}."
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
     return easyocr.Reader(
@@ -155,7 +155,7 @@ def save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,

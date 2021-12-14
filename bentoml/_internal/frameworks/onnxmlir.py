@@ -9,7 +9,7 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Runner
-from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import MissingDependencyException, BentoMLException
 
 from ..models import Model
 from ..models import SAVE_NAMESPACE
@@ -31,6 +31,8 @@ PyRuntime is not found in PYTHONPATH. Refers to
     )
 
 ONNXMLIR_EXTENSION: str = ".so"
+
+MODULE_NAME = "bentoml.onnxmlir"
 
 
 @inject
@@ -60,6 +62,10 @@ def load(
     Examples::
     """  # noqa
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     compiled_path = model.path_of(model.info.options["compiled_path"])
     return ExecutionSession(compiled_path, "run_main_graph")
 
@@ -97,7 +103,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         metadata=metadata,
         context=context,

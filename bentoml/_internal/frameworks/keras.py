@@ -10,7 +10,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import MissingDependencyException, BentoMLException
 
 from ..models import Model
 from ..models import H5_EXT
@@ -44,6 +44,8 @@ except ImportError:  # pragma: no cover
     )
 
 from .tensorflow import _TensorflowRunner  # type: ignore[reportPrivateUsage]
+
+MODULE_NAME = "bentoml.keras"
 
 _tf_version = get_tf_version()
 TF2 = _tf_version.startswith("2")
@@ -95,6 +97,11 @@ def load(
     """  # noqa
 
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+
     default_custom_objects = None
     if model.info.options["custom_objects"]:
         assert Path(model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
@@ -165,7 +172,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,

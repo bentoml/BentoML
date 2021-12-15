@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 import uuid
 import base64
 import typing as t
@@ -18,6 +19,11 @@ import cattr
 from ..exceptions import BentoMLException
 from .utils.validation import validate_tag_str
 from .utils.dataclasses import json_serializer
+
+if sys.version_info < (3, 7):
+    from backports.datetime_fromisoformat import MonkeyPatch
+
+    MonkeyPatch.patch_fromisoformat()
 
 logger = logging.getLogger(__name__)
 

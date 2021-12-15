@@ -210,11 +210,13 @@ class PythonOptions:
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
             logger.warning(
-                f'Build option python: requirements_txt="{self.requirements_txt}" found, this will ignore the option: packages="{self.packages}"'
+                f'Build option python: requirements_txt="{self.requirements_txt}" found,'
+                f' this will ignore the option: packages="{self.packages}"'
             )
         if self.no_index and (self.index_url or self.extra_index_url):
             logger.warning(
-                "Bulid option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
+                "Build option python.no_index=True found, this will ignore index_url"
+                " and extra_index_url option when installing PyPI packages"
             )
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str):
@@ -230,7 +232,7 @@ class PythonOptions:
         # Note: although wheel files outside of build_ctx will also work, we should
         # discourage users from doing that
         if self.wheels is not None:
-            for whl_file in self.wheels:
+            for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
@@ -262,13 +264,13 @@ class PythonOptions:
         if self.index_url:
             pip_args.append(f"--index-url={self.index_url}")
         if self.trusted_host:
-            for item in self.trusted_host:
+            for item in self.trusted_host:  # pylint: disable=not-an-iterable
                 pip_args.append(f"--trusted-host={item}")
         if self.find_links:
-            for item in self.find_links:
+            for item in self.find_links:  # pylint: disable=not-an-iterable
                 pip_args.append(f"--find-links={item}")
         if self.extra_index_url:
-            for item in self.extra_index_url:
+            for item in self.extra_index_url:  # pylint: disable=not-an-iterable
                 pip_args.append(f"--extra-index-url={item}")
         if self.pip_args:
             # Additional user provided pip_args
@@ -419,14 +421,16 @@ class BentoBuildConfig:
         except KeyError as e:
             if str(e) == "'service'":
                 raise InvalidArgument(
-                    'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
+                    'Missing required build config field "service", which'
+                    " indicates import path of target bentoml.Service instance."
+                    ' e.g.: "service: fraud_detector.py:svc"'
                 )
             else:
                 raise
 
     def to_yaml(self, stream: t.TextIO):
         # TODO: Save BentoBuildOptions to a yaml file
-        # This is reserved for building iteractive build file creation CLI
+        # This is reserved for building interactive build file creation CLI
         raise NotImplementedError
 
 

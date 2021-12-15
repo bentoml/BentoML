@@ -10,6 +10,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 write_to = "bentoml/_version.py"
 git_describe_command = "git describe --dirty --tags --long --first-parent"
+version_scheme = "post-release"
 
 [tool.black]
 line-length = 88

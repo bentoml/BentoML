@@ -9,7 +9,7 @@ VALID_BRANCH_REGEX="^(style|chore|refactor|feat|internal|bugfix|improvement|libr
 cd "$GIT_ROOT" || exit
 
 # format setup.cfg
-setup-cfg-fmt "$GIT_ROOT/setup.cfg"
+setup-cfg-fmt --max-py-version 3.9 "$GIT_ROOT/setup.cfg"
 
 # Run format scripts
 # ./scripts/tools/formatter.sh || exit 1

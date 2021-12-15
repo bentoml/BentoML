@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ..types import Tag
 from ..runner import Runner
 from ...exceptions import BentoMLException
-from ..bento.bento import _get_default_bento_readme
+from ..bento.bento import get_default_bento_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
 from ..utils.validation import validate_tag_str
@@ -75,14 +75,12 @@ class Service:
 
     def _set_runners(self, runners: t.Sequence[Runner]) -> None:
         for runner in runners:
-            i = 0
-            while True:
-                name = runner.name if i == 0 else f"{runner.name}_{i}"
-                if name not in self.runners:
-                    self.runners[name] = runner
-                    break
-                else:
-                    i += 1
+            if runner.name in self.runners:
+                raise ValueError(
+                    f"duplicate runner name: {runner.name} found. "
+                    f"Please set different runner names."
+                )
+            self.runners[runner.name] = runner
 
     def _on_asgi_app_startup(self) -> None:
         # TODO: initialize Local Runner instances or Runner Clients here
@@ -201,4 +199,4 @@ class Service:
         if self.bento is not None:
             return self.bento.doc
 
-        return _get_default_bento_readme(self)
+        return get_default_bento_readme(self)

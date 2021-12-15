@@ -8,12 +8,13 @@ import functools
 from typing import TYPE_CHECKING
 from distutils.dir_util import copy_tree
 
+import attr
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.frameworks import ModelRunner
 
 from ..types import PathType
 from ..models import Model
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     import numpy as np
     import tensorflow.keras as keras
     from _internal.models import ModelStore
+    from tensorflow.python.client.session import BaseSession
 
 try:
     import tensorflow as tf
@@ -393,43 +395,18 @@ def save(
     return _model.tag
 
 
-class TensorflowRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        device_id: str,
-        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+def _validate_device(device_id: str) -> bool:
+    assert any(device_id in d.name for d in device_lib.list_local_devices())
+    return True
 
-        self._device_id = device_id
-        self._predict_fn_name = predict_fn_name
-        assert any(device_id in d.name for d in device_lib.list_local_devices())
-        self._partial_kwargs: t.Dict[str, t.Any] = (
-            partial_kwargs if partial_kwargs is not None else dict()
-        )
 
-    def _configure(self, device_id: str) -> None:
-        if TF2 and "GPU" in device_id:
-            tf.config.set_visible_devices(device_id, "GPU")
-        self._config_proto = dict(
-            allow_soft_placement=True,
-            log_device_placement=False,
-            intra_op_parallelism_threads=self.num_concurrency_per_replica,
-            inter_op_parallelism_threads=self.num_concurrency_per_replica,
-        )
+@attr.define(kw_only=True)
+class TensorflowRunner(ModelRunner):
+    predict_fn_name: str
+    device_id: str
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]]
 
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+    _session: "BaseSession"
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -443,19 +420,25 @@ class TensorflowRunner(Runner):
             return len(tf.config.list_physical_devices("GPU"))
         return 1
 
-    # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
-        self._configure(self._device_id)
-        # setup a global session for model runner
-        self._session = tf.compat.v1.Session(
-            config=tf.compat.v1.ConfigProto(**self._config_proto)
-        )
-        self._model = load(self._model_tag, model_store=self._model_store)
-        if not TF2:
+        assert any(self.device_id in d.name for d in device_lib.list_local_devices())
+        self._model = load(self.tag, model_store=self.model_store)
+        if TF2 and "GPU" in self.device_id:
+            tf.config.set_visible_devices(self.device_id, "GPU")
             raw_predict_fn = self._model.signatures["serving_default"]
         else:
-            raw_predict_fn = getattr(self._model, self._predict_fn_name)
-        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
+            _config_proto = dict(
+                allow_soft_placement=True,
+                log_device_placement=False,
+                intra_op_parallelism_threads=self.num_concurrency_per_replica,
+                inter_op_parallelism_threads=self.num_concurrency_per_replica,
+            )
+            self._session = tf.compat.v1.Session(
+                config=tf.compat.v1.ConfigProto(**_config_proto)
+            )
+
+            raw_predict_fn = getattr(self._model, self.predict_fn_name)
+        self._predict_fn = functools.partial(raw_predict_fn, **self.partial_kwargs)
 
     def _run_batch(
         self,
@@ -474,7 +457,7 @@ class TensorflowRunner(Runner):
             ]
         ](*args, **kwargs)
 
-        with tf.device(self._device_id):
+        with tf.device(self.device_id):
 
             def _mapping(
                 item: t.Union[
@@ -536,6 +519,10 @@ def load_runner(
         Runner instances for `bentoml.tensorflow` model
     Examples::
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
     return TensorflowRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,

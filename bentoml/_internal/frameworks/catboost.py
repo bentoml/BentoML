@@ -1,13 +1,15 @@
+# type: ignore[reportMissingTypeStubs]
 import typing as t
 from typing import TYPE_CHECKING
 
+import attr
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.frameworks import ModelRunner
 
 from ..utils import LazyLoader
 from ..models import Model
@@ -219,28 +221,13 @@ def save(
     return _model.tag
 
 
-class CatBoostRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+@attr.define(kw_only=True)
+class CatBoostRunner(ModelRunner):
+    predict_fn_name: str = attr.ib()
+    model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = attr.ib()
 
-        self._predict_fn_name = predict_fn_name
-        self._model_params = model_params
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+    _model: CatBoostModelType = attr.ib(init=False)
+    _predict_fn: t.Callable[[t.Any], t.Any] = attr.ib(init=False)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -250,15 +237,12 @@ class CatBoostRunner(Runner):
     def num_replica(self) -> int:
         return int(round(self.resource_quota.cpu))
 
-    # pylint: disable=attribute-defined-outside-init
-    def _setup(
-        self,
-    ) -> None:
+    def _setup(self) -> None:
         _, model_file, model_params = _get_model_info(
-            self._model_tag, self._model_params, self._model_store
+            self.tag, self.model_params, self.model_store
         )
         self._model = _load_helper(model_file, model_params)
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn = getattr(self._model, self.predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
@@ -266,7 +250,7 @@ class CatBoostRunner(Runner):
         inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame", cbt.Pool],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         res = self._predict_fn(inputs)
-        return np.asarray(res)
+        return np.asarray(res)  # type: ignore
 
 
 @inject
@@ -275,9 +259,10 @@ def load_runner(
     predict_fn_name: str = "predict",
     *,
     model_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "CatBoostRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -295,6 +280,8 @@ def load_runner(
                   a `CatBoostClassifier` or `CatBoostRegressor`
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
+        name (`t.Optional[str]`, default to `None`):
+            Name for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -312,11 +299,16 @@ def load_runner(
         runner = bentoml.catboost.load_runner("my_model:latest"")
         runner.run(cbt.Pool(input_data))
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
     return CatBoostRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         model_params=model_params,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
+        name=name,
+        resource_quota=resource_quota,  # type: ignore
+        batch_options=batch_options,  # type: ignore
         model_store=model_store,
     )

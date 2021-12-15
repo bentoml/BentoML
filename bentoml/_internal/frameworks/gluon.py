@@ -1,12 +1,14 @@
+# type: ignore[reportMissingTypeStubs]
 import typing as t
 from typing import TYPE_CHECKING
 
+import attr
 import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
+from bentoml._internal.frameworks import ModelRunner
 
 from ..models import Model
 from ..models import JSON_EXT
@@ -18,7 +20,8 @@ from ..runner.utils import Params
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    # pylint: disable=unused-import
+    from bentoml._internal.frameworks import AnyNdarray
+
     from ..models import ModelStore
 
 try:
@@ -124,30 +127,13 @@ def save(
     return _model.tag
 
 
-class GluonRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+@attr.define(kw_only=True)
+class GluonRunner(ModelRunner):
+    predict_fn_name: str = attr.ib()
 
-        self._predict_fn_name = predict_fn_name
-        self._ctx = None
-
-        self._model: "gluon.Block"
-        self._predict_fn: t.Callable[..., t.Any]
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+    _ctx: "mxnet.Context" = attr.ib(init=False)
+    _model: "gluon.Block" = attr.ib(init=False)
+    _predict_fn: t.Callable[..., t.Any] = attr.ib(init=False)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -165,14 +151,14 @@ class GluonRunner(Runner):
         else:
             ctx = mxnet.cpu()
         self._ctx = ctx
-        self._model = load(self._model_tag, ctx, self._model_store)
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        self._model = load(self.tag, ctx, self.model_store)
+        self._predict_fn = getattr(self._model, self.predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(
         self,
-        *args: t.Union[np.ndarray[t.Any, t.Any], mxnet.ndarray.NDArray],
-        **kwargs: t.Union[np.ndarray[t.Any, t.Any], mxnet.ndarray.NDArray],
+        *args: t.Union["AnyNdarray", mxnet.ndarray.NDArray],
+        **kwargs: t.Union["AnyNdarray", mxnet.ndarray.NDArray],
     ) -> np.ndarray[t.Any, t.Any]:
         params = Params(*args, **kwargs)
         if isinstance(params.sample, np.ndarray):
@@ -193,9 +179,10 @@ def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "__call__",
     *,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> GluonRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -219,11 +206,16 @@ def load_runner(
 
     Examples:
         TODO
-    """  # noqa
-    return GluonRunner(
+    """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
+    return GluonRunner(  # pylint: disable=unexpected-keyword-arg
         tag=tag,
         predict_fn_name=predict_fn_name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
+        name=name,
+        resource_quota=resource_quota,  # type: ignore[reportGeneralTypeIssues]
+        batch_options=batch_options,  # type: ignore[reportGeneralTypeIssues]
     )

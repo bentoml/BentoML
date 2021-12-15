@@ -4,6 +4,7 @@ import functools
 from typing import TYPE_CHECKING
 from pathlib import Path
 
+import attr
 import numpy as np
 import cloudpickle
 from simple_di import inject
@@ -50,8 +51,6 @@ TF2 = _tf_version.startswith("2")
 
 
 # Global instance of tf.Session()
-_graph: "Graph" = tf.compat.v1.get_default_graph()
-_sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
 
 
 _CUSTOM_OBJ_FNAME = f"{SAVE_NAMESPACE}_custom_objects{PKL_EXT}"
@@ -187,6 +186,9 @@ def save(
 
 
 class KerasRunner(TensorflowRunner):
+    _session: "BaseSession"
+    _graph: "Graph"
+
     @inject
     def __init__(
         self,
@@ -220,6 +222,10 @@ class KerasRunner(TensorflowRunner):
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
+        if TF2:
+            self._graph = tf.compat.v1.get_default_graph()
+            self._session = tf.compat.v1.Session(graph=self._graph)
+
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
         self,
@@ -232,11 +238,11 @@ class KerasRunner(TensorflowRunner):
         with tf.device(self._device_id):
             if TF2:
                 tf.compat.v1.global_variables_initializer()
+                return self._predict_fn(input_data)
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
-                with get_session().as_default():
-                    self._predict_fn(input_data)
-            return self._predict_fn(input_data)
+                with self._session.as_default():
+                    return self._predict_fn(input_data)
 
 
 @inject

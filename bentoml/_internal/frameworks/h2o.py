@@ -1,14 +1,16 @@
+# type: ignore[reportMissingTypeStubs]
 import typing as t
 from typing import TYPE_CHECKING
 
+import attr
 import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.frameworks import ModelRunner
 
 from ..models import Model
 from ..models import SAVE_NAMESPACE
@@ -18,8 +20,9 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ..models import ModelStore  # noqa
+    from bentoml._internal.frameworks import AnyNdarray
 
+    from ..models import ModelStore
 
 try:
     import h2o
@@ -129,35 +132,20 @@ def save(
     return _model.tag
 
 
-class H2ORunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+@attr.define(kw_only=True)
+class H2ORunner(ModelRunner):
+    predict_fn_name: str = attr.ib()
+    init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]] = attr.ib()
 
-        self._predict_fn_name = predict_fn_name
-        self._init_params = {} if init_params is None else init_params
-
-        self._model: h2o.model.ModelBase
-        self._predict_fn: t.Callable[..., t.Any]
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+    _model: h2o.model.ModelBase = attr.ib(init=False)
+    _predict_fn: t.Callable[..., t.Any] = attr.ib(init=False)
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        nthreads = int(self._init_params.get("nthreads", -1))
+        if self.init_params is None:
+            nthreads = -1
+        else:
+            nthreads = int(self.init_params.get("nthreads", -1))
 
         if nthreads == -1:
             return int(round(self.resource_quota.cpu))
@@ -169,11 +157,11 @@ class H2ORunner(Runner):
 
     def _setup(self) -> None:
         self._model = load(
-            self._model_tag,
-            init_params=self._init_params,
-            model_store=self._model_store,
+            self.tag,
+            init_params=self.init_params,
+            model_store=self.model_store,
         )
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn = getattr(self._model, self.predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
@@ -185,8 +173,10 @@ class H2ORunner(Runner):
         res = self._predict_fn(input_data)
 
         if isinstance(res, h2o.H2OFrame):
-            res = res.as_data_frame()
-        return np.asarray(res)
+            res = t.cast(
+                "pd.DataFrame", res.as_data_frame(use_pandas=True, header=True)
+            )
+        return t.cast("AnyNdarray", np.asarray(res))
 
 
 @inject
@@ -195,6 +185,7 @@ def load_runner(
     predict_fn_name: str = "predict",
     *,
     init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -225,12 +216,17 @@ def load_runner(
     Examples::
         TODO
 
-    """  # noqa
-    return H2ORunner(
+    """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
+    return H2ORunner(  # pylint: disable=unexpected-keyword-arg
         tag=tag,
         predict_fn_name=predict_fn_name,
-        init_params=init_params,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
+        name=name,
+        init_params=init_params,
+        resource_quota=resource_quota,  # type: ignore[reportGeneralTypeIssues]
+        batch_options=batch_options,  # type: ignore[reportGeneralTypeIssues]
     )

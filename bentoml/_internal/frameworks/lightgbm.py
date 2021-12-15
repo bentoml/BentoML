@@ -2,14 +2,15 @@ import os
 import typing as t
 from typing import TYPE_CHECKING
 
+import attr
 import joblib
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.frameworks import ModelRunner
 
 from ..models import Model
 from ..models import PKL_EXT
@@ -20,8 +21,16 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
+    import lightgbm as lgb
 
     from ..models import ModelStore
+
+    LightGBMModelType = t.Union[
+        "lgb.LGBMModel",
+        "lgb.LGBMClassifier",
+        "lgb.LGBMRegressor",
+        "lgb.LGBMRanker",
+    ]
 
 try:
     import lightgbm as lgb  # noqa: F811
@@ -34,13 +43,6 @@ except ImportError:  # pragma: no cover
     )
 
 _lightgbm_version = get_pkg_version("lightgbm")
-
-_LightGBMModelType = t.TypeVar(
-    "_LightGBMModelType",
-    bound=t.Union[
-        "lgb.LGBMModel", "lgb.LGBMClassifier", "lgb.LGBMRegressor", "lgb.LGBMRanker"
-    ],
-)
 
 
 def _get_model_info(
@@ -76,7 +78,7 @@ def load(
     tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["lgb.basic.Booster", _LightGBMModelType]:
+) -> t.Union["lgb.basic.Booster", "LightGBMModelType"]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -107,7 +109,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Union["lgb.basic.Booster", _LightGBMModelType],
+    model: t.Union["lgb.basic.Booster", "LightGBMModelType"],
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -185,14 +187,14 @@ def save(
     )
 
     _model.info.options["sklearn_api"] = False
-    if any(
-        isinstance(model, _)
-        for _ in [
+    if isinstance(
+        model,
+        (
             lgb.LGBMModel,
             lgb.LGBMClassifier,
             lgb.LGBMRegressor,
             lgb.LGBMRanker,
-        ]
+        ),
     ):
         joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
         _model.info.options["sklearn_api"] = True
@@ -204,37 +206,23 @@ def save(
     return _model.tag
 
 
-class LightGBMRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        infer_api_callback: str,
-        booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+@attr.define(kw_only=True)
+class LightGBMRunner(ModelRunner):
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = attr.ib()
+    infer_api_callback: str = attr.ib()
 
-        self._model_store = model_store
-        self._booster_params = booster_params
-        self._infer_api_callback = infer_api_callback
-
-        self._model = None
+    _model: t.Any = attr.ib(init=False)
+    _predict_fn: t.Callable[..., t.Any] = attr.ib(init=False)
 
     def _is_gpu(self) -> bool:
-        try:
-            return "gpu" in self._booster_params["device"]
-        except KeyError:
-            return False
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+        if (
+            self.booster_params is not None
+            and "device" in self.booster_params
+            and isinstance(self.booster_params["device"], str)
+            and "gpu" in self.booster_params["device"]
+        ):
+            return True
+        return False
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -248,17 +236,18 @@ class LightGBMRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         _, _, booster_params = _get_model_info(
-            self._model_tag, self._booster_params, self._model_store
+            self.tag,
+            self.booster_params,
+            self.model_store,
         )
         self._model = load(
-            tag=self._model_tag,
+            tag=self.tag,
             booster_params=booster_params,
-            model_store=self._model_store,
+            model_store=self.model_store,
         )
-        self._predict_fn = getattr(self._model, self._infer_api_callback)
+        self._predict_fn = getattr(self._model, self.infer_api_callback)
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":  # type: ignore[override]
@@ -270,6 +259,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     infer_api_callback: str = "predict",
     *,
+    name: t.Optional[str] = None,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -304,12 +294,17 @@ def load_runner(
 
         runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
         runner.run_batch(X_test, num_iteration=gbm.best_iteration)
-    """  # noqa
-    return LightGBMRunner(
+    """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
+    return LightGBMRunner(  # pylint: disable=unexpected-keyword-arg
         tag=tag,
         infer_api_callback=infer_api_callback,
         booster_params=booster_params,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
+        name=name,
+        resource_quota=resource_quota,  # type: ignore[reportGeneralTypeIssues
+        batch_options=batch_options,  # type: ignore[reportGeneralTypeIssues]
         model_store=model_store,
     )

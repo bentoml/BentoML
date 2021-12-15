@@ -5,6 +5,7 @@ import importlib.util
 from typing import TYPE_CHECKING
 from pathlib import Path
 
+import attr
 import yaml
 from simple_di import inject
 from simple_di import Provide
@@ -13,6 +14,7 @@ from bentoml import Tag
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.frameworks import ModelRunner
 
 from ..models import Model as BentoModel
 from ..utils.pkg import get_pkg_version
@@ -197,23 +199,9 @@ def import_from_uri(
     return _model.tag
 
 
-class PyFuncRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+@attr.define(kw_only=True)
+class PyFuncRunner(ModelRunner):
+    _model: t.Any = attr.ib(init=False)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -225,7 +213,7 @@ class PyFuncRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        model_info = self._model_store.get(self._model_tag)
+        model_info = self.model_store.get(self.tag)
         path = model_info.info.options["mlflow_folder"]
         artifact_path = model_info.path_of(path)
         self._model = mlflow.pyfunc.load_model(artifact_path, suppress_warnings=False)
@@ -238,6 +226,8 @@ class PyFuncRunner(Runner):
 @inject
 def load_runner(
     tag: t.Union[str, Tag],
+    *,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -263,10 +253,15 @@ def load_runner(
         Runner or BentoML runner instance that maps to MLflow flavors
 
     Examples::
-    """  # noqa
-    return PyFuncRunner(
-        tag,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
+    """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
+    return PyFuncRunner(  # pylint: disable=unexpected-keyword-arg
+        tag=tag,
+        name=name,
+        resource_quota=resource_quota,  # type: ignore[reportGeneralTypeIssues
+        batch_options=batch_options,  # type: ignore[reportGeneralTypeIssues]
         model_store=model_store,
     )

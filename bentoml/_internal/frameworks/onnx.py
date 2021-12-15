@@ -3,6 +3,7 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
+import attr
 from simple_di import inject
 from simple_di import Provide
 
@@ -368,6 +369,7 @@ class ONNXRunner(Runner):
 def load_runner(
     tag: t.Union[str, Tag],
     *,
+    name: t.Optional[str] = None,
     backend: str = "onnxruntime",
     gpu_device_id: int = -1,
     disable_copy_in_default_stream: bool = False,
@@ -409,7 +411,7 @@ def load_runner(
         Runner instances for `bentoml.onnx` model
 
     Examples::
-    """  # noqa
+    """
     return ONNXRunner(
         tag=tag,
         backend=backend,
@@ -417,6 +419,7 @@ def load_runner(
         disable_copy_in_default_stream=disable_copy_in_default_stream,
         providers=providers,
         session_options=session_options,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

@@ -5,6 +5,7 @@ import functools
 from typing import TYPE_CHECKING
 from pathlib import Path
 
+import attr
 import cloudpickle
 from simple_di import inject
 from simple_di import Provide

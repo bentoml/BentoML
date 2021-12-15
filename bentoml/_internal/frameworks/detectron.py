@@ -1,13 +1,14 @@
+# type: ignore[reportMissingTypeStubs]
 import os
 import typing as t
 from typing import TYPE_CHECKING
 
+import attr
 import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -16,10 +17,14 @@ from ..models import PTH_EXT
 from ..models import YAML_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from ..frameworks import ModelRunner
 from ..runner.utils import Params
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from detectron2.checkpoint import DetectionCheckpointer
+
+    from . import AnyNdarray
     from ..models import ModelStore
 
 try:
@@ -28,7 +33,7 @@ try:
     import detectron2.config as config
     import detectron2.modeling as modeling
     import detectron2.checkpoint as checkpoint
-    from detectron2.checkpoint import DetectionCheckpointer
+
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """detectron2 is required in order to use module `bentoml.detectron`,
@@ -187,34 +192,23 @@ def save(
             "w",
             encoding="utf-8",
         ) as ouf:
-            ouf.write(model_config.dump())
+            out_str = t.cast(str, model_config.dump())
+            ouf.write(out_str)
 
     _model.save(model_store)
 
     return _model.tag
 
 
-class DetectronRunner(Runner):
-    @inject
-    # TODO add partial_kwargs @larme
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+@attr.define(kw_only=True)
+class DetectronRunner(ModelRunner):
+    predict_fn_name: str = attr.ib()
 
-        self._predict_fn_name = predict_fn_name
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+    _model: "torch.nn.Module" = attr.ib(init=False)
+    _predict_fn: t.Callable[
+        [t.List[t.Dict[str, "torch.Tensor"]]],
+        "torch.Tensor",
+    ] = attr.ib(init=False)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -226,36 +220,32 @@ class DetectronRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         if self.resource_quota.on_gpu:
             device = "cuda"
         else:
             device = "cpu"
-        self._model = load(self._model_tag, device, self._model_store)
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(
+        self._model = load(self.tag, device, self.model_store)
+        self._predict_fn = getattr(self._model, self.predict_fn_name)
+
+    @staticmethod
+    def _input_mapping(item: t.Union["AnyNdarray", torch.Tensor]) -> torch.Tensor:
+        if isinstance(item, np.ndarray):
+            return torch.from_numpy(item)
+        return item
+
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](
-            *args
-        )
+        *args: t.Union["AnyNdarray", torch.Tensor],
+    ) -> "AnyNdarray":
+        params = Params(*args)
 
-        def _mapping(
-            item: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]
-        ) -> torch.Tensor:
-            if isinstance(item, np.ndarray):
-                return torch.from_numpy(item)
-            return item
-
-        params = params.map(_mapping)
-
+        params = params.map(self._input_mapping)
         inputs = [{"image": image} for image in params.args]
-
         res = self._predict_fn(inputs)
-        return np.asarray(res, dtype=object)
+        return np.asarray(res)  # type: ignore
 
 
 @inject
@@ -263,9 +253,10 @@ def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "__call__",
     *,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> DetectronRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -277,23 +268,30 @@ def load_runner(
             Model tag to retrieve model from modelstore
         predict_fn_name (`str`, default to `__call__`):
             Options for inference functions. Default to `__call__`
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+        name (`t.Optional[str]`, default to `None`):
+            Name for runner.
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
-        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         Runner instances for `bentoml.detectron` model
 
     Examples:
         TODO
-    """  # noqa
-    return DetectronRunner(
+    """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
+    return DetectronRunner(  # pylint: disable=unexpected-keyword-arg
         tag=tag,
         predict_fn_name=predict_fn_name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
+        name=name,
+        resource_quota=resource_quota,  # type: ignore
+        batch_options=batch_options,  # type: ignore
     )

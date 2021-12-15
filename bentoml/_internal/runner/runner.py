@@ -1,5 +1,6 @@
 import os
 import re
+import abc
 import enum
 import typing as t
 from abc import ABC
@@ -27,34 +28,32 @@ if TYPE_CHECKING:
         from psutil._pswindows import svmem
 
 
+def _get_default_cpu() -> float:
+    # Default to the total CPU count available in current node or cgroup
+    if psutil.POSIX:
+        return query_cgroup_cpu_count()
+    else:
+        cpu_count = os.cpu_count()
+        if cpu_count is not None:
+            return float(cpu_count)
+        raise ValueError("CPU count is NoneType")
+
+
+def _get_default_mem() -> int:
+    # Default to the total memory available
+    from psutil import virtual_memory
+
+    mem: "svmem" = virtual_memory()
+    return mem.total
+
+
 @attr.define
 class ResourceQuota:
-    cpu: float = attr.field(converter=cpu_converter)
-    mem: int = attr.field(converter=mem_converter)
-
+    cpu: float = attr.field(converter=cpu_converter, factory=_get_default_cpu)
+    mem: int = attr.field(converter=mem_converter, factory=_get_default_mem)
+    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
-
-    @cpu.default  # type: ignore
-    def _get_default_cpu(self) -> float:
-        # Default to the total CPU count available in current node or cgroup
-        if psutil.POSIX:
-            return query_cgroup_cpu_count()
-        else:
-            cpu_count = os.cpu_count()
-            if cpu_count is not None:
-                return float(cpu_count)
-            raise ValueError("CPU count is NoneType")
-
-    @mem.default  # type: ignore
-    def _get_default_mem(self) -> int:
-        # Default to the total memory available
-        from psutil import virtual_memory
-
-        mem: "svmem" = virtual_memory()
-        return mem.total
-
     @property
     def on_gpu(self) -> bool:
         if self.gpus is not None:
@@ -87,35 +86,39 @@ class BatchOptions:
 VARNAME_RE = re.compile(r"\W|^(?=\d)")
 
 
-class _BaseRunner:
+class _BaseRunner(abc.ABC):
+    name: str
+    resource_quota: ResourceQuota
+    batch_options: BatchOptions
+
     def __init__(
         self,
-        display_name: t.Union[str, Tag],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
         batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     ):
-        if isinstance(display_name, Tag):
-            display_name = display_name.name
-        if not display_name.isidentifier():
-            display_name = VARNAME_RE.sub("_", display_name)
-        self.name = display_name
-
+        if not name.isidentifier():
+            name = VARNAME_RE.sub("_", name)
+        self.name = name
         self.resource_quota = ResourceQuota(
             **(resource_quota if resource_quota else {})
         )
         self.batch_options = BatchOptions(**(batch_options if batch_options else {}))
 
     @property
+    @abstractmethod
     def num_concurrency_per_replica(self) -> int:
-        return 1
+        ...
 
     @property
+    @abstractmethod
     def num_replica(self) -> int:
-        return 1
+        ...
 
     @property
+    @abstractmethod
     def required_models(self) -> t.List[Tag]:
-        return []
+        ...
 
     @abstractmethod
     def _setup(self) -> None:

@@ -8,6 +8,7 @@ from pathlib import Path
 from functools import partial
 from distutils.dir_util import copy_tree
 
+import attr
 import yaml
 from simple_di import inject
 from simple_di import Provide

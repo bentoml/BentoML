@@ -3,14 +3,15 @@ import shutil
 import typing as t
 from typing import TYPE_CHECKING
 
+import attr
 import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.frameworks import ModelRunner
 
 from ..models import Model
 from ..models import PTH_EXT
@@ -18,10 +19,11 @@ from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from . import AnyNdarray
     from ..models import ModelStore
 
 try:
-    import easyocr
+    import easyocr  # type: ignore
 
     assert easyocr.__version__ >= "1.4", BentoMLException(
         "Only easyocr>=1.4 is supported by BentoML"
@@ -178,30 +180,13 @@ def save(
     return _model.tag
 
 
-class _EasyOCRRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        predict_params: t.Optional[t.Dict[str, t.Any]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+@attr.define(kw_only=True)
+class EasyOCRRunner(ModelRunner):
+    predict_fn_name: str = attr.ib()
+    predict_params: t.Optional[t.Dict[str, t.Any]] = attr.ib()
 
-        self._predict_fn_name = predict_fn_name
-        self._predict_params = predict_params
-
-        self._model = None
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+    _model: easyocr.Reader = attr.ib(init=False)
+    _predict_fn: t.Callable[["AnyNdarray"], "AnyNdarray"] = attr.ib(init=False)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -213,17 +198,23 @@ class _EasyOCRRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        model = load(self._model_tag, self.resource_quota.on_gpu, self._model_store)
-        self._predict_fn = getattr(model, self._predict_fn_name)
+    def _setup(self) -> None:
+        self._model = load(
+            self.tag,
+            self.resource_quota.on_gpu,
+            self.model_store,
+        )
+        self._predict_fn = getattr(self._model, self.predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self, input_data: np.ndarray[t.Any, t.Any]
-    ) -> "np.ndarray[t.Any, t.Any]":
-        res = self._predict_fn(input_data, **self._predict_params)
-        return np.asarray(res, dtype=object)
+        self, input_data: "AnyNdarray"
+    ) -> "AnyNdarray":
+        if self.predict_params is None:
+            res = self._predict_fn(input_data)
+        else:
+            res = self._predict_fn(input_data, **self.predict_params)
+        return np.asarray(res)  # type: ignore
 
 
 @inject
@@ -232,10 +223,11 @@ def load_runner(
     predict_fn_name: str = "readtext_batched",
     *,
     predict_params: t.Union[None, t.Dict[str, t.Union[str, t.Any]]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> _EasyOCRRunner:
+) -> EasyOCRRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.easyocr.load_runner` implements a Runner class that
@@ -268,11 +260,16 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """  # noqa
-    return _EasyOCRRunner(
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
+
+    return EasyOCRRunner(  # pylint: disable=unexpected-keyword-arg
         tag=tag,
         predict_fn_name=predict_fn_name,
         predict_params=predict_params,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
+        name=name,
+        resource_quota=resource_quota,  # type: ignore
+        batch_options=batch_options,  # type: ignore
     )

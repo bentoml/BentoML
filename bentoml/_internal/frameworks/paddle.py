@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 from distutils.dir_util import copy_tree
 
+import attr
 from simple_di import inject
 from simple_di import Provide
 

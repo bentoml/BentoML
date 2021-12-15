@@ -11,6 +11,7 @@ from pathlib import Path
 from importlib import import_module
 from contextlib import contextmanager
 
+import attr
 import requests
 from filelock import FileLock
 from simple_di import inject

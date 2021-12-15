@@ -37,6 +37,8 @@ except ImportError:  # pragma: no cover
 
 _h2o_version = get_pkg_version("h2o")
 
+MODULE_NAME = "bentoml.h2o"
+
 
 @inject
 def load(
@@ -68,11 +70,9 @@ def load(
     h2o.init(**init_params)
 
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with"
-            f" module {model.info.module},"
-            f" failed loading with {__name__}."
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
     path = model.path_of(SAVE_NAMESPACE)
@@ -119,7 +119,7 @@ def save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,

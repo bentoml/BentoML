@@ -58,7 +58,7 @@ def invalid_save_with_no_mlmodel(modelstore):
 
 
 def test_invalid_load(modelstore, invalid_save_with_no_mlmodel):
-    with pytest.raises(BentoMLException):
+    with pytest.raises(FileNotFoundError):
         _ = bentoml.mlflow.load(invalid_save_with_no_mlmodel, model_store=modelstore)
 
 

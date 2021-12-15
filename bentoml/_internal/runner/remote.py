@@ -1,5 +1,6 @@
 import json
 import typing as t
+import asyncio
 from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class RemoteRunnerClient(RunnerImpl):
     _conn: t.Optional["BaseConnector"] = None
     _client: t.Optional["ClientSession"] = None
+    _loop: t.Optional[asyncio.AbstractEventLoop] = None
 
     @inject
     def _get_conn(
@@ -33,8 +35,14 @@ class RemoteRunnerClient(RunnerImpl):
         import aiohttp
 
         uds: str = remote_runner_mapping[self._runner.name]
-        if self._conn is None or self._conn.closed:
-            self._conn = aiohttp.UnixConnector(path=uds)
+        if (
+            self._loop is None
+            or self._conn is None
+            or self._conn.closed
+            or self._loop.is_closed()
+        ):
+            self._loop = asyncio.get_event_loop()
+            self._conn = aiohttp.UnixConnector(path=uds, loop=self._loop)
         return self._conn
 
     @inject
@@ -44,7 +52,12 @@ class RemoteRunnerClient(RunnerImpl):
     ) -> "ClientSession":
         import aiohttp
 
-        if self._client is None or self._client.closed:
+        if (
+            self._loop is None
+            or self._client is None
+            or self._client.closed
+            or self._loop.is_closed()
+        ):
             jar = aiohttp.DummyCookieJar()
             if timeout_sec is not None:
                 timeout = aiohttp.ClientTimeout(total=timeout_sec)
@@ -57,6 +70,7 @@ class RemoteRunnerClient(RunnerImpl):
                 cookie_jar=jar,
                 connector_owner=False,
                 timeout=timeout,
+                loop=self._loop,
             )
         return self._client
 

@@ -1,7 +1,5 @@
 import os
 import typing as t
-import importlib
-import importlib.util
 from typing import TYPE_CHECKING
 from pathlib import Path
 
@@ -20,17 +18,13 @@ from ..frameworks import ModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-
-    import mlflow.pyfunc
     from mlflow.pyfunc import PyFuncModel
 
     from ..models import ModelStore
 
 
 try:
-    import mlflow
-    from mlflow.models import Model
-    from mlflow.models.model import MLMODEL_FILE_NAME
+    import mlflow.pyfunc
     from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 except ImportError:
     raise MissingDependencyException(
@@ -39,6 +33,8 @@ except ImportError:
         Instruction: `pip install -U mlflow`
         """
     )
+
+MODULE_NAME = "bentoml.mlflow"
 
 _mlflow_version = get_pkg_version("mlflow")
 
@@ -76,14 +72,12 @@ def load(
     Examples::
     """  # noqa
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     mlflow_folder = model.path_of(model.info.options["mlflow_folder"])
-    mlmodel_fpath = Path(mlflow_folder, MLMODEL_FILE_NAME)
-    if not mlmodel_fpath.exists():
-        raise BentoMLException(f"{MLMODEL_FILE_NAME} cannot be found.")
-    flavors = Model.load(mlmodel_fpath).flavors  # pragma: no cover
-    module = list(flavors.values())[0]["loader_module"]
-    loader_module = importlib.import_module(module)
-    return loader_module.load_model(mlflow_folder)  # noqa
+    return mlflow.pyfunc.load_model(mlflow_folder, suppress_warnings=False)
 
 
 def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
@@ -173,7 +167,7 @@ def import_from_uri(
 
     _model = BentoModel.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,

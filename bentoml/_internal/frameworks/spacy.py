@@ -48,6 +48,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.spacy"
+
 _spacy_version = get_pkg_version("spacy")
 
 _check_compat = _spacy_version.startswith("3")
@@ -92,6 +94,10 @@ def load_project(
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     if "projects_uri" in model.info.options:
         logger.warning(
             "We will only returns the path of projects saved under BentoML modelstore"
@@ -115,6 +121,11 @@ def load(
     config: t.Union[t.Dict[str, t.Any], "Config"] = util.SimpleFrozenDict(),  # noqa
 ) -> "spacy.language.Language":
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+
     if "projects_uri" in model.info.options:
         raise EnvironmentError(
             "Cannot use `bentoml.spacy.load()` to load Spacy Projects. Use"
@@ -199,7 +210,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
@@ -255,7 +266,7 @@ def projects(
     }
     _model = Model.create(
         save_name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,

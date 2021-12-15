@@ -40,6 +40,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.catboost"
+
 _catboost_version = get_pkg_version("catboost")
 
 # TODO: support cbt.Pool runner io container
@@ -53,10 +55,9 @@ def _get_model_info(
     model_store: "ModelStore",
 ) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with module {model.info.module}, failed loading "
-            f"with {__name__}."
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
     model_file = model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
@@ -202,7 +203,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=model_params,
         metadata=metadata,
         context=context,

@@ -62,6 +62,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.transformers"
+
 _transformers_version = get_pkg_version("transformers")
 
 try:
@@ -241,6 +243,11 @@ def load(
     """
     _check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+
     _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
 
     if _tokenizer != "na":
@@ -427,7 +434,7 @@ def _save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         context=context,
         options=None,
         metadata=metadata,

@@ -149,7 +149,6 @@ class Service:
 
     @property
     def asgi_app(self) -> "Starlette":
-        logger.info("Initializing HTTP server for %s", self)
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()

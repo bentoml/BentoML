@@ -66,6 +66,7 @@ for p in _PACKAGE:
         pass
 _onnx_version = importlib_metadata.version("onnx")
 
+MODULE_NAME = "bentoml.onnx"
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +92,9 @@ def _get_model_info(
     model_store: "ModelStore",
 ) -> t.Tuple["Model", str]:
     model = model_store.get(tag)
-    if model.info.module != __name__:
+    if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading "
-            f"with {__name__}."
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}")
     return model, model_file
@@ -184,7 +184,7 @@ def save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         metadata=metadata,
         context=context,
     )

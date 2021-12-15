@@ -44,6 +44,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.pycaret"
+
 _pycaret_version = get_pkg_version("pycaret")
 
 logger = logging.getLogger(__name__)
@@ -53,10 +55,9 @@ def _get_model_info(
     tag: t.Union[str, Tag], model_store: "ModelStore"
 ) -> t.Tuple["Model", PathType, PathType]:
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with module {model.info.module}, failed loading "
-            f"with {__name__}."
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}")
     pycaret_config = model.path_of(f"{PYCARET_CONFIG}{PKL_EXT}")
@@ -143,7 +144,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         metadata=metadata,
         context=context,
     )

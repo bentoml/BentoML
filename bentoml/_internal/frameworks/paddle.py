@@ -24,6 +24,8 @@ from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
+MODULE_NAME = "bentoml.paddle"
+
 PADDLE_MODEL_EXTENSION = ".pdmodel"
 PADDLE_PARAMS_EXTENSION = ".pdiparams"
 
@@ -140,6 +142,10 @@ def load(
     Examples::
     """
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     if "paddlehub" in model.info.context:
         if model.info.options["from_local_dir"]:
             return hub.Module(directory=model.path)
@@ -217,7 +223,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                 pass
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         context=context,
         metadata=metadata,
     )

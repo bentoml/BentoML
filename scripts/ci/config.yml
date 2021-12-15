@@ -20,6 +20,14 @@ general_features:
   dependencies:
     - "Pillow"
 
+general_features_sync:
+  <<: *tmpl
+  root_test_dir: "tests/e2e/bento_server_general_features_sync"
+  is_dir: true
+  type_tests: "e2e"
+  dependencies:
+    - "Pillow"
+
 catboost:
   <<: *tmpl
   dependencies:

@@ -197,7 +197,7 @@ def build_bentofile(
         build_ctx=build_ctx,
         model_store=_model_store,
     ).save(_bento_store)
-    logger.info("Bento build success, %s created", bento)
+    logger.info('Successfully built %s at "%s"', bento, bento.path)
     return bento
 
 

@@ -61,6 +61,7 @@ def serve_development(
     reload: bool = False,
     reload_delay: float = 0.25,
 ) -> None:
+    logger.info('Starting development BentoServer from "%s"', bento_identifier)
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
     from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
@@ -136,6 +137,7 @@ def serve_production(
     backlog: int = Provide[BentoServerContainer.config.backlog],
     app_workers: t.Optional[int] = None,
 ) -> None:
+    logger.info('Starting production BentoServer from "%s"', bento_identifier)
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
     svc = load(bento_identifier, working_dir=working_dir)
@@ -273,7 +275,6 @@ def start_prod_api_server(
         "backlog": backlog,
         "log_config": UVICORN_LOGGING_CONFIG,
     }
-
     uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
 

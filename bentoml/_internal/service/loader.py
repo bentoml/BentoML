@@ -247,15 +247,15 @@ def load(bento_identifier: str, working_dir: t.Optional[str] = None) -> "Service
             raise BentoMLException(
                 f"Failed loading Bento from directory {bento_identifier}: {e}"
             )
-        logger.info("Loaded from Bento directory: %s", svc)
+        logger.info("Service loaded from Bento directory: %s", svc)
     else:
         try:
             svc = import_service(bento_identifier, working_dir)
-            logger.info("Imported from source: %s", svc)
+            logger.info("Service imported from source: %s", svc)
         except ImportServiceError as e1:
             try:
                 svc = load_bento(bento_identifier)
-                logger.info("Loaded from Bento: %s", svc)
+                logger.info("Service loaded from Bento store: %s", svc)
             except (NotFound, ImportServiceError) as e2:
                 raise BentoMLException(
                     f"Failed to load bento or import service "

@@ -68,7 +68,7 @@ def is_pypi_installed_bentoml() -> bool:
     """
     # In a git repo with no tag, setuptools_scm generated version starts with "0.1."
     is_tagged = not BENTOML_VERSION.startswith("0.1.")
-    is_clean = not version_mod.version_tuple[-1].split(".")[-1].startswith("d")
+    is_clean = not str(version_mod.version_tuple[-1]).split(".")[-1].startswith("d")
     not_been_modified = BENTOML_VERSION == BENTOML_VERSION.split("+")[0]
     return is_tagged and is_clean and not_been_modified
 

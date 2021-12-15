@@ -111,23 +111,10 @@ def save(
     return _model.tag
 
 
-class ONNXMLirRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        self._model_store = model_store
-        self._model_tag = Tag.from_taglike(tag)
-        name = f"{self.__class__.__name__}_{self._model_tag.name}"
-        super().__init__(name, resource_quota, batch_options)
+@attr.define(kw_only=True)
+class ONNXMLirRunner(ModelRunner):
 
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
+    _session: "ExecutionSession" = attr.ib(init=False)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -150,6 +137,7 @@ class ONNXMLirRunner(Runner):
 def load_runner(
     tag: t.Union[str, Tag],
     *,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -176,6 +164,7 @@ def load_runner(
     """  # noqa
     return ONNXMLirRunner(
         tag=tag,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

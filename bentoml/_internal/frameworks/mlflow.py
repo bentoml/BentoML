@@ -11,13 +11,12 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
-from bentoml._internal.frameworks import ModelRunner
 
 from ..models import Model as BentoModel
 from ..utils.pkg import get_pkg_version
+from ..frameworks import ModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:

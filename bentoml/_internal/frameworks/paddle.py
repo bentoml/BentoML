@@ -8,12 +8,13 @@ from distutils.dir_util import copy_tree
 import attr
 from simple_di import inject
 from simple_di import Provide
+from tensorflow.python.util.tf_export import kwarg_only
 
 from bentoml import Tag
-from bentoml import Runner
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.frameworks import ModelRunner
 
 from ..utils import LazyLoader
 from ..models import Model
@@ -395,7 +396,14 @@ def import_from_paddlehub(
     )
 
 
-class PaddlePaddleRunner(Runner):
+@attr.define(kw_only=True)
+class PaddlePaddleRunner(ModelRunner):
+    infer_api_callback: str
+    device: str,
+    enable_gpu: bool,
+    gpu_mem_pool_mb: int,
+    config: t.Optional["paddle.inference.Config"],
+
     @inject
     def __init__(
         self,
@@ -484,6 +492,11 @@ class PaddlePaddleRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        if enable_gpu and not paddle.is_compiled_with_cuda():
+            raise BentoMLException(
+                "`enable_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
+                " Make sure to install `paddlepaddle-gpu` and try again."
+            )
         model_config = self._build_model_config(**self._config_kwargs)
         self._model = load(
             self._model_tag, config=model_config, model_store=self._model_store
@@ -547,6 +560,7 @@ def load_runner(
     enable_gpu: bool = False,
     gpu_mem_pool_mb: int = 0,
     config: t.Optional["paddle.inference.Config"] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -593,6 +607,7 @@ def load_runner(
         enable_gpu=enable_gpu,
         gpu_mem_pool_mb=gpu_mem_pool_mb,
         config=config,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

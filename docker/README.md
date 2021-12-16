@@ -136,6 +136,11 @@ docker run --gpus all --device /dev/nvidia0 --device /dev/nvidiactl \
 
 This section covers how BentoML internally manages its docker base image releases.
 
+<<<<<<< HEAD
+=======
+You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/main/docker/Dockerfile) to have a fully installed environment.
+```shell
+>>>>>>> chore: update documents url from master to main
 
 ## Image Manifest
 

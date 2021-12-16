@@ -19,7 +19,7 @@ Scikit-Learn
 
 Example Projects:
 
-* Sentiment Analysis - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__
+* Sentiment Analysis - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__
 
 .. autoclass:: bentoml.sklearn.SklearnModel
     :show-inheritance:
@@ -30,8 +30,8 @@ PyTorch
 
 Example Projects:
 
-* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__
-* CIFAR-10 Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__
+* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__
+* CIFAR-10 Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__
 
 .. autoclass:: bentoml.pytorch.PyTorchModel
     :show-inheritance:
@@ -43,9 +43,9 @@ Tensorflow 2.0 (Native API)
 
 Example Projects:
 
-* tf.Function model - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/echo/tensorflow-echo.ipynb>`__
-* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`__
-* Movie Review Sentiment with BERT - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb>`__
+* tf.Function model - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/tensorflow/echo/tensorflow-echo.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/tensorflow/echo/tensorflow-echo.ipynb>`__
+* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`__
+* Movie Review Sentiment with BERT - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/tensorflow/bert/bert_movie_reviews.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/tensorflow/bert/bert_movie_reviews.ipynb>`__
 
 .. autoclass:: bentoml.tensorflow.TensorflowModel
     :show-inheritance:
@@ -57,9 +57,9 @@ Keras (Tensorflow 2.0 as the backend)
 
 Example Projects:
 
-* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/fashion-mnist/keras-fashion-mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/fashion-mnist/keras-fashion-mnist.ipynb>`__
-* Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__
-* Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__
+* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/legacy-keras/fashion-mnist/keras-fashion-mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/legacy-keras/fashion-mnist/keras-fashion-mnist.ipynb>`__
+* Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/legacy-keras/text-classification/keras-text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/legacy-keras/text-classification/keras-text-classification.ipynb>`__
+* Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__
 
 .. autoclass:: bentoml.keras.KerasModel
     :show-inheritance:
@@ -71,7 +71,7 @@ Tensorflow 1.0
 
 Example Projects:
 
-* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__
+* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__
 
 .. autoclass:: bentoml.tensorflow.TensorflowModel
     :noindex:
@@ -83,7 +83,7 @@ FastAI v2
 
 Example Projects:
 
-* Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
+* Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
 .. autoclass:: bentoml.fastai.FastAIModel
     :show-inheritance:
@@ -94,8 +94,8 @@ XGBoost
 
 Example Projects:
 
-* Titanic Survival Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`__
-* League of Legend win Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`__
+* Titanic Survival Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`__
+* League of Legend win Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`__
 
 .. autoclass:: bentoml.xgboost.XgboostModel
 
@@ -104,7 +104,7 @@ LightGBM
 
 Example Projects:
 
-* Titanic Survival Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__
+* Titanic Survival Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__
 
 .. autoclass:: bentoml.lightgbm.LightGBMModel
 
@@ -114,7 +114,7 @@ FastText
 
 Example Projects:
 
-* Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-text/text-classification/text-classification.ipynb>`__
+* Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/fasttext/text-classification/text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/fast-text/text-classification/text-classification.ipynb>`__
 
 .. autoclass:: bentoml.fasttext.FastTextModel
 
@@ -123,8 +123,8 @@ H2O
 
 Example Projects:
 
-* Loan Default Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__
-* Prostate Cancer Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__
+* Loan Default Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__
+* Prostate Cancer Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__
 
 .. autoclass:: bentoml.h2o.H2OModel
 
@@ -141,7 +141,7 @@ ONNX
 
 Example Projects:
 
-* Image Classification with ResNet50 - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__
+* Image Classification with ResNet50 - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/onnx/resnet50/resnet50.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/onnx/resnet50/resnet50.ipynb>`__
 
 .. autoclass:: bentoml.onnx.ONNXModel
 
@@ -174,7 +174,7 @@ For statsmodels, we recommend using PickleModel:
 
 Example Projects:
 
-* Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
+* Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
 
 Gluon
@@ -200,7 +200,7 @@ Paddle
 
 Example Projects:
 
-* Boston Housing Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__
+* Boston Housing Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/main/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__
 
 .. autoclass:: bentoml.paddle.PaddlePaddleModel
 

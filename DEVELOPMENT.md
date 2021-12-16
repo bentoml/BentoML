@@ -37,7 +37,7 @@ print(bentoml.__version__)
 
 `pip` also supports installing directly from remote git repository. This makes it
 easy to try out new BentoML feature that has not been released, test changes in a pull
-request. For example, to install BentoML from its master branch:
+request. For example, to install BentoML from its main branch:
 
 ```bash
 pip install git+https://github.com/bentoml/BentoML.git

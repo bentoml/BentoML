@@ -2,7 +2,7 @@
 
 [BentoML](https://github.com/bentoml/BentoML) is an open and community-driven project. Everyone is welcome to contribute.
 
-The decision-making process and governance structure of BentoML project can be found in the governance document: [BentoML Governance Doc](https://github.com/bentoml/BentoML/blob/master/GOVERNANCE.md).
+The decision-making process and governance structure of BentoML project can be found in the governance document: [BentoML Governance Doc](https://github.com/bentoml/BentoML/blob/main/GOVERNANCE.md).
 
 To follow development updates and discussion, join the [BentoML contributors mailing list](https://groups.google.com/forum/#!forum/bentoml) and the [BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
 
@@ -55,7 +55,7 @@ One easy way to find an issue to work on is by applying the "help wanted" label 
 issues list: [help wanted issues](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22).
 
 For detailed instructions on how to develop BentoML locally and submit a 'pull request',
-follow the [development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
+follow the [development guide](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md).
 
 If you are new to BentoML project and interested in contributing code, take a look at
 the [Good first issues list](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
@@ -71,7 +71,7 @@ GitHub pull request.
 
 Full documentation can be found under the `docs/source` directory. You can edit the
 documentation `.rst` or `.md` files using any text editor. Follow the instructions 
-[here](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md#how-to-edit-run-build-documentation-site)
+[here](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md#how-to-edit-run-build-documentation-site)
 to build documentation site locally, generate HTML output and preview your changes.
 
 ## Issue Tracker Tags

@@ -139,7 +139,7 @@ import your BentoService class and create a BentoML bundle.
     the class itself should not be defined in a Jupyter notebook cell or a python
     interactive shell. You can however use the :code:`%writefile` magic command in
     Jupyter notebook to write the BentoService class definition to a separate file, see
-    example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
+    example in `BentoML quickstart notebook <https://github.com/bentoml/BentoML/blob/main/guides/quick-start/bentoml-quick-start-guide.ipynb>`_.
 
 
 BentoService can only be created using Python as the programming language. But it is
@@ -266,7 +266,7 @@ Custom Docker base image
 BentoML's default Docker base image is released on DockerHub
 `r/bentoml <https://hub.docker.com/r/bentoml/model-server/tags>`_, with its build
 process can be found under the
-`./docker directory in BentoML source code <https://github.com/bentoml/BentoML/tree/master/docker/>`_.
+`./docker directory in BentoML source code <https://github.com/bentoml/BentoML/tree/main/docker/>`_.
 
 The `bentoml containerize` is equivalent to running `docker build .` in the BentoML
 bundle directory with a few additional options. The docker image build process copies
@@ -293,7 +293,7 @@ BentoML makes it really easy to switch between base images by specifying a
     right version of :code:`Python` pre-installed.
     If the conda packages are being used, an installation of conda on the base image
     will also be required.
-    This `bentoml-init.sh <https://github.com/bentoml/BentoML/blob/master/bentoml/saved_bundle/bentoml-init.sh>`_
+    This `bentoml-init.sh <https://github.com/bentoml/BentoML/blob/main/bentoml/saved_bundle/bentoml-init.sh>`_
     script is how BentoML initializes a docker image with files under a BentoML bundle
 
 
@@ -721,9 +721,9 @@ and host them when starting the API server.
         def predict(self, df):
             return self.artifacts.model.predict(df)
 
-Here is an example project `bentoml/gallery@master/scikit-learn/iris-classifier <https://github.com/bentoml/gallery/blob/master/scikit-learn/iris-classifier/iris-classifier.ipynb>`_
+Here is an example project `bentoml/gallery@main/scikit-learn/iris-classifier <https://github.com/bentoml/gallery/blob/main/scikit-learn/iris-classifier/iris-classifier.ipynb>`_
 
-.. image:: https://raw.githubusercontent.com/bentoml/gallery/master/scikit-learn/iris-classifier/webui.png
+.. image:: https://raw.githubusercontent.com/bentoml/gallery/main/scikit-learn/iris-classifier/webui.png
 
 
 Saving BentoService

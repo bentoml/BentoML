@@ -3,14 +3,14 @@
 (Optional) Prometheus - Grafana - docker-compose stack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Users can freely update `prometheus.yml <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs/prometheus/prometheus.yml>`_ target section to define what should be  monitored by Prometheus.
+Users can freely update `prometheus.yml <https://github.com/bentoml/BentoML/tree/main/docs/source/guides/configs/prometheus/prometheus.yml>`_ target section to define what should be  monitored by Prometheus.
 
-`grafana/provisioning <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs/grafana/provisioning>`_ provides both `datasources` and `dashboards` for us to specify datasources and bootstrap our dashboards quickly courtesy of the `introduction of Provisioning in v5.0.0 <https://grafana.com/docs/grafana/latest/administration/provisioning/>`_
+`grafana/provisioning <https://github.com/bentoml/BentoML/tree/main/docs/source/guides/configs/grafana/provisioning>`_ provides both `datasources` and `dashboards` for us to specify datasources and bootstrap our dashboards quickly courtesy of the `introduction of Provisioning in v5.0.0 <https://grafana.com/docs/grafana/latest/administration/provisioning/>`_
 
-If you would like to automate the installation of additional dashboards just copy the Dashboard JSON file to `grafana/provisioning/dashboards <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/grafana/provisioning/dashboards>`_ and it will be provisioned next time you stop and start Grafana.
+If you would like to automate the installation of additional dashboards just copy the Dashboard JSON file to `grafana/provisioning/dashboards <https://github.com/bentoml/BentoML/tree/main/docs/source/guides/grafana/provisioning/dashboards>`_ and it will be provisioned next time you stop and start Grafana.
 
 .. seealso::
-    `Stack Implementation <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs>`_
+    `Stack Implementation <https://github.com/bentoml/BentoML/tree/main/docs/source/guides/configs>`_
 
     .. code-block:: bash
 
@@ -123,7 +123,7 @@ To cleanup swarm stack:
 Deploying on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Refers to `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploy-prometheus-on-k8s>`_.
+Refers to `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/main/docs/source/guides/monitoring.html#deploy-prometheus-on-k8s>`_.
 
 .. warning::
     Make sure to install ``virtualbox`` before using the script.

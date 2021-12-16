@@ -1,4 +1,4 @@
-.. BentoML documentation master file, created by
+.. BentoML documentation main file, created by
    sphinx-quickstart on Fri Jun 14 11:20:19 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -44,15 +44,15 @@ There are many ways to contribute to the project:
 - If you have any feedback on the project, share it with the community in `Github Discussions <https://github.com/bentoml/BentoML/discussions>`_ of this project.
 - Report issues you're facing and "Thumbs up" on issues and feature requests that are relevant to you.
 - Investigate bugs and reviewing other developer's pull requests.
-- Contributing code or documentation to the project by submitting a Github pull request. See the `development guide <https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md>`_.
-- See more in the `contributing guide <ttps://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md>`_.
+- Contributing code or documentation to the project by submitting a Github pull request. See the `development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_.
+- See more in the `contributing guide <ttps://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md>`_.
 
 Usage Reporting
 ---------------
 
 BentoML by default collects anonymous usage data using `Amplitude <https://amplitude.com/>`_. 
 It only collects BentoML library's own actions and parameters, no user or model data will be collected. 
-Here is the `code <https://github.com/bentoml/BentoML/blob/master/bentoml/utils/usage_stats.py>`_ that does it.
+Here is the `code <https://github.com/bentoml/BentoML/blob/main/bentoml/utils/usage_stats.py>`_ that does it.
 
 This helps the BentoML team to understand how the community is using this tool and what to build next. 
 You can easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.
@@ -70,7 +70,7 @@ You can also opt-out via setting environment variable `BENTOML_DO_NOT_TRACK=True
 
 License
 -------
-`Apache License 2.0 <https://github.com/bentoml/BentoML/blob/master/LICENSE>`_
+`Apache License 2.0 <https://github.com/bentoml/BentoML/blob/main/LICENSE>`_
 
 .. toctree::
    :hidden:

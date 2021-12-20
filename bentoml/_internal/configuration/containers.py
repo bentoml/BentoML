@@ -296,7 +296,7 @@ class BentoServerContainerClass:
         config.workers,
     )
     service_port = config.port
-    service_host = providers.Static[str]("0.0.0.0")
+    service_host = config.host
     forward_host = providers.Static[str]("localhost")
     forward_port = providers.SingletonFactory[int](get_free_port)
     prometheus_lock = providers.SingletonFactory["SyncLock"](multiprocessing.Lock)

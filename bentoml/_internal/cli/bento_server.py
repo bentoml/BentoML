@@ -1,4 +1,5 @@
 import sys
+import typing as t
 import logging
 
 import click
@@ -7,16 +8,13 @@ from ..configuration.containers import BentoServerContainer
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
+DEFAULT_RELAOD_DELAY = 0.25
+
 
 def add_serve_command(cli) -> None:
     @cli.command()
     @click.argument("bento", type=click.STRING)
-    @click.option(
-        "--working-dir",
-        type=click.Path(),
-        help="Look for Service in the specified directory",
-        default=".",
-    )
     @click.option(
         "--production",
         type=click.BOOL,
@@ -28,7 +26,7 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoServerContainer.config.port.get(),
+        default=BentoServerContainer.service_port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -36,10 +34,9 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--host",
         type=click.STRING,
-        default=BentoServerContainer.config.host.get(),
-        help="The host to bind for the REST api server",
+        default=None,
+        help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
         envvar="BENTOML_HOST",
-        show_default=True,
     )
     @click.option(
         "--backlog",
@@ -52,35 +49,42 @@ def add_serve_command(cli) -> None:
         "--reload",
         type=click.BOOL,
         is_flag=True,
-        help="Reload Service when code changes detected, this is only available in development mode.",
+        help="Reload Service when code changes detected, this is only available in development mode",
         default=False,
         show_default=True,
     )
     @click.option(
         "--reload-delay",
         type=click.FLOAT,
-        help="Delay in seconds between each check if the Service needs to be reloaded. Default is 0.25.",
+        help="Delay in seconds between each check if the Service needs to be reloaded",
         show_default=True,
-        default=0.25,
+        default=DEFAULT_RELAOD_DELAY,
+    )
+    @click.option(
+        "--working-dir",
+        type=click.Path(),
+        help="When loading from source code, specify the directory to find the Service instance",
+        default=".",
+        show_default=True,
     )
     @click.option(
         "--run-with-ngrok",  # legacy option
         "--ngrok",
         is_flag=True,
         default=False,
-        help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, this is only available in development mode.",
+        help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, only available in dev mode",
         show_default=True,
     )
     def serve(
-        bento,
-        working_dir,
-        port,
-        host,
-        backlog,
-        reload,
-        reload_delay,
-        run_with_ngrok,
-        production,
+        bento: str,
+        production: bool,
+        port: int,
+        host: t.Optional[str],
+        backlog: int,
+        reload: bool,
+        reload_delay: float,
+        working_dir: str,
+        run_with_ngrok: bool,
     ) -> None:
         """Start BentoServer from BENTO
 
@@ -118,7 +122,7 @@ def add_serve_command(cli) -> None:
                 bento,
                 working_dir=working_dir,
                 port=port,
-                host=host,
+                host=BentoServerContainer.service_host if host is None else host,
                 backlog=backlog,
             )
         else:
@@ -129,7 +133,7 @@ def add_serve_command(cli) -> None:
                 working_dir=working_dir,
                 with_ngrok=run_with_ngrok,
                 port=port,
-                host=host,
+                host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,
                 reload_delay=reload_delay,
             )

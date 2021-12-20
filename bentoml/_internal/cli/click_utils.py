@@ -159,6 +159,10 @@ class BentoMLCommandGroup(click.Group):
         return wrapper
 
     def command(self, *args, **kwargs):
+        if "context_settings" not in kwargs:
+            kwargs["context_settings"] = {}
+        kwargs["context_settings"]["max_content_width"] = 120
+
         def wrapper(func):
             # add common parameters to command
             func = BentoMLCommandGroup.bentoml_common_params(func)

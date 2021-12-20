@@ -11,7 +11,8 @@ import fs
 from simple_di import inject
 from simple_di import Provide
 
-from .exceptions import InvalidArgument
+from bentoml.exceptions import InvalidArgument
+
 from ._internal.bento import Bento
 from ._internal.types import Tag
 from ._internal.utils import resolve_user_filepath
@@ -197,6 +198,16 @@ def build_bentofile(
         build_ctx=build_ctx,
         model_store=_model_store,
     ).save(_bento_store)
+    logger.info(
+        """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
+    )
     logger.info('Successfully built %s at "%s"', bento, bento.path)
     return bento
 

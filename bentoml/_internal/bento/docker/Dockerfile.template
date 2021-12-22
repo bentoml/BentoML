@@ -23,7 +23,7 @@ RUN ./env/docker/init.sh user_setup_script
 # copy over all remaining bento files
 COPY --chown=bentoml:bentoml . ./
 
-# Default port for BentoML Service
+# Default port for BentoServer
 EXPOSE 5000
 
 USER bentoml

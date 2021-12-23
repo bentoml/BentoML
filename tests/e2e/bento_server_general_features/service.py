@@ -24,20 +24,34 @@ class _Schema(pydantic.BaseModel):
     endpoints: t.List[str]
 
 
-json_echo_runner = bentoml.sklearn.load_runner("sk_model", function_name="echo_json")
+json_echo_runner = bentoml.sklearn.load_runner(
+    "sk_model",
+    function_name="echo_json",
+    name="json_echo_runner",
+)
 ndarray_pred_runner = bentoml.sklearn.load_runner(
-    "sk_model", function_name="predict_ndarray"
+    "sk_model",
+    function_name="predict_ndarray",
+    name="ndarray_pred_runner",
 )
 dataframe_pred_runner = bentoml.sklearn.load_runner(
-    "sk_model", function_name="predict_dataframe"
+    "sk_model",
+    function_name="predict_dataframe",
+    name="dataframe_pred_runner",
 )
-file_pred_runner = bentoml.sklearn.load_runner("sk_model", function_name="predict_file")
+file_pred_runner = bentoml.sklearn.load_runner(
+    "sk_model", function_name="predict_file", name="file_pred_runner"
+)
 
 multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
-    "sk_model", function_name="predict_multi_ndarray"
+    "sk_model",
+    function_name="predict_multi_ndarray",
+    name="multi_ndarray_pred_runner",
 )
 echo_multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
-    "sk_model", function_name="echo_multi_ndarray"
+    "sk_model",
+    function_name="echo_multi_ndarray",
+    name="echo_multi_ndarray_pred_runner",
 )
 
 

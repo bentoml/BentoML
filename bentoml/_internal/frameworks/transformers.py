@@ -198,7 +198,7 @@ If you want to import directly from a `transformers.pipeline` then do:
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     from_tf: bool = False,
     from_flax: bool = False,
     framework: str = "pt",
@@ -722,7 +722,7 @@ class _TransformersRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         tasks: str,
         *,
         framework: str,
@@ -819,6 +819,7 @@ def load_runner(
     framework: str = "pt",
     lm_head: str = "casual",
     device: int = -1,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -867,12 +868,16 @@ def load_runner(
                                                   framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
     """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _TransformersRunner(
         tag=tag,
         tasks=tasks,
         framework=framework,
         lm_head=lm_head,
         device=device,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

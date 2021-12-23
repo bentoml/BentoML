@@ -73,7 +73,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Union["lgb.basic.Booster", _LightGBMModelType]:
@@ -208,14 +208,15 @@ class _LightGBMRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         infer_api_callback: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         model_info, model_file, booster_params = _get_model_info(
             tag, booster_params, model_store
         )
@@ -269,6 +270,7 @@ def load_runner(
     infer_api_callback: str = "predict",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -303,9 +305,13 @@ def load_runner(
         runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
         runner.run_batch(X_test, num_iteration=gbm.best_iteration)
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _LightGBMRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,
+        name=name,
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,

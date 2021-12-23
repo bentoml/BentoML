@@ -57,7 +57,7 @@ _xgboost_version = get_pkg_version("xgboost")
 
 
 def _get_model_info(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
     model_store: "ModelStore",
 ) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
@@ -181,14 +181,15 @@ class _XgBoostRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         model_info, model_file, booster_params = _get_model_info(
             tag, booster_params, model_store
         )
@@ -258,6 +259,7 @@ def load_runner(
     predict_fn_name: str = "predict",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -296,10 +298,14 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _XgBoostRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

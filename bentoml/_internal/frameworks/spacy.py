@@ -89,7 +89,7 @@ logger = logging.getLogger(__name__)
 
 @inject
 def load_project(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     model = model_store.get(tag)
@@ -112,7 +112,7 @@ def load_project(
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     vocab: t.Union["Vocab", bool] = True,  # type: ignore[reportUnknownParameterType]
     disable: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
@@ -322,8 +322,9 @@ class _SpacyRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         gpu_device_id: t.Optional[int],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         vocab: t.Union["Vocab", bool],  # type: ignore[reportUnknownParameterType]
@@ -337,7 +338,7 @@ class _SpacyRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         self._tag = in_store_tag
 
         self._vocab: t.Union["Vocab", bool] = vocab
@@ -466,6 +467,7 @@ def load_runner(
     *,
     gpu_device_id: t.Optional[int] = None,
     backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     vocab: t.Union["Vocab", bool] = True,  # type: ignore[reportUnknownParameterType]
@@ -477,10 +479,14 @@ def load_runner(
     component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SpacyRunner":
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _SpacyRunner(
         tag=tag,
         gpu_device_id=gpu_device_id,
         backend_options=backend_options,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         vocab=vocab,

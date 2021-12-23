@@ -39,7 +39,7 @@ MODULE_NAME = "bentoml.h2o"
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     init_params: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> h2o.model.model_base.ModelBase:
@@ -133,14 +133,15 @@ class _H2ORunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
 
         self._tag = Tag.from_taglike(tag)
         self._predict_fn_name = predict_fn_name
@@ -189,6 +190,7 @@ def load_runner(
     predict_fn_name: str = "predict",
     *,
     init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -220,10 +222,14 @@ def load_runner(
         TODO
 
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _H2ORunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         init_params=init_params,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

@@ -728,6 +728,7 @@ class _TransformersRunner(Runner):
         framework: str,
         lm_head: str,
         device: int,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -735,7 +736,7 @@ class _TransformersRunner(Runner):
     ):
         in_store_tag = model_store.get(tag).tag
         self._tag = in_store_tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
 
         try:
             transformers.pipelines.check_task(tasks)

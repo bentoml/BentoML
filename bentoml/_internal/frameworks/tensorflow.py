@@ -518,7 +518,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
-    name: t.Optional[t.String] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

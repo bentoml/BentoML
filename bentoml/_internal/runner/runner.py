@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import attr
 import psutil
+from simple_di.providers import SingletonFactory
 
 from .utils import cpu_converter
 from .utils import gpu_converter
@@ -106,6 +107,7 @@ class BaseRunner:
             **(resource_quota if resource_quota else {})
         )
         self.batch_options = BatchOptions(**(batch_options if batch_options else {}))
+        self._impl_provider = SingletonFactory(create_runner_impl, self)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -125,7 +127,7 @@ class BaseRunner:
 
     @property
     def _impl(self) -> "RunnerImpl":
-        return RunnerImplPool.get_by_runner(self)
+        return self._impl_provider.get()
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run(*args, **kwargs)
@@ -226,23 +228,15 @@ class RunnerImpl:
         ...
 
 
-class RunnerImplPool:
-    _runner_map: t.Dict[str, RunnerImpl] = {}
+def create_runner_impl(runner: BaseRunner) -> RunnerImpl:
+    remote_runner_mapping = BentoServerContainer.remote_runner_mapping.get()
+    if runner.name in remote_runner_mapping:
+        from .remote import RemoteRunnerClient
 
-    @classmethod
-    def get_by_runner(cls, runner: BaseRunner) -> RunnerImpl:
-        if runner.name in cls._runner_map:
-            return cls._runner_map[runner.name]
+        impl = RemoteRunnerClient(runner)
+    else:
+        from .local import LocalRunner
 
-        remote_runner_mapping = BentoServerContainer.remote_runner_mapping.get()
-        if runner.name in remote_runner_mapping:
-            from .remote import RemoteRunnerClient
+        impl = LocalRunner(runner)
 
-            impl = RemoteRunnerClient(runner)
-        else:
-            from .local import LocalRunner
-
-            impl = LocalRunner(runner)
-
-        cls._runner_map[runner.name] = impl
-        return impl
+    return impl

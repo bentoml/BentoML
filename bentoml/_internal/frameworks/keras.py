@@ -79,7 +79,7 @@ def get_session() -> "BaseSession":
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "keras.Model":
     """
@@ -198,10 +198,11 @@ class _KerasRunner(_TensorflowRunner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         device_id: str,
         predict_kwargs: t.Optional[t.Dict[str, t.Any]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -210,6 +211,7 @@ class _KerasRunner(_TensorflowRunner):
             tag=tag,
             predict_fn_name=predict_fn_name,
             device_id=device_id,
+            name=name,
             partial_kwargs=predict_kwargs,
             resource_quota=resource_quota,
             batch_options=batch_options,
@@ -254,6 +256,7 @@ def load_runner(
     predict_fn_name: str = "predict",
     device_id: str = "CPU:0",
     predict_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -284,10 +287,14 @@ def load_runner(
 
     Examples::
     """  # noqa: LN001
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _KerasRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        name=name,
         predict_kwargs=predict_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,

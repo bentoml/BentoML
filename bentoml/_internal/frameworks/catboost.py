@@ -43,7 +43,7 @@ CATBOOST_EXT = "cbm"
 
 
 def _get_model_info(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
     model_store: "ModelStore",
 ) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
@@ -235,9 +235,10 @@ class _CatBoostRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -245,7 +246,7 @@ class _CatBoostRunner(Runner):
         model_info, model_file, _model_params = _get_model_info(
             tag, model_params, model_store
         )
-        super().__init__(model_info.tag.name, resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         self._model_info = model_info
         self._model_file = model_file
         self._predict_fn_name = predict_fn_name
@@ -283,9 +284,10 @@ def load_runner(
     predict_fn_name: str = "predict",
     *,
     model_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_CatBoostRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -320,11 +322,15 @@ def load_runner(
         runner = bentoml.catboost.load_runner("my_model:latest"")
         runner.run(cbt.Pool(input_data))
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _CatBoostRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         model_params=model_params,
+        model_store=model_store,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
-        model_store=model_store,
     )

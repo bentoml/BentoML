@@ -48,9 +48,7 @@ np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 pd = LazyLoader("pd", globals(), "pandas")
 
 
-def _get_model_info(
-    tag: t.Union[str, Tag], model_store: "ModelStore"
-) -> t.Tuple["Model", PathType]:
+def _get_model_info(tag: Tag, model_store: "ModelStore") -> t.Tuple["Model", PathType]:
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
@@ -63,7 +61,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Union["BaseEstimator", "Pipeline"]:
     """
@@ -137,13 +135,14 @@ class _SklearnRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         function_name: str,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(f"{tag}-{function_name}", resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._model_info = model_info
@@ -182,6 +181,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     function_name: str = "predict",
     *,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -218,9 +218,13 @@ def load_runner(
         runner = bentoml.sklearn.load_runner("my_model:20201012_DE43A2")
         runner.run(input_data)
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _SklearnRunner(
         tag=tag,
         function_name=function_name,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

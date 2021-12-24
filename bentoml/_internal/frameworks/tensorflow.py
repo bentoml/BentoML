@@ -190,7 +190,7 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     tfhub_tags: t.Optional[t.List[str]] = None,
     tfhub_options: t.Optional[t.Any] = None,
     load_as_wrapper: t.Optional[bool] = None,
@@ -405,17 +405,18 @@ class _TensorflowRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         device_id: str,
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
         self._tag = in_store_tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
 
         self._device_id = device_id
         self._configure(device_id)
@@ -517,6 +518,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -544,11 +546,15 @@ def load_runner(
         Runner instances for `bentoml.tensorflow` model
     Examples::
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _TensorflowRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
         partial_kwargs=partial_kwargs,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

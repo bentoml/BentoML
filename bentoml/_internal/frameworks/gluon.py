@@ -38,7 +38,7 @@ MODULE_NAME = "bentoml.gluon"
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     mxnet_ctx: t.Optional[mxnet.context.Context] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> gluon.Block:
@@ -128,14 +128,15 @@ class _GluonRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        self._tag = Tag.from_taglike(tag)
+        super().__init__(name, resource_quota, batch_options)
+        self._tag = tag
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         self._ctx = None
@@ -190,6 +191,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     *,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _GluonRunner:
@@ -216,6 +218,9 @@ def load_runner(
     Examples:
         TODO
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _GluonRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,

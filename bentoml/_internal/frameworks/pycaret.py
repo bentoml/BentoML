@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_model_info(
-    tag: t.Union[str, Tag], model_store: "ModelStore"
+    tag: Tag, model_store: "ModelStore"
 ) -> t.Tuple["Model", PathType, PathType]:
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
@@ -66,7 +66,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Any:
     """
@@ -158,12 +158,13 @@ class _PycaretRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         model_info, model_file, pycaret_config = _get_model_info(tag, model_store)
 
         self._model_info = model_info
@@ -201,6 +202,7 @@ class _PycaretRunner(Runner):
 def load_runner(
     tag: t.Union[str, Tag],
     *,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -244,8 +246,12 @@ def load_runner(
         prediction = runner._run_batch(input_data=data_unseen)
         print(prediction)
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _PycaretRunner(
         tag=tag,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

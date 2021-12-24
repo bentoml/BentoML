@@ -54,7 +54,7 @@ def _is_gpu_available() -> bool:  # pragma: no cover
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _ModelType:
@@ -178,9 +178,10 @@ class _PyTorchRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         device_id: str,
+        name: str,
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -188,7 +189,7 @@ class _PyTorchRunner(Runner):
     ):
         in_store_tag = model_store.get(tag).tag
 
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         if "cuda" in device_id:
@@ -288,6 +289,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     device_id: str = "cpu:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -321,11 +323,15 @@ def load_runner(
         runner = bentoml.pytorch.load_runner("ngrams:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _PyTorchRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
         partial_kwargs=partial_kwargs,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

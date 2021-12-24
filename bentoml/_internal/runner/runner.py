@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import attr
 import psutil
+from simple_di.providers import SingletonFactory
 
 from .utils import cpu_converter
 from .utils import gpu_converter
@@ -87,34 +88,26 @@ class BatchOptions:
 VARNAME_RE = re.compile(r"\W|^(?=\d)")
 
 
-class _BaseRunner:
+class BaseRunner:
     EXIST_NAMES: t.Set[str] = set()
 
     def __init__(
         self,
-        display_name: t.Union[str, Tag],
+        name: t.Union[str, Tag],
         resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
         batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         # probe an unique name
-        if isinstance(display_name, Tag):
-            display_name = display_name.name
-        if not display_name.isidentifier():
-            display_name = VARNAME_RE.sub("_", display_name)
-        i = 0
-        while True:
-            name = display_name if i == 0 else f"{display_name}_{i}"
-            if name not in self.EXIST_NAMES:
-                self.EXIST_NAMES.add(name)
-                break
-            else:
-                i += 1
+        if isinstance(name, Tag):
+            name = name.name
+        if not name.isidentifier():
+            name = VARNAME_RE.sub("_", name)
         self.name = name
-
         self.resource_quota = ResourceQuota(
             **(resource_quota if resource_quota else {})
         )
         self.batch_options = BatchOptions(**(batch_options if batch_options else {}))
+        self._impl_provider = SingletonFactory(create_runner_impl, self)
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -134,7 +127,7 @@ class _BaseRunner:
 
     @property
     def _impl(self) -> "RunnerImpl":
-        return RunnerImplPool.get_by_runner(self)
+        return self._impl_provider.get()
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run(*args, **kwargs)
@@ -149,7 +142,7 @@ class _BaseRunner:
         return self._impl.run_batch(*args, **kwargs)
 
 
-class Runner(_BaseRunner, ABC):
+class Runner(BaseRunner, ABC):
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. This Runner class is an abstract class, used for creating
@@ -189,7 +182,7 @@ class Runner(_BaseRunner, ABC):
         ...
 
 
-class SimpleRunner(_BaseRunner, ABC):
+class SimpleRunner(BaseRunner, ABC):
     """
     SimpleRunner is a special type of Runner that does not support dynamic batching.
     Instead of `_run_batch` in Runner, a `_run` method is expected to be defined in its
@@ -211,7 +204,7 @@ class RunnerState(enum.IntEnum):
 
 
 class RunnerImpl:
-    def __init__(self, runner: _BaseRunner):
+    def __init__(self, runner: BaseRunner):
         self._runner = runner
         self._state: RunnerState = RunnerState.INIT
 
@@ -235,23 +228,15 @@ class RunnerImpl:
         ...
 
 
-class RunnerImplPool:
-    _runner_map: t.Dict[str, RunnerImpl] = {}
+def create_runner_impl(runner: BaseRunner) -> RunnerImpl:
+    remote_runner_mapping = BentoServerContainer.remote_runner_mapping.get()
+    if runner.name in remote_runner_mapping:
+        from .remote import RemoteRunnerClient
 
-    @classmethod
-    def get_by_runner(cls, runner: _BaseRunner) -> RunnerImpl:
-        if runner.name in cls._runner_map:
-            return cls._runner_map[runner.name]
+        impl = RemoteRunnerClient(runner)
+    else:
+        from .local import LocalRunner
 
-        remote_runner_mapping = BentoServerContainer.remote_runner_mapping.get()
-        if runner.name in remote_runner_mapping:
-            from .remote import RemoteRunnerClient
+        impl = LocalRunner(runner)
 
-            impl = RemoteRunnerClient(runner)
-        else:
-            from .local import LocalRunner
-
-            impl = LocalRunner(runner)
-
-        cls._runner_map[runner.name] = impl
-        return impl
+    return impl

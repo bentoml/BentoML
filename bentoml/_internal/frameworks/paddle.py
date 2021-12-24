@@ -116,7 +116,7 @@ def _load_paddle_bentoml_default_config(model: "Model") -> "paddle.inference.Con
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     config: t.Optional["paddle.inference.Config"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
@@ -404,13 +404,14 @@ class _PaddlePaddleRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         infer_api_callback: str,
         *,
         device: str,
         enable_gpu: bool,
         gpu_mem_pool_mb: int,
         config: t.Optional["paddle.inference.Config"],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -424,7 +425,7 @@ class _PaddlePaddleRunner(Runner):
             )
         in_store_tag = model_store.get(tag).tag
 
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         self._infer_api_callback = infer_api_callback
         self._model_store = model_store
         self._enable_gpu = enable_gpu
@@ -545,6 +546,7 @@ def load_runner(
     device: str = "cpu",
     enable_gpu: bool = False,
     gpu_mem_pool_mb: int = 0,
+    name: t.Optional[str] = None,
     config: t.Optional["paddle.inference.Config"] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
@@ -585,6 +587,9 @@ def load_runner(
 
     Examples::
     """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _PaddlePaddleRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,
@@ -592,6 +597,7 @@ def load_runner(
         enable_gpu=enable_gpu,
         gpu_mem_pool_mb=gpu_mem_pool_mb,
         config=config,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

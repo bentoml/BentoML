@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from .utils import TypeRef
+from ..types import TypeRef
 from ..configuration.containers import BentoServerContainer
 
 SingleType = t.TypeVar("SingleType")
@@ -250,8 +250,8 @@ class DataContainerRegistry:
         batch_type: t.Union[TypeRef, type],
         container_cls: t.Type[DataContainer],
     ):
-        single_type = TypeRef.from_type(single_type)
-        batch_type = TypeRef.from_type(batch_type)
+        single_type = TypeRef(single_type)
+        batch_type = TypeRef(batch_type)
 
         cls.CONTAINER_BATCH_TYPE_MAP[batch_type] = container_cls
         cls.CONTAINER_SINGLE_TYPE_MAP[single_type] = container_cls
@@ -260,14 +260,14 @@ class DataContainerRegistry:
     def find_by_single_type(
         cls, type_: t.Union[t.Type[SingleType], TypeRef]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:
-        typeref = TypeRef.from_type(type_)
+        typeref = TypeRef(type_)
         return cls.CONTAINER_SINGLE_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod
     def find_by_batch_type(
         cls, type_: t.Union[t.Type[BatchType], TypeRef]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:
-        typeref = TypeRef.from_type(type_)
+        typeref = TypeRef(type_)
         return cls.CONTAINER_BATCH_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod

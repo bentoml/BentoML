@@ -1,5 +1,4 @@
 import io
-import sys
 import typing as t
 from typing import TYPE_CHECKING
 from urllib.parse import quote
@@ -7,6 +6,8 @@ from urllib.parse import quote
 from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
+
+from bentoml._internal.types import TypeRef
 
 from .base import ImageType
 from .base import IODescriptor
@@ -16,11 +17,13 @@ from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
 
 if TYPE_CHECKING:
-    import PIL
-    import numpy as np
     import PIL.Image
+    import numpy.typing
+
+    _Mode = t.Literal[
+        "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
+    ]
 else:
-    np = LazyLoader("np", globals(), "numpy")
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
@@ -31,17 +34,8 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
 
 DEFAULT_PIL_MODE = "RGB"
-
-_Mode = Literal[
-    "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
-]
 
 
 class Image(IODescriptor[ImageType]):
@@ -120,7 +114,7 @@ class Image(IODescriptor[ImageType]):
             )
 
         self._mime_type = mime_type.lower()
-        self._pilmode: t.Optional[_Mode] = pilmode
+        self._pilmode: t.Optional["_Mode"] = pilmode
         self._format = self.MIME_EXT_MAPPING[mime_type]
 
     def openapi_schema_type(self) -> t.Dict[str, str]:
@@ -150,9 +144,9 @@ class Image(IODescriptor[ImageType]):
         return PIL.Image.open(io.BytesIO(bytes_))
 
     async def to_http_response(self, obj: ImageType) -> Response:
-        if isinstance(obj, np.ndarray):
+        if TypeRef["numpy.typing.NDArray[t.Any]"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
-        elif isinstance(obj, PIL.Image.Image):  # type: ignore
+        elif TypeRef["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
             image = obj
         else:
             raise InternalServerError(

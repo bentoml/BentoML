@@ -240,34 +240,34 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
 
 
 class DataContainerRegistry:
-    CONTAINER_SINGLE_TYPE_MAP: t.Dict[TypeRef, t.Type[DataContainer]] = dict()
-    CONTAINER_BATCH_TYPE_MAP: t.Dict[TypeRef, t.Type[DataContainer]] = dict()
+    CONTAINER_SINGLE_TYPE_MAP: t.Dict[TypeRef[t.Any], t.Type[DataContainer]] = dict()
+    CONTAINER_BATCH_TYPE_MAP: t.Dict[TypeRef[t.Any], t.Type[DataContainer]] = dict()
 
     @classmethod
     def register_container(
         cls,
-        single_type: t.Union[TypeRef, type],
-        batch_type: t.Union[TypeRef, type],
+        single_type: t.Union[TypeRef[t.Any], type],
+        batch_type: t.Union[TypeRef[t.Any], type],
         container_cls: t.Type[DataContainer],
     ):
-        single_type = TypeRef(single_type)
-        batch_type = TypeRef(batch_type)
+        single_type = TypeRef.from_type(single_type)
+        batch_type = TypeRef.from_type(batch_type)
 
         cls.CONTAINER_BATCH_TYPE_MAP[batch_type] = container_cls
         cls.CONTAINER_SINGLE_TYPE_MAP[single_type] = container_cls
 
     @classmethod
     def find_by_single_type(
-        cls, type_: t.Union[t.Type[SingleType], TypeRef]
+        cls, type_: t.Union[t.Type[SingleType], TypeRef[t.Any]]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:
-        typeref = TypeRef(type_)
+        typeref = TypeRef.from_type(type_)
         return cls.CONTAINER_SINGLE_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod
     def find_by_batch_type(
-        cls, type_: t.Union[t.Type[BatchType], TypeRef]
+        cls, type_: t.Union[t.Type[BatchType], TypeRef[t.Any]]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:
-        typeref = TypeRef(type_)
+        typeref = TypeRef.from_type(type_)
         return cls.CONTAINER_BATCH_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod

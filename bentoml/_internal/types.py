@@ -118,7 +118,13 @@ class TypeRef(t.Generic[T]):
             if hasattr(module_or_cls, "__qualname__"):
                 self.qualname: str = getattr(module_or_cls, "__qualname__")
             else:
-                self.qualname: str = getattr(module_or_cls, __name__)
+                self.qualname: str = getattr(module_or_cls, "__name__")
+
+    @classmethod
+    def from_type(cls, typ_: t.Union["TypeRef[T]", "t.Type[T]"]) -> "TypeRef[T]":
+        if isinstance(typ_, TypeRef):
+            return typ_
+        return cls(typ_)
 
     def __eq__(self, o: object) -> bool:
         """

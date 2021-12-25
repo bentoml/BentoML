@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     import PIL.Image
     import numpy.typing
 
+    NDArray = numpy.typing.NDArray[t.Any]
+
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
     ]
@@ -144,7 +146,7 @@ class Image(IODescriptor[ImageType]):
         return PIL.Image.open(io.BytesIO(bytes_))
 
     async def to_http_response(self, obj: ImageType) -> Response:
-        if TypeRef["numpy.typing.NDArray[t.Any]"]("numpy.ndarray").isinstance(obj):
+        if TypeRef["NDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
         elif TypeRef["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
             image = obj

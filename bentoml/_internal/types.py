@@ -89,7 +89,7 @@ class TypeRef(t.Generic[T]):
     def __init__(self, module_or_cls: str, qualname: str) -> None:
         """TypeRef("numpy", "ndarray")"""
 
-    @t.overload
+    @overload
     def __init__(self, module_or_cls: type) -> None:
         """TypeRef(numpy.ndarray)"""
 

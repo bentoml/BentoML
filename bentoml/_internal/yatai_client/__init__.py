@@ -28,6 +28,7 @@ from rich.progress import TransferSpeedColumn
 from ..bento import Bento
 from ..bento import BentoStore
 from ..types import Tag
+from ..utils import calc_dir_size
 from ..models import Model
 from ..models import copy_model
 from ..models import ModelStore
@@ -259,6 +260,7 @@ class YataiClient:
                             bentoml_version=info.bentoml_version,
                             apis=apis,
                             models=models,
+                            size_bytes=calc_dir_size(bento.path),
                         ),
                         labels=labels,
                     ),
@@ -515,6 +517,7 @@ class YataiClient:
                             options=info.options,
                             api_version=info.api_version,
                             bentoml_version=info.bentoml_version,
+                            size_bytes=calc_dir_size(model.path),
                         ),
                         labels=labels,
                     ),

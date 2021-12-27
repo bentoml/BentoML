@@ -1,11 +1,12 @@
-import click
 import logging
 
-from bentoml.exceptions import CLIException
-from bentoml._internal.yatai_rest_api_client.config import add_context
-from bentoml._internal.yatai_rest_api_client.config import YataiClientContext
-from bentoml._internal.yatai_rest_api_client.config import default_context_name
+import click
 
+from bentoml.exceptions import CLIException
+
+from ..yatai_rest_api_client.config import add_context
+from ..yatai_rest_api_client.config import YataiClientContext
+from ..yatai_rest_api_client.config import default_context_name
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +40,12 @@ def add_login_command(cli):
         user = yatai_rest_client.get_current_user()
 
         if user is None:
-            raise CLIException('current user is not found')
+            raise CLIException("current user is not found")
 
         org = yatai_rest_client.get_current_organization()
 
         if org is None:
-            raise CLIException('current organization is not found')
+            raise CLIException("current organization is not found")
 
         logger.info(
             f"login successfully! user: {user.name}, organization: {org.name}",

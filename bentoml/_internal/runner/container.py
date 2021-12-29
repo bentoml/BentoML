@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from .utils import TypeRef
+from ..types import LazyType
 from ..configuration.containers import BentoServerContainer
 
 SingleType = t.TypeVar("SingleType")
@@ -240,34 +240,34 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
 
 
 class DataContainerRegistry:
-    CONTAINER_SINGLE_TYPE_MAP: t.Dict[TypeRef, t.Type[DataContainer]] = dict()
-    CONTAINER_BATCH_TYPE_MAP: t.Dict[TypeRef, t.Type[DataContainer]] = dict()
+    CONTAINER_SINGLE_TYPE_MAP: t.Dict[LazyType[t.Any], t.Type[DataContainer]] = dict()
+    CONTAINER_BATCH_TYPE_MAP: t.Dict[LazyType[t.Any], t.Type[DataContainer]] = dict()
 
     @classmethod
     def register_container(
         cls,
-        single_type: t.Union[TypeRef, type],
-        batch_type: t.Union[TypeRef, type],
+        single_type: t.Union[LazyType[t.Any], type],
+        batch_type: t.Union[LazyType[t.Any], type],
         container_cls: t.Type[DataContainer],
     ):
-        single_type = TypeRef.from_type(single_type)
-        batch_type = TypeRef.from_type(batch_type)
+        single_type = LazyType.from_type(single_type)
+        batch_type = LazyType.from_type(batch_type)
 
         cls.CONTAINER_BATCH_TYPE_MAP[batch_type] = container_cls
         cls.CONTAINER_SINGLE_TYPE_MAP[single_type] = container_cls
 
     @classmethod
     def find_by_single_type(
-        cls, type_: t.Union[t.Type[SingleType], TypeRef]
+        cls, type_: t.Union[t.Type[SingleType], LazyType[t.Any]]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:
-        typeref = TypeRef.from_type(type_)
+        typeref = LazyType.from_type(type_)
         return cls.CONTAINER_SINGLE_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod
     def find_by_batch_type(
-        cls, type_: t.Union[t.Type[BatchType], TypeRef]
+        cls, type_: t.Union[t.Type[BatchType], LazyType[t.Any]]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:
-        typeref = TypeRef.from_type(type_)
+        typeref = LazyType.from_type(type_)
         return cls.CONTAINER_BATCH_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod
@@ -282,19 +282,19 @@ class DataContainerRegistry:
 
 def register_builtin_containers():
     DataContainerRegistry.register_container(
-        TypeRef("numpy", "ndarray"), TypeRef("numpy", "ndarray"), NdarrayContainer
+        LazyType("numpy", "ndarray"), LazyType("numpy", "ndarray"), NdarrayContainer
     )
     # DataContainerRegistry.register_container(np.ndarray, np.ndarray, NdarrayContainer)
 
     DataContainerRegistry.register_container(
-        TypeRef("pandas.core.series", "Series"),
-        TypeRef("pandas.core.frame", "DataFrame"),
+        LazyType("pandas.core.series", "Series"),
+        LazyType("pandas.core.frame", "DataFrame"),
         PandasDataFrameContainer,
     )
 
     DataContainerRegistry.register_container(
-        TypeRef("pandas.core.frame", "DataFrame"),
-        TypeRef("pandas.core.frame", "DataFrame"),
+        LazyType("pandas.core.frame", "DataFrame"),
+        LazyType("pandas.core.frame", "DataFrame"),
         PandasDataFrameContainer,
     )
 

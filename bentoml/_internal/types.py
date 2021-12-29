@@ -43,6 +43,130 @@ else:
 JSONSerializable = t.NewType("JSONSerializable", object)
 
 
+T = t.TypeVar("T")
+
+
+class LazyType(t.Generic[T]):
+    """
+    LazyType provides solutions for several conflicts when applying lazy dependencies,
+        type annotations and runtime class checking.
+    It works both for runtime and type checking phases.
+
+    * conflicts 1
+
+    isinstance(obj, class) requires importing the class first, which breaks
+    lazy dependencies
+
+    solution:
+    >>> LazyType("numpy.ndarray").isinstance(obj)
+
+    * conflicts 2
+
+    `isinstance(obj, str)` will narrow obj types down to str. But it only works for the
+    case that the class is the type at the same time. For numpy.ndarray which the type
+    is actually numpy.typing.NDArray, we had to hack the type checking.
+
+    solution:
+    >>> if TYPE_CHECKING:
+    >>>     from numpy.typing import NDArray
+    >>> LazyType["NDArray"]("numpy.ndarray").isinstance(obj)`
+    >>> #  this will narrow the obj to NDArray with PEP-647
+
+    * conflicts 3
+
+    compare/refer/map classes before importing them.
+
+    >>> HANDLER_MAP = {
+    >>>     LazyType("numpy.ndarray"): ndarray_handler,
+    >>>     LazyType("pandas.DataFrame"): pdframe_handler,
+    >>> }
+    >>>
+    >>> HANDLER_MAP[LazyType(numpy.ndarray)]](array)
+    >>> LazyType("numpy.ndarray") == numpy.ndarray
+    """
+
+    @t.overload
+    def __init__(self, module_or_cls: str, qualname: str) -> None:
+        """LazyType("numpy", "ndarray")"""
+
+    @t.overload
+    def __init__(self, module_or_cls: type) -> None:
+        """LazyType(numpy.ndarray)"""
+
+    @t.overload
+    def __init__(self, module_or_cls: str) -> None:
+        """LazyType("numpy.ndarray")"""
+
+    def __init__(
+        self,
+        module_or_cls: t.Union[str, type],
+        qualname: t.Optional[str] = None,
+    ) -> None:
+        if isinstance(module_or_cls, str):
+            if qualname is None:  # LazyType("numpy.ndarray")
+                parts = module_or_cls.rsplit(".", 1)
+                if len(parts) == 1:
+                    raise ValueError("LazyType only works with classes")
+                self.module, self.qualname = parts
+            else:  # LazyType("numpy", "ndarray")
+                self.module = module_or_cls
+                self.qualname = qualname
+            self._runtime_class = None
+        else:  # LazyType(numpy.ndarray)
+            self._runtime_class = module_or_cls
+            self.module = module_or_cls.__module__
+            if hasattr(module_or_cls, "__qualname__"):
+                self.qualname: str = getattr(module_or_cls, "__qualname__")
+            else:
+                self.qualname: str = getattr(module_or_cls, "__name__")
+
+    @classmethod
+    def from_type(cls, typ_: t.Union["LazyType[T]", "t.Type[T]"]) -> "LazyType[T]":
+        if isinstance(typ_, LazyType):
+            return typ_
+        return cls(typ_)
+
+    def __eq__(self, o: object) -> bool:
+        """
+        LazyType("numpy", "ndarray") == np.ndarray
+        """
+        if isinstance(o, type):
+            o = self.__class__(o)
+
+        if isinstance(o, LazyType):
+            return self.module == o.module and self.qualname == o.qualname
+
+        return False
+
+    def __hash__(self) -> int:
+        return hash(f"{self.module}.{self.qualname}")
+
+    def __repr__(self) -> str:
+        return f'LazyType("{self.module}", "{self.qualname}")'
+
+    def get_class(self, import_module: bool = False) -> type:
+        if self._runtime_class is None:
+            try:
+                m = sys.modules[self.module]
+            except KeyError:
+                if import_module:
+                    import importlib
+
+                    m = importlib.import_module(self.module)
+
+                class Nothing:
+                    pass
+
+                return Nothing
+
+            self._runtime_class = getattr(m, self.qualname)
+
+        return self._runtime_class
+
+    def isinstance(self, obj: t.Any) -> "t.TypeGuard[T]":
+        return isinstance(obj, self.get_class(import_module=False))
+
+
 @attr.define
 class Tag:
     name: str

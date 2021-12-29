@@ -46,9 +46,9 @@ JSONSerializable = t.NewType("JSONSerializable", object)
 T = t.TypeVar("T")
 
 
-class TypeRef(t.Generic[T]):
+class LazyType(t.Generic[T]):
     """
-    TypeRef provides solutions for several conflicts when applying lazy dependencies,
+    LazyType provides solutions for several conflicts when applying lazy dependencies,
         type annotations and runtime class checking.
     It works both for runtime and type checking phases.
 
@@ -58,7 +58,7 @@ class TypeRef(t.Generic[T]):
     lazy dependencies
 
     solution:
-    >>> TypeRef("numpy.ndarray").isinstance(obj)
+    >>> LazyType("numpy.ndarray").isinstance(obj)
 
     * conflicts 2
 
@@ -69,7 +69,7 @@ class TypeRef(t.Generic[T]):
     solution:
     >>> if TYPE_CHECKING:
     >>>     from numpy.typing import NDArray
-    >>> TypeRef["NDArray"]("numpy.ndarray").isinstance(obj)`
+    >>> LazyType["NDArray"]("numpy.ndarray").isinstance(obj)`
     >>> #  this will narrow the obj to NDArray with PEP-647
 
     * conflicts 3
@@ -77,25 +77,25 @@ class TypeRef(t.Generic[T]):
     compare/refer/map classes before importing them.
 
     >>> HANDLER_MAP = {
-    >>>     TypeRef("numpy.ndarray"): ndarray_handler,
-    >>>     TypeRef("pandas.DataFrame"): pdframe_handler,
+    >>>     LazyType("numpy.ndarray"): ndarray_handler,
+    >>>     LazyType("pandas.DataFrame"): pdframe_handler,
     >>> }
     >>>
-    >>> HANDLER_MAP[TypeRef(numpy.ndarray)]](array)
-    >>> TypeRef("numpy.ndarray") == numpy.ndarray
+    >>> HANDLER_MAP[LazyType(numpy.ndarray)]](array)
+    >>> LazyType("numpy.ndarray") == numpy.ndarray
     """
 
     @t.overload
     def __init__(self, module_or_cls: str, qualname: str) -> None:
-        """TypeRef("numpy", "ndarray")"""
+        """LazyType("numpy", "ndarray")"""
 
     @t.overload
     def __init__(self, module_or_cls: type) -> None:
-        """TypeRef(numpy.ndarray)"""
+        """LazyType(numpy.ndarray)"""
 
     @t.overload
     def __init__(self, module_or_cls: str) -> None:
-        """TypeRef("numpy.ndarray")"""
+        """LazyType("numpy.ndarray")"""
 
     def __init__(
         self,
@@ -103,16 +103,16 @@ class TypeRef(t.Generic[T]):
         qualname: t.Optional[str] = None,
     ) -> None:
         if isinstance(module_or_cls, str):
-            if qualname is None:  # TypeRef("numpy.ndarray")
+            if qualname is None:  # LazyType("numpy.ndarray")
                 parts = module_or_cls.rsplit(".", 1)
                 if len(parts) == 1:
-                    raise ValueError("TypeRef only works with classes")
+                    raise ValueError("LazyType only works with classes")
                 self.module, self.qualname = parts
-            else:  # TypeRef("numpy", "ndarray")
+            else:  # LazyType("numpy", "ndarray")
                 self.module = module_or_cls
                 self.qualname = qualname
             self._runtime_class = None
-        else:  # TypeRef(numpy.ndarray)
+        else:  # LazyType(numpy.ndarray)
             self._runtime_class = module_or_cls
             self.module = module_or_cls.__module__
             if hasattr(module_or_cls, "__qualname__"):
@@ -121,19 +121,19 @@ class TypeRef(t.Generic[T]):
                 self.qualname: str = getattr(module_or_cls, "__name__")
 
     @classmethod
-    def from_type(cls, typ_: t.Union["TypeRef[T]", "t.Type[T]"]) -> "TypeRef[T]":
-        if isinstance(typ_, TypeRef):
+    def from_type(cls, typ_: t.Union["LazyType[T]", "t.Type[T]"]) -> "LazyType[T]":
+        if isinstance(typ_, LazyType):
             return typ_
         return cls(typ_)
 
     def __eq__(self, o: object) -> bool:
         """
-        TypeRef("numpy", "ndarray") == np.ndarray
+        LazyType("numpy", "ndarray") == np.ndarray
         """
         if isinstance(o, type):
             o = self.__class__(o)
 
-        if isinstance(o, TypeRef):
+        if isinstance(o, LazyType):
             return self.module == o.module and self.qualname == o.qualname
 
         return False
@@ -142,7 +142,7 @@ class TypeRef(t.Generic[T]):
         return hash(f"{self.module}.{self.qualname}")
 
     def __repr__(self) -> str:
-        return f'TypeRef("{self.module}", "{self.qualname}")'
+        return f'LazyType("{self.module}", "{self.qualname}")'
 
     def get_class(self, import_module: bool = False) -> type:
         if self._runtime_class is None:

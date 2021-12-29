@@ -7,7 +7,7 @@ from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from bentoml._internal.types import TypeRef
+from bentoml._internal.types import LazyType
 
 from .base import ImageType
 from .base import IODescriptor
@@ -146,9 +146,9 @@ class Image(IODescriptor[ImageType]):
         return PIL.Image.open(io.BytesIO(bytes_))
 
     async def to_http_response(self, obj: ImageType) -> Response:
-        if TypeRef["NDArray"]("numpy.ndarray").isinstance(obj):
+        if LazyType["NDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
-        elif TypeRef["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
+        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
             image = obj
         else:
             raise InternalServerError(

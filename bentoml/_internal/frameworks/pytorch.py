@@ -12,7 +12,7 @@ from simple_di import Provide
 from bentoml import Tag
 from bentoml import Runner
 
-from ..types import TypeRef
+from ..types import LazyType
 from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
@@ -374,7 +374,7 @@ class PytorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
 
 
 DataContainerRegistry.register_container(
-    TypeRef("torch", "Tensor"),
-    TypeRef("torch", "Tensor"),
+    LazyType("torch", "Tensor"),
+    LazyType("torch", "Tensor"),
     PytorchTensorContainer,
 )

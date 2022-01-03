@@ -1,6 +1,7 @@
 import sys
 import json
 import typing as t
+from typing import TYPE_CHECKING
 
 import yaml
 import click
@@ -18,8 +19,8 @@ from .click_utils import _is_valid_bento_name
 from ..yatai_client import yatai_client
 from ..configuration.containers import BentoMLContainer
 
-if t.TYPE_CHECKING:
-    from bentoml._internal.bento import BentoStore
+if TYPE_CHECKING:
+    from ..bento import BentoStore
 
 
 def parse_delete_targets_argument_callback(

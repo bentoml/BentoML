@@ -7,10 +7,9 @@ from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from bentoml._internal.types import LazyType
-
 from .base import ImageType
 from .base import IODescriptor
+from ..types import LazyType
 from ..utils import LazyLoader
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument

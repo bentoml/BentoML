@@ -9,16 +9,15 @@ from simple_di import Provide
 from rich.table import Table
 from rich.console import Console
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
 from .click_utils import _is_valid_bento_tag
 from .click_utils import _is_valid_bento_name
 from ..yatai_client import yatai_client
+from ..configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
+    from ..models import ModelStore
 
 
 def parse_delete_targets_argument_callback(

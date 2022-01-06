@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from starlette.responses import Response
 
     from ..runner import Runner
+    from ..runner import SimpleRunner
     from ..tracing import Tracer
 
 
@@ -33,7 +34,7 @@ class RunnerAppFactory(BaseAppFactory):
     @inject
     def __init__(
         self,
-        runner: "Runner",
+        runner: "t.Union[Runner, SimpleRunner]",
         instance_id: t.Optional[int] = None,
         tracer: "Tracer" = Provide[BentoMLContainer.tracer],
     ) -> None:

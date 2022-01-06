@@ -121,7 +121,7 @@ SCHEMA = Schema(
                 },
             },
         },
-    }
+    }  # type: ignore
 )
 
 

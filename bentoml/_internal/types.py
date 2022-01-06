@@ -90,7 +90,7 @@ class LazyType(t.Generic[T]):
         """LazyType("numpy", "ndarray")"""
 
     @t.overload
-    def __init__(self, module_or_cls: type) -> None:
+    def __init__(self, module_or_cls: t.Type[T]) -> None:
         """LazyType(numpy.ndarray)"""
 
     @t.overload
@@ -99,7 +99,7 @@ class LazyType(t.Generic[T]):
 
     def __init__(
         self,
-        module_or_cls: t.Union[str, type],
+        module_or_cls: t.Union[str, t.Type[T]],
         qualname: t.Optional[str] = None,
     ) -> None:
         if isinstance(module_or_cls, str):
@@ -144,7 +144,7 @@ class LazyType(t.Generic[T]):
     def __repr__(self) -> str:
         return f'LazyType("{self.module}", "{self.qualname}")'
 
-    def get_class(self, import_module: bool = False) -> type:
+    def get_class(self, import_module: bool = True) -> "t.Type[T]":
         if self._runtime_class is None:
             try:
                 m = sys.modules[self.module]
@@ -153,18 +153,18 @@ class LazyType(t.Generic[T]):
                     import importlib
 
                     m = importlib.import_module(self.module)
+                else:
+                    raise ValueError(f"Module {self.module} not imported")
 
-                class Nothing:
-                    pass
-
-                return Nothing
-
-            self._runtime_class = getattr(m, self.qualname)
+            self._runtime_class = t.cast("t.Type[T]", getattr(m, self.qualname))
 
         return self._runtime_class
 
     def isinstance(self, obj: t.Any) -> "t.TypeGuard[T]":
-        return isinstance(obj, self.get_class(import_module=False))
+        try:
+            return isinstance(obj, self.get_class(import_module=False))
+        except ValueError:
+            return False
 
 
 @attr.define

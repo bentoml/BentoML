@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 
 from ..types import Tag
 from ...exceptions import BentoMLException
-from ..bento.bento import _get_default_bento_readme
+from ..bento.bento import get_default_bento_readme
 from .inference_api import InferenceAPI
-from ..runner.runner import BaseRunner
+from ..runner.runner import Runner
+from ..runner.runner import SimpleRunner
 from ..io_descriptors import IODescriptor
 from ..utils.validation import validate_tag_str
 
@@ -52,7 +53,11 @@ class Service:
     # For docs property
     _doc: t.Optional[str] = None
 
-    def __init__(self, name: str, runners: t.Optional[t.List[BaseRunner]] = None):
+    def __init__(
+        self,
+        name: str,
+        runners: "t.Optional[t.List[t.Union[Runner, SimpleRunner]]]" = None,
+    ):
         lower_name = name.lower()
 
         if name != lower_name:
@@ -69,13 +74,12 @@ class Service:
                     raise ValueError(
                         f"Found duplicate name `{r.name}` in service runners."
                     )
-                if not isinstance(r, BaseRunner):
-                    raise ValueError(
-                        "Service runners list must only contain runner instances"
-                    )
+                assert isinstance(
+                    r, (Runner, SimpleRunner)
+                ), "Service runners list must only contain runner instances"
                 self.runners[r.name] = r
         else:
-            self.runners: t.Dict[str, BaseRunner] = {}
+            self.runners: t.Dict[str, "t.Union[Runner, SimpleRunner]"] = {}
 
         self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
         self._middlewares: t.List[t.Tuple[t.Type["Middleware"], t.Any]] = []
@@ -196,4 +200,4 @@ class Service:
         if self.bento is not None:
             return self.bento.doc
 
-        return _get_default_bento_readme(self)
+        return get_default_bento_readme(self)

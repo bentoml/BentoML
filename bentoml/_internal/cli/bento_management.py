@@ -1,6 +1,5 @@
 import sys
 import json
-import typing as t
 from typing import TYPE_CHECKING
 
 import yaml

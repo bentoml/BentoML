@@ -10,12 +10,11 @@ from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ...exceptions import BadInput
 from ...exceptions import InternalServerError
-from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     import numpy as np
-else:
-    np = LazyLoader("np", globals(), "numpy")
+
+    from .. import ext_typing as ext
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ def _is_matched_shape(
     return True
 
 
-class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
+class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
     """
     `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type
@@ -110,6 +109,8 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
     ):
+        import numpy as np
+
         if isinstance(dtype, str):
             dtype = np.dtype(dtype)
 
@@ -151,9 +152,9 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
 
     def _verify_ndarray(
         self,
-        obj: "np.ndarray[t.Any, np.dtype[t.Any]]",
+        obj: "ext.NpNDArray[t.Any]",
         exception_cls: t.Type[Exception] = BadInput,
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+    ) -> "ext.NpNDArray[t.Any]":
         if self._dtype is not None and self._dtype != obj.dtype:
             if self._enforce_dtype:
                 raise exception_cls(
@@ -175,9 +176,7 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
                 logger.warning(f"{self.__class__.__name__}: {e}")
         return obj
 
-    async def from_http_request(
-        self, request: Request
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+    async def from_http_request(self, request: Request) -> "ext.NpNDArray[t.Any]":
         """
         Process incoming requests and convert incoming
          objects to `numpy.ndarray`
@@ -189,18 +188,18 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
+        import numpy as np
+
         obj = await request.json()
-        res: "np.ndarray[t.Any, np.dtype[t.Any]]"
+        res: "ext.NpNDArray[t.Any]"
         try:
-            res = np.array(obj, dtype=self._dtype)
+            res = np.array(obj, dtype=self._dtype)  # type: ignore[arg-type]
         except ValueError:
-            res = np.array(obj)
+            res = np.array(obj)  # type: ignore[arg-type]
         res = self._verify_ndarray(res, BadInput)
         return res
 
-    async def to_http_response(
-        self, obj: "np.ndarray[t.Any, np.dtype[t.Any]]"
-    ) -> Response:
+    async def to_http_response(self, obj: "ext.NpNDArray[t.Any]") -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -217,7 +216,7 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
     @classmethod
     def from_sample(
         cls,
-        sample_input: "np.ndarray[t.Any, np.dtype[t.Any]]",
+        sample_input: "ext.NpNDArray[t.Any]",
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> "NumpyNdarray":
@@ -225,7 +224,7 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         Create a NumpyNdarray IO Descriptor from given inputs.
 
         Args:
-            sample_input (`np.ndarray[Any, np.dtype[Any]]`):
+            sample_input (`np.ndarray`):
                 Sample inputs for IO descriptors.
             enforce_dtype (`bool`, `optional`, default to `True`):
                 Enforce a certain data type. `dtype` must be specified at function

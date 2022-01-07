@@ -7,19 +7,18 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
+from ..types import LazyType
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
-    import pandas as pd
+    import pandas as pd  # type: ignore[import]
+
+    from .. import ext_typing as ext
 else:
     pd = LazyLoader("pd", globals(), "pandas")
 
-try:
-    from typing import Literal
-except ImportError:  # pragma: no cover
-    from typing_extensions import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ def _schema_type(
         return {"type": "object"}
 
 
-class PandasDataFrame(IODescriptor["pd.DataFrame"]):
+class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     """
     `PandasDataFrame` defines API specification for the inputs/outputs of a Service,
       where either inputs will be converted to or outputs will be converted from type
@@ -148,9 +147,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
 
     def __init__(
         self,
-        orient: Literal[
-            "split", "records", "index", "columns", "values", "table"
-        ] = "records",
+        orient: "ext.DataFrameOrient" = "records",
         apply_column_names: bool = False,
         columns: t.Optional[t.List[str]] = None,
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
@@ -178,7 +175,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> "pd.DataFrame":
+    async def from_http_request(self, request: Request) -> "ext.PdDataFrame":
         """
         Process incoming requests and convert incoming
          objects to `pd.DataFrame`
@@ -200,7 +197,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
             # TODO(jiang): check dtype
-        res = pd.read_json(obj, dtype=self._dtype, orient=self._orient)
+        res = pd.read_json(obj, dtype=self._dtype, orient=self._orient)  # type: ignore[arg-type]
         assert isinstance(res, pd.DataFrame)
 
         if self._apply_column_names:
@@ -238,20 +235,18 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if not isinstance(obj, pd.DataFrame):
+        if LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
             raise InvalidArgument(
                 f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
             )
-        resp = obj.to_json(orient=self._orient)
+        resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
         return Response(resp, media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(
         cls,
         sample_input: "pd.DataFrame",
-        orient: Literal[
-            "split", "records", "index", "columns", "values", "table"
-        ] = "records",
+        orient: "ext.DataFrameOrient" = "records",
         apply_column_names: bool = True,
         enforce_shape: bool = True,
         enforce_dtype: bool = False,
@@ -311,7 +306,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         )
 
 
-class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
+class PandasSeries(IODescriptor["ext.PdSeries"]):
     """
     `PandasSeries` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type
@@ -405,7 +400,7 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
 
     def __init__(
         self,
-        orient: Literal["split", "records", "index", "table"] = "records",
+        orient: "ext.SeriesOrient" = "records",
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
@@ -429,7 +424,7 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> "pd.Series[t.Any]":
+    async def from_http_request(self, request: Request) -> "ext.PdSeries":
         """
         Process incoming requests and convert incoming
          objects to `pd.Series`
@@ -449,7 +444,8 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
                 )
 
         # TODO(jiang): check dtypes when enforce_dtype is set
-        res = pd.read_json(obj, typ="series", orient=self._orient, dtype=self._dtype)
+        res = pd.read_json(obj, typ="series", orient=self._orient, dtype=self._dtype)  # type: ignore[arg-type]
+
         assert isinstance(res, pd.Series)
 
         if self._enforce_shape:
@@ -465,9 +461,7 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def to_http_response(
-        self, obj: t.Union[t.Any, "pd.Series[t.Any]"]
-    ) -> Response:
+    async def to_http_response(self, obj: t.Union[t.Any, "ext.PdSeries"]) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -478,9 +472,9 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if not isinstance(obj, pd.Series):
+        if not LazyType["ext.PdSeries"](pd.Series).isinstance(obj):
             raise InvalidArgument(
                 f"return object is not of type `pd.Series`, got type {type(obj)} instead"
             )
-        resp = obj.to_json(orient=self._orient)
+        resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
         return Response(resp, media_type=MIME_TYPE_JSON)

@@ -18,9 +18,8 @@ from ...exceptions import InternalServerError
 
 if TYPE_CHECKING:
     import PIL.Image
-    import numpy.typing
 
-    NDArray = numpy.typing.NDArray[t.Any]
+    from .. import ext_typing as ext
 
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
@@ -101,6 +100,12 @@ class Image(IODescriptor[ImageType]):
         pilmode: t.Optional["_Mode"] = DEFAULT_PIL_MODE,
         mime_type: str = "image/jpeg",
     ):
+        try:
+            import PIL.Image
+        except ImportError:
+            raise InternalServerError(
+                "`Pillow` is required to use {__name__}\n Instructions: `pip install -U Pillow`"
+            )
         PIL.Image.init()
         self.MIME_EXT_MAPPING.update({v: k for k, v in PIL.Image.MIME.items()})
 
@@ -146,7 +151,7 @@ class Image(IODescriptor[ImageType]):
         return PIL.Image.open(io.BytesIO(bytes_))
 
     async def to_http_response(self, obj: ImageType) -> Response:
-        if LazyType["NDArray"]("numpy.ndarray").isinstance(obj):
+        if LazyType["ext.NpNDArray[t.Any]"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
         elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
             image = obj

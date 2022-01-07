@@ -1,4 +1,3 @@
-import sys
 import json
 import typing as t
 import dataclasses
@@ -9,27 +8,24 @@ from starlette.responses import Response
 
 from .base import JSONType
 from .base import IODescriptor
+from ..types import LazyType
 from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
-from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
     import pydantic
-    from pydantic import BaseModel
-    from pandas.core.frame import DataFrame  # noqa: F401
-else:  # pragma: no cover
-    np = LazyLoader("np", globals(), "numpy")
-    pd = LazyLoader("pd", globals(), "pandas")
-    pydantic = LazyLoader("pydantic", globals(), "pydantic")
+
+    from .. import ext_typing as ext
+
+    _SerializableObj = t.Union[
+        "ext.NpNDArray[t.Any]",
+        "ext.PdDataFrame",
+        t.Type["pydantic.BaseModel"],
+        t.Any,
+    ]
 
 
 MIME_TYPE_JSON = "application/json"
-
-_SerializableObj = t.Union[
-    "np.ndarray[t.Any, np.dtype[t.Any]]", t.Type["BaseModel"], "DataFrame", t.Any
-]
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
@@ -37,23 +33,19 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 
-        if "numpy" in sys.modules:
-            if isinstance(o, np.generic):
-                return o.item()
-
-            if isinstance(o, np.ndarray):
-                return o.tolist()
-
-        if "pandas" in sys.modules:
-            if isinstance(o, (pd.DataFrame, pd.Series)):
-                return o.to_dict()  # type: ignore
-
-        if "pydantic" in sys.modules:
-            if pydantic is not None and isinstance(o, pydantic.BaseModel):
-                obj_dict = o.dict()
-                if "__root__" in obj_dict:
-                    obj_dict = obj_dict.get("__root__")
-                return obj_dict
+        if LazyType["ext.NpNDArray[t.Any]"]("numpy.ndarray").isinstance(o):
+            return o.tolist()
+        if LazyType["ext.NpGeneric"]("numpy.generic").isinstance(o):
+            return o.item()
+        if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(o):
+            return o.to_dict()  # type: ignore[attr-defined]
+        if LazyType["ext.PdSeries"]("pandas.Series").isinstance(o):
+            return o.to_dict()  # type: ignore[attr-defined]
+        if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(o):
+            obj_dict = o.dict()
+            if "__root__" in obj_dict:
+                obj_dict = obj_dict.get("__root__")
+            return obj_dict
 
         return super().default(o)
 
@@ -110,12 +102,14 @@ class JSON(IODescriptor[JSONType]):
 
     def __init__(
         self,
-        pydantic_model: t.Optional["BaseModel"] = None,
+        pydantic_model: t.Optional["pydantic.BaseModel"] = None,
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:  # pragma: no cover
-            if pydantic is None:
+            try:
+                import pydantic as _
+            except ImportError:
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"
                 )
@@ -140,7 +134,9 @@ class JSON(IODescriptor[JSONType]):
     async def from_http_request(self, request: Request) -> JSONType:
         json_obj = await request.json()
         if hasattr(self, "_pydantic_model") and self._validate_json:
-            if pydantic is None:
+            try:
+                import pydantic
+            except ImportError:
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"
                 )

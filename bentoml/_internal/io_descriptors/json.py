@@ -108,7 +108,7 @@ class JSON(IODescriptor[JSONType]):
     ):
         if pydantic_model is not None:  # pragma: no cover
             try:
-                import pydantic as _
+                import pydantic as _  # noqa: F401
             except ImportError:
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"

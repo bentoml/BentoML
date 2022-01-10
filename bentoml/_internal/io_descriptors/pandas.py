@@ -197,7 +197,11 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
             # TODO(jiang): check dtype
-        res = pd.read_json(obj, dtype=self._dtype, orient=self._orient)  # type: ignore[arg-type]
+        res = pd.read_json(  # type: ignore[arg-type]
+            obj,
+            dtype=self._dtype,  # type: ignore[arg-type]
+            orient=self._orient,
+        )
         assert isinstance(res, pd.DataFrame)
 
         if self._apply_column_names:
@@ -444,7 +448,12 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
                 )
 
         # TODO(jiang): check dtypes when enforce_dtype is set
-        res = pd.read_json(obj, typ="series", orient=self._orient, dtype=self._dtype)  # type: ignore[arg-type]
+        res = pd.read_json(  # type: ignore[arg-type]
+            obj,
+            typ="series",
+            orient=self._orient,
+            dtype=self._dtype,  # type: ignore[arg-type]
+        )
 
         assert isinstance(res, pd.Series)
 

@@ -98,7 +98,10 @@ class NdarrayContainer(
     ) -> "ext.NpNDArray[t.Any]":
         import numpy as np
 
-        return np.stack(singles, axis=batch_axis)  # type: ignore[reportGeneralTypeIssues]
+        return np.stack(  # type: ignore[reportGeneralTypeIssues]
+            singles,
+            axis=batch_axis,
+        )
 
     @classmethod
     def batch_to_singles(
@@ -110,7 +113,11 @@ class NdarrayContainer(
 
         return [
             np.squeeze(arr, axis=batch_axis)  # type: ignore
-            for arr in np.split(batch, batch.shape[batch_axis], axis=batch_axis)  # type: ignore
+            for arr in np.split(  # type: ignore[list-item]
+                batch,
+                batch.shape[batch_axis],
+                axis=batch_axis,
+            )
         ]
 
     @classmethod
@@ -278,14 +285,20 @@ class DataContainerRegistry:
         cls, type_: t.Union[t.Type[SingleType], LazyType[t.Any]]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:  # type: ignore[override]
         typeref = LazyType.from_type(type_)
-        return cls.CONTAINER_SINGLE_TYPE_MAP.get(typeref, DefaultContainer)  # type: ignore[arg-type]
+        return cls.CONTAINER_SINGLE_TYPE_MAP.get(
+            typeref,
+            DefaultContainer,
+        )  # type: ignore[arg-type]
 
     @classmethod
     def find_by_batch_type(
         cls, type_: t.Union[t.Type[BatchType], LazyType[t.Any]]
     ) -> t.Type[DataContainer[SingleType, BatchType]]:  # type: ignore[override]
         typeref = LazyType.from_type(type_)
-        return cls.CONTAINER_BATCH_TYPE_MAP.get(typeref, DefaultContainer)  # type: ignore[arg-type]
+        return cls.CONTAINER_BATCH_TYPE_MAP.get(
+            typeref,
+            DefaultContainer,
+        )  # type: ignore[arg-type]
 
     @classmethod
     def find_by_name(cls, name: str) -> t.Type[DataContainer[t.Any, t.Any]]:
@@ -336,7 +349,10 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.single_to_payload(single)
 
     @classmethod
-    def payload_to_single(cls, payload: Payload) -> SingleType:  # type: ignore[override]
+    def payload_to_single(
+        cls,
+        payload: Payload,
+    ) -> SingleType:  # type: ignore[override]
         container_cls = DataContainerRegistry.find_by_name(
             str(payload.meta.get("container"))
         )

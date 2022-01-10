@@ -19,7 +19,7 @@ from ...exceptions import InternalServerError
 if TYPE_CHECKING:
     import PIL.Image
 
-    from .. import ext_typing as ext
+    from .. import ext_typing as ext  # noqa: F401
 
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"

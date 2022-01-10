@@ -1,11 +1,12 @@
 import click
 
 from bentoml.exceptions import CLIException
-from bentoml._internal.cli.click_utils import _echo
-from bentoml._internal.cli.click_utils import CLI_COLOR_SUCCESS
-from bentoml._internal.yatai_rest_api_client.config import add_context
-from bentoml._internal.yatai_rest_api_client.config import YataiClientContext
-from bentoml._internal.yatai_rest_api_client.config import default_context_name
+
+from ..cli.click_utils import _echo
+from ..cli.click_utils import CLI_COLOR_SUCCESS
+from ..yatai_rest_api_client.config import add_context
+from ..yatai_rest_api_client.config import YataiClientContext
+from ..yatai_rest_api_client.config import default_context_name
 
 
 def add_login_command(cli):

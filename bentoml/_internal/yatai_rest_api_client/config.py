@@ -8,8 +8,9 @@ import yaml
 import cattr
 
 from bentoml.exceptions import YataiRESTApiClientError
-from bentoml._internal.configuration.containers import BENTOML_HOME
-from bentoml._internal.yatai_rest_api_client.yatai import YataiRESTApiClient
+
+from .yatai import YataiRESTApiClient
+from ..configuration.containers import BENTOML_HOME
 
 logger = logging.getLogger(__name__)
 

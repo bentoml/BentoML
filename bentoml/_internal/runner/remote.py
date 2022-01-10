@@ -7,9 +7,8 @@ from json.decoder import JSONDecodeError
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml._internal.runner.container import Payload
-
 from .runner import RunnerImpl
+from .container import Payload
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import payload_params_to_multipart

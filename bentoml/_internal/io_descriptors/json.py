@@ -29,7 +29,7 @@ MIME_TYPE_JSON = "application/json"
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
-    def default(self, o: _SerializableObj) -> t.Any:
+    def default(self, o: "_SerializableObj") -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 

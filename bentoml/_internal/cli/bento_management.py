@@ -74,7 +74,7 @@ def add_bento_management_commands(
     )
     @click.option(
         "--no-trunc",
-        is_flag=False,
+        is_flag=True,
         help="Don't truncate the output",
     )
     def list_bentos(bento_name, output, no_trunc):

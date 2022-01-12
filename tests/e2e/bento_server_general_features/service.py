@@ -1,7 +1,7 @@
 import typing as t
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 import pydantic
 from PIL.Image import Image as PILImage
 from PIL.Image import fromarray
@@ -74,7 +74,7 @@ async def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
 
 
 @svc.api(
-    input=JSON(pydantic_model=_Schema(name="test", endpoints=["predict", "health"])),
+    input=JSON(pydantic_model=_Schema),
     output=JSON(),
 )
 async def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
@@ -122,7 +122,7 @@ async def predict_file(f: FileLike) -> bytes:
 @svc.api(input=Image(), output=Image(mime_type="image/bmp"))
 async def echo_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert isinstance(f, PILImage)
-    return np.array(f)
+    return np.array(f)  # type: ignore[arg-type]
 
 
 @svc.api(

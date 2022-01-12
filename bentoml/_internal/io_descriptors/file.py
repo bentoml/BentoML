@@ -52,7 +52,7 @@ class File(IODescriptor[FileLike]):
 
     Returns:
         IO Descriptor that represents file-like objects.
-    """  # noqa: LN001
+    """
 
     def __init__(self, mime_type: t.Optional[str] = None):
         self._mime_type = (

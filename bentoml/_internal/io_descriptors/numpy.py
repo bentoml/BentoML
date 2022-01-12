@@ -247,7 +247,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
             ...
             @svc.api(input=inp, output=NumpyNdarray())
             def predict() -> np.ndarray:...
-        """  # noqa: LN001
+        """
         return cls(
             dtype=sample_input.dtype,
             shape=sample_input.shape,

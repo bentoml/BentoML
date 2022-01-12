@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    import typing as t
     from typing import Literal
 
     from numpy import generic as NpGeneric
@@ -13,6 +14,12 @@ if TYPE_CHECKING:
     DataFrameOrient = Literal["split", "records", "index", "columns", "values", "table"]
     SeriesOrient = Literal["split", "records", "index", "table"]
 
+    from starlette.types import ASGIApp
+
+    class AsgiMiddleware(t.Protocol):
+        def __call__(self, app: ASGIApp, **options: t.Any) -> ASGIApp:
+            ...
+
     __all__ = [
         "PdSeries",
         "PdDataFrame",
@@ -20,4 +27,8 @@ if TYPE_CHECKING:
         "ObjectID",
         "PlasmaClient",
         "NpGeneric",
+        "DataFrameOrient",
+        "SeriesOrient",
+        "AsgiMiddleware",
+        "ASGIApp",
     ]

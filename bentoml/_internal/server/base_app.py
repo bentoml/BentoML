@@ -76,5 +76,17 @@ class BaseAppFactory(abc.ABC):
 
     @property
     def middlewares(self) -> t.List["Middleware"]:
-        # return [InstrumentMiddleware()]  #TODO(jiang)
-        return []
+        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
+        from starlette.middleware import Middleware
+
+        return [
+            Middleware(
+                otel_asgi.OpenTelemetryMiddleware,
+                excluded_urls=None,
+                default_span_details=None,
+                server_request_hook=None,
+                client_request_hook=None,
+                client_response_hook=None,
+                tracer_provider=None,
+            )
+        ]

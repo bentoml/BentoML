@@ -123,7 +123,7 @@ class ServiceAppFactory(BaseAppFactory):
             BentoServerContainer.metrics_client
         ],
         enable_access_control: bool = Provide[BentoServerContainer.config.cors.enabled],
-        access_control_options: t.Dict = Provide[
+        access_control_options: t.Dict[str, t.Union[t.List[str], int]] = Provide[
             BentoServerContainer.access_control_options
         ],
     ) -> None:
@@ -220,7 +220,7 @@ class ServiceAppFactory(BaseAppFactory):
             )
         )
 
-        for _, api in self.bento_service._apis.items():
+        for _, api in self.bento_service.apis.items():
             api_route_endpoint = self._create_api_endpoint(api)
             routes.append(
                 Route(
@@ -239,7 +239,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         from starlette.middleware import Middleware
 
-        for middleware_cls, options in self.bento_service._middlewares:
+        for middleware_cls, options in self.bento_service.middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
 
         if self.enable_access_control:
@@ -258,22 +258,20 @@ class ServiceAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
-        on_startup.insert(0, self.bento_service._on_asgi_app_startup)
+        on_startup.insert(0, self.bento_service.on_asgi_app_startup)
         return on_startup
 
     @property
     def on_shutdown(self) -> t.List[t.Callable[[], None]]:
         on_shutdown = super().on_shutdown
-        on_shutdown.insert(0, self.bento_service._on_asgi_app_shutdown)
+        on_shutdown.insert(0, self.bento_service.on_asgi_app_shutdown)
         return on_shutdown
 
     def __call__(self) -> "Starlette":
         app = super().__call__()
 
-        for mount_app, path, name in self.bento_service._mount_apps:
-            app.mount(
-                app=mount_app, path=path, name=name
-            )  # TODO(jiang): mount wsgi app ?
+        for mount_app, path, name in self.bento_service.mount_apps:
+            app.mount(app=mount_app, path=path, name=name)
 
         return app
 
@@ -301,9 +299,9 @@ class ServiceAppFactory(BaseAppFactory):
                         output = await api.func(input_data)
                 else:
                     if isinstance(api.input, Multipart):
-                        output = await run_in_threadpool(api.func, **input_data)
+                        output: t.Any = await run_in_threadpool(api.func, **input_data)
                     else:
-                        output = await run_in_threadpool(api.func, input_data)
+                        output: t.Any = await run_in_threadpool(api.func, input_data)
                 response = await api.output.to_http_response(output)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())

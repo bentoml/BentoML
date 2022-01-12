@@ -79,6 +79,8 @@ class BaseAppFactory(abc.ABC):
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
         from starlette.middleware import Middleware
 
+        from ..configuration.containers import BentoServerContainer
+
         return [
             Middleware(
                 otel_asgi.OpenTelemetryMiddleware,
@@ -87,6 +89,6 @@ class BaseAppFactory(abc.ABC):
                 server_request_hook=None,
                 client_request_hook=None,
                 client_response_hook=None,
-                tracer_provider=None,
+                tracer_provider=BentoServerContainer.tracer_provider.get(),
             )
         ]

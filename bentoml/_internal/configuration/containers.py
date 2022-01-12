@@ -1,3 +1,4 @@
+# type: ignore[stub]
 import os
 import typing as t
 import logging
@@ -316,6 +317,28 @@ class BentoServerContainerClass:
             multiproc_dir=multiproc_dir,
             namespace=namespace,
         )
+
+    @providers.SingletonFactory
+    @staticmethod
+    def tracer_provider():
+        from opentelemetry import trace
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.exporter.zipkin.json import ZipkinExporter
+
+        tracer_provider = trace.get_tracer_provider()
+
+        zipkin_exporter = ZipkinExporter(
+            # version=Protocol.V2
+            endpoint="http://localhost:9411/api/v2/spans",
+            local_node_ipv4="127.0.0.1",
+            # local_node_ipv6="2001:db8::c001",
+            local_node_port=31313,
+            max_tag_value_length=256,
+            timeout=5,  # (in seconds)
+        )
+        span_processor = BatchSpanProcessor(zipkin_exporter)
+        tracer_provider.add_span_processor(span_processor)
+        return tracer_provider
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())

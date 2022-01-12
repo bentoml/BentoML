@@ -11,6 +11,7 @@ from rich.console import Console
 
 from bentoml.bentos import build_bentofile
 
+from ..types import Tag
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
 from .click_utils import _is_valid_bento_tag
@@ -88,7 +89,7 @@ def add_bento_management_commands(
         bentos = bento_store.list(bento_name)
         res = [
             {
-                "tag": str(bento.tag),
+                "tag": bento.tag,
                 "service": bento.info.service,
                 "path": bento.path,
                 "size": human_readable_size(calc_dir_size(bento.path)),
@@ -98,6 +99,11 @@ def add_bento_management_commands(
                 bentos, key=lambda x: x.info.creation_time, reverse=True
             )
         ]
+
+        if not no_trunc:
+            tags = [data["tag"] for data in res]
+            Tag.shorten_versions(tags)
+
         if output == "json":
             info = json.dumps(res, indent=2)
             print(info)

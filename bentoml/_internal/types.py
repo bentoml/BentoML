@@ -10,12 +10,14 @@ import urllib.parse
 import urllib.request
 from typing import TYPE_CHECKING
 from datetime import datetime
+from collections import defaultdict
 from dataclasses import dataclass
 
 import fs
 import attr
 import cattr
 
+from .utils.trie import Trie
 from ..exceptions import BentoMLException
 from .utils.validation import validate_tag_str
 from .utils.dataclasses import json_serializer
@@ -258,6 +260,28 @@ class Tag:
 
     def latest_path(self) -> str:
         return fs.path.combine(self.name, "latest")
+
+    @classmethod
+    def shorten_versions(cls, tags: "t.List[Tag]"):
+        versionmap = defaultdict(list)
+
+        for tag in tags:
+            versionmap[tag.name].append(tag)
+
+        for name in versionmap:
+            trie = Trie()
+
+            prefixlen = 0
+            for tag in versionmap[name]:
+                requiredprefix = trie.insert(tag.version)
+                if requiredprefix > prefixlen:
+                    prefixlen = requiredprefix
+
+            if prefixlen < 8:
+                prefixlen = 8
+
+            for tag in versionmap[name]:
+                tag.version = tag.version[:prefixlen]
 
 
 cattr.register_structure_hook(Tag, lambda d, t: Tag.from_taglike(d))

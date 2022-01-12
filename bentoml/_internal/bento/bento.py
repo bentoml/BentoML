@@ -42,7 +42,7 @@ BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
 
 
-def _get_default_bento_readme(svc: "Service"):
+def get_default_bento_readme(svc: "Service"):
     doc = f'# BentoML Service "{svc.name}"\n\n'
     doc += "This is a Machine Learning Service created with BentoML. \n\n"
 
@@ -215,7 +215,7 @@ class Bento(StoreItem):
         # Create `readme.md` file
         if build_config.description is None:
             with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
-                f.write(_get_default_bento_readme(svc))
+                f.write(get_default_bento_readme(svc))
         else:
             if build_config.description.startswith("file:"):
                 file_name = build_config.description[5:].strip()

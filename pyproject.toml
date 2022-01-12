@@ -38,6 +38,7 @@ markers = ["gpus"]
 
 [tool.pylint.master]
 ignore=".ipynb_checkpoints,typings"
+ignore-paths=".*.pyi"
 unsafe-load-any-extension="no"
 extension-pkg-whitelist="numpy,tensorflow,torch,paddle,keras"
 jobs=4

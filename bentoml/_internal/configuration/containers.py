@@ -24,10 +24,7 @@ from ...exceptions import BentoMLConfigException
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
-    from pyarrow._plasma import (  # pylint: disable=E0611 # noqa: F401,LN001 # type: ignore[reportMissingImports]
-        PlasmaClient,
-    )
-
+    from .. import ext_typing as ext
     from ..server.metrics.prometheus import PrometheusClient
 
 
@@ -322,7 +319,7 @@ class BentoServerContainerClass:
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())
-    plasma_db = providers.Static[t.Optional["PlasmaClient"]](None)  # type: ignore
+    plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
 
 
 BentoServerContainer = BentoServerContainerClass()

@@ -8,13 +8,12 @@ from functools import partial
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml._internal.runner.utils import Params
-from bentoml._internal.runner.utils import PAYLOAD_META_HEADER
-from bentoml._internal.runner.utils import multipart_to_payload_params
-from bentoml._internal.runner.container import AutoContainer
-from bentoml._internal.marshal.dispatcher import CorkDispatcher
-
+from ..runner.utils import Params
+from ..runner.utils import PAYLOAD_META_HEADER
+from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
+from ..runner.container import AutoContainer
+from ..marshal.dispatcher import CorkDispatcher
 from ..configuration.containers import BentoMLContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -26,6 +25,7 @@ if TYPE_CHECKING:
     from starlette.responses import Response
 
     from ..runner import Runner
+    from ..runner import SimpleRunner
     from ..tracing import Tracer
 
 
@@ -33,7 +33,7 @@ class RunnerAppFactory(BaseAppFactory):
     @inject
     def __init__(
         self,
-        runner: "Runner",
+        runner: "t.Union[Runner, SimpleRunner]",
         instance_id: t.Optional[int] = None,
         tracer: "Tracer" = Provide[BentoMLContainer.tracer],
     ) -> None:

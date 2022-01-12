@@ -102,14 +102,20 @@ class JSON(IODescriptor[JSONType]):
 
     def __init__(
         self,
-        pydantic_model: t.Optional["pydantic.BaseModel"] = None,
+        pydantic_model: t.Optional["t.Type[pydantic.BaseModel]"] = None,
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
-            assert LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(
-                pydantic_model
-            ), "`pydantic` must be installed to use `pydantic_model`"
+            try:
+                import pydantic
+            except ImportError:
+                raise MissingDependencyException(
+                    "`pydantic` must be installed to use `pydantic_model`"
+                )
+            assert issubclass(
+                pydantic_model, pydantic.BaseModel
+            ), "`pydantic_model` must be a subclass of `pydantic.BaseModel`"
 
         self._pydantic_model = pydantic_model
         self._validate_json = validate_json

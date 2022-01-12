@@ -106,22 +106,19 @@ class JSON(IODescriptor[JSONType]):
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
-        if pydantic_model is not None:  # pragma: no cover
-            try:
-                import pydantic as _  # noqa: F401
-            except ImportError:
-                raise MissingDependencyException(
-                    "`pydantic` must be installed to use `pydantic_model`"
-                )
-            self._pydantic_model = pydantic_model
+        if pydantic_model is not None:
+            assert LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(
+                pydantic_model
+            ), "`pydantic` must be installed to use `pydantic_model`"
 
+        self._pydantic_model = pydantic_model
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        if hasattr(self, "_pydantic_model"):
-            return self._pydantic_model.schema()
-        return {"type": "object"}
+        if self._pydantic_model is None:
+            return {"type": "object"}
+        return self._pydantic_model.schema()
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -133,7 +130,7 @@ class JSON(IODescriptor[JSONType]):
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_obj = await request.json()
-        if hasattr(self, "_pydantic_model") and self._validate_json:
+        if self._pydantic_model is not None and self._validate_json:
             try:
                 import pydantic
             except ImportError:

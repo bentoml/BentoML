@@ -10,7 +10,7 @@ help: ## Show all Makefile targets
 
 format: ## Running code formatter: black and isort
 	@./scripts/tools/formatter.sh
-lint: ## Running lint checker: flake8 and pylint
+lint: ## Running lint checker: pylint
 	@./scripts/tools/linter.sh
 type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
@@ -24,7 +24,7 @@ __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
 __style_name := ${__style_src:_check.sh=}
 tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
 
-ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, pyright
+ci-all: $(tools) ## Running codestyle in CI: black, isort, pylint, pyright
 
 ci-%:
 	$(eval style := $(subst ci-, ,$@))
@@ -34,7 +34,7 @@ ci-%:
 ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 
 .PHONY: ci-lint
-ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
+ci-lint: ci-pylint ## Running lint check in CI: pylint
 
 
 tests-%: check-defined-USE_GPU check-defined-USE_VERBOSE

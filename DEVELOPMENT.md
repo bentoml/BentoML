@@ -205,7 +205,7 @@ bentoml get IrisClassifier --verbose
 
 formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort)
 
-linter: [flake8](https://flake8.pycqa.org/en/latest/), [pylint](https://pylint.org/)
+linter: [pylint](https://pylint.org/)
 
 type checker: [pyright](https://github.com/microsoft/pyright)
 
@@ -283,7 +283,7 @@ sudo apt install inotify-tools
 Currently BentoML are [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible via `setup.cfg` and `pyproject.toml`.
  We also define most of our config for Python tools where:
  - `pyproject.toml` contains config for `setuptools`, `black`, `pytest`, `pylint`, `isort`, `pyright`
- - `setup.cfg` contains metadata for `bentoml` library, `flake8`, and `coverage`
+ - `setup.cfg` contains metadata for `bentoml` library and `coverage`
 
 ## Benchmark
 BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).

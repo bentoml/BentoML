@@ -199,6 +199,9 @@ class Tag:
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)}, version={repr(self.version)})"
 
+    def __rich__(self) -> str:
+        return str(self)
+
     def __eq__(self, other: "Tag") -> bool:
         return self.name == other.name and self.version == other.version
 

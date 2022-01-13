@@ -256,11 +256,16 @@ class Tag:
         return fs.path.combine(self.name, "latest")
 
 
-cattr.register_structure_hook(Tag, lambda d, t: Tag.from_taglike(d))  # type: ignore[misc]
+cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
 
-cattr.register_structure_hook(  # type: ignore[misc]
-    datetime, lambda d, t: d if isinstance(d, datetime) else datetime.fromisoformat(d)  # type: ignore[misc]
-)
+
+def _format_dt(d: t.Union[datetime, str]) -> datetime:
+    if isinstance(d, str):
+        return datetime.fromisoformat(d)
+    return d
+
+
+cattr.register_structure_hook(datetime, _format_dt)  # type: ignore[misc]
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

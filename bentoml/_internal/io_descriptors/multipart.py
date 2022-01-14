@@ -13,7 +13,6 @@ from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_responses
 
 if TYPE_CHECKING:
-    # noqa: F811
     from .file import File
     from .json import JSON
     from .text import Text
@@ -97,7 +96,7 @@ class Multipart(IODescriptor[MultipartIO]):
 
     Returns:
         IO Descriptor that represents Multipart request/response.
-    """  # noqa: LN001
+    """
 
     def __init__(
         self,

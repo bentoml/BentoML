@@ -1,4 +1,3 @@
-# flake8: noqa: E402
 from typing import TYPE_CHECKING
 
 from ._internal.configuration import BENTOML_VERSION as __version__

@@ -400,7 +400,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
              be specified
     Returns:
         IO Descriptor that represents `pd.DataFrame`.
-    """  # noqa: LN001
+    """
 
     def __init__(
         self,

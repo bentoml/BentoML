@@ -23,7 +23,7 @@ from bentoml.types import InferenceResult, InferenceTask
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
+@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact("sk_model")])
 class ExampleService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose
@@ -43,7 +43,7 @@ class ExampleService(bentoml.BentoService):
         return self.artifacts.model.predict_dataframe(df)
 
     @bentoml.api(
-        input=MultiImageInput(input_names=('original', 'compared')), batch=True
+        input=MultiImageInput(input_names=("original", "compared")), batch=True
     )
     def predict_multi_images(self, originals, compareds):
         return self.artifacts.model.predict_multi_images(originals, compareds)
@@ -114,16 +114,21 @@ class ExampleService(bentoml.BentoService):
             InferenceResult(http_status=200, data=json.dumps(result)) for result in rets
         ]
 
-    @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000, batch=True)
+    @bentoml.api(
+        route="/echo_with_delay",
+        input=JsonInput(),
+        mb_max_latency=10000 * 1000,
+        batch=True,
+    )
     def echo_with_delay(self, input_datas):
         data = input_datas[0]
-        time.sleep(data['b'] + data['a'] * len(input_datas))
+        time.sleep(data["b"] + data["a"] * len(input_datas))
         return input_datas
 
     @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000, batch=True)
     def echo_batch_size(self, input_datas=10):
         data = input_datas[0]
-        time.sleep(data['b'] + data['a'] * len(input_datas))
+        time.sleep(data["b"] + data["a"] * len(input_datas))
         batch_size = len(input_datas)
         return [batch_size] * batch_size
 

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from starlette.responses import Response
     from starlette.middleware import Middleware
     from starlette.applications import Starlette
+    from opentelemetry.sdk.trace import Span
 
 logger = logging.getLogger(__name__)
 
@@ -81,13 +82,17 @@ class BaseAppFactory(abc.ABC):
 
         from ..configuration.containers import BentoServerContainer
 
+        def client_request_hook(span: "Span", scope: t.Dict[str, t.Any]) -> None:
+            span.context.trace_id
+            return
+
         return [
             Middleware(
                 otel_asgi.OpenTelemetryMiddleware,
                 excluded_urls=None,
                 default_span_details=None,
                 server_request_hook=None,
-                client_request_hook=None,
+                client_request_hook=client_request_hook,
                 client_response_hook=None,
                 tracer_provider=BentoServerContainer.tracer_provider.get(),
             )

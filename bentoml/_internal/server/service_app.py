@@ -3,15 +3,16 @@ import sys
 import typing as t
 import asyncio
 import logging
+import contextvars
 from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
+from opentelemetry import trace  # type: ignore[import]
 
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
-from ..configuration.containers import BentoMLContainer
 from ..configuration.containers import BentoServerContainer
 from ..io_descriptors.multipart import Multipart
 
@@ -21,8 +22,8 @@ if TYPE_CHECKING:
     from starlette.responses import Response
     from starlette.middleware import Middleware
     from starlette.applications import Starlette
+    from opentelemetry.sdk.trace import Span
 
-    from ..tracing import Tracer
     from ..service.inference_api import InferenceAPI
     from ..server.metrics.prometheus import PrometheusClient
 
@@ -104,6 +105,32 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
     )
 
 
+class ServiceContextClass:
+    def __init__(self) -> None:
+        self.request_id_var = contextvars.ContextVar[t.Optional[int]]("request_id_var")
+
+    @property
+    def trace_id(self) -> t.Optional[int]:
+        span = trace.get_current_span()
+        if span is None:
+            return None
+        return span.get_span_context().trace_id
+
+    @property
+    def span_id(self) -> t.Optional[int]:
+        span = trace.get_current_span()
+        if span is None:
+            return None
+        return span.get_span_context().span_id
+
+    @property
+    def request_id(self) -> t.Optional[int]:
+        return self.request_id_var.get()
+
+
+ServiceContext = ServiceContextClass()
+
+
 class ServiceAppFactory(BaseAppFactory):
     """
     ServiceApp creates a REST API server based on APIs defined with a BentoService
@@ -118,7 +145,6 @@ class ServiceAppFactory(BaseAppFactory):
         self,
         bento_service: Service,
         enable_metrics: bool = Provide[BentoServerContainer.config.metrics.enabled],
-        tracer: "Tracer" = Provide[BentoMLContainer.tracer],
         metrics_client: "PrometheusClient" = Provide[
             BentoServerContainer.metrics_client
         ],
@@ -130,7 +156,6 @@ class ServiceAppFactory(BaseAppFactory):
         self.bento_service = bento_service
 
         self.enable_metrics = enable_metrics
-        self.tracer = tracer
         self.metrics_client = metrics_client
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
@@ -253,6 +278,27 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(CORSMiddleware, **self.access_control_options)
             )
 
+        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
+
+        def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
+            if span is not None:
+                ServiceContext.request_id_var.set(span.context.span_id)
+
+        def client_response_hook(span: "Span", _message: t.Any) -> None:
+            if span is not None:
+                ServiceContext.request_id_var.set(None)
+
+        middlewares.append(
+            Middleware(
+                otel_asgi.OpenTelemetryMiddleware,
+                excluded_urls=None,
+                default_span_details=None,
+                server_request_hook=None,
+                client_request_hook=client_request_hook,
+                client_response_hook=client_response_hook,
+                tracer_provider=BentoServerContainer.tracer_provider.get(),
+            )
+        )
         return middlewares
 
     @property
@@ -325,16 +371,4 @@ class ServiceAppFactory(BaseAppFactory):
 
             return response
 
-        """
-        TODO: instrument tracing
-        def api_func_with_tracing():
-            with self.tracer.span(
-                service_name=f"BentoService.{self.bento_service.name}",
-                span_name=f"InferenceAPI {api.name} HTTP route",
-                request_headers=request.headers,
-            ):
-                return api_func()
-
-        return api_func_with_tracing
-        """
         return api_func

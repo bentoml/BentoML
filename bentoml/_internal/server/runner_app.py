@@ -5,16 +5,12 @@ import logging
 from typing import TYPE_CHECKING
 from functools import partial
 
-from simple_di import inject
-from simple_di import Provide
-
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
-from ..configuration.containers import BentoMLContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -26,20 +22,37 @@ if TYPE_CHECKING:
 
     from ..runner import Runner
     from ..runner import SimpleRunner
-    from ..tracing import Tracer
+
+from opentelemetry import trace  # type: ignore[import]
+
+
+class ServiceContextClass:
+    @property
+    def trace_id(self) -> t.Optional[int]:
+        span = trace.get_current_span()
+        if span is None:
+            return None
+        return span.get_span_context().trace_id
+
+    @property
+    def span_id(self) -> t.Optional[int]:
+        span = trace.get_current_span()
+        if span is None:
+            return None
+        return span.get_span_context().span_id
+
+
+ServiceContext = ServiceContextClass()
 
 
 class RunnerAppFactory(BaseAppFactory):
-    @inject
     def __init__(
         self,
         runner: "t.Union[Runner, SimpleRunner]",
         instance_id: t.Optional[int] = None,
-        tracer: "Tracer" = Provide[BentoMLContainer.tracer],
     ) -> None:
         self.runner = runner
         self.instance_id = instance_id
-        self.tracer = tracer
 
         from starlette.responses import Response
 

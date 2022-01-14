@@ -4,7 +4,7 @@ import typing as t
 import logging
 import multiprocessing
 from typing import TYPE_CHECKING
-from dataclasses import dataclass  # TODO: simple-di required this. remove it
+from dataclasses import dataclass
 
 import yaml
 from schema import Or
@@ -100,6 +100,7 @@ SCHEMA = Schema(
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
+            "sample_rate": And(float, lambda i: i >= 0 and i <= 1),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
@@ -217,32 +218,6 @@ class BentoMLContainerClass:
 
         return ModelStore(base_dir)
 
-    @providers.SingletonFactory
-    @staticmethod
-    def tracer(
-        tracer_type: str = Provide[config.tracing.type],
-        zipkin_server_url: str = Provide[config.tracing.zipkin.url],
-        jaeger_server_address: str = Provide[config.tracing.jaeger.address],
-        jaeger_server_port: int = Provide[config.tracing.jaeger.port],
-    ):
-        if tracer_type and tracer_type.lower() == "zipkin" and zipkin_server_url:
-            from ..tracing.zipkin import get_zipkin_tracer
-
-            return get_zipkin_tracer(zipkin_server_url)
-        elif (
-            tracer_type
-            and tracer_type.lower() == "jaeger"
-            and jaeger_server_address
-            and jaeger_server_port
-        ):
-            from ..tracing.jaeger import get_jaeger_tracer
-
-            return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
-        else:
-            from ..tracing.noop import NoopTracer
-
-            return NoopTracer()
-
     logging_file_directory = providers.Factory[str](
         lambda default, customized: customized if customized is not None else default,
         providers.Factory[str](
@@ -320,25 +295,49 @@ class BentoServerContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def tracer_provider():
+    def tracer_provider(
+        tracer_type: str = Provide[config.tracing.type],
+        sample_rate: float = Provide[config.tracing.sample_rate],
+        zipkin_server_url: str = Provide[config.tracing.zipkin.url],
+        jaeger_server_address: str = Provide[config.tracing.jaeger.address],
+        jaeger_server_port: int = Provide[config.tracing.jaeger.port],
+    ):
         from opentelemetry import trace
+        from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.exporter.zipkin.json import ZipkinExporter
+        from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
 
-        tracer_provider = trace.get_tracer_provider()
-
-        zipkin_exporter = ZipkinExporter(
-            # version=Protocol.V2
-            endpoint="http://localhost:9411/api/v2/spans",
-            local_node_ipv4="127.0.0.1",
-            # local_node_ipv6="2001:db8::c001",
-            local_node_port=31313,
-            max_tag_value_length=256,
-            timeout=5,  # (in seconds)
+        provider = TracerProvider(
+            sampler=TraceIdRatioBased(sample_rate),
+            # resource: Resource = Resource.create({}),
+            # shutdown_on_exit: bool = True,
+            # active_span_processor: Union[
+            # SynchronousMultiSpanProcessor, ConcurrentMultiSpanProcessor
+            # ] = None,
+            # id_generator: IdGenerator = None,
         )
-        span_processor = BatchSpanProcessor(zipkin_exporter)
-        tracer_provider.add_span_processor(span_processor)
-        return tracer_provider
+
+        if tracer_type == "zipkin":
+            from opentelemetry.exporter.zipkin.json import ZipkinExporter
+
+            exporter = ZipkinExporter(
+                endpoint=zipkin_server_url,
+            )
+            provider = TracerProvider()
+            provider.add_span_processor(BatchSpanProcessor(exporter))
+            return provider
+        elif tracer_type == "jaeger":
+            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+
+            exporter = JaegerExporter(
+                agent_host_name=jaeger_server_address,
+                agent_port=jaeger_server_port,
+            )
+            provider = TracerProvider()
+            provider.add_span_processor(BatchSpanProcessor(exporter))
+            return provider
+        else:
+            return trace.get_tracer_provider()
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())

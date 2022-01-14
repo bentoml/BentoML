@@ -100,7 +100,7 @@ SCHEMA = Schema(
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
-            "sample_rate": And(float, lambda i: i >= 0 and i <= 1),
+            "sample_rate": Or(And(float, lambda i: i >= 0 and i <= 1), None),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
@@ -297,7 +297,7 @@ class BentoServerContainerClass:
     @staticmethod
     def tracer_provider(
         tracer_type: str = Provide[config.tracing.type],
-        sample_rate: float = Provide[config.tracing.sample_rate],
+        sample_rate: t.Optional[float] = Provide[config.tracing.sample_rate],
         zipkin_server_url: str = Provide[config.tracing.zipkin.url],
         jaeger_server_address: str = Provide[config.tracing.jaeger.address],
         jaeger_server_port: int = Provide[config.tracing.jaeger.port],
@@ -306,6 +306,9 @@ class BentoServerContainerClass:
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
         from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
+
+        if sample_rate is None:
+            sample_rate = 0.0
 
         provider = TracerProvider(
             sampler=TraceIdRatioBased(sample_rate),

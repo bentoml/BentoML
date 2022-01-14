@@ -5,6 +5,8 @@ import logging
 from typing import TYPE_CHECKING
 from functools import partial
 
+from opentelemetry import trace  # type: ignore[import]
+
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
@@ -22,8 +24,6 @@ if TYPE_CHECKING:
 
     from ..runner import Runner
     from ..runner import SimpleRunner
-
-from opentelemetry import trace  # type: ignore[import]
 
 
 class ServiceContextClass:

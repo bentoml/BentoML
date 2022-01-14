@@ -98,9 +98,7 @@ class LazyType(t.Generic[T]):
         """LazyType("numpy.ndarray")"""
 
     def __init__(
-        self,
-        module_or_cls: t.Union[str, t.Type[T]],
-        qualname: t.Optional[str] = None,
+        self, module_or_cls: t.Union[str, t.Type[T]], qualname: t.Optional[str] = None,
     ) -> None:
         if isinstance(module_or_cls, str):
             if qualname is None:  # LazyType("numpy.ndarray")
@@ -259,7 +257,7 @@ class Tag:
 cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
 
 
-def _format_dt(d: t.Union[datetime, str]) -> datetime:
+def _format_dt(d: t.Union[datetime, str], _: type) -> datetime:
     if isinstance(d, str):
         return datetime.fromisoformat(d)
     return d

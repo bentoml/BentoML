@@ -5,8 +5,6 @@ import logging
 from typing import TYPE_CHECKING
 from functools import partial
 
-from opentelemetry import trace  # type: ignore[import]
-
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
@@ -24,25 +22,6 @@ if TYPE_CHECKING:
 
     from ..runner import Runner
     from ..runner import SimpleRunner
-
-
-class ServiceContextClass:
-    @property
-    def trace_id(self) -> t.Optional[int]:
-        span = trace.get_current_span()
-        if span is None:
-            return None
-        return span.get_span_context().trace_id
-
-    @property
-    def span_id(self) -> t.Optional[int]:
-        span = trace.get_current_span()
-        if span is None:
-            return None
-        return span.get_span_context().span_id
-
-
-ServiceContext = ServiceContextClass()
 
 
 class RunnerAppFactory(BaseAppFactory):
@@ -123,14 +102,12 @@ class RunnerAppFactory(BaseAppFactory):
         params = Params.agg(
             params_list,
             lambda i: AutoContainer.payloads_to_batch(
-                i,
-                batch_axis=self.runner.batch_options.input_batch_axis,
+                i, batch_axis=self.runner.batch_options.input_batch_axis,
             ),
         )
         batch_ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
         payloads = AutoContainer.batch_to_payloads(
-            batch_ret,
-            batch_axis=self.runner.batch_options.input_batch_axis,
+            batch_ret, batch_axis=self.runner.batch_options.input_batch_axis,
         )
         return [
             Response(

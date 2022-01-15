@@ -233,24 +233,31 @@ BentoMLContainer = BentoMLContainerClass()
 
 
 @dataclass
-class BentoServerContainerClass:
+class DeploymentContainerClass:
 
     bentoml_container = BentoMLContainer
-    config = bentoml_container.config.bento_server
+    config = bentoml_container.config
+    api_server_config = config.bento_server
 
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins: t.List[str] = Provide[config.cors.access_control_allow_origin],
+        allow_origins: t.List[str] = Provide[
+            api_server_config.cors.access_control_allow_origin
+        ],
         allow_credentials: t.List[str] = Provide[
-            config.cors.access_control_allow_credentials
+            api_server_config.cors.access_control_allow_credentials
         ],
         expose_headers: t.List[str] = Provide[
-            config.cors.access_control_expose_headers
+            api_server_config.cors.access_control_expose_headers
         ],
-        allow_methods: t.List[str] = Provide[config.cors.access_control_allow_methods],
-        allow_headers: t.List[str] = Provide[config.cors.access_control_allow_headers],
-        max_age: int = Provide[config.cors.access_control_max_age],
+        allow_methods: t.List[str] = Provide[
+            api_server_config.cors.access_control_allow_methods
+        ],
+        allow_headers: t.List[str] = Provide[
+            api_server_config.cors.access_control_allow_headers
+        ],
+        max_age: int = Provide[api_server_config.cors.access_control_max_age],
     ) -> t.Dict[str, t.Union[t.List[str], int]]:
         kwargs = dict(
             allow_origins=allow_origins,
@@ -266,10 +273,10 @@ class BentoServerContainerClass:
 
     api_server_workers = providers.Factory[int](
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-        config.workers,
+        api_server_config.workers,
     )
-    service_port = config.port
-    service_host = config.host
+    service_port = api_server_config.port
+    service_host = api_server_config.host
     forward_host = providers.Static[str]("localhost")
     forward_port = providers.SingletonFactory[int](get_free_port)
     prometheus_lock = providers.SingletonFactory["SyncLock"](multiprocessing.Lock)
@@ -284,7 +291,7 @@ class BentoServerContainerClass:
     @staticmethod
     def metrics_client(
         multiproc_dir: str = Provide[prometheus_multiproc_dir],
-        namespace: str = Provide[config.metrics.namespace],
+        namespace: str = Provide[api_server_config.metrics.namespace],
     ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
@@ -347,4 +354,4 @@ class BentoServerContainerClass:
     plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
 
 
-BentoServerContainer = BentoServerContainerClass()
+DeploymentContainer = DeploymentContainerClass()

@@ -13,7 +13,7 @@ from opentelemetry import trace  # type: ignore[import]
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
-from ..configuration.containers import BentoServerContainer
+from ..configuration.containers import DeploymentContainer
 from ..io_descriptors.multipart import Multipart
 
 if TYPE_CHECKING:
@@ -144,13 +144,13 @@ class ServiceAppFactory(BaseAppFactory):
     def __init__(
         self,
         bento_service: Service,
-        enable_metrics: bool = Provide[BentoServerContainer.config.metrics.enabled],
+        enable_metrics: bool = Provide[DeploymentContainer.config.metrics.enabled],
         metrics_client: "PrometheusClient" = Provide[
-            BentoServerContainer.metrics_client
+            DeploymentContainer.metrics_client
         ],
-        enable_access_control: bool = Provide[BentoServerContainer.config.cors.enabled],
+        enable_access_control: bool = Provide[DeploymentContainer.config.cors.enabled],
         access_control_options: t.Dict[str, t.Union[t.List[str], int]] = Provide[
-            BentoServerContainer.access_control_options
+            DeploymentContainer.access_control_options
         ],
     ) -> None:
         self.bento_service = bento_service
@@ -296,7 +296,7 @@ class ServiceAppFactory(BaseAppFactory):
                 server_request_hook=None,
                 client_request_hook=client_request_hook,
                 client_response_hook=client_response_hook,
-                tracer_provider=BentoServerContainer.tracer_provider.get(),
+                tracer_provider=DeploymentContainer.tracer_provider.get(),
             )
         )
         return middlewares

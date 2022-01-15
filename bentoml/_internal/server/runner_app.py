@@ -102,12 +102,14 @@ class RunnerAppFactory(BaseAppFactory):
         params = Params.agg(
             params_list,
             lambda i: AutoContainer.payloads_to_batch(
-                i, batch_axis=self.runner.batch_options.input_batch_axis,
+                i,
+                batch_axis=self.runner.batch_options.input_batch_axis,
             ),
         )
         batch_ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
         payloads = AutoContainer.batch_to_payloads(
-            batch_ret, batch_axis=self.runner.batch_options.input_batch_axis,
+            batch_ret,
+            batch_axis=self.runner.batch_options.input_batch_axis,
         )
         return [
             Response(

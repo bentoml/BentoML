@@ -4,7 +4,7 @@ import logging
 
 import click
 
-from ..configuration.containers import BentoServerContainer
+from ..configuration.containers import DeploymentContainer
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoServerContainer.service_port.get(),
+        default=DeploymentContainer.service_port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -41,7 +41,7 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=BentoServerContainer.config.backlog.get(),
+        default=DeploymentContainer.config.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
     )
@@ -122,7 +122,7 @@ def add_serve_command(cli) -> None:
                 bento,
                 working_dir=working_dir,
                 port=port,
-                host=BentoServerContainer.service_host if host is None else host,
+                host=DeploymentContainer.service_host if host is None else host,
                 backlog=backlog,
             )
         else:

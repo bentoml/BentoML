@@ -67,18 +67,20 @@ class ResourceQuota:
 class BatchOptions:
     enabled = attr.ib(
         type=bool,
-        default=attr.Factory(DeploymentContainer.config.batch_options.enabled.get),
+        default=attr.Factory(
+            DeploymentContainer.api_server_config.batch_options.enabled.get
+        ),
     )
     max_batch_size = attr.ib(
         type=int,
         default=attr.Factory(
-            DeploymentContainer.config.batch_options.max_batch_size.get
+            DeploymentContainer.api_server_config.batch_options.max_batch_size.get
         ),
     )
     max_latency_ms = attr.ib(
         type=int,
         default=attr.Factory(
-            DeploymentContainer.config.batch_options.max_latency_ms.get
+            DeploymentContainer.api_server_config.batch_options.max_latency_ms.get
         ),
     )
     input_batch_axis = attr.ib(type=int, default=0)

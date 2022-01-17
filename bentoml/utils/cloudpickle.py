@@ -844,7 +844,7 @@ class CloudPickler(Pickler):
         elif obj is type(NotImplemented):
             return self.save_reduce(type, (NotImplemented,), obj=obj)
 
-        if obj.__module__ == "__main__":
+        if hasattr(obj, "__module__") and obj.__module__ == "__main__":
             return self.save_dynamic_class(obj)
 
         try:

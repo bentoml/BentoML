@@ -9,6 +9,7 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Runner
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import Model
@@ -32,10 +33,12 @@ PyRuntime is not found in PYTHONPATH. Refers to
 
 ONNXMLIR_EXTENSION: str = ".so"
 
+MODULE_NAME = "bentoml.onnxmlir"
+
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "ExecutionSession":
     """
@@ -60,6 +63,10 @@ def load(
     Examples::
     """  # noqa
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     compiled_path = model.path_of(model.info.options["compiled_path"])
     return ExecutionSession(compiled_path, "run_main_graph")
 
@@ -97,7 +104,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         metadata=metadata,
         context=context,
@@ -114,13 +121,14 @@ class _ONNXMLirRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
 
         self._model_store = model_store
         self._tag = in_store_tag
@@ -150,6 +158,7 @@ class _ONNXMLirRunner(Runner):
 def load_runner(
     tag: t.Union[str, Tag],
     *,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -174,8 +183,12 @@ def load_runner(
 
     Examples::
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _ONNXMLirRunner(
         tag=tag,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

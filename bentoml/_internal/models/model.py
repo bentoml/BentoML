@@ -127,6 +127,13 @@ class Model(StoreItem):
     def save(
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "Model":
+        self._save(model_store)
+        logger.info(f"Successfully saved {self}")
+        return self
+
+    def _save(
+        self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
+    ) -> "Model":
         self.flush_info()
         self.flush_custom_objects()
 
@@ -140,7 +147,6 @@ class Model(StoreItem):
             self._fs.close()
             self._fs = out_fs
 
-        logger.info(f"Successfully saved {self}")
         return self
 
     @classmethod

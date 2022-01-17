@@ -33,10 +33,12 @@ except ImportError:  # pragma: no cover
 
 _mxnet_version = get_pkg_version("mxnet")
 
+MODULE_NAME = "bentoml.gluon"
+
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     mxnet_ctx: t.Optional[mxnet.context.Context] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> gluon.Block:
@@ -61,11 +63,9 @@ def load(
     """  # noqa
 
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with"
-            f" module {model.info.module},"
-            f" failed loading with {__name__}."
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
     json_path: str = model.path_of(f"{SAVE_NAMESPACE}-symbol{JSON_EXT}")
@@ -111,7 +111,7 @@ def save(
     options: t.Dict[str, t.Any] = dict()
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,
@@ -128,14 +128,15 @@ class _GluonRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        self._tag = Tag.from_taglike(tag)
+        super().__init__(name, resource_quota, batch_options)
+        self._tag = tag
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         self._ctx = None
@@ -190,6 +191,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     *,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _GluonRunner:
@@ -216,6 +218,9 @@ def load_runner(
     Examples:
         TODO
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _GluonRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,

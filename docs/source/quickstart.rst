@@ -129,15 +129,15 @@ the service, from models to the dependencies.
 
 To build a Bento, first create a `bentofile.yaml` in your project directory:
 
-```yaml
-# bentofile.yaml
-service: "iris_classifier:svc"
-include:
-- "*.py"
-python:
-  packages:
-    - scikit-learn
-```
+.. code-block:: yaml
+
+     # bentofile.yaml
+    service: "iris_classifier:svc"
+    include:
+     - "*.py"
+    python:
+      packages:
+       - scikit-learn
 
 Next, use the `bentoml build` CLI command in the same directory to build a bento.
 

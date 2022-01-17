@@ -213,7 +213,7 @@ Tensorflow Implementation
 """""""""""""""""""""""""
 
 .. note::
-    refers to `Tensorflow gallery <https://github.com/bentoml/gallery/blob/master/tensorflow/sentiment-analysis-gpu/sentiment-analysis-gpu.ipynb>`_ for the complete version.
+    refers to `Tensorflow gallery <https://github.com/bentoml/gallery/blob/main/tensorflow/sentiment-analysis-gpu/sentiment-analysis-gpu.ipynb>`_ for the complete version.
 
 .. code-block:: python
 
@@ -286,7 +286,7 @@ PyTorch Implementation
 """"""""""""""""""""""
 
 .. note::
-    refers to `PyTorch gallery <https://github.com/bentoml/gallery/blob/master/pytorch/news-classification-gpu/news-classification.ipynb>`_ for the complete version.
+    refers to `PyTorch gallery <https://github.com/bentoml/gallery/blob/main/pytorch/news-classification-gpu/news-classification.ipynb>`_ for the complete version.
 
 .. code-block:: python
 
@@ -370,7 +370,7 @@ ONNX Implementation
 """""""""""""""""""
 
 .. note::
-    refers to `ONNX gallery <https://github.com/bentoml/gallery/blob/master/onnx/news-classification-gpu/news-classification-gpu.ipynb>`_ for the complete version.
+    refers to `ONNX gallery <https://github.com/bentoml/gallery/blob/main/onnx/news-classification-gpu/news-classification-gpu.ipynb>`_ for the complete version.
 
 .. code-block:: python
 

@@ -34,7 +34,7 @@ Remaining properties will take their defaults values.
 Throughout the BentoML documentation, features that are customizable through configuration are demonstrated 
 like the example above. For a full configuration schema including all customizable properties, refer to 
 the BentoML configuration template defined in 
-`default_configuration.yml <https://github.com/bentoml/BentoML/blob/master/bentoml/configuration/default_configuration.yml>`_. 
+`default_configuration.yml <https://github.com/bentoml/BentoML/blob/main/bentoml/configuration/default_configuration.yml>`_. 
 
 Docker Deployment
 -----------------

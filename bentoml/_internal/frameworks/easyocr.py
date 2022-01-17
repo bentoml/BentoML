@@ -35,6 +35,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.easyocr"
+
 _easyocr_version = get_pkg_version("easyocr")
 
 
@@ -66,11 +68,9 @@ def load(
     """  # noqa
 
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with"
-            f" module {model.info.module},"
-            f" failed loading with {__name__}."
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
     return easyocr.Reader(
@@ -155,7 +155,7 @@ def save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,
@@ -182,15 +182,16 @@ class _EasyOCRRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
+        name: str,
         predict_params: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
-        self._tag = Tag.from_taglike(tag)
+        super().__init__(name, resource_quota, batch_options)
+        self._tag = tag
         self._predict_fn_name = predict_fn_name
         self._predict_params = predict_params
         self._model_store = model_store
@@ -227,6 +228,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "readtext_batched",
     *,
+    name: t.Optional[str] = None,
     predict_params: t.Union[None, t.Dict[str, t.Union[str, t.Any]]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -263,11 +265,15 @@ def load_runner(
         input_data = pd.from_csv("/path/to/csv")
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
-    """  # noqa
+    """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _EasyOCRRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         predict_params=predict_params,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

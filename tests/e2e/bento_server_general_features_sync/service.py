@@ -69,58 +69,58 @@ svc = bentoml.Service(
 
 
 @svc.api(input=JSON(), output=JSON())
-async def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
-    return await json_echo_runner.async_run(json_obj)
+def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
+    return json_echo_runner.run(json_obj)
 
 
 @svc.api(
     input=JSON(pydantic_model=_Schema(name="test", endpoints=["predict", "health"])),
     output=JSON(),
 )
-async def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
-    return await json_echo_runner.async_run(json_obj)
+def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
+    return json_echo_runner.run(json_obj)
 
 
 @svc.api(
     input=NumpyNdarray(shape=(2, 2), enforce_shape=True),
     output=NumpyNdarray(shape=(1, 4)),
 )
-async def predict_ndarray_enforce_shape(
+def predict_ndarray_enforce_shape(
     inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
 ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert inp.shape == (2, 2)
-    return await ndarray_pred_runner.async_run(inp)
+    return ndarray_pred_runner.run(inp)
 
 
 @svc.api(
     input=NumpyNdarray(dtype="uint8", enforce_dtype=True),
     output=NumpyNdarray(dtype="str"),
 )
-async def predict_ndarray_enforce_dtype(
+def predict_ndarray_enforce_dtype(
     inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
 ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert inp.dtype == np.dtype("uint8")
-    return await ndarray_pred_runner.async_run(inp)
+    return ndarray_pred_runner.run(inp)
 
 
 @svc.api(
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasSeries(),
 )
-async def predict_dataframe(df: "pd.DataFrame") -> "pd.Series":
+def predict_dataframe(df: "pd.DataFrame") -> "pd.Series":
     assert df["col1"].dtype == "int64"
-    output = await dataframe_pred_runner.async_run(df)
+    output = dataframe_pred_runner.run(df)
     assert isinstance(output, pd.Series)
     return output
 
 
 @svc.api(input=File(), output=File())
-async def predict_file(f: FileLike) -> bytes:
-    return await file_pred_runner.async_run(f)
+def predict_file(f: FileLike) -> bytes:
+    return file_pred_runner.run(f)
 
 
 @svc.api(input=Image(), output=Image(mime_type="image/bmp"))
-async def echo_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+def echo_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert isinstance(f, PILImage)
     return np.array(f)
 
@@ -129,10 +129,8 @@ async def echo_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     input=Multipart(original=Image(), compared=Image()),
     output=Multipart(img1=Image(), img2=Image()),
 )
-async def predict_multi_images(
-    original: t.Dict[str, Image], compared: t.Dict[str, Image]
-):
-    output_array = await multi_ndarray_pred_runner.async_run_batch(
+def predict_multi_images(original: t.Dict[str, Image], compared: t.Dict[str, Image]):
+    output_array = multi_ndarray_pred_runner.run_batch(
         np.array(original), np.array(compared)
     )
     img = fromarray(output_array)

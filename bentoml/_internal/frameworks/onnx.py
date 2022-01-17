@@ -65,6 +65,7 @@ for p in _PACKAGE:
         pass
 _onnx_version = importlib_metadata.version("onnx")
 
+MODULE_NAME = "bentoml.onnx"
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +91,9 @@ def _get_model_info(
     model_store: "ModelStore",
 ) -> t.Tuple["Model", str]:
     model = model_store.get(tag)
-    if model.info.module != __name__:
+    if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading "
-            f"with {__name__}."
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}")
     return model, model_file
@@ -101,7 +101,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     backend: t.Optional[str] = "onnxruntime",
     providers: t.Optional[t.Union["_ProviderType", "_GPUProviderType"]] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
@@ -183,7 +183,7 @@ def save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         metadata=metadata,
         context=context,
     )
@@ -202,12 +202,13 @@ class _ONNXRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         backend: str,
         gpu_device_id: int,
         disable_copy_in_default_stream: bool,
         providers: t.Optional["_ProviderType"],
         session_options: t.Optional["ort.SessionOptions"],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore",
@@ -217,7 +218,7 @@ class _ONNXRunner(Runner):
             if "gpus" not in resource_quota:
                 resource_quota["gpus"] = gpu_device_id
 
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         self._model_info, self._model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._backend = backend
@@ -371,6 +372,7 @@ def load_runner(
     disable_copy_in_default_stream: bool = False,
     providers: t.Optional["_ProviderType"] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -408,6 +410,9 @@ def load_runner(
 
     Examples::
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _ONNXRunner(
         tag=tag,
         backend=backend,
@@ -415,6 +420,7 @@ def load_runner(
         disable_copy_in_default_stream=disable_copy_in_default_stream,
         providers=providers,
         session_options=session_options,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

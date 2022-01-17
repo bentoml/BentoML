@@ -38,6 +38,8 @@ except ImportError:  # pragma: no cover
          """
     )
 
+MODULE_NAME = "bentoml.statsmodels"
+
 _statsmodels_version = get_pkg_version("statsmodels")
 
 _exc_msg = """\
@@ -49,14 +51,13 @@ pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)  # noqa: F811
 
 
 def _get_model_info(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore",
 ) -> t.Tuple["Model", PathType]:
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with module {model.info.module}, failed loading"
-            f"with {__name__}"
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
 
@@ -65,7 +66,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _MT:
     """
@@ -135,13 +136,14 @@ class _StatsModelsRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
         self._predict_fn_name = predict_fn_name
         self._model_info = model_info
@@ -183,6 +185,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "predict",
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -209,9 +212,13 @@ def load_runner(
 
     Examples::
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _StatsModelsRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

@@ -5,11 +5,11 @@ import json
 import shutil
 import typing as t
 import operator
-import itertools
 from copy import deepcopy
 from pathlib import Path
 from functools import lru_cache
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
 from absl import app
 from absl import logging
@@ -88,7 +88,7 @@ class LogsMixin(object):
                 blocking generator from docker.api.build
             image_tag (:obj:`str`):
                 given model server tags.
-                Ex: bento-server:0.13.0-python3.8-slim-runtime
+                Ex: bento-server:0.13.0-python3.8-debian-runtime
 
         Raises:
             docker.errors.BuildErrors:
@@ -219,7 +219,6 @@ class GenerateMixin(object):
             build_tag (:obj:`t.Optional[str]`):
                 strictly use for FROM args for base image.
         """
-
         if DOCKERFILE_TEMPLATE_SUFFIX not in input_path.name:
             output_name = input_path.stem
         else:
@@ -421,23 +420,18 @@ class GenerateMixin(object):
         _release_context: t.MutableMapping = defaultdict(list)
 
         # check if given distro is supported per package.
-        for distro_version in self.releases.keys():
-            if "debian" in distro_version:
-                _os_tag = "slim"
-            elif "amazonlinux" in distro_version:
-                _os_tag = "ami"
-            else:
-                _os_tag = distro_version
-
+        distros = [
+            self.releases[release]["add_to_tags"] for release in self.releases.keys()
+        ]
+        for distro_version in distros:
             _release_context[distro_version] = sorted(
                 [
                     (release_tags, gen_path)
                     for release_tags, gen_path in paths.items()
-                    if _os_tag in release_tags and "base" not in release_tags
+                    if distro_version in release_tags and "base" not in release_tags
                 ],
                 key=operator.itemgetter(0),
             )
-
         _readme_context: t.Dict = {
             "ephemeral": False,
             "bentoml_package": "",
@@ -447,11 +441,7 @@ class GenerateMixin(object):
 
         for package in self.packages.keys():
             output_readme = Path("generated", package)
-            shutil.rmtree(package, ignore_errors=True)
-
             set_data(_readme_context, package, "bentoml_package")
-            _readme_context["oss"] = maxkeys(self.packages[package])
-
             self.render(
                 input_path=README_TEMPLATE,
                 output_path=output_readme,
@@ -500,45 +490,70 @@ class BuildMixin(object):
 
     def build_images(self) -> None:
         """Build images."""
-        for image_tag, dockerfile_path in self.build_tags():
-            log.info(f"Building {image_tag} from {dockerfile_path}")
-            try:
-                # this is should be when there are changed in base image.
-                if FLAGS.overwrite:
-                    docker_client.api.remove_image(image_tag, force=True)
-                    # workaround for not having goto supports in Python.
-                    raise ImageNotFound(f"Building {image_tag}")
-                if docker_client.api.history(image_tag):
-                    log.info(
-                        f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
-                    )
-                    self._push_context[image_tag] = docker_client.images.get(image_tag)
-                    continue
-            except ImageNotFound:
-                pyenv = get_data(self._tags, image_tag, "envars", "PYTHON_VERSION")
-                build_args = {"PYTHON_VERSION": pyenv}
-                # NOTES: https://warehouse.pypa.io/api-reference/index.html
-                resp = docker_client.api.build(
-                    timeout=FLAGS.timeout,
-                    path=".",
-                    nocache=False,
-                    buildargs=build_args,
-                    dockerfile=dockerfile_path,
-                    tag=image_tag,
-                )
-                self.build_logs(resp, image_tag)
+        with ThreadPoolExecutor(max_workers=5) as executor:
 
-    def build_tags(self):  # type: ignore
-        """Generate build tags."""
+            def _build_image(build_args):
+                image_tag, dockerfile_path = build_args
+                log.info(f"Building {image_tag} from {dockerfile_path}")
+                try:
+                    # this is should be when there are changed in base image.
+                    if FLAGS.overwrite:
+                        docker_client.api.remove_image(image_tag, force=True)
+                        # workaround for not having goto supports in Python.
+                        raise ImageNotFound(f"Building {image_tag}")
+                    if docker_client.api.history(image_tag):
+                        log.info(
+                            f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
+                        )
+                        self._push_context[image_tag] = docker_client.images.get(
+                            image_tag
+                        )
+                        return
+                except ImageNotFound:
+                    pyenv = get_data(self._tags, image_tag, "envars", "PYTHON_VERSION")
+                    build_args = {"PYTHON_VERSION": pyenv}
+                    # NOTES: https://warehouse.pypa.io/api-reference/index.html
+
+                    log.info(
+                        f"Building docker image {image_tag} with {dockerfile_path}"
+                    )
+                    resp = docker_client.api.build(
+                        timeout=FLAGS.timeout,
+                        path=".",
+                        nocache=False,
+                        buildargs=build_args,
+                        dockerfile=dockerfile_path,
+                        tag=image_tag,
+                        rm=True,
+                    )
+                    self.build_logs(resp, image_tag)
+
+            base_tags, other_tags = self.build_tags()
+            # Build all base images before starting other builds
+            list(executor.map(_build_image, base_tags))
+            list(executor.map(_build_image, other_tags))
+
+    def build_tags(self) -> t.Tuple[t.Tuple[str, str], t.Tuple[str, str]]:
+        """Generate build tags
+
+        returns:
+            (
+                [(image_tag, dockerfile_path), ..],  # all base images
+                [(image_tag, dockerfile_path), ..]  # all other images to build
+            )
+        """
         # We will build and push if args is parsed.
         # NOTE: type hint is a bit janky here as well
         if FLAGS.releases and (FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY):
-            build_tags = itertools.chain(
-                self.paths["base"].items(), self.paths[FLAGS.releases].items()
-            )
+            return self.paths["base"].items(), self.paths[FLAGS.releases].items()
         else:
-            build_tags = ((k, v) for i in self.paths.values() for k, v in i.items())
-        return build_tags
+            # non "base" items
+            items = []
+            for release in DOCKERFILE_BUILD_HIERARCHY:
+                if release != "base":
+                    items += self.paths[release].items()
+
+            return self.paths["base"].items(), items
 
 
 class PushMixin(object):
@@ -562,7 +577,7 @@ class PushMixin(object):
 
         if not self._push_context:
             log.debug("--generate images is not specified. Generate push context...")
-            for image_tag, _ in self.build_tags():
+            for image_tag, _ in self.build_tags()[1]:  # get non base image tags
                 self._push_context[image_tag] = docker_client.images.get(image_tag)
 
         for registry, registry_spec in self.repository.items():
@@ -586,21 +601,18 @@ class PushMixin(object):
                 return
 
             # Then push image to registry.
-            for image_tag in self.push_tags():
-                image = self._push_context[image_tag]
-                reg, tag = image_tag.split(":")
-                registry = "".join(
-                    [v for k, v in registry_spec["registry"].items() if reg in k]
-                )
-                log.info(f"Uploading {image_tag} to {registry}")
-
-                # NOTES: about concurrent pushing
-                #   This would change most of our build logics
-                #   since DockerClient is essentially a requests.Session,
-                #   which doesn't have support for asynchronous requests.
-                #   If we want to implement aiohttp then we might want to
-                #   run docker from shell commands.
-                self.background_upload(image, tag, registry)
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                for image_tag in self.push_tags():
+                    image = self._push_context[image_tag]
+                    reg, tag = image_tag.split(":")
+                    registry = "".join(
+                        [v for k, v in registry_spec["registry"].items() if reg in k]
+                    )
+                    log.info(f"Uploading {image_tag} to {registry}")
+                    future = executor.submit(
+                        self.background_upload, image, tag, registry
+                    )
+                    log.info(future.result)
 
     def push_readmes(
         self,

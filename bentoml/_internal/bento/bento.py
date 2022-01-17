@@ -58,16 +58,16 @@ def _get_default_bento_readme(svc: "Service"):
 ## Customize This Message
 
 This is the default generated `bentoml.Service` doc. You may customize it in your Bento
-build file:
+build file, e.g.:
 
 ```yaml
 service: "image_classifier.py:svc"
-description: "./readme.md"
+description: "file: ./readme.md"
 labels:
   foo: bar
   team: abc
 docker:
-  distro: slim
+  distro: debian
   gpu: True
 python:
   packages:
@@ -158,14 +158,11 @@ class Bento(StoreItem):
                     f"Model {model_tag} not found in local model store"
                 )
 
-        logger.info(
-            "Packing required models: %s",
-            ", ".join([f'"{m.tag}"' for m in models]),
-        )
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
         for model in models:
-            model.save(bento_model_store)
+            logger.info('Packing model "%s" from "%s"', model.tag, model.path)
+            model._save(bento_model_store)  # type: ignore[reportPrivateUsage]
 
         # Copy all files base on include and exclude, into `{svc.name}` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]
@@ -312,7 +309,7 @@ class Bento(StoreItem):
         return self._fs.isfile(BENTO_YAML_FILENAME)
 
     def __str__(self):
-        return f'Bento(tag="{self.tag}", path="{self.path}")'
+        return f'Bento(tag="{self.tag}")'
 
 
 class BentoStore(Store[Bento]):

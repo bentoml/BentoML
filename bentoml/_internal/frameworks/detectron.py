@@ -40,13 +40,15 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.detectron"
+
 _detectron2_version = get_pkg_version("detectron2")
 _torch_version = get_pkg_version("torch")
 
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     device: str = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "torch.nn.Module":
@@ -73,11 +75,9 @@ def load(
     """  # noqa: LN001
 
     model_info = model_store.get(tag)
-    if model_info.info.module != __name__:  # pragma: no cover
+    if model_info.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with"
-            f" module {model_info.info.module},"
-            f" failed loading with {__name__}."
+            f"Model {tag} was saved with module {model_info.info.module}, failed loading with {MODULE_NAME}."
         )
 
     cfg: config.CfgNode = config.get_cfg()
@@ -175,7 +175,7 @@ def save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,
@@ -201,19 +201,20 @@ class _DetectronRunner(Runner):
     # TODO add partial_kwargs @larme
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         self._tag = tag
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._tag]
 
     @property
@@ -263,6 +264,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "__call__",
     *,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -290,10 +292,14 @@ def load_runner(
     Examples:
         TODO
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _DetectronRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
+        model_store=model_store,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
-        model_store=model_store,
     )

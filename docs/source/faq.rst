@@ -26,7 +26,7 @@ How does BentoML compare to Tensorflow-serving?
 
 Tensorflow loads the model in tf.SavedModel format, so all the graphs and computations must be compiled into the SavedModel. BentoML keeps the Python runtime in serving time, making it possible to do pre-processing and post-processing in serving endpoints.
 
-Both Tensorflow-serving and BentoML provides support for adaptive micro-batching, related benchmarks can be found here https://github.com/bentoml/BentoML/tree/master/benchmark
+Both Tensorflow-serving and BentoML provides support for adaptive micro-batching, related benchmarks can be found here https://github.com/bentoml/BentoML/tree/main/benchmark
 
 
 How does BentoML compare to Clipper?
@@ -36,7 +36,7 @@ BentoML is an end-to-end model serving solution. Besides online API model servin
 
 Both BentoML and Clipper provides micro-batching capability. BentoML's implementation is highly inspired by the paper: Clipper: A Low-Latency Online Prediction Serving System https://www.usenix.org/system/files/conference/nsdi17/nsdi17-crankshaw.pdf
 
-The main difference is that BentoML provides micro-batching at the instance level while Clipper does it at a cluster level. Users can deploy BentoML API server containers in a more flexible way, while Clipper requires all prediction requests being routed to its master node.
+The main difference is that BentoML provides micro-batching at the instance level while Clipper does it at a cluster level. Users can deploy BentoML API server containers in a more flexible way, while Clipper requires all prediction requests being routed to its main node.
 
 BentoML works great with Clipper, users can deploy BentoML packaged models to their Clipper cluster and benefit from both frameworks: https://docs.bentoml.org/en/latest/deployment/clipper.html
 
@@ -54,11 +54,11 @@ BentoML packaged model can be easily deployed to SageMaker serving: https://docs
 How does BentoML compare to MLFlow?
 -----------------------------------
 
-MLFlow provides components that work great for experimentation management, ML project management. BentoML only focuses on serving and deploying trained models. You can, in fact, serve models logged in MLFlow experimentation with BentoML (see the gallery for an `example <https://github.com/bentoml/gallery/blob/master/bentomlflow/mlflow-to-bentoml-example.ipynb>`_).
+MLFlow provides components that work great for experimentation management, ML project management. BentoML only focuses on serving and deploying trained models. You can, in fact, serve models logged in MLFlow experimentation with BentoML (see the gallery for an `example <https://github.com/bentoml/gallery/blob/main/bentomlflow/mlflow-to-bentoml-example.ipynb>`_).
 
 Both BentoML and MLFlow can expose a trained model as a REST API server, but there are a few main differences:
 
-- In our benchmark testing, the BentoML API server is roughly 3-10x better performance compared to MLFlow's API server, and over 50x in some extreme cases: https://github.com/bentoml/BentoML/tree/master/benchmark
+- In our benchmark testing, the BentoML API server is roughly 3-10x better performance compared to MLFlow's API server, and over 50x in some extreme cases: https://github.com/bentoml/BentoML/tree/main/benchmark
 
 - BentoML server is able to handle high-volume prediction requests without crashing while the MLFlow API server is very unstable in that case.
 

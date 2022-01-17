@@ -10,6 +10,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import Model
@@ -45,6 +46,8 @@ except ImportError:  # pragma: no cover
 
 from .tensorflow import _TensorflowRunner  # type: ignore[reportPrivateUsage]
 
+MODULE_NAME = "bentoml.keras"
+
 _tf_version = get_tf_version()
 TF2 = _tf_version.startswith("2")
 
@@ -76,7 +79,7 @@ def get_session() -> "BaseSession":
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "keras.Model":
     """
@@ -95,6 +98,11 @@ def load(
     """  # noqa
 
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+
     default_custom_objects = None
     if model.info.options["custom_objects"]:
         assert Path(model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
@@ -165,7 +173,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=options,
         context=context,
         metadata=metadata,
@@ -190,10 +198,11 @@ class _KerasRunner(_TensorflowRunner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         device_id: str,
         predict_kwargs: t.Optional[t.Dict[str, t.Any]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -202,6 +211,7 @@ class _KerasRunner(_TensorflowRunner):
             tag=tag,
             predict_fn_name=predict_fn_name,
             device_id=device_id,
+            name=name,
             partial_kwargs=predict_kwargs,
             resource_quota=resource_quota,
             batch_options=batch_options,
@@ -246,6 +256,7 @@ def load_runner(
     predict_fn_name: str = "predict",
     device_id: str = "CPU:0",
     predict_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -276,10 +287,14 @@ def load_runner(
 
     Examples::
     """  # noqa: LN001
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _KerasRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        name=name,
         predict_kwargs=predict_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,

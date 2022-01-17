@@ -85,7 +85,7 @@ exclude:
 additional_models:
 - "iris_model:latest"
 docker:
-  distro: slim
+  distro: debian
   gpu: True
   python_version: "3.8"
   setup_script: "./setup_env.sh"

@@ -14,7 +14,7 @@ Two sets of APIs are provided:
     We want to provide a better documentation on
     using :class:`~bentoml.yatai.client.deployment_api.DeploymentAPIClient`
     programmatically. For now refer to
-    `deployment_api.py <https://github.com/bentoml/BentoML/blob/master/bentoml/yatai/client/deployment_api.py>`_
+    `deployment_api.py <https://github.com/bentoml/BentoML/blob/main/bentoml/yatai/client/deployment_api.py>`_
     or using the CLI commands :code:`bentoml deployment`
 
 .. autofunction:: bentoml.yatai.client.get_yatai_client

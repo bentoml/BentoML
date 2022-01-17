@@ -139,7 +139,7 @@ To log in to Grafana for the first time:
 .. seealso::::
     `Best practice while creating dashboards on Grafana <https://grafana.com/docs/grafana/latest/best-practices/best-practices-for-creating-dashboards/>`_
 
-Users can also import `BentoService Dashboard <https://github.com/bentoml/BentoML/blob/master/docs/source/guides/configs/grafana/provisioning/dashboards/bentoml-dashboard-docker-swarm-1623677587070.json>`_ and
+Users can also import `BentoService Dashboard <https://github.com/bentoml/BentoML/blob/main/docs/source/guides/configs/grafana/provisioning/dashboards/bentoml-dashboard-docker-swarm-1623677587070.json>`_ and
 explore given BentoService metrics by `importing dashboard <https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard>`_.
 
 .. image:: ../_static/img/bentoml-grafana-dashboard.png

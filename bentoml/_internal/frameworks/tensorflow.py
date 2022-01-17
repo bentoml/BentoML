@@ -13,6 +13,7 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Runner
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import PathType
@@ -29,7 +30,8 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     import numpy as np
     import tensorflow.keras as keras
-    from _internal.models import ModelStore
+
+    from ..models import ModelStore
 
 try:
     import tensorflow as tf
@@ -55,6 +57,8 @@ except ImportError:
 _tf_version = get_tf_version()
 logger = logging.getLogger(__name__)
 TF2 = _tf_version.startswith("2")
+
+MODULE_NAME = "bentoml.tensorflow"
 
 try:
     import tensorflow_hub as hub
@@ -186,7 +190,7 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     tfhub_tags: t.Optional[t.List[str]] = None,
     tfhub_options: t.Optional[t.Any] = None,
     load_as_wrapper: t.Optional[bool] = None,
@@ -212,6 +216,10 @@ def load(
     Examples::
     """  # noqa: LN001
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
     if model.info.context["import_from_tfhub"]:
         assert load_as_wrapper is not None, (
             "You have to specified `load_as_wrapper=True | False`"
@@ -267,7 +275,7 @@ def load(
         # pretty format loaded model
         logger.info(pretty_format_restored_model(tf_model))
         if hasattr(tf_model, "keras_api"):
-            logger.warning(KERAS_MODEL_WARNING.format(name=__name__))
+            logger.warning(KERAS_MODEL_WARNING.format(name=MODULE_NAME))
         return tf_model
 
 
@@ -296,7 +304,7 @@ def import_from_tfhub(
             name = f"{identifier.__class__.__name__}_{uuid.uuid4().hex[:5].upper()}"
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
@@ -367,7 +375,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
@@ -397,17 +405,18 @@ class _TensorflowRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         device_id: str,
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
         self._tag = in_store_tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
 
         self._device_id = device_id
         self._configure(device_id)
@@ -509,6 +518,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -536,11 +546,15 @@ def load_runner(
         Runner instances for `bentoml.tensorflow` model
     Examples::
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _TensorflowRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
         partial_kwargs=partial_kwargs,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

@@ -12,13 +12,14 @@ from simple_di import Provide
 from bentoml import Tag
 from bentoml import Runner
 
+from ..types import LazyType
 from ..models import Model
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
-from ..runner.utils import TypeRef
 from ..runner.container import Payload
 from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
@@ -42,6 +43,8 @@ except ImportError:  # pragma: no cover
 
 _ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule"]  # type: ignore[reportPrivateUsage]
 
+MODULE_NAME = "bentoml.pytorch"
+
 _torch_version = get_pkg_version("torch")
 
 
@@ -51,7 +54,7 @@ def _is_gpu_available() -> bool:  # pragma: no cover
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _ModelType:
@@ -75,6 +78,13 @@ def load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
     bentoml_model = model_store.get(tag)
+    if bentoml_model.info.module not in (MODULE_NAME, __name__):
+        import bentoml._internal.frameworks.pytorch_lightning as pl
+
+        if bentoml_model.info.module not in (pl.MODULE_NAME, pl.__name__):
+            raise BentoMLException(
+                f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+            )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     # TorchScript Models are saved as zip files
     if zipfile.is_zipfile(weight_file):
@@ -148,7 +158,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
@@ -168,9 +178,10 @@ class _PyTorchRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         predict_fn_name: str,
         device_id: str,
+        name: str,
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -178,7 +189,7 @@ class _PyTorchRunner(Runner):
     ):
         in_store_tag = model_store.get(tag).tag
 
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         if "cuda" in device_id:
@@ -278,6 +289,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     device_id: str = "cpu:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -311,11 +323,15 @@ def load_runner(
         runner = bentoml.pytorch.load_runner("ngrams:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _PyTorchRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
         partial_kwargs=partial_kwargs,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
@@ -358,7 +374,7 @@ class PytorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
 
 
 DataContainerRegistry.register_container(
-    TypeRef("torch", "Tensor"),
-    TypeRef("torch", "Tensor"),
+    LazyType("torch", "Tensor"),
+    LazyType("torch", "Tensor"),
     PytorchTensorContainer,
 )

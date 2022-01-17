@@ -61,6 +61,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+MODULE_NAME = "bentoml.transformers"
+
 _transformers_version = get_pkg_version("transformers")
 
 try:
@@ -196,7 +198,7 @@ If you want to import directly from a `transformers.pipeline` then do:
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     from_tf: bool = False,
     from_flax: bool = False,
     framework: str = "pt",
@@ -240,6 +242,11 @@ def load(
     """
     _check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+
     _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
 
     if _tokenizer != "na":
@@ -426,7 +433,7 @@ def _save(
 
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         context=context,
         options=None,
         metadata=metadata,
@@ -715,12 +722,13 @@ class _TransformersRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        tag: Tag,
         tasks: str,
         *,
         framework: str,
         lm_head: str,
         device: int,
+        name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -728,7 +736,7 @@ class _TransformersRunner(Runner):
     ):
         in_store_tag = model_store.get(tag).tag
         self._tag = in_store_tag
-        super().__init__(str(in_store_tag), resource_quota, batch_options)
+        super().__init__(name, resource_quota, batch_options)
 
         try:
             transformers.pipelines.check_task(tasks)
@@ -812,6 +820,7 @@ def load_runner(
     framework: str = "pt",
     lm_head: str = "casual",
     device: int = -1,
+    name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -860,12 +869,16 @@ def load_runner(
                                                   framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
     """
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _TransformersRunner(
         tag=tag,
         tasks=tasks,
         framework=framework,
         lm_head=lm_head,
         device=device,
+        name=name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

@@ -8,9 +8,9 @@ Anyone with an interest in the project can join the community, contribute to the
 and participate in the decision making process. And this is a living document aiming to 
 outline how that participation takes place.
 
-* Contribution guidelines: https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md
-* Code of Conduct: https://github.com/bentoml/BentoML/blob/master/CODE_OF_CONDUCT.md
-* Development guidelines: https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md
+* Contribution guidelines: https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md
+* Code of Conduct: https://github.com/bentoml/BentoML/blob/main/CODE_OF_CONDUCT.md
+* Development guidelines: https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md
 * BentoML contributor mailing list: https://groups.google.com/forum/#!forum/bentoml
 * BentoML contributor slack channel: https://bentoml.slack.com/archives/CKC2JP3TM
 
@@ -21,7 +21,7 @@ outline how that participation takes place.
 
 Contributors are community members who contribute in concrete ways to the project. 
 Anyone can become a contributor, and contributions can take many forms, as detailed in 
-the [BentoML Contribution Guidelines](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md).
+the [BentoML Contribution Guidelines](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md).
 There is no expectation of commitment to the project, no specific skill requirements and
 no selection process.
 
@@ -133,7 +133,7 @@ they will appoint a substitute BDFL for that decision.
 Anyone can contribute to the project, regardless of their skills, as there are many ways
 to contribute. For instance, a contributor might be active on the project mailing list 
 and issue tracker, or might supply patches. The various ways of contributing are 
-described in more detail in the [Contribution Guidelines](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md).
+described in more detail in the [Contribution Guidelines](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md).
 
 The [BentoML contributor mailing list](https://groups.google.com/forum/#!forum/bentoml) 
 is the most appropriate place to ask for help or get feedback when making contributions.

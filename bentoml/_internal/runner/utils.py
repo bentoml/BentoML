@@ -152,55 +152,6 @@ async def multipart_to_payload_params(request: "Request") -> Params["Payload"]:
     return Params(*args, **kwargs)
 
 
-class TypeRef:
-    def __init__(self, module: str, qualname: str):
-        self.module = module
-        self.qualname = qualname
-
-    @classmethod
-    def from_instance(cls, instance: object) -> "TypeRef":
-        klass = type(instance)
-        return cls.from_type(klass)
-
-    @classmethod
-    def from_type(cls, klass: t.Union["TypeRef", type]) -> "TypeRef":
-        if isinstance(klass, type):
-            return cls(klass.__module__, klass.__qualname__)
-        return klass
-
-    def evaluate(self) -> type:
-        import importlib
-
-        m = importlib.import_module(self.module)
-        ref = t.ForwardRef(f"m.{self.qualname}")
-        localns = {"m": m}
-
-        if hasattr(t, "_eval_type"):  # python3.7, 3.8 & 3.9
-            _eval_type = getattr(t, "_eval_type")
-            return t.cast(type, _eval_type(ref, globals(), localns))
-
-        raise SystemError("unsupported Python version")
-
-    def __eq__(self, o: object) -> bool:
-        """
-        TypeRef("numpy", "ndarray") == np.ndarray
-        TypeRef("numpy", "ndarray") == TypeRef.from_instance(np.random.randint([2, 3]))
-        """
-        if isinstance(o, type):
-            o = self.from_type(o)
-
-        if isinstance(o, TypeRef):
-            return self.module == o.module and self.qualname == o.qualname
-
-        return False
-
-    def __hash__(self) -> int:
-        return hash(f"{self.module}.{self.qualname}")
-
-    def __repr__(self) -> str:
-        return f'TypeRef("{self.module}", "{self.qualname}")'
-
-
 def cpu_converter(cpu: t.Union[int, float, str]) -> float:
     if isinstance(cpu, (int, float)):
         return float(cpu)

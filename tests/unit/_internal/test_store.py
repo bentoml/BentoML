@@ -1,3 +1,4 @@
+import sys
 import typing as t
 from typing import TYPE_CHECKING
 from datetime import datetime
@@ -11,6 +12,11 @@ from bentoml.exceptions import BentoMLException
 from bentoml._internal.store import Store
 from bentoml._internal.store import StoreItem
 from bentoml._internal.types import Tag
+
+if sys.version_info < (3, 7):
+    from backports.datetime_fromisoformat import MonkeyPatch
+
+    MonkeyPatch.patch_fromisoformat()
 
 if TYPE_CHECKING:
     from pathlib import Path

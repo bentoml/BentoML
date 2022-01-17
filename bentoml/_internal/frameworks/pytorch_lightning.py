@@ -5,6 +5,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import Model
@@ -31,13 +32,15 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 
+MODULE_NAME = "bentoml.pytorch_lightning"
+
 _torch_version = get_pkg_version("torch")
 _pl_version = get_pkg_version("pytorch_lightning")
 
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: Tag,
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "pl.LightningModule":
@@ -61,6 +64,10 @@ def load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa: LN001
     bentoml_model = model_store.get(tag)
+    if bentoml_model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+        )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
     return model
@@ -144,7 +151,7 @@ def save(
     }
     _model = Model.create(
         name,
-        module=__name__,
+        module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
@@ -164,6 +171,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     device_id: str = "cpu:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    name: t.Optional[str] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -197,9 +205,13 @@ def load_runner(
         runner = bentoml.pytorch_lightning.load_runner("lit_classifier:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
+    tag = Tag.from_taglike(tag)
+    if name is None:
+        name = tag.name
     return _PyTorchLightningRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
+        name=name,
         device_id=device_id,
         partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,

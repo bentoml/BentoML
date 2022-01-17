@@ -58,26 +58,30 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_common_params(func):
+        """Must update NUMBER_OF_COMMON_PARAMS above when adding or removing common CLI
+        parameters here
+        """
+
         @click.option(
             "-q",
             "--quiet",
             is_flag=True,
             default=False,
-            help="Hide all warnings and info logs",
+            help="Suppress all warnings and info logs",
         )
         @click.option(
             "--verbose",
             "--debug",
             is_flag=True,
             default=False,
-            help="Show debug logs when running the command",
+            help="Generate debug information",
         )
         @click.option(
             "--do-not-track",
             is_flag=True,
             default=False,
             envvar="BENTOML_DO_NOT_TRACK",
-            help="Do not track usage when running this command",
+            help="Do not send usage info",
         )
         @click.option(
             "--config",
@@ -155,6 +159,10 @@ class BentoMLCommandGroup(click.Group):
         return wrapper
 
     def command(self, *args, **kwargs):
+        if "context_settings" not in kwargs:
+            kwargs["context_settings"] = {}
+        kwargs["context_settings"]["max_content_width"] = 120
+
         def wrapper(func):
             # add common parameters to command
             func = BentoMLCommandGroup.bentoml_common_params(func)

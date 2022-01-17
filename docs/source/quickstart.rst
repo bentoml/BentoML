@@ -24,6 +24,8 @@ If models are already saved to file, they can also be brought to BentoML with th
     from sklearn import svm
     from sklearn import datasets
 
+    import bentoml.sklearn
+
     # Load training data
     iris = datasets.load_iris()
     X, y = iris.data, iris.target

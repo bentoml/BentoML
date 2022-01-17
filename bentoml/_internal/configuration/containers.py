@@ -305,20 +305,20 @@ class DeploymentContainerClass:
     def tracer_provider(
         tracer_type: str = Provide[config.tracing.type],
         sample_rate: t.Optional[float] = Provide[config.tracing.sample_rate],
-        zipkin_server_url: str = Provide[config.tracing.zipkin.url],
-        jaeger_server_address: str = Provide[config.tracing.jaeger.address],
-        jaeger_server_port: int = Provide[config.tracing.jaeger.port],
+        zipkin_server_url: t.Optional[str] = Provide[config.tracing.zipkin.url],
+        jaeger_server_address: t.Optional[str] = Provide[config.tracing.jaeger.address],
+        jaeger_server_port: t.Optional[int] = Provide[config.tracing.jaeger.port],
     ):
-        from opentelemetry import trace
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
+
+        from ..utils.telemetry import TraceIdRatioBasedAlwaysRecording
 
         if sample_rate is None:
             sample_rate = 0.0
 
         provider = TracerProvider(
-            sampler=TraceIdRatioBased(sample_rate),
+            sampler=TraceIdRatioBasedAlwaysRecording(sample_rate),
             # resource: Resource = Resource.create({}),
             # shutdown_on_exit: bool = True,
             # active_span_processor: Union[
@@ -327,27 +327,29 @@ class DeploymentContainerClass:
             # id_generator: IdGenerator = None,
         )
 
-        if tracer_type == "zipkin":
+        if tracer_type == "zipkin" and zipkin_server_url is not None:
             from opentelemetry.exporter.zipkin.json import ZipkinExporter
 
             exporter = ZipkinExporter(
                 endpoint=zipkin_server_url,
             )
-            provider = TracerProvider()
             provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
-        elif tracer_type == "jaeger":
+        elif (
+            tracer_type == "jaeger"
+            and jaeger_server_address is not None
+            and jaeger_server_port is not None
+        ):
             from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 
             exporter = JaegerExporter(
                 agent_host_name=jaeger_server_address,
                 agent_port=jaeger_server_port,
             )
-            provider = TracerProvider()
             provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
         else:
-            return trace.get_tracer_provider()
+            return provider
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())

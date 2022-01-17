@@ -12,7 +12,7 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 DEFAULT_RELAOD_DELAY = 0.25
 
 
-def add_serve_command(cli) -> None:
+def add_serve_command(cli: click.Group) -> None:
     @cli.command()
     @click.argument("bento", type=click.STRING)
     @click.option(
@@ -41,7 +41,7 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=DeploymentContainer.config.backlog.get(),
+        default=DeploymentContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
     )
@@ -75,7 +75,7 @@ def add_serve_command(cli) -> None:
         help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, only available in dev mode",
         show_default=True,
     )
-    def serve(
+    def serve(  # type: ignore[reportUnusedFunction]
         bento: str,
         production: bool,
         port: int,
@@ -122,7 +122,7 @@ def add_serve_command(cli) -> None:
                 bento,
                 working_dir=working_dir,
                 port=port,
-                host=DeploymentContainer.service_host if host is None else host,
+                host=DeploymentContainer.service_host.get() if host is None else host,
                 backlog=backlog,
             )
         else:

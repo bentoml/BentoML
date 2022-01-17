@@ -342,6 +342,8 @@ class BentoInfo:
             logger.error(exc)
             raise
 
+        assert yaml_content is not None
+
         yaml_content["tag"] = Tag(yaml_content["name"], yaml_content["version"])
         del yaml_content["name"]
         del yaml_content["version"]

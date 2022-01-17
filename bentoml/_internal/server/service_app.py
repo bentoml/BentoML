@@ -107,7 +107,9 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
 
 class ServiceContextClass:
     def __init__(self) -> None:
-        self.request_id_var = contextvars.ContextVar[t.Optional[int]]("request_id_var")
+        self.request_id_var = contextvars.ContextVar(
+            "request_id_var", default=t.cast("t.Optional[int]", None)
+        )
 
     @property
     def trace_id(self) -> t.Optional[int]:
@@ -144,11 +146,15 @@ class ServiceAppFactory(BaseAppFactory):
     def __init__(
         self,
         bento_service: Service,
-        enable_metrics: bool = Provide[DeploymentContainer.config.metrics.enabled],
+        enable_metrics: bool = Provide[
+            DeploymentContainer.api_server_config.metrics.enabled
+        ],
         metrics_client: "PrometheusClient" = Provide[
             DeploymentContainer.metrics_client
         ],
-        enable_access_control: bool = Provide[DeploymentContainer.config.cors.enabled],
+        enable_access_control: bool = Provide[
+            DeploymentContainer.api_server_config.cors.enabled
+        ],
         access_control_options: t.Dict[str, t.Union[t.List[str], int]] = Provide[
             DeploymentContainer.access_control_options
         ],

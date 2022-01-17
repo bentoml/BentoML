@@ -55,8 +55,8 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
 def serve_development(
     bento_identifier: str,
     working_dir: str,
-    port: int = Provide[DeploymentContainer.config.port],
-    host: str = Provide[DeploymentContainer.config.host],
+    port: int = Provide[DeploymentContainer.api_server_config.port],
+    host: str = Provide[DeploymentContainer.api_server_config.host],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
@@ -122,7 +122,7 @@ def start_ngrok_server() -> None:
     from bentoml._internal.utils.flask_ngrok import start_ngrok
 
     time.sleep(1)
-    start_ngrok(DeploymentContainer.config.port.get())
+    start_ngrok(DeploymentContainer.api_server_config.port.get())
 
 
 MAX_AF_UNIX_PATH_LENGTH = 103
@@ -132,9 +132,9 @@ MAX_AF_UNIX_PATH_LENGTH = 103
 def serve_production(
     bento_identifier: str,
     working_dir: str,
-    port: int = Provide[DeploymentContainer.config.port],
-    host: str = Provide[DeploymentContainer.config.host],
-    backlog: int = Provide[DeploymentContainer.config.backlog],
+    port: int = Provide[DeploymentContainer.api_server_config.port],
+    host: str = Provide[DeploymentContainer.api_server_config.host],
+    backlog: int = Provide[DeploymentContainer.api_server_config.backlog],
     app_workers: t.Optional[int] = None,
 ) -> None:
     logger.info('Starting production BentoServer from "%s"', bento_identifier)

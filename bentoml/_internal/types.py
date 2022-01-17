@@ -241,10 +241,9 @@ class Tag:
                 "tried to run 'make_new_version' on a Tag that already has a version"
             )
         ver_bytes = bytearray(uuid.uuid1().bytes)
-        # replace 3 bits of the version with the end of the uuid
-        ver_bytes[6] = (ver_bytes[6] & 0x1F) | ((ver_bytes[-1] & 0x7) << 5)
-        # last 7 bytes of the base32 encode are padding
-        encoded_ver = base64.b32encode(ver_bytes)[:-7]
+        # cut out the time_hi and node bits of the uuid
+        ver_bytes = ver_bytes[:6] + ver_bytes[8:12]
+        encoded_ver = base64.b32encode(ver_bytes)
 
         return Tag(self.name, encoded_ver.decode("ascii").lower())
 

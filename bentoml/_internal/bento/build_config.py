@@ -183,7 +183,7 @@ class CondaOptions:
                     self.environment_yml,
                     self.dependencies,
                 )
-            if self.channels is not None:
+            if self.pip is not None:
                 logger.warning(
                     "conda environment_yml %s is used, 'pip=%s' option is ignored",
                     self.environment_yml,
@@ -191,7 +191,44 @@ class CondaOptions:
                 )
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str):
-        ...
+        conda_folder = fs.path.join("env", "conda")
+        bento_fs.makedirs(conda_folder, recreate=True)
+
+        if self.environment_yml is not None:
+            environment_yml_file = resolve_user_filepath(
+                self.environment_yml, build_ctx
+            )
+            copy_file_to_fs_folder(
+                environment_yml_file,
+                bento_fs,
+                conda_folder,
+                dst_filename="environment_yml",
+            )
+
+            return
+
+        deps_list = [] if self.dependencies is None else self.dependencies
+        if self.pip is not None:
+            deps_list.append(dict(pip=self.pip))  # type: ignore
+
+        if not deps_list:
+            return
+
+        yaml_content = dict(dependencies=deps_list)
+        yaml_content["channels"] = (
+            ["defaults"] if self.channels is None else self.channels
+        )
+        with bento_fs.open(fs.path.join(conda_folder, "environment_yml"), "w") as f:
+            yaml.dump(yaml_content, f)
+
+    def with_defaults(self) -> "CondaOptions":
+        # Convert from user provided options to actual build options with default values
+        update_defaults = {}
+
+        if self.channels is None:
+            update_defaults["channels"] = ["defaults"]
+
+        return attr.evolve(self, **update_defaults)
 
 
 @attr.frozen
@@ -405,7 +442,7 @@ class BentoBuildConfig:
             [] if self.additional_models is None else self.additional_models,
             (DockerOptions() if self.docker is None else self.docker).with_defaults(),
             (PythonOptions() if self.python is None else self.python).with_defaults(),
-            CondaOptions() if self.conda is None else self.conda,
+            (CondaOptions() if self.conda is None else self.conda).with_defaults(),
         )
 
     @classmethod

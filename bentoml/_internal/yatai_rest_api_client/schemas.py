@@ -143,6 +143,7 @@ class BentoApiSchema:
 class BentoManifestSchema:
     service: str
     bentoml_version: str
+    size_bytes: int
     apis: Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: List[str] = attr.field(factory=list)
 
@@ -209,6 +210,7 @@ class ModelManifestSchema:
     module: str
     api_version: str
     bentoml_version: str
+    size_bytes: int
     metadata: Dict[str, Any] = attr.field(factory=dict)
     context: Dict[str, Any] = attr.field(factory=dict)
     options: Dict[str, Any] = attr.field(factory=dict)

@@ -10,6 +10,11 @@
 
 BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
+__The BentoML version 1.0 is around the corner.__ For stable release version 0.13, see
+the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS). Version 1.0 is 
+under active development, you can be of great help by testing out the preview release, 
+reporting issues, contribute to the documentation and create sample gallery projects.
+
 ## Why BentoML ##
 
 - The easiest way to get your ML models into production.

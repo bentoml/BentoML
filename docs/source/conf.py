@@ -1,8 +1,6 @@
-import os
 import sys
 
 # Adding BentoML source directory for accessing BentoML version
-sys.path.insert(0, os.path.abspath("../.."))
 import bentoml
 
 # -- Project information -----------------------------------------------------

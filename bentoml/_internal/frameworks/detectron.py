@@ -7,11 +7,11 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml import Model
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..models import Model
 from ..models import PTH_EXT
 from ..models import YAML_EXT
 from ..models import SAVE_NAMESPACE

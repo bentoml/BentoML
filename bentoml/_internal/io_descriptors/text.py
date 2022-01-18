@@ -11,10 +11,13 @@ MIME_TYPE = "text/plain"
 class Text(IODescriptor[str]):
     """
     `Text` defines API specification for the inputs/outputs of a Service. `Text`
-      represents strings for all incoming requests/outcoming responses as specified in
-      your API function signature.
+    represents strings for all incoming requests/outcoming responses as specified in
+    your API function signature.
 
-    .. Toy implementation of a GPT2 service::
+    Sample implementation of a GPT2 service:
+
+    .. code-block:: python
+
         # gpt2_svc.py
         import bentoml
         from bentoml.io import Text
@@ -31,7 +34,10 @@ class Text(IODescriptor[str]):
             res = runner.run_batch(input_arr)
             return res[0]['generated_text']
 
-    Users then can then serve this service with `bentoml serve`::
+    Users then can then serve this service with `bentoml serve`:
+
+    .. code-block:: bash
+
         % bentoml serve ./gpt2_svc.py:svc --auto-reload
 
         (Press CTRL+C to quit)
@@ -39,16 +45,16 @@ class Text(IODescriptor[str]):
         [INFO] Serving BentoML Service "gpt2-generation" defined in "gpt2_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session::
+    Users can then send a cURL requests like shown in different terminal session:
+
+    .. code-block:: bash
+
         % curl -X POST -H "Content-Type: text/plain" --data 'Not for nothing did Orin
          say that people outdoors down here just scuttle in vectors from air
          conditioning to air conditioning.' http://0.0.0.0:5000/predict
 
-        Not for nothing did Orin say that people outdoors down here just scuttle in
-         vectors from air conditioning to air conditioning. How do you get to such a
-         situation?\n\nWell, you want it to just be one giant monster and that is%
+    .. note::
 
-    .. notes::
         `Text` is not designed to take any `args` or `kwargs` during initialization
 
     Returns:

@@ -120,17 +120,17 @@ def build(
         description: optional description string in markdown format
         include: list of file paths and patterns specifying files to include in Bento,
             default is all files under build_ctx, beside the ones excluded from the
-            exclude parameter or a .bentoignore file for a given directory
+            exclude parameter or a :code:`.bentoignore` file for a given directory
         exclude: list of file paths and patterns to exclude from the final Bento archive
         additional_models: list of model tags to pack in Bento, in addition to the
             models that are required by service's runners. These models must be
             found in the given _model_store
         docker: dictionary for configuring Bento's containerization process, see details
-            in `._internal.bento.build_config.DockerOptions`
+            in :class:`bentoml._internal.bento.build_config.DockerOptions`
         python: dictionary for configuring Bento's python dependencies, see details in
-            `._internal.bento.build_config.PythonOptions`
+            :class:`bentoml._internal.bento.build_config.PythonOptions`
         conda: dictionary for configuring Bento's conda dependencies, see details in
-            `._internal.bento.build_config.CondaOptions`
+            :class:`bentoml._internal.bento.build_config.CondaOptions`
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
         _bento_store: save Bento created to this BentoStore

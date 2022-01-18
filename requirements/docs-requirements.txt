@@ -9,3 +9,4 @@ sphinxcontrib-fulltoc
 sphinxcontrib-spelling
 sphinx_copybutton
 pyenchant
+mock

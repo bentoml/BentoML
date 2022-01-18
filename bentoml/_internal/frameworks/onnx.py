@@ -7,12 +7,12 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml import Model
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import PathType
-from ..models import Model
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ..runner.utils import Params
@@ -121,7 +121,7 @@ def load(
             Different providers provided by users. By default BentoML will use `onnxruntime.get_available_providers()`
              when loading a model.
         session_options (`onnxruntime.SessionOptions`, `optional`, default to `None`):
-            SessionOptions per usecase. If not specified, then default to None.
+            SessionOptions per use case. If not specified, then default to None.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -398,7 +398,7 @@ def load_runner(
             Different providers provided by users. By default BentoML will use `CPUExecutionProvider` when
              loading a model
         session_options (`onnxruntime.SessionOptions`, `optional`, default to `None`):
-            SessionOptions per usecase. If not specified, then default to None.
+            SessionOptions per use case. If not specified, then default to None.
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):

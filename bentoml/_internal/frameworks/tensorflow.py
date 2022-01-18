@@ -12,12 +12,12 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml import Model
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import PathType
-from ..models import Model
 from ..runner.utils import Params
 from ..utils.tensorflow import get_arg_names
 from ..utils.tensorflow import get_tf_version

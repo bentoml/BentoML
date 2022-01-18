@@ -17,12 +17,12 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml import Model
 from bentoml import Runner
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..models import Model
 from ..models import JSON_EXT
 from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
@@ -225,7 +225,7 @@ def load(
         framework (`str`, default to `pt`):
             Given frameworks supported by transformers: PyTorch, Tensorflow, Flax
         lm_head (`str`, default to `causal`):
-            Language model head for your model. For most usecase causal are applied.
+            Language model head for your model. For most use cases causal are applied.
              Refers to huggingface.co/transformers for more details on which type of
              language model head is applied to your use case and model.
         kwargs (:obj:`str`, `Optional`):
@@ -421,7 +421,7 @@ def _save(
             info = model_store.get(name)
             if not keep_download_from_hub:
                 logger.warning(
-                    f"{name} is found under BentoML modelstore.\nFor most usecases of using pretrained model,"
+                    f"{name} is found under BentoML modelstore.\nFor most use cases of using pretrained model,"
                     f" you don't have to redownload the model. returning {info.tag}...\nIf you still insist on downloading,"
                     " then specify `keep_download_from_hub=True` in `import_from_huggingface_hub`"
                 )
@@ -565,7 +565,7 @@ def save(
         tokenizer (`t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]`):
             Tokenizer instance provided by transformers. This can be retrieved from
              their `AutoTokenizer` class. You can also use any type of Tokenizer
-             accordingly to your usecase provided by transformers. Refers to
+             accordingly to your use case provided by transformers. Refers to
              https://huggingface.co/transformers/main_classes/tokenizer.html
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
@@ -848,9 +848,9 @@ def load_runner(
         device (`int`, `optional`, default to `-1`):
             Default GPU devices to be used by runner.
         lm_head (`str`, default to `causal`):
-            Language model head for your model. For most usecase causal are applied.
+            Language model head for your model. For most use case causal are applied.
              Refers to huggingface.co/transformers for more details on which type of
-             language model head is applied to your usecase.
+             language model head is applied to your use case.
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):

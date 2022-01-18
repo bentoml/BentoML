@@ -15,12 +15,15 @@ from . import models
 # bento APIs are top-level
 from .bentos import get
 from .bentos import list  # pylint: disable=W0622
+from .bentos import pull
+from .bentos import push
 from .bentos import build
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader as _LazyLoader
+from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner import SimpleRunner
 from ._internal.service import Service
@@ -84,6 +87,7 @@ __all__ = [
     "Runner",
     "SimpleRunner",
     "YataiClient",
+    "Model",
     # bento APIs
     "list",
     "get",
@@ -92,6 +96,8 @@ __all__ = [
     "export_bento",
     "build",
     "load",
+    "push",
+    "pull",
     # frameworks
     "catboost",
     "detectron",

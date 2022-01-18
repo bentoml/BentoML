@@ -6,9 +6,9 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml import Model
 from bentoml import Runner
 
-from ..models import Model
 from ..models import JSON_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version

@@ -312,13 +312,13 @@ class DeploymentContainerClass:
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-        from ..utils.telemetry import TraceIdRatioBasedAlwaysRecording
+        from ..utils.telemetry import ParentBasedTraceIdRatio
 
         if sample_rate is None:
             sample_rate = 0.0
 
         provider = TracerProvider(
-            sampler=TraceIdRatioBasedAlwaysRecording(sample_rate),
+            sampler=ParentBasedTraceIdRatio(sample_rate),
             # resource: Resource = Resource.create({}),
             # shutdown_on_exit: bool = True,
             # active_span_processor: Union[

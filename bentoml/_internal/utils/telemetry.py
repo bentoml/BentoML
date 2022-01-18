@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING
 
 from opentelemetry.trace import get_current_span
 from opentelemetry.sdk.trace.sampling import Decision
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from opentelemetry.sdk.trace.sampling import ParentBased
+from opentelemetry.sdk.trace.sampling import StaticSampler
 from opentelemetry.sdk.trace.sampling import SamplingResult
 from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
 
@@ -62,4 +64,10 @@ class ParentBasedTraceIdRatio(ParentBased):
 
     def __init__(self, rate: float):
         root = TraceIdRatioBasedAlwaysRecording(rate=rate)
-        super().__init__(root=root)
+        super().__init__(
+            root=root,
+            remote_parent_sampled=ALWAYS_ON,
+            remote_parent_not_sampled=StaticSampler(Decision.RECORD_ONLY),
+            local_parent_sampled=ALWAYS_ON,
+            local_parent_not_sampled=StaticSampler(Decision.RECORD_ONLY),
+        )

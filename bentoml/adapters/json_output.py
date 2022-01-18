@@ -43,9 +43,10 @@ class JsonOutput(BaseOutputAdapter):
         ensure_ascii(bool): Escape all non-ASCII characters. Default False.
     """
 
-    def __init__(self, ensure_ascii=False, **kwargs):
+    def __init__(self, ensure_ascii=False, charset=None, **kwargs):
         super().__init__(**kwargs)
         self.ensure_ascii = ensure_ascii
+        self.charset = charset
 
     def pack_user_func_return_value(
         self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
@@ -73,7 +74,10 @@ class JsonOutput(BaseOutputAdapter):
                     InferenceResult(
                         data=json_str,
                         http_status=200,
-                        http_headers={"Content-Type": "application/json"},
+                        http_headers={
+                            "Content-Type": "application/json"
+                            + ("" if not self.charset else "; charset=" + self.charset)
+                        }
                     )
                 )
             except AssertionError as e:

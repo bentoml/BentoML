@@ -58,6 +58,7 @@ autodoc_mock_imports = [
     "tensorflow.keras",
     "tensorflow.python.client",
     "tensorflow.python.training.tracking.tracking",
+    "tensorflow_hub",
     "keras",
     "trax",
     "flax",

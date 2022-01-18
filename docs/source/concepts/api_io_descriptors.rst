@@ -6,7 +6,7 @@ API and IO Descriptors
 APIs are functions defined in the service definition that are exposed as an HTTP or gRPC endpoint. 
 A function is a part of the APIs if it is decorated with the `@svc.api` decorator. APIs can be defined 
 either as a synchronous function or 
-:ref:`asynchronous coroutine <https://docs.python.org/3/library/asyncio-task.html>` in Python. APIs fulfill 
+`asynchronous coroutine <https://docs.python.org/3/library/asyncio-task.html>`_ in Python. APIs fulfill
 requests by invoking the pre- and post-processing logic in the function and model runners created in the 
 service definition. Let's look into each of these parts in details.
 

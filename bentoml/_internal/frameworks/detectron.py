@@ -29,8 +29,6 @@ try:
     import detectron2.modeling as modeling
     import detectron2.checkpoint as checkpoint
     from detectron2.checkpoint import DetectionCheckpointer
-
-
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """detectron2 is required in order to use module `bentoml.detectron`,

@@ -14,6 +14,7 @@ from bentoml.exceptions import MissingDependencyException
 from ..types import PathType
 from ..models import Model
 from ..models import SAVE_NAMESPACE
+from ..utils.pkg import get_pkg_version
 from ..runner.utils import Params
 from ..runner.utils import get_gpu_memory
 from ..configuration.containers import BentoMLContainer
@@ -63,7 +64,7 @@ for p in _PACKAGE:
         break
     except importlib_metadata.PackageNotFoundError:
         pass
-_onnx_version = importlib_metadata.version("onnx")
+_onnx_version = get_pkg_version("onnx")
 
 MODULE_NAME = "bentoml.onnx"
 

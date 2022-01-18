@@ -1,20 +1,6 @@
 CLI Reference
 =============
 
-.. click:: bentoml:commandline_interface
+.. click:: bentoml._internal.cli:cli
   :prog: bentoml
   :show-nested:
-
-
-.. spelling::
-
-    xlarge
-    num
-    ngrok
-    gunicorn
-    POSIX
-    ui
-    filesystem
-    gRPC
-    ec
-    gcs

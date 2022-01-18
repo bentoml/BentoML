@@ -42,6 +42,9 @@ autodoc_mock_imports = [
     "catboost",
     "coremltools",
     "detectron2",
+    "detectron2.config",
+    "detectron2.modeling",
+    "detectron2.checkpoint",
     "torch",
     "torchvision",
     "torchtext",
@@ -50,29 +53,64 @@ autodoc_mock_imports = [
     "fastai",
     "fasttext",
     "mxnet",
+    "mxnet.gluon",
     "h2o",
+    "h2o.model",
     "tensorflow",
+    "tensorflow.keras",
+    "tensorflow.python.client",
+    "tensorflow.python.training.tracking.tracking",
     "keras",
     "trax",
     "flax",
     "jax",
     "lightgbm",
     "mlflow",
+    "mlflow.pyfunc",
+    "mlflow.tracking.artifact_utils",
     "onnx",
     "onnxruntime",
     "PyRuntime",
-    "paddlepaddle",
+    "paddle",
+    "paddle.nn",
+    "paddle.inference",
+    "paddle.fluid",
     "paddlehub",
+    "paddlehub.module.manager",
+    "paddlehub.server.server",
     "pycaret",
+    "pycaret.internal.tabular",
     "pyspark",
+    "pytorch",
+    "torch.nn.parallel",
     "pytorch_lightning",
     "sklearn",
     "joblib",
     "spacy",
+    "spacy.util",
+    "thinc.util",
+    "thinc.backends",
     "statsmodels",
+    "statsmodels.api",
+    "statsmodels.tools.parallel",
     "transformers",
+    "transformers.file_utils",
     "xgboost",
 ]
+
+
+# Mock external libraries to avoid doc dependencies
+import mock
+import bentoml._internal.utils.pkg as pkg
+
+for mod_name in autodoc_mock_imports:
+    sys.modules[mod_name] = mock.MagicMock()
+    sys.modules[mod_name].__version__ = mock.Mock()
+    sys.modules[mod_name].__spec__ = mock.Mock()
+
+sys.modules['easyocr'].__version__ = "1.4"
+pkg.get_pkg_version = mock.MagicMock()
+    
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

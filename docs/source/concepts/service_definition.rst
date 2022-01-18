@@ -22,7 +22,6 @@ A BentoML service is composed of three components.
 
     # bento.py
     import bentoml
-    import bentoml.sklearn
     import numpy as np
 
     from bentoml.io import NumpyNdarray

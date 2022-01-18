@@ -1,3 +1,5 @@
+.. _tracing-page:
+
 Performance Tracing
 ===================
 
@@ -63,12 +65,6 @@ Similarly when serving with BentoML API server docker image, assuming you have a
 
     # after version 0.13.0
     docker run -v $(PWD):/tmp -p 5000:5000 -e BENTOML_CONFIG=/tmp/my_config_file.yml my-bento-api-server
-
-BentoML has already implemented basic tracing information for its micro-batching server
-and model server. If there's additional tracing that you'd like to add to your BentoML
-
-model server, you may import
-
 
 .. spelling::
 

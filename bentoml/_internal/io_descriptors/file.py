@@ -16,10 +16,13 @@ logger = logging.getLogger(__name__)
 class File(IODescriptor[FileLike]):
     """
     `File` defines API specification for the inputs/outputs of a Service, where either
-     inputs will be converted to or outputs will be converted from file-like objects as
-     specified in your API function signature.
+    inputs will be converted to or outputs will be converted from file-like objects as
+    specified in your API function signature.
 
-    .. Toy implementation of a ViT service::
+    Sample implementation of a ViT service:
+
+    .. code-block:: python
+
         # vit_svc.py
         import bentoml
         from bentoml.io import File
@@ -30,7 +33,10 @@ class File(IODescriptor[FileLike]):
         def predict(input_pdf):
             return input_pdf
 
-    Users then can then serve this service with `bentoml serve`::
+    Users then can then serve this service with :code:`bentoml serve`:
+
+    .. code-block:: bash
+
         % bentoml serve ./vit_svc.py:svc --auto-reload
 
         (Press CTRL+C to quit)
@@ -39,19 +45,21 @@ class File(IODescriptor[FileLike]):
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session with an
-     input PDF files::
-        % curl -H "Content-Type: multipart/form-data" -F
-          'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
+    input PDF files:
 
-        %PDF-1.7
-                  zed 1/L 1959874/O 282/E 157204/N 12/T 1959312/H [ 500 221]>>
-        <</DecodeParms<</Columns 5/Predictor 12>>/Filter/FlateDecode/ID[<5901CB390F31F2B4497ED82C610CB725><7DF08A87AED4DE458FEBB8B3350A46FF>]/Index[280 35]/Info 279 0 R/Length 88/Prev 1959313/Root 281 0 R/Size 315/Type/XRef/W[1 3 1]>>stream
-        Warning: Binary output can mess up your terminal. Use "--output -" to tell
-        Warning: curl to output it to your terminal anyway, or consider "--output
-        Warning: <FILE>" to save to a file.
+    .. code-block:: bash
 
+        % curl -H "Content-Type: multipart/form-data" -F \
+        'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
+
+
+    Args:
+        mime_type (`str`, `optional`, default to `None`):
+            Return MIME type of the :code:`starlette.response.Response`, only available
+            when used as output descriptor
     Returns:
         IO Descriptor that represents file-like objects.
+
     """
 
     def __init__(self, mime_type: t.Optional[str] = None):

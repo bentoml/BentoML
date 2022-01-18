@@ -3,13 +3,14 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
+from bentoml import Runner
+from bentoml import SimpleRunner
+from bentoml.io import IODescriptor
+from bentoml.exceptions import BentoMLException
+
 from ..types import Tag
-from ...exceptions import BentoMLException
 from ..bento.bento import get_default_bento_readme
 from .inference_api import InferenceAPI
-from ..runner.runner import Runner
-from ..runner.runner import SimpleRunner
-from ..io_descriptors import IODescriptor
 from ..utils.validation import validate_tag_str
 
 if TYPE_CHECKING:

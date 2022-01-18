@@ -153,26 +153,34 @@ class Runner(BaseRunner, ABC):
     batching optimization for all Runners by default.
 
     Why use Runner:
+
     - Runner allow BentoML to better leverage multiple threads or processes for higher
-        hardware utilization (CPU, GPU, Memory)
+      hardware utilization (CPU, GPU, Memory)
+
     - Runner enables higher concurrency in serving workload, which minimizes latency:
-        you may prefetch data while model is being executed, parallelize data
-        extraction, data transformation or multiple runner execution.
+      you may prefetch data while model is being executed, parallelize data
+      extraction, data transformation or multiple runner execution.
+
     - Runner comes with dynamic batching optimization, which groups `run` calls into
-        batch execution when serving online, the batch size and wait time is adaptive
-        to the workload. This can bring massive throughput improvement to a ML service.
+      batch execution when serving online, the batch size and wait time is adaptive
+      to the workload. This can bring massive throughput improvement to a ML service.
 
     All `_run_batch` argument value must be one of the three types below:
-        numpy.ndarray, pandas.DataFrame, List[PickleSerializable]
+    numpy.ndarray, pandas.DataFrame, List[PickleSerializable]
 
     Return value of `_run_batch` acceptable types :
-        numpy.ndarray, pandas.DataFrame, pandas.Series, List[PickleSerializable]
-        Or Tuple of the types above, indicating multiple return values
+
+    - numpy.ndarray, pandas.DataFrame, pandas.Series, List[PickleSerializable]
+
+    - Tuple of the types above, indicating multiple return values
 
     Runner `run` accepts argument value of the following types:
-        numpy.ndarray => numpy.ndarray
-        pandas.DataFrame, pandas.Series => pandas.DataFrame
-        any => List[PickleSerializable]
+
+    - numpy.ndarray => numpy.ndarray
+
+    - pandas.DataFrame, pandas.Series => pandas.DataFrame
+
+    - any => List[PickleSerializable]
 
     Note: for pandas.DataFrame and List, the batch_axis must be 0
     """
@@ -189,7 +197,8 @@ class SimpleRunner(BaseRunner, ABC):
     subclasses.
 
     A SimpleRunner only exposes `run` method to its users.
-        `SimpleRunner._run` can accept arbitrary input type that are pickle-serializable
+
+    `SimpleRunner._run` can accept arbitrary input type that are pickle-serializable
     """
 
     @abstractmethod

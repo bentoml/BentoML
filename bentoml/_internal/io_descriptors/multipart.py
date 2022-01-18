@@ -28,9 +28,12 @@ MultipartIO = t.Dict[str, IOType]
 class Multipart(IODescriptor[MultipartIO]):
     """
     `Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
-     of a Service can receive/send a `multipart` request/responses as specified in your API function signature.
+    of a Service can receive/send a `multipart` request/responses as specified in your API function signature.
 
-    .. Toy implementation of a sklearn service::
+    Sample implementation of a sklearn service:
+
+    .. code-block:: python
+
         # sklearn_svc.py
         import bentoml
         from bentoml.io import NumpyNdarray, Multipart, JSON
@@ -47,7 +50,10 @@ class Multipart(IODescriptor[MultipartIO]):
             res = runner.run(arr)
             return {"output":res, "result":annotations}
 
-    Users then can then serve this service with `bentoml serve`::
+    Users then can then serve this service with :code:`bentoml serve`:
+
+    .. code-block:: bash
+
         % bentoml serve ./sklearn_svc.py:svc --reload
 
         (Press CTRL+C to quit)
@@ -55,7 +61,10 @@ class Multipart(IODescriptor[MultipartIO]):
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session::
+    Users can then send a cURL requests like shown in different terminal session:
+
+    .. code-block:: bash
+
         % curl -X POST -H "Content-Type: multipart/form-data" -F annotations=@test.json -F arr='[5,4,3,2]' http://0.0.0.0:5000/predict
 
         --b1d72c201a064ecd92a17a412eb9208e
@@ -74,25 +83,29 @@ class Multipart(IODescriptor[MultipartIO]):
 
     Args:
         inputs (`Dict[str, IODescriptor]`):
-            Dictionary consisting keys as inputs definition for a Multipart request/response, values
-             as IODescriptor supported by BentoML. Currently we support Image, NumpyNdarray, PandasDataFrame,
-             PandasSeries, Text, File.
+            Dictionary consisting keys as inputs definition for a Multipart
+            request/response, values as IODescriptor supported by BentoML. Currently,
+            Multipart supports Image, NumpyNdarray, PandasDataFrame, PandasSeries, Text,
+            and File.
 
-    .. notes::
-        Make sure to match your input params in your API function to the keys defined under `Multipart`::
-            ┌───────────────────────────────────────────────────────┐
-            │                                                       │
-            │ ┌───────────────────────────────────────────────────┐ │
-            │ │ Multipart(arr=NumpyNdarray(), annotations=JSON()) │ │
-            │ └─────────────────────┬─────────────┬───────────────┘ │
-            │                       │             │                 │
-            │                       │       ┌─────┘                 │
-            │                       │       │                       │
-            │       ┌───────────────▼───────▼─────────┐             │
-            │       │  def predict(arr, annotations): │             │
-            │       └─────────────────────────────────┘             │
-            │                                                       │
-            └───────────────────────────────────────────────────────┘
+            Make sure to match the input params in an API function to the keys defined
+            under :code:`Multipart`:
+
+            .. code-block:: bash
+
+                    ┌───────────────────────────────────────────────────────┐
+                    │                                                       │
+                    │ ┌───────────────────────────────────────────────────┐ │
+                    │ │ Multipart(arr=NumpyNdarray(), annotations=JSON()) │ │
+                    │ └─────────────────────┬─────────────┬───────────────┘ │
+                    │                       │             │                 │
+                    │                       │       ┌─────┘                 │
+                    │                       │       │                       │
+                    │       ┌───────────────▼───────▼─────────┐             │
+                    │       │  def predict(arr, annotations): │             │
+                    │       └─────────────────────────────────┘             │
+                    │                                                       │
+                    └───────────────────────────────────────────────────────┘
 
     Returns:
         IO Descriptor that represents Multipart request/response.

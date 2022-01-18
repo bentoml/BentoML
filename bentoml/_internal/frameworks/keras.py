@@ -10,10 +10,10 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..models import Model
 from ..models import H5_EXT
 from ..models import PKL_EXT
 from ..models import HDF5_EXT

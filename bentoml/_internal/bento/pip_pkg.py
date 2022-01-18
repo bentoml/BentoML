@@ -9,7 +9,10 @@ import zipimport
 from typing import TYPE_CHECKING
 from collections import defaultdict
 
-import importlib_metadata
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 from packaging.requirements import Requirement
 
 if TYPE_CHECKING:

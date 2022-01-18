@@ -11,7 +11,7 @@ This section is an understanding-oriented documentation that focuses on explaini
 different core concepts, which is the most useful when learning BentoML.
 
 .. toctree::
-   :hidden:
+   :maxdepth: 1
 
    service_definition
    api_io_descriptors

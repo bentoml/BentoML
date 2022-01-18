@@ -41,10 +41,13 @@ def _is_matched_shape(
 class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
     """
     `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
-     either inputs will be converted to or outputs will be converted from type
-     `numpy.ndarray` as specified in your API function signature.
+    either inputs will be converted to or outputs will be converted from type
+    :code:`numpy.ndarray` as specified in your API function signature.
 
-    .. Toy implementation of a sklearn service::
+    Sample implementation of a sklearn service:
+
+    .. code-block:: python
+
         # sklearn_svc.py
         import bentoml
         from bentoml.io import NumpyNdarray
@@ -59,7 +62,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
             res = runner.run(input_arr)
             return res
 
-    Users then can then serve this service with `bentoml serve`::
+    Users then can then serve this service with :code:`bentoml serve`:
+
+    .. code-block:: bash
+
         % bentoml serve ./sklearn_svc.py:svc --auto-reload
 
         (Press CTRL+C to quit)
@@ -67,23 +73,28 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session::
+    Users can then send a cURL requests like shown in different terminal session:
+
+    .. code-block:: bash
+
         % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]'
           http://0.0.0.0:5000/predict
 
         [1]%
 
     Args:
-        dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`,
-               `optional`, default to `None`):
+        dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to `None`):
             Data Type users wish to convert their inputs/outputs to. Refers to
-             https://numpy.org/doc/stable/reference/arrays.dtypes.html for more
-              information
+            https://numpy.org/doc/stable/reference/arrays.dtypes.html for more
+            information
         enforce_dtype (`bool`, `optional`, default to `False`):
             Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype`
-             must be specified.
+            must be specified.
         shape (`Tuple[int, ...]`, `optional`, default to `None`):
-            Given shape that an array will be converted to. For example::
+            Given shape that an array will be converted to. For example:
+
+            .. code-block:: python
+
                 from bentoml.io import NumpyNdarray
                 arr = [[1,2,3]]  # shape (1,3)
                 inp = NumpyNdarray.from_sample(arr)
@@ -94,9 +105,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
                 def predict(input_array: np.ndarray) -> np.ndarray:
                     # input_array will have shape (3,1)
                     result = await runner.run(input_array)
+
         enforce_shape (`bool`, `optional`, default to `False`):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
-             must be specified
+            must be specified
 
     Returns:
         IO Descriptor that represents `np.ndarray`.
@@ -224,21 +236,23 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         Create a NumpyNdarray IO Descriptor from given inputs.
 
         Args:
-            sample_input (`np.ndarray`):
-                Sample inputs for IO descriptors.
+            sample_input (`np.ndarray`): Given sample np.ndarray data
             enforce_dtype (`bool`, `optional`, default to `True`):
                 Enforce a certain data type. `dtype` must be specified at function
-                 signature. If you don't want to enforce a specific dtype then change
-                 `enforce_dtype=False`.
+                signature. If you don't want to enforce a specific dtype then change
+                `enforce_dtype=False`.
             enforce_shape (`bool`, `optional`, default to `False`):
                 Enforce a certain shape. `shape` must be specified at function
-                 signature. If you don't want to enforce a specific shape then change
-                 `enforce_shape=False`.
+                signature. If you don't want to enforce a specific shape then change
+                `enforce_shape=False`.
 
         Returns:
             `NumpyNdarray` IODescriptor from given users inputs.
 
-        Examples::
+        Examples Usage:
+
+        .. code-block:: python
+
             import numpy as np
             from bentoml.io import NumpyNdarray
             arr = [[1,2,3]]

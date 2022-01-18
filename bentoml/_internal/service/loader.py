@@ -233,9 +233,40 @@ def load(bento_identifier: str, working_dir: t.Optional[str] = None) -> "Service
 
     A bento_identifier:str can be provided in three different forms:
 
-    * Tag pointing to a Bento in local Bento store under BENTOML_HOME/bentos
+    * Tag pointing to a Bento in local Bento store under `BENTOML_HOME/bentos`
     * File path to a Bento directory
     * "import_str" for loading a service instance from the `working_dir`
+
+    Example load from Bento usage:
+
+    .. code-block:: python
+
+        # load from local bento store
+        load("FraudDetector:latest")
+        load("FraudDetector:4tht2icroji6zput")
+
+        # load from bento directory
+        load("~/bentoml/bentos/iris_classifier/4tht2icroji6zput")
+
+
+    Example load from working directory by "import_str" usage:
+
+    .. code-block:: python
+
+        # When multiple service defined in the same module
+        load("fraud_detector:svc_a")
+        load("fraud_detector:svc_b")
+
+        # Find svc by Python module name or file path
+        load("fraud_detector:svc")
+        load("fraud_detector.py:svc")
+        load("foo.bar.fraud_detector:svc")
+        load("./def/abc/fraud_detector.py:svc")
+
+        # When there's only one Service instance in the target module, the attributes
+        # part in the svc_import_path can be omitted
+        load("fraud_detector.py")
+        load("fraud_detector")
 
     """
     if os.path.isdir(os.path.expanduser(bento_identifier)) and os.path.isfile(

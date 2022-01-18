@@ -1,3 +1,0 @@
-spec:
-  type: NodePort
-  nodePort: 36745

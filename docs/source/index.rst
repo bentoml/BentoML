@@ -24,10 +24,12 @@ reporting issues, contribute to the documentation and create sample gallery proj
 
 Why BentoML
 -----------
-- The easiest way to get your ML models into production.
+
+- The easiest way to turn your ML models into production-ready API endpoints.
 - High performance model serving, all in Python.
-- Package your model once and deploy it anywhere.
-- Support all major ML model training :ref:`frameworks <frameworks-page>`.
+- Standardlize model packaging and ML service definition to streamline deployment.
+- Support all major machine-learning training :ref:`frameworks <frameworks-page>`.
+
 
 Getting Started
 ---------------
@@ -83,13 +85,10 @@ License
 
    quickstart
    concepts/index
-   frameworks
+   frameworks/index
    guides/index
-   deployment/index
-   examples
    api/index
    cli
-   faq
 
 .. spelling::
 

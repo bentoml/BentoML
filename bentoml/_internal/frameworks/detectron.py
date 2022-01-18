@@ -7,11 +7,11 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
+from bentoml import Model
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..models import Model
 from ..models import PTH_EXT
 from ..models import YAML_EXT
 from ..models import SAVE_NAMESPACE
@@ -29,8 +29,6 @@ try:
     import detectron2.modeling as modeling
     import detectron2.checkpoint as checkpoint
     from detectron2.checkpoint import DetectionCheckpointer
-
-
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """detectron2 is required in order to use module `bentoml.detectron`,

@@ -3,23 +3,30 @@
 Advanced Guides
 ***************
 
+Here we cover advanced features and configurations available in BentoML. Make sure to
+read through the core concept section before diving into these guides.
+
+
+.. toctree::
+  :maxdepth: 1
+
+  server
+  runner
+  adaptive_batching
+  configuration
+  gpu
+  bento_format
+  batch_inference
+  logging
+  ci
+  custom_framework
+  tracing
+  custom_endpoints
+  multi_models
+  benchmark
+
+
 This part of the BentoML documentation is a work in progress. If you have any questions
 related to this, please join
 `the BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_
 and ask in the bentoml-users channel.
-
-
-.. toctree::
-  :glob:
-
-  configuration
-  logging
-  batch_serving
-  monitoring
-  micro_batching
-  custom_artifact
-  custom_input_adapter
-  yatai_service
-  tracing
-  helm
-  gpu_serving

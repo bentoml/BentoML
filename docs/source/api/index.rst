@@ -1,12 +1,17 @@
+.. _api-reference-page:
+
+
 API Reference
 =============
 
-.. toctree::
-  :glob:
+This page contains detailed API specification generated from docstring in BentoML
+source code. This is best use for digging deeper into BentoML implementation when
+learning about advanced features or debugging issues.
 
-  bentoml
-  adapters
-  ../frameworks
-  artifacts
-  types
-  yatai_client
+.. toctree::
+
+  core
+  stores
+  api_io_descriptors
+
+

@@ -43,7 +43,8 @@ _T = t.TypeVar("_T")
 class IODescriptor(ABC, t.Generic[IOPyObj]):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
-     in a bentoml.Service
+    in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
+    endpoint IO descriptor types in BentoServer.
     """
 
     HTTP_METHODS = ["POST"]

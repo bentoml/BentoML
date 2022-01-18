@@ -1,6 +1,6 @@
 .. _bento-server-page:
 
-Bento Server
-============
+BentoServer
+===========
 
 TODO

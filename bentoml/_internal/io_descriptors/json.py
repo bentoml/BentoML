@@ -14,6 +14,7 @@ from ...exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
     import pydantic
+    from starlette.background import BackgroundTask
 
     from .. import ext_typing as ext
 
@@ -26,6 +27,26 @@ if TYPE_CHECKING:
 
 
 MIME_TYPE_JSON = "application/json"
+
+
+class _CustomizedCharsetResponse(Response):
+    def __init__(
+        self,
+        charset: str,
+        content: t.Any = None,
+        status_code: int = 200,
+        headers: t.Optional[t.Dict[t.Any, t.Any]] = None,
+        media_type: t.Optional[str] = None,
+        background: t.Optional["BackgroundTask"] = None,
+    ):
+        self.charset = charset
+        super().__init__(
+            content=content,
+            status_code=status_code,
+            headers=headers,
+            media_type=media_type,
+            background=background,
+        )
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
@@ -64,7 +85,6 @@ class JSON(IODescriptor[JSONType]):
         import pandas as pd
         import numpy as np
         from bentoml.io import PandasDataFrame, JSON
-        import bentoml.sklearn
 
         input_spec = PandasDataFrame.from_sample(pd.DataFrame(np.array([[5,4,3,2]])))
 
@@ -100,10 +120,13 @@ class JSON(IODescriptor[JSONType]):
     Args:
         pydantic_model (`pydantic.BaseModel`, `optional`, default to `None`):
             Pydantic model schema.
-        validate_json (`bool`, `optional`, default to `True`): If True, then use
-            Pydantic model specified above to validate given JSON.
+        validate_json (`bool`, `optional`, default to `True`):
+            If True, then use Pydantic model specified above to validate given JSON.
         json_encoder (`Type[json.JSONEncoder]`, default to `bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
             JSON encoder class.
+        charset (`str`, `optional`, default to `utf-8`):
+            Charset options for encoding.
+
     Returns:
         IO Descriptor that in JSON format.
     """
@@ -113,6 +136,7 @@ class JSON(IODescriptor[JSONType]):
         pydantic_model: t.Optional["t.Type[pydantic.BaseModel]"] = None,
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
+        charset: str = "utf-8",
     ):
         if pydantic_model is not None:
             try:
@@ -128,6 +152,7 @@ class JSON(IODescriptor[JSONType]):
         self._pydantic_model = pydantic_model
         self._validate_json = validate_json
         self._json_encoder = json_encoder
+        self._charset = charset
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if self._pydantic_model is None:
@@ -166,4 +191,6 @@ class JSON(IODescriptor[JSONType]):
             indent=None,
             separators=(",", ":"),
         )
-        return Response(json_str, media_type=MIME_TYPE_JSON)
+        return _CustomizedCharsetResponse(
+            self._charset, json_str, media_type=MIME_TYPE_JSON
+        )

@@ -20,14 +20,14 @@ reporting issues, contribute to the documentation and create sample gallery proj
 - The easiest way to turn your ML models into production-ready API endpoints.
 - High performance model serving, all in Python.
 - Standardlize model packaging and ML service definition to streamline deployment.
-- Support all major machine-learning training [frameworks](https://docs.bentoml.org/en/latest/frameworks.html).
+- Support all major machine-learning training [frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html).
 
 ## Getting Started ##
 
 - [Quickstart guide](https://docs.bentoml.org/en/latest/quickstart.html) will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
-- [Main concepts](https://docs.bentoml.org/en/latest/concepts.html) will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
+- [Main concepts](https://docs.bentoml.org/en/latest/concepts/index.html) will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
 - Playground notebook gets your hands dirty in a notebook environment, for you to try out all the core features in BentoML.
-- [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks.html) lays out best practices and example usages by the ML framework used for training models.
+- [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html) lays out best practices and example usages by the ML framework used for training models.
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) show cases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
 
 ## Community ##

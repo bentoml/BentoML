@@ -11,6 +11,17 @@ There are three parts to the BentoML workflow.
 
 .. _save-models-section:
 
+Installation
+------------
+
+BentoML is distributed as a Python package and can be installed from PyPI:
+
+.. code-block:: bash
+
+    pip install bentoml --pre
+
+** BentoML 1.0 is still under preview release, thus :code:`--pre` flag is required.
+
 Save Models
 -----------
 

@@ -1,9 +1,10 @@
+# type: ignore[stub]
 import os
 import typing as t
 import logging
 import multiprocessing
 from typing import TYPE_CHECKING
-from dataclasses import dataclass  # TODO: simple-di required this. remove it
+from dataclasses import dataclass
 
 import yaml
 from schema import Or
@@ -99,6 +100,7 @@ SCHEMA = Schema(
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
+            "sample_rate": Or(And(float, lambda i: i >= 0 and i <= 1), None),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
@@ -216,32 +218,6 @@ class BentoMLContainerClass:
 
         return ModelStore(base_dir)
 
-    @providers.SingletonFactory
-    @staticmethod
-    def tracer(
-        tracer_type: str = Provide[config.tracing.type],
-        zipkin_server_url: str = Provide[config.tracing.zipkin.url],
-        jaeger_server_address: str = Provide[config.tracing.jaeger.address],
-        jaeger_server_port: int = Provide[config.tracing.jaeger.port],
-    ):
-        if tracer_type and tracer_type.lower() == "zipkin" and zipkin_server_url:
-            from ..tracing.zipkin import get_zipkin_tracer
-
-            return get_zipkin_tracer(zipkin_server_url)
-        elif (
-            tracer_type
-            and tracer_type.lower() == "jaeger"
-            and jaeger_server_address
-            and jaeger_server_port
-        ):
-            from ..tracing.jaeger import get_jaeger_tracer
-
-            return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
-        else:
-            from ..tracing.noop import NoopTracer
-
-            return NoopTracer()
-
     logging_file_directory = providers.Factory[str](
         lambda default, customized: customized if customized is not None else default,
         providers.Factory[str](
@@ -257,24 +233,31 @@ BentoMLContainer = BentoMLContainerClass()
 
 
 @dataclass
-class BentoServerContainerClass:
+class DeploymentContainerClass:
 
     bentoml_container = BentoMLContainer
-    config = bentoml_container.config.bento_server
+    config = bentoml_container.config
+    api_server_config = config.bento_server
 
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins: t.List[str] = Provide[config.cors.access_control_allow_origin],
+        allow_origins: t.List[str] = Provide[
+            api_server_config.cors.access_control_allow_origin
+        ],
         allow_credentials: t.List[str] = Provide[
-            config.cors.access_control_allow_credentials
+            api_server_config.cors.access_control_allow_credentials
         ],
         expose_headers: t.List[str] = Provide[
-            config.cors.access_control_expose_headers
+            api_server_config.cors.access_control_expose_headers
         ],
-        allow_methods: t.List[str] = Provide[config.cors.access_control_allow_methods],
-        allow_headers: t.List[str] = Provide[config.cors.access_control_allow_headers],
-        max_age: int = Provide[config.cors.access_control_max_age],
+        allow_methods: t.List[str] = Provide[
+            api_server_config.cors.access_control_allow_methods
+        ],
+        allow_headers: t.List[str] = Provide[
+            api_server_config.cors.access_control_allow_headers
+        ],
+        max_age: int = Provide[api_server_config.cors.access_control_max_age],
     ) -> t.Dict[str, t.Union[t.List[str], int]]:
         kwargs = dict(
             allow_origins=allow_origins,
@@ -290,10 +273,10 @@ class BentoServerContainerClass:
 
     api_server_workers = providers.Factory[int](
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-        config.workers,
+        api_server_config.workers,
     )
-    service_port = config.port
-    service_host = config.host
+    service_port = api_server_config.port
+    service_host = api_server_config.host
     forward_host = providers.Static[str]("localhost")
     forward_port = providers.SingletonFactory[int](get_free_port)
     prometheus_lock = providers.SingletonFactory["SyncLock"](multiprocessing.Lock)
@@ -308,7 +291,7 @@ class BentoServerContainerClass:
     @staticmethod
     def metrics_client(
         multiproc_dir: str = Provide[prometheus_multiproc_dir],
-        namespace: str = Provide[config.metrics.namespace],
+        namespace: str = Provide[api_server_config.metrics.namespace],
     ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
@@ -317,9 +300,60 @@ class BentoServerContainerClass:
             namespace=namespace,
         )
 
+    @providers.SingletonFactory
+    @staticmethod
+    def tracer_provider(
+        tracer_type: str = Provide[config.tracing.type],
+        sample_rate: t.Optional[float] = Provide[config.tracing.sample_rate],
+        zipkin_server_url: t.Optional[str] = Provide[config.tracing.zipkin.url],
+        jaeger_server_address: t.Optional[str] = Provide[config.tracing.jaeger.address],
+        jaeger_server_port: t.Optional[int] = Provide[config.tracing.jaeger.port],
+    ):
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+        from ..utils.telemetry import ParentBasedTraceIdRatio
+
+        if sample_rate is None:
+            sample_rate = 0.0
+
+        provider = TracerProvider(
+            sampler=ParentBasedTraceIdRatio(sample_rate),
+            # resource: Resource = Resource.create({}),
+            # shutdown_on_exit: bool = True,
+            # active_span_processor: Union[
+            # SynchronousMultiSpanProcessor, ConcurrentMultiSpanProcessor
+            # ] = None,
+            # id_generator: IdGenerator = None,
+        )
+
+        if tracer_type == "zipkin" and zipkin_server_url is not None:
+            from opentelemetry.exporter.zipkin.json import ZipkinExporter
+
+            exporter = ZipkinExporter(
+                endpoint=zipkin_server_url,
+            )
+            provider.add_span_processor(BatchSpanProcessor(exporter))
+            return provider
+        elif (
+            tracer_type == "jaeger"
+            and jaeger_server_address is not None
+            and jaeger_server_port is not None
+        ):
+            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+
+            exporter = JaegerExporter(
+                agent_host_name=jaeger_server_address,
+                agent_port=jaeger_server_port,
+            )
+            provider.add_span_processor(BatchSpanProcessor(exporter))
+            return provider
+        else:
+            return provider
+
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())
     plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
 
 
-BentoServerContainer = BentoServerContainerClass()
+DeploymentContainer = DeploymentContainerClass()

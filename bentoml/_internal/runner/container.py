@@ -7,7 +7,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from ..types import LazyType
-from ..configuration.containers import BentoServerContainer
+from ..configuration.containers import DeploymentContainer
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
@@ -125,7 +125,7 @@ class NdarrayContainer(
     def single_to_payload(  # pylint: disable=arguments-differ
         cls,
         single: "ext.NpNDArray[t.Any]",
-        plasma_db: "ext.PlasmaClient" = Provide[BentoServerContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
@@ -143,7 +143,7 @@ class NdarrayContainer(
     def payload_to_single(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-        plasma_db: "ext.PlasmaClient" = Provide[BentoServerContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ) -> "ext.NpNDArray[t.Any]":
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
@@ -199,7 +199,7 @@ class PandasDataFrameContainer(
     def single_to_payload(  # pylint: disable=arguments-differ
         cls,
         single: "t.Union[ext.PdDataFrame, ext.PdSeries]",
-        plasma_db: "ext.PlasmaClient" = Provide[BentoServerContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
@@ -217,7 +217,7 @@ class PandasDataFrameContainer(
     def payload_to_single(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-        plasma_db: "ext.PlasmaClient" = Provide[BentoServerContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ):
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma

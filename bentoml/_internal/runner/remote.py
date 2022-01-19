@@ -12,7 +12,7 @@ from .container import Payload
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import payload_params_to_multipart
-from ..configuration.containers import BentoServerContainer
+from ..configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:  # pragma: no cover
     from aiohttp import BaseConnector
@@ -28,7 +28,7 @@ class RemoteRunnerClient(RunnerImpl):
     def _get_conn(
         self,
         remote_runner_mapping: t.Dict[str, str] = Provide[
-            BentoServerContainer.remote_runner_mapping
+            DeploymentContainer.remote_runner_mapping
         ],
     ) -> "BaseConnector":
         import aiohttp

@@ -29,7 +29,6 @@ from bentoml.exceptions import BentoMLConfigException
 from bentoml.types import HTTPRequest, HTTPResponse, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 
-
 logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("bentoml.prediction")
 
@@ -89,8 +88,13 @@ class InferenceAPI(object):
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
         self.batch = batch
-        self.route = name if route is None else route
         self.tracer = tracer
+        if route is None:
+            self.route = name
+        elif route.startswith("/"):
+            self.route = route[1:]
+        else:
+            self.route = route
 
         if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
             raise BentoMLConfigException(
@@ -212,9 +216,9 @@ class InferenceAPI(object):
         else:
             schema = self.input_adapter.custom_request_schema
 
-        if schema.get('application/json'):
-            schema.get('application/json')[
-                'example'
+        if schema.get("application/json"):
+            schema.get("application/json")[
+                "example"
             ] = self.input_adapter._http_input_example
         return schema
 
@@ -300,7 +304,7 @@ class InferenceAPI(object):
         results = self.infer((inf_task,))
         result = next(iter(results))
         response = self.output_adapter.to_http_response(result)
-        response.headers['X-Request-Id'] = inf_task.task_id
+        response.headers["X-Request-Id"] = inf_task.task_id
         return response
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
@@ -312,7 +316,7 @@ class InferenceAPI(object):
             results = self.infer(inf_tasks)
             responses = tuple(map(self.output_adapter.to_http_response, results))
             for inf_task, response in zip(inf_tasks, responses):
-                response.headers['X-Request-Id'] = inf_task.task_id
+                response.headers["X-Request-Id"] = inf_task.task_id
             return responses
 
     def handle_cli(self, cli_args: Sequence[str]) -> int:

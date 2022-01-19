@@ -5,12 +5,12 @@ from bentoml.adapters import JsonInput
 from bentoml.frameworks.keras import KerasModelArtifact
 
 
-@bentoml.env(infer_pip_packages=True)
+@bentoml.env(pip_packages=["keras==2.6.0", "tensorflow==2.6.2"])
 @bentoml.artifacts(
     [
-        KerasModelArtifact('model'),
+        KerasModelArtifact("model"),
         # TODO: #1698 set store_as_json_and_weights to True after the issue is fixed
-        KerasModelArtifact('model2', store_as_json_and_weights=False),
+        KerasModelArtifact("model2", store_as_json_and_weights=False),
     ]
 )
 class KerasClassifier(bentoml.BentoService):

@@ -4,7 +4,7 @@ import logging
 
 import click
 
-from ..configuration.containers import BentoServerContainer
+from ..configuration.containers import DeploymentContainer
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 DEFAULT_RELAOD_DELAY = 0.25
 
 
-def add_serve_command(cli) -> None:
+def add_serve_command(cli: click.Group) -> None:
     @cli.command()
     @click.argument("bento", type=click.STRING)
     @click.option(
@@ -26,7 +26,7 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoServerContainer.service_port.get(),
+        default=DeploymentContainer.service_port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -41,7 +41,7 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=BentoServerContainer.config.backlog.get(),
+        default=DeploymentContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
     )
@@ -75,7 +75,7 @@ def add_serve_command(cli) -> None:
         help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, only available in dev mode",
         show_default=True,
     )
-    def serve(
+    def serve(  # type: ignore[reportUnusedFunction]
         bento: str,
         production: bool,
         port: int,
@@ -122,7 +122,7 @@ def add_serve_command(cli) -> None:
                 bento,
                 working_dir=working_dir,
                 port=port,
-                host=BentoServerContainer.service_host if host is None else host,
+                host=DeploymentContainer.service_host.get() if host is None else host,
                 backlog=backlog,
             )
         else:

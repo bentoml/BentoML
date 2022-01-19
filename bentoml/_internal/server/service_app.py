@@ -3,16 +3,17 @@ import sys
 import typing as t
 import asyncio
 import logging
+import contextvars
 from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
+from opentelemetry import trace  # type: ignore[import]
 
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
-from ..configuration.containers import BentoMLContainer
-from ..configuration.containers import BentoServerContainer
+from ..configuration.containers import DeploymentContainer
 from ..io_descriptors.multipart import Multipart
 
 if TYPE_CHECKING:
@@ -21,8 +22,8 @@ if TYPE_CHECKING:
     from starlette.responses import Response
     from starlette.middleware import Middleware
     from starlette.applications import Starlette
+    from opentelemetry.sdk.trace import Span
 
-    from ..tracing import Tracer
     from ..service.inference_api import InferenceAPI
     from ..server.metrics.prometheus import PrometheusClient
 
@@ -104,6 +105,34 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
     )
 
 
+class ServiceContextClass:
+    def __init__(self) -> None:
+        self.request_id_var = contextvars.ContextVar(
+            "request_id_var", default=t.cast("t.Optional[int]", None)
+        )
+
+    @property
+    def trace_id(self) -> t.Optional[int]:
+        span = trace.get_current_span()
+        if span is None:
+            return None
+        return span.get_span_context().trace_id
+
+    @property
+    def span_id(self) -> t.Optional[int]:
+        span = trace.get_current_span()
+        if span is None:
+            return None
+        return span.get_span_context().span_id
+
+    @property
+    def request_id(self) -> t.Optional[int]:
+        return self.request_id_var.get()
+
+
+ServiceContext = ServiceContextClass()
+
+
 class ServiceAppFactory(BaseAppFactory):
     """
     ServiceApp creates a REST API server based on APIs defined with a BentoService
@@ -117,20 +146,22 @@ class ServiceAppFactory(BaseAppFactory):
     def __init__(
         self,
         bento_service: Service,
-        enable_metrics: bool = Provide[BentoServerContainer.config.metrics.enabled],
-        tracer: "Tracer" = Provide[BentoMLContainer.tracer],
-        metrics_client: "PrometheusClient" = Provide[
-            BentoServerContainer.metrics_client
+        enable_metrics: bool = Provide[
+            DeploymentContainer.api_server_config.metrics.enabled
         ],
-        enable_access_control: bool = Provide[BentoServerContainer.config.cors.enabled],
-        access_control_options: t.Dict = Provide[
-            BentoServerContainer.access_control_options
+        metrics_client: "PrometheusClient" = Provide[
+            DeploymentContainer.metrics_client
+        ],
+        enable_access_control: bool = Provide[
+            DeploymentContainer.api_server_config.cors.enabled
+        ],
+        access_control_options: t.Dict[str, t.Union[t.List[str], int]] = Provide[
+            DeploymentContainer.access_control_options
         ],
     ) -> None:
         self.bento_service = bento_service
 
         self.enable_metrics = enable_metrics
-        self.tracer = tracer
         self.metrics_client = metrics_client
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
@@ -220,7 +251,7 @@ class ServiceAppFactory(BaseAppFactory):
             )
         )
 
-        for _, api in self.bento_service._apis.items():
+        for _, api in self.bento_service.apis.items():
             api_route_endpoint = self._create_api_endpoint(api)
             routes.append(
                 Route(
@@ -239,7 +270,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         from starlette.middleware import Middleware
 
-        for middleware_cls, options in self.bento_service._middlewares:
+        for middleware_cls, options in self.bento_service.middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
 
         if self.enable_access_control:
@@ -253,27 +284,46 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(CORSMiddleware, **self.access_control_options)
             )
 
+        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
+
+        def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
+            if span is not None:
+                ServiceContext.request_id_var.set(span.context.span_id)
+
+        def client_response_hook(span: "Span", _message: t.Any) -> None:
+            if span is not None:
+                ServiceContext.request_id_var.set(None)
+
+        middlewares.append(
+            Middleware(
+                otel_asgi.OpenTelemetryMiddleware,
+                excluded_urls=None,
+                default_span_details=None,
+                server_request_hook=None,
+                client_request_hook=client_request_hook,
+                client_response_hook=client_response_hook,
+                tracer_provider=DeploymentContainer.tracer_provider.get(),
+            )
+        )
         return middlewares
 
     @property
     def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
-        on_startup.insert(0, self.bento_service._on_asgi_app_startup)
+        on_startup.insert(0, self.bento_service.on_asgi_app_startup)
         return on_startup
 
     @property
     def on_shutdown(self) -> t.List[t.Callable[[], None]]:
         on_shutdown = super().on_shutdown
-        on_shutdown.insert(0, self.bento_service._on_asgi_app_shutdown)
+        on_shutdown.insert(0, self.bento_service.on_asgi_app_shutdown)
         return on_shutdown
 
     def __call__(self) -> "Starlette":
         app = super().__call__()
 
-        for mount_app, path, name in self.bento_service._mount_apps:
-            app.mount(
-                app=mount_app, path=path, name=name
-            )  # TODO(jiang): mount wsgi app ?
+        for mount_app, path, name in self.bento_service.mount_apps:
+            app.mount(app=mount_app, path=path, name=name)
 
         return app
 
@@ -301,9 +351,9 @@ class ServiceAppFactory(BaseAppFactory):
                         output = await api.func(input_data)
                 else:
                     if isinstance(api.input, Multipart):
-                        output = await run_in_threadpool(api.func, **input_data)
+                        output: t.Any = await run_in_threadpool(api.func, **input_data)
                     else:
-                        output = await run_in_threadpool(api.func, input_data)
+                        output: t.Any = await run_in_threadpool(api.func, input_data)
                 response = await api.output.to_http_response(output)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
@@ -327,16 +377,4 @@ class ServiceAppFactory(BaseAppFactory):
 
             return response
 
-        """
-        TODO: instrument tracing
-        def api_func_with_tracing():
-            with self.tracer.span(
-                service_name=f"BentoService.{self.bento_service.name}",
-                span_name=f"InferenceAPI {api.name} HTTP route",
-                request_headers=request.headers,
-            ):
-                return api_func()
-
-        return api_func_with_tracing
-        """
         return api_func

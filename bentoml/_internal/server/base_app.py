@@ -76,5 +76,4 @@ class BaseAppFactory(abc.ABC):
 
     @property
     def middlewares(self) -> t.List["Middleware"]:
-        # return [InstrumentMiddleware()]  #TODO(jiang)
         return []

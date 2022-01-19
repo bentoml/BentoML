@@ -62,13 +62,16 @@ def load(
     Args:
         tag (`str`):
             Tag of a saved model in BentoML local modelstore.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
         an instance of `mlflow.pyfunc.PyFuncModel` from BentoML modelstore.
 
-    Examples::
+    Examples:
+
+    .. code-block:: python
+
     """  # noqa
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
@@ -243,18 +246,21 @@ def load_runner(
     Args:
         tag (`str`):
             Model tag to retrieve model from modelstore
-        resource_quota (`t.Dict[str, t.Any]`, default to `None`):
+        resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`t.Dict[str, t.Any]`, default to `None`):
+        batch_options (`Dict[str, Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
         Runner instances loaded from `bentoml.mlflow`. This can be either a `mlflow.pyfunc.PyFuncModel`
         Runner or BentoML runner instance that maps to MLflow flavors
 
-    Examples::
+    Examples:
+
+    .. code-block:: python
+
     """  # noqa
     tag = Tag.from_taglike(tag)
     if name is None:

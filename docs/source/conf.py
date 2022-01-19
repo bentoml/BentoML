@@ -97,9 +97,11 @@ autodoc_mock_imports = [
     "xgboost",
 ]
 
+autodoc_typehints = "none"
 
 # Mock external libraries to avoid doc dependencies
 import mock
+
 import bentoml._internal.utils.pkg as pkg
 
 for mod_name in autodoc_mock_imports:
@@ -107,9 +109,9 @@ for mod_name in autodoc_mock_imports:
     sys.modules[mod_name].__version__ = mock.Mock()
     sys.modules[mod_name].__spec__ = mock.Mock()
 
-sys.modules['easyocr'].__version__ = "1.4"
+sys.modules["easyocr"].__version__ = "1.4"
 pkg.get_pkg_version = mock.MagicMock()
-    
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

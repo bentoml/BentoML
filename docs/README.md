@@ -19,6 +19,15 @@ Once you have `sphinx` installed, you can build the documentation and enable wat
 » make watch-docs
 ```
 
+For Apple Silicon (M1), a environment variable is required:
+```bash
+» export PYENCHANT_LIBRARY_PATH=/opt/homebrew/lib/libenchant-2.2.dylib
+```
+then install pychant with `brew`:
+```bash
+» arch -arm64 brew install enchant
+```
+
 ## Documentation specification
 
 `bentoml/BentoML` follows [Google's docstring style](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings),
@@ -121,11 +130,11 @@ class FooBarArtifact(Model):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`service.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
+    Containerize a bento with :code:`bento_packer.py`::
 
         TODO:
     """  # noqa: E501

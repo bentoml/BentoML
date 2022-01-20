@@ -189,7 +189,7 @@ a {
 /* Content related patch */
 
 .wy-nav-content {
-    max-width: 100%;
+    max-width: 1200px;
     background-color: var(--white);
 }
 

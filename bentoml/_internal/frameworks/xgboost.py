@@ -33,8 +33,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.xgboost"
 
-_xgboost_version = get_pkg_version("xgboost")
-
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
 # class DMatrixContainer(RunnerIOContainer):
@@ -87,7 +85,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Params for xgb.core.Booster initialization
@@ -132,7 +130,7 @@ def save(
             Instance of model to be saved
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Params for booster initialization
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -165,7 +163,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "xgboost",
-        "pip_dependencies": [f"xgboost=={_xgboost_version}"],
+        "pip_dependencies": [f"xgboost=={get_pkg_version('xgboost')}"],
     }
 
     _model = Model.create(
@@ -275,8 +273,8 @@ def load_runner(
     wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `predict`):
             Options for inference functions. If you want to use `run`
              or `run_batch` in a thread context then use `inplace_predict`.

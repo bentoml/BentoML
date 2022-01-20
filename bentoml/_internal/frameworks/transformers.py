@@ -214,7 +214,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -560,17 +560,17 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]`,
+        model (`Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]`,
                required):
             Model instance provided by transformers. This can be retrieved from their
              `AutoModel` class. You can also use any type of models/automodel provided
              by transformers. Refers to https://huggingface.co/transformers/main_classes/model.html
-        tokenizer (`t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]`):
+        tokenizer (`Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]`):
             Tokenizer instance provided by transformers. This can be retrieved from
              their `AutoTokenizer` class. You can also use any type of Tokenizer
              accordingly to your use case provided by transformers. Refers to
              https://huggingface.co/transformers/main_classes/tokenizer.html
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -661,7 +661,7 @@ def import_from_huggingface_hub(
              `~bentoml.transformers.save` for more information.
         save_namespace (`str`, default to given `name`):
             Name to save model to BentoML modelstore.
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -845,8 +845,8 @@ def load_runner(
 
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         tasks (`str`):
             Given tasks for pipeline. Refers to https://huggingface.co/transformers/task_summary.html
              for more information.

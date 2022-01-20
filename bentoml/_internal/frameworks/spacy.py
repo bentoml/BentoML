@@ -49,15 +49,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.spacy"
 
-_spacy_version = get_pkg_version("spacy")
-
-_check_compat = _spacy_version.startswith("3")
-if not _check_compat:  # pragma: no cover
-    raise EnvironmentError(
-        "BentoML will only provide supports for spacy 3.x and above"
-        " as we can provide more supports for Spacy new design. Currently"
-        f" detected spacy to have version {_spacy_version}"
-    )
 
 util = LazyLoader("util", globals(), "spacy.util")
 thinc_util = LazyLoader("thinc_util", globals(), "thinc.util")
@@ -185,7 +176,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`spacy.language.Language`):
             Instance of model to be saved
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -262,7 +253,7 @@ def projects(
         )
     context: t.Dict[str, t.Any] = {
         "framework_name": "spacy",
-        "pip_dependencies": [f"spacy=={_spacy_version}"],
+        "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
         "tasks": tasks,
     }
     _model = Model.create(

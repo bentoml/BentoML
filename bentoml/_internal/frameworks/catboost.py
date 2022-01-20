@@ -35,8 +35,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.catboost"
 
-_catboost_version = get_pkg_version("catboost")
-
 # TODO: support cbt.Pool runner io container
 
 CATBOOST_EXT = "cbm"
@@ -150,7 +148,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.CatBoostRegressor]`):
+        model (`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.CatBoostRegressor]`):
             Instance of model to be saved
         model_params (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):
             Parameters for a CatBoost model. Following parameters can be specified:
@@ -159,7 +157,7 @@ def save(
             Export parameters for given model.
         model_pool (`cbt.core.Pool`, `optional`, default to `None`):
             CatBoost data pool for given model.
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -206,7 +204,7 @@ def save(
 
     context = {
         "framework_name": "catboost",
-        "pip_dependencies": [f"catboost=={_catboost_version}"],
+        "pip_dependencies": [f"catboost=={get_pkg_version('catboost')}"],
     }
     _model = Model.create(
         name,
@@ -293,8 +291,8 @@ def load_runner(
     wrap around a CatBoost model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `predict`):
             Options for inference functions. `predict` are the default function.
         model_params (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):

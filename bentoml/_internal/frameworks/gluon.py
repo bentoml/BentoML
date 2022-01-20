@@ -31,7 +31,6 @@ except ImportError:  # pragma: no cover
         to https://mxnet.apache.org/versions/master/get_started?  """
     )
 
-_mxnet_version = get_pkg_version("mxnet")
 
 MODULE_NAME = "bentoml.gluon"
 
@@ -46,7 +45,7 @@ def load(
     Load a model from BentoML local modelstore with given tag.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         mxnet_ctx (mxnet.context.Context, `optional`, default to ``cpu``):
             Device type to cast model. Default behaviour similar
@@ -93,7 +92,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`mxnet.gluon.HybridBlock`):
             Instance of gluon.HybridBlock model to be saved.
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -111,7 +110,7 @@ def save(
 
     context: t.Dict[str, t.Any] = {
         "framework_name": "gluon",
-        "pip_dependencies": [f"mxnet=={_mxnet_version}"],
+        "pip_dependencies": [f"mxnet=={get_pkg_version('mxnet')}"],
     }
     options: t.Dict[str, t.Any] = dict()
     _model = Model.create(
@@ -206,8 +205,8 @@ def load_runner(
     wrap around a torch.nn.Module model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `__call__`):
             Options for inference functions. Default to `__call__`
         resource_quota (`Dict[str, Any]`, default to `None`):

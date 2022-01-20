@@ -45,8 +45,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.pycaret"
 
-_pycaret_version = get_pkg_version("pycaret")
-
 logger = logging.getLogger(__name__)
 
 
@@ -73,7 +71,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -107,9 +105,9 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union[sklearn.pipeline.Pipeline, xgboost.Booster, lightgbm.basic.Booster]`):
+        model (`Union[sklearn.pipeline.Pipeline, xgboost.Booster, lightgbm.basic.Booster]`):
             Instance of model to be saved
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -138,7 +136,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "pycaret",
-        "pip_dependencies": [f"pycaret=={_pycaret_version}"],
+        "pip_dependencies": [f"pycaret=={get_pkg_version('pycaret')}"],
     }
     _model = Model.create(
         name,
@@ -212,8 +210,8 @@ def load_runner(
     wraps around a PyCaret model, which optimizes it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`Dict[str, Any]`, default to `None`):

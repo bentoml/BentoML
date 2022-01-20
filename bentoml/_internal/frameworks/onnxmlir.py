@@ -52,7 +52,7 @@ def load(
     See the onnx-mlir supporting documentation for detail.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -90,7 +90,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`str`):
             Path to compiled model by MLIR
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -174,8 +174,8 @@ def load_runner(
     wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`Dict[str, Any]`, default to `None`):

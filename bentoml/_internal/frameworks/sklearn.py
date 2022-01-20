@@ -68,7 +68,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -104,7 +104,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (``):
             Instance of model to be saved
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -214,8 +214,8 @@ def load_runner(
     wrap around a Sklearn joblib model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore.
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore..
         function_name (`str`, `optional`, default to `predict`):
             Predict function used by a given sklearn model.
         resource_quota (`Dict[str, Any]`, default to `None`):

@@ -22,7 +22,7 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from ..models import ModelStore
 try:
-    # pylint: disable=unused-import;
+    # pylint: disable=unused-import
     import torch
     import detectron2  # noqa F401
     import detectron2.config as config
@@ -40,9 +40,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.detectron"
 
-_detectron2_version = get_pkg_version("detectron2")
-_torch_version = get_pkg_version("torch")
-
 
 @inject
 def load(
@@ -54,7 +51,7 @@ def load(
     Load a model from BentoML local modelstore with given tag.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         device (`str`, `optional`, default to ``cpu``):
             Device type to cast model. Default behaviour similar
@@ -123,7 +120,7 @@ def save(
             Instance of detectron2 model to be saved.
         model_config (`detectron2.config.CfgNode`, `optional`, default to `None`):
             model config from :meth:`detectron2.model_zoo.get_config_file`
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -170,8 +167,8 @@ def save(
     context: t.Dict[str, t.Any] = {
         "framework_name": "detectron2",
         "pip_dependencies": [
-            f"detectron2=={_detectron2_version}",
-            f"torch=={_torch_version}",
+            f"detectron2=={get_pkg_version('detectron2')}",
+            f"torch=={get_pkg_version('torch')}",
         ],
     }
     options: t.Dict[str, t.Any] = dict()
@@ -278,8 +275,8 @@ def load_runner(
     wrap around a torch.nn.Module model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `__call__`):
             Options for inference functions. Default to `__call__`
         resource_quota (`Dict[str, Any]`, default to `None`):

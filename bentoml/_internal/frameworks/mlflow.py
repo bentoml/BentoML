@@ -12,6 +12,7 @@ from bentoml import Model as BentoModel
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.models import SAVE_NAMESPACE
 
 from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
@@ -34,8 +35,6 @@ except ImportError:
     )
 
 MODULE_NAME = "bentoml.mlflow"
-
-_mlflow_version = get_pkg_version("mlflow")
 
 
 def _strike(text: str) -> str:
@@ -60,7 +59,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -82,14 +81,12 @@ def load(
     return mlflow.pyfunc.load_model(mlflow_folder, suppress_warnings=False)
 
 
-def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
-    raise EnvironmentError(
-        f"""\n
-BentoML won't provide a `save` API for MLflow.
-If you currently working with `mlflow.<flavor>.save_model`, we kindly suggest you
- to replace `mlflow.<flavor>.save_model` with BentoML's `save` API as we also supports
- the majority of ML frameworks that MLflow supports. An example below shows how you can
- migrate your code for PyTorch from MLflow to BentoML::
+SAVE_WARNING = f"""\
+BentoML won't provide a :func:`save` API for MLflow.
+If you currently working with :code:`mlflow.<flavor>.save_model`, we kindly suggest you
+to replace :code:`mlflow.<flavor>.save_model` with BentoML's `save` API as we also supports
+the majority of ML frameworks that MLflow supports. An example below shows how you can
+migrate your code for PyTorch from MLflow to BentoML::
 
     - {_strike('import mlflow.pytorch')}
     + import bentoml.pytorch
@@ -101,7 +98,7 @@ If you currently working with `mlflow.<flavor>.save_model`, we kindly suggest yo
     + bentoml.pytorch.save("embed_bag", model)
 
 If you want to import MLflow models from local directory or a given file path, you can
- utilize `bentoml.mlflow.import_from_uri`::
+utilize :code:`bentoml.mlflow.import_from_uri`::
 
     import mlflow.pytorch
     + import bentoml.mlflow
@@ -110,10 +107,10 @@ If you want to import MLflow models from local directory or a given file path, y
     mlflow.pytorch.save_model(model, path)
     + tag = bentoml.mlflow.import_from_uri("mlflow_pytorch_model", path)
 
-If your current workflow with MLflow involve `log_model` as well as importing models from MLflow Registry,
- you can import those directly to BentoML modelstore using `bentoml.mlflow.import_from_uri`. We also accept
- MLflow runs syntax, as well as models registry uri.
-An example showing how to integrate your current `log_model` with `mlflow.sklearn` to BentoML::
+If your current workflow with MLflow involve :func:`log_model` as well as importing models from MLflow Registry,
+you can import those directly to BentoML modelstore using :code:`bentoml.mlflow.import_from_uri`. We also accept
+MLflow runs syntax, as well as models registry uri.
+An example showing how to integrate your current :func:`log_model` with :code:`mlflow.sklearn` to BentoML::
 
     import mlflow.sklearn
     + import mlflow
@@ -135,8 +132,8 @@ An example showing how to integrate your current `log_model` with `mlflow.sklear
     + tag = bentoml.mlflow.import_from_uri("runs_mlflow_sklearn", uri)
 
 An example showing how to import from MLflow models registry to BentoML modelstore. With this usecase, we
- recommend you to load the model into memory first with `mlflow.<flavor>.load_model` then save the model using
- BentoML `save` API::
+recommend you to load the model into memory first with :code:`mlflow.<flavor>.load_model` then save the model using
+BentoML :func:`save` API::
 
     import mlflow.sklearn
     + import bentoml.sklearn
@@ -150,8 +147,14 @@ An example showing how to import from MLflow models registry to BentoML modelsto
     #  defining `model_uri`
     + import bentoml.mlflow
     + tag = bentoml.mlflow.import_from_uri("my_model", model_uri)
-    """  # noqa
-    )
+"""  # noqa
+
+
+def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
+    raise EnvironmentError(SAVE_WARNING)
+
+
+save.__doc__ = SAVE_WARNING
 
 
 @inject
@@ -164,7 +167,7 @@ def import_from_uri(
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
         "framework_name": "mlflow",
-        "pip_dependencies": [f"mlflow=={_mlflow_version}"],
+        "pip_dependencies": [f"mlflow=={get_pkg_version('mlflow')}"],
     }
 
     _model = BentoModel.create(
@@ -244,8 +247,8 @@ def load_runner(
     load BentoML internal Runner implementation, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`Dict[str, Any]`, default to `None`):

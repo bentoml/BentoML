@@ -47,7 +47,7 @@ def load(
     Load a model from BentoML local modelstore with given tag.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         init_params (`t.Dict[str, t.Union[str, t.Any]]`):
             Params for h2o server initialization
@@ -96,7 +96,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`h2o.model.model_base.ModelBase`):
             Instance of h2o model to be saved.
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -203,8 +203,8 @@ def load_runner(
     optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `predict`):
             Options for inference functions. Default to `predict`
         init_params (`t.Dict[str, t.Union[str, t.Any]]`, default to `None`):

@@ -64,7 +64,6 @@ for p in _PACKAGE:
         break
     except importlib_metadata.PackageNotFoundError:
         pass
-_onnx_version = get_pkg_version("onnx")
 
 MODULE_NAME = "bentoml.onnx"
 
@@ -112,7 +111,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         backend (`str`, `optional`, default to `onnxruntime`):
             Different backend runtime supported by ONNX. Currently only accepted `onnxruntime`
@@ -166,7 +165,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model:
             Instance of model to be saved
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -182,7 +181,7 @@ def save(
     context: t.Dict[str, t.Any] = {
         "framework_name": "onnx",
         "pip_dependencies": [
-            f"onnx=={_onnx_version}",
+            f"onnx=={get_pkg_version('onnx')}",
             f"onnxruntime=={_onnxruntime_version}",
         ],
     }
@@ -389,8 +388,8 @@ def load_runner(
     wrap around an ONNX model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         gpu_device_id (`int`, `optional`, default to `-1`):
             GPU device ID. Currently only support CUDA.
         disable_copy_in_default_stream (`bool`, `optional`, default to `False`):

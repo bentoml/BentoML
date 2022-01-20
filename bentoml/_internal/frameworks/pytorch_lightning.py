@@ -34,9 +34,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.pytorch_lightning"
 
-_torch_version = get_pkg_version("torch")
-_pl_version = get_pkg_version("pytorch_lightning")
-
 
 @inject
 def load(
@@ -48,7 +45,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         device_id (`str`, `optional`):
             Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
@@ -92,7 +89,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`pl.LightningModule`):
             Instance of model to be saved
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -150,8 +147,8 @@ def save(
     context: t.Dict[str, t.Any] = {
         "framework_name": "torch",
         "pip_dependencies": [
-            f"torch=={_torch_version}",
-            f"pytorch_lightning=={_pl_version}",
+            f"torch=={get_pkg_version('torch')}",
+            f"pytorch_lightning=={get_pkg_version('pytorch_lightning')}",
         ],
     }
     _model = Model.create(
@@ -187,15 +184,15 @@ def load_runner(
     wrap around a statsmodels instance, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
-        device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `cpu`):
+        device_id (`Union[str, int, List[Union[str, int]]]`, `optional`, default to `cpu`):
             Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
-        partial_kwargs (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        partial_kwargs (`Optional[Dict[str, Any]]`, default to `None`):
             Common kwargs passed to model for this runner
         batch_options (`Dict[str, Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.

@@ -1,4 +1,4 @@
-import sys
+from pygments.lexers import PythonLexer
 
 # Adding BentoML source directory for accessing BentoML version
 import bentoml
@@ -40,9 +40,6 @@ autodoc_mock_imports = [
     "catboost",
     "coremltools",
     "detectron2",
-    "detectron2.config",
-    "detectron2.modeling",
-    "detectron2.checkpoint",
     "torch",
     "torchvision",
     "torchtext",
@@ -51,13 +48,8 @@ autodoc_mock_imports = [
     "fastai",
     "fasttext",
     "mxnet",
-    "mxnet.gluon",
     "h2o",
-    "h2o.model",
     "tensorflow",
-    "tensorflow.keras",
-    "tensorflow.python.client",
-    "tensorflow.python.training.tracking.tracking",
     "tensorflow_hub",
     "keras",
     "trax",
@@ -65,53 +57,25 @@ autodoc_mock_imports = [
     "jax",
     "lightgbm",
     "mlflow",
-    "mlflow.pyfunc",
-    "mlflow.tracking.artifact_utils",
     "onnx",
     "onnxruntime",
     "PyRuntime",
     "paddle",
-    "paddle.nn",
-    "paddle.inference",
-    "paddle.fluid",
     "paddlehub",
-    "paddlehub.module.manager",
-    "paddlehub.server.server",
     "pycaret",
-    "pycaret.internal.tabular",
     "pyspark",
     "pytorch",
-    "torch.nn.parallel",
     "pytorch_lightning",
     "sklearn",
     "joblib",
     "spacy",
-    "spacy.util",
-    "thinc.util",
-    "thinc.backends",
+    "thinc",
     "statsmodels",
-    "statsmodels.api",
-    "statsmodels.tools.parallel",
     "transformers",
-    "transformers.file_utils",
     "xgboost",
 ]
 
-autodoc_typehints = "none"
-
-# Mock external libraries to avoid doc dependencies
-import mock
-
-import bentoml._internal.utils.pkg as pkg
-
-for mod_name in autodoc_mock_imports:
-    sys.modules[mod_name] = mock.MagicMock()
-    sys.modules[mod_name].__version__ = mock.Mock()
-    sys.modules[mod_name].__spec__ = mock.Mock()
-
-sys.modules["easyocr"].__version__ = "1.4"
-pkg.get_pkg_version = mock.MagicMock()
-
+autodoc_typehints = "signature"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -142,6 +106,19 @@ html_static_path = ["_static"]
 # Private dictionary for spell checker
 spelling_word_list_filename = ["bentoml_wordlist.txt"]
 
+# -- Custom lexers
+class TensorflowV1Lexer(PythonLexer):
+    name = "Tensorflow V1"
+    aliases = ["tensorflow_v1"]
+
+
+class TensorflowV2Lexer(PythonLexer):
+    name = "Tensorflow V2"
+    aliases = ["tensorflow_v2"]
+
 
 def setup(app):
     app.add_css_file("css/bentoml.css")
+    # Adding lexers for rendering different code version
+    app.add_lexer("tensorflow_v1", TensorflowV1Lexer)
+    app.add_lexer("tensorflow_v2", TensorflowV2Lexer)

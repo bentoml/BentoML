@@ -35,7 +35,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.lightgbm"
 
-_lightgbm_version = get_pkg_version("lightgbm")
 
 _LightGBMModelType = t.TypeVar(
     "_LightGBMModelType",
@@ -81,7 +80,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
@@ -119,12 +118,12 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union["lgb.basic.Booster", LightGBMModelType]`):
+        model (`Union["lgb.basic.Booster", LightGBMModelType]`):
             Instance of model to be saved
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
             for more information.
-        metadata (`t.Union[None, t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Union[None, t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -172,7 +171,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "lightgbm",
-        "pip_dependencies": [f"lightgbm=={_lightgbm_version}"],
+        "pip_dependencies": [f"lightgbm=={get_pkg_version('lightgbm')}"],
     }
 
     _model = Model.create(
@@ -280,8 +279,8 @@ def load_runner(
     wrap around a Lightgbm booster model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore.
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore..
         infer_api_callback (`str`, `optional`, default to `predict`):
             Inference API callback from given model. If not specified, BentoML will use default `predict`.
              Users can also choose to use `predict_proba` for supported model.

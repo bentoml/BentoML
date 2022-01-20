@@ -40,8 +40,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.statsmodels"
 
-_statsmodels_version = get_pkg_version("statsmodels")
-
 _exc_msg = """\
 `pandas` is required by `bentoml.statsmodels`, install pandas with
  `pip install pandas`. For more information, refer to
@@ -73,7 +71,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -107,7 +105,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`t.Any):
             Instance of model to be saved
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -122,7 +120,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "statsmodels",
-        "pip_dependencies": [f"statsmodels=={_statsmodels_version}"],
+        "pip_dependencies": [f"statsmodels=={get_pkg_version('statsmodels')}"],
     }
     _model = Model.create(
         name,
@@ -201,8 +199,8 @@ def load_runner(
     wrap around a statsmodels instance, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `predict`):
             Options for inference functions
         resource_quota (`Dict[str, Any]`, default to `None`):

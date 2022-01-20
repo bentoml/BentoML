@@ -54,8 +54,6 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_paddle_exc)
 
-_paddle_version = get_pkg_version("paddlepaddle")
-
 _hub_exc = (
     """\
 `paddlehub` is required to use `bentoml.paddle.import_from_paddlehub()`. Make sure
@@ -127,7 +125,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`str`):
+        tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         config (`paddle.inference.Config`, `optional`, default to `None`):
             Model config to be used to create a `Predictor` instance.
@@ -184,7 +182,7 @@ def _save(
 ) -> Tag:
     context: t.Dict[str, t.Any] = {
         "framework_name": "paddle",
-        "pip_dependencies": [f"paddlepaddle=={_paddle_version}"],
+        "pip_dependencies": [f"paddlepaddle=={get_pkg_version('paddlepaddle')}"],
     }
     if isinstance(model, str):
         context["paddlehub"] = hub.__version__
@@ -298,7 +296,7 @@ def save(
              `list`/`dict` of them. If `None`, all input variables of the original
              Layer's forward method would be the inputs of the saved model. Generally
              this is NOT RECOMMENDED to use unless you know what you are doing.
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -375,7 +373,7 @@ def import_from_paddlehub(
              PaddleHub default cache, which is under `$HOME/.paddlehub`
         keep_download_from_hub (`bool`, `optional`, default to `False`):
             Whether to re-download pretrained model from hub.
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Optional[Dict[str, Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -566,8 +564,8 @@ def load_runner(
     which optimize it for the BentoML runtime.
 
     Args:
-        tag (`str`):
-            Model tag to retrieve model from modelstore
+        tag (`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
         infer_api_callback (`str`, `optional`, default to `run`):
             Inference API function that will be used during `run_batch`. If `tag`
              is a tag of a `hub.Module`, then `infer_api_callback` should be changed

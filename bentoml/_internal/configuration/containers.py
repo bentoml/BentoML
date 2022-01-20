@@ -328,7 +328,10 @@ class DeploymentContainerClass:
         )
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:
-            from opentelemetry.exporter.zipkin.json import ZipkinExporter
+            try:
+                from opentelemetry.exporter.zipkin.json import ZipkinExporter
+            except ImportError as e:
+                raise ImportError(f"{e.msg} Run `pip install bentoml[zipkin]`")
 
             exporter = ZipkinExporter(
                 endpoint=zipkin_server_url,
@@ -340,7 +343,10 @@ class DeploymentContainerClass:
             and jaeger_server_address is not None
             and jaeger_server_port is not None
         ):
-            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+            try:
+                from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+            except ImportError as e:
+                raise ImportError(f"{e.msg} Run `pip install bentoml[jaeger]`")
 
             exporter = JaegerExporter(
                 agent_host_name=jaeger_server_address,

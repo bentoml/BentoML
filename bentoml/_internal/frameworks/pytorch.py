@@ -45,8 +45,6 @@ _ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule"]  # type: ignor
 
 MODULE_NAME = "bentoml.pytorch"
 
-_torch_version = get_pkg_version("torch")
-
 
 def _is_gpu_available() -> bool:  # pragma: no cover
     return torch.cuda.is_available()
@@ -64,13 +62,13 @@ def load(
     Args:
         tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        device_id (`str`, `optional`):
-            Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
+        device_id (`str`, `optional`, default to `cpu`):
+            Optional devices to put the given model on. Refers to `device attributes <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of either `torch.jit.ScriptModule` or `torch.nn.Module` from BentoML modelstore.
+        an instance of either :code:`torch.jit.ScriptModule` or :code:`torch.nn.Module` from BentoML modelstore.
 
     Examples:
 
@@ -78,7 +76,7 @@ def load(
 
         import bentoml.pytorch
         booster = bentoml.pytorch.load(
-            'lit_classifier:20201012_DE43A2', device_id="cuda:0")
+            'lit_classifier:latest', device_id="cuda:0")
     """  # noqa
     bentoml_model = model_store.get(tag)
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
@@ -126,8 +124,8 @@ def save(
 
     .. code-block:: python
 
-        import bentoml.pytorch
         import torch
+        import bentoml
 
         class NGramLanguageModeler(nn.Module):
 
@@ -147,9 +145,12 @@ def save(
         tag = bentoml.pytorch.save("ngrams", NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE))
         # example tag: ngrams:20201012_DE43A2
 
-    Integration with Torch Hub and BentoML::
-        import bentoml.pytorch
+    Integration with Torch Hub and BentoML:
+
+    .. code-block:: python
+
         import torch
+        import bentoml
 
         resnet50 = torch.hub.load("pytorch/vision", "resnet50", pretrained=True)
         ...
@@ -159,7 +160,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "torch",
-        "pip_dependencies": [f"torch=={_torch_version}"],
+        "pip_dependencies": [f"torch=={get_pkg_version('torch')}"],
     }
     _model = Model.create(
         name,
@@ -279,7 +280,7 @@ class _PyTorchRunner(Runner):
         params = params.map(_mapping)
 
         # inference mode is required for PyTorch version 1.9.*
-        if _torch_version.startswith("1.9"):
+        if get_pkg_version("torch").startswith("1.9"):
             with torch.inference_mode():
                 res = self._predict_fn(*params.args, **kwargs)
         else:
@@ -309,8 +310,8 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
-        device_id (`Union[str, int, List[Union[str, int]]]`, `optional`, default to `cpu`):
-            Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
+        device_id (`str`, `optional`, default to `cpu`):
+            Optional devices to put the given model on. Refers to `device attributes <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_.
         partial_kwargs (`Optional[Dict[str, Any]]`, default to `None`):
             Common kwargs passed to model for this runner
         resource_quota (`Dict[str, Any]`, default to `None`):
@@ -321,14 +322,16 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.pytorch` model
+        Runner instances for :mod:`bentoml.pytorch` model
 
     Examples:
 
     .. code-block:: python
 
-        import bentoml.pytorch
-        runner = bentoml.pytorch.load_runner("ngrams:20201012_DE43A2")
+        import bentoml
+        import pandas as pd
+
+        runner = bentoml.pytorch.load_runner("ngrams:latest")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
     tag = Tag.from_taglike(tag)

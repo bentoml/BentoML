@@ -42,7 +42,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.sklearn"
 
-_sklearn_version = get_pkg_version("scikit-learn")
 
 np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 pd = LazyLoader("pd", globals(), "pandas")
@@ -136,7 +135,7 @@ def save(
     """  # noqa
     context = {
         "framework_name": "sklearn",
-        "pip_dependencies": [f"scikit-learn=={_sklearn_version}"],
+        "pip_dependencies": [f"scikit-learn=={get_pkg_version('scikit-learn')}"],
     }
 
     _model = Model.create(
@@ -210,7 +209,7 @@ def load_runner(
 
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.sklearn.load_runner` implements a Runner class that
+    maximize throughput. :func:`bentoml.sklearn.load_runner` implements a Runner class that
     wrap around a Sklearn joblib model, which optimize it for the BentoML runtime.
 
     Args:
@@ -226,7 +225,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for the target `bentoml.sklearn` model
+        Runner instances for the target :mod:`bentoml.sklearn` model
 
     Examples:
 

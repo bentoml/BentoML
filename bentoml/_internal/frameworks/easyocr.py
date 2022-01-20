@@ -22,11 +22,6 @@ if TYPE_CHECKING:
 
 try:
     import easyocr
-
-    assert easyocr.__version__ >= "1.4", BentoMLException(
-        "Only easyocr>=1.4 is supported by BentoML"
-    )
-
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """easyocr is required in order to use module `bentoml.easyocr`, install
@@ -36,8 +31,6 @@ except ImportError:  # pragma: no cover
     )
 
 MODULE_NAME = "bentoml.easyocr"
-
-_easyocr_version = get_pkg_version("easyocr")
 
 
 @inject
@@ -69,6 +62,9 @@ def load(
         booster = bentoml.catboost.load(
             "my_model:20201012_DE43A2", model_params=dict(model_type="classifier"))
     """  # noqa
+    assert easyocr.__version__ >= "1.4", BentoMLException(
+        "Only easyocr>=1.4 is supported by BentoML"
+    )
 
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
@@ -146,10 +142,13 @@ def save(
         loaded = bentoml.easyocr.load(tag)
 
     """  # noqa
+    assert easyocr.__version__ >= "1.4", BentoMLException(
+        "Only easyocr>=1.4 is supported by BentoML"
+    )
 
     context: t.Dict[str, t.Any] = {
         "framework_name": "easyocr",
-        "pip_dependencies": [f"easyocr=={_easyocr_version}"],
+        "pip_dependencies": [f"easyocr=={get_pkg_version('easyocr')}"],
     }
     if lang_list is None:
         lang_list = ["en"]
@@ -274,6 +273,9 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """
+    assert easyocr.__version__ >= "1.4", BentoMLException(
+        "Only easyocr>=1.4 is supported by BentoML"
+    )
     tag = Tag.from_taglike(tag)
     if name is None:
         name = tag.name

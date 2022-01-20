@@ -63,8 +63,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.transformers"
 
-_transformers_version = get_pkg_version("transformers")
-
 try:
     from huggingface_hub import HfFolder
 except ImportError:
@@ -148,7 +146,7 @@ def _clean_name(name: str) -> str:
 
 
 def _check_flax_supported() -> None:  # pragma: no cover
-    _supported: bool = _transformers_version.startswith("4")
+    _supported: bool = get_pkg_version("transformers").startswith("4")
     _flax_available = (
         importlib.util.find_spec("jax") is not None
         and importlib.util.find_spec("flax") is not None
@@ -156,7 +154,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
     if not _supported:
         logger.warning(
             "Detected transformers version: "
-            f"{_transformers_version}, which "
+            f"{get_pkg_version('transformers')}, which "
             "doesn't have supports for Flax. "
             "Update `transformers` to 4.x and "
             "above to have Flax supported."
@@ -416,7 +414,7 @@ def _save(
     _check_flax_supported()  # pragma: no cover
     context: t.Dict[str, t.Any] = {
         "framework_name": "transformers",
-        "pip_dependencies": [f"transformers=={_transformers_version}"],
+        "pip_dependencies": [f"transformers=={get_pkg_version('transformers')}"],
     }
 
     if isinstance(model_identifier, str):

@@ -32,8 +32,6 @@ except ImportError:  # pragma: no cover
         """
     )
 
-_h2o_version = get_pkg_version("h2o")
-
 MODULE_NAME = "bentoml.h2o"
 
 
@@ -112,7 +110,7 @@ def save(
 
     context: t.Dict[str, t.Any] = {
         "framework_name": "h2o",
-        "pip_dependencies": [f"h2o=={_h2o_version}"],
+        "pip_dependencies": [f"h2o=={get_pkg_version('h2o')}"],
     }
     options: t.Dict[str, t.Any] = dict()
 

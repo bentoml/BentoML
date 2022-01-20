@@ -42,7 +42,7 @@ With the newly releases 1.0, Users can now uses CatBoost with BentoML with a bra
 
    # Run a given model under `Runner` abstraction with `load_runner`
    input_data = pd.from_csv("/path/to/csv")
-   runner = bentoml.catboost.load_runner("cancer_clf:latest"")
+   runner = bentoml.catboost.load_runner("cancer_clf:latest")
    runner.run(cbt.Pool(input_data))
 
 .. note::

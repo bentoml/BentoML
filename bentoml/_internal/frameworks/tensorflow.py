@@ -214,7 +214,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `SavedModel` format from BentoML modelstore.
+        an instance of :obj:`SavedModel` format from BentoML modelstore.
 
     Examples:
 
@@ -458,7 +458,7 @@ def save(
             :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
 
     Raises:
-        ValueError: If `obj` is not trackable.
+        ValueError: If :obj:`obj` is not trackable.
 
     Returns:
         :obj:`str`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
@@ -714,7 +714,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.tensorflow` model
+        Runner instances for :mod:`bentoml.tensorflow` model
 
     Examples:
 

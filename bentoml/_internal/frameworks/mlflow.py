@@ -12,7 +12,6 @@ from bentoml import Model as BentoModel
 from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
-from bentoml._internal.models import SAVE_NAMESPACE
 
 from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer

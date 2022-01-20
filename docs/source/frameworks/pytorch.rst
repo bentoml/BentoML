@@ -5,7 +5,7 @@ PyTorch
 | PyTorch enables fast, flexible experimentation and efficient production through a
 | user-friendly front-end, distributed training, and ecosystem of tools and libraries. - `Source <https://pytorch.org/>`_
 
-With the newly releases 1.0, Users can now uses PyTorch with BentoML with a brand new three API: :code:`load`, :code:`save`, and :code:`load_runner` as follows:
+Users can now use PyTorch with BentoML with the following three API: :code:`load`, :code:`save`, and :code:`load_runner` as follows:
 
 .. code-block:: python
 

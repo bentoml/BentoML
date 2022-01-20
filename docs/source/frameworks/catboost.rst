@@ -6,7 +6,7 @@ CatBoost
 | tasks at Yandex and in other companies, including CERN, Cloudflare, Careem taxi. It is in `open-source <https://github.com/catboost/catboost>`_
 | and can be used by anyone. - `Source <https://catboost.ai/>`_
 
-With the newly releases 1.0, Users can now uses CatBoost with BentoML with a brand new three API: :code:`load`, :code:`save`, and :code:`load_runner` as follows:
+Users can now use CatBoost with BentoML with the following three API: :code:`load`, :code:`save`, and :code:`load_runner` as follows:
 
 .. code-block:: python
 

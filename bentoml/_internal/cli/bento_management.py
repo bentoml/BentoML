@@ -127,7 +127,7 @@ def add_bento_management_commands(
         "delete_targets",
         type=click.STRING,
         callback=parse_delete_targets_argument_callback,
-        required=False,
+        required=True,
     )
     @click.option(
         "-y",
@@ -148,7 +148,22 @@ def add_bento_management_commands(
         * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
         * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
-        pass
+
+        def delete_target(target):
+            to_delete_bentos = bento_store.list(target)
+
+            for bento in to_delete_bentos:
+                if yes:
+                    if_delete = True
+                else:
+                    if_delete = click.confirm(f"delete bento {bento.tag}?")
+
+                if if_delete:
+                    click.echo(f"deleting bento {bento.tag}")
+                    bento_store.delete(bento.tag)
+
+        for target in delete_targets:
+            delete_target(target)
 
     @cli.command(help="Export Bento to a tar file")
     @click.argument("bento_tag", type=click.STRING)

@@ -129,7 +129,7 @@ def add_model_management_commands(
         "delete_targets",
         type=click.STRING,
         callback=parse_delete_targets_argument_callback,
-        required=False,
+        required=True,
     )
     @click.option(
         "-y",
@@ -150,7 +150,22 @@ def add_model_management_commands(
         * Bulk delete all models with a specific name, e.g.: `bentoml model delete IrisClassifier`
         * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml model delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
-        pass
+
+        def delete_target(target):
+            to_delete_models = model_store.list(target)
+
+            for model in to_delete_models:
+                if yes:
+                    if_delete = True
+                else:
+                    if_delete = click.confirm(f"delete bento {model.tag}?")
+
+                if if_delete:
+                    click.echo(f"deleting bento {model.tag}")
+                    model_store.delete(model.tag)
+
+        for target in delete_targets:
+            delete_target(target)
 
     @model_cli.command(help="Export Model to a tar file")
     @click.argument("model_tag", type=click.STRING)

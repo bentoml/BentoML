@@ -133,13 +133,19 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `paddle.inference.Predictor` from BentoML modelstore.
+        :obj:`Union[paddle.inference.Predictor, paddlehub.module.module.RunModule, paddlehub.module.module.ModuleV1]`: an instance of
+        one of :obj:`paddle.inference.Predictor`, :obj:`paddlehub.module.module.RunModule`, and :obj:`paddlehub.module.module.ModuleV1`
+        from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-    """
+        import bentoml
+
+        model = bentoml.paddle.load(tag)
+
+    """  # noqa
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
@@ -285,17 +291,16 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`Union["paddle.nn.Layer", "paddle.inference.Predictor", "StaticFunction"]`):
-            Instance of `paddle.nn.Layer`, decorated functions, or
-            `paddle.inference.Predictor` to be saved.
-        input_spec (`Union[List[InputSpec], Tuple[InputSpec, ...]]`, `optional`,
-                    default to `None`):
+        model (`Union[paddle.nn.Layer, paddle.inference.Predictor, StaticFunction]`):
+            Instance of :code:`paddle.nn.Layer`, decorated functions, or
+            :code:`paddle.inference.Predictor` to be saved.
+        input_spec (`Union[List[InputSpec], Tuple[InputSpec, ...]]`, `optional`, default to `None`):
             Describes the input of the saved model's forward method, which can be
-             described by InputSpec or example Tensor. Moreover, we support to specify
-             non-tensor type argument, such as `int`, `float`, `string`, or
-             `list`/`dict` of them. If `None`, all input variables of the original
-             Layer's forward method would be the inputs of the saved model. Generally
-             this is NOT RECOMMENDED to use unless you know what you are doing.
+            described by :obj:`InputSpec` or example Tensor. Moreover, we support to specify
+            non-tensor type argument, such as `int`, `float`, `string`, or
+            `list`/`dict` of them. If `None`, all input variables of the original
+            Layer's forward method would be the inputs of the saved model. Generally
+            this is **NOT RECOMMENDED** to use unless you know what you are doing.
         metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -308,7 +313,61 @@ def save(
 
     .. code-block:: python
 
-    """
+        import random
+        import numpy as np
+
+        import bentoml
+        import paddle
+        import paddle.nn as nn
+        from paddle.static import InputSpec
+
+        IN_FEATURES = 13
+        OUT_FEATURES = 1
+
+
+        def set_random_seed(seed):
+            random.seed(seed)
+            np.random.seed(seed)
+            paddle.seed(seed)
+            paddle.framework.random._manual_program_seed(seed)
+
+
+        class LinearModel(nn.Layer):
+            def __init__(self):
+                super(LinearModel, self).__init__()
+                self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
+
+            @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype="float32")])
+            def forward(self, x):
+                return self.fc(x)
+
+
+        def train_paddle_model() -> "LinearModel":
+            set_random_seed(SEED)
+            model = LinearModel()
+            loss = nn.MSELoss()
+            adam = paddle.optimizer.Adam(parameters=model.parameters())
+
+            train_data = paddle.text.datasets.UCIHousing(mode="train")
+
+            loader = paddle.io.DataLoader(
+                train_data, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=2
+            )
+
+            model.train()
+            for _ in range(EPOCH_NUM):
+                for _, (feature, label) in enumerate(loader()):
+                    out = model(feature)
+                    loss_fn = loss(out, label)
+                    loss_fn.backward()
+                    adam.step()
+                    adam.clear_grad()
+            return model
+
+        model = train_paddle_model()
+        # `save` a pretrained model to BentoML modelstore:
+        tag = bentoml.paddle.save("linear_model", model, input_spec=InputSpec(shape=[IN_FEATURES], dtype="float32"))
+    """  # noqa
     return _save(
         name=name,
         model=model,
@@ -341,36 +400,36 @@ def import_from_paddlehub(
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
-    Import models from PaddleHub and save it under BentoML modelstore.
+    Import models from :code:`PaddleHub` and save it under BentoML modelstore.
 
     Args:
         model_name (`str`):
-            Name for a PaddleHub model. This can be either path to a Hub module, model
-             name, for both v2 and v1.
+            Name for a PaddleHub model. This can be either path to a Hub module or model
+            name, for both v2 and v1.
         name (`str`, `optional`, default to `None`):
             Name for given model instance. This should pass Python identifier check. If
-             not specified, then BentoML will save under `model_name`.
+            not specified, then BentoML will save under :obj:`model_name`.
         version (`str`, `optional`, default to `None`):
-            The version limit of the module, only takes effect when the `name` is
-             specified. When the local Module does not meet the specified version
-             conditions, PaddleHub will re-request the server to download the
-             appropriate Module. Default to None, This means that the local Module will
-             be used. If the Module does not exist, PaddleHub will download the latest
-             version available from the server according to the usage environment.
+            The version limit of the module, only takes effect when the :obj:`name` is
+            specified. When the local Module does not meet the specified version
+            conditions, PaddleHub will re-request the server to download the
+            appropriate Module. Default to `None`, This means that the local Module will
+            be used. If the Module does not exist, PaddleHub will download the latest
+            version available from the server according to the usage environment.
         source (`str`, `optional`, default to `None`):
-            Url of a git repository. If this parameter is specified, PaddleHub will no
-             longer download the specified Module from the default server, but will look
-             for it in the specified repository.
+            URL of a git repository. If this parameter is specified, PaddleHub will no
+            longer download the specified Module from the default server, but will look
+            for it in the specified repository.
         update (`bool`, `optional`, default to `False`):
             Whether to update the locally cached git repository, only takes effect when
             the `source` is specified.
         branch (`str`, `optional`, default to `None`):
-            The branch of the specified git repository
+            The branch of the specified git repository.
         ignore_env_mismatch (`bool`, `optional`, default to `False`):
             Whether to ignore the environment mismatch when installing the Module.
         hub_module_home (`str`, `optional`, default is `None`):
             Location to save for your PaddleHub cache. If `None`, then default to use
-             PaddleHub default cache, which is under `$HOME/.paddlehub`
+            PaddleHub default cache, which is under :code:`$HOME/.paddlehub`
         keep_download_from_hub (`bool`, `optional`, default to `False`):
             Whether to re-download pretrained model from hub.
         metadata (`Dict[str, Any]`, `optional`,  default to `None`):
@@ -385,8 +444,11 @@ def import_from_paddlehub(
 
     .. code-block:: python
 
+        import bentoml
 
-    """
+        tag = bentoml.paddle.import_from_paddlehub("senta_bilstm")
+
+    """  # noqa
     _name = model_name.split("/")[-1] if os.path.isdir(model_name) else model_name
 
     return _save(
@@ -559,27 +621,26 @@ def load_runner(
 ) -> "_PaddlePaddleRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.paddle.load_runner` implements a Runner class that
-    either wraps around `paddle.inference.Predictor` or `paddlehub.module.Module`,
+    maximize throughput. :func:`bentoml.paddle.load_runner` implements a Runner class that
+    either wraps around :obj:`paddle.inference.Predictor` or :obj:`paddlehub.module.Module`,
     which optimize it for the BentoML runtime.
 
     Args:
         tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         infer_api_callback (`str`, `optional`, default to `run`):
-            Inference API function that will be used during `run_batch`. If `tag`
-             is a tag of a `hub.Module`, then `infer_api_callback` should be changed
-             to corresponding API endpoint offered by given module.
+            Inference API function that will be used during :obj:`run_batch`. If :obj:`tag`
+            is a tag of a :obj:`hub.Module`, then :code:`infer_api_callback` should be changed
+            to corresponding API endpoint offered by given module.
         config (`paddle.inference.Config`, `optional`, default to `None`):
             Config for inference. If None is specified, then use BentoML default.
         device (`str`, `optional`, default to `cpu`):
-            Type of device either paddle Predictor or `hub.Module` will be running on.
-             Currently only supports CPU and GPU. Kunlun XPUs is currently NOT
-             SUPPORTED.
+            Type of device either paddle Predictor or :obj:`hub.Module` will be running on.
+            Currently only supports CPU and GPU. Kunlun XPUs is currently **NOT SUPPORTED**.
         enable_gpu (`bool`, `optional`, default to `False`):
             Whether to enable GPU.
         gpu_mem_pool_mb (`int`, `optional`, default to 0):
-            Amount of memory one wants to allocate to GPUs. By default we will allocate
+            Amount of memory one wants to allocate to GPUs. By default we will allocate None.
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`Dict[str, Any]`, default to `None`):
@@ -594,7 +655,19 @@ def load_runner(
 
     .. code-block:: python
 
-    """
+        import bentoml
+        import numpy as np
+
+        runner = bentoml.paddle.load_runner(
+            tag,
+            enable_gpu=True,
+            device="gpu:0",
+            resource_quota={"gpus": 0},
+        )
+
+        _ = runner.run_batch(pd_dataframe.to_numpy().astype(np.float32))
+
+    """  # noqa
     tag = Tag.from_taglike(tag)
     if name is None:
         name = tag.name

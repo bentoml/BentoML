@@ -177,9 +177,9 @@ def load_runner(
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyTorchLightningRunner":
     """
-        Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.pytorch_lightning.load_runner` implements a Runner class that
-    wrap around a statsmodels instance, which optimize it for the BentoML runtime.
+    Runner represents a unit of serving logic that can be scaled horizontally to
+    maximize throughput. :func:`bentoml.pytorch_lightning.load_runner` implements a Runner class that
+    wrap around a :obj:`pl.LightningModule` instance, which optimize it for the BentoML runtime.
 
     Args:
         tag (`Union[str, Tag]`):
@@ -189,7 +189,8 @@ def load_runner(
         predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
         device_id (`Union[str, int, List[Union[str, int]]]`, `optional`, default to `cpu`):
-            Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
+            Optional devices to put the given model on. Refers to `Tensor Attributes Docs <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_
+            for more information.
         partial_kwargs (`Dict[str, Any]`, `optional`,  default to `None`):
             Common kwargs passed to model for this runner
         batch_options (`Dict[str, Any]`, default to `None`):

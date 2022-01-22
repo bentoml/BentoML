@@ -37,7 +37,7 @@ MODULE_NAME = "bentoml.gluon"
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     mxnet_ctx: t.Optional[mxnet.context.Context] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> gluon.Block:
@@ -47,21 +47,24 @@ def load(
     Args:
         tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        mxnet_ctx (mxnet.context.Context, `optional`, default to ``cpu``):
+        mxnet_ctx (`mxnet.context.Context`, `optional`, default to ``cpu``):
             Device type to cast model. Default behaviour similar
-             to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
-             If None is specified then return default config.MODEL.DEVICE
+            to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
+            If `None` is specified then return default `config.MODEL.DEVICE`
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `torch.nn.Module`
+        :obj:`mxnet.gluon.Block`: an instance of :obj:`mxnet.gluon.Block` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-        TODO
+        import bentoml
+
+        model = bentoml.gluon.load(tag)
+
     """  # noqa
 
     model = model_store.get(tag)
@@ -104,8 +107,20 @@ def save(
 
     .. code-block:: python
 
-        TODO
+        import mxnet
+        import mxnet.gluon as gluon
+        import bentoml
 
+
+        def train_gluon_classifier() -> gluon.nn.HybridSequential:
+            net = mxnet.gluon.nn.HybridSequential()
+            net.hybridize()
+            net.forward(mxnet.nd.array(0))
+            return net
+
+        model = train_gluon_classifier()
+
+        tag = bentoml.gluon.save("gluon_block", model)
     """  # noqa
 
     context: t.Dict[str, t.Any] = {
@@ -220,7 +235,14 @@ def load_runner(
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.detectron` model
 
     Examples:
-        TODO
+
+    .. code-block:: python
+
+        import bentoml
+
+        runner = bentoml.gluon.load_runner("gluon_block")
+        runner.run_batch(data)
+
     """  # noqa
     tag = Tag.from_taglike(tag)
     if name is None:

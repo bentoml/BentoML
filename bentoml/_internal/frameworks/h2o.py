@@ -37,7 +37,7 @@ MODULE_NAME = "bentoml.h2o"
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     init_params: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> h2o.model.model_base.ModelBase:
@@ -47,19 +47,21 @@ def load(
     Args:
         tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        init_params (`t.Dict[str, t.Union[str, t.Any]]`):
+        init_params (`Dict[str, Union[str, Any]]`, `optional`, defaults to `None`):
             Params for h2o server initialization
-         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `h2o.model.model_base.ModelBase`
+        :obj:`h2o.model.model_base.ModelBase`: an instance of `h2o.model.model_base.ModelBase` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-        TODO
+        import bentoml
+
+        model = bentoml.h2o.load(tag, init_params=dict(port=54323))
     """  # noqa
 
     if not init_params:
@@ -103,8 +105,39 @@ def save(
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
-        TODO
 
+    .. code-block:: python
+
+        import bentoml
+        import h2o
+        import h2o.model
+        import h2o.automl
+
+        H2O_PORT = 54323
+
+        def train_h2o_aml() -> h2o.automl.H2OAutoML:
+
+            h2o.init(port=H2O_PORT)
+            h2o.no_progress()
+
+            df = h2o.import_file(
+                "https://github.com/yubozhao/bentoml-h2o-data-for-testing/raw/master/"
+                "powerplant_output.csv"
+            )
+            splits = df.split_frame(ratios=[0.8], seed=1)
+            train = splits[0]
+            test = splits[1]
+
+            aml = h2o.automl.H2OAutoML(
+                max_runtime_secs=60, seed=1, project_name="powerplant_lb_frame"
+            )
+            aml.train(y="HourlyEnergyOutputMW", training_frame=train, leaderboard_frame=test)
+
+            return aml
+
+        model = train_h2o_aml()
+
+        tag = bentoml.h2o.save("h2o_model", model.leader)
 
     """  # noqa
 
@@ -205,9 +238,9 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `predict`):
             Options for inference functions. Default to `predict`
-        init_params (`t.Dict[str, t.Union[str, t.Any]]`, default to `None`):
-            Parameters for h2o.init(). Refers to https://docs.h2o.ai/h2o/latest-stable/h2o-docs/starting-h2o.html#from-python
-             for more information
+        init_params (`Dict[str, Union[str, Any]]`, default to `None`):
+            Parameters for h2o.init(). Refers to `H2O Python API <https://docs.h2o.ai/h2o/latest-stable/h2o-docs/starting-h2o.html#from-python>`_
+            for more information
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`Dict[str, Any]`, default to `None`):
@@ -222,7 +255,10 @@ def load_runner(
 
     .. code-block:: python
 
-        TODO
+        import bentoml
+
+        runner = bentoml.h2o.load_runner("h2o_model")
+        runner.run_batch(data)
 
     """  # noqa
     tag = Tag.from_taglike(tag)

@@ -101,7 +101,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (``):
+        model (`Union[BaseEstimator, Pipeline]`):
             Instance of model to be saved
         metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
@@ -206,7 +206,6 @@ def load_runner(
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SklearnRunner":
-
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. :func:`bentoml.sklearn.load_runner` implements a Runner class that

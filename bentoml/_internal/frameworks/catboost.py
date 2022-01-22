@@ -153,7 +153,7 @@ def save(
         model_params (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):
             Parameters for a CatBoost model. Following parameters can be specified:
                 - model_type(`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        model_export_parameters (`t.Dict[str, t.Union[str, t.Any]]`, `optional`, default to `None`):
+        model_export_parameters (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):
             Export parameters for given model.
         model_pool (`cbt.core.Pool`, `optional`, default to `None`):
             CatBoost data pool for given model.

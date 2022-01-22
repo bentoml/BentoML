@@ -193,20 +193,29 @@ a {
     background-color: var(--white);
 }
 
-/* Quote block */
+/* Stacked quote block with animation */
 .rst-content .line-block {
     font-style: italic;
     width: auto;
     line-height: 26px;
-    display: inline-block;
     box-sizing: content-box;
-    margin-left: 1em;
-    margin-bottom: 2em;
+    display: inline-block;
+    margin: 0em 0em 2em 1em;
     padding: 1em;
     position: relative;
     border: solid 2px #757575;
     background: white;
-    box-shadow: 16px 16px;
+    box-shadow: 8px 8px;
+    transition: perspective(1px) translateZ(0);
+    transition-duration: 0.3s;
+    transition-property: box-shadow;
+    /*compat browser*/
+    -webkit-transition: perspective(1px) translateZ(0);
+    -webkit-transition-duration: 0.3s;
+    -webkit-transition-property: box-shadow;
+}
+.rst-content .line-block:hover, .rst-content .line-block:focus, .rst-content .line-block:active {
+    box-shadow: 12px 12px;
 }
 
 html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list)>dt {

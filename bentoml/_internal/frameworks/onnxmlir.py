@@ -38,7 +38,7 @@ MODULE_NAME = "bentoml.onnxmlir"
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "ExecutionSession":
     """
@@ -58,11 +58,16 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        :obj:`ExecutionSession`: an instance of ONNX-MLir compiled model from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+
+        session = bentoml.onnxmlir.load(tag)
+        session.run(data)
 
     """  # noqa
     model = model_store.get(tag)
@@ -89,7 +94,7 @@ def save(
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`str`):
-            Path to compiled model by MLIR
+            Path to compiled model by MLIR.
         metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -101,6 +106,65 @@ def save(
     Examples:
 
     .. code-block:: python
+
+        import sys
+        import os
+        import subprocess
+
+        import bentoml
+        import tensorflow as tf
+
+        sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
+
+        from PyRuntime import ExecutionSession
+
+        class NativeModel(tf.Module):
+            def __init__(self):
+                super().__init__()
+                self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
+                self.dense = lambda inputs: tf.matmul(inputs, self.weights)
+
+            @tf.function(
+                input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="inputs")]
+            )
+            def __call__(self, inputs):
+                return self.dense(inputs)
+
+        directory = "/tmp/model"
+        model = NativeModel()
+        tf.saved_model.save(model, directory)
+
+        model_path = os.path.join(directory, "model.onnx")
+        command = [
+            "python",
+            "-m",
+            "tf2onnx.convert",
+            "--saved-model",
+            directory,
+            "--output",
+            model_path,
+        ]
+        docker_proc = subprocess.Popen(  # noqa
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=tmpdir, text=True
+        )
+        stdout, stderr = docker_proc.communicate()
+
+        sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
+        model_location = os.path.join(directory, "model.onnx")
+        command = ["./onnx-mlir", "--EmitLib", model_location]
+        onnx_mlir_loc = "/workdir/onnx-mlir/build/Debug/bin"
+
+        docker_proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=onnx_mlir_loc,
+        )
+        stdout, stderr = docker_proc.communicate()
+
+        model_path = os.path.join(directory, "model.so")
+        tag = bentoml.onnxmlir.save("compiled_model", model)
 
     """  # noqa
     context: t.Dict[str, t.Any] = {
@@ -170,8 +234,8 @@ def load_runner(
 ) -> "_ONNXMLirRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    maximize throughput. :func:`bentoml.onnxmlir.load_runner` implements a Runner class that
+    wrap around a ONNX-MLir compiled model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`Union[str, Tag]`):
@@ -189,6 +253,11 @@ def load_runner(
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+
+        runner = bentoml.onnxmlir.load_runner(tag)
+        res = runner.run_batch(pd_dataframe.to_numpy().astype(np.float64))
 
     """  # noqa
     tag = Tag.from_taglike(tag)

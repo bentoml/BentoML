@@ -85,7 +85,6 @@ def load(
 
 
 SAVE_WARNING = f"""\
-
 BentoML won't provide a :func:`save` API for MLflow. If one uses :code:`bentoml.mlflow.save`, it will
 raises :obj:`EnvironmentError`:
 
@@ -120,7 +119,7 @@ raises :obj:`EnvironmentError`:
     - If your current workflow with MLflow involve :func:`log_model` as well as importing models from MLflow Registry,
       you can import those directly to BentoML modelstore using :code:`bentoml.mlflow.import_from_uri`. We also accept
       MLflow runs syntax, as well as models registry uri.
-      An example showing how to integrate your current :func:`log_model` with :code:`mlflow.sklearn` to BentoML::
+      An example showing how to integrate your current :func:`log_model` with :code:`mlflow.sklearn` to BentoML:
 
     .. code-block:: diff
 

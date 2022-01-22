@@ -72,7 +72,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Union["lgb.basic.Booster", _LightGBMModelType]:
@@ -82,17 +82,22 @@ def load(
     Args:
         tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        booster_params (`t.Dict[str, t.Union[str, int]]`):
-            Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
+        booster_params (`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
+            Parameters for boosters. Refers to `Parameters Docs <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `LightGBMModelType` or `"lgb.basic.Booster"` from BentoML modelstore.
+        :obj:`Union[lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker, lightgbm.basic.Booster]`: An instance of either
+        :obj:`Union[lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker]` or :obj:`lightgbm.basic.Booster`
+        from BentoML modelstore.
 
     Examples:
-        import bentoml.lightgbm
+
+    .. code-block:: python
+
+        import bentoml
         gbm = bentoml.lightgbm.load("my_lightgbm_model:latest")
     """  # noqa
     _, _model_file, _booster_params = _get_model_info(tag, booster_params, model_store)
@@ -118,12 +123,12 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`Union["lgb.basic.Booster", LightGBMModelType]`):
-            Instance of model to be saved
-        booster_params (`t.Dict[str, t.Union[str, int]]`):
-            Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
+        model (`Union[lightgbm.basic.Booster, lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker]`):
+            Instance of model to be saved.
+        booster_params (`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
+            Parameters for boosters. Refers to `Parameters Doc <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
-        metadata (`Union[None, t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -132,8 +137,12 @@ def save(
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
+
+    .. code-block:: python
+
+        import bentoml
+
         import lightgbm as lgb
-        import bentoml.lightgbm
         import pandas as pd
 
         # load a dataset
@@ -164,10 +173,6 @@ def save(
         )
 
         tag = bentoml.lightgbm.save("my_lightgbm_model", gbm, booster_params=params)
-        # example tag: my_lightgbm_model:20211021_80F7DB
-
-        # load the booster back:
-        gbm = bentoml.lightgbm.load("my_lightgbm_model:latest")
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "lightgbm",
@@ -275,17 +280,17 @@ def load_runner(
 ) -> "_LightGBMRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.lightgbm.load_runner` implements a Runner class that
-    wrap around a Lightgbm booster model, which optimize it for the BentoML runtime.
+    maximize throughput. :func:`bentoml.lightgbm.load_runner` implements a Runner class that
+    wrap around a LightGBM model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore..
+            Tag of a saved model in BentoML modelstore.
         infer_api_callback (`str`, `optional`, default to `predict`):
-            Inference API callback from given model. If not specified, BentoML will use default `predict`.
-             Users can also choose to use `predict_proba` for supported model.
-        booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
-            Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
+            Inference API callback from given model. If not specified, BentoML will use default :code:`predict`.
+            Users can also choose to use :code:`predict_proba` for supported model.
+        booster_params (`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
+            Parameters for boosters. Refers to `Parameters Doc <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
@@ -298,7 +303,10 @@ def load_runner(
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.lightgbm` model
 
     Examples:
-        import bentoml.lightgbm
+
+    .. code-block:: python
+
+        import bentoml
 
         runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
         runner.run_batch(X_test, num_iteration=gbm.best_iteration)

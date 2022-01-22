@@ -6,7 +6,7 @@ Scikit-Learn
 | Built on NumPy, SciPy, and matplotlib.
 | Open source, commercially usable - BSD license. - `Source <https://scikit-learn.org/stable/>`_
 
-Users can now use scikit-learn with BentoML with the following three API: :code:`load`, :code:`save`, and :code:`load_runner` as follows:
+Users can now use scikit-learn with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
 

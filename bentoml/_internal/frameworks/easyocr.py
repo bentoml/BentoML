@@ -105,7 +105,7 @@ def save(
             should be same as `easyocr.Reader(recog_network=...)`
         detect_model (`str`, `optional`, default to `craft_mlt_25k`):
             TODO:
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -259,7 +259,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.xgboost` model
 
     Examples:
 

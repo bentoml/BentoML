@@ -568,7 +568,7 @@ def save(
              their `AutoTokenizer` class. You can also use any type of Tokenizer
              accordingly to your use case provided by transformers. Refers to
              https://huggingface.co/transformers/main_classes/tokenizer.html
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -659,7 +659,7 @@ def import_from_huggingface_hub(
              `~bentoml.transformers.save` for more information.
         save_namespace (`str`, default to given `name`):
             Name to save model to BentoML modelstore.
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -864,7 +864,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.transformers` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.transformers` model
 
     Examples:
 

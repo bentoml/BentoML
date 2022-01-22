@@ -120,7 +120,7 @@ def save(
             Instance of detectron2 model to be saved.
         model_config (`detectron2.config.CfgNode`, `optional`, default to `None`):
             model config from :meth:`detectron2.model_zoo.get_config_file`
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -287,7 +287,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.detectron` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.detectron` model
 
     Examples:
         TODO

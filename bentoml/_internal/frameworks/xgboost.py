@@ -93,15 +93,17 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        :obj:`xgboost.core.Booster`: an instance of `xgboost.core.Booster` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-        import bentoml.xgboost
-        booster = bentoml.xgboost.load(
-            'my_model:20201012_DE43A2', booster_params=dict(gpu_id=0))
+        import bentoml
+
+        # `load` the booster back in memory:
+        booster = bentoml.xgboost.load('booster_tree', booster_params=dict(gpu_id=0))
+
     """  # noqa
     _, _model_file, _booster_params = _get_model_info(tag, booster_params, model_store)
 
@@ -128,9 +130,9 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`xgboost.core.Booster`):
             Instance of model to be saved
-        booster_params (`t.Dict[str, t.Union[str, int]]`):
+        booster_params (`Dict[str, Union[str, int]]`, `optional`, default to `None`):
             Params for booster initialization
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -143,7 +145,7 @@ def save(
     .. code-block:: python
 
         import xgboost as xgb
-        import bentoml.xgboost
+        import bentoml
 
         # read in data
         dtrain = xgb.DMatrix('demo/data/agaricus.txt.train')
@@ -154,12 +156,8 @@ def save(
         bst = xgb.train(param, dtrain, num_round)
         ...
 
+        # `save` the booster to BentoML modelstore:
         tag = bentoml.xgboost.save("my_xgboost_model", bst, booster_params=param)
-        # example tag: my_xgboost_model:20210929_153BC4
-
-        # load the booster back:
-        bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
-        bst = bentoml.xgboost.load(tag)
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "xgboost",
@@ -277,8 +275,8 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (`str`, default to `predict`):
             Options for inference functions. If you want to use `run`
-             or `run_batch` in a thread context then use `inplace_predict`.
-             Otherwise, `predict` are the de facto functions.
+            or `run_batch` in a thread context then use `inplace_predict`.
+            Otherwise, `predict` are the de facto functions.
         booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
             Parameters for boosters. Refers to https://xgboost.readthedocs.io/en/latest/parameter.html
              for more information
@@ -290,7 +288,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.xgboost` model
 
     Examples:
 

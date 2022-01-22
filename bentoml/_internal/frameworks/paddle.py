@@ -296,7 +296,7 @@ def save(
              `list`/`dict` of them. If `None`, all input variables of the original
              Layer's forward method would be the inputs of the saved model. Generally
              this is NOT RECOMMENDED to use unless you know what you are doing.
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -373,7 +373,7 @@ def import_from_paddlehub(
              PaddleHub default cache, which is under `$HOME/.paddlehub`
         keep_download_from_hub (`bool`, `optional`, default to `False`):
             Whether to re-download pretrained model from hub.
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -588,7 +588,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.paddle` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.paddle` model
 
     Examples:
 

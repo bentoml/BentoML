@@ -157,7 +157,7 @@ def save(
             Export parameters for given model.
         model_pool (`cbt.core.Pool`, `optional`, default to `None`):
             CatBoost data pool for given model.
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -306,7 +306,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.catboost` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.catboost` model
 
     Examples:
 

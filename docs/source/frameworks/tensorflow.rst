@@ -6,7 +6,7 @@ Tensorflow
 | that lets researchers push the state-of-the-art in ML and developers easily build and
 | deploy ML powered applications. - `Source <https://www.tensorflow.org/>`_
 
-Users can now use Tensorflow (v1 and v2 supported) with BentoML with the following three API: :code:`load`, :code:`save`, and :code:`load_runner` as follows:
+Users can now use Tensorflow (v1 and v2 supported) with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. tabs::
 
@@ -130,5 +130,12 @@ We also offer :code:`import_from_tfhub` which enables users to import model from
 .. note::
    You can find more examples for **Tensorflow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
-.. automodule:: bentoml.tensorflow
-   :members:
+.. currentmodule:: bentoml.tensorflow
+
+.. autofunction:: bentoml.tensorflow.save
+
+.. autofunction:: bentoml.tensorflow.load
+
+.. autofunction:: bentoml.tensorflow.load_runner
+
+.. autofunction:: bentoml.tensorflow.import_from_tfhub

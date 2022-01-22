@@ -64,11 +64,15 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `mlflow.pyfunc.PyFuncModel` from BentoML modelstore.
+        :obj:`mlflow.pyfunc.PyFuncModel`: an instance of `mlflow.pyfunc.PyFuncModel` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+
+        model = bentoml.mlflow.load("mlflow_sklearn_model")
 
     """  # noqa
     model = model_store.get(tag)
@@ -81,61 +85,72 @@ def load(
 
 
 SAVE_WARNING = f"""\
-BentoML won't provide a :func:`save` API for MLflow.
-If you currently working with :code:`mlflow.<flavor>.save_model`, we kindly suggest you
-to replace :code:`mlflow.<flavor>.save_model` with BentoML's `save` API as we also supports
-the majority of ML frameworks that MLflow supports. An example below shows how you can
-migrate your code for PyTorch from MLflow to BentoML::
 
-    - {_strike('import mlflow.pytorch')}
-    + import bentoml.pytorch
+BentoML won't provide a :func:`save` API for MLflow. If one uses :code:`bentoml.mlflow.save`, it will
+raises :obj:`EnvironmentError`:
 
-    # PyTorch model logics
-    ...
-    model = EmbeddingBag()
-    - {_strike('mlflow.pytorch.save_model(model, "embed_bag")')}
-    + bentoml.pytorch.save("embed_bag", model)
+    - If you currently working with :code:`mlflow.<flavor>.save_model`, we kindly suggest you
+      to replace :code:`mlflow.<flavor>.save_model` with BentoML's `save` API as we also supports
+      the majority of ML frameworks that MLflow supports. An example below shows how you can
+      migrate your code for PyTorch from MLflow to BentoML:
 
-If you want to import MLflow models from local directory or a given file path, you can
-utilize :code:`bentoml.mlflow.import_from_uri`::
+    .. code-block:: diff
 
-    import mlflow.pytorch
-    + import bentoml.mlflow
+        - {_strike('import mlflow.pytorch')}
+        + import bentoml
 
-    path = "./my_pytorch_model"
-    mlflow.pytorch.save_model(model, path)
-    + tag = bentoml.mlflow.import_from_uri("mlflow_pytorch_model", path)
+        # PyTorch model logics
+        ...
+        model = EmbeddingBag()
+        - {_strike('mlflow.pytorch.save_model(model, "embed_bag")')}
+        + bentoml.pytorch.save("embed_bag", model)
 
-If your current workflow with MLflow involve :func:`log_model` as well as importing models from MLflow Registry,
-you can import those directly to BentoML modelstore using :code:`bentoml.mlflow.import_from_uri`. We also accept
-MLflow runs syntax, as well as models registry uri.
-An example showing how to integrate your current :func:`log_model` with :code:`mlflow.sklearn` to BentoML::
+    - If you want to import MLflow models from local directory or a given file path, you can
+      utilize :code:`bentoml.mlflow.import_from_uri`:
 
-    import mlflow.sklearn
-    + import mlflow
-    + import bentoml.mlflow
+    .. code-block:: diff
 
-    # Log sklearn model `sk_learn_rfr` and register as version 1
-    ...
-    reg_name = "sk-learn-random-forest-reg-model"
-    artifact_path = "sklearn_model"
-    mlflow.sklearn.log_model(
-        sk_model=sk_learn_rfr,
-        artifact_path=artifact_path,
-        registered_model_name=reg_name
-    )
+        import mlflow.pytorch
+        + import bentoml
 
-    # refers to https://www.mlflow.org/docs/latest/tracking.html#logging-functions
-    + current_run = mlflow.active_run().info.run_id
-    + uri = "runs:/%s/%s" % (current_run, artifact_path)
-    + tag = bentoml.mlflow.import_from_uri("runs_mlflow_sklearn", uri)
+        path = "./my_pytorch_model"
+        mlflow.pytorch.save_model(model, path)
+        + tag = bentoml.mlflow.import_from_uri("mlflow_pytorch_model", path)
+
+    - If your current workflow with MLflow involve :func:`log_model` as well as importing models from MLflow Registry,
+      you can import those directly to BentoML modelstore using :code:`bentoml.mlflow.import_from_uri`. We also accept
+      MLflow runs syntax, as well as models registry uri.
+      An example showing how to integrate your current :func:`log_model` with :code:`mlflow.sklearn` to BentoML::
+
+    .. code-block:: diff
+
+        import mlflow.sklearn
+        + import mlflow
+        + import bentoml
+
+        # Log sklearn model `sk_learn_rfr` and register as version 1
+        ...
+        reg_name = "sk-learn-random-forest-reg-model"
+        artifact_path = "sklearn_model"
+        mlflow.sklearn.log_model(
+            sk_model=sk_learn_rfr,
+            artifact_path=artifact_path,
+            registered_model_name=reg_name
+        )
+
+        # refers to https://www.mlflow.org/docs/latest/tracking.html#logging-functions
+        + current_run = mlflow.active_run().info.run_id
+        + uri = "runs:/%s/%s" % (current_run, artifact_path)
+        + tag = bentoml.mlflow.import_from_uri("runs_mlflow_sklearn", uri)
 
 An example showing how to import from MLflow models registry to BentoML modelstore. With this usecase, we
 recommend you to load the model into memory first with :code:`mlflow.<flavor>.load_model` then save the model using
-BentoML :func:`save` API::
+BentoML :func:`save` API:
+
+.. code-block:: diff
 
     import mlflow.sklearn
-    + import bentoml.sklearn
+    + import bentoml
 
     reg_model_name = "sk-learn-random-forest-reg-model"
     model_uri = "models:/%s/1" % reg_model_name
@@ -144,8 +159,9 @@ BentoML :func:`save` API::
 
     # you can also use `bentoml.mlflow.import_from_uri` to import the model directly after
     #  defining `model_uri`
-    + import bentoml.mlflow
+    + import bentoml
     + tag = bentoml.mlflow.import_from_uri("my_model", model_uri)
+
 """  # noqa
 
 
@@ -164,6 +180,70 @@ def import_from_uri(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
+    """
+    Imports a MLFlow model format to BentoML modelstore via given URI.
+
+    Args:
+        name (`str`):
+            Name for your MLFlow model to be saved under BentoML modelstore.
+        uri (`str`):
+            URI accepts all MLflow defined APIs in terms of referencing artifacts. All available accepted URI (extracted from `MLFlow Concept <https://mlflow.org/docs/latest/concepts.html>`_):
+                - :code:`/Users/me/path/to/local/model`
+                - :code:`relative/path/to/local/model`
+                - :code:`<scheme>/<scheme-dependent-path>`. For example:
+                    - :code:`s3://my_bucket/path/to/model`
+                    - :code:`hdfs://<host>:<port>/<path>`
+                    - :code:`runs:/<mlflow_run_id>/run-relative/path/to/model`
+                    - :code:`models:/<model_name>/<model_version>`
+                    - :code:`models:/<model_name>/<stage>`
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Custom metadata for given model.
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+
+    Returns:
+        :obj:`~bentoml._internal.types.Tag`: A :obj:`~bentoml._internal.types.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
+
+    Example:
+
+    .. code-block:: python
+
+        from sklearn import svm, datasets
+
+        import mlflow
+        import bentoml
+
+        # Load training data
+        iris = datasets.load_iris()
+        X, y = iris.data, iris.target
+
+        # Model Training
+        clf = svm.SVC()
+        clf.fit(X, y)
+
+        # Wrap up as a custom pyfunc model
+        class ModelPyfunc(mlflow.pyfunc.PythonModel):
+
+            def load_context(self, context):
+                self.model = clf
+
+            def predict(self, context, model_input):
+                return self.model.predict(model_input)
+
+        # Log model
+        with mlflow.start_run() as run:
+            model = ModelPyfunc()
+            mlflow.pyfunc.log_model("model", python_model=model)
+            print("run_id: {}".format(run.info.run_id))
+
+        model_uri = f"runs:/{run.info.run_id}/model"
+
+        # import given model from local uri to BentoML modelstore:
+        tag = bentoml.mlflow.import_from_uri("model", model_uri)
+
+        # from MLFlow Models API
+        model_tag = bentoml.mlflow.import_from_uri("mymodel", "models:/mymodel/1")
+    """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "mlflow",
         "pip_dependencies": [f"mlflow=={get_pkg_version('mlflow')}"],
@@ -256,12 +336,33 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances loaded from `bentoml.mlflow`. This can be either a `mlflow.pyfunc.PyFuncModel`
-        Runner or BentoML runner instance that maps to MLflow flavors
+        :obj:`bentoml._internal.runner.Runner`: Runner instances loaded from `bentoml.mlflow`.
+
+    .. note::
+        Currently this is an instance of :obj:`bentoml._internal.frameworks.mlflow._PyFuncRunner` which is the base
+        runner. We recommend users to use the correspond frameworks' Runner implementation provided by BentoML for the best performance.
+
+    .. note::
+        On our roadmap, the intention for this API is to load the coresponding framework runner automatically. For example:
+
+        .. code-block:: python
+
+            import bentoml
+
+            # this tag `mlflow_pytorch` is imported from mlflow
+            # when user use `bentoml.mlflow.load_runner`, it should returns
+            # bentoml._internal.frameworks.pytorch.PyTorchRunner` instead
+            # and kwargs can be passed directly to `PyTorchRunner`
+            runner = bentoml.mlflow.load_runner("mlflow_pytorch", **kwargs)
 
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+
+        runner = bentoml.mlflow.load_runner(tag)
+        runner.run_batch([[1,2,3,4,5]])
 
     """  # noqa
     tag = Tag.from_taglike(tag)

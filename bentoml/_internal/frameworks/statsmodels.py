@@ -105,7 +105,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`t.Any):
             Instance of model to be saved
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -211,7 +211,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.statsmodels` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.statsmodels` model
 
     Examples:
 

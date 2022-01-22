@@ -7,7 +7,7 @@ Keras
 | it minimizes the number of user actions required for common use cases, and it provides clear &
 | actionable error messages. It also has extensive documentation and developer guides. - `Source <https://keras.io/>`_
 
-Users can now use Keras (with Tensorflow v1 and v2 backend) with BentoML with the following three API: :code:`load`, :code:`save`, and :code:`load_runner` as follows:
+Users can now use Keras (with Tensorflow v1 and v2 backend) with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. tabs::
 

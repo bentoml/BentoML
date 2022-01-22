@@ -68,15 +68,14 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of either :code:`torch.jit.ScriptModule` or :code:`torch.nn.Module` from BentoML modelstore.
+        :obj:`Union[torch.jit.ScriptModule, torch.nn.Module]`: an instance of either :code:`torch.jit.ScriptModule` or :code:`torch.nn.Module` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-        import bentoml.pytorch
-        booster = bentoml.pytorch.load(
-            'lit_classifier:latest', device_id="cuda:0")
+        import bentoml
+        model = bentoml.pytorch.load('lit_classifier:latest', device_id="cuda:0")
     """  # noqa
     bentoml_model = model_store.get(tag)
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
@@ -112,7 +111,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`Union[torch.nn.Module, torch.jit.ScriptModule]`):
             Instance of model to be saved
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -302,8 +301,8 @@ def load_runner(
 ) -> "_PyTorchRunner":
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
-    wrap around a pytorch instance, which optimize it for the BentoML runtime.
+        maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
+        wrap around a pytorch instance, which optimize it for the BentoML runtime.
 
     Args:
         tag (`Union[str, Tag]`):
@@ -312,7 +311,7 @@ def load_runner(
             inference function to be used.
         device_id (`str`, `optional`, default to `cpu`):
             Optional devices to put the given model on. Refers to `device attributes <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_.
-        partial_kwargs (`Optional[Dict[str, Any]]`, default to `None`):
+        partial_kwargs (`Dict[str, Any]`, `optional`,  default to `None`):
             Common kwargs passed to model for this runner
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
@@ -322,7 +321,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for :mod:`bentoml.pytorch` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pytorch` model
 
     Examples:
 

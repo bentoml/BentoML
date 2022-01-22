@@ -295,7 +295,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.lightgbm` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.lightgbm` model
 
     Examples:
         import bentoml.lightgbm

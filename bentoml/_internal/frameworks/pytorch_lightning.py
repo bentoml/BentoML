@@ -53,15 +53,14 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `pl.LightningModule` from BentoML modelstore.
+        :obj:`pl.LightningModule`: an instance of :obj:`pl.LightningModule` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-        import bentoml.pytorch_lightning
-        booster = bentoml.pytorch_lightning.load(
-            'lit_classifier:20201012_DE43A2', device_id="cuda:0")
+        import bentoml
+        lit = bentoml.pytorch_lightning.load('lit_classifier:latest', device_id="cuda:0")
     """  # noqa: LN001
     bentoml_model = model_store.get(tag)
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
@@ -89,7 +88,7 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`pl.LightningModule`):
             Instance of model to be saved
-        metadata (`Optional[Dict[str, Any]]`, default to `None`):
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -101,9 +100,9 @@ def save(
 
     .. code-block:: python
 
-        import bentoml.pytorch_lightning
-        import pytorch_lightning as pl
+        import bentoml
         import torch
+        import pytorch_lightning as pl
 
         class LitClassifier(pl.LightningModule):
 
@@ -142,7 +141,6 @@ def save(
                 return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
 
         tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
-        # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "torch",
@@ -192,7 +190,7 @@ def load_runner(
             inference function to be used.
         device_id (`Union[str, int, List[Union[str, int]]]`, `optional`, default to `cpu`):
             Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
-        partial_kwargs (`Optional[Dict[str, Any]]`, default to `None`):
+        partial_kwargs (`Dict[str, Any]`, `optional`,  default to `None`):
             Common kwargs passed to model for this runner
         batch_options (`Dict[str, Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
@@ -200,7 +198,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.pytorch_lightning` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pytorch_lightning` model
 
     Examples:
 

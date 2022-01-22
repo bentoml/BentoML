@@ -101,7 +101,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     backend: t.Optional[str] = "onnxruntime",
     providers: t.Optional[t.Union["_ProviderType", "_GPUProviderType"]] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
@@ -114,22 +114,26 @@ def load(
         tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         backend (`str`, `optional`, default to `onnxruntime`):
-            Different backend runtime supported by ONNX. Currently only accepted `onnxruntime`
-             and `onnxruntime-gpu`.
-        providers (`List[Union[str, t.Tuple[str, Dict[str, Any]]`, `optional`, default to `None`):
-            Different providers provided by users. By default BentoML will use `onnxruntime.get_available_providers()`
-             when loading a model.
+            Different backend runtime supported by ONNX. Currently only accepted :obj:`onnxruntime`
+            and :obj:`onnxruntime-gpu`.
+        providers (`List[Union[str, Tuple[str, Dict[str, Any]]`, `optional`, default to `None`):
+            Different providers provided by users. By default BentoML will use :func:`onnxruntime.get_available_providers`
+            when loading a model.
         session_options (`onnxruntime.SessionOptions`, `optional`, default to `None`):
-            SessionOptions per use case. If not specified, then default to None.
+            SessionOptions per use case. If not specified, then default to `None`.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of Onnx model from BentoML modelstore.
+        :obj:`onnxruntime.InferenceSession`: an instance of ONNX model from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+
+        model = bentoml.onnx.load(tag)
 
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
@@ -154,7 +158,7 @@ def save(
     name: str,
     model: t.Union[onnx.ModelProto, PathType],
     *,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
@@ -163,8 +167,8 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model:
-            Instance of model to be saved
+        model (Union[onnx.ModelProto, path-like object]):
+            Instance of model to be saved.
         metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -177,6 +181,44 @@ def save(
 
     .. code-block:: python
 
+        import bentoml
+
+        import torch
+        import torch.nn as nn
+
+        class ExtendedModel(nn.Module):
+            def __init__(self, D_in, H, D_out):
+                # In the constructor we instantiate two nn.Linear modules and assign them as
+                #  member variables.
+                super(ExtendedModel, self).__init__()
+                self.linear1 = nn.Linear(D_in, H)
+                self.linear2 = nn.Linear(H, D_out)
+
+            def forward(self, x, bias):
+                # In the forward function we accept a Tensor of input data and an optional bias
+                h_relu = self.linear1(x).clamp(min=0)
+                y_pred = self.linear2(h_relu)
+                return y_pred + bias
+
+
+        N, D_in, H, D_out = 64, 1000, 100, 1
+        x = torch.randn(N, D_in)
+        model = ExtendedModel(D_in, H, D_out)
+
+        input_names = ["x", "bias"]
+        output_names = ["output1"]
+
+        tmpdir = "/tmp/model"
+        model_path = os.path.join(tmpdir, "test_torch.onnx")
+        torch.onnx.export(
+            model,
+            (x, torch.Tensor([1.0])),
+            model_path,
+            input_names=input_names,
+            output_names=output_names,
+        )
+
+        tag = bentoml.onnx.save("onnx_model", model_path, model_store=modelstore)
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "onnx",
@@ -393,16 +435,16 @@ def load_runner(
         gpu_device_id (`int`, `optional`, default to `-1`):
             GPU device ID. Currently only support CUDA.
         disable_copy_in_default_stream (`bool`, `optional`, default to `False`):
-            Whether to do copies in the default stream or use separate streams. Refers to
-             https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#do_copy_in_default_stream
+            Whether to do copies in the default stream or use separate streams. Refers to `Execution Providers <https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#do_copy_in_default_stream>`_
+            for more information.
         backend (`str`, `optional`, default to `onnxruntime`):
-            Different backend runtime supported by ONNX. Currently only accepted `onnxruntime`
-             and `onnxruntime-gpu`.
-        providers (`List[Union[str, t.Tuple[str, Dict[str, Any]]`, `optional`, default to `None`):
-            Different providers provided by users. By default BentoML will use `CPUExecutionProvider` when
-             loading a model
+            Different backend runtime supported by ONNX. Currently only accepted :obj:`onnxruntime`
+            and :obj:`onnxruntime-gpu`.
+        providers (`List[Union[str, Tuple[str, Dict[str, Any]]`, `optional`, default to `None`):
+            Different providers provided by users. By default BentoML will use :obj:`CPUExecutionProvider` when
+            loading a model.
         session_options (`onnxruntime.SessionOptions`, `optional`, default to `None`):
-            SessionOptions per use case. If not specified, then default to None.
+            :obj:`SessionOptions` per use case. If not specified, then default to `None`.
         resource_quota (`Dict[str, Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`Dict[str, Any]`, default to `None`):
@@ -417,6 +459,10 @@ def load_runner(
 
     .. code-block:: python
 
+        runner = bentoml.onnx.load_runner(
+            tag, model_store=modelstore, backend="onnxruntime-gpu", gpu_device_id=0
+        )
+        runner.run_batch(data)
     """  # noqa
     tag = Tag.from_taglike(tag)
     if name is None:

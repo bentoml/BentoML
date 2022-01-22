@@ -216,9 +216,9 @@ def load(
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
-        from_tf (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        from_tf (`bool`, `optional`, defaults to `False`):
             Load the model weights from a TensorFlow checkpoint save file
-        from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        from_flax (`bool`, `optional`, defaults to `False`):
             Load the model weights from a Flax checkpoint save file
         framework (`str`, default to `pt`):
             Given frameworks supported by transformers: PyTorch, Tensorflow, Flax
@@ -226,21 +226,20 @@ def load(
             Language model head for your model. For most use cases causal are applied.
              Refers to huggingface.co/transformers for more details on which type of
              language model head is applied to your use case and model.
-        kwargs (:obj:`str`, `Optional`):
+        kwargs (`str`, `optional`):
             kwargs that can be parsed to transformers Models instance.
 
     Returns:
-        a Tuple containing `model` and `tokenizer` for your given model saved at BentoML
-         modelstore.
+        :obj:`Tuple[PretrainedConfig, Union[PreTrainedModel, TFPreTrainedModel, FlaxPreTrainedModel], Optional[Union[PreTrainedTokenizer, PreTrainedTokenizerFast]]]`: a tuple containing
+        :obj:`PretrainedConfig`, :obj:`Model` class object defined by :obj:`transformers`, with an optional :obj:`Tokenizer` class for the given model saved in BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-        import bentoml.transformers
-        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax",
-                                                     lm_head="masked")
-    """
+        import bentoml
+        config, model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax", lm_head="masked")
+    """  # noqa
     _check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
@@ -558,53 +557,55 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]`,
-               required):
-            Model instance provided by transformers. This can be retrieved from their
-             `AutoModel` class. You can also use any type of models/automodel provided
-             by transformers. Refers to https://huggingface.co/transformers/main_classes/model.html
-        tokenizer (`Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]`):
-            Tokenizer instance provided by transformers. This can be retrieved from
-             their `AutoTokenizer` class. You can also use any type of Tokenizer
-             accordingly to your use case provided by transformers. Refers to
-             https://huggingface.co/transformers/main_classes/tokenizer.html
+        model (`Union[transformers.PreTrainedModel, transformers.TFPreTrainedModel, transformers.FlaxPreTrainedModel]`):
+            Model instance provided by :obj:`transformers`. This can be retrieved from their
+            :code:`AutoModel` class. You can also use any type of models/automodel provided
+            by :obj:`transformers`. Refers to `Models API <https://huggingface.co/transformers/main_classes/model.html>`_
+            for more information.
+        tokenizer (`Union[transformers.PreTrainedTokenizer, transformers.PreTrainedTokenizerFast]`):
+            Toeknizer instance provided by :obj:`transformers`. This can be retrieved from their
+            their :code:`AutoTokenizer` class. You can also use any type of Tokenizer
+            accordingly to your use case provided by :obj:`transformers`. Refers to
+            `Tokenizer API <https://huggingface.co/transformers/main_classes/tokenizer.html>`_
+            for more information
         metadata (`Dict[str, Any]`, `optional`,  default to `None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
-        from_tf (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+
+    The following options (provided by :obj:`transformers`) can also be passed to :func:`~bentoml._internal.frameworks.transformers.save`:
+        from_tf (`bool`, `optional`, defaults to `False`):
             Load the model weights from a TensorFlow checkpoint save file
-        from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        from_flax (`bool`, `optional`, defaults to `False`):
             Load the model weights from a Flax checkpoint save file
-        revision(:obj:`str`, `Optional`, defaults to :obj:`"main"`):
+        revision(`str`, `optional`, defaults to `"main"`):
             The specific model version to use. It can be a branch name, a tag name, or a
             commit id, since we use a git-based system for storing models and other
-            artifacts on huggingface.co, so ``revision`` can be any
+            artifacts on *huggingface.co*, so ``revision`` can be any
             identifier allowed by git.
-        mirror(:obj:`str`, `Optional`):
+        mirror(`str`, `optional`):
             Mirror source to accelerate downloads in China. If you are from China and
             have an accessibility problem, you can set this option to resolve it. Note
             that we do not guarantee the timeliness or safety. Please refer to the
             mirror site for more information.
-        proxies (:obj:`Dict[str, str], `Optional`):
+        proxies (`Dict[str, str]`, `optional`):
             A dictionary of proxy servers to use by protocol or endpoint, e.g.
             :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
             proxies are used on each request.
-        use_auth_token (:obj:`str` or `bool`, `Optional`):
+        use_auth_token (`str` or `bool`, `optional`):
             The token to use as HTTP bearer authorization for remote files. If
             :obj:`True`, will use the token generated when running
             :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
-        force_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        force_download (`bool`, `optional`, defaults to `False`):
             Whether or not to force the (re-)download of the model weights and
             configuration files, overriding the cached versions if they exist.
-        resume_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        resume_download (`bool`, `optional`, defaults to `False`):
             Whether or not to delete incompletely received files. Will attempt to resume
             the download if such a file exists.
 
-        .. note::
-            some parameters are direct port from `from_pretrained()` arguments. This
-            ensures that when doing save operations we don't actually load the model
-            class, which can take a while to do so.
+    .. note::
+        Some parameters are direct port from :func:`from_pretrained` arguments. This is to
+        ensure that when doing :func:`save` operations we don't actually load the model class into memory
 
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
@@ -614,7 +615,7 @@ def save(
     .. code-block:: python
 
         from transformers import AutoModelForQuestionAnswering, AutoTokenizer
-        import bentoml.transformers
+        import bentoml
 
         model = AutoModelForQuestionAnswering.from_pretrained("gpt2", from_flax=True)
         tokenizer = AutoTokenizer.from_pretrained("gpt2", from_flax=True)
@@ -654,9 +655,9 @@ def import_from_huggingface_hub(
 
     Args:
         name (`str`):
-            Model name retrieved from huggingface hub. This shouldn't be a model
-             instance. If you would like to save a model instance refers to
-             `~bentoml.transformers.save` for more information.
+            Model name retrieved from HuggingFace Model hub. This shouldn't be a model
+            instance. If you would like to save a model instance refers to
+            :func:`~bentoml.transformers.save` for more information.
         save_namespace (`str`, default to given `name`):
             Name to save model to BentoML modelstore.
         metadata (`Dict[str, Any]`, `optional`,  default to `None`):
@@ -665,39 +666,39 @@ def import_from_huggingface_hub(
             BentoML modelstore, provided by DI Container.
         keep_download_from_hub (`bool`, `optional`, default to `False`):
             Whether to re-download pretrained model from hub.
-        from_tf (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        from_tf (`bool`, `optional`, defaults to `False`):
             Load the model weights from a TensorFlow checkpoint save file
-        from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        from_flax (`bool`, `optional`, defaults to `False`):
             Load the model weights from a Flax checkpoint save file
-        revision(:obj:`str`, `Optional`, defaults to :obj:`"main"`):
+        revision(`str`, `optional`, defaults to `"main"`):
             The specific model version to use. It can be a branch name, a tag name, or a
             commit id, since we use a git-based system for storing models and other
             artifacts on huggingface.co, so ``revision`` can be any identifier allowed
             by git.
-        mirror(:obj:`str`, `Optional`):
+        mirror(`str`, `optional`):
             Mirror source to accelerate downloads in China. If you are from China and
             have an accessibility problem, you can set this option to resolve it. Note
             that we do not guarantee the timeliness or safety. Please refer to the
             mirror site for more information.
-        proxies (:obj:`Dict[str, str], `Optional`):
+        proxies (`Dict[str, str], `optional`):
             A dictionary of proxy servers to use by protocol or endpoint, e.g.
             :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
             proxies are used on each request.
-        use_auth_token (:obj:`str` or `bool`, `Optional`):
+        use_auth_token (`str` or `bool`, `optional`):
             The token to use as HTTP bearer authorization for remote files. If
             :obj:`True`, will use the token generated when running
             :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
-        force_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        force_download (`bool`, `optional`, defaults to `False`):
             Whether or not to force the (re-)download of the model weights and
             configuration files, overriding the cached versions if they exist.
-        resume_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+        resume_download (`bool`, `optional`, defaults to `False`):
             Whether or not to delete incompletely received files. Will attempt to resume
             the download if such a file exists.
 
-        .. note::
-            some parameters are direct port from `from_pretrained()` arguments. This
-            ensures that when doing save operations we don't actually load the model
-            class, which can take up a lot of time and resources.
+    .. note::
+        some parameters are direct port from :func:`from_pretrained()` arguments. This
+        ensures that when doing :func:`save` operations we don't actually load the model
+        class into memory
 
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
@@ -707,7 +708,7 @@ def import_from_huggingface_hub(
     .. code-block:: python
 
         from transformers import AutoModelForQuestionAnswering, AutoTokenizer
-        import bentoml.transformers
+        import bentoml
 
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
     """
@@ -833,35 +834,39 @@ def load_runner(
 ) -> "_TransformersRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.transformers.load_runner` implements a Runner class
+    maximize throughput. :func:`~bentoml.transformers.load_runner` implements a Runner class
     that wrap around a transformers pipeline, which optimize it for the BentoML runtime.
+
 
     .. warning::
         `load_runner` will try to load the model from given `tag`. If the model does not
-         exists, then BentoML will fallback to initialize pipelines from transformers,
-         thus files will be loaded from huggingface cache.
+        exists, then BentoML will fallback to initialize pipelines from transformers,
+        thus files will be loaded from huggingface cache.
 
 
     Args:
         tag (`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         tasks (`str`):
-            Given tasks for pipeline. Refers to https://huggingface.co/transformers/task_summary.html
-             for more information.
+            Given tasks for pipeline. Refers to `Task Summary <https://huggingface.co/transformers/task_summary.html>`_
+            for more information.
         framework (`str`, default to `pt`):
             Given frameworks supported by transformers: PyTorch, Tensorflow
         device (`int`, `optional`, default to `-1`):
             Default GPU devices to be used by runner.
         lm_head (`str`, default to `causal`):
-            Language model head for your model. For most use case causal are applied.
-             Refers to huggingface.co/transformers for more details on which type of
-             language model head is applied to your use case.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+            Language model attention head for your model. For most use case :obj:`causal` are applied.
+            Refers to `HuggingFace Docs <https://huggingface.co/docs/transformers/main_classes/model>`_
+            for more details on which type of language model head is applied to your use case.
+        resource_quota (`Dict[str, Any]`, `optional`, default to `None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (`Dict[str, Any]`, `optional`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
+        **pipeline_kwargs(`Any`):
+            Refers to `Pipeline Docs <https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline>`_ for more information
+            on :obj:`kwargs` that is applicable for your specific pipeline.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.transformers` model
@@ -871,10 +876,9 @@ def load_runner(
     .. code-block:: python
 
         import transformers
-        import bentoml.transformers
+        import bentoml
 
-        runner = bentoml.transformers.load_runner("gpt2:latest", tasks='zero-shot-classification',
-                                                  framework=tf)
+        runner = bentoml.transformers.load_runner("gpt2:latest", tasks='zero-shot-classification', framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
     """
     tag = Tag.from_taglike(tag)

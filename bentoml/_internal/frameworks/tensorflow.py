@@ -214,7 +214,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of :obj:`SavedModel` format from BentoML modelstore.
+        :obj:`SavedModel`: an instance of :obj:`SavedModel` format from BentoML modelstore.
 
     Examples:
 
@@ -325,7 +325,19 @@ def import_from_tfhub(
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`~bentoml._internal.types.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
 
-    Example:
+    Example for importing a model from Tensorflow Hub:
+
+    .. code-block:: python
+
+        import tensorflow_text as text # noqa # pylint: disable
+        import bentoml
+
+        tag = bentoml.tensorflow.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
+
+        # load model back with `load`:
+        model = bentoml.tensorflow.load(tag, load_as_wrapper=True)
+
+    Example for importing a custom Tensorflow Hub model:
 
     .. tabs::
 
@@ -371,18 +383,6 @@ def import_from_tfhub(
             # then save the given model to BentoML modelstore:
             model = _plus_one_model_tf2()
             tag = bentoml.tensorflow.import_from_tfhub(model)
-
-        Example for importing a model from Tensorflow Hub:
-
-        .. code-block:: python
-
-            import tensorflow_text as text # noqa # pylint: disable
-            import bentoml
-
-            tag = bentoml.tensorflow.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
-
-            # load model back with `load`:
-            model = bentoml.tensorflow.load(tag, load_as_wrapper=True)
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "tensorflow",
@@ -461,7 +461,7 @@ def save(
         ValueError: If :obj:`obj` is not trackable.
 
     Returns:
-        :obj:`str`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -714,7 +714,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for :mod:`bentoml.tensorflow` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.tensorflow` model
 
     Examples:
 

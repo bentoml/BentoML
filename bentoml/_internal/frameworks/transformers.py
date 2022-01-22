@@ -607,7 +607,7 @@ def save(
             class, which can take a while to do so.
 
     Returns:
-        :obj:`str`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -700,7 +700,7 @@ def import_from_huggingface_hub(
             class, which can take up a lot of time and resources.
 
     Returns:
-        :obj:`str`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 

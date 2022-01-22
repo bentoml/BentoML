@@ -195,8 +195,18 @@ a {
 
 /* Quote block */
 .rst-content .line-block {
-    margin-bottom: 24px;
+    font-style: italic;
+    width: auto;
     line-height: 26px;
+    display: inline-block;
+    box-sizing: content-box;
+    margin-left: 1em;
+    margin-bottom: 2em;
+    padding: 1em;
+    position: relative;
+    border: solid 2px #757575;
+    background: white;
+    box-shadow: 16px 16px;
 }
 
 html.writer-html4 .rst-content dl:not(.docutils) dl:not(.field-list)>dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list)>dt {

@@ -73,7 +73,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of sklearn model from BentoML modelstore.
+        :obj:`Union[BaseEstimator, Pipeline]`: an instance of :obj:`sklearn` model from BentoML modelstore.
 
     Examples:
 
@@ -109,7 +109,7 @@ def save(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`str`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -225,7 +225,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for the target :mod:`bentoml.sklearn` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for the target :mod:`bentoml.sklearn` model
 
     Examples:
 

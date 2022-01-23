@@ -25,12 +25,12 @@ body {
 }
 
 h1 {
-    font-family: Calibre-Thin, sans-serif;
+    font-family: Calibre-Regular, sans-serif;
     font-size: 40px;
 }
 
-h2,h3, h4, h5, h6, .rst-content .toctree-wrapper p.caption, legend {
-    font-family: Calibre-Medium, sans-serif;
+h2,h3, h4, h5, h6, .rst-contrnt .toctree-wrapper p.caption, legend {
+    font-family: Calibre-Thin, sans-serif;
 }
 
 em {

@@ -1,7 +1,6 @@
 import sys
 from datetime import datetime
 
-from sqlalchemy import true
 from pygments.lexers import PythonLexer
 
 # Adding BentoML source directory for accessing BentoML version

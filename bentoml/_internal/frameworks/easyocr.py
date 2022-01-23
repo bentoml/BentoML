@@ -43,24 +43,22 @@ def load(
     Load a model from BentoML local modelstore with given tag.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        gpu (`bool`):
-            Enable GPU support, default to True
-        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
+        gpu (`bool`, `optional`, defaults to True):
+            Enable GPU support.
+        model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `catboost.core.CatBoostClassifier` or `catboost.core. CatBoostRegressor`
-        from BentoML modelstore.
+        :obj:`easyocr.Reader`: an instance of :code:`easyocr.Reader` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
-        import bentoml.catboost
-        booster = bentoml.catboost.load(
-            "my_model:20201012_DE43A2", model_params=dict(model_type="classifier"))
+        import bentoml
+        booster = bentoml.easyocr.load("craft_model", model_params=dict(model_type="classifier"))
     """  # noqa
     assert easyocr.__version__ >= "1.4", BentoMLException(
         "Only easyocr>=1.4 is supported by BentoML"
@@ -95,19 +93,20 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`easyocr.Reader`):
-            Instance of model to be saved
-        lang_list (`List[str]`, `optional`, default to `["en"]`):
-            should be same as `easyocr.Reader(lang_list=...)`
-        recog_network (`str`, `optional`, default to `english_g2`):
-            should be same as `easyocr.Reader(recog_network=...)`
-        detect_model (`str`, `optional`, default to `craft_mlt_25k`):
-            TODO:
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+            Instance of model to be saved.
+        lang_list (`List[str]`, `optional`, default to :code:`None`):
+            Should be same as :func:`easyocr.Reader(lang_list=...)`.
+            If `None`, then default to :code:`["en"]`.
+        recog_network (:code:`str`, `optional`, default to :code:`english_g2`):
+            Should be same as `easyocr.Reader(recog_network=...)`
+        detect_model (:code:`str`, `optional`, default to :code:`craft_mlt_25k`):
+            Model used for detection pipeline.
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
-        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -118,6 +117,7 @@ def save(
     .. code-block:: python
 
         import easyocr
+        import bentoml
 
         language_list = ["ch_sim", "en"]
         recog_network = "zh_sim_g2"
@@ -134,8 +134,6 @@ def save(
             lang_list=language_list,
             recog_network=recog_network
         )
-
-        # example tag: my_easyocr_model:20211018_B9EABF
 
         # load the booster back:
         loaded = bentoml.easyocr.load("my_easyocr_model:latest") # or
@@ -240,38 +238,37 @@ def load_runner(
 ) -> _EasyOCRRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.easyocr.load_runner` implements a Runner class that
+    maximize throughput. :func:`bentoml.easyocr.load_runner` implements a Runner class that
     wrap around a EasyOCR Reader model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (`str`, default to `readtext_batched`):
-            Options for inference functions. Default to `readtext_batched`
-        booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
-            Parameters for boosters. Refers to https://xgboost.readthedocs.io/en/latest/parameter.html
-             for more information
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        predict_fn_name (:code:`str`, default to :code:`readtext_batched`):
+            Options for inference functions.
+        predict_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
+            Parameters for prediction. Refers to `<https://github.com/JaidedAI/EasyOCR/blob/master/easyocr/easyocr.py#L460>`_
+            for more information
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
-        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.xgboost` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.easyocr` model
 
     Examples:
 
     .. code-block:: python
 
-        import xgboost as xgb
-        import bentoml.xgboost
+        import bentoml
         import pandas as pd
 
         input_data = pd.from_csv("/path/to/csv")
-        runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
-        runner.run(xgb.DMatrix(input_data))
+        runner = bentoml.easyocr.load_runner("my_easyocr_model")
+        runner.run(pd.DataFrame(input_data))
     """
     assert easyocr.__version__ >= "1.4", BentoMLException(
         "Only easyocr>=1.4 is supported by BentoML"

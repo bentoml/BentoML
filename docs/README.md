@@ -56,7 +56,7 @@ its type, a new indentation for description of given field. Each argument should
 
 ```markdown
     Args:
-        bento_name (`str`):
+        bento_name (:code:`str`):
             :class:`~bentoml.BentoService` identifier with name format :obj:`NAME:VERSION`.
             ``NAME`` can be accessed via :meth:`~bentoml.BentoService.name` and ``VERSION`` can
             be accessed via :meth:`~bentoml.BentoService.version`
@@ -73,7 +73,7 @@ then documentation should look like:
 
 ```markdown
     Args:
-        x (`str`, `optional`):
+        x (:code:`str`, `optional`):
             Description of x ...
         a (`bool`, `optional`):
             Description of a ...
@@ -114,9 +114,9 @@ class FooBarArtifact(Model):
     Model class for saving/loading :obj:`mlflow` models
 
     Args:
-        model (`mlflow.models.Model`):
+        model (:code:`mlflow.models.Model`):
             All mlflow models are of type :obj:`mlflow.models.Model`
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (:code:`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to :code:`None`):
             Class metadata
         ... # Custom parameters
 

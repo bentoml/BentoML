@@ -58,7 +58,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -183,9 +183,9 @@ def import_from_uri(
     Imports a MLFlow model format to BentoML modelstore via given URI.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for your MLFlow model to be saved under BentoML modelstore.
-        uri (`str`):
+        uri (:code:`str`):
             URI accepts all MLflow defined APIs in terms of referencing artifacts. All available accepted URI (extracted from `MLFlow Concept <https://mlflow.org/docs/latest/concepts.html>`_):
                 - :code:`/Users/me/path/to/local/model`
                 - :code:`relative/path/to/local/model`
@@ -195,7 +195,7 @@ def import_from_uri(
                     - :code:`runs:/<mlflow_run_id>/run-relative/path/to/model`
                     - :code:`models:/<model_name>/<model_version>`
                     - :code:`models:/<model_name>/<stage>`
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -325,11 +325,11 @@ def load_runner(
     load BentoML internal Runner implementation, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

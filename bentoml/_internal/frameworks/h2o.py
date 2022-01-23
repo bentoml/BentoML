@@ -45,9 +45,9 @@ def load(
     Load a model from BentoML local modelstore with given tag.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        init_params (`Dict[str, Union[str, Any]]`, `optional`, defaults to `None`):
+        init_params (:code:`Dict[str, Union[str, Any]]`, `optional`, defaults to `None`):
             Params for h2o server initialization
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -92,11 +92,11 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`h2o.model.model_base.ModelBase`):
             Instance of h2o model to be saved.
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -234,16 +234,16 @@ def load_runner(
     optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (`str`, default to `predict`):
+        predict_fn_name (:code:`str`, default to :code:`predict`):
             Options for inference functions. Default to `predict`
-        init_params (`Dict[str, Union[str, Any]]`, default to `None`):
+        init_params (:code:`Dict[str, Union[str, Any]]`, default to :code:`None`):
             Parameters for h2o.init(). Refers to `H2O Python API <https://docs.h2o.ai/h2o/latest-stable/h2o-docs/starting-h2o.html#from-python>`_
             for more information
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

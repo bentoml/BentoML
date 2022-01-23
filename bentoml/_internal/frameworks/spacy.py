@@ -114,18 +114,18 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
-        vocab (`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
+        vocab (:code:`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
             Optional vocab to pass in on initialization. If True, a new Vocab object will be created.
         disable (`Iterable[str]`, `optional`):
             Names of pipeline components to disable.
         exclude (`Iterable[str]`, `optional`):
             Names of pipeline components to exclude. Excluded
             components won't be loaded.
-        config (`Union[Dict[str, Any], spacy.Config]`, `optional`):
+        config (:code:`Union[Dict[str, Any], spacy.Config]`, `optional`):
             Config overrides as nested dict or dict
             keyed by section values in dot notation.
 
@@ -202,11 +202,11 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`spacy.language.Language`):
             Instance of model to be saved
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -228,7 +228,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "spacy",
-        "pip_dependencies": [f"spacy=={_spacy_version}"],
+        "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
     }
     _model = Model.create(
         name,
@@ -267,19 +267,19 @@ def projects(
     Enables users to use :code:`spacy cli` and integrate SpaCy `Projects <https://spacy.io/usage/projects>`_ to BentoML.
 
     Args:
-        save_name (`str`):
+        save_name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        tasks (`str`):
+        tasks (:code:`str`):
             Given SpaCy CLI tasks. Currently only support :code:`pull` and :code:`clone`
-        repo_or_store(`str`, `optional`, defaults to `None`):
+        repo_or_store(:code:`str`, `optional`, defaults to `None`):
             URL of Git repo or given S3 store containing project templates.
         model (`spacy.language.Language`):
             Instance of model to be saved
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
-        branch (`str`, `optional`, defaults to `None`):
+        branch (:code:`str`, `optional`, defaults to `None`):
             The branch to clone from. If not specified, defaults to :code:`main` branch
-        verbose (`bool`, `optional`, default to `True`):
+        verbose (`bool`, `optional`, default to :code:`True`):
             Verbosely post all logs.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -349,9 +349,7 @@ def projects(
     _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
     if tasks == "clone":
         # TODO: update check for master or main branch
-        assert (
-            name is not None
-        ), "`name` of the template is required to clone a project."
+        assert name is not None, "`name` of the template is required to clone a project."
         _model.info.options["name"] = name
         assert isinstance(repo_or_store, str) and isinstance(branch, str)
         project_clone(
@@ -560,26 +558,26 @@ def load_runner(
     wrap around :obj:`spacy.language.Language` model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore..
         gpu_device_id (`int`, `optional`, defaults to `None`):
             GPU device ID.
         backend_options (`Literal['pytorch', 'tensorflow'], `optional`, defaults to `None`):
             Backend options for Thinc. Either PyTorch or Tensorflow.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
-        vocab (`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
+        vocab (:code:`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
             Optional vocab to pass in on initialization. If True, a new Vocab object will be created.
         disable (`Iterable[str]`, `optional`):
             Names of pipeline components to disable.
         exclude (`Iterable[str]`, `optional`):
             Names of pipeline components to exclude. Excluded
             components won't be loaded.
-        config (`Union[Dict[str, Any], spacy.Config]`, `optional`):
+        config (:code:`Union[Dict[str, Any], spacy.Config]`, `optional`):
             Config overrides as nested dict or dict
             keyed by section values in dot notation.
         as_tuples (`Literal[False, True]`, `optional`, defaults to `False`):
@@ -588,7 +586,7 @@ def load_runner(
             (doc, context) tuples.
         batch_size (`int`, `optional`, defaults to `None`):
             The number of texts to buffer.
-        component_cfg (`Dict[str, `Dict[str, Any]]`, `optional`, defaults to `None`):
+        component_cfg (:code:`Dict[str, :code:`Dict[str, Any]]`, `optional`, defaults to `None`):
             An optional dictionary with extra keyword
             arguments for specific components.
 

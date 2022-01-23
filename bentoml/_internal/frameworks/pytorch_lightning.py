@@ -45,9 +45,9 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        device_id (`str`, `optional`):
+        device_id (:code:`str`, `optional`):
             Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -84,11 +84,11 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`pl.LightningModule`):
             Instance of model to be saved
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -182,18 +182,18 @@ def load_runner(
     wrap around a :obj:`pl.LightningModule` instance, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        predict_fn_name (`str`, default to `__call__`):
+        predict_fn_name (:code:`str`, default to :code:`__call__`):
             inference function to be used.
-        device_id (`Union[str, int, List[Union[str, int]]]`, `optional`, default to `cpu`):
+        device_id (:code:`Union[str, int, List[Union[str, int]]]`, `optional`, default to :code:`cpu`):
             Optional devices to put the given model on. Refers to `Tensor Attributes Docs <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_
             for more information.
-        partial_kwargs (`Dict[str, Any]`, `optional`,  default to `None`):
+        partial_kwargs (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Common kwargs passed to model for this runner
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

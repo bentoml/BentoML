@@ -71,17 +71,21 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of pickled model from BentoML modelstore.
+        :obj:`Any`: an instance of :mod:`statsmodels` that is unpickled from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+
+        model = bentoml.statsmodels.load("holtswinter")
 
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
@@ -101,11 +105,11 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Any):
-            Instance of model to be saved
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        model (`t.Any`):
+            Instance of model to be saved.
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -116,6 +120,39 @@ def save(
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+        import pandas as pd
+
+        import statsmodels
+        from statsmodels.tsa.holtwinters import HoltWintersResults
+        from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
+        def holt_model() -> "HoltWintersResults":
+            df: pd.DataFrame = pd.read_csv(
+                "https://raw.githubusercontent.com/jbrownlee/Datasets/master/shampoo.csv"
+            )
+
+            # Taking a test-train split of 80 %
+            train = df[0 : int(len(df) * 0.8)]
+            test = df[int(len(df) * 0.8) :]
+
+            # Pre-processing the  Month  field
+            train.Timestamp = pd.to_datetime(train.Month, format="%m-%d")
+            train.index = train.Timestamp
+            test.Timestamp = pd.to_datetime(test.Month, format="%m-%d")
+            test.index = test.Timestamp
+
+            # fitting the model based on  optimal parameters
+            return ExponentialSmoothing(
+                np.asarray(train["Sales"]),
+                seasonal_periods=7,
+                trend="add",
+                seasonal="add",
+            ).fit()
+
+        # `save` a given classifier and retrieve coresponding tag:
+        tag = bentoml.statsmodels.save("holtwinters", HoltWintersResults())
 
     """  # noqa
     context: t.Dict[str, t.Any] = {
@@ -199,13 +236,13 @@ def load_runner(
     wrap around a statsmodels instance, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (`str`, default to `predict`):
+        predict_fn_name (:code:`str`, default to :code:`predict`):
             Options for inference functions
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -216,6 +253,12 @@ def load_runner(
     Examples:
 
     .. code-block:: python
+
+        import bentoml
+        import pandas as pd
+
+        runner = bentoml.statsmodels.load_runner("holtswinter")
+        runner.run_batch(pd.DataFrame("/path/to/data"))
 
     """  # noqa
     tag = Tag.from_taglike(tag)

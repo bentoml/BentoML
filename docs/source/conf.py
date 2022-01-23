@@ -1,3 +1,7 @@
+import sys
+from datetime import datetime
+
+from sqlalchemy import true
 from pygments.lexers import PythonLexer
 
 # Adding BentoML source directory for accessing BentoML version
@@ -6,7 +10,7 @@ import bentoml
 # -- Project information -----------------------------------------------------
 
 project = "BentoML"
-copyright = "2021, bentoml.org"
+copyright = f"2020-{datetime.now().year}, bentoml.org"
 author = "bentoml.org"
 version = bentoml.__version__
 
@@ -40,6 +44,9 @@ autodoc_mock_imports = [
     "catboost",
     "coremltools",
     "detectron2",
+    "detectron2.config",
+    "detectron2.modeling",
+    "detectron2.checkpoint",
     "torch",
     "torchvision",
     "torchtext",
@@ -48,8 +55,13 @@ autodoc_mock_imports = [
     "fastai",
     "fasttext",
     "mxnet",
+    "mxnet.gluon",
     "h2o",
+    "h2o.model",
     "tensorflow",
+    "tensorflow.keras",
+    "tensorflow.python.client",
+    "tensorflow.python.training.tracking.tracking",
     "tensorflow_hub",
     "keras",
     "trax",
@@ -57,21 +69,35 @@ autodoc_mock_imports = [
     "jax",
     "lightgbm",
     "mlflow",
+    "mlflow.pyfunc",
+    "mlflow.tracking.artifact_utils",
     "onnx",
     "onnxruntime",
     "PyRuntime",
     "paddle",
+    "paddle.nn",
+    "paddle.inference",
+    "paddle.fluid",
     "paddlehub",
+    "paddlehub.module.manager",
+    "paddlehub.server.server",
     "pycaret",
+    "pycaret.internal.tabular",
     "pyspark",
     "pytorch",
+    "torch.nn.parallel",
     "pytorch_lightning",
     "sklearn",
     "joblib",
     "spacy",
-    "thinc",
+    "spacy.util",
+    "thinc.util",
+    "thinc.backends",
     "statsmodels",
+    "statsmodels.api",
+    "statsmodels.tools.parallel",
     "transformers",
+    "transformers.file_utils",
     "xgboost",
 ]
 
@@ -81,7 +107,7 @@ autodoc_typehints = "signature"
 templates_path = ["_templates"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = "zenburn"
 
 # Remove the prompt when copying examples
 copybutton_prompt_text = r">>> |\.\.\.|» |$ "
@@ -98,10 +124,17 @@ html_theme_options = {
     "display_version": True,
 }
 
+# html_theme = "furo"
+# html_theme_options = {
+#     # "collapse_navigation": True,
+#     "sidebar_hide_name": True
+# }
+
 html_logo = "_static/img/bentoml-removebg.png"
 
 # Static folder path
 html_static_path = ["_static"]
+# html_css_files = ["bentoml.css"]
 
 # Private dictionary for spell checker
 spelling_word_list_filename = ["bentoml_wordlist.txt"]
@@ -129,6 +162,9 @@ class KerasTensorflowV2Lexer(PythonLexer):
 
 
 def setup(app):
+    app.add_css_file("css/typeface/typeface.css")
+    app.add_css_file("css/common.css")
+    app.add_css_file("css/nav_patch.css")
     app.add_css_file("css/bentoml.css")
 
     # Adding lexers for rendering different code version

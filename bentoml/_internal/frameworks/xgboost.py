@@ -85,7 +85,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Params for xgb.core.Booster initialization
@@ -126,13 +126,13 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`xgboost.core.Booster`):
             Instance of model to be saved
-        booster_params (`Dict[str, Union[str, int]]`, `optional`, default to `None`):
+        booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, default to :code:`None`):
             Params for booster initialization
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -271,18 +271,18 @@ def load_runner(
     wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (`str`, default to `predict`):
+        predict_fn_name (:code:`str`, default to :code:`predict`):
             Options for inference functions. If you want to use `run`
             or `run_batch` in a thread context then use `inplace_predict`.
             Otherwise, `predict` are the de facto functions.
-        booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
+        booster_params (`t.Dict[str, t.Union[str, int]]`, default to :code:`None`):
             Parameters for boosters. Refers to https://xgboost.readthedocs.io/en/latest/parameter.html
              for more information
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

@@ -64,11 +64,7 @@ def _get_model_info(
 
 def _load_helper(
     model_file: str, model_params: t.Optional[t.Dict[str, t.Union[str, int]]]
-) -> t.Union[
-    cbt.core.CatBoost,
-    cbt.core.CatBoostClassifier,
-    cbt.core.CatBoostRegressor,
-]:
+) -> t.Union[cbt.core.CatBoost, cbt.core.CatBoostClassifier, cbt.core.CatBoostRegressor,]:
 
     if model_params is not None:
         model_type = model_params["model_type"]
@@ -95,24 +91,22 @@ def load(
     tag: t.Union[str, Tag],
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union[
-    cbt.core.CatBoost, cbt.core.CatBoostClassifier, cbt.core.CatBoostRegressor
-]:
+) -> t.Union[cbt.core.CatBoost, cbt.core.CatBoostClassifier, cbt.core.CatBoostRegressor]:
     """
     Load a CatBoost model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        model_params (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):
+        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
             Parameters for a CatBoost model. Following parameters can be specified:
-                - model_type(`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
+                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `catboost.core.CatBoostClassifier` or `catboost.core. CatBoostRegressor`
-        from BentoML modelstore.
+        :obj:`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.core.CatBoostRegressor]`: one of :code:`catboost.core.CatBoostClassifier`,
+        :code:`catboost.core.CatBoostRegressor` or :code:`catboost.core.CatBoost` from BentoML modelstore.
 
     Examples:
 
@@ -146,18 +140,18 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.CatBoostRegressor]`):
+        model (:code:`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.CatBoostRegressor]`):
             Instance of model to be saved
-        model_params (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):
+        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
             Parameters for a CatBoost model. Following parameters can be specified:
-                - model_type(`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        model_export_parameters (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):
+                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
+        model_export_parameters (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
             Export parameters for given model.
-        model_pool (`cbt.core.Pool`, `optional`, default to `None`):
+        model_pool (:code:`cbt.core.Pool`, `optional`, default to :code:`None`):
             CatBoost data pool for given model.
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -291,16 +285,16 @@ def load_runner(
     wrap around a CatBoost model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (`str`, default to `predict`):
+        predict_fn_name (:code:`str`, default to :code:`predict`):
             Options for inference functions. `predict` are the default function.
-        model_params (`Dict[str, Union[str, Any]]`, `optional`, default to `None`):
+        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
             Parameters for a CatBoost model. Following parameters can be specified:
-                - model_type(`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        resource_quota (`Dict[str, Any]`, default to `None`):
+                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

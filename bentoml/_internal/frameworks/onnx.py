@@ -111,16 +111,16 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        backend (`str`, `optional`, default to `onnxruntime`):
+        backend (:code:`str`, `optional`, default to :code:`onnxruntime`):
             Different backend runtime supported by ONNX. Currently only accepted :obj:`onnxruntime`
             and :obj:`onnxruntime-gpu`.
-        providers (`List[Union[str, Tuple[str, Dict[str, Any]]`, `optional`, default to `None`):
+        providers (`List[Union[str, Tuple[str, Dict[str, Any]]`, `optional`, default to :code:`None`):
             Different providers provided by users. By default BentoML will use :func:`onnxruntime.get_available_providers`
             when loading a model.
-        session_options (`onnxruntime.SessionOptions`, `optional`, default to `None`):
-            SessionOptions per use case. If not specified, then default to `None`.
+        session_options (`onnxruntime.SessionOptions`, `optional`, default to :code:`None`):
+            SessionOptions per use case. If not specified, then default to :code:`None`.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -165,11 +165,11 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (Union[onnx.ModelProto, path-like object]):
             Instance of model to be saved.
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -276,9 +276,7 @@ class _ONNXRunner(Runner):
             )
         if providers is not None:
             if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
-                raise BentoMLException(
-                    f"'{providers}' cannot be parsed by `onnxruntime`"
-                )
+                raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
         else:
             providers = self._get_default_providers(
                 gpu_device_id, disable_copy_in_default_stream
@@ -430,24 +428,24 @@ def load_runner(
     wrap around an ONNX model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        gpu_device_id (`int`, `optional`, default to `-1`):
+        gpu_device_id (`int`, `optional`, default to :code:`-1`):
             GPU device ID. Currently only support CUDA.
-        disable_copy_in_default_stream (`bool`, `optional`, default to `False`):
+        disable_copy_in_default_stream (`bool`, `optional`, default to :code:`False`):
             Whether to do copies in the default stream or use separate streams. Refers to `Execution Providers <https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#do_copy_in_default_stream>`_
             for more information.
-        backend (`str`, `optional`, default to `onnxruntime`):
+        backend (:code:`str`, `optional`, default to :code:`onnxruntime`):
             Different backend runtime supported by ONNX. Currently only accepted :obj:`onnxruntime`
             and :obj:`onnxruntime-gpu`.
-        providers (`List[Union[str, Tuple[str, Dict[str, Any]]`, `optional`, default to `None`):
+        providers (`List[Union[str, Tuple[str, Dict[str, Any]]`, `optional`, default to :code:`None`):
             Different providers provided by users. By default BentoML will use :obj:`CPUExecutionProvider` when
             loading a model.
-        session_options (`onnxruntime.SessionOptions`, `optional`, default to `None`):
-            :obj:`SessionOptions` per use case. If not specified, then default to `None`.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        session_options (`onnxruntime.SessionOptions`, `optional`, default to :code:`None`):
+            :obj:`SessionOptions` per use case. If not specified, then default to :code:`None`.
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

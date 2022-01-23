@@ -80,17 +80,17 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        booster_params (`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
+        booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
             Parameters for boosters. Refers to `Parameters Docs <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`Union[lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker, lightgbm.basic.Booster]`: An instance of either
-        :obj:`Union[lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker]` or :obj:`lightgbm.basic.Booster`
+        :obj::code:`Union[lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker, lightgbm.basic.Booster]`: An instance of either
+        :obj::code:`Union[lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker]` or :obj:`lightgbm.basic.Booster`
         from BentoML modelstore.
 
     Examples:
@@ -121,14 +121,14 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`Union[lightgbm.basic.Booster, lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker]`):
+        model (:code:`Union[lightgbm.basic.Booster, lightgbm.LGBMModel, lightgbm.LGBMClassifier, lightgbm.LGBMRegressor, lightgbm.LGBMRanker]`):
             Instance of model to be saved.
-        booster_params (`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
+        booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
             Parameters for boosters. Refers to `Parameters Doc <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -284,17 +284,17 @@ def load_runner(
     wrap around a LightGBM model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML modelstore.
-        infer_api_callback (`str`, `optional`, default to `predict`):
+        infer_api_callback (:code:`str`, `optional`, default to :code:`predict`):
             Inference API callback from given model. If not specified, BentoML will use default :code:`predict`.
             Users can also choose to use :code:`predict_proba` for supported model.
-        booster_params (`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
+        booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
             Parameters for boosters. Refers to `Parameters Doc <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

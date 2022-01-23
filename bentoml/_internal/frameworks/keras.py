@@ -95,7 +95,7 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -174,15 +174,15 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`tensorflow.keras.Model`):
             Instance of the Keras model to be saved to BentoML modelstore.
-        store_as_json (`bool`, `optional`, default to `False`):
+        store_as_json (`bool`, `optional`, default to :code:`False`):
             Whether to store Keras model as JSON and weights.
-        custom_objects (`Dict[str, Any]`, `optional`, default to `None`):
+        custom_objects (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary of Keras custom objects, if specified.
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -412,17 +412,17 @@ def load_runner(
     wrap around a Keras model, with Tensorflow as backend, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (`str`, `optional`, default to `predict`):
+        predict_fn_name (:code:`str`, `optional`, default to :code:`predict`):
             Inference function to be used.
-        predict_kwargs (`Dict[str, Any]`, `optional`, default to `None`):
+        predict_kwargs (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary of `predict()` kwargs that can be shared across different model.
-        device_id (`str`, `optional`, default to the first CPU):
+        device_id (:code:`str`, `optional`, default to the first CPU):
             Optional devices to put the given model on. Refers to `Logical Devices <https://www.tensorflow.org/api_docs/python/tf/config/list_logical_devices>`_ from TF documentation.
-        resource_quota (`Dict[str, Any]`, `optional`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, `optional`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

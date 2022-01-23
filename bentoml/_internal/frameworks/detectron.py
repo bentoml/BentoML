@@ -51,25 +51,24 @@ def load(
     Load a model from BentoML local modelstore with given tag.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        device (`str`, `optional`, default to ``cpu``):
+        device (:code:`str`, `optional`, default to :code:``cpu``):
             Device type to cast model. Default behaviour similar
              to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
              If None is specified then return default config.MODEL.DEVICE
-        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `torch.nn.Module`
+        :obj:`torch.nn.Module`: an instance of `torch.nn.Module`
 
     Examples:
 
     .. code-block:: python
 
-        import bentoml.detectron
-        model = bentoml.detectron.load(
-            "my_detectron_model:20201012_DE43A2")
+        import bentoml
+        model = bentoml.detectron.load("my_detectron_model")
     """  # noqa: LN001
 
     model_info = model_store.get(tag)
@@ -114,15 +113,15 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`torch.nn.Module`):
             Instance of detectron2 model to be saved.
-        model_config (`detectron2.config.CfgNode`, `optional`, default to `None`):
+        model_config (`detectron2.config.CfgNode`, `optional`, default to :code:`None`):
             model config from :meth:`detectron2.model_zoo.get_config_file`
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
-        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -132,7 +131,7 @@ def save(
 
     .. code-block:: python
 
-        import bentoml.detectron
+        import bentoml
 
         # import some common detectron2 utilities
         import detectron2
@@ -156,10 +155,9 @@ def save(
             model_config=cfg,
         )
 
-        # example tag: my_detectron_model:20211018_B9EABF
-
         # load the model back:
-        loaded = bentoml.detectron.load("my_detectron_model:latest") # or
+        loaded = bentoml.detectron.load("my_detectron_model:latest")
+        # or:
         loaded = bentoml.detectron.load(tag)
 
     """  # noqa
@@ -198,7 +196,7 @@ def save(
 
 class _DetectronRunner(Runner):
     @inject
-    # TODO add partial_kwargs @larme
+    # TODO: add partial_kwargs @larme
     def __init__(
         self,
         tag: Tag,
@@ -271,26 +269,33 @@ def load_runner(
 ) -> _DetectronRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.detectron.load_runner` implements a Runner class that
-    wrap around a torch.nn.Module model, which optimize it for the BentoML runtime.
+    maximize throughput. :func:`bentoml.detectron.load_runner` implements a Runner class that
+    wrap around a :obj:`torch.nn.Module` model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (`str`, default to `__call__`):
+        predict_fn_name (:code:`str`, default to :code:`__call__`):
             Options for inference functions. Default to `__call__`
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
-        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.detectron` model
 
     Examples:
-        TODO
+
+    .. code-block:: python
+
+        import bentoml
+        import numpy as np
+
+        runner = bentoml.detectron.load_runner(tag)
+        runner.run_batch(np.array([[1,2,3,]]))
     """  # noqa
     tag = Tag.from_taglike(tag)
     if name is None:

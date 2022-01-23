@@ -125,15 +125,15 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        config (`paddle.inference.Config`, `optional`, default to `None`):
+        config (`paddle.inference.Config`, `optional`, default to :code:`None`):
             Model config to be used to create a `Predictor` instance.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`Union[paddle.inference.Predictor, paddlehub.module.module.RunModule, paddlehub.module.module.ModuleV1]`: an instance of
+        :obj::code:`Union[paddle.inference.Predictor, paddlehub.module.module.RunModule, paddlehub.module.module.ModuleV1]`: an instance of
         one of :obj:`paddle.inference.Predictor`, :obj:`paddlehub.module.module.RunModule`, and :obj:`paddlehub.module.module.ModuleV1`
         from BentoML modelstore.
 
@@ -289,19 +289,19 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`Union[paddle.nn.Layer, paddle.inference.Predictor, StaticFunction]`):
+        model (:code:`Union[paddle.nn.Layer, paddle.inference.Predictor, StaticFunction]`):
             Instance of :code:`paddle.nn.Layer`, decorated functions, or
             :code:`paddle.inference.Predictor` to be saved.
-        input_spec (`Union[List[InputSpec], Tuple[InputSpec, ...]]`, `optional`, default to `None`):
+        input_spec (:code:`Union[List[InputSpec], Tuple[InputSpec, ...]]`, `optional`, default to :code:`None`):
             Describes the input of the saved model's forward method, which can be
             described by :obj:`InputSpec` or example Tensor. Moreover, we support to specify
             non-tensor type argument, such as `int`, `float`, `string`, or
             `list`/`dict` of them. If `None`, all input variables of the original
             Layer's forward method would be the inputs of the saved model. Generally
             this is **NOT RECOMMENDED** to use unless you know what you are doing.
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -403,36 +403,36 @@ def import_from_paddlehub(
     Import models from :code:`PaddleHub` and save it under BentoML modelstore.
 
     Args:
-        model_name (`str`):
+        model_name (:code:`str`):
             Name for a PaddleHub model. This can be either path to a Hub module or model
             name, for both v2 and v1.
-        name (`str`, `optional`, default to `None`):
+        name (:code:`str`, `optional`, default to :code:`None`):
             Name for given model instance. This should pass Python identifier check. If
             not specified, then BentoML will save under :obj:`model_name`.
-        version (`str`, `optional`, default to `None`):
+        version (:code:`str`, `optional`, default to :code:`None`):
             The version limit of the module, only takes effect when the :obj:`name` is
             specified. When the local Module does not meet the specified version
             conditions, PaddleHub will re-request the server to download the
             appropriate Module. Default to `None`, This means that the local Module will
             be used. If the Module does not exist, PaddleHub will download the latest
             version available from the server according to the usage environment.
-        source (`str`, `optional`, default to `None`):
+        source (:code:`str`, `optional`, default to :code:`None`):
             URL of a git repository. If this parameter is specified, PaddleHub will no
             longer download the specified Module from the default server, but will look
             for it in the specified repository.
-        update (`bool`, `optional`, default to `False`):
+        update (`bool`, `optional`, default to :code:`False`):
             Whether to update the locally cached git repository, only takes effect when
             the `source` is specified.
-        branch (`str`, `optional`, default to `None`):
+        branch (:code:`str`, `optional`, default to :code:`None`):
             The branch of the specified git repository.
-        ignore_env_mismatch (`bool`, `optional`, default to `False`):
+        ignore_env_mismatch (`bool`, `optional`, default to :code:`False`):
             Whether to ignore the environment mismatch when installing the Module.
-        hub_module_home (`str`, `optional`, default is `None`):
+        hub_module_home (:code:`str`, `optional`, default is `None`):
             Location to save for your PaddleHub cache. If `None`, then default to use
             PaddleHub default cache, which is under :code:`$HOME/.paddlehub`
-        keep_download_from_hub (`bool`, `optional`, default to `False`):
+        keep_download_from_hub (`bool`, `optional`, default to :code:`False`):
             Whether to re-download pretrained model from hub.
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -626,24 +626,24 @@ def load_runner(
     which optimize it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        infer_api_callback (`str`, `optional`, default to `run`):
+        infer_api_callback (:code:`str`, `optional`, default to :code:`run`):
             Inference API function that will be used during :obj:`run_batch`. If :obj:`tag`
             is a tag of a :obj:`hub.Module`, then :code:`infer_api_callback` should be changed
             to corresponding API endpoint offered by given module.
-        config (`paddle.inference.Config`, `optional`, default to `None`):
+        config (`paddle.inference.Config`, `optional`, default to :code:`None`):
             Config for inference. If None is specified, then use BentoML default.
-        device (`str`, `optional`, default to `cpu`):
+        device (:code:`str`, `optional`, default to :code:`cpu`):
             Type of device either paddle Predictor or :obj:`hub.Module` will be running on.
             Currently only supports CPU and GPU. Kunlun XPUs is currently **NOT SUPPORTED**.
-        enable_gpu (`bool`, `optional`, default to `False`):
+        enable_gpu (`bool`, `optional`, default to :code:`False`):
             Whether to enable GPU.
         gpu_mem_pool_mb (`int`, `optional`, default to 0):
             Amount of memory one wants to allocate to GPUs. By default we will allocate None.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.

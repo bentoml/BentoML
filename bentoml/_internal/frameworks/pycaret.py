@@ -71,17 +71,19 @@ def load(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        a Pycaret model instance. This depends on which type of model you save with BentoML (Classifier, Trees, SVM, etc).
+        :obj:`Any`: a :mod:`Pycaret` model instance.
 
     Examples:
-        import bentoml.pycaret
-        # NOTE: pycaret setup config will be loaded
+
+    .. code-block:: python
+
+        import bentoml
         dt = bentoml.pycaret.load("my_model:latest")
     """  # noqa
     _, model_file, pycaret_config = _get_model_info(tag, model_store)
@@ -103,11 +105,11 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`Union[sklearn.pipeline.Pipeline, xgboost.Booster, lightgbm.basic.Booster]`):
+        model (:code:`Union[sklearn.pipeline.Pipeline, xgboost.Booster, lightgbm.basic.Booster]`):
             Instance of model to be saved
-        metadata (`Dict[str, Any]`, `optional`,  default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -116,8 +118,12 @@ def save(
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
+
+    .. code-block:: python
+
+        import bentoml
+
         from pycaret.classification import *
-        import bentoml.pycaret
         from pycaret.datasets import get_data
 
         # get data
@@ -210,20 +216,23 @@ def load_runner(
     wraps around a PyCaret model, which optimizes it for the BentoML runtime.
 
     Args:
-        tag (`Union[str, Tag]`):
+        tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        resource_quota (`Dict[str, Any]`, default to `None`):
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
-        batch_options (`Dict[str, Any]`, default to `None`):
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.xgboost` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pycaret` model
 
     Examples:
-        import bentoml.pycaret
+
+    .. code-block:: python
+
+        import bentoml
         from pycaret.datasets import get_data
         dataset = get_data('credit')
 
@@ -237,11 +246,7 @@ def load_runner(
         # NOTE: loading the model will load the saved pycaret config too
         runner = bentoml.pycaret.load_runner(tag="my_model:latest")
 
-        # set up the runner
-        runner._setup()
-
-        prediction = runner._run_batch(input_data=data_unseen)
-        print(prediction)
+        prediction = runner.run_batch(input_data=data_unseen)
     """  # noqa
     tag = Tag.from_taglike(tag)
     if name is None:

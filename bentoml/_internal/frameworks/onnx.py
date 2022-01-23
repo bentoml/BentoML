@@ -276,7 +276,9 @@ class _ONNXRunner(Runner):
             )
         if providers is not None:
             if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
-                raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
+                raise BentoMLException(
+                    f"'{providers}' cannot be parsed by `onnxruntime`"
+                )
         else:
             providers = self._get_default_providers(
                 gpu_device_id, disable_copy_in_default_stream

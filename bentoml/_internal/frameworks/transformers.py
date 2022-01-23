@@ -111,7 +111,10 @@ class _GeneratorContextManager(t.ContextManager[_T_co]):
 
 
 def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
-    if framework not in _AUTOMODEL_PREFIX_MAPPING and framework not in _FRAMEWORK_ALIASES:
+    if (
+        framework not in _AUTOMODEL_PREFIX_MAPPING
+        and framework not in _FRAMEWORK_ALIASES
+    ):
         raise AttributeError(
             f"{framework} is either invalid aliases "
             "or not supported by transformers. "
@@ -161,7 +164,8 @@ def _check_flax_supported() -> None:  # pragma: no cover
             _jax_version = get_pkg_version("jax")
             _flax_version = get_pkg_version("flax")
             logger.info(
-                f"JAX version {_jax_version}, " f"Flax version {_flax_version} available."
+                f"JAX version {_jax_version}, "
+                f"Flax version {_flax_version} available."
             )
         else:
             logger.warning(

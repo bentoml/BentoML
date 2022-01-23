@@ -64,7 +64,11 @@ def _get_model_info(
 
 def _load_helper(
     model_file: str, model_params: t.Optional[t.Dict[str, t.Union[str, int]]]
-) -> t.Union[cbt.core.CatBoost, cbt.core.CatBoostClassifier, cbt.core.CatBoostRegressor,]:
+) -> t.Union[
+    cbt.core.CatBoost,
+    cbt.core.CatBoostClassifier,
+    cbt.core.CatBoostRegressor,
+]:
 
     if model_params is not None:
         model_type = model_params["model_type"]
@@ -91,7 +95,9 @@ def load(
     tag: t.Union[str, Tag],
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union[cbt.core.CatBoost, cbt.core.CatBoostClassifier, cbt.core.CatBoostRegressor]:
+) -> t.Union[
+    cbt.core.CatBoost, cbt.core.CatBoostClassifier, cbt.core.CatBoostRegressor
+]:
     """
     Load a CatBoost model from BentoML local modelstore with given name.
 

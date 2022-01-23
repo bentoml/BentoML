@@ -124,17 +124,10 @@ html_theme_options = {
     "display_version": True,
 }
 
-# html_theme = "furo"
-# html_theme_options = {
-#     # "collapse_navigation": True,
-#     "sidebar_hide_name": True
-# }
-
 html_logo = "_static/img/bentoml-removebg.png"
 
 # Static folder path
 html_static_path = ["_static"]
-# html_css_files = ["bentoml.css"]
 
 # Private dictionary for spell checker
 spelling_word_list_filename = ["bentoml_wordlist.txt"]
@@ -168,7 +161,7 @@ def setup(app):
     app.add_css_file("css/bentoml.css")
 
     # Adding lexers for rendering different code version
-    app.add_lexer("tensorflow_v1", TensorflowV1Lexer)
     app.add_lexer("keras_v1", KerasTensorflowV1Lexer)
     app.add_lexer("keras_v2", KerasTensorflowV2Lexer)
+    app.add_lexer("tensorflow_v1", TensorflowV1Lexer)
     app.add_lexer("tensorflow_v2", TensorflowV2Lexer)

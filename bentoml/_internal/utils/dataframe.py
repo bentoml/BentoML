@@ -218,19 +218,19 @@ def from_json_or_csv(
             Data in either JSON or CSV format
         formats (`Iterable[str]`):
             List of formats, which are either `json` or `csv`
-        orient (`str`, `optional`, default `"records"`):
+        orient (:code:`str`, `optional`, default `"records"`):
             Indication of expected JSON string format. Compatible JSON strings can be
              produced by `pandas.io.json.to_json()` with a corresponding orient value.
              Possible orients are:
-                - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data
+                - `split` - :code:`Dict[str, Any]`: {idx -> [idx], columns -> [columns], data
                    -> [values]}
                 - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
-                - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
-                - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
-                - `values` - `Dict[str, Any]`: Values arrays
+                - `index` - :code:`Dict[str, Any]`: {idx -> {column -> value}}
+                - `columns` - :code:`Dict[str, Any]`: {column -> {index -> value}}
+                - `values` - :code:`Dict[str, Any]`: Values arrays
         columns (`List[str]`, `optional`, default `None`):
             List of column names that users wish to update
-        dtype (`Union[bool, Dict[str, Any]]`, `optional`, default `None`):
+        dtype (:code:`Union[bool, Dict[str, Any]]`, `optional`, default `None`):
             Data type to inputs/outputs to. If it is a boolean, then pandas will infer
              data types. Otherwise, if it is a dictionary of column to data type, then
              applies those to incoming dataframes. If False, then don't infer data types

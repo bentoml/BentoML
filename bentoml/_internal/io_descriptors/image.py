@@ -92,8 +92,8 @@ class Image(IODescriptor[ImageType]):
          {"score":0.0009498853469267488,"label":"Siamese cat, Siamese"}]%
 
     Args:
-        pilmode (`str`, `optional`, default to `RGB`): Color mode for PIL.
-        mime_type (`str`, `optional`, default to `image/jpeg`):
+        pilmode (:code:`str`, `optional`, default to :code:`RGB`): Color mode for PIL.
+        mime_type (:code:`str`, `optional`, default to :code:`image/jpeg`):
             Return MIME type of the :code:`starlette.response.Response`, only available
             when used as output descriptor
 

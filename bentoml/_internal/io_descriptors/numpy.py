@@ -83,14 +83,14 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         [1]%
 
     Args:
-        dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to `None`):
+        dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to :code:`None`):
             Data Type users wish to convert their inputs/outputs to. Refers to
             https://numpy.org/doc/stable/reference/arrays.dtypes.html for more
             information
-        enforce_dtype (`bool`, `optional`, default to `False`):
+        enforce_dtype (`bool`, `optional`, default to :code:`False`):
             Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype`
             must be specified.
-        shape (`Tuple[int, ...]`, `optional`, default to `None`):
+        shape (`Tuple[int, ...]`, `optional`, default to :code:`None`):
             Given shape that an array will be converted to. For example:
 
             .. code-block:: python
@@ -106,7 +106,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
                     # input_array will have shape (3,1)
                     result = await runner.run(input_array)
 
-        enforce_shape (`bool`, `optional`, default to `False`):
+        enforce_shape (`bool`, `optional`, default to :code:`False`):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
             must be specified
 
@@ -169,9 +169,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
     ) -> "ext.NpNDArray[t.Any]":
         if self._dtype is not None and self._dtype != obj.dtype:
             if self._enforce_dtype:
-                raise exception_cls(
-                    f"{self.__class__.__name__}: enforced dtype mismatch"
-                )
+                raise exception_cls(f"{self.__class__.__name__}: enforced dtype mismatch")
             try:
                 obj = obj.astype(self._dtype)  # type: ignore
             except ValueError as e:
@@ -179,9 +177,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
 
         if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
             if self._enforce_shape:
-                raise exception_cls(
-                    f"{self.__class__.__name__}: enforced shape mismatch"
-                )
+                raise exception_cls(f"{self.__class__.__name__}: enforced shape mismatch")
             try:
                 obj = obj.reshape(self._shape)
             except ValueError as e:
@@ -237,11 +233,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
 
         Args:
             sample_input (`np.ndarray`): Given sample np.ndarray data
-            enforce_dtype (`bool`, `optional`, default to `True`):
+            enforce_dtype (`bool`, `optional`, default to :code:`True`):
                 Enforce a certain data type. `dtype` must be specified at function
                 signature. If you don't want to enforce a specific dtype then change
                 `enforce_dtype=False`.
-            enforce_shape (`bool`, `optional`, default to `False`):
+            enforce_shape (`bool`, `optional`, default to :code:`False`):
                 Enforce a certain shape. `shape` must be specified at function
                 signature. If you don't want to enforce a specific shape then change
                 `enforce_shape=False`.

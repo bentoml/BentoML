@@ -98,11 +98,11 @@ class JSON(IODescriptor[JSONType]):
         {"res":"[{\"0\":1}]"}%
 
     Args:
-        pydantic_model (`pydantic.BaseModel`, `optional`, default to `None`):
+        pydantic_model (`pydantic.BaseModel`, `optional`, default to :code:`None`):
             Pydantic model schema.
-        validate_json (`bool`, `optional`, default to `True`): If True, then use
+        validate_json (`bool`, `optional`, default to :code:`True`): If True, then use
             Pydantic model specified above to validate given JSON.
-        json_encoder (`Type[json.JSONEncoder]`, default to `bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
+        json_encoder (`Type[json.JSONEncoder]`, default to :code:`bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
             JSON encoder class.
     Returns:
         IO Descriptor that in JSON format.

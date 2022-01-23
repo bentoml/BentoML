@@ -82,7 +82,7 @@ class Multipart(IODescriptor[MultipartIO]):
         --b1d72c201a064ecd92a17a412eb9208e--
 
     Args:
-        inputs (`Dict[str, IODescriptor]`):
+        inputs (:code:`Dict[str, IODescriptor]`):
             Dictionary consisting keys as inputs definition for a Multipart
             request/response, values as IODescriptor supported by BentoML. Currently,
             Multipart supports Image, NumpyNdarray, PandasDataFrame, PandasSeries, Text,
@@ -144,9 +144,7 @@ class Multipart(IODescriptor[MultipartIO]):
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {
             "type": "object",
-            "properties": {
-                k: io.openapi_schema_type() for k, io in self._inputs.items()
-            },
+            "properties": {k: io.openapi_schema_type() for k, io in self._inputs.items()},
         }
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:

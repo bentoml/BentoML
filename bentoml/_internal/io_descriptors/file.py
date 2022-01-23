@@ -54,7 +54,7 @@ class File(IODescriptor[FileLike]):
 
 
     Args:
-        mime_type (`str`, `optional`, default to `None`):
+        mime_type (:code:`str`, `optional`, default to :code:`None`):
             Return MIME type of the :code:`starlette.response.Response`, only available
             when used as output descriptor
     Returns:

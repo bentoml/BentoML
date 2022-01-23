@@ -101,7 +101,8 @@ autodoc_mock_imports = [
     "xgboost",
 ]
 
-autodoc_typehints = "signature"
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -158,6 +159,7 @@ def setup(app):
     app.add_css_file("css/typeface/typeface.css")
     app.add_css_file("css/common.css")
     app.add_css_file("css/nav_patch.css")
+    app.add_css_file("css/notes_patch.css")
     app.add_css_file("css/bentoml.css")
 
     # Adding lexers for rendering different code version

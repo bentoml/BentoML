@@ -287,8 +287,10 @@ def projects(
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
-    .. note::
-        This is an **EXPERIMENTAL** API as a decision for this feature is subject to change. Use with care!
+    .. admonition:: btw
+       :class: customWarningFmt
+
+       This is an **EXPERIMENTAL** API as it is subjected to change. We are also looking for feedback.
 
     Examples:
 
@@ -349,9 +351,7 @@ def projects(
     _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
     if tasks == "clone":
         # TODO: update check for master or main branch
-        assert (
-            name is not None
-        ), "`name` of the template is required to clone a project."
+        assert name is not None, "`name` of the template is required to clone a project."
         _model.info.options["name"] = name
         assert isinstance(repo_or_store, str) and isinstance(branch, str)
         project_clone(

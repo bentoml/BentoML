@@ -109,7 +109,9 @@ We also offer :code:`import_from_paddlehub` which enables users to import model 
    module = bentoml.paddle.load(tag)
    assert module.sentiment_classify(texts=text)[0]["sentiment"] == "negative"
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **PaddlePaddle** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.paddle

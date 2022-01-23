@@ -45,7 +45,9 @@ Users can now use EasyOCR with BentoML with the following API: :code:`load`, :co
     runner = bentoml.easyocr.load_runner(tag)
     runner.run_batch(imarr)
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **EasyOCR** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.easyocr

@@ -34,7 +34,9 @@ Users can now use scikit-learn with BentoML with the following API: :code:`load`
    runner = bentoml.sklearn.load_runner(tag)
    runner.run([[1,2,3,4,5]])
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **scikit-learn** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 

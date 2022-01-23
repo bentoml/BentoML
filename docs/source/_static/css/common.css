@@ -5,17 +5,18 @@
     /* misc color */
     --nav-color: rgb(235,236,237);
     --toc-nested-color: rgb(227,227,227);
-    --sig-param-color: #52525b;
+    --sig-param-color: rgba(82,82,91, 0.45);
+    --link-color: rgba(236, 188, 188, 0.64);
     /* palette */
     --black: rgb(0,0,0);
     --white: rgb(255,255,255);
     --gray: rgba(155,154,151, 0.7);
     --red: rgb(224,62,62);
-    --green: rgb(77,171,154);
-    --blue: rgba(82,156,202,0.5);
+    --green: rgb(77,171,154, 0.4);
+    --blue: rgba(82,156,202,0.7);
     --yellow: rgb(254,184,0);
     --orange: rgb(251, 141, 104);
-    --light-orange: rgba(251, 141, 104, 0.1);
+    --light-orange: rgba(251, 141, 104, 0.7);
 }
 
 body {
@@ -31,9 +32,20 @@ h1 {
 h2,h3, h4, h5, h6, .rst-content .toctree-wrapper p.caption, legend {
     font-family: Calibre-Medium, sans-serif;
 }
+
 em {
     font-style: normal;
+    font-size: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--sig-param-color);
 }
+
+em.sig-param:hover .pre {
+    color: var(--white);
+    background-color: var(--black);
+
+}
+
 
 /* The one with copy button */
 a.copybtn {
@@ -42,7 +54,11 @@ a.copybtn {
 
 /* The one with links */
 a {
-    color: var(--orange);
+    color: var(--light-orange);
+}
+
+a:hover {
+    color: var(--black);
 }
 
 p {

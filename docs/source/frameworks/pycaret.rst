@@ -45,7 +45,9 @@ Users can now use PyCaret with BentoML with the following API: :code:`load`, :co
    runner = bentoml.pycaret.load_runner(tag)
    runner.run(pd.DataFrame("/path/to/csv"))
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **PyCaret** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.pycaret

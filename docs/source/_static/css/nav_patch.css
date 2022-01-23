@@ -97,8 +97,3 @@
 .wy-menu-vertical li.toctree-l3 span.toctree-expand{
     color: var(--black);
 }
-
-.wy-nav-content {
-    max-width: 1200px;
-    background-color: var(--white);
-}

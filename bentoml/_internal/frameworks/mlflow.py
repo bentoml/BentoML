@@ -337,22 +337,23 @@ def load_runner(
     Returns:
         :obj:`bentoml._internal.runner.Runner`: Runner instances loaded from `bentoml.mlflow`.
 
-    .. note::
-        Currently this is an instance of :obj:`bentoml._internal.frameworks.mlflow._PyFuncRunner` which is the base
-        runner. We recommend users to use the correspond frameworks' Runner implementation provided by BentoML for the best performance.
+    .. admonition:: btw
+       :class: customNotesFmt
 
-    .. note::
-        On our roadmap, the intention for this API is to load the coresponding framework runner automatically. For example:
+       Currently this is an instance of :obj:`bentoml._internal.frameworks.mlflow._PyFuncRunner` which is the base
+       runner. We recommend users to use the correspond frameworks' Runner implementation provided by BentoML for the best performance.
 
-        .. code-block:: python
+    On our roadmap, the intention for this API is to load the coresponding framework runner automatically. For example:
 
-            import bentoml
+    .. code-block:: python
 
-            # this tag `mlflow_pytorch` is imported from mlflow
-            # when user use `bentoml.mlflow.load_runner`, it should returns
-            # bentoml._internal.frameworks.pytorch.PyTorchRunner` instead
-            # and kwargs can be passed directly to `PyTorchRunner`
-            runner = bentoml.mlflow.load_runner("mlflow_pytorch", **kwargs)
+        import bentoml
+
+        # this tag `mlflow_pytorch` is imported from mlflow
+        # when user use `bentoml.mlflow.load_runner`, it should returns
+        # bentoml._internal.frameworks.pytorch.PyTorchRunner` instead
+        # and kwargs can be passed directly to `PyTorchRunner`
+        runner = bentoml.mlflow.load_runner("mlflow_pytorch", **kwargs)
 
     Examples:
 

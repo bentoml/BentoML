@@ -127,7 +127,9 @@ We also offer :code:`import_from_tfhub` which enables users to import model from
    # load model back with `load`:
    model = bentoml.tensorflow.load(tag, load_as_wrapper=True)
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **Tensorflow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.tensorflow

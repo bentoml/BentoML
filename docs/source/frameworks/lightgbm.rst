@@ -57,7 +57,9 @@ Users can now use LightGBM with BentoML with the following API: :code:`load`, :c
    runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
    runner.run(input_data)
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **LightGBM** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.lightgbm

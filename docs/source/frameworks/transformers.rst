@@ -45,7 +45,9 @@ We also offer :code:`import_from_huggingface_hub` which enables users to import 
    image = Image.open(requests.get(url, stream=True).raw)
    res = runner.run_batch(image)
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **Transformers** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.transformers

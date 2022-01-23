@@ -43,7 +43,9 @@ Users can now use XGBoost with BentoML with the following API: :code:`load`, :co
    # `load` the model back in memory:
    loaded = bentoml.xgboost.load("booster_tree")
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **XGBoost** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.xgboost

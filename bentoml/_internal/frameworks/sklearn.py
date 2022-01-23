@@ -60,7 +60,7 @@ def _get_model_info(tag: Tag, model_store: "ModelStore") -> t.Tuple["Model", Pat
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Union["BaseEstimator", "Pipeline"]:
     """
@@ -73,7 +73,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj::code:`Union[BaseEstimator, Pipeline]`: an instance of :obj:`sklearn` model from BentoML modelstore.
+        :obj:`Union[BaseEstimator, Pipeline]`: an instance of :obj:`sklearn` model from BentoML modelstore.
 
     Examples:
 
@@ -102,7 +102,7 @@ def save(
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (:code:`Union[BaseEstimator, Pipeline]`):
-            Instance of model to be saved
+            Instance of model to be saved.
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):

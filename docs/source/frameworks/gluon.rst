@@ -32,7 +32,9 @@ Users can now use MXNet Gluon with BentoML with the following API: :code:`load`,
    # `load` the model back in memory:
    loaded: gluon.Block = bentoml.gluon.load(tag)
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **MXNet Gluon** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.gluon

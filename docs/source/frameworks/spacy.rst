@@ -42,7 +42,9 @@ Users can now use SpaCy with BentoML with the following API: :code:`load`, :code
    runner = bentoml.spacy.load_runner("cancer_clf:latest")
    runner.run(cbt.Pool(input_data))
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **SpaCy** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.spacy

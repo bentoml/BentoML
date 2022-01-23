@@ -51,7 +51,9 @@ Users can now use H2O with BentoML with the following API: :code:`load`, :code:`
        init_params=dict(port=H2O_PORT),
    )
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **H2O** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.h2o

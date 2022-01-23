@@ -45,7 +45,9 @@ Users can now use CatBoost with BentoML with the following API: :code:`load`, :c
    runner = bentoml.catboost.load_runner("cancer_clf:latest")
    runner.run(cbt.Pool(input_data))
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **CatBoost** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.catboost

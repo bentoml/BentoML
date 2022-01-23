@@ -64,7 +64,9 @@ Users can now use Detectron2 with BentoML with the following API: :code:`load`, 
     res = runner.run_batch(image)
     runner.run_batch(imarr)
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **Detectron2** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.detectron

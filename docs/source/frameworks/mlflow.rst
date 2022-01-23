@@ -35,7 +35,9 @@ BentoML also offer :code:`import_from_uri` which enables users to import any MLF
     # uri can also be a S3 bucket
     s3_tag = bentoml.mlflow.import_from_uri("sklearn_clf_model", "s3://my_sklearn_model")
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **MLFlow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.mlflow

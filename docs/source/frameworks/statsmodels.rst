@@ -53,7 +53,9 @@ Users can now use statsmodels with BentoML with the following API: :code:`load`,
    runner = bentoml.statsmodels.load_runner(tag)
    runner.run(pd.DataFrame("/path/to/csv"))
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **statsmodels** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.statsmodels

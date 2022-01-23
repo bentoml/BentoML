@@ -77,7 +77,9 @@ Users can now use onnx-mlir with BentoML with the following API: :code:`load`, :
    runner = bentoml.onnxmlir.load_runner("compiled_model:latest")
    res = runner.run_batch(np.array([[1,2,3]]).astype(np.float64))
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **ONNX** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.onnxmlir

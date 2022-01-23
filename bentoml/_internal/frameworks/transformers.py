@@ -603,9 +603,11 @@ def save(
             Whether or not to delete incompletely received files. Will attempt to resume
             the download if such a file exists.
 
-    .. note::
-        Some parameters are direct port from :func:`from_pretrained` arguments. This is to
-        ensure that when doing :func:`save` operations we don't actually load the model class into memory
+    .. admonition:: btw
+       :class: customNotesFmt
+
+       Some parameters are direct port from :func:`from_pretrained` arguments. This is to
+       ensure that when doing :func:`save` operations we don't actually load the model class into memory
 
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
@@ -695,10 +697,12 @@ def import_from_huggingface_hub(
             Whether or not to delete incompletely received files. Will attempt to resume
             the download if such a file exists.
 
-    .. note::
-        some parameters are direct port from :func:`from_pretrained()` arguments. This
-        ensures that when doing :func:`save` operations we don't actually load the model
-        class into memory
+    .. admonition:: btw
+       :class: customNotesFmt
+
+       Some parameters are direct port from :func:`from_pretrained()` arguments. This
+       ensures that when doing :func:`save` operations we don't actually load the model
+       class into memory
 
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
@@ -837,11 +841,12 @@ def load_runner(
     maximize throughput. :func:`~bentoml.transformers.load_runner` implements a Runner class
     that wrap around a transformers pipeline, which optimize it for the BentoML runtime.
 
+    .. admonition:: btw
+       :class: customWarningFmt
 
-    .. warning::
-        `load_runner` will try to load the model from given `tag`. If the model does not
-        exists, then BentoML will fallback to initialize pipelines from transformers,
-        thus files will be loaded from huggingface cache.
+       `load_runner` will try to load the model from given `tag`. If the model does not
+       exists, then BentoML will fallback to initialize pipelines from transformers,
+       thus files will be loaded from huggingface cache.
 
 
     Args:

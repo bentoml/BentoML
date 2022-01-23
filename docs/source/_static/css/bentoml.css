@@ -1,6 +1,30 @@
 @import url("./common.css");
 @import url("./nav_patch.css");
+@import url("./notes_patch.css");
+@import url("./typeface/typeface.css");
 
+.wy-nav-content {
+    max-width: 1400px;
+    background-color: var(--white);
+}
+
+/* The one with literal code blocks */
+.rst-content code.literal, .rst-content tt.literal {
+    color: #52525b;
+    white-space: normal;
+    font-weight: 400;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-family: 'IBM Plex Mono';
+}
+
+/* The one with code block fonts */ 
+.rst-content .linenodiv pre, .rst-content div[class^=highlight] pre, .rst-content pre.literal-block {
+    font-family: "IBM Plex Mono",Menlo,Monaco,Consolas,monospace;
+    font-size: 14px;
+    line-height: 1.4;
+}
 
 /* Stacked quote block with animation */
 .rst-content .line-block {
@@ -57,17 +81,28 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
     display: table;
 }
 
-/* The one with the class header */
-html.writer-html4 .rst-content dl:not(.docutils)>dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)>dt {
-    display: table;
-    margin: 6px 0;
-    font-size: 20px;
-    line-height: normal;
-    background: var(--light-orange);
-    border-top: 3px solid var(--orange);
-    color: var(--orange);
-    padding: 6px;
+/*function box patch*/
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) {
+    margin-bottom: 24px;
+    width: auto;
+    line-height: 26px;
+    box-sizing: content-box;
+    display: inline-block;
+    margin: 0em 0em 2em 1em;
+    padding: 1em;
     position: relative;
+    border: solid 2px #757575;
+    background: white;
+    box-shadow: 8px 8px;
+    transition: perspective(1px) translateZ(0);
+    transition-duration: 0.3s;
+    transition-property: box-shadow;
+    -webkit-transition: perspective(1px) translateZ(0);
+    -webkit-transition-duration: 0.3s;
+    -webkit-transition-property: box-shadow;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):hover, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):focus, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):active {
+    box-shadow: 12px 12px;
 }
 
 html.writer-html5 .rst-content dl.field-list>dt, html.writer-html5 .rst-content dl.footnote>dt {
@@ -75,26 +110,17 @@ html.writer-html5 .rst-content dl.field-list>dt, html.writer-html5 .rst-content 
     padding-right: 5px;
 }
 
-/* Class introduction "class" string at beginning */
-.rst-content dl:not(.docutils) .property{
-    font-size: 18px;
-    color: black;
-}
-
-/* The one with literal code blocks */
-.rst-content code.literal, .rst-content tt.literal {
-    color: #52525b;
-    white-space: normal;
-    font-weight: 400;
-    border: none;
-    background: transparent;
-    font-size: 14px;
-    font-family: 'IBM Plex Mono';
-}
-
-/* The one with code block fonts */ 
-.rst-content .linenodiv pre, .rst-content div[class^=highlight] pre, .rst-content pre.literal-block {
-    font-family: "IBM Plex Mono",Menlo,Monaco,Consolas,monospace;
-    font-size: 14px;
-    line-height: 1.4;
+/* function definition box */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)>dt {
+    display: table;
+    line-height: normal;
+    font-size: 90%;
+    margin: 6px 0;
+    color: var(--sig-param-color);
+    background: none;
+    border-top: none;
+    position: relative;
+    background-image: gradient(to right, var(--gray), var(--white)) ;
+    padding: 0.035em;
+    border-radius: 5px;
 }

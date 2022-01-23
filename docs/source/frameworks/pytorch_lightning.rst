@@ -29,7 +29,9 @@ Users can now use PyTorch Lightning with BentoML with the following API: :code:`
    runner = bentoml.pytorch_lightning.load_runner(tag)
    runner.run_batch(torch.from_numpy(np.array([[1,2,3,4]])))
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **PyTorch Lightning** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 

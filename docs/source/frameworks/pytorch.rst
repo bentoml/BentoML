@@ -42,7 +42,9 @@ Users can now use PyTorch with BentoML with the following API: :code:`load`, :co
    runner = bentoml.pytorch.load_runner(tag)
    runner.run(pd.DataFrame("/path/to/csv"))
 
-.. note::
+.. admonition:: btw
+   :class: customNotesFmt
+
    You can find more examples for **PyTorch** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.pytorch

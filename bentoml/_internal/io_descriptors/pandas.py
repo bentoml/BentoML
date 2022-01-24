@@ -205,7 +205,9 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:
-                logger.warning("`dtype` is None or undefined, while `enforce_dtype`=True")
+                logger.warning(
+                    "`dtype` is None or undefined, while `enforce_dtype`=True"
+                )
             # TODO(jiang): check dtype
         res = pd.read_json(  # type: ignore[arg-type]
             obj,
@@ -227,7 +229,9 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 res.columns = pd.Index(self._columns)
         if self._enforce_shape:
             if self._shape is None:
-                logger.warning("`shape` is None or undefined, while `enforce_shape`=True")
+                logger.warning(
+                    "`shape` is None or undefined, while `enforce_shape`=True"
+                )
             else:
                 assert all(
                     left == right
@@ -460,7 +464,9 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:
-                logger.warning("`dtype` is None or undefined, while `enforce_dtype`=True")
+                logger.warning(
+                    "`dtype` is None or undefined, while `enforce_dtype`=True"
+                )
 
         # TODO(jiang): check dtypes when enforce_dtype is set
         res = pd.read_json(  # type: ignore[arg-type]
@@ -474,7 +480,9 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
 
         if self._enforce_shape:
             if self._shape is None:
-                logger.warning("`shape` is None or undefined, while `enforce_shape`=True")
+                logger.warning(
+                    "`shape` is None or undefined, while `enforce_shape`=True"
+                )
             else:
                 assert all(
                     left == right

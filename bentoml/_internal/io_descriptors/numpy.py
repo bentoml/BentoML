@@ -169,7 +169,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
     ) -> "ext.NpNDArray[t.Any]":
         if self._dtype is not None and self._dtype != obj.dtype:
             if self._enforce_dtype:
-                raise exception_cls(f"{self.__class__.__name__}: enforced dtype mismatch")
+                raise exception_cls(
+                    f"{self.__class__.__name__}: enforced dtype mismatch"
+                )
             try:
                 obj = obj.astype(self._dtype)  # type: ignore
             except ValueError as e:
@@ -177,7 +179,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
 
         if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
             if self._enforce_shape:
-                raise exception_cls(f"{self.__class__.__name__}: enforced shape mismatch")
+                raise exception_cls(
+                    f"{self.__class__.__name__}: enforced shape mismatch"
+                )
             try:
                 obj = obj.reshape(self._shape)
             except ValueError as e:

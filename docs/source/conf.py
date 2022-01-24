@@ -1,4 +1,7 @@
 import sys
+from datetime import datetime
+
+from pygments.lexers import PythonLexer
 
 # Adding BentoML source directory for accessing BentoML version
 import bentoml
@@ -6,7 +9,7 @@ import bentoml
 # -- Project information -----------------------------------------------------
 
 project = "BentoML"
-copyright = "2021, bentoml.org"
+copyright = f"2020-{datetime.now().year}, bentoml.org"
 author = "bentoml.org"
 version = bentoml.__version__
 
@@ -97,25 +100,14 @@ autodoc_mock_imports = [
     "xgboost",
 ]
 
-
-# Mock external libraries to avoid doc dependencies
-import mock
-import bentoml._internal.utils.pkg as pkg
-
-for mod_name in autodoc_mock_imports:
-    sys.modules[mod_name] = mock.MagicMock()
-    sys.modules[mod_name].__version__ = mock.Mock()
-    sys.modules[mod_name].__spec__ = mock.Mock()
-
-sys.modules['easyocr'].__version__ = "1.4"
-pkg.get_pkg_version = mock.MagicMock()
-    
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = "zenburn"
 
 # Remove the prompt when copying examples
 copybutton_prompt_text = r">>> |\.\.\.|» |$ "
@@ -141,5 +133,36 @@ html_static_path = ["_static"]
 spelling_word_list_filename = ["bentoml_wordlist.txt"]
 
 
+# -- Custom lexers
+class TensorflowV1Lexer(PythonLexer):
+    name = "Tensorflow V1"
+    aliases = ["tensorflow_v1"]
+
+
+class TensorflowV2Lexer(PythonLexer):
+    name = "Tensorflow V2"
+    aliases = ["tensorflow_v2"]
+
+
+class KerasTensorflowV1Lexer(PythonLexer):
+    name = "Keras (Tensorflow V1 backend)"
+    aliases = ["keras_v1"]
+
+
+class KerasTensorflowV2Lexer(PythonLexer):
+    name = "Keras (Tensorflow V2 backend)"
+    aliases = ["keras_v2"]
+
+
 def setup(app):
+    app.add_css_file("css/typeface/typeface.css")
+    app.add_css_file("css/common.css")
+    app.add_css_file("css/nav_patch.css")
+    app.add_css_file("css/notes_patch.css")
     app.add_css_file("css/bentoml.css")
+
+    # Adding lexers for rendering different code version
+    app.add_lexer("keras_v1", KerasTensorflowV1Lexer)
+    app.add_lexer("keras_v2", KerasTensorflowV2Lexer)
+    app.add_lexer("tensorflow_v1", TensorflowV1Lexer)
+    app.add_lexer("tensorflow_v2", TensorflowV2Lexer)

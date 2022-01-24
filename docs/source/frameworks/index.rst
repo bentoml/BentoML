@@ -25,11 +25,11 @@ repository.
   gluon
   h2o
   lightgbm
-  pycaret
+  catboost
   spacy
+  pycaret
   statsmodels
   easyocr
-  catboost
   detectron
 
 

@@ -8,7 +8,7 @@ source ./scripts/ci/helpers.sh
 
 INFO "(black) Formatting codebase..."
 
-black --config ./pyproject.toml bentoml/ tests/ docker/
+black --config ./pyproject.toml bentoml/ tests/ docker/ docs/
 
 INFO "(isort) Reordering imports..."
 

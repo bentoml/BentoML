@@ -19,7 +19,7 @@ async def test_customized_route(host):
 
     def path_in_docs(response_body):
         d = json.loads(response_body.decode())
-        return f"/{CUSTOM_ROUTE}" in d['paths']
+        return f"/{CUSTOM_ROUTE}" in d["paths"]
 
     await pytest.assert_request(
         "GET",
@@ -33,7 +33,7 @@ async def test_customized_route(host):
         f"http://{host}/{CUSTOM_ROUTE}",
         headers=(("Content-Type", "application/json"),),
         data=json.dumps("hello"),
-        assert_data=bytes('"hello"', 'ascii'),
+        assert_data=bytes('"hello"', "ascii"),
     )
 
 
@@ -61,7 +61,19 @@ async def test_cors(host):
         assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
         return True
 
-    await pytest.assert_request(
+    await pytest.assert_request(  # assert preflight requests works
+        "OPTIONS",
+        f"http://{host}/echo_json",
+        headers=(
+            ("Content-Type", "application/json"),
+            ("Origin", ORIGIN),
+            ("Access-Control-Request-Method", "POST"),
+            ("Access-Control-Request-Headers", "content-type"),
+        ),
+        assert_status=200,
+    )
+
+    await pytest.assert_request(  # assert cors works
         "POST",
         f"http://{host}/echo_json",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
@@ -76,18 +88,18 @@ async def test_cors(host):
     "metrics",
     [
         pytest.param(
-            '_mb_request_duration_seconds_count',
+            "_mb_request_duration_seconds_count",
             marks=pytest.mark.skipif(
                 psutil.MACOS, reason="microbatch metrics is not shown in MacOS tests"
             ),
         ),
         pytest.param(
-            '_mb_request_total',
+            "_mb_request_total",
             marks=pytest.mark.skipif(
                 psutil.MACOS, reason="microbatch metrics is not shown in MacOS tests"
             ),
         ),
-        '_request_duration_seconds_bucket',
+        "_request_duration_seconds_bucket",
     ],
 )
 async def test_api_server_metrics(host, metrics):

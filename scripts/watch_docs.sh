@@ -5,19 +5,21 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 # make sure to kill the python server when existing the script
 trap 'kill $(jobs -p)' EXIT
 
-echo "Initial docs build..."
+echo "removing previous build and make a new one.."
 cd "$GIT_ROOT"/docs
 make clean && make html
+
+
 
 echo "Starting local http server for preview..."
 python3 -m http.server --directory "$GIT_ROOT"/docs/build/html &
 
 echo "Open browser..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  open -a "Google Chrome" http://0.0.0.0:8000/
   fswatch -o "$GIT_ROOT/docs/source" "$GIT_ROOT/bentoml" | while read -r; do
     echo "Change detected, rebuilding docs..."
-    cd "$GIT_ROOT"/docs && make clean html
+    cd "$GIT_ROOT"/docs
+    make clean && make html
 
     # refresh page
     osascript -e '

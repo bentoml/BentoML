@@ -168,7 +168,7 @@ module or the `models push` CLI command.
 
 .. tabs::
 
-    .. code-tabs:: python 
+    .. code-tab:: python 
 
         import bentoml.models
 
@@ -186,7 +186,7 @@ store with the `pull()` function under the `bentoml.models` module or the `model
 
 .. tabs::
 
-    .. code-tabs:: python 
+    .. code-tab:: python 
 
         import bentoml.models
 

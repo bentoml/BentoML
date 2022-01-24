@@ -1,0 +1,61 @@
+@import url("./common.css");
+
+.rst-content .customnotesfmt .admonition-title {
+    background: transparent;
+    color: transparent;
+    margin: -20px -10px;
+    padding: 10px;
+}
+ 
+.rst-content .customnotesfmt {
+    border-radius: 3rem;
+    border: 1px solid var(--gray);
+    width: 70%;
+    text-align: center;
+    line-height: 26px;
+    box-sizing: content-box;
+    display: inline-block;
+    position: relative;
+    background: var(--green);
+    box-shadow: -8px 8px;
+    transition: perspective(1px) translateZ(0);
+    transition-duration: 0.3s;
+    transition-property: box-shadow;
+    -webkit-transition: perspective(1px) translateZ(0);
+    -webkit-transition-duration: 0.3s;
+    -webkit-transition-property: box-shadow;
+ }
+
+.rst-content .customnotesfmt:hover, .rst-content .customnotesfmt:focus, .rst-content .customnotesfmt:active {
+    box-shadow: -14px 14px;
+}
+
+.rst-content .customwarningfmt .admonition-title {
+    background: transparent;
+    color: transparent;
+    margin: -20px -10px;
+    padding: 10px;
+}
+ 
+.rst-content .customwarningfmt {
+    border-radius: 3rem;
+    border: 1px solid var(--gray);
+    width: 70%;
+    text-align: center;
+    line-height: 26px;
+    box-sizing: content-box;
+    display: inline-block;
+    position: relative;
+    background: var(--orange);
+    box-shadow: -8px 8px;
+    transition: perspective(1px) translateZ(0);
+    transition-duration: 0.3s;
+    transition-property: box-shadow;
+    -webkit-transition: perspective(1px) translateZ(0);
+    -webkit-transition-duration: 0.3s;
+    -webkit-transition-property: box-shadow;
+ }
+
+.rst-content .customwarningfmt:hover, .rst-content .customwarningfmt:focus, .rst-content .customwarningfmt:active {
+    box-shadow: -14px 14px;
+}

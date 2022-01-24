@@ -19,12 +19,12 @@ master_doc = "index"
 
 # Sphinx extensions
 extensions = [
+    "sphinx_tabs.tabs",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx_click.ext",
     "sphinx_copybutton",
-    "sphinx_tabs.tabs",
     "recommonmark",
     "sphinxcontrib.spelling",
 ]
@@ -34,6 +34,8 @@ napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
 todo_include_todos = True
+
+sphinx_tabs_disable_css_loading = True
 
 # mock any heavy imports, eg: imports from frameworks library
 autodoc_mock_imports = [
@@ -107,9 +109,9 @@ for mod_name in autodoc_mock_imports:
     sys.modules[mod_name].__version__ = mock.Mock()
     sys.modules[mod_name].__spec__ = mock.Mock()
 
-sys.modules['easyocr'].__version__ = "1.4"
+sys.modules["easyocr"].__version__ = "1.4"
 pkg.get_pkg_version = mock.MagicMock()
-    
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -121,15 +123,14 @@ pygments_style = None
 copybutton_prompt_text = r">>> |\.\.\.|» |$ "
 copybutton_prompt_is_regexp = True
 
-# Exclude directory pattern
-exclude_patterns = ["guides/configs/*.md"]
-
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    # "collapse_navigation": True,
+    "collapse_navigation": False,
+    "sticky_navigation": False,
     "logo_only": True,
     "display_version": True,
+    "navigation_depth": -1,
 }
 
 html_logo = "_static/img/bentoml-removebg.png"
@@ -142,4 +143,9 @@ spelling_word_list_filename = ["bentoml_wordlist.txt"]
 
 
 def setup(app):
+    app.add_css_file("css/typeface/typeface.css")
+    app.add_css_file("css/common.css")
+    app.add_css_file("css/nav_patch.css")
+    app.add_css_file("css/notes_patch.css")
+    app.add_css_file("css/tabs.css")
     app.add_css_file("css/bentoml.css")

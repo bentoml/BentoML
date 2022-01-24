@@ -1,0 +1,100 @@
+@import url("./common.css");
+
+
+/* -------------------------------------------------------------------------------------------------------------------*/
+/* Nav related patch */
+
+.wy-side-nav-search {
+    padding-top: 0;
+    background-color: var(--nav-color);
+}
+
+/* The one above the toc tree */
+.wy-side-nav-search>div.version {
+    color: var(--black);
+}
+
+.wy-side-nav-search input[type=text] {
+    width: 100%;
+    border-radius: 0;
+    padding: 6px 12px;
+    border: 3px solid inherit;
+    border-color: var(--gray);
+}
+
+/* The one with the toc tree */
+.wy-nav-side {
+    background: var(--nav-color);
+}
+
+.wy-side-scroll {
+    width: -moz-fit-content;
+    font-size: 19px;
+}
+
+/* The one with the fonts */
+.wy-menu-vertical a {
+    color: var(--black);
+    font-family: Calibre-Light, sans-serif;
+}
+
+.wy-menu-vertical header {
+    color: var(--black);
+    font-family: Calibre-Light, sans-serif;
+}
+
+/* The one with the text color in each toctree block */
+.wy-menu-vertical li.toctree-l2 a, .wy-menu-vertical li.toctree-l3 a, .wy-menu-vertical li.toctree-l4 a {
+    color: var(--black);
+}
+
+/* The one with toc tree section headers */
+.wy-menu-vertical li.current>a, .wy-menu-vertical li.on a {
+    color: #404040;
+    font-weight: 700;
+    position: relative;
+    background: var(--blue);
+}
+
+/* The selected items in the toc tree */
+.wy-menu-vertical li.current {
+    background-color: var(--toc-nested-color);
+}
+
+/* The one with all the hover */
+.wy-menu-vertical li a:hover{
+    background-color: var(--yellow);
+}
+.wy-menu-vertical li.toctree-l1 a:hover{
+    background: var(--light-orange);
+}
+.wy-menu-vertical li.toctree-l2 a:hover {
+    background: var(--light-orange);
+}
+.wy-menu-vertical li.toctree-l3 a:hover {
+    background: var(--light-orange);
+}
+.wy-menu-vertical li.toctree-l4 a:hover {
+    background: var(--light-orange);
+}
+
+/* The one with depth-2 selected toc tree block */
+.wy-menu-vertical li.toctree-l2.current>a {
+    background-color: var(--toc-nested-color);
+}
+.wy-menu-vertical li.toctree-l2.current li.toctree-l3>a {
+    --gray: rgba(155,154,151,0.3);
+    background-color: var(--gray);
+}
+
+/* The one with depth-3 selected toc tree block */
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4>a{
+    background-color: var(--gray);
+}
+
+/* Expand button */
+.wy-menu-vertical li.toctree-l2 span.toctree-expand,
+.wy-menu-vertical li.on a span.toctree-expand, .wy-menu-vertical li.current>a span.toctree-expand,
+.wy-menu-vertical li.toctree-l3 span.toctree-expand{
+    color: var(--black);
+}

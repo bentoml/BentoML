@@ -1,19 +1,6 @@
-/* DOM objects */
-:root {
-    /* misc color */
-    --nav-color: rgb(235,236,237);
-    --toc-nested-color: rgb(227,227,227);
-    /* palette */
-    --black: rgb(0,0,0);
-    --white: rgb(255,255,255);
-    --gray: rgba(155,154,151, 0.7);
-    --red: rgb(224,62,62);
-    --green: rgb(77,171,154);
-    --blue: rgba(82,156,202,0.5);
-    --yellow: rgb(254,184,0);
-    --orange: rgb(251, 141, 104);
-    --light-orange: rgba(251, 141, 104, 0.1);
-}
+@import url("./nav_patch.css");
+@import url("./notes_patch.css");
+@import url("./typeface/typeface.css");
 
 body {
     font-family: Calibre, sans-serif;
@@ -226,26 +213,14 @@ html.writer-html5 .rst-content dl.field-list>dt, html.writer-html5 .rst-content 
     background: #f0f0f0;
     color: #555;
     display: table;
-}
-
-/* The one with literal code blocks */
-.rst-content tt.literal, .rst-content tt.literal, .rst-content code.literal {
-    color: var(--red);
-}
-
-/* Class introduction "class" string at beginning */
-.rst-content dl:not(.docutils) .property {
-    font-size: 18px;
-    color: black;
-}
-
-/* class and method names in doc */
-.rst-content dl:not(.docutils) tt.descname, .rst-content dl:not(.docutils) tt.descclassname, .rst-content dl:not(.docutils) tt.descname, .rst-content dl:not(.docutils) code.descname, .rst-content dl:not(.docutils) tt.descclassname, .rst-content dl:not(.docutils) code.descclassname {
-    font-family: Calibre, sans-serif;
-    font-size: 21px !important;
-}
-
-/* Method and class parameters */
-.sig-param {
-    line-height: 23px;
+    line-height: normal;
+    font-size: 90%;
+    margin: 6px 0;
+    color: var(--sig-param-color);
+    background: none;
+    border-top: none;
+    position: relative;
+    background-image: gradient(to right, var(--gray), var(--white)) ;
+    padding: 0.035em;
+    border-radius: 5px;
 }

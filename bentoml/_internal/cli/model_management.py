@@ -113,13 +113,13 @@ def add_model_management_commands(
             table.add_column("Path")
             table.add_column("Size")
             table.add_column("Creation Time")
-            for bento in res:
+            for model in res:
                 table.add_row(
-                    bento["tag"],
-                    bento["module"],
-                    bento["path"],
-                    bento["size"],
-                    bento["creation_time"],
+                    model["tag"],
+                    model["module"],
+                    model["path"],
+                    model["size"],
+                    model["creation_time"],
                 )
             console = Console()
             console.print(table)
@@ -156,13 +156,13 @@ def add_model_management_commands(
 
             for model in to_delete_models:
                 if yes:
-                    if_delete = True
+                    delete_confirmed = True
                 else:
-                    if_delete = click.confirm(f"delete bento {model.tag}?")
+                    delete_confirmed = click.confirm(f"delete model {model.tag}?")
 
-                if if_delete:
-                    click.echo(f"deleting bento {model.tag}")
+                if delete_confirmed:
                     model_store.delete(model.tag)
+                    click.echo(f"{model.tag} deleted")
 
         for target in delete_targets:
             delete_target(target)

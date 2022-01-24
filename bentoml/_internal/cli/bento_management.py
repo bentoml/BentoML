@@ -154,13 +154,13 @@ def add_bento_management_commands(
 
             for bento in to_delete_bentos:
                 if yes:
-                    if_delete = True
+                    delete_confirmed = True
                 else:
-                    if_delete = click.confirm(f"delete bento {bento.tag}?")
+                    delete_confirmed = click.confirm(f"delete bento {bento.tag}?")
 
-                if if_delete:
-                    click.echo(f"deleting bento {bento.tag}")
+                if delete_confirmed:
                     bento_store.delete(bento.tag)
+                    click.echo(f"{bento.tag} deleted")
 
         for target in delete_targets:
             delete_target(target)

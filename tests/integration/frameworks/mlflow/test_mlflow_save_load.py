@@ -4,9 +4,9 @@ from pathlib import Path
 import numpy as np
 import psutil
 import pytest
+import mlflow.sklearn
 
 import bentoml
-import mlflow.sklearn
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data
@@ -41,7 +41,9 @@ def test_mlflow_save_load(modelstore):
     uri = Path(current_file, "sklearn_clf")
     if not uri.exists():
         mlflow.sklearn.save_model(model, uri.resolve())
-    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri.resolve()), model_store=modelstore)
+    tag = bentoml.mlflow.import_from_uri(
+        MODEL_NAME, str(uri.resolve()), model_store=modelstore
+    )
     model_info = modelstore.get(tag)
     assert_have_file_extension(os.path.join(model_info.path, "sklearn_clf"), ".pkl")
 

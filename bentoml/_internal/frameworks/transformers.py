@@ -263,13 +263,13 @@ def load(
         #  google/bert_uncased-L-2-H-128-A-2
         t_model = _load_autoclass(framework, lm_head).from_pretrained(
             model.path,
-            config=config,
+            # config=config,
             **kwargs,
         )
     except (AttributeError, BentoMLException):  # noqa
         t_model = getattr(import_module("transformers"), _model).from_pretrained(
             model.path,
-            config=config,
+            # config=config,
             from_tf=from_tf,
             from_flax=from_flax,
             **kwargs,

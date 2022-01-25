@@ -20,17 +20,18 @@ BentoML is distributed as a Python package and can be installed from PyPI:
 
     pip install bentoml --pre
 
-** BentoML 1.0 is still under preview release, thus :code:`--pre` flag is required.
+** The :code:`--pre` flag is required as BentoML 1.0 is still a preview release
 
 Save Models
 -----------
 
-We start with saving a trained model instance to BentoML's local 
-:ref:`model store <bento-management-page>`. 
-If models are already saved to file, they can also be brought to BentoML with the 
+We begin by saving a trained model instance to BentoML's local
+:ref:`model store <bento-management-page>`.
+If models you wish to use are already saved to disk, they can also be added to BentoML with the
 :ref:`import APIs <bento-management-page>`.
 
 .. code-block:: python
+    import bentoml
 
     from sklearn import svm
     from sklearn import datasets
@@ -44,34 +45,37 @@ If models are already saved to file, they can also be brought to BentoML with th
     clf.fit(X, y)
 
     bentoml.sklearn.save("iris_clf", clf)
-    # [INFO] Scikit-learn model 'iris_clf:yftvuwkbbbi6zcphca6rzl235' is successfully saved to BentoML local model store under "~/bentoml/models/iris_clf/yftvuwkbbbi6zcphca6rzl235"
+    # [08:34:16 AM] INFO     Successfully saved Model(tag="iris_clf:svcryrt5xgafweb5",
+    #                        path="/home/user/bentoml/models/iris_clf/svcryrt5xgafweb5/")
+    # Tag(name='iris_clf', version='svcryrt5xgafweb5')
 
-The :ref:`ML framework specific API <frameworks-page>`, `bentoml.sklearn.save()`, will save the Iris Classifier to a 
-local model store managed by BentoML. And the `load_runner()` API can be used to load this model into a Runner:
+The :ref:`ML framework specific API <frameworks-page>`, :code:`bentoml.sklearn.save()`, will save
+the Iris Classifier to a local model store managed by BentoML. You can then load the runner for this
+model with the :code:`load_runner()` API:
 
 .. code-block:: python
 
     iris_clf_runner = bentoml.sklearn.load_runner("iris_clf:latest")
-    iris_clf_runner.run(np.ndarray([5.9, 3. , 5.1, 1.8]))
+    iris_clf_runner.run(np.array([5.9, 3. , 5.1, 1.8]))
 
-Models can also be managed via the `bentoml models` CLI command, see `bentoml models --help` for more.
+Models can also be managed via the :code:`bentoml models` CLI command. For more information use
+:code:`bentoml models --help`.
 
 .. code-block:: bash
 
     > bentoml models list iris_clf
 
-    TAG                                FRAMEWORK    CREATED
-    iris_clf:yftvuwkbbbi6zcphca6rzl235 ScikitLearn  2021/9/19 10:13:35
+    Tag                        Module           Path                                                 Size      Creation Time
+    iris_clf:svcryrt5xgafweb5  bentoml.sklearn  /home/user/bentoml/models/iris_clf/svcryrt5xgafweb5  5.81 KiB  2022-01-25 08:34:16
 
 .. _define-and-debug-service-section:
 
 Define and Debug Services
 -------------------------
 
-Services are the core components of BentoML where the serving logic is defined. With the model saved in the model store, 
-we can define the :ref:`service <service-definition-page>` by creating a Python file `bento.py` in the working directory 
-with the following contents. In the example below, we defined `numpy.ndarray` as the input and output type. More options 
-like `pandas.dataframe` and `PIL.image` are also supported IO types, see @API and IO Descriptors.
+Services are the core components of BentoML, where the serving logic is defined. With the model
+saved in the model store, we can define the :ref:`service <service-definition-page>` by creating a
+Python file :code:`bento.py` with the following contents:
 
 .. code-block:: python
 
@@ -96,20 +100,29 @@ like `pandas.dataframe` and `PIL.image` are also supported IO types, see @API an
         # Define post-processing logic
         return result
 
-We now have everything needed to serve our first request, launch the server in debug mode by running the `bentoml serve` 
-command in the current working directory. Using the `--reload` option allows the server to reflect any change in the 
-`bento.py` module without restarting the server.
+In this example, we defined the input and output type to be :code:`numpy.ndarray`. More options, such as
+:code:`pandas.DataFrame` and :code:`PIL.image` are also supported. To see all supported options, see
+:ref:`API and IO Descriptors <api-io-descriptors>`.
+
+We now have everything we need to serve our first request. Launch the server in debug mode by
+running the :code:`bentoml serve` command in the current working directory. Using the
+:code:`--reload` option allows the server to reflect any changes made to the :code:`bento.py` module
+without restarting:
 
 .. code-block:: bash
 
     > bentoml serve ./bento.py:svc --reload
 
-    (Press CTRL+C to quit)
-    [INFO] Starting BentoML API server in development mode with auto-reload enabled
-    [INFO] Serving BentoML Service "iris_classifier" defined in "bento.py"
-    [INFO] API Server running on http://127.0.0.1:5000
+    [10:18:42 AM] INFO     Starting development BentoServer from "./bento.py:svc"
+    [10:18:42 AM] INFO     Service imported from source: bentoml.Service(name="iris_classifier", import_str="bento:svc", working_dir="/home/user/devel/bentoml-quickstart")
+    [10:18:42 AM] INFO     Will watch for changes in these directories: ['/home/user/devel/bentoml-quickstart']                                                              config.py:334
+                  INFO     Uvicorn running on http://127.0.0.1:5000 (Press CTRL+C to quit)                                                                                   config.py:554
+                  INFO     Started reloader process [97796] using statreload                                                                                              basereload.py:56
+    [10:18:43 AM] INFO     Started server process [97808]                                                                                                                     server.py:84
+                  INFO     Waiting for application startup.                                                                                                                       on.py:45
+                  INFO     Application startup complete.                                                                                                                          on.py:59
 
-We can send requests to the newly started service with any clients.
+We can then send requests to the newly started service with any HTTP client:
 
 .. tabs::
 
@@ -119,68 +132,89 @@ We can send requests to the newly started service with any clients.
         requests.post(
             "http://127.0.0.1:5000/predict",
             headers={"content-type": "application/json"},
-            data="[[5,4,3,2]]").text
+            data="[5,4,3,2]").text
 
     .. code-tab:: bash
 
         > curl \
-        -X POST \
-        -H "content-type: application/json" \
-        --data "[[5, 4, 3, 2]]" \
-        http://127.0.0.1:5000/predict
+          -X POST \
+          -H "content-type: application/json" \
+          --data "[5,4,3,2]" \
+          http://127.0.0.1:5000/predict
 
 .. _build-and-deploy-bentos:
 
 Build and Deploy Bentos
 -----------------------
 
-Once we are happy with the service definition, we can :ref:`build <building-bentos-page>` the model and service into a bento. 
-Bentos are the distribution format of the service that can be deployed and contains all the information required for running 
-the service, from models to the dependencies.
+Once we are happy with the service definition, we can build the model and service into a
+bento. Bentos are the distribution format for services, and contains all the information required to
+run or deploy those services, such as models and dependencies. For more information about building
+bentos, see :ref:`Building Bentos <building-bentos-page>`.
 
-To build a Bento, first create a `bentofile.yaml` in your project directory:
+To build a Bento, first create a :code:`bentofile.yaml` in your project directory:
 
 .. code-block:: yaml
 
      # bentofile.yaml
-    service: "iris_classifier:svc"
+    service: "bento.py:svc"
     include:
      - "*.py"
     python:
       packages:
        - scikit-learn
 
-Next, use the `bentoml build` CLI command in the same directory to build a bento.
+Next, use the :code:`bentoml build` CLI command in the same directory to build a bento.
 
 .. code-block:: bash
 
     > bentoml build
-    
-    [INFO] Building BentoML Service "iris_classifier" with models "iris_clf:yftvuwkbbbi6zcphca6rzl235"
-    [INFO] Bento is successfully built and saved to ~/bentoml/bentos/iris_classifier/v5mgcacfgzi6zdz7vtpeqaare
 
-Bentos built will be saved in the local :ref:`bento store <bento-management-page>`, which we can view via the `bentoml list` CLI command.
+    [10:25:51 AM] INFO     Building BentoML service "iris_classifier:foereut5zgw3ceb5" from build context "/home/user/devel/bentoml-quickstart"
+                  INFO     Packing model "iris_clf:svcryrt5xgafweb5" from "/home/user/bentoml/models/iris_clf/svcryrt5xgafweb5"
+                  INFO
+                           ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+                           ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+                           ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+                           ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+                           ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+                           ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+
+                  INFO     Successfully built Bento(tag="iris_classifier:foereut5zgw3ceb5") at "/home/user/bentoml/bentos/iris_classifier/foereut5zgw3ceb5/"
+
+Bentos built will be saved in the local :ref:`bento store <bento-management-page>`, which you can
+view using the :code:`bentoml list` CLI command.
 
 .. code-block:: bash
 
     > bentoml list
-    TAG                                        CREATED
-    iris_classifier:v5mgcacfgzi6zdz7vtpeqaare  2021/09/19 10:15:50
 
-We can serve bentos from the bento store using the `bentoml serve --production` CLI command. Using the `--production` option allows 
-serving the bento in production mode.
+    Tag                               Service    Path                                                          Size       Creation Time
+    iris_classifier:foereut5zgw3ceb5  bento:svc  /home/user/bentoml/bentos/iris_classifier/foereut5zgw3ceb5  13.97 KiB  2022-01-25 10:25:51
+
+We can serve bentos from the bento store using the :code:`bentoml serve --production` CLI
+command. Using the :code:`--production` option will serve the bento in production mode.
 
 .. code-block:: bash
 
-    > bentoml serve iris_classifier_service:latest --production
+    > bentoml serve iris_classifier:latest --production
 
-    (Press CTRL+C to quit)
-    [INFO] Starting BentoML API server in production mode
-    [INFO] Serving BentoML Service "iris_classifier_service"
-    [INFO] API Server running on http://0.0.0.0:5000
+    [09:04:18 PM] INFO     Starting production BentoServer from "iris_classifier:latest"
+                  INFO     Service loaded from Bento store: bentoml.Service(tag="iris_classifier:2qcg23t5zgzlseb5", path="/home/user/bentoml/bentos/iris_classifier/2qcg23t5zgzlseb5")
+    [09:04:19 PM] INFO     Service loaded from Bento store: bentoml.Service(tag="iris_classifier:2qcg23t5zgzlseb5", path="/home/user/bentoml/bentos/iris_classifier/2qcg23t5zgzlseb5")
+    [09:04:19 PM] INFO     Service loaded from Bento store: bentoml.Service(tag="iris_classifier:2qcg23t5zgzlseb5", path="/home/user/bentoml/bentos/iris_classifier/2qcg23t5zgzlseb5")
+    [09:04:19 PM] INFO     Started server process [28395]                                                                                                                     server.py:84
+                  INFO     Waiting for application startup.                                                                                                                       on.py:45
+    [09:04:19 PM] INFO     Started server process [28396]                                                                                                                     server.py:84
+                  INFO     Waiting for application startup.                                                                                                                       on.py:45
+                  INFO     Application startup complete.                                                                                                                          on.py:59
+                  INFO     Uvicorn running on http://0.0.0.0:5000 (Press CTRL+C to quit)                                                                                     server.py:222
+                  INFO     Application startup complete.                                                                                                                          on.py:59
+                  INFO     Uvicorn running on socket /run/user/1000/tmpy16ao7fo/140574878932496.sock (Press CTRL+C to quit)                                                  server.py:191
 
-Lastly, we can :ref:`containerize bentos as Docker images <containerize-bentos-page>` using the `bentoml container` CLI command and manage 
-Bentos at scale using the :ref:`model and bento management <bento-management-page>` service.
+Lastly, we can :ref:`containerize bentos as Docker images <containerize-bentos-page>` using the
+:code:`bentoml container` CLI command and manage bentos at scale using the
+:ref:`model and bento management <bento-management-page>` service.
 
 Further Reading
 ---------------
@@ -190,4 +224,3 @@ Further Reading
 - :ref:`Building Bentos <building-bentos-page>`
 
 .. spelling::
-

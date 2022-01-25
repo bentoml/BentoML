@@ -1,4 +1,3 @@
-from types import GeneratorType
 import typing as t
 
 from .runner import Runner
@@ -41,11 +40,6 @@ class LocalRunner(RunnerImpl):
                 batch_result,
                 batch_axis=self._runner.batch_options.output_batch_axis,
             )
-            if isinstance(single_results, GeneratorType):
-                # A runner may mistakenly return a generator, causing 
-                # indexing & pickling errors downstream.
-                single_results = list(single_results)
-
             return single_results[0]
 
         if isinstance(self._runner, SimpleRunner):

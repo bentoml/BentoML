@@ -1,6 +1,7 @@
 import abc
 import pickle
 import typing as t
+from types import GeneratorType
 from typing import TYPE_CHECKING
 
 from simple_di import inject
@@ -244,6 +245,8 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         cls, batch: t.List[t.Any], batch_axis: int = 0
     ) -> t.List[t.Any]:
         assert batch_axis == 0
+        if isinstance(batch, GeneratorType):
+            batch = list(batch)
         return batch
 
     @classmethod
@@ -341,7 +344,10 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def batch_to_singles(cls, batch: t.Any, batch_axis: int = 0) -> t.List[t.Any]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        return container_cls.batch_to_singles(batch, batch_axis=batch_axis)
+        ret = container_cls.batch_to_singles(batch, batch_axis=batch_axis)
+        if isinstance(ret, GeneratorType):
+            ret = list(ret)  # Ensure the result is a list
+        return ret
 
     @classmethod
     def single_to_payload(cls, single: SingleType) -> Payload:  # type: ignore[override]

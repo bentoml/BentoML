@@ -96,7 +96,8 @@ mlflow:
   override_name_or_path: mlflow
   dependencies:
     - "mlflow"
-    - "scikit-learn"
+  external_scripts: |
+    python -m pip install -U scikit-learn
 
 onnx:
   <<: *tmpl
@@ -169,6 +170,7 @@ spacy:
     - "tensorflow==2.6.0"
   external_scripts: |
     python -m spacy download en_core_web_sm
+    python -m pip install "typing_extensions>=3.10"
 
 statsmodels:
   <<: *tmpl

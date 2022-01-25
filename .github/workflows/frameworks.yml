@@ -662,7 +662,7 @@ jobs:
           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
           pip install -e .
           pip install -r requirements/tests-requirements.txt
-          make tests-onnxmlir
+          USE_VERBOSE=true make tests-onnxmlir vvv
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnxmlir == 'true' }}

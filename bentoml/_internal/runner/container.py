@@ -375,7 +375,10 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     @abc.abstractmethod
     def batch_to_payload(cls, batch: BatchType) -> Payload:  # type: ignore[override]
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        return container_cls.batch_to_payload(batch)
+        ret = container_cls.batch_to_payload(batch)
+        if isinstance(ret, GeneratorType):
+            ret = list(ret)  # Ensure the result is a list
+        return ret
 
     @classmethod
     def payloads_to_batch(cls, payload_list: t.Sequence[Payload], batch_axis: int = 0):
@@ -391,4 +394,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         batch_axis: int = 0,
     ) -> t.List[Payload]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        return container_cls.batch_to_payloads(batch, batch_axis=batch_axis)
+        ret = container_cls.batch_to_payloads(batch, batch_axis=batch_axis)
+        if isinstance(ret, GeneratorType):
+            ret = list(ret)  # Ensure the result is a list
+        return ret

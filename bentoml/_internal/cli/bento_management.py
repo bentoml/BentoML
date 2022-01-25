@@ -1,7 +1,5 @@
-import os
 import sys
 import json
-import tarfile
 from typing import TYPE_CHECKING
 
 import yaml

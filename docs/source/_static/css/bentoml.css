@@ -24,6 +24,12 @@
     grid-template-columns: max-content auto;
 }
 
+.py.function dl dl dt, .py.class dl dl dt, .py.method dl dl dt {
+    border-left: none;
+    background: transparent;
+    color: var(--gray);
+}
+
 .py.class dt span, .py.function dt span, .py.method dt span {
     font-family: "IBM Plex Mono",monospace;
 }

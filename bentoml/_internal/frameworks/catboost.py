@@ -104,8 +104,8 @@ def load(
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
-            Parameters for a CatBoost model. Following parameters can be specified:
+        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): Parameters for
+            a CatBoost model. Following parameters can be specified:
                 - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -295,8 +295,8 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (:code:`str`, default to :code:`predict`):
             Options for inference functions. `predict` are the default function.
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
-            Parameters for a CatBoost model. Following parameters can be specified:
+        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): Parameters for
+            a CatBoost model. Following parameters can be specified:
                 - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
         resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.

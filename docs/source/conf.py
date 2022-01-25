@@ -111,7 +111,7 @@ templates_path = ["_templates"]
 pygments_style = "zenburn"
 
 # Remove the prompt when copying examples
-copybutton_prompt_text = r">>> |\.\.\.|» |$ "
+copybutton_prompt_text = r">>> |\.\.\.|» |$ |% "
 copybutton_prompt_is_regexp = True
 
 # -- Options for HTML output -------------------------------------------------
@@ -155,12 +155,16 @@ class KerasTensorflowV2Lexer(PythonLexer):
 
 
 def setup(app):
+    # css files
     app.add_css_file("css/typeface/typeface.css")
     app.add_css_file("css/common.css")
-    app.add_css_file("css/nav_patch.css")
-    app.add_css_file("css/notes_patch.css")
     app.add_css_file("css/tabs.css")
-    app.add_css_file("css/bentoml.css")
+    app.add_css_file("css/nav_patch.css")
+    app.add_css_file("css/bentoml.css", priority=200)
+
+    # js files
+    app.add_js_file("js/expanded_toc.js")
+    app.add_js_file("js/dropdown.js")
 
     # Adding lexers for rendering different code version
     app.add_lexer("keras_v1", KerasTensorflowV1Lexer)

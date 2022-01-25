@@ -40,7 +40,7 @@ def _is_matched_shape(
 
 class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
     """
-    `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
+    :code:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
     :code:`numpy.ndarray` as specified in your API function signature.
 
@@ -73,24 +73,22 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session:
+    Users can then send requests to the newly started services with any client:
+
+    .. tabs::
 
     .. code-block:: bash
 
-        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]'
-          http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:5000/predict
 
         [1]%
 
     Args:
-        dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to :code:`None`):
-            Data Type users wish to convert their inputs/outputs to. Refers to
-            https://numpy.org/doc/stable/reference/arrays.dtypes.html for more
-            information
-        enforce_dtype (`bool`, `optional`, default to :code:`False`):
-            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype`
-            must be specified.
-        shape (`Tuple[int, ...]`, `optional`, default to :code:`None`):
+        dtype (:code:`numpy.typings.DTypeLike`, `optional`, default to :code:`None`):
+            Data Type users wish to convert their inputs/outputs to. Refers to `arrays dtypes <https://numpy.org/doc/stable/reference/arrays.dtypes.html>`_ for more information.
+        enforce_dtype (:code:`bool`, `optional`, default to :code:`False`):
+            Whether to enforce a certain data type. if :code:`enforce_dtype=True` then :code:`dtype` must be specified.
+        shape (:code:`Tuple[int, ...]`, `optional`, default to :code:`None`):
             Given shape that an array will be converted to. For example:
 
             .. code-block:: python
@@ -106,12 +104,12 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
                     # input_array will have shape (3,1)
                     result = await runner.run(input_array)
 
-        enforce_shape (`bool`, `optional`, default to :code:`False`):
+        enforce_shape (:code:`bool`, `optional`, default to :code:`False`):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
             must be specified
 
     Returns:
-        IO Descriptor that represents `np.ndarray`.
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
     """
 
     def __init__(
@@ -236,20 +234,20 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         Create a NumpyNdarray IO Descriptor from given inputs.
 
         Args:
-            sample_input (`np.ndarray`): Given sample np.ndarray data
-            enforce_dtype (`bool`, `optional`, default to :code:`True`):
-                Enforce a certain data type. `dtype` must be specified at function
+            sample_input (:code:`np.ndarray`): Given sample np.ndarray data
+            enforce_dtype (;code:`bool`, `optional`, default to :code:`True`):
+                Enforce a certain data type. :code:`dtype` must be specified at function
                 signature. If you don't want to enforce a specific dtype then change
-                `enforce_dtype=False`.
-            enforce_shape (`bool`, `optional`, default to :code:`False`):
-                Enforce a certain shape. `shape` must be specified at function
+                :code:`enforce_dtype=False`.
+            enforce_shape (:code:`bool`, `optional`, default to :code:`False`):
+                Enforce a certain shape. :code:`shape` must be specified at function
                 signature. If you don't want to enforce a specific shape then change
-                `enforce_shape=False`.
+                :code:`enforce_shape=False`.
 
         Returns:
-            `NumpyNdarray` IODescriptor from given users inputs.
+            :obj:`~bentoml._internal.io_descriptors.NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
 
-        Examples Usage:
+        Example:
 
         .. code-block:: python
 

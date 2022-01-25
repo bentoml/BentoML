@@ -10,7 +10,7 @@ MIME_TYPE = "text/plain"
 
 class Text(IODescriptor[str]):
     """
-    `Text` defines API specification for the inputs/outputs of a Service. `Text`
+    :code:`Text` defines API specification for the inputs/outputs of a Service. :code:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
     your API function signature.
 
@@ -34,7 +34,7 @@ class Text(IODescriptor[str]):
             res = runner.run_batch(input_arr)
             return res[0]['generated_text']
 
-    Users then can then serve this service with `bentoml serve`:
+    Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
@@ -45,20 +45,31 @@ class Text(IODescriptor[str]):
         [INFO] Serving BentoML Service "gpt2-generation" defined in "gpt2_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session:
+    Users can then send requests to the newly started services with any client:
 
-    .. code-block:: bash
+    .. tabs::
 
-        % curl -X POST -H "Content-Type: text/plain" --data 'Not for nothing did Orin
-         say that people outdoors down here just scuttle in vectors from air
-         conditioning to air conditioning.' http://0.0.0.0:5000/predict
+        .. code-block:: python
+
+            import requests
+            requests.post(
+                "http://0.0.0.0:5000/predict",
+                headers = {"content-type":"text/plain"},
+                data = 'Not for nothing did Orin say that people outdoors down here just scuttle in vectors from air conditioning to air conditioning.'
+            ).text
+
+        .. code-block:: bash
+
+            % curl -X POST -H "Content-Type: text/plain" --data 'Not for nothing did Orin
+            say that people outdoors down here just scuttle in vectors from air
+            conditioning to air conditioning.' http://0.0.0.0:5000/predict
 
     .. note::
 
         `Text` is not designed to take any `args` or `kwargs` during initialization
 
     Returns:
-        IO Descriptor that represents strings type.
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that strings type.
     """
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:

@@ -25,7 +25,6 @@
 }
 
 .sphinx-tabs-tab[aria-selected="true"] {
-  font-weight: 700;
   border: 1px solid #a0b3bf;
   border-bottom: 1px solid white;
   margin: -1px;

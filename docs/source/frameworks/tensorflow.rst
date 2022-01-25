@@ -1,11 +1,6 @@
 Tensorflow
 ----------
 
-| TensorFlow is an end-to-end open source platform for machine learning. 
-| It has a comprehensive, flexible ecosystem of tools, libraries and community resources
-| that lets researchers push the state-of-the-art in ML and developers easily build and
-| deploy ML powered applications. - `Source <https://www.tensorflow.org/>`_
-
 Users can now use Tensorflow (v1 and v2 supported) with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. tabs::
@@ -127,8 +122,7 @@ We also offer :code:`import_from_tfhub` which enables users to import model from
    # load model back with `load`:
    model = bentoml.tensorflow.load(tag, load_as_wrapper=True)
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **Tensorflow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

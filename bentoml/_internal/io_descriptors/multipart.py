@@ -27,8 +27,8 @@ MultipartIO = t.Dict[str, IOType]
 
 class Multipart(IODescriptor[MultipartIO]):
     """
-    `Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
-    of a Service can receive/send a `multipart` request/responses as specified in your API function signature.
+    :code:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
+    of a Service can receive/send a *multipart* request/responses as specified in your API function signature.
 
     Sample implementation of a sklearn service:
 
@@ -61,25 +61,39 @@ class Multipart(IODescriptor[MultipartIO]):
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session:
+    Users can then send requests to the newly started services with any client:
 
-    .. code-block:: bash
+    .. tabs::
 
-        % curl -X POST -H "Content-Type: multipart/form-data" -F annotations=@test.json -F arr='[5,4,3,2]' http://0.0.0.0:5000/predict
+        .. code-tab:: python
 
-        --b1d72c201a064ecd92a17a412eb9208e
-        Content-Disposition: form-data; name="output"
-        content-length: 1
-        content-type: application/json
+            import requests
+            from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-        1
-        --b1d72c201a064ecd92a17a412eb9208e
-        Content-Disposition: form-data; name="result"
-        content-length: 13
-        content-type: application/json
+            m = MultipartEncoder(
+                fields={'field0': 'value', 'field1': 'value',
+                        'field2': ('filename', open('test.json', 'rb'), 'application/json')}
+                )
 
-        {"foo":"bar"}
-        --b1d72c201a064ecd92a17a412eb9208e--
+            requests.post('http://0.0.0.0:5000/predict', data=m, headers={'Content-Type': m.content_type})
+
+        .. code-tab:: bash
+
+            % curl -X POST -H "Content-Type: multipart/form-data" -F annotations=@test.json -F arr='[5,4,3,2]' http://0.0.0.0:5000/predict
+
+            --b1d72c201a064ecd92a17a412eb9208e
+            Content-Disposition: form-data; name="output"
+            content-length: 1
+            content-type: application/json
+
+            1
+            --b1d72c201a064ecd92a17a412eb9208e
+            Content-Disposition: form-data; name="result"
+            content-length: 13
+            content-type: application/json
+
+            {"foo":"bar"}
+            --b1d72c201a064ecd92a17a412eb9208e--
 
     Args:
         inputs (:code:`Dict[str, IODescriptor]`):
@@ -93,22 +107,26 @@ class Multipart(IODescriptor[MultipartIO]):
 
             .. code-block:: bash
 
-                    ┌───────────────────────────────────────────────────────┐
-                    │                                                       │
-                    │ ┌───────────────────────────────────────────────────┐ │
-                    │ │ Multipart(arr=NumpyNdarray(), annotations=JSON()) │ │
-                    │ └─────────────────────┬─────────────┬───────────────┘ │
-                    │                       │             │                 │
-                    │                       │       ┌─────┘                 │
-                    │                       │       │                       │
-                    │       ┌───────────────▼───────▼─────────┐             │
-                    │       │  def predict(arr, annotations): │             │
-                    │       └─────────────────────────────────┘             │
-                    │                                                       │
-                    └───────────────────────────────────────────────────────┘
+                +----------------------------------------------------------------+
+                |                                                                |
+                |   +--------------------------------------------------------+   |
+                |   |                                                        |   |
+                |   |    Multipart(arr=NumpyNdarray(), annotations=JSON()    |   |
+                |   |                                                        |   |
+                |   +----------------+-----------------------+---------------+   |
+                |                    |                       |                   |
+                |                    |                       |                   |
+                |                    |                       |                   |
+                |                    +----+        +---------+                   |
+                |                         |        |                             |
+                |         +---------------v--------v---------+                   |
+                |         |  def predict(arr, annotations):  |                   |
+                |         +----------------------------------+                   |
+                |                                                                |
+                +----------------------------------------------------------------+
 
     Returns:
-        IO Descriptor that represents Multipart request/response.
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that Multipart request/response.
     """
 
     def __init__(

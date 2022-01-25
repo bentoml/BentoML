@@ -162,7 +162,7 @@ def add_model_management_commands(
 
                 if delete_confirmed:
                     model_store.delete(model.tag)
-                    click.echo(f"{model.tag} deleted")
+                    click.echo(f"{model} deleted")
 
         for target in delete_targets:
             delete_target(target)

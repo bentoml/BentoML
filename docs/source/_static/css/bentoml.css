@@ -19,6 +19,11 @@
     margin: 0 0 12px 36px;
 }
 
+.py.function dd dl, .py.class dd dl, .py.method dd dl {
+    display: grid;
+    grid-template-columns: max-content auto;
+}
+
 .py.class dt span, .py.function dt span, .py.method dt span {
     font-family: "IBM Plex Mono",monospace;
 }

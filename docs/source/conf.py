@@ -153,11 +153,11 @@ class KerasTensorflowV2Lexer(PythonLexer):
 
 def setup(app):
     # css files
-    app.add_css_file("css/typeface/typeface.css")
-    app.add_css_file("css/common.css")
-    app.add_css_file("css/tabs.css")
-    app.add_css_file("css/nav_patch.css")
-    app.add_css_file("css/bentoml.css")
+    app.add_css_file("css/typeface/typeface.css", priority=500)
+    app.add_css_file("css/common.css", priority=500)
+    app.add_css_file("css/tabs.css", priority=500)
+    app.add_css_file("css/nav_patch.css", priority=500)
+    app.add_css_file("css/bentoml.css", priority=500)
 
     # js files
     app.add_js_file("js/bentoml.js")

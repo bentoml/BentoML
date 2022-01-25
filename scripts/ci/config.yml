@@ -205,7 +205,8 @@ transformers:
     - "tensorflow==2.5.0"
     - "importlib_metadata"
     - "Pillow==8.4.0"
-    - "typing_extensions>=3.10"
+  external_scripts: |
+    python -m pip install "typing_extensions>=3.10"
 
 xgboost:
   <<: *tmpl

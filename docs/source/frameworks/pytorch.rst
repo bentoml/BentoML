@@ -1,10 +1,6 @@
 PyTorch
 -------
 
-| End-to-end Machine Learning Framework.
-| PyTorch enables fast, flexible experimentation and efficient production through a
-| user-friendly front-end, distributed training, and ecosystem of tools and libraries. - `Source <https://pytorch.org/>`_
-
 Users can now use PyTorch with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -42,8 +38,7 @@ Users can now use PyTorch with BentoML with the following API: :code:`load`, :co
    runner = bentoml.pytorch.load_runner(tag)
    runner.run(pd.DataFrame("/path/to/csv"))
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **PyTorch** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

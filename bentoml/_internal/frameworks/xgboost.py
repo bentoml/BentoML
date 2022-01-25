@@ -277,9 +277,8 @@ def load_runner(
             Options for inference functions. If you want to use `run`
             or `run_batch` in a thread context then use `inplace_predict`.
             Otherwise, `predict` are the de facto functions.
-        booster_params (`t.Dict[str, t.Union[str, int]]`, default to :code:`None`):
-            Parameters for boosters. Refers to https://xgboost.readthedocs.io/en/latest/parameter.html
-             for more information
+        booster_params (:code:`t.Dict[str, t.Union[str, int]]`, default to :code:`None`):
+            Parameters for boosters. Refers to `Parameters docs <https://xgboost.readthedocs.io/en/latest/parameter.html>`_ for more information.
         resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
         batch_options (:code:`Dict[str, Any]`, default to :code:`None`):

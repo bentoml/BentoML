@@ -1,11 +1,6 @@
 Scikit-Learn
 ------------
 
-| Simple and efficient tools for predictive data analysis.
-| Accessible to everybody, and reusable in various contexts.
-| Built on NumPy, SciPy, and matplotlib.
-| Open source, commercially usable - BSD license. - `Source <https://scikit-learn.org/stable/>`_
-
 Users can now use scikit-learn with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -34,8 +29,7 @@ Users can now use scikit-learn with BentoML with the following API: :code:`load`
    runner = bentoml.sklearn.load_runner(tag)
    runner.run([[1,2,3,4,5]])
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **scikit-learn** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

@@ -1,9 +1,6 @@
 EasyOCR
 -------
 
-| Build OCR with no code
-| EasyOCR is the easiest way to build your custom OCR solution with just a few images - `Source <https://github.com/JaidedAI/EasyOCR>`_
-
 Users can now use EasyOCR with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -45,8 +42,7 @@ Users can now use EasyOCR with BentoML with the following API: :code:`load`, :co
     runner = bentoml.easyocr.load_runner(tag)
     runner.run_batch(imarr)
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **EasyOCR** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

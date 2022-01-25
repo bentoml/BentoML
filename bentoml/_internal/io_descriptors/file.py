@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class File(IODescriptor[FileLike]):
     """
-    `File` defines API specification for the inputs/outputs of a Service, where either
+    :code:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
     specified in your API function signature.
 
@@ -44,21 +44,31 @@ class File(IODescriptor[FileLike]):
         [INFO] Serving BentoML Service "vit-object-detection" defined in "vit_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session with an
-    input PDF files:
+    Users can then send requests to the newly started services with any client:
 
-    .. code-block:: bash
+    .. tabs::
 
-        % curl -H "Content-Type: multipart/form-data" -F \
-        'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
+        .. code-tab:: python
 
+            import requests
+            requests.post(
+                "http://0.0.0.0:5000/predict",
+                files = {"upload_file": open('test.pdf', 'rb')},
+                headers = {"content-type": "multipart/form-data"}
+            ).text
+
+
+        .. code-tab:: bash
+
+            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
 
     Args:
-        mime_type (`str`, `optional`, default to `None`):
+        mime_type (:code:`str`, `optional`, default to :code:`None`):
             Return MIME type of the :code:`starlette.response.Response`, only available
             when used as output descriptor
+
     Returns:
-        IO Descriptor that represents file-like objects.
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that file-like objects.
 
     """
 

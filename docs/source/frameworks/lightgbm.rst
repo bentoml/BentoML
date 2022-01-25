@@ -1,13 +1,6 @@
 LightGBM
 --------
 
-| LightGBM is a gradient boosting framework that uses tree based learning algorithms. It is designed to be distributed and efficient with the following advantages:
-| - Faster training speed and higher efficiency.
-| - Lower memory usage.
-| - Better accuracy.
-| - Support of parallel, distributed, and GPU learning.
-| - Capable of handling large-scale data. - `Source <https://lightgbm.readthedocs.io/en/latest/>`_
-
 Users can now use LightGBM with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -57,8 +50,7 @@ Users can now use LightGBM with BentoML with the following API: :code:`load`, :c
    runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
    runner.run(input_data)
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **LightGBM** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

@@ -7,6 +7,10 @@
     --toc-nested-color: rgb(227,227,227);
     --sig-param-color: rgba(82,82,91, 0.45);
     --link-color: rgba(236, 188, 188, 0.64);
+    --block-text-color: #222;
+    --block-background-color: #fff;
+    --block-accent-color: #00ae86;
+    --block-shadow-color: #444;
     /* palette */
     --black: rgb(0,0,0);
     --white: rgb(255,255,255);
@@ -65,4 +69,3 @@ p {
     line-height: 24px;
     font-size: 18px;
 }
-

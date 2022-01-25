@@ -287,8 +287,7 @@ def projects(
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
-    .. admonition:: btw
-       :class: customWarningFmt
+    .. warning::
 
        This is an **EXPERIMENTAL** API as it is subjected to change. We are also looking for feedback.
 

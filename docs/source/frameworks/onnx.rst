@@ -1,9 +1,6 @@
 ONNX
 ----
 
-| Open Neural Network Exchange
-| The open standard for machine learning interoperability - `Source <https://onnx.ai/>`_
-
 Users can now use ONNX with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -70,8 +67,7 @@ Users can now use ONNX with BentoML with the following API: :code:`load`, :code:
    # from 1e-9 to 1e-6 just in case
    assert math.isclose(res1 - res2, bias1 - bias2, rel_tol=1e-6)
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **ONNX** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

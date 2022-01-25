@@ -224,8 +224,8 @@ def load(
             Given frameworks supported by transformers: PyTorch, Tensorflow, Flax
         lm_head (:code:`str`, default to :code:`causal`):
             Language model head for your model. For most use cases causal are applied.
-             Refers to huggingface.co/transformers for more details on which type of
-             language model head is applied to your use case and model.
+            Refers to `transformers <https://huggingface.co/docs/transformers/index>`_ for more details on which type of
+            language model head is applied to your use case and model.
         kwargs (:code:`str`, `optional`):
             kwargs that can be parsed to transformers Models instance.
 
@@ -572,13 +572,11 @@ def save(
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
-
-    The following options (provided by :obj:`transformers`) can also be passed to :func:`~bentoml._internal.frameworks.transformers.save`:
-        from_tf (`bool`, `optional`, defaults to `False`):
+        from_tf (:code:`bool`, `optional`, defaults to :code:`False`):
             Load the model weights from a TensorFlow checkpoint save file
-        from_flax (`bool`, `optional`, defaults to `False`):
+        from_flax (:code:`bool`, `optional`, defaults to :code:`False`):
             Load the model weights from a Flax checkpoint save file
-        revision(:code:`str`, `optional`, defaults to `"main"`):
+        revision(:code:`str`, `optional`, defaults to :code:`"main"`):
             The specific model version to use. It can be a branch name, a tag name, or a
             commit id, since we use a git-based system for storing models and other
             artifacts on *huggingface.co*, so ``revision`` can be any
@@ -592,19 +590,19 @@ def save(
             A dictionary of proxy servers to use by protocol or endpoint, e.g.
             :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
             proxies are used on each request.
-        use_auth_token (:code:`str` or `bool`, `optional`):
+        use_auth_token (:code:`str` or :code:`bool`, `optional`):
             The token to use as HTTP bearer authorization for remote files. If
             :obj:`True`, will use the token generated when running
             :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
-        force_download (`bool`, `optional`, defaults to `False`):
+        force_download (:code:`bool`, `optional`, defaults to :code:`False`):
             Whether or not to force the (re-)download of the model weights and
             configuration files, overriding the cached versions if they exist.
-        resume_download (`bool`, `optional`, defaults to `False`):
+        resume_download (:code:`bool`, `optional`, defaults to :code:`False`):
             Whether or not to delete incompletely received files. Will attempt to resume
             the download if such a file exists.
 
-    .. admonition:: btw
-       :class: customNotesFmt
+    .. note::
+
 
        Some parameters are direct port from :func:`from_pretrained` arguments. This is to
        ensure that when doing :func:`save` operations we don't actually load the model class into memory
@@ -697,8 +695,8 @@ def import_from_huggingface_hub(
             Whether or not to delete incompletely received files. Will attempt to resume
             the download if such a file exists.
 
-    .. admonition:: btw
-       :class: customNotesFmt
+    .. note::
+
 
        Some parameters are direct port from :func:`from_pretrained()` arguments. This
        ensures that when doing :func:`save` operations we don't actually load the model
@@ -841,10 +839,9 @@ def load_runner(
     maximize throughput. :func:`~bentoml.transformers.load_runner` implements a Runner class
     that wrap around a transformers pipeline, which optimize it for the BentoML runtime.
 
-    .. admonition:: btw
-       :class: customWarningFmt
+    .. warning::
 
-       `load_runner` will try to load the model from given `tag`. If the model does not
+       :func:`load_runner` will try to load the model from given :obj:`tag`. If the model does not
        exists, then BentoML will fallback to initialize pipelines from transformers,
        thus files will be loaded from huggingface cache.
 

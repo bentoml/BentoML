@@ -67,8 +67,7 @@ def get_session() -> "BaseSession":
     """
     Return TF1 sessions for :mod:`bentoml.keras`.
 
-    .. admonition:: btw
-       :class: customWarningFmt
+    .. warning::
 
        This function is served for the purposes of using Tensorflow V1.
 

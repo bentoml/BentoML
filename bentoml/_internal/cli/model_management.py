@@ -170,7 +170,7 @@ def add_model_management_commands(
     @model_cli.command(help="Export Model to a tar file")
     @click.argument("model_tag", type=click.STRING)
     @click.argument(
-        "out_file", type=click.File("wb"), default=sys.stdout, required=False
+        "out_file", type=click.File("wb"), default=sys.stdout.buffer, required=False
     )
     def export(model_tag, out_file):
         """Export Model files to a tar file
@@ -178,13 +178,18 @@ def add_model_management_commands(
         bentoml model export FraudDetector:latest > my_model.tar
         bentoml model export FraudDetector:20210709_DE14C9 ./my_model.tar
         """
-        pass
+        if not _is_valid_bento_tag(model_tag):
+            raise click.BadParameter(
+                'Bad formatting. Please present a valid model "name:version" tag'
+            )
+
+        model_store.export_tar(model_tag, "", out_file)
 
     @model_cli.command(
         name="import", help="Import a previously exported Model tar file"
     )
     @click.argument(
-        "model_path", type=click.File("rb"), default=sys.stdin, required=False
+        "model_path", type=click.File("rb"), default=sys.stdin.buffer, required=False
     )
     def import_model(model_path):
         """Export Model files to a tar file
@@ -192,7 +197,7 @@ def add_model_management_commands(
         bentoml model import < ./my_model.tar
         bentoml model import ./my_model.tar
         """
-        pass
+        model_store.import_tar(fileobj=model_path)
 
     @model_cli.command(
         help="Pull Model from a yatai server",

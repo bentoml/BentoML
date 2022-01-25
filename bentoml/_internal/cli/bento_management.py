@@ -1,5 +1,7 @@
+import os
 import sys
 import json
+import tarfile
 from typing import TYPE_CHECKING
 
 import yaml
@@ -168,7 +170,7 @@ def add_bento_management_commands(
     @cli.command(help="Export Bento to a tar file")
     @click.argument("bento_tag", type=click.STRING)
     @click.argument(
-        "out_file", type=click.File("wb"), default=sys.stdout, required=False
+        "out_file", type=click.File("wb"), default=sys.stdout.buffer, required=False
     )
     def export(bento_tag, out_file):
         """Export Bento files to a tar file
@@ -176,11 +178,16 @@ def add_bento_management_commands(
         bentoml export FraudDetector:latest > my_bento.tar
         bentoml export FraudDetector:20210709_DE14C9 ./my_bento.tar
         """
-        pass
+        if not _is_valid_bento_tag(bento_tag):
+            raise click.BadParameter(
+                'Bad formatting. Please present a valid bento bundle "name:version" tag'
+            )
+
+        bento_store.export_tar(bento_tag, "", out_file)
 
     @cli.command(name="import", help="Import a previously exported Bento tar file")
     @click.argument(
-        "bento_path", type=click.File("rb"), default=sys.stdin, required=False
+        "bento_path", type=click.File("rb"), default=sys.stdin.buffer, required=False
     )
     def import_bento(bento_path):
         """Export Bento files to a tar file
@@ -188,7 +195,7 @@ def add_bento_management_commands(
         bentoml import < ./my_bento.tar
         bentoml import ./my_bento.tar
         """
-        pass
+        bento_store.import_tar(fileobj=bento_path)
 
     @cli.command(
         help="Pull Bento from a yatai server",

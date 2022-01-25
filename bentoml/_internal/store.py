@@ -1,5 +1,6 @@
 import os
 import typing as t
+import tarfile
 import datetime
 from abc import ABC
 from abc import abstractmethod
@@ -162,3 +163,65 @@ class Store(ABC, t.Generic[Item]):
                 # otherwise, update the latest version
                 assert new_latest.tag.version is not None
                 self._fs.writetext(_tag.latest_path(), new_latest.tag.version)
+
+    def export_tar(
+        self,
+        tag: t.Union[str, Tag],
+        export_path: PathType = "",
+        fileobj: t.Optional[t.BinaryIO] = None,
+    ) -> None:
+        """
+        store.export_tar("item/ver", "backup.tar") -> a tar file backup.tar contain "/item/ver/*"
+        """
+        _tag = Tag.from_taglike(tag)
+
+        if _tag.version is not None:
+            arcname = os.path.join(_tag.name, _tag.version)
+        else:
+            raise BentoMLException("f{item.tag} has no version")
+
+        item_path = _tag.path()
+        item_sys_path = self._fs.getsyspath(item_path)
+
+        if not self._fs.exists(item_path):
+            raise BentoMLException(
+                f"Item '{_tag}' does not exist in the store {self._fs}"
+            )
+        with tarfile.open(export_path, "w", fileobj=fileobj) as tar:
+            tar.add(item_sys_path, arcname=arcname)
+
+    def import_tar(
+        self,
+        import_path: PathType = "",
+        fileobj: t.Optional[t.BinaryIO] = None,
+    ) -> None:
+        """
+        store.import_tar("item.tar")
+        store.import_tar(fp)
+        """
+        with tarfile.open(import_path, "r", fileobj=fileobj) as tar:
+            content_fns = tar.getnames()
+            item_path = os.path.commonpath(content_fns)
+
+            # validate item_path is in item/ver format
+            item_path = os.path.normpath(item_path)
+            parts = item_path.split(os.path.sep)
+            if len(parts) != 2:
+                raise BentoMLException(
+                    "Tar file to be imported is not in a valid format"
+                )
+
+            tag = Tag(*parts)
+
+            if self._fs.exists(item_path):
+                raise BentoMLException(
+                    f"Item '{tag}' already exists in the store {self._fs}"
+                )
+
+            if self._fs.exists(tag.name):
+                if not self._fs.isdir(tag.name):
+                    raise BentoMLException(
+                        f"{tag.name} already exists but is not a directory"
+                    )
+
+            tar.extractall(path=self._fs.getsyspath("/"))

@@ -194,9 +194,8 @@ tf2:
 transformers:
   <<: *tmpl
   dependencies:
-    - "transformers==4.9.2"
+    - "transformers"
     - "tensorflow_hub"
-    - "tensorflow"
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.9.0+cpu"
     - "torchvision==0.10.0+cpu"
@@ -206,6 +205,7 @@ transformers:
     - "tensorflow==2.5.0"
     - "importlib_metadata"
     - "Pillow==8.4.0"
+    - "typing_extensions>=3.10"
 
 xgboost:
   <<: *tmpl

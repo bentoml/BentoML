@@ -9,6 +9,11 @@
     background-color: var(--nav-color);
 }
 
+.wy-side-nav-search>a {
+    color: var(--black);
+    font-weight: 300;
+}
+
 /* The one above the toc tree */
 .wy-side-nav-search>div.version {
     color: var(--black);

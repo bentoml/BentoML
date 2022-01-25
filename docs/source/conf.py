@@ -118,13 +118,10 @@ copybutton_prompt_is_regexp = True
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "collapse_navigation": False,
-    "sticky_navigation": False,
-    "logo_only": True,
+    "logo_only": False,
     "display_version": True,
     "navigation_depth": -1,
 }
-
-html_logo = "_static/img/bentoml-removebg.png"
 
 # Static folder path
 html_static_path = ["_static"]
@@ -160,11 +157,10 @@ def setup(app):
     app.add_css_file("css/common.css")
     app.add_css_file("css/tabs.css")
     app.add_css_file("css/nav_patch.css")
-    app.add_css_file("css/bentoml.css", priority=200)
+    app.add_css_file("css/bentoml.css")
 
     # js files
-    app.add_js_file("js/expanded_toc.js")
-    app.add_js_file("js/dropdown.js")
+    app.add_js_file("js/bentoml.js")
 
     # Adding lexers for rendering different code version
     app.add_lexer("keras_v1", KerasTensorflowV1Lexer)

@@ -7,6 +7,7 @@ Users can now use CatBoost with BentoML with the following API: :code:`load`, :c
 
    import bentoml
    import catboost as cbt
+   import pandas as pd
 
    from sklearn.datasets import load_breast_cancer
 
@@ -36,7 +37,7 @@ Users can now use CatBoost with BentoML with the following API: :code:`load`, :c
    model = bentoml.catboost.load("cancer_clf:latest")
 
    # Run a given model under `Runner` abstraction with `load_runner`
-   input_data = pd.from_csv("/path/to/csv")
+   input_data = pd.read_csv("/path/to/csv")
    runner = bentoml.catboost.load_runner("cancer_clf:latest")
    runner.run(cbt.Pool(input_data))
 

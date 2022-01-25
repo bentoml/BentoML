@@ -315,7 +315,7 @@ def load_runner(
         import catboost as cbt
         import pandas as pd
 
-        input_data = pd.from_csv("/path/to/csv")
+        input_data = pd.read_csv("/path/to/csv")
         runner = bentoml.catboost.load_runner("my_model:latest"")
         runner.run(cbt.Pool(input_data))
     """  # noqa

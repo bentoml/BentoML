@@ -167,7 +167,7 @@ class Store(ABC, t.Generic[Item]):
     def export_tar(
         self,
         tag: t.Union[str, Tag],
-        export_path: PathType = "",
+        path: PathType = "",
         fileobj: t.Optional[t.BinaryIO] = None,
     ) -> None:
         """
@@ -187,19 +187,19 @@ class Store(ABC, t.Generic[Item]):
             raise BentoMLException(
                 f"Item '{_tag}' does not exist in the store {self._fs}"
             )
-        with tarfile.open(export_path, "w", fileobj=fileobj) as tar:
+        with tarfile.open(path, "w", fileobj=fileobj) as tar:
             tar.add(item_sys_path, arcname=arcname)
 
     def import_tar(
         self,
-        import_path: PathType = "",
+        path: PathType = "",
         fileobj: t.Optional[t.BinaryIO] = None,
     ) -> None:
         """
         store.import_tar("item.tar")
         store.import_tar(fp)
         """
-        with tarfile.open(import_path, "r", fileobj=fileobj) as tar:
+        with tarfile.open(path, "r", fileobj=fileobj) as tar:
             content_fns = tar.getnames()
             item_path = os.path.commonpath(content_fns)
 

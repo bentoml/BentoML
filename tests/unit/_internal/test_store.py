@@ -1,3 +1,4 @@
+import os
 import sys
 import typing as t
 from typing import TYPE_CHECKING
@@ -64,7 +65,9 @@ class DummyStore(Store[DummyItem]):
 
 
 def test_store(tmpdir: "Path"):
-    store = DummyStore(tmpdir)
+    store_path = os.path.join(tmpdir, "store")
+    os.mkdir(store_path)
+    store = DummyStore(store_path)
 
     DummyItem.store = store
     oldtime = datetime.now()
@@ -116,6 +119,19 @@ def test_store(tmpdir: "Path"):
     assert store.list("nonexistent:latest") == []
     assert store.list("test:version4") == []
 
+    # test import/export
+    tag = "test1:version1"
+    tar_path = os.path.join(tmpdir, "test.tar")
+    store.export_tar(tag, path=tar_path)
+    with pytest.raises(BentoMLException):
+        store.import_tar(path=tar_path)
+
+    store.delete(tag)
+    store.import_tar(path=tar_path)
+    restored = store.get(tag)
+    assert restored.tag == Tag.from_taglike(tag)
+
+    # test delete
     store.delete("test:version2")
     latest = store.get("test")
     assert latest.tag == Tag("test", "otherprefix")

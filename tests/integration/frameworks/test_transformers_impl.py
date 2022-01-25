@@ -4,13 +4,14 @@ import transformers.pipelines
 from transformers import set_seed
 from transformers.file_utils import CONFIG_NAME
 from transformers.file_utils import hf_bucket_url
-from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID
 
 import bentoml.transformers
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
 set_seed(123)
+
+MODEL_ID = "julien-c/dummy-unknown"
 
 REVISION_ID_INVALID = "e10"
 

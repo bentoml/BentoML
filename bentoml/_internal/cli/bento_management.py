@@ -160,7 +160,7 @@ def add_bento_management_commands(
 
                 if delete_confirmed:
                     bento_store.delete(bento.tag)
-                    click.echo(f"{bento.tag} deleted")
+                    click.echo(f"{bento} deleted")
 
         for target in delete_targets:
             delete_target(target)

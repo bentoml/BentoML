@@ -1,3 +1,4 @@
+import io
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -211,7 +212,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 )
             # TODO(jiang): check dtype
         res = pd.read_json(  # type: ignore[arg-type]
-            obj,
+            io.BytesIO(obj),
             dtype=self._dtype,  # type: ignore[arg-type]
             orient=self._orient,
         )

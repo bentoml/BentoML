@@ -9,18 +9,19 @@
     :target: https://github.com/bentoml/BentoML
 
 
-Model Serving Made Easy
-=======================
+Unified Model Serving Framework
+===============================
 
 |pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
 
 BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
-
 The BentoML version 1.0 is around the corner. For stable release version 0.13, see
 the `0.13-LTS branch <https://github.com/bentoml/BentoML/tree/0.13-LTS>`_. Version 1.0 is
 under active development, you can be of great help by testing out the preview release,
 reporting issues, contribute to the documentation and create sample gallery projects.
+
+👉 `Join our Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_ to receive project updates and get involved with latest development.
 
 Why BentoML
 -----------
@@ -29,21 +30,23 @@ Why BentoML
 - High performance model serving, all in Python.
 - Standardlize model packaging and ML service definition to streamline deployment.
 - Support all major machine-learning training :ref:`frameworks <frameworks-page>`.
+- Deploy and operate ML serving workload at scale on Kubernetes via `Yatai <https://github.com/bentoml/yatai>`_.
 
 
 Getting Started
 ---------------
 - :ref:`Quickstart guide <getting-started-page>` will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
 - :ref:`Main concepts <concepts-page>` will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
-- Playground notebook gets your hands dirty in a notebook environment, for you to try out all the core features in BentoML.
 - :ref:`ML frameworks <frameworks-page>` lays out best practices and example usages by the ML framework used for training models.
-- :ref:`Advanced guides <guides-page>` show cases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
-
+- :ref:`Advanced guides <guides-page>` showcases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+- Check out other projects from the `BentoML team <https://github.com/bentoml>`_:
+  - `🦄️ Yatai <https://github.com/bentoml/yatai>`_: Run BentoML workflow at scale on Kubernetes
+  - `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_: Fast model deployment with BentoML on cloud platforms
 Community
 ---------
 - To report a bug or suggest a feature request, use `GitHub Issues <https://github.com/bentoml/BentoML/issues/new/choose>`_.
 - For other discussions, use `Github Discussions <https://github.com/bentoml/BentoML/discussions>`_.
-- To receive release announcements, please subscribe to our mailing list or join us on `Slack <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_.
+- To receive release announcements, please join us on `Slack <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_.
 
 Contributing
 ------------

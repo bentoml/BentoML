@@ -255,25 +255,18 @@ def load(
         )
     else:
         tokenizer = None
-    config = AutoConfig.from_pretrained(model.path)
+    config = AutoConfig.from_pretrained(
+        model.path, from_tf=from_tf, from_flax=from_flax, **kwargs
+    )
 
     try:
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
         #  google/bert_uncased-L-2-H-128-A-2
-        t_model = _load_autoclass(framework, lm_head).from_pretrained(
-            model.path,
-            # config=config,
-            **kwargs,
-        )
+        loader = _load_autoclass(framework, lm_head)
     except (AttributeError, BentoMLException):  # noqa
-        t_model = getattr(import_module("transformers"), _model).from_pretrained(
-            model.path,
-            # config=config,
-            from_tf=from_tf,
-            from_flax=from_flax,
-            **kwargs,
-        )
+        loader = getattr(import_module("transformers"), _model)
+    t_model = loader.from_config(config)
     return config, t_model, tokenizer
 
 
@@ -298,7 +291,7 @@ def _download_from_hub(
     elif use_auth_token:
         token = HfFolder.get_token()
         if token is None:
-            raise EnvironmentError(
+            raise BentoMLException(
                 "You specified use_auth_token=True, "
                 "but a huggingface token was not found."
             )
@@ -624,7 +617,7 @@ def save(
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
     """
     if isinstance(model, str) and not tokenizer:
-        raise EnvironmentError(
+        raise BentoMLException(
             "If you want to import model directly from huggingface hub"
             " please use `import_from_huggingface_hub` instead. `save` should"
             " only be used for saving custom pretrained model and tokenizer"
@@ -787,7 +780,7 @@ class _TransformersRunner(Runner):
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         try:
             _ = self._model_store.get(self._tag)
             self._config, self._model, self._tokenizer = load(
@@ -826,7 +819,7 @@ def load_runner(
     *,
     tasks: str,
     framework: str = "pt",
-    lm_head: str = "casual",
+    lm_head: str = "causal",
     device: int = -1,
     name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,

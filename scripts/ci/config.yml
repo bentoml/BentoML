@@ -127,6 +127,8 @@ paddle:
     - "paddlepaddle"
     - "paddlehub"
     - "gast==0.3.3"
+  external_scripts: |
+    export SETUPTOOLS_USE_DISTUTILS=stdlib
 
 pycaret:
   <<: *tmpl

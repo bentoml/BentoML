@@ -145,16 +145,17 @@ def test_transformers_runner_pipelines_kwargs(modelstore):
     from PIL import Image
 
     tag = bentoml.transformers.import_from_huggingface_hub(
-        "google/vit-large-patch16-224", model_store=modelstore
+        "google/vit-base-patch16-224", model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
         tag,
         tasks="image-classification",
+        lm_head="image-classification",
         device=-1,
-        feature_extractor="google/vit-large-patch16-224",
+        feature_extractor="google/vit-base-patch16-224",
         model_store=modelstore,
     )
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
     res = runner.run_batch(image)
-    assert res[0]["label"] == "Egyptian cat"
+    assert res[0]["label"] == "LABEL_1"

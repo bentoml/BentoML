@@ -267,7 +267,7 @@ def load(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    config: "PretrainedConfig" = AutoConfig.from_pretrained(model.path)  # type: ignore[reportUnknownMemberType]
+    config, unused_kwargs = AutoConfig.from_pretrained(model.path, return_unused_kwargs=True, **kwargs)  # type: ignore[reportUnknownMemberType]
 
     _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
     _feature_extractor = model.info.options["feature_extractor"]
@@ -291,7 +291,11 @@ def load(
         else:
             loader = getattr(import_module("transformers"), _model)
         t_model: "ext.TransformersModelType" = loader.from_pretrained(  # type: ignore[reportUnknownMemberType]
-            model.path, config=config, from_tf=from_tf, from_flax=from_flax, **kwargs
+            model.path,
+            config=config,
+            from_tf=from_tf,
+            from_flax=from_flax,
+            **unused_kwargs,
         )
     except RuntimeError as e:
         raise e
@@ -300,7 +304,7 @@ def load(
         #  name under their config.json. An example is
         #  google/bert_uncased_L-2_H-128_A-2
         t_model = _load_autoclass(framework, lm_head).from_pretrained(  # type: ignore[reportUnknownMemberType]
-            model.path, config=config, **kwargs
+            model.path, config=config, **unused_kwargs
         )
     return config, t_model, tokenizer, feature_extractor
 
@@ -677,14 +681,15 @@ def save(
 
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
     """
-    if not _check_model_type(model) or not LazyType["ext.TransformersPipeline"](
-        "transformers.pipelines.base.Pipeline"
-    ).isinstance(model):
-        raise BentoMLException(
-            "If you want to import model directly from huggingface hub"
-            " please use `import_from_huggingface_hub` instead. `save` should"
-            " only be used for saving custom pretrained model and tokenizer"
-        )
+    if not _check_model_type(model):
+        if not LazyType["ext.TransformersPipeline"](
+            "transformers.pipelines.base.Pipeline"
+        ).isinstance(model):
+            raise BentoMLException(
+                "If you want to import model directly from huggingface hub"
+                " please use `import_from_huggingface_hub` instead. `save` should"
+                " only be used for saving custom pretrained model and tokenizer"
+            )
     return _save(
         name=name,
         model_identifier=model,

@@ -31,7 +31,7 @@ def predict_df(inference_sess: ExecutionSession, df: pd.DataFrame):
 
 
 @pytest.fixture(name="convert_to_onnx")
-def fixture_convert_to_onnx(tensorflow_model, tmpdir):
+def fixture_convert_to_onnx(tmpdir):
     model = NativeModel()
     tf.saved_model.save(model, str(tmpdir))
     model_path = os.path.join(str(tmpdir), "model.onnx")

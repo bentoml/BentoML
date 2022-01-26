@@ -534,7 +534,7 @@ def _save(
                 _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
                 _tokenizer_inst.save_pretrained(_model.path)
                 _model.info.options["tokenizer"] = type(_tokenizer_inst).__name__
-            except ValueError:
+            except (ValueError, KeyError):
                 _model.info.options["tokenizer"] = "na"
 
     _model.save(model_store)

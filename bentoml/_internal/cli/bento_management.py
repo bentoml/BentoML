@@ -178,7 +178,7 @@ def add_bento_management_commands(
         """
         if not _is_valid_bento_tag(bento_tag):
             raise click.BadParameter(
-                'Bad formatting. Please present a valid bento bundle "name:version" tag'
+                f'Invalid tag {bento_tag}. Please use a valid "name:version" tag'
             )
 
         bento_store.export_tar(bento_tag, "", out_file)

@@ -52,7 +52,7 @@ def _is_gpu_available() -> bool:  # pragma: no cover
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[Tag, str],
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _ModelType:
@@ -86,13 +86,27 @@ def load(
                 f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
             )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    # TorchScript Models are saved as zip files
-    if zipfile.is_zipfile(weight_file):
+    model_format = bentoml_model.info.options.get("_model_format")
+    # backward compatibility
+    if not model_format:
+        if zipfile.is_zipfile(weight_file):
+            model_format = "torchscript:v1"
+        else:
+            model_format = "cloudpickle:v1"
+
+    if model_format == "torchscript:v1":
         model: "torch.jit.ScriptModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
-        return model
-    else:
+    elif model_format == "cloudpickle:v1":
         with Path(weight_file).open("rb") as file:
-            return cloudpickle.load(file)
+            model: "torch.nn.Module" = cloudpickle.load(file).to(device_id)
+    elif model_format == "torch.save:v1":
+        with Path(weight_file).open("rb") as file:
+            model: "torch.nn.Module" = torch.load(file, map_location=device_id)
+    else:
+        raise BentoMLException(f"Unknown model format {model_format}")
+
+    model.eval()
+    return model
 
 
 @inject
@@ -170,10 +184,12 @@ def save(
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     if isinstance(model, torch.jit.ScriptModule):  # type: ignore[reportPrivateUsage]
+        _model.info.options["_model_format"] = "torchscript:v1"
         torch.jit.save(model, weight_file)  # type: ignore[reportUnknownMemberType]
     else:
+        _model.info.options["_model_format"] = "torch.save:v1"
         with open(weight_file, "wb") as file:
-            cloudpickle.dump(model, file)
+            torch.save(model, file, pickle_module=cloudpickle)
 
     _model.save(model_store)
     return _model.tag
@@ -292,7 +308,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "__call__",
-    device_id: str = "cpu:0",
+    device_id: str = "cpu",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
@@ -364,10 +380,10 @@ class PytorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
     @inject
     def single_to_payload(
         cls,
-        single_data,
+        single,
     ) -> Payload:
         return cls.create_payload(
-            pickle.dumps(single_data),
+            pickle.dumps(single),
             {"plasma": False},
         )
 

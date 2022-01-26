@@ -255,18 +255,19 @@ def load(
         )
     else:
         tokenizer = None
-    config = AutoConfig.from_pretrained(
-        model.path, from_tf=from_tf, from_flax=from_flax, **kwargs
-    )
+    config = AutoConfig.from_pretrained(model.path)
 
     try:
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
         #  google/bert_uncased-L-2-H-128-A-2
-        loader = _load_autoclass(framework, lm_head)
+        t_model = _load_autoclass(framework, lm_head).from_pretrained(
+            model.path, config=config, **kwargs
+        )
     except (AttributeError, BentoMLException):  # noqa
-        loader = getattr(import_module("transformers"), _model)
-    t_model = loader.from_config(config)
+        t_model = getattr(import_module("transformers"), _model).from_pretrained(
+            model.path, from_tf=from_tf, from_flax=from_flax, **kwargs
+        )
     return config, t_model, tokenizer
 
 

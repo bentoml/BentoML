@@ -15,7 +15,7 @@ MODEL_ID = "julien-c/dummy-unknown"
 
 REVISION_ID_INVALID = "e10"
 
-model_name = "gpt2"
+model_name = "distilgpt2"
 test_sentence = {"text": "A Bento box is a "}
 batched_sentence = [
     "I love you and I want to spend my whole life with you",
@@ -115,7 +115,7 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
 )
 def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
-        "gpt2", model_store=modelstore, **kwargs
+        model_name, model_store=modelstore, **kwargs
     )
     _, model, tokenizer = bentoml.transformers.load(
         tag, framework=framework, from_tf="tf" in framework, model_store=modelstore
@@ -131,7 +131,7 @@ def test_transformers_runner_setup_run_batch(modelstore):
         "distilbert-base-uncased-finetuned-sst-2-english", model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
-        tag, tasks="text-classification", model_store=modelstore
+        tag, lm_head="masked", tasks="text-classification", model_store=modelstore
     )
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == runner.num_replica == 1

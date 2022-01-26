@@ -180,7 +180,7 @@ def add_model_management_commands(
         """
         if not _is_valid_bento_tag(model_tag):
             raise click.BadParameter(
-                'Bad formatting. Please present a valid model "name:version" tag'
+                f'Invalid tag {bento_tag}. Please use a valid "name:version" tag'
             )
 
         model_store.export_tar(model_tag, "", out_file)

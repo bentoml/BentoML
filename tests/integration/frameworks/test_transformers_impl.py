@@ -15,7 +15,7 @@ MODEL_ID = "julien-c/dummy-unknown"
 
 REVISION_ID_INVALID = "e10"
 
-model_name = "distilgpt2"
+model_name = "gpt2"
 test_sentence = {"text": "A Bento box is a "}
 batched_sentence = [
     "I love you and I want to spend my whole life with you",
@@ -117,7 +117,7 @@ def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
         model_name, model_store=modelstore, **kwargs
     )
-    _, model, tokenizer = bentoml.transformers.load(
+    _, model, tokenizer, _ = bentoml.transformers.load(
         tag, framework=framework, from_tf="tf" in framework, model_store=modelstore
     )
     assert (
@@ -152,10 +152,9 @@ def test_transformers_runner_pipelines_kwargs(modelstore):
         tasks="image-classification",
         lm_head="image-classification",
         device=-1,
-        feature_extractor="google/vit-base-patch16-224",
         model_store=modelstore,
     )
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
     res = runner.run_batch(image)
-    assert res[0]["label"] == "LABEL_1"
+    assert res[0]["label"] == "Egyptian cat"

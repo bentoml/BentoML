@@ -1,6 +1,5 @@
 onnx-mlir
 ---------
-| The Open Neural Network Exchange implementation in MLIR - `Source <https://github.com/onnx/onnx-mlir>`_
 
 Users can now use onnx-mlir with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
@@ -77,8 +76,7 @@ Users can now use onnx-mlir with BentoML with the following API: :code:`load`, :
    runner = bentoml.onnxmlir.load_runner("compiled_model:latest")
    res = runner.run_batch(np.array([[1,2,3]]).astype(np.float64))
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **ONNX** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

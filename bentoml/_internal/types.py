@@ -278,14 +278,14 @@ class FileLike:
     Class attributes:
 
     - bytes (`bytes`, `optional`):
-    - uri (`str`, `optional`):
+    - uri (:code:`str`, `optional`):
         The set of possible uris is:
 
         - :code:`file:///home/user/input.json`
         - :code:`http://site.com/input.csv` (Not implemented)
         - :code:`https://site.com/input.csv` (Not implemented)
 
-    - name (`str`, `optional`, default to :obj:`None`)
+    - name (:code:`str`, `optional`, default to :obj:`None`)
 
     """
 

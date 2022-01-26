@@ -1,8 +1,6 @@
 MLFlow
 ------
 
-| An open source platform for the machine learning lifecycle. - `Source <https://mlflow.org/>`_
-
 Users can now use MLFlow with BentoML with the following API: :code:`load`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -35,8 +33,7 @@ BentoML also offer :code:`import_from_uri` which enables users to import any MLF
     # uri can also be a S3 bucket
     s3_tag = bentoml.mlflow.import_from_uri("sklearn_clf_model", "s3://my_sklearn_model")
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **MLFlow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

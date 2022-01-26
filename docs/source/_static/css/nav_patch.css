@@ -9,6 +9,11 @@
     background-color: var(--nav-color);
 }
 
+.wy-side-nav-search>a {
+    color: var(--black);
+    font-weight: 300;
+}
+
 /* The one above the toc tree */
 .wy-side-nav-search>div.version {
     color: var(--black);
@@ -18,7 +23,8 @@
     width: 100%;
     border-radius: 0;
     padding: 6px 12px;
-    border-color: inherit;
+    border: 3px solid inherit;
+    border-color: var(--gray);
 }
 
 /* The one with the toc tree */

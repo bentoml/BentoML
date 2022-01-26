@@ -40,7 +40,7 @@ DEFAULT_PIL_MODE = "RGB"
 
 class Image(IODescriptor[ImageType]):
     """
-    `Image` defines API specification for the inputs/outputs of a Service, where either
+    :code:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
     in your API function signature.
 
@@ -65,7 +65,7 @@ class Image(IODescriptor[ImageType]):
             res = runner.run_batch(input_img)
             return res
 
-    Users then can then serve this service with `bentoml serve`:
+    Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
@@ -76,32 +76,43 @@ class Image(IODescriptor[ImageType]):
         [INFO] Serving BentoML Service "vit-object-detection" defined in "obj_detc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session:
+    Users can then send requests to the newly started services with any client:
 
-    .. code-block:: bash
+    .. tabs::
 
-        # we will run on our input image test.png
-        # image can get from http://images.cocodataset.org/val2017/000000039769.jpg
-        % curl -H "Content-Type: multipart/form-data" -F
-          'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:8000/predict
+        .. code-tab:: python
 
-        [{"score":0.8610631227493286,"label":"Egyptian cat"},
-         {"score":0.08770329505205154,"label":"tabby, tabby cat"},
-         {"score":0.03540956228971481,"label":"tiger cat"},
-         {"score":0.004140055272728205,"label":"lynx, catamount"},
-         {"score":0.0009498853469267488,"label":"Siamese cat, Siamese"}]%
+            import requests
+            requests.post(
+                "http://0.0.0.0:5000/predict",
+                files = {"upload_file": open('test.jpg', 'rb')},
+                headers = {"content-type": "multipart/form-data"}
+            ).text
+
+        .. code-tab:: bash
+
+            # we will run on our input image test.png
+            # image can get from http://images.cocodataset.org/val2017/000000039769.jpg
+            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:5000/predict
+
+            [{"score":0.8610631227493286,"label":"Egyptian cat"},
+            {"score":0.08770329505205154,"label":"tabby, tabby cat"},
+            {"score":0.03540956228971481,"label":"tiger cat"},
+            {"score":0.004140055272728205,"label":"lynx, catamount"},
+            {"score":0.0009498853469267488,"label":"Siamese cat, Siamese"}]%
 
     Args:
-        pilmode (`str`, `optional`, default to `RGB`): Color mode for PIL.
-        mime_type (`str`, `optional`, default to `image/jpeg`):
+        pilmode (:code:`str`, `optional`, default to :code:`RGB`):
+            Color mode for PIL.
+        mime_type (:code:`str`, `optional`, default to :code:`image/jpeg`):
             Return MIME type of the :code:`starlette.response.Response`, only available
-            when used as output descriptor
+            when used as output descriptor.
 
     Returns:
-        IO Descriptor that represents either a `PIL.Image.Image` or a `np.ndarray`
-        representing an image
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray`
+        representing an image.
 
-    """
+    """  # noqa
 
     MIME_EXT_MAPPING: t.Dict[str, str] = {}
 

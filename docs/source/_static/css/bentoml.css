@@ -1,11 +1,37 @@
 @import url("./common.css");
 @import url("./nav_patch.css");
-@import url("./notes_patch.css");
 @import url("./typeface/typeface.css");
 
 .wy-nav-content {
     max-width: 1400px;
     background-color: var(--white);
+}
+
+.py.function, .py.class {
+    margin: 12px 0px 6px 0px;
+}
+
+.py.function dt, .py.class dt, .py.method dt {
+    width: 100%;
+}
+
+.py.function dd, .py.class dd, .py.method dd {
+    margin: 0 0 12px 36px;
+}
+
+.py.function dd dl, .py.class dd dl, .py.method dd dl {
+    display: grid;
+    grid-template-columns: max-content auto;
+}
+
+.py.function dl dl dt, .py.class dl dl dt, .py.method dl dl dt {
+    border-left: none;
+    background: transparent;
+    color: var(--gray);
+}
+
+.py.class dt span, .py.function dt span, .py.method dt span {
+    font-family: "IBM Plex Mono",monospace;
 }
 
 /* The one with literal code blocks */
@@ -26,101 +52,10 @@
     line-height: 1.4;
 }
 
-/* Stacked quote block with animation */
-.rst-content .line-block {
-    font-style: italic;
-    width: auto;
-    line-height: 26px;
-    box-sizing: content-box;
-    display: inline-block;
-    margin: 0em 0em 2em 1em;
-    padding: 1em;
-    position: relative;
-    border: solid 2px #757575;
-    background: white;
-    box-shadow: 8px 8px;
-    transition: perspective(1px) translateZ(0);
-    transition-duration: 0.3s;
-    transition-property: box-shadow;
-    -webkit-transition: perspective(1px) translateZ(0);
-    -webkit-transition-duration: 0.3s;
-    -webkit-transition-property: box-shadow;
-}
-
-.rst-content .line-block:hover, .rst-content .line-block:focus, .rst-content .line-block:active {
-    box-shadow: 12px 12px;
-}
-
-
-/*The one that format descriptions of parameters*/
-.rst-content .section ul li>p:only-child, .rst-content .section ul li>p:only-child:last-child {
-    margin: 0px 0px 12px 0px;
-}
-
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list)>dt {
-    border: none;
-    background: none;
-    font-weight: normal;
-    font-size: 16px;
-}
-
-/* The one with new line parameters */
-.rst-content dd dl.field-list.simple {
-    display: grid;
-    margin-bottom: inherit;
-    align-content: space-between;
-}
-
-/* The one inside code snippets */
-.rst-content dl:not(.docutils) dt {
-    font-size: 17px;
-    font-weight: normal;
-}
-
-.rst-content dl:not(.docutils) dl dt {
-    display: table;
-}
-
-/*function box patch*/
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) {
-    margin-bottom: 24px;
-    width: auto;
-    line-height: 26px;
-    box-sizing: content-box;
-    display: inline-block;
-    margin: 0em 0em 2em 1em;
-    padding: 1em;
-    position: relative;
-    border: solid 2px #757575;
-    background: white;
-    box-shadow: 8px 8px;
-    transition: perspective(1px) translateZ(0);
-    transition-duration: 0.3s;
-    transition-property: box-shadow;
-    -webkit-transition: perspective(1px) translateZ(0);
-    -webkit-transition-duration: 0.3s;
-    -webkit-transition-property: box-shadow;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):hover, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):focus, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):active {
-    box-shadow: 12px 12px;
-}
-
-html.writer-html5 .rst-content dl.field-list>dt, html.writer-html5 .rst-content dl.footnote>dt {
-    padding-left: 5px;
-    padding-right: 5px;
-}
-
-/* function definition box */
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)>dt {
-    display: table;
-    line-height: normal;
-    font-size: 90%;
-    margin: 6px 0;
-    color: var(--sig-param-color);
-    background: none;
+/* the one that highlights functions and class box */
+html.writer-html4 .rst-content dl:not(.docutils)>dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)>dt {
     border-top: none;
-    position: relative;
-    background-image: gradient(to right, var(--gray), var(--white)) ;
-    padding: 0.035em;
-    border-radius: 5px;
+    line-height: 26px;
+    color: rgba(236,188,188);
+    background: rgba(236,188,188,0.4);
 }

@@ -1,13 +1,6 @@
 XGBoost
 -------
 
-| XGBoost is an optimized distributed gradient boosting library designed
-| to be highly efficient, flexible and portable. It implements machine learning algorithms
-| under the `Gradient Boosting <https://en.wikipedia.org/wiki/Gradient_boosting>`_ framework.
-| XGBoost provides a parallel tree boosting (also known as GBDT, GBM) that solve many data science
-| problems in a fast and accurate way. The same code runs on major distributed environment (Hadoop, SGE, MPI)
-| and can solve problems beyond billions of examples. - `Source <https://xgboost.readthedocs.io/en/stable/>`_
-
 Users can now use XGBoost with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -43,8 +36,7 @@ Users can now use XGBoost with BentoML with the following API: :code:`load`, :co
    # `load` the model back in memory:
    loaded = bentoml.xgboost.load("booster_tree")
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **XGBoost** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

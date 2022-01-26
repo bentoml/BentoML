@@ -1,11 +1,6 @@
 H2O
 ---
 
-| H2O is an Open Source, Distributed, Fast & Scalable Machine Learning Platform: Deep Learning,
-| Gradient Boosting (GBM) & XGBoost, Random Forest, Generalized Linear Modeling (GLM with Elastic Net),
-| K-Means, PCA, Generalized Additive Models (GAM), RuleFit, Support Vector Machine (SVM), Stacked Ensembles,
-| Automatic Machine Learning (AutoML), etc. - `Source <https://github.com/h2oai/h2o-3>`_
-
 Users can now use H2O with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -51,8 +46,7 @@ Users can now use H2O with BentoML with the following API: :code:`load`, :code:`
        init_params=dict(port=H2O_PORT),
    )
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **H2O** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

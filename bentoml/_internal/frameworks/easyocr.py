@@ -247,8 +247,8 @@ def load_runner(
         predict_fn_name (:code:`str`, default to :code:`readtext_batched`):
             Options for inference functions.
         predict_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
-            Parameters for prediction. Refers to `<https://github.com/JaidedAI/EasyOCR/blob/master/easyocr/easyocr.py#L460>`_
-            for more information
+            Parameters for prediction. Refers `here <https://github.com/JaidedAI/EasyOCR/blob/master/easyocr/easyocr.py#L460>`_
+            for more information.
         resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
         batch_options (:code:`Dict[str, Any]`, default to :code:`None`):

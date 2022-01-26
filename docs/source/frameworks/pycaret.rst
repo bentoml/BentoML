@@ -1,10 +1,6 @@
 PyCaret
 -------
 
-| PyCaret is an open source, low-code machine learning library in
-| Python that allows you to go from preparing your data to deploying your 
-| model within minutes in your choice of notebook environment. - `Source <https://pycaret.org/>`_
-
 Users can now use PyCaret with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -45,8 +41,7 @@ Users can now use PyCaret with BentoML with the following API: :code:`load`, :co
    runner = bentoml.pycaret.load_runner(tag)
    runner.run(pd.DataFrame("/path/to/csv"))
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **PyCaret** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

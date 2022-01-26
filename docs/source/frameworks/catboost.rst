@@ -1,17 +1,13 @@
 CatBoost
 --------
 
-| CatBoost is an algorithm for gradient boosting on decision trees. It is developed by Yandex researchers and engineers,
-| and is used for search, recommendation systems, personal assistant, self-driving cars, weather prediction and many other
-| tasks at Yandex and in other companies, including CERN, Cloudflare, Careem taxi. It is in `open-source <https://github.com/catboost/catboost>`_
-| and can be used by anyone. - `Source <https://catboost.ai/>`_
-
 Users can now use CatBoost with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
 
    import bentoml
    import catboost as cbt
+   import pandas as pd
 
    from sklearn.datasets import load_breast_cancer
 
@@ -41,12 +37,11 @@ Users can now use CatBoost with BentoML with the following API: :code:`load`, :c
    model = bentoml.catboost.load("cancer_clf:latest")
 
    # Run a given model under `Runner` abstraction with `load_runner`
-   input_data = pd.from_csv("/path/to/csv")
+   input_data = pd.read_csv("/path/to/csv")
    runner = bentoml.catboost.load_runner("cancer_clf:latest")
    runner.run(cbt.Pool(input_data))
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **CatBoost** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

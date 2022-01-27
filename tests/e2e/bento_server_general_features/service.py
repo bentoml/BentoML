@@ -113,6 +113,7 @@ async def predict_dataframe1(df: "pd.DataFrame") -> "pd.Series":
     assert isinstance(output, pd.Series)
     return output
 
+
 @svc.api(
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasDataFrame(),
@@ -124,6 +125,7 @@ async def predict_dataframe2(df: "pd.DataFrame") -> "pd.DataFrame":
     dfo["col1"] = output
     assert isinstance(dfo, pd.DataFrame)
     return dfo
+
 
 @svc.api(input=File(), output=File())
 async def predict_file(f: FileLike) -> bytes:

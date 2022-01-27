@@ -86,7 +86,7 @@ def load(
                 f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
             )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    model_format = bentoml_model.info.options.get("_model_format")
+    model_format = bentoml_model.info.context.get("model_format")
     # backward compatibility
     if not model_format:
         if zipfile.is_zipfile(weight_file):
@@ -105,7 +105,6 @@ def load(
     else:
         raise BentoMLException(f"Unknown model format {model_format}")
 
-    model.eval()
     return model
 
 
@@ -184,10 +183,10 @@ def save(
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     if isinstance(model, torch.jit.ScriptModule):  # type: ignore[reportPrivateUsage]
-        _model.info.options["_model_format"] = "torchscript:v1"
+        _model.info.context["model_format"] = "torchscript:v1"
         torch.jit.save(model, weight_file)  # type: ignore[reportUnknownMemberType]
     else:
-        _model.info.options["_model_format"] = "torch.save:v1"
+        _model.info.context["model_format"] = "torch.save:v1"
         with open(weight_file, "wb") as file:
             torch.save(model, file, pickle_module=cloudpickle)
 
@@ -252,21 +251,15 @@ class _PyTorchRunner(Runner):
     @torch.no_grad()
     def _setup(self) -> None:  # type: ignore[override]
         self._configure()
+        model = load(
+            self._tag, model_store=self._model_store, device_id=self._device_id
+        )
+        model.eval()
         if self.resource_quota.on_gpu and _is_gpu_available():
-            self._model = parallel.DataParallel(
-                load(
-                    self._tag,
-                    model_store=self._model_store,
-                    device_id=self._device_id,
-                ),
-            )
+            self._model = parallel.DataParallel(model)
             torch.cuda.empty_cache()
         else:
-            self._model = load(
-                self._tag,
-                model_store=self._model_store,
-                device_id=self._device_id,
-            )
+            self._model = model
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn: t.Callable[..., torch.Tensor] = functools.partial(
             raw_predict_fn, **self._partial_kwargs

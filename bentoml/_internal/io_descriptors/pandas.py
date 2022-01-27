@@ -253,7 +253,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
+        if not LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
             raise InvalidArgument(
                 f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
             )

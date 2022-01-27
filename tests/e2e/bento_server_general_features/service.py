@@ -107,12 +107,23 @@ async def predict_ndarray_enforce_dtype(
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasSeries(),
 )
-async def predict_dataframe(df: "pd.DataFrame") -> "pd.Series":
+async def predict_dataframe1(df: "pd.DataFrame") -> "pd.Series":
     assert df["col1"].dtype == "int64"
     output = await dataframe_pred_runner.async_run(df)
     assert isinstance(output, pd.Series)
     return output
 
+@svc.api(
+    input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
+    output=PandasDataFrame(),
+)
+async def predict_dataframe2(df: "pd.DataFrame") -> "pd.DataFrame":
+    assert df["col1"].dtype == "int64"
+    output = await dataframe_pred_runner.async_run(df)
+    dfo = pd.DataFrame()
+    dfo["col1"] = output
+    assert isinstance(dfo, pd.DataFrame)
+    return dfo
 
 @svc.api(input=File(), output=File())
 async def predict_file(f: FileLike) -> bytes:

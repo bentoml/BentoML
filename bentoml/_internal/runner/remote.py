@@ -99,9 +99,9 @@ class RemoteRunnerClient(RunnerImpl):
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         import anyio
 
-        return anyio.run(self.async_run, *args, **kwargs)
+        return anyio.from_thread.run(self.async_run, *args, **kwargs)
 
     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         import anyio
 
-        return anyio.run(self.async_run_batch, *args, **kwargs)
+        return anyio.from_thread.run(self.async_run_batch, *args, **kwargs)

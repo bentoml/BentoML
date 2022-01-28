@@ -70,6 +70,8 @@ _AUTOMODEL_PREFIX_MAPPING: t.Dict[str, str] = {
 }
 
 _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
+    "base": "",
+    "pre-training": "ForPreTraining",
     "causal": "ForCausalLM",
     "masked": "ForMaskedLM",
     "seq2seq": "ForSeq2SeqLM",
@@ -203,14 +205,27 @@ def load(
     from_tf: bool = False,
     from_flax: bool = False,
     framework: str = "pt",
-    lm_head: str = "causal",
+    *,
+    lm_head: str = "base",
+    return_config: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
-) -> t.Tuple[
-    "PretrainedConfig",
-    "ext.TransformersModelType",
-    t.Optional["ext.TransformersTokenizerType"],
-    t.Optional["ext.PreTrainedFeatureExtractor"],
+) -> t.Union[
+    t.Tuple[
+        "PretrainedConfig",
+        "ext.TransformersModelType",
+        t.Union[
+            t.Optional["ext.TransformersTokenizerType"],
+            t.Optional["ext.PreTrainedFeatureExtractor"],
+        ],
+    ],
+    t.Tuple[
+        "ext.TransformersModelType",
+        t.Union[
+            t.Optional["ext.TransformersTokenizerType"],
+            t.Optional["ext.PreTrainedFeatureExtractor"],
+        ],
+    ],
 ]:
     """
     Load a model from BentoML local modelstore with given name.
@@ -230,6 +245,8 @@ def load(
             Language model head for your model. For most use cases causal are applied.
             Refers to `transformers <https://huggingface.co/docs/transformers/index>`_ for more details on which type of
             language model head is applied to your use case and model.
+        return_config (:code:`bool`, `optional`, default to :code:`False`):
+            Whether or not to return configuration of the Transformers model.
         kwargs (:code:`str`, `optional`):
             kwargs that can be parsed to transformers Models instance.
 
@@ -242,13 +259,31 @@ def load(
     .. code-block:: python
 
         import bentoml
-        config, model, tokenizer, _ = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal")
+        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal")
+
+    If you want to returns an config object:
+
+    .. code-block:: python
+
+        import bentoml
+        config, model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal", return_config=True)
     """  # noqa
     check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    if lm_head == "base":
+        logger.warning(
+            """\
+Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
+be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
+given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
+model head should be used:
+    import bentoml
+    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
+                """
         )
 
     config, unused_kwargs = AutoConfig.from_pretrained(
@@ -270,6 +305,10 @@ def load(
         feature_extractor = getattr(
             import_module("transformers"), _feature_extractor
         ).from_pretrained(model.path)
+
+    tokenizer_or_fe = tokenizer if tokenizer is not None else feature_extractor
+    # check for cases where a model doesn't have a tokenizer and a feature extractor
+    assert tokenizer_or_fe is not None
 
     try:
         # Cover cases where some model repo doesn't include a model
@@ -294,7 +333,10 @@ def load(
             config=config,
             **unused_kwargs,
         )
-    return config, t_model, tokenizer, feature_extractor
+
+    if return_config:
+        return config, t_model, tokenizer_or_fe
+    return t_model, tokenizer_or_fe
 
 
 def _save(

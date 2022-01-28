@@ -58,7 +58,7 @@ def test_load_autoclass(autoclass, exc):
 )
 def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
-        model_name, model_store=modelstore, **kwargs
+        model_name, model_store=modelstore, lm_head="causal", **kwargs
     )
     info = modelstore.get(tag)
     try:
@@ -83,7 +83,7 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
 )
 def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
-        model_name, model_store=modelstore, **kwargs
+        model_name, lm_head="causal", model_store=modelstore, **kwargs
     )
     model, tokenizer = bentoml.transformers.load(
         tag,
@@ -100,7 +100,9 @@ def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
 
 def test_transformers_runner_setup_run_batch(modelstore):
     tag = bentoml.transformers.import_from_huggingface_hub(
-        "distilbert-base-uncased-finetuned-sst-2-english", model_store=modelstore
+        "distilbert-base-uncased-finetuned-sst-2-english",
+        lm_head="sequence-classification",
+        model_store=modelstore,
     )
     runner = bentoml.transformers.load_runner(
         tag,
@@ -120,7 +122,9 @@ def test_transformers_runner_pipelines_kwargs(modelstore):
     from PIL import Image
 
     tag = bentoml.transformers.import_from_huggingface_hub(
-        "google/vit-base-patch16-224", model_store=modelstore
+        "google/vit-base-patch16-224",
+        lm_head="image-classification",
+        model_store=modelstore,
     )
     runner = bentoml.transformers.load_runner(
         tag,

@@ -326,6 +326,7 @@ model head should be used:
 def _save(
     name: str,
     *,
+    lm_head: str,
     model_identifier: t.Union[
         str, "ext.TransformersModelType", "ext.TransformersPipeline"
     ],
@@ -335,6 +336,17 @@ def _save(
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
 ) -> Tag:
+    if lm_head == "base":
+        logger.warning(
+            """\
+Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
+be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
+given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
+model head should be used:
+    import bentoml
+    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
+                """
+        )
 
     # AutoConfig kwargs options
     cache_dir = transformers_options_kwargs.pop("cache_dir", None)
@@ -372,11 +384,13 @@ def _save(
     )
 
     if from_tf:
-        automodel_cls = TFAutoModel
+        framework = "tf"
     elif from_flax:
-        automodel_cls = FlaxAutoModel
+        framework = "flax"
     else:
-        automodel_cls = AutoModel
+        framework = "pt"
+
+    automodel_cls = load_autoclass(framework, lm_head)
 
     if isinstance(model_identifier, str):
         try:
@@ -488,6 +502,7 @@ def _save(
 def save(
     name: str,
     *,
+    lm_head: str = "base",
     model: t.Union["ext.TransformersModelType", "ext.TransformersPipeline"],
     tokenizer: t.Optional["ext.TransformersTokenizerType"] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -579,6 +594,7 @@ def save(
     return _save(
         name=name,
         model_identifier=model,
+        lm_head=lm_head,
         tokenizer=tokenizer,
         metadata=metadata,
         keep_download_from_hub=False,
@@ -591,6 +607,7 @@ def save(
 def import_from_huggingface_hub(
     name: str,
     *,
+    lm_head: str = "base",
     save_namespace: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     keep_download_from_hub: bool = False,
@@ -674,6 +691,7 @@ def import_from_huggingface_hub(
     return _save(
         name=save_namespace,
         model_identifier=name,
+        lm_head=lm_head,
         tokenizer=None,
         keep_download_from_hub=keep_download_from_hub,
         metadata=metadata,
@@ -726,6 +744,9 @@ class _TransformersRunner(Runner):
             "model_kwargs", {}
         )  # type: t.Dict[str, t.Any]
         self._kwargs = pipeline_kwargs
+        self._has_tokenizer = (
+            model_store.get(tag).info.context["feature_extractor"] is False
+        )
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -744,14 +765,20 @@ class _TransformersRunner(Runner):
     def _setup(self) -> None:
         try:
             _ = self._model_store.get(self._tag)
-            self._config, self._model, self._tokenizer, self._feature_extractor = load(
+            self._config, self._model, _tokenizer_or_fe = load(
                 self._tag,
                 model_store=self._model_store,
                 from_flax=False,
                 from_tf="tf" in self._framework,
                 framework=self._framework,
                 lm_head=self._lm_head,
+                return_config=True,
             )
+            if not self._has_tokenizer:
+                self._feature_extractor = _tokenizer_or_fe
+                self._tokenizer = None
+            else:
+                self._tokenizer = _tokenizer_or_fe
         except FileNotFoundError:
             self._config, self._model, self._tokenizer = None, None, None
         if self._tokenizer is None:

@@ -7,6 +7,7 @@ import spacy
 import pytest
 
 import bentoml
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 if TYPE_CHECKING:

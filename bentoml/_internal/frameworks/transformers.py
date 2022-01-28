@@ -39,13 +39,7 @@ try:
     from transformers import AutoTokenizer
     from transformers import FlaxAutoModel
     from transformers import AutoFeatureExtractor
-    from transformers.file_utils import http_get
     from transformers.file_utils import CONFIG_NAME
-    from transformers.file_utils import WEIGHTS_NAME
-    from transformers.file_utils import hf_bucket_url
-    from transformers.file_utils import http_user_agent
-    from transformers.file_utils import TF2_WEIGHTS_NAME
-    from transformers.file_utils import FLAX_WEIGHTS_NAME
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -53,12 +47,6 @@ except ImportError:  # pragma: no cover
         Instruction: Install transformers with `pip install transformers`.
         """
     )
-
-
-_hfhub_exc = """\
-`huggingface_hub` is required to use `bentoml.transformers.import_from_huggingface_hub()`.
-Instruction: `pip install huggingface_hub`
-"""
 
 
 _FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
@@ -110,7 +98,6 @@ def check_tokenizer_type(tokenizer: t.Any) -> bool:
     ).isinstance(
         tokenizer
     )
-
 
 def load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
     """Getting transformers Auto Classes from given frameworks and lm_head"""

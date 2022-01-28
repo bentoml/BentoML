@@ -81,6 +81,21 @@ def test_pytorch_save_load(test_type, modelstore, models):
     assert predict_df(pytorch_loaded, test_df) == 5.0
 
 
+@pytest.mark.gpus
+@pytest.mark.parametrize("dev", ["cpu", "cuda", "cuda:0"])
+@pytest.mark.parametrize("test_type", ["", "tracedmodel", "scriptedmodel"])
+def test_pytorch_save_load_across_devices(dev, test_type, modelstore, models):
+    def is_cuda(model):
+        return next(model.parameters()).is_cuda
+
+    tag = models(test_type)
+    loaded: nn.Module = bentoml.pytorch.load(tag, model_store=modelstore, device_id=dev)
+    if dev == "cpu":
+        assert not is_cuda(loaded)
+    else:
+        assert is_cuda(loaded)
+
+
 @pytest.mark.parametrize(
     "input_data",
     [

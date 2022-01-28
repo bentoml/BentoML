@@ -7,6 +7,7 @@ import spacy
 import pytest
 
 import bentoml
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
@@ -32,7 +33,7 @@ def test_spacy_save_load(
 
     spacy_loaded = bentoml.spacy.load(tag, model_store=modelstore)
     assert predict_json(spacy_loaded, test_json) == test_json["text"]
-    with pytest.raises(EnvironmentError):
+    with pytest.raises(BentoMLException):
         _ = bentoml.spacy.load_project(tag, model_store=modelstore)
 
 
@@ -46,7 +47,7 @@ def test_spacy_load_project(modelstore: "ModelStore"):
     )
     path = bentoml.spacy.load_project(tag, model_store=modelstore)
     assert "project.yml" in [f.name for f in Path(path).iterdir()]
-    with pytest.raises(EnvironmentError):
+    with pytest.raises(BentoMLException):
         _ = bentoml.spacy.load(tag, model_store=modelstore)
 
 

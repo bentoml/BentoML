@@ -2,8 +2,6 @@ import pytest
 import requests
 import transformers.pipelines
 from transformers import set_seed
-from transformers.file_utils import CONFIG_NAME
-from transformers.file_utils import hf_bucket_url
 
 import bentoml.transformers
 from bentoml.exceptions import BentoMLException

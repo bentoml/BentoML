@@ -86,7 +86,7 @@ def load(
 
 SAVE_WARNING = f"""\
 BentoML won't provide a :func:`save` API for MLflow. If one uses :code:`bentoml.mlflow.save`, it will
-raises :obj:`EnvironmentError`:
+raises :obj:`BentoMLException`:
 
     - If you currently working with :code:`mlflow.<flavor>.save_model`, we kindly suggest you
       to replace :code:`mlflow.<flavor>.save_model` with BentoML's `save` API as we also supports
@@ -165,7 +165,7 @@ BentoML :func:`save` API:
 
 
 def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
-    raise EnvironmentError(SAVE_WARNING)
+    raise BentoMLException(SAVE_WARNING)
 
 
 save.__doc__ = SAVE_WARNING

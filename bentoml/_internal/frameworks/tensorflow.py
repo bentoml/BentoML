@@ -270,7 +270,7 @@ def load(
 
         if tfhub_options is not None:
             if not isinstance(tfhub_options, tf.saved_model.SaveOptions):
-                raise EnvironmentError(
+                raise BentoMLException(
                     f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
                 )
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):

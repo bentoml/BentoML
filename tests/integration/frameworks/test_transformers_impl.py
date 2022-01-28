@@ -4,13 +4,14 @@ import transformers.pipelines
 from transformers import set_seed
 from transformers.file_utils import CONFIG_NAME
 from transformers.file_utils import hf_bucket_url
-from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID
 
 import bentoml.transformers
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
 set_seed(123)
+
+MODEL_ID = "julien-c/dummy-unknown"
 
 REVISION_ID_INVALID = "e10"
 
@@ -47,37 +48,7 @@ def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
 )
 def test_load_autoclass(autoclass, exc):
     with pytest.raises(exc):
-        bentoml._internal.frameworks.transformers._load_autoclass(**autoclass)
-
-
-@pytest.mark.parametrize(
-    "kwargs, exc",
-    [
-        (
-            {"hf_url": "https://bofa", "output_dir": "/tmp"},
-            requests.exceptions.ConnectionError,
-        ),
-        (
-            {
-                "hf_url": hf_bucket_url(MODEL_ID, filename="missing.bin"),
-                "output_dir": "/tmp",
-            },
-            requests.exceptions.HTTPError,
-        ),
-        (
-            {
-                "hf_url": hf_bucket_url(
-                    MODEL_ID, filename=CONFIG_NAME, revision=REVISION_ID_INVALID
-                ),
-                "output_dir": "/tmp",
-            },
-            requests.exceptions.HTTPError,
-        ),
-    ],
-)
-def test_download_from_hub(kwargs, exc):
-    with pytest.raises(exc):
-        bentoml._internal.frameworks.transformers._download_from_hub(**kwargs)
+        bentoml._internal.frameworks.transformers.load_autoclass(**autoclass)
 
 
 @pytest.mark.parametrize(
@@ -114,9 +85,9 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
 )
 def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
-        "gpt2", model_store=modelstore, **kwargs
+        model_name, model_store=modelstore, **kwargs
     )
-    _, model, tokenizer = bentoml.transformers.load(
+    _, model, tokenizer, _ = bentoml.transformers.load(
         tag, framework=framework, from_tf="tf" in framework, model_store=modelstore
     )
     assert (
@@ -130,13 +101,16 @@ def test_transformers_runner_setup_run_batch(modelstore):
         "distilbert-base-uncased-finetuned-sst-2-english", model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
-        tag, tasks="text-classification", model_store=modelstore
+        tag,
+        lm_head="sequence-classification",
+        tasks="text-classification",
+        model_store=modelstore,
     )
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == runner.num_replica == 1
 
     res = runner.run_batch(batched_sentence)
-    assert all(i["score"] >= 0.8 for i in res)
+    assert all(i["score"] >= 0.4 for i in res)
     assert isinstance(runner._pipeline, transformers.pipelines.Pipeline)
 
 
@@ -144,13 +118,13 @@ def test_transformers_runner_pipelines_kwargs(modelstore):
     from PIL import Image
 
     tag = bentoml.transformers.import_from_huggingface_hub(
-        "google/vit-large-patch16-224", model_store=modelstore
+        "google/vit-base-patch16-224", model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
         tag,
         tasks="image-classification",
+        lm_head="image-classification",
         device=-1,
-        feature_extractor="google/vit-large-patch16-224",
         model_store=modelstore,
     )
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"

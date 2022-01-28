@@ -34,10 +34,6 @@ getval(){
   run_yq eval "$@" "$CONFIG_FILE";
 }
 
-run_python(){
-  python -m "$@"
-}
-
 validate_yaml() {
   # validate YAML file
   if ! [ -f "$CONFIG_FILE" ]; then
@@ -173,7 +169,7 @@ main() {
   need_cmd tr
   (need_cmd yq && echo "Using yq via $(which yq)...";) || install_yq
 
-  run_python pip install -U pip setuptools
+  pip install -U pip setuptools
 
 
   for args in "$@"; do
@@ -198,7 +194,7 @@ main() {
   if [ "$SKIP_DEPS" -eq 0 ]; then
     # setup tests environment
     if [ -f "$REQ_FILE" ]; then
-      run_python pip install -r "$REQ_FILE" || exit 1
+      pip install -r "$REQ_FILE" || exit 1
     fi
   fi
 
@@ -213,9 +209,8 @@ main() {
     path="$GIT_ROOT"/"$test_dir"/"$fname"
   fi
 
-  if ! (run_python pytest "$path" "${OPTS[@]}"); then
-    ERR=1
-  fi
+  # run pytest
+  python -m pytest "$path" "${OPTS[@]}" || ERR=1
 
   # Return non-zero if pytest failed
   if ! test $ERR = 0; then

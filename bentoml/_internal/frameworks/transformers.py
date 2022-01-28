@@ -99,6 +99,7 @@ def check_tokenizer_type(tokenizer: t.Any) -> bool:
         tokenizer
     )
 
+
 def load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
     """Getting transformers Auto Classes from given frameworks and lm_head"""
     if (

@@ -113,13 +113,13 @@ def add_model_management_commands(
             table.add_column("Path")
             table.add_column("Size")
             table.add_column("Creation Time")
-            for bento in res:
+            for model in res:
                 table.add_row(
-                    bento["tag"],
-                    bento["module"],
-                    bento["path"],
-                    bento["size"],
-                    bento["creation_time"],
+                    model["tag"],
+                    model["module"],
+                    model["path"],
+                    model["size"],
+                    model["creation_time"],
                 )
             console = Console()
             console.print(table)
@@ -129,7 +129,7 @@ def add_model_management_commands(
         "delete_targets",
         type=click.STRING,
         callback=parse_delete_targets_argument_callback,
-        required=False,
+        required=True,
     )
     @click.option(
         "-y",
@@ -150,7 +150,22 @@ def add_model_management_commands(
         * Bulk delete all models with a specific name, e.g.: `bentoml model delete IrisClassifier`
         * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml model delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
-        pass
+
+        def delete_target(target):
+            to_delete_models = model_store.list(target)
+
+            for model in to_delete_models:
+                if yes:
+                    delete_confirmed = True
+                else:
+                    delete_confirmed = click.confirm(f"delete model {model.tag}?")
+
+                if delete_confirmed:
+                    model_store.delete(model.tag)
+                    click.echo(f"{model} deleted")
+
+        for target in delete_targets:
+            delete_target(target)
 
     @model_cli.command(help="Export Model to a tar file")
     @click.argument("model_tag", type=click.STRING)

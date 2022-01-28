@@ -46,10 +46,10 @@ def get_default_bento_readme(svc: "Service"):
     doc = f'# BentoML Service "{svc.name}"\n\n'
     doc += "This is a Machine Learning Service created with BentoML. \n\n"
 
-    if svc._apis:  # type: ignore[reportPrivateUsage]
+    if svc.apis:
         doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
 
-        for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
+        for api in svc.apis.values():
             doc += f"### /{api.name}\n\n"
             doc += f"* Input: {api.input.__class__.__name__}\n"
             doc += f"* Output: {api.output.__class__.__name__}\n\n"
@@ -342,12 +342,14 @@ class BentoInfo:
             logger.error(exc)
             raise
 
+        assert yaml_content is not None
+
         yaml_content["tag"] = Tag(yaml_content["name"], yaml_content["version"])
         del yaml_content["name"]
         del yaml_content["version"]
 
         try:
-            return cattr.structure(yaml_content, cls)
+            return cattr.structure(yaml_content, cls)  # type: ignore[attr-defined]
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")
 

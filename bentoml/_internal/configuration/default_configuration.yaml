@@ -38,6 +38,7 @@ logging:
 
 tracing:
   type: zipkin
+  sample_rate: 0.0
   zipkin:
     url: Null
   jaeger:

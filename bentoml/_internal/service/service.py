@@ -14,10 +14,7 @@ from .inference_api import InferenceAPI
 from ..utils.validation import validate_tag_str
 
 if TYPE_CHECKING:
-    from starlette.types import ASGIApp
-    from starlette.middleware import Middleware
-    from starlette.applications import Starlette
-
+    from .. import ext_typing as ext
     from ..bento import Bento
 
 
@@ -39,7 +36,7 @@ class Service:
     the `api` decorator.
     """
 
-    _apis: t.Dict[str, InferenceAPI] = {}
+    apis: t.Dict[str, InferenceAPI] = {}
 
     # Name of the service, it is a required parameter for __init__
     name: str
@@ -82,15 +79,17 @@ class Service:
         else:
             self.runners: t.Dict[str, "t.Union[Runner, SimpleRunner]"] = {}
 
-        self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
-        self._middlewares: t.List[t.Tuple[t.Type["Middleware"], t.Any]] = []
+        self.mount_apps: t.List[t.Tuple["ext.ASGIApp", str, str]] = []
+        self.middlewares: t.List[
+            t.Tuple[t.Type["ext.AsgiMiddleware"], t.Dict[str, t.Any]]
+        ] = []
 
-    def _on_asgi_app_startup(self) -> None:
+    def on_asgi_app_startup(self) -> None:
         # TODO: initialize Local Runner instances or Runner Clients here
         # TODO(P1): add `@svc.on_startup` decorator for adding user-defined hook
         pass
 
-    def _on_asgi_app_shutdown(self) -> None:
+    def on_asgi_app_shutdown(self) -> None:
         # TODO(P1): add `@svc.on_shutdown` decorator for adding user-defined hook
         pass
 
@@ -144,34 +143,34 @@ class Service:
             route=route,
         )
 
-        if api.name in self._apis:
+        if api.name in self.apis:
             raise BentoMLException(
                 f"API {api.name} is already defined in Service {self.name}"
             )
-        self._apis[api.name] = api
+        self.apis[api.name] = api
 
     @property
-    def asgi_app(self) -> "Starlette":
+    def asgi_app(self) -> "ext.ASGIApp":
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
 
     def mount_asgi_app(
-        self, app: "ASGIApp", path: str = "/", name: t.Optional[str] = None
+        self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
     ) -> None:
-        self._mount_apps.append((app, path, name))  # type: ignore
+        self.mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(
         self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
     ) -> None:
         from starlette.middleware.wsgi import WSGIMiddleware
 
-        self._mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
+        self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_asgi_middleware(
-        self, middleware_cls: t.Type["Middleware"], **options: t.Any
+        self, middleware_cls: t.Type["ext.AsgiMiddleware"], **options: t.Any
     ) -> None:
-        self._middlewares.append((middleware_cls, options))
+        self.middlewares.append((middleware_cls, options))
 
     def openapi_doc(self):
         from .openapi import get_service_openapi_doc

@@ -96,11 +96,20 @@ async def test_pandas(host):
 
     await async_request(
         "POST",
-        f"http://{host}/predict_dataframe",
+        f"http://{host}/predict_dataframe1",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
         data=df.to_json(orient="records"),
         assert_status=200,
         assert_data=b"[202]",
+    )
+
+    await async_request(
+        "POST",
+        f"http://{host}/predict_dataframe2",
+        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
+        data=df.to_json(orient="records"),
+        assert_status=200,
+        assert_data=b'[{"col1":202}]',
     )
 
 

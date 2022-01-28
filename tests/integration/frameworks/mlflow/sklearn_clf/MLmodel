@@ -3,9 +3,10 @@ flavors:
     env: conda.yaml
     loader_module: mlflow.sklearn
     model_path: model.pkl
-    python_version: 3.8.8
+    python_version: 3.9.4
   sklearn:
     pickled_model: model.pkl
     serialization_format: cloudpickle
-    sklearn_version: 0.24.2
-utc_time_created: '2021-10-16 21:28:24.399774'
+    sklearn_version: 1.0.2
+model_uuid: 985e1569d5b741dc9b43741e1b94e823
+utc_time_created: '2022-01-25 06:26:49.386149'

@@ -12,7 +12,7 @@ from .container import Payload
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import payload_params_to_multipart
-from ..configuration.containers import BentoServerContainer
+from ..configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:  # pragma: no cover
     from aiohttp import BaseConnector
@@ -28,7 +28,7 @@ class RemoteRunnerClient(RunnerImpl):
     def _get_conn(
         self,
         remote_runner_mapping: t.Dict[str, str] = Provide[
-            BentoServerContainer.remote_runner_mapping
+            DeploymentContainer.remote_runner_mapping
         ],
     ) -> "BaseConnector":
         import aiohttp
@@ -81,11 +81,20 @@ class RemoteRunnerClient(RunnerImpl):
         client = self._get_client()
         async with client.post(url, data=multipart) as resp:
             body = await resp.read()
+        try:
             meta_header = resp.headers[PAYLOAD_META_HEADER]
+        except KeyError:
+            raise ValueError(
+                f"Bento payload decode error: {PAYLOAD_META_HEADER} not exist. "
+                "An exception might have occurred in the upstream server."
+                f"[{resp.status}] {body.decode()}"
+            )
+
         try:
             payload = Payload(data=body, meta=json.loads(meta_header))
         except JSONDecodeError:
             raise ValueError(f"Bento payload decode error: {meta_header}")
+
         return AutoContainer.payload_to_single(payload)
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -99,9 +108,9 @@ class RemoteRunnerClient(RunnerImpl):
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         import anyio
 
-        return anyio.run(self.async_run, *args, **kwargs)
+        return anyio.from_thread.run(self.async_run, *args, **kwargs)
 
     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         import anyio
 
-        return anyio.run(self.async_run_batch, *args, **kwargs)
+        return anyio.from_thread.run(self.async_run_batch, *args, **kwargs)

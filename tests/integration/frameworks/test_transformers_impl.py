@@ -2,8 +2,6 @@ import pytest
 import requests
 import transformers.pipelines
 from transformers import set_seed
-from transformers.file_utils import CONFIG_NAME
-from transformers.file_utils import hf_bucket_url
 
 import bentoml.transformers
 from bentoml.exceptions import BentoMLException
@@ -87,8 +85,12 @@ def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
         model_name, model_store=modelstore, **kwargs
     )
-    _, model, tokenizer, _ = bentoml.transformers.load(
-        tag, framework=framework, from_tf="tf" in framework, model_store=modelstore
+    model, tokenizer = bentoml.transformers.load(
+        tag,
+        framework=framework,
+        from_tf="tf" in framework,
+        lm_head="causal",
+        model_store=modelstore,
     )
     assert (
         generate_from_text(model, tokenizer, test_sentence, return_tensors=tensors_type)

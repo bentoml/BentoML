@@ -258,13 +258,6 @@ def load(
     _model, _tokenizer = model.info.context["model"], model.info.context["tokenizer"]
     _feature_extractor = model.info.context["feature_extractor"]
 
-    if from_tf:
-        automodel_cls = TFAutoModel
-    elif from_flax:
-        automodel_cls = FlaxAutoModel
-    else:
-        automodel_cls = AutoModel
-
     if _tokenizer is False:
         tokenizer: t.Optional["ext.TransformersTokenizerType"] = None
     else:
@@ -279,27 +272,27 @@ def load(
         ).from_pretrained(model.path)
 
     try:
-        if feature_extractor is not None:
-            loader = AutoModel
-        else:
-            loader = getattr(import_module("transformers"), _model)
-        t_model: "ext.TransformersModelType" = loader.from_pretrained(  # type: ignore[reportUnknownMemberType]
-            model.path,
-            config=config,
-            from_tf=from_tf,
-            from_flax=from_flax,
-            **unused_kwargs,
-        )
-    except RuntimeError:
-        t_model = automodel_cls.from_pretrained(
-            model.path, config=config, **unused_kwargs
-        )
-    except Exception:  # noqa # pylint: disable=broad-except
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
         #  google/bert_uncased_L-2_H-128_A-2
         t_model = load_autoclass(framework, lm_head).from_pretrained(  # type: ignore[reportUnknownMemberType]
             model.path, config=config, **unused_kwargs
+        )
+    except Exception:  # noqa # pylint: disable=broad-except
+        if feature_extractor is not None:
+            if from_tf:
+                framework = "tf"
+            elif from_flax:
+                framework = "flax"
+            else:
+                framework = "pt"
+            loader = load_autoclass(framework, lm_head)
+        else:
+            loader = getattr(import_module("transformers"), _model)
+        t_model: "ext.TransformersModelType" = loader.from_pretrained(  # type: ignore[reportUnknownMemberType]
+            model.path,
+            config=config,
+            **unused_kwargs,
         )
     return config, t_model, tokenizer, feature_extractor
 
@@ -376,21 +369,17 @@ def _save(
         except (NotFound, FileNotFoundError):
             pass
 
-        # workflow
-        # load config -> load model from config (this way it doesn't load weight) -> save pretrained weight
-        config = AutoConfig.from_pretrained(
+        # Load the model from pretrained
+        # This is pretty slow approach
+        model = automodel_cls.from_pretrained(
             model_identifier,
             cache_dir=cache_dir,
             force_download=force_download,
             resume_download=resume_download,
             proxies=proxies,
             revision=revision,
-            trust_remote_code=trust_remote_code,
             **transformers_options_kwargs,
         )
-
-        # Load the model from pretrained
-        model = automodel_cls.from_config(config)
         model.save_pretrained(_model.path)
 
         with open(_model.path_of(CONFIG_NAME), "r", encoding="utf-8") as of:
@@ -413,7 +402,6 @@ def _save(
             _tokenizer: "ext.TransformersTokenizerType" = AutoTokenizer.from_pretrained(
                 # type: ignore[reportUnknownMemberType]
                 model_identifier,
-                config=config,
                 force_download=force_download,
                 resume_download=resume_download,
                 proxies=proxies,

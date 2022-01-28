@@ -31,7 +31,7 @@ res_arr = np.array(
 
 
 def test_mlflow_save():
-    with pytest.raises(EnvironmentError):
+    with pytest.raises(BentoMLException):
         bentoml.mlflow.save()
 
 

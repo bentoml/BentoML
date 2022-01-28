@@ -35,7 +35,9 @@ try:
     import transformers
     from transformers import AutoModel
     from transformers import AutoConfig
+    from transformers import TFAutoModel
     from transformers import AutoTokenizer
+    from transformers import FlaxAutoModel
     from transformers import AutoFeatureExtractor
     from transformers.file_utils import http_get
     from transformers.file_utils import CONFIG_NAME
@@ -253,8 +255,15 @@ def load(
         model.path, return_unused_kwargs=True, **kwargs
     )  # type: ignore[reportUnknownMemberType]
 
-    _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
-    _feature_extractor = model.info.options["feature_extractor"]
+    _model, _tokenizer = model.info.context["model"], model.info.context["tokenizer"]
+    _feature_extractor = model.info.context["feature_extractor"]
+
+    if from_tf:
+        automodel_cls = TFAutoModel
+    elif from_flax:
+        automodel_cls = FlaxAutoModel
+    else:
+        automodel_cls = AutoModel
 
     if _tokenizer is False:
         tokenizer: t.Optional["ext.TransformersTokenizerType"] = None
@@ -282,7 +291,9 @@ def load(
             **unused_kwargs,
         )
     except RuntimeError:
-        t_model = AutoModel.from_pretrained(model.path, config=config, **unused_kwargs)
+        t_model = automodel_cls.from_pretrained(
+            model.path, config=config, **unused_kwargs
+        )
     except Exception:  # noqa # pylint: disable=broad-except
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
@@ -305,16 +316,33 @@ def _save(
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
 ) -> Tag:
+
+    # AutoConfig kwargs options
+    cache_dir = transformers_options_kwargs.pop("cache_dir", None)
+    force_download = transformers_options_kwargs.pop("force_download", False)
+    resume_download = transformers_options_kwargs.pop("resume_download", True)
+    proxies = transformers_options_kwargs.pop("proxies", None)
+    revision = transformers_options_kwargs.pop("revision", "main")
+    trust_remote_code = transformers_options_kwargs.pop("trust_remote_code", False)
+
+    from_tf = transformers_options_kwargs.pop("from_tf", False)
+    from_flax = transformers_options_kwargs.pop("from_flax", False)
+    use_auth_token = transformers_options_kwargs.pop("use_auth_token", None)
+
+    # AutoTokenizer kwargs options
+    subfolder = transformers_options_kwargs.pop("subfolder", None)
+    use_fast = transformers_options_kwargs.pop("use_fast", True)
+    tokenizer_type = transformers_options_kwargs.pop("tokenizer_type", None)
+
     check_flax_supported()  # pragma: no cover
     context: t.Dict[str, t.Any] = {
         "framework_name": "transformers",
         "pip_dependencies": [f"transformers=={get_pkg_version('transformers')}"],
-    }
-    options: t.Dict[str, t.Any] = {
         "feature_extractor": False,
         "pipeline": False,
         "tokenizer": False,
     }
+    options: t.Dict[str, t.Any] = {"revision": revision}
 
     _model = Model.create(
         name,
@@ -324,47 +352,45 @@ def _save(
         metadata=metadata,
     )
 
+    if from_tf:
+        automodel_cls = TFAutoModel
+    elif from_flax:
+        automodel_cls = FlaxAutoModel
+    else:
+        automodel_cls = AutoModel
+
     if isinstance(model_identifier, str):
         try:
-            info = model_store.get(name)
-            if not keep_download_from_hub:
+            meta = model_store.get(name)
+            rev = meta.info.options["revision"]
+            if rev == "main" and not keep_download_from_hub:
                 logger.warning(
                     f"{name} is found under BentoML modelstore.\nFor most use cases of using pretrained model,"
-                    f" you don't have to redownload the model. returning {info.tag} ...\nIf you"
+                    f" you don't have to re-download the model. returning {meta.tag} ...\nIf you"
                     " still insist on downloading, then specify `keep_download_from_hub=True` in"
                     " `import_from_huggingface_hub`."
                 )
-                return info.tag
+                return meta.tag
             else:
                 pass
         except (NotFound, FileNotFoundError):
             pass
-        from_tf = transformers_options_kwargs.pop("from_tf", False)
-        from_flax = transformers_options_kwargs.pop("from_flax", False)
-        revision = transformers_options_kwargs.pop("revision", None)
-        mirror = transformers_options_kwargs.pop("mirror", None)
-        proxies = transformers_options_kwargs.pop("proxies", None)
-        use_auth_token = transformers_options_kwargs.pop("use_auth_token", None)
-        force_download = bool(transformers_options_kwargs.pop("force_download", False))
-        resume_download = bool(transformers_options_kwargs.pop("resume_download", True))
 
-        # AutoTokenizer kwargs options
-        subfolder = transformers_options_kwargs.pop("subfolder", None)
-        use_fast = transformers_options_kwargs.pop("use_fast", True)
-        tokenizer_type = transformers_options_kwargs.pop("tokenizer_type", None)
-        trust_remote_code = transformers_options_kwargs.pop("trust_remote_code", False)
-
-        # Load the model from pretrained
-        # Hmm we don't want to do this since it loads
-        # model back into memory, which makes the workflow very slow
-        model = AutoModel.from_pretrained(
+        # workflow
+        # load config -> load model from config (this way it doesn't load weight) -> save pretrained weight
+        config = AutoConfig.from_pretrained(
             model_identifier,
-            proxies=proxies,
-            mirror=mirror,
-            use_auth_token=use_auth_token,
+            cache_dir=cache_dir,
             force_download=force_download,
             resume_download=resume_download,
+            proxies=proxies,
+            revision=revision,
+            trust_remote_code=trust_remote_code,
+            **transformers_options_kwargs,
         )
+
+        # Load the model from pretrained
+        model = automodel_cls.from_config(config)
         model.save_pretrained(_model.path)
 
         with open(_model.path_of(CONFIG_NAME), "r", encoding="utf-8") as of:
@@ -372,21 +398,22 @@ def _save(
             try:
                 arch = "".join(_config["architectures"])
                 if from_tf:
-                    _model.info.options["model"] = f"TF{arch}"
+                    _model.info.context["model"] = f"TF{arch}"
                 elif from_flax:
-                    _model.info.options["model"] = f"Flax{arch}"
+                    _model.info.context["model"] = f"Flax{arch}"
                 else:
-                    _model.info.options["model"] = arch
+                    _model.info.context["model"] = arch
             except KeyError:
-                _model.info.options["model"] = ""
+                _model.info.context["model"] = ""
 
         # NOTE: With Tokenizer there are way too many files
         #  to be included, per frameworks. Thus we will load
         #  a Tokenizer instance, then save it to path.
         try:
-            _tokenizer_inst: "ext.TransformersTokenizerType" = AutoTokenizer.from_pretrained(
+            _tokenizer: "ext.TransformersTokenizerType" = AutoTokenizer.from_pretrained(
                 # type: ignore[reportUnknownMemberType]
                 model_identifier,
+                config=config,
                 force_download=force_download,
                 resume_download=resume_download,
                 proxies=proxies,
@@ -395,30 +422,40 @@ def _save(
                 use_fast=use_fast,
                 tokenizer_type=tokenizer_type,
                 trust_remote_code=trust_remote_code,
+                **transformers_options_kwargs,
             )
-            _ = _tokenizer_inst.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
-            _model.info.options["tokenizer"] = type(_tokenizer_inst).__name__
+            _ = _tokenizer.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
+            _model.info.context["tokenizer"] = type(_tokenizer).__name__
         except (ValueError, KeyError):
             # For pretrained model that doesn't have a tokenizer,
             # it will have a feature extractor instead
             _feature_extractor: "ext.PreTrainedFeatureExtractor" = (
-                AutoFeatureExtractor.from_pretrained(model_identifier)
-            )  # type: ignore[reportUnknownMemberType]
+                AutoFeatureExtractor.from_pretrained(
+                    model_identifier,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    resume_download=resume_download,
+                    proxies=proxies,
+                    revision=revision,
+                    use_auth_token=use_auth_token,
+                    **transformers_options_kwargs,
+                )
+            )
             _feature_extractor.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
-            _model.info.options["feature_extractor"] = type(_feature_extractor).__name__
+            _model.info.context["feature_extractor"] = type(_feature_extractor).__name__
     elif LazyType["ext.TransformersPipeline"](
         "transformers.pipelines.base.Pipeline"
     ).isinstance(model_identifier):
-        _model.info.options["model"] = model_identifier.model.__class__.__name__
-        _model.info.options["tokenizer"] = model_identifier.tokenizer.__class__.__name__
-        _model.info.options["pipeline"] = True
+        _model.info.context["model"] = model_identifier.model.__class__.__name__
+        _model.info.context["tokenizer"] = model_identifier.tokenizer.__class__.__name__
+        _model.info.context["pipeline"] = True
         model_identifier.save_pretrained(_model.path)
     elif check_model_type(model_identifier):
         assert tokenizer is not None and check_tokenizer_type(
             tokenizer
         ), _SAVE_CONFLICTS_ERR.format(tokenizer=tokenizer, model=type(model_identifier))
-        _model.info.options["model"] = model_identifier.__class__.__name__
-        _model.info.options["tokenizer"] = tokenizer.__class__.__name__
+        _model.info.context["model"] = model_identifier.__class__.__name__
+        _model.info.context["tokenizer"] = tokenizer.__class__.__name__
         model_identifier.save_pretrained(_model.path)
         tokenizer.save_pretrained(_model.path)
     else:

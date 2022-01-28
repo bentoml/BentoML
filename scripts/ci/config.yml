@@ -1,3 +1,10 @@
+# NOTE: PUT YOUR PYPI dependencies under `dependencies`
+# `dependencies` will pass all given arguments to a `requirements.txt`
+#  then `./scripts/ci/run_tests.sh` will try to install all given dependencies
+#  for given tests
+#  `external_scripts` will be run AFTER installing dependencies, and can be used
+#  to setup external envvar
+
 template: &tmpl
   root_test_dir: "tests/integration/frameworks"
   is_dir: false
@@ -91,6 +98,8 @@ lightgbm:
   dependencies:
     - "lightgbm"
 
+# we need to use external_scripts to update scikit-learn here due to some error
+# with mismatch scikit-learn from mlflow side
 mlflow:
   <<: *tmpl
   is_dir: true

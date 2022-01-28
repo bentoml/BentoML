@@ -66,8 +66,6 @@ def fixture_compile_model(convert_to_onnx, tmpdir):
         cwd=onnx_mlir_loc,
     )
     stdout, stderr = docker_proc.communicate()
-    print(stdout)
-    print(stderr)
     # returns something like: 'Shared library model.so has been compiled.'
     assert "has been compiled" in stdout, "Failed to compile model"
 

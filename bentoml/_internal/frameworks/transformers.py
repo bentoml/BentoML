@@ -1,18 +1,10 @@
-import os
-import re
 import json
 import typing as t
 import logging
-import tempfile
-import functools
 import importlib.util
 from typing import TYPE_CHECKING
-from pathlib import Path
 from importlib import import_module
-from contextlib import contextmanager
 
-import requests
-from filelock import FileLock
 from simple_di import inject
 from simple_di import Provide
 
@@ -24,7 +16,6 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
-from ..models import JSON_EXT
 from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
@@ -60,19 +51,12 @@ except ImportError:  # pragma: no cover
         """
     )
 
-MODULE_NAME = "bentoml.transformers"
-
-# `save` should only be used when training or working with a customized pretrained transformers model
-# otherwise use import_from_huggingface_hub
 
 _hfhub_exc = """\
 `huggingface_hub` is required to use `bentoml.transformers.import_from_huggingface_hub()`.
 Instruction: `pip install huggingface_hub`
 """
 
-_T = t.TypeVar("_T")
-_F = t.TypeVar("_F", bound=t.Callable[..., t.Any])
-_T_co = t.TypeVar("_T_co", covariant=True)
 
 _FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
 
@@ -99,12 +83,7 @@ _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
 }
 
 
-class _GeneratorContextManager(t.ContextManager[_T_co]):
-    def __call__(self, func: _F) -> _F:
-        ...
-
-
-def _check_model_type(identifier: t.Any) -> bool:
+def check_model_type(identifier: t.Any) -> bool:
     return (
         LazyType["ext.TransformersModelType"](
             "transformers.modeling_utils.PreTrainedModel"
@@ -118,7 +97,7 @@ def _check_model_type(identifier: t.Any) -> bool:
     )
 
 
-def _check_tokenizer_type(tokenizer: t.Any) -> bool:
+def check_tokenizer_type(tokenizer: t.Any) -> bool:
     return LazyType["ext.TransformersTokenizerType"](
         "transformers.tokenization_utils.PreTrainedTokenizer"
     ).isinstance(tokenizer) or LazyType["ext.TransformersTokenizerType"](
@@ -128,7 +107,7 @@ def _check_tokenizer_type(tokenizer: t.Any) -> bool:
     )
 
 
-def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
+def load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
     """Getting transformers Auto Classes from given frameworks and lm_head"""
     if (
         framework not in _AUTOMODEL_PREFIX_MAPPING
@@ -160,11 +139,11 @@ def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
         )
 
 
-def _clean_name(name: str) -> str:
+def clean_name(name: str) -> str:
     return re.sub(r"\W|^(?=\d)-", "_", name)
 
 
-def _check_flax_supported() -> None:  # pragma: no cover
+def check_flax_supported() -> None:  # pragma: no cover
     _supported: bool = get_pkg_version("transformers").startswith("4")
     _flax_available = (
         importlib.util.find_spec("jax") is not None
@@ -195,6 +174,8 @@ def _check_flax_supported() -> None:  # pragma: no cover
             )
 
 
+MODULE_NAME = "bentoml.transformers"
+
 _SAVE_CONFLICTS_ERR = """\
 When `tokenizer={tokenizer}`, model should be of type
 Union[`PreTrainedModel`, `TFPreTrainedModel`, `FlaxPreTrainedModel`]. Currently
@@ -209,7 +190,7 @@ If you are training a model from scratch using transformers, to save into BentoM
 
 If you want to import directly from a `transformers.pipeline` then do:
     # pipeline = transformers.pipelines('sentiment-analysis')
-    `bentoml.transoformers.save("senta-pipe", pipeline)
+    `bentoml.transformers.save("senta-pipe", pipeline)
 """
 
 
@@ -260,14 +241,16 @@ def load(
         import bentoml
         config, model, tokenizer, _ = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal")
     """  # noqa
-    _check_flax_supported()  # pragma: no cover
+    check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    config, unused_kwargs = AutoConfig.from_pretrained(model.path, return_unused_kwargs=True, **kwargs)  # type: ignore[reportUnknownMemberType]
+    config, unused_kwargs = AutoConfig.from_pretrained(
+        model.path, return_unused_kwargs=True, **kwargs
+    )  # type: ignore[reportUnknownMemberType]
 
     _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
     _feature_extractor = model.info.options["feature_extractor"]
@@ -297,142 +280,16 @@ def load(
             from_flax=from_flax,
             **unused_kwargs,
         )
-    except RuntimeError as e:
-        raise e
+    except RuntimeError:
+        t_model = AutoModel.from_pretrained(model.path, config=config, **unused_kwargs)
     except Exception:  # noqa # pylint: disable=broad-except
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
         #  google/bert_uncased_L-2_H-128_A-2
-        t_model = _load_autoclass(framework, lm_head).from_pretrained(  # type: ignore[reportUnknownMemberType]
+        t_model = load_autoclass(framework, lm_head).from_pretrained(  # type: ignore[reportUnknownMemberType]
             model.path, config=config, **unused_kwargs
         )
     return config, t_model, tokenizer, feature_extractor
-
-
-def _download_from_hub(
-    hf_url: str,
-    output_dir: str,
-    force_download: bool = False,
-    proxies: t.Union[str, None] = None,
-    etag_timeout: int = 10,
-    resume_download: bool = False,
-    user_agent: t.Optional[t.Union[t.Dict[str, str], str]] = None,
-    use_auth_token: t.Optional[t.Union[bool, str]] = None,
-) -> None:
-    """
-    Modification of https://github.com/huggingface/transformers/blob/master/src/transformers/file_utils.py
-    functions cached_path()
-    """
-    try:
-        from huggingface_hub import HfFolder
-    except ImportError:
-        raise BentoMLException(_hfhub_exc)
-    headers = {"user-agent": http_user_agent(user_agent)}
-    if isinstance(use_auth_token, str):
-        headers["authorization"] = f"Bearer {use_auth_token}"
-    elif use_auth_token:
-        token = HfFolder.get_token()
-        if token is None:
-            raise BentoMLException(
-                "You specified use_auth_token=True, "
-                "but a huggingface token was not found."
-            )
-        headers["authorization"] = f"Bearer {token}"
-
-    url_to_download = hf_url
-    etag = None
-    try:
-        r = requests.head(
-            hf_url,
-            headers=headers,
-            allow_redirects=False,
-            proxies=proxies,
-            timeout=etag_timeout,
-        )
-        r.raise_for_status()
-        etag = r.headers.get("X-Linked-Etag") or r.headers.get("ETag")
-        # We favor a custom header indicating the etag of the linked resource, and
-        # we fallback to the regular etag header.
-        # If we don't have any of those, raise an error.
-        if etag is None:
-            raise OSError(
-                "Distant resource does not have an ETag, "
-                "we won't be able to reliably ensure reproducibility."
-            )
-        # In case of a redirect,
-        # save an extra redirect on the request.get call,
-        # and ensure we download the exact atomic version even if it changed
-        # between the HEAD and the GET (unlikely, but hey).
-        if 300 <= r.status_code <= 399:
-            url_to_download = r.headers["Location"]
-    except (requests.exceptions.SSLError, requests.exceptions.ProxyError):
-        # Actually raise for those subclasses of ConnectionError
-        raise
-    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-        # Otherwise, our Internet connection is down.
-        # etag is None
-        pass
-    fname = Path(output_dir, hf_url.split("/")[-1])
-    logger.info(f"Downloading {hf_url} to {str(fname)}")
-    fpath = Path(output_dir, fname)
-    # From now on, etag is not None.
-    if fpath.exists() and not force_download:
-        return
-
-    # Prevent parallel downloads of the same file with a lock.
-    lock_path = fpath.with_suffix(".lock")
-    with FileLock(str(lock_path)):
-
-        # If the download just completed while the lock was activated.
-        if os.path.exists(fpath) and not force_download:
-            # Even if returning early like here, the lock will be released.
-            return
-
-        _tmp_file_manager: t.Union[
-            t.Callable[[], _GeneratorContextManager[t.BinaryIO]],
-            t.Callable[[t.Any, t.Any], t.IO[str]],
-        ]
-
-        if resume_download:
-            incomplete_path = fpath.with_suffix(".incomplete")
-
-            @contextmanager
-            def _resume_file_manager() -> t.Generator[t.BinaryIO, None, None]:
-                with open(incomplete_path, "ab") as f:
-                    yield f
-
-            _tmp_file_manager = _resume_file_manager
-            if os.path.exists(incomplete_path):
-                resume_size = os.stat(incomplete_path).st_size
-            else:
-                resume_size = 0
-        else:
-            _tmp_file_manager = functools.partial(
-                tempfile.NamedTemporaryFile, mode="wb", dir=output_dir, delete=False
-            )
-            resume_size = 0
-    with _tmp_file_manager() as temp_file:
-        http_get(
-            url_to_download,
-            temp_file,
-            proxies=proxies,
-            resume_size=resume_size,
-            headers=headers,
-        )
-
-    logger.info(f"storing {hf_url} at {output_dir}")
-    os.replace(temp_file.name, str(fname))
-
-    # NamedTemporaryFile creates a file with
-    #  hardwired 0600 perms (ignoring umask), so fixing it.
-    umask = os.umask(0o666)
-    os.umask(umask)
-    os.chmod(fname, 0o666 & ~umask)
-    logger.info(f"creating metadata file for {fpath.name}")
-    meta = {"url": hf_url, "etag": etag}
-    meta_path = fpath.with_suffix(f".metadata{JSON_EXT}")
-    with meta_path.open("w") as meta_file:
-        json.dump(meta, meta_file)
 
 
 def _save(
@@ -447,7 +304,7 @@ def _save(
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
 ) -> Tag:
-    _check_flax_supported()  # pragma: no cover
+    check_flax_supported()  # pragma: no cover
     context: t.Dict[str, t.Any] = {
         "framework_name": "transformers",
         "pip_dependencies": [f"transformers=={get_pkg_version('transformers')}"],
@@ -496,46 +353,19 @@ def _save(
         tokenizer_type = transformers_options_kwargs.pop("tokenizer_type", None)
         trust_remote_code = transformers_options_kwargs.pop("trust_remote_code", False)
 
-        # download config file
-        config_file_url = hf_bucket_url(
+        # Load the model from pretrained
+        # Hmm we don't want to do this since it loads
+        # model back into memory, which makes the workflow very slow
+        model = AutoModel.from_pretrained(
             model_identifier,
-            filename=CONFIG_NAME,
-            revision=revision,
-            mirror=mirror,
-        )
-        _download_from_hub(
-            config_file_url,
-            output_dir=_model.path,
             proxies=proxies,
+            mirror=mirror,
             use_auth_token=use_auth_token,
             force_download=force_download,
             resume_download=resume_download,
         )
+        model.save_pretrained(_model.path)
 
-        # download weight file set correct filename
-        if from_tf:
-            weight_filename = TF2_WEIGHTS_NAME
-        elif from_flax:
-            weight_filename = FLAX_WEIGHTS_NAME
-        else:
-            weight_filename = WEIGHTS_NAME
-
-        weight_file_url = hf_bucket_url(
-            model_identifier,
-            filename=weight_filename,
-            revision=revision,
-            mirror=mirror,
-        )
-        _download_from_hub(
-            weight_file_url,
-            output_dir=_model.path,
-            proxies=proxies,
-            use_auth_token=use_auth_token,
-            force_download=force_download,
-            resume_download=resume_download,
-        )
-
-        # _model.info.options will be None here
         with open(_model.path_of(CONFIG_NAME), "r", encoding="utf-8") as of:
             _config = json.loads(of.read())
             try:
@@ -553,7 +383,8 @@ def _save(
         #  to be included, per frameworks. Thus we will load
         #  a Tokenizer instance, then save it to path.
         try:
-            _tokenizer_inst: "ext.TransformersTokenizerType" = AutoTokenizer.from_pretrained(  # type: ignore[reportUnknownMemberType]
+            _tokenizer_inst: "ext.TransformersTokenizerType" = AutoTokenizer.from_pretrained(
+                # type: ignore[reportUnknownMemberType]
                 model_identifier,
                 force_download=force_download,
                 resume_download=resume_download,
@@ -569,7 +400,9 @@ def _save(
         except (ValueError, KeyError):
             # For pretrained model that doesn't have a tokenizer,
             # it will have a feature extractor instead
-            _feature_extractor: "ext.PreTrainedFeatureExtractor" = AutoFeatureExtractor.from_pretrained(model_identifier)  # type: ignore[reportUnknownMemberType]
+            _feature_extractor: "ext.PreTrainedFeatureExtractor" = (
+                AutoFeatureExtractor.from_pretrained(model_identifier)
+            )  # type: ignore[reportUnknownMemberType]
             _feature_extractor.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
             _model.info.options["feature_extractor"] = type(_feature_extractor).__name__
     elif LazyType["ext.TransformersPipeline"](
@@ -579,8 +412,8 @@ def _save(
         _model.info.options["tokenizer"] = model_identifier.tokenizer.__class__.__name__
         _model.info.options["pipeline"] = True
         model_identifier.save_pretrained(_model.path)
-    elif _check_model_type(model_identifier):
-        assert tokenizer is not None and _check_tokenizer_type(
+    elif check_model_type(model_identifier):
+        assert tokenizer is not None and check_tokenizer_type(
             tokenizer
         ), _SAVE_CONFLICTS_ERR.format(tokenizer=tokenizer, model=type(model_identifier))
         _model.info.options["model"] = model_identifier.__class__.__name__
@@ -665,6 +498,12 @@ def save(
        Some parameters are direct port from :func:`from_pretrained` arguments. This is to
        ensure that when doing :func:`save` operations we don't actually load the model class into memory
 
+    .. warning::
+
+
+        :code:`save` should **ONLY BE USED** when training or working with a customized pretrained transformers model.
+        Otherwise, use :code:`import_from_huggingface_hub` for most usecases.
+
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
@@ -681,7 +520,7 @@ def save(
 
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
     """
-    if not _check_model_type(model):
+    if not check_model_type(model):
         if not LazyType["ext.TransformersPipeline"](
             "transformers.pipelines.base.Pipeline"
         ).isinstance(model):
@@ -787,7 +626,7 @@ def import_from_huggingface_hub(
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
     """
     # TODO: pass down kwargs for AutoTokenizer
-    save_namespace = _clean_name(name) if save_namespace is None else save_namespace
+    save_namespace = clean_name(name) if save_namespace is None else save_namespace
     return _save(
         name=save_namespace,
         model_identifier=name,
@@ -892,7 +731,9 @@ class _TransformersRunner(Runner):
             )
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[_T, t.List[_T]]) -> t.Union[_T, t.List[_T]]:  # type: ignore[override]  # noqa
+    def _run_batch(
+        self, input_data: t.Union[t.Any, t.List[t.Any]]
+    ) -> t.Union[t.Any, t.List[t.Any]]:  # type: ignore[override]  # noqa
         res: t.Any = self._pipeline(input_data)
         return res
 

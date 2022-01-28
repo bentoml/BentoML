@@ -48,37 +48,7 @@ def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
 )
 def test_load_autoclass(autoclass, exc):
     with pytest.raises(exc):
-        bentoml._internal.frameworks.transformers._load_autoclass(**autoclass)
-
-
-@pytest.mark.parametrize(
-    "kwargs, exc",
-    [
-        (
-            {"hf_url": "https://bofa", "output_dir": "/tmp"},
-            requests.exceptions.ConnectionError,
-        ),
-        (
-            {
-                "hf_url": hf_bucket_url(MODEL_ID, filename="missing.bin"),
-                "output_dir": "/tmp",
-            },
-            requests.exceptions.HTTPError,
-        ),
-        (
-            {
-                "hf_url": hf_bucket_url(
-                    MODEL_ID, filename=CONFIG_NAME, revision=REVISION_ID_INVALID
-                ),
-                "output_dir": "/tmp",
-            },
-            requests.exceptions.HTTPError,
-        ),
-    ],
-)
-def test_download_from_hub(kwargs, exc):
-    with pytest.raises(exc):
-        bentoml._internal.frameworks.transformers._download_from_hub(**kwargs)
+        bentoml._internal.frameworks.transformers.load_autoclass(**autoclass)
 
 
 @pytest.mark.parametrize(

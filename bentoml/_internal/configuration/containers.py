@@ -18,7 +18,6 @@ from simple_di import Provide
 from simple_di import providers
 
 from . import expand_env_var
-from ..utils import get_free_port
 from ..utils import validate_or_create_dir
 from ...exceptions import BentoMLConfigException
 
@@ -277,8 +276,6 @@ class DeploymentContainerClass:
     )
     service_port = api_server_config.port
     service_host = api_server_config.host
-    forward_host = providers.Static[str]("localhost")
-    forward_port = providers.SingletonFactory[int](get_free_port)
     prometheus_lock = providers.SingletonFactory["SyncLock"](multiprocessing.Lock)
 
     prometheus_multiproc_dir = providers.Factory[str](

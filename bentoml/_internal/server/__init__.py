@@ -10,6 +10,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
+from bentoml._internal.utils.circus import create_standalone_arbiter
 
 from ..configuration import get_debug_mode
 from ..configuration.containers import DeploymentContainer
@@ -64,8 +65,6 @@ def serve_development(
     logger.info('Starting development BentoServer from "%s"', bento_identifier)
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
-    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
     from circus.arbiter import Arbiter  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
@@ -109,12 +108,7 @@ bentoml._internal.server.start_dev_api_server(
         )
     )
 
-    arbiter = Arbiter(
-        watchers=watchers,
-        endpoint=DEFAULT_ENDPOINT_DEALER,
-        pubsub_endpoint=DEFAULT_ENDPOINT_SUB,
-    )
-
+    arbiter = create_standalone_arbiter(watchers)
     arbiter.start()
 
 
@@ -145,9 +139,6 @@ def serve_production(
 
     import json
 
-    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
-    from circus.arbiter import Arbiter  # type: ignore
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
@@ -208,10 +199,8 @@ bentoml._internal.server.start_prod_api_server(
         )
     )
 
-    arbiter = Arbiter(
+    arbiter = create_standalone_arbiter(
         watchers=watchers,
-        endpoint=DEFAULT_ENDPOINT_DEALER,
-        pubsub_endpoint=DEFAULT_ENDPOINT_SUB,
         sockets=[s for s in sockets_map.values()],
     )
 

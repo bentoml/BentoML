@@ -14,7 +14,9 @@ if TYPE_CHECKING:
     from ..server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
-START_TIME_VAR = contextvars.ContextVar[float]("START_TIME_VAR")
+START_TIME_VAR: "contextvars.ContextVar[float]" = contextvars.ContextVar(
+    "START_TIME_VAR"
+)
 
 
 class MetricsMiddleware:

@@ -185,15 +185,15 @@ class ServiceAppFactory(BaseAppFactory):
             media_type="text/html",
         )
 
-    @inject
     async def metrics_view_func(
         self,
         _: "Request",
-    ) -> "Response":  # pylint: disable=unused-argument
+    ) -> "Response":
         from starlette.responses import Response
 
         return Response(
             self.metrics_client.generate_latest(),
+            status_code=200,
             media_type=self.metrics_client.CONTENT_TYPE_LATEST,
         )
 
@@ -237,7 +237,11 @@ class ServiceAppFactory(BaseAppFactory):
 
         if self.enable_metrics:
             routes.append(
-                Route(path="/metrics", name="metrics", endpoint=self.metrics_view_func)
+                Route(
+                    path="/metrics",
+                    name="metrics",
+                    endpoint=self.metrics_view_func,
+                )
             )
 
         parent_dir_path = os.path.dirname(os.path.realpath(__file__))

@@ -284,11 +284,20 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(CORSMiddleware, **self.access_control_options)
             )
 
+        # metrics middleware
+        from .instruments import MetricsMiddleware
+
+        middlewares.append(
+            Middleware(MetricsMiddleware, bento_service=self.bento_service)
+        )
+
+        # otel middleware
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
 
         def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
-                ServiceContext.request_id_var.set(span.context.span_id)
+                span_id: int = span.context.span_id
+                ServiceContext.request_id_var.set(span_id)
 
         def client_response_hook(span: "Span", _message: t.Any) -> None:
             if span is not None:

@@ -1,26 +1,30 @@
 import logging
-import multiprocessing
+import contextvars
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
 
-from ..configuration.containers import BentoMLContainer
+from ..configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:
-    Lock = multiprocessing.synchronize.Lock
+    from .. import ext_typing as ext
+    from ..service import Service
+    from ..server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
 
 
-class InstrumentMiddleware:
+class MetricsMiddleware:
     @inject
     def __init__(
         self,
-        app,
-        bento_service,
-        metrics_client=Provide[BentoMLContainer.metrics_client],
+        app: "ext.ASGIApp",
+        bento_service: "Service",
+        metrics_client: "PrometheusClient" = Provide[
+            DeploymentContainer.metrics_client
+        ],
     ):
         self.app = app
         self.bento_service = bento_service
@@ -44,35 +48,50 @@ class InstrumentMiddleware:
             multiprocess_mode="livesum",
         )
 
-    def __call__(self, environ, start_response):
-        from flask import Request
+    async def __call__(
+        self,
+        scope: "ext.ASGIScope",
+        receive: "ext.ASGIReceive",
+        send: "ext.ASGISend",
+    ) -> None:
+        if not scope["type"].startswith("http"):
+            await self.app(scope, receive, send)
+            return
 
-        req = Request(environ)
-        endpoint = req.path
-        start_time = default_timer()
+        service_version = (
+            self.bento_service.version if self.bento_service.version is not None else ""
+        )
+        endpoint = scope["path"]
+        start_time = contextvars.ContextVar[float]("start_time")
 
-        def start_response_wrapper(status, headers, exc_info=None):
-            ret = start_response(status, headers, exc_info)
-            status_code = int(status.split()[0])
+        async def wrapped_receive() -> "ext.ASGIMessage":
+            message = await receive()
+            start_time.set(default_timer())
+            return message
 
-            # instrument request total count
-            self.metrics_request_total.labels(
-                endpoint=endpoint,
-                service_version=self.bento_service.version,
-                http_response_code=status_code,
-            ).inc()
+        async def wrapped_send(message: "ext.ASGIMessage") -> None:
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
 
-            # instrument request duration
-            total_time = max(default_timer() - start_time, 0)
-            self.metrics_request_duration.labels(
-                endpoint=endpoint,
-                service_version=self.bento_service.version,
-                http_response_code=status_code,
-            ).observe(total_time)
+                # instrument request total count
+                self.metrics_request_total.labels(
+                    endpoint=endpoint,
+                    service_version=service_version,
+                    http_response_code=status_code,
+                ).inc()
 
-            return ret
+                # instrument request duration
+                assert start_time.get() != 0
+                total_time = max(default_timer() - start_time.get(), 0)
+                self.metrics_request_duration.labels(  # type: ignore
+                    endpoint=endpoint,
+                    service_version=service_version,
+                    http_response_code=status_code,
+                ).observe(total_time)
+            start_time.set(0)
+            await send(message)
 
         with self.metrics_request_in_progress.labels(
-            endpoint=endpoint, service_version=self.bento_service.version
+            endpoint=endpoint, service_version=service_version
         ).track_inprogress():
-            return self.app(environ, start_response_wrapper)
+            await self.app(scope, wrapped_receive, wrapped_send)

@@ -170,9 +170,7 @@ class ServiceAppFactory(BaseAppFactory):
     def name(self) -> str:
         return self.bento_service.name
 
-    async def index_view_func(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def index_view_func(self, _: "Request") -> "Response":
         """
         The default index view for BentoML API server. This includes the readme
         generated from docstring and swagger UI
@@ -185,10 +183,7 @@ class ServiceAppFactory(BaseAppFactory):
             media_type="text/html",
         )
 
-    async def metrics_view_func(
-        self,
-        _: "Request",
-    ) -> "Response":
+    async def metrics_view_func(self, _: "Request") -> "Response":
         from starlette.responses import Response
 
         return Response(
@@ -197,9 +192,7 @@ class ServiceAppFactory(BaseAppFactory):
             media_type=self.metrics_client.CONTENT_TYPE_LATEST,
         )
 
-    async def docs_view_func(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def docs_view_func(self, _: "Request") -> "Response":
         from starlette.responses import JSONResponse
 
         docs = self.bento_service.openapi_doc()

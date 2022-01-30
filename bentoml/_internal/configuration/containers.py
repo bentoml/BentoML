@@ -276,7 +276,6 @@ class DeploymentContainerClass:
     )
     service_port = api_server_config.port
     service_host = api_server_config.host
-    prometheus_lock = providers.SingletonFactory["SyncLock"](multiprocessing.Lock)
 
     prometheus_multiproc_dir = providers.Factory[str](
         os.path.join,

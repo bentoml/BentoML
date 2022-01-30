@@ -1,5 +1,6 @@
+# type: ignore[reportMissingTypeStubs]
 import os
-import shutil
+import sys
 import typing as t
 import logging
 from functools import partial
@@ -20,55 +21,67 @@ class PrometheusClient:
         which is required when working with Gunicorn server
 
         Warning: for this to work, prometheus_client library must be imported after
-        this function is called. It relies on the os.environ['prometheus_multiproc_dir']
+        this function is called. It relies on the os.environ['PROMETHEUS_MULTIPROC_DIR']
         to properly setup for multiprocess mode
         """
-        self.multiproc = multiproc
-        self.namespace = namespace
-        self._registry = None
-
         if multiproc:
             assert multiproc_dir is not None, "multiproc_dir must be provided"
-            os.environ["prometheus_multiproc_dir"] = multiproc_dir
 
-    @classmethod
-    def clean_multiproc_dir(cls, multiproc_dir: t.Optional[str]):
-        assert multiproc_dir is not None, "multiproc_dir must be provided"
-        logger.debug("Setting up prometheus_multiproc_dir: %s", multiproc_dir)
-        # Wipe prometheus metrics directory between runs
-        # https://github.com/prometheus/client_python#multiprocess-mode-gunicorn
-        # Ignore errors so it does not fail when directory does not exist
-        shutil.rmtree(multiproc_dir, ignore_errors=True)
-        os.makedirs(multiproc_dir, exist_ok=True)
+        self.multiproc = multiproc
+        self.namespace = namespace
+        self.multiproc_dir: t.Optional[str] = None
+        self._registry = None
+        self._pid: t.Optional[int] = None
 
     @property
     def registry(self):
         if self._registry is None:
-            from prometheus_client import multiprocess
-            from prometheus_client import CollectorRegistry
-
-            registry = CollectorRegistry()
             if self.multiproc:
+                # step 1: check environment
+                assert (
+                    "prometheus_client" not in sys.modules
+                ), "prometheus_client is already imported, multiprocessing will not work properly"
+
+                assert self.multiproc_dir
+                assert os.path.isdir(self.multiproc_dir)
+
+                os.environ["PROMETHEUS_MULTIPROC_DIR"] = self.multiproc_dir
+
+                # step 2:
+                from prometheus_client import multiprocess
+                from prometheus_client import CollectorRegistry
+
+                registry = CollectorRegistry()
                 multiprocess.MultiProcessCollector(registry)
-            self._registry = registry
+                self._pid = os.getpid()
+                self._registry = registry
+            else:
+                from prometheus_client import REGISTRY as registry
+
+                self._registry = registry
+        else:
+            if self.multiproc:
+                assert self._pid is not None
+                assert (
+                    os.getpid() == self._pid
+                ), "The current process's different than the process which the prometheus client gets created"
+
         return self._registry
 
-    # review
-    # @classmethod
-    # def mark_process_dead(cls, pid: int):
-    #     # TODO(jiang)
-    #     pass
+    def mark_process_dead(self) -> None:
+        if self.multiproc:
+            assert self._pid is not None
+            assert (
+                os.getpid() == self._pid
+            ), "The current process's different than the process which the prometheus client gets created"
+            from prometheus_client import multiprocess
 
-    @staticmethod
-    def mark_process_dead(pid: int) -> None:
-        from prometheus_client import multiprocess
+            multiprocess.mark_process_dead(self._pid)
 
-        multiprocess.mark_process_dead(pid)
+    # def start_http_server(self, port: int, addr: str = "") -> None:
+    # from prometheus_client import start_http_server
 
-    def start_http_server(self, port: int, addr: str = "") -> None:
-        from prometheus_client import start_http_server
-
-        start_http_server(port=port, addr=addr, registry=self.registry)
+    # start_http_server(port=port, addr=addr, registry=self.registry)
 
     def generate_latest(self):
         from prometheus_client import generate_latest

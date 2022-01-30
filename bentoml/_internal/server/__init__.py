@@ -53,6 +53,21 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
 
 
 @inject
+def _ensure_prometheus_dir(
+    prometheus_multiproc_dir: str = Provide[
+        DeploymentContainer.prometheus_multiproc_dir
+    ],
+    clean: bool = True,
+):
+    if os.path.exists(prometheus_multiproc_dir):
+        if not os.path.isdir(prometheus_multiproc_dir):
+            shutil.rmtree(prometheus_multiproc_dir)
+        elif clean or os.listdir(prometheus_multiproc_dir):
+            shutil.rmtree(prometheus_multiproc_dir)
+    os.makedirs(prometheus_multiproc_dir, exist_ok=True)
+
+
+@inject
 def serve_development(
     bento_identifier: str,
     working_dir: str,
@@ -109,6 +124,7 @@ bentoml._internal.server.start_dev_api_server(
     )
 
     arbiter = create_standalone_arbiter(watchers)
+    _ensure_prometheus_dir()
     arbiter.start()
 
 
@@ -204,6 +220,7 @@ bentoml._internal.server.start_prod_api_server(
         sockets=[s for s in sockets_map.values()],
     )
 
+    _ensure_prometheus_dir()
     try:
         arbiter.start()
     finally:

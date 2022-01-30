@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from ..server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
+START_TIME_VAR = contextvars.ContextVar[float]("START_TIME_VAR")
 
 
 class MetricsMiddleware:
@@ -62,12 +63,7 @@ class MetricsMiddleware:
             self.bento_service.version if self.bento_service.version is not None else ""
         )
         endpoint = scope["path"]
-        start_time = contextvars.ContextVar[float]("start_time")
-
-        async def wrapped_receive() -> "ext.ASGIMessage":
-            message = await receive()
-            start_time.set(default_timer())
-            return message
+        START_TIME_VAR.set(default_timer())
 
         async def wrapped_send(message: "ext.ASGIMessage") -> None:
             if message["type"] == "http.response.start":
@@ -81,17 +77,18 @@ class MetricsMiddleware:
                 ).inc()
 
                 # instrument request duration
-                assert start_time.get() != 0
-                total_time = max(default_timer() - start_time.get(), 0)
+                assert START_TIME_VAR.get() != 0
+                total_time = max(default_timer() - START_TIME_VAR.get(), 0)
                 self.metrics_request_duration.labels(  # type: ignore
                     endpoint=endpoint,
                     service_version=service_version,
                     http_response_code=status_code,
                 ).observe(total_time)
-            start_time.set(0)
+            START_TIME_VAR.set(0)
             await send(message)
 
         with self.metrics_request_in_progress.labels(
             endpoint=endpoint, service_version=service_version
         ).track_inprogress():
-            await self.app(scope, wrapped_receive, wrapped_send)
+            await self.app(scope, receive, wrapped_send)
+            return

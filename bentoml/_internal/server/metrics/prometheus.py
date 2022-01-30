@@ -29,36 +29,41 @@ class PrometheusClient:
 
         self.multiproc = multiproc
         self.namespace = namespace
-        self.multiproc_dir: t.Optional[str] = None
+        self.multiproc_dir: t.Optional[str] = multiproc_dir
         self._registry = None
+        self._imported = False
         self._pid: t.Optional[int] = None
+
+    @property
+    def prometheus_client(self):
+        if self.multiproc and not self._imported:
+            # step 1: check environment
+            assert (
+                "prometheus_client" not in sys.modules
+            ), "prometheus_client is already imported, multiprocessing will not work properly"
+
+            assert self.multiproc_dir, repr(self.multiproc_dir)
+            assert os.path.isdir(self.multiproc_dir)
+
+            os.environ["PROMETHEUS_MULTIPROC_DIR"] = self.multiproc_dir
+
+        # step 2:
+        import prometheus_client
+        import prometheus_client.multiprocess
+
+        self._imported = True
+        return prometheus_client
 
     @property
     def registry(self):
         if self._registry is None:
             if self.multiproc:
-                # step 1: check environment
-                assert (
-                    "prometheus_client" not in sys.modules
-                ), "prometheus_client is already imported, multiprocessing will not work properly"
-
-                assert self.multiproc_dir
-                assert os.path.isdir(self.multiproc_dir)
-
-                os.environ["PROMETHEUS_MULTIPROC_DIR"] = self.multiproc_dir
-
-                # step 2:
-                from prometheus_client import multiprocess
-                from prometheus_client import CollectorRegistry
-
-                registry = CollectorRegistry()
-                multiprocess.MultiProcessCollector(registry)
+                registry = self.prometheus_client.CollectorRegistry()
+                self.prometheus_client.multiprocess.MultiProcessCollector(registry)
                 self._pid = os.getpid()
                 self._registry = registry
             else:
-                from prometheus_client import REGISTRY as registry
-
-                self._registry = registry
+                self._registry = self.prometheus_client.REGISTRY
         else:
             if self.multiproc:
                 assert self._pid is not None
@@ -68,52 +73,59 @@ class PrometheusClient:
 
         return self._registry
 
+    def __del__(self):
+        self.mark_process_dead()
+
     def mark_process_dead(self) -> None:
         if self.multiproc:
             assert self._pid is not None
             assert (
                 os.getpid() == self._pid
             ), "The current process's different than the process which the prometheus client gets created"
-            from prometheus_client import multiprocess
+            self.prometheus_client.multiprocess.mark_process_dead(self._pid)
 
-            multiprocess.mark_process_dead(self._pid)
-
-    # def start_http_server(self, port: int, addr: str = "") -> None:
-    # from prometheus_client import start_http_server
-
-    # start_http_server(port=port, addr=addr, registry=self.registry)
+    def start_http_server(self, port: int, addr: str = "") -> None:
+        self.prometheus_client.start_http_server(
+            port=port,
+            addr=addr,
+            registry=self.registry,
+        )
 
     def generate_latest(self):
-        from prometheus_client import generate_latest
-
-        return generate_latest(self.registry)
+        return self.prometheus_client.generate_latest(self.registry)
 
     @property
     def CONTENT_TYPE_LATEST(self) -> str:
-        from prometheus_client import CONTENT_TYPE_LATEST
-
-        return CONTENT_TYPE_LATEST
+        return self.prometheus_client.CONTENT_TYPE_LATEST
 
     @property
     def Histogram(self):
-        from prometheus_client import Histogram as Operator
-
-        return partial(Operator, namespace=self.namespace, registry=self.registry)
+        return partial(
+            self.prometheus_client.Histogram,
+            namespace=self.namespace,
+            registry=self.registry,
+        )
 
     @property
     def Counter(self):
-        from prometheus_client import Counter as Operator
-
-        return partial(Operator, namespace=self.namespace, registry=self.registry)
+        return partial(
+            self.prometheus_client.Counter,
+            namespace=self.namespace,
+            registry=self.registry,
+        )
 
     @property
     def Summary(self):
-        from prometheus_client import Summary as Operator
-
-        return partial(Operator, namespace=self.namespace, registry=self.registry)
+        return partial(
+            self.prometheus_client.Summary,
+            namespace=self.namespace,
+            registry=self.registry,
+        )
 
     @property
     def Gauge(self):
-        from prometheus_client import Gauge as Operator
-
-        return partial(Operator, namespace=self.namespace, registry=self.registry)
+        return partial(
+            self.prometheus_client.Gauge,
+            namespace=self.namespace,
+            registry=self.registry,
+        )

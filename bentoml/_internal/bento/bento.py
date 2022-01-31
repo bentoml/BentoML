@@ -168,8 +168,7 @@ class Bento(StoreItem):
         relpaths = [s for s in build_config.include if s.startswith("../")]
         if len(relpaths) != 0:
             raise InvalidArgument(
-                "Paths outside of the build context directory cannot be included; use "
-                "a symlink or copy those files into the working directory manually."
+                "Paths outside of the build context directory cannot be included; use a symlink or copy those files into the working directory manually."
             )
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", build_config.include)

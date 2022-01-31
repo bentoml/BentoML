@@ -42,7 +42,7 @@ class PrometheusClient:
                 "prometheus_client" not in sys.modules
             ), "prometheus_client is already imported, multiprocessing will not work properly"
 
-            assert self.multiproc_dir, repr(self.multiproc_dir)
+            assert self.multiproc_dir, f"Invalid prometheus multiproc directory: {self.multiproc_dir}"
             assert os.path.isdir(self.multiproc_dir)
 
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = self.multiproc_dir

@@ -185,7 +185,6 @@ class ServiceAppFactory(BaseAppFactory):
             media_type="text/html",
         )
 
-    @inject
     async def metrics_view_func(
         self,
         _: "Request",

@@ -39,13 +39,7 @@ try:
     from transformers import AutoTokenizer
     from transformers import FlaxAutoModel
     from transformers import AutoFeatureExtractor
-    from transformers.file_utils import http_get
     from transformers.file_utils import CONFIG_NAME
-    from transformers.file_utils import WEIGHTS_NAME
-    from transformers.file_utils import hf_bucket_url
-    from transformers.file_utils import http_user_agent
-    from transformers.file_utils import TF2_WEIGHTS_NAME
-    from transformers.file_utils import FLAX_WEIGHTS_NAME
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -53,12 +47,6 @@ except ImportError:  # pragma: no cover
         Instruction: Install transformers with `pip install transformers`.
         """
     )
-
-
-_hfhub_exc = """\
-`huggingface_hub` is required to use `bentoml.transformers.import_from_huggingface_hub()`.
-Instruction: `pip install huggingface_hub`
-"""
 
 
 _FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
@@ -70,6 +58,8 @@ _AUTOMODEL_PREFIX_MAPPING: t.Dict[str, str] = {
 }
 
 _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
+    "base": "",
+    "pre-training": "ForPreTraining",
     "causal": "ForCausalLM",
     "masked": "ForMaskedLM",
     "seq2seq": "ForSeq2SeqLM",
@@ -183,14 +173,11 @@ _SAVE_CONFLICTS_ERR = """\
 When `tokenizer={tokenizer}`, model should be of type
 Union[`PreTrainedModel`, `TFPreTrainedModel`, `FlaxPreTrainedModel`]. Currently
 `type(model)={model}`
-
 If you want to save the weight directly from
 `transformers` and save it to BentoML do:
     `bentoml.transformers.import_from_huggingface_hub('bert-base-uncased')`.
-
 If you are training a model from scratch using transformers, to save into BentoML do:
     `bentoml.transformers.save('bert_model', model=my_bert_model, tokenizer=my_tokenizer)`
-
 If you want to import directly from a `transformers.pipeline` then do:
     # pipeline = transformers.pipelines('sentiment-analysis')
     `bentoml.transformers.save("senta-pipe", pipeline)
@@ -203,14 +190,27 @@ def load(
     from_tf: bool = False,
     from_flax: bool = False,
     framework: str = "pt",
-    lm_head: str = "causal",
+    *,
+    lm_head: str = "base",
+    return_config: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
-) -> t.Tuple[
-    "PretrainedConfig",
-    "ext.TransformersModelType",
-    t.Optional["ext.TransformersTokenizerType"],
-    t.Optional["ext.PreTrainedFeatureExtractor"],
+) -> t.Union[
+    t.Tuple[
+        "PretrainedConfig",
+        "ext.TransformersModelType",
+        t.Union[
+            t.Optional["ext.TransformersTokenizerType"],
+            t.Optional["ext.PreTrainedFeatureExtractor"],
+        ],
+    ],
+    t.Tuple[
+        "ext.TransformersModelType",
+        t.Union[
+            t.Optional["ext.TransformersTokenizerType"],
+            t.Optional["ext.PreTrainedFeatureExtractor"],
+        ],
+    ],
 ]:
     """
     Load a model from BentoML local modelstore with given name.
@@ -230,6 +230,8 @@ def load(
             Language model head for your model. For most use cases causal are applied.
             Refers to `transformers <https://huggingface.co/docs/transformers/index>`_ for more details on which type of
             language model head is applied to your use case and model.
+        return_config (:code:`bool`, `optional`, default to :code:`False`):
+            Whether or not to return configuration of the Transformers model.
         kwargs (:code:`str`, `optional`):
             kwargs that can be parsed to transformers Models instance.
 
@@ -240,15 +242,32 @@ def load(
     Examples:
 
     .. code-block:: python
+        import bentoml
+        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal")
+
+    If you want to returns an config object:
+
+    .. code-block:: python
 
         import bentoml
-        config, model, tokenizer, _ = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal")
+        config, model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal", return_config=True)
     """  # noqa
     check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    if lm_head == "base":
+        logger.warning(
+            """\
+Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
+be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
+given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
+model head should be used:
+    import bentoml
+    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
+                """
         )
 
     config, unused_kwargs = AutoConfig.from_pretrained(
@@ -270,6 +289,10 @@ def load(
         feature_extractor = getattr(
             import_module("transformers"), _feature_extractor
         ).from_pretrained(model.path)
+
+    tokenizer_or_fe = tokenizer if tokenizer is not None else feature_extractor
+    # check for cases where a model doesn't have a tokenizer and a feature extractor
+    assert tokenizer_or_fe is not None
 
     try:
         # Cover cases where some model repo doesn't include a model
@@ -294,12 +317,16 @@ def load(
             config=config,
             **unused_kwargs,
         )
-    return config, t_model, tokenizer, feature_extractor
+
+    if return_config:
+        return config, t_model, tokenizer_or_fe
+    return t_model, tokenizer_or_fe
 
 
 def _save(
     name: str,
     *,
+    lm_head: str,
     model_identifier: t.Union[
         str, "ext.TransformersModelType", "ext.TransformersPipeline"
     ],
@@ -309,6 +336,17 @@ def _save(
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
 ) -> Tag:
+    if lm_head == "base":
+        logger.warning(
+            """\
+Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
+be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
+given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
+model head should be used:
+    import bentoml
+    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
+                """
+        )
 
     # AutoConfig kwargs options
     cache_dir = transformers_options_kwargs.pop("cache_dir", None)
@@ -346,11 +384,13 @@ def _save(
     )
 
     if from_tf:
-        automodel_cls = TFAutoModel
+        framework = "tf"
     elif from_flax:
-        automodel_cls = FlaxAutoModel
+        framework = "flax"
     else:
-        automodel_cls = AutoModel
+        framework = "pt"
+
+    automodel_cls = load_autoclass(framework, lm_head)
 
     if isinstance(model_identifier, str):
         try:
@@ -462,6 +502,7 @@ def _save(
 def save(
     name: str,
     *,
+    lm_head: str = "base",
     model: t.Union["ext.TransformersModelType", "ext.TransformersPipeline"],
     tokenizer: t.Optional["ext.TransformersTokenizerType"] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -520,12 +561,10 @@ def save(
 
     .. note::
 
-
        Some parameters are direct port from :func:`from_pretrained` arguments. This is to
        ensure that when doing :func:`save` operations we don't actually load the model class into memory
 
     .. warning::
-
 
         :code:`save` should **ONLY BE USED** when training or working with a customized pretrained transformers model.
         Otherwise, use :code:`import_from_huggingface_hub` for most usecases.
@@ -536,14 +575,11 @@ def save(
     Examples:
 
     .. code-block:: python
-
         from transformers import AutoModelForQuestionAnswering, AutoTokenizer
         import bentoml
-
         model = AutoModelForQuestionAnswering.from_pretrained("gpt2", from_flax=True)
         tokenizer = AutoTokenizer.from_pretrained("gpt2", from_flax=True)
         # custom training and modification goes here
-
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
     """
     if not check_model_type(model):
@@ -558,6 +594,7 @@ def save(
     return _save(
         name=name,
         model_identifier=model,
+        lm_head=lm_head,
         tokenizer=tokenizer,
         metadata=metadata,
         keep_download_from_hub=False,
@@ -570,6 +607,7 @@ def save(
 def import_from_huggingface_hub(
     name: str,
     *,
+    lm_head: str = "base",
     save_namespace: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     keep_download_from_hub: bool = False,
@@ -633,8 +671,6 @@ def import_from_huggingface_hub(
             execute code present on the Hub on your local machine.
 
     .. note::
-
-
        Some parameters are direct port from :func:`from_pretrained()` arguments. This
        ensures that when doing :func:`save` operations we don't actually load the model
        class into memory
@@ -648,7 +684,6 @@ def import_from_huggingface_hub(
 
         from transformers import AutoModelForQuestionAnswering, AutoTokenizer
         import bentoml
-
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
     """
     # TODO: pass down kwargs for AutoTokenizer
@@ -656,6 +691,7 @@ def import_from_huggingface_hub(
     return _save(
         name=save_namespace,
         model_identifier=name,
+        lm_head=lm_head,
         tokenizer=None,
         keep_download_from_hub=keep_download_from_hub,
         metadata=metadata,
@@ -708,6 +744,9 @@ class _TransformersRunner(Runner):
             "model_kwargs", {}
         )  # type: t.Dict[str, t.Any]
         self._kwargs = pipeline_kwargs
+        self._has_tokenizer = (
+            model_store.get(tag).info.context["feature_extractor"] is False
+        )
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -726,14 +765,20 @@ class _TransformersRunner(Runner):
     def _setup(self) -> None:
         try:
             _ = self._model_store.get(self._tag)
-            self._config, self._model, self._tokenizer, self._feature_extractor = load(
+            self._config, self._model, _tokenizer_or_fe = load(
                 self._tag,
                 model_store=self._model_store,
                 from_flax=False,
                 from_tf="tf" in self._framework,
                 framework=self._framework,
                 lm_head=self._lm_head,
+                return_config=True,
             )
+            if not self._has_tokenizer:
+                self._feature_extractor = _tokenizer_or_fe
+                self._tokenizer = None
+            else:
+                self._tokenizer = _tokenizer_or_fe
         except FileNotFoundError:
             self._config, self._model, self._tokenizer = None, None, None
         if self._tokenizer is None:
@@ -783,11 +828,9 @@ def load_runner(
     that wrap around a transformers pipeline, which optimize it for the BentoML runtime.
 
     .. warning::
-
        :func:`load_runner` will try to load the model from given :obj:`tag`. If the model does not
        exists, then BentoML will fallback to initialize pipelines from transformers,
        thus files will be loaded from huggingface cache.
-
 
     Args:
         tag (:code:`Union[str, Tag]`):
@@ -819,10 +862,8 @@ def load_runner(
     Examples:
 
     .. code-block:: python
-
         import transformers
         import bentoml
-
         runner = bentoml.transformers.load_runner("gpt2:latest", tasks='zero-shot-classification', framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
     """

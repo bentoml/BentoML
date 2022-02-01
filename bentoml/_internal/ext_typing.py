@@ -28,7 +28,11 @@ if TYPE_CHECKING:
     DataFrameOrient = Literal["split", "records", "index", "columns", "values", "table"]
     SeriesOrient = Literal["split", "records", "index", "table"]
 
+    from starlette.types import Send as ASGISend
+    from starlette.types import Scope as ASGIScope
     from starlette.types import ASGIApp
+    from starlette.types import Message as ASGIMessage
+    from starlette.types import Receive as ASGIReceive
 
     class AsgiMiddleware(t.Protocol):
         def __call__(self, app: ASGIApp, **options: t.Any) -> ASGIApp:
@@ -45,6 +49,10 @@ if TYPE_CHECKING:
         "SeriesOrient",
         "AsgiMiddleware",
         "ASGIApp",
+        "ASGIScope",
+        "ASGISend",
+        "ASGIReceive",
+        "ASGIMessage",
         # transformers-related types
         "TransformersPipeline",
         "TransformersModelType",

@@ -170,9 +170,7 @@ class ServiceAppFactory(BaseAppFactory):
     def name(self) -> str:
         return self.bento_service.name
 
-    async def index_view_func(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def index_view_func(self, _: "Request") -> "Response":
         """
         The default index view for BentoML API server. This includes the readme
         generated from docstring and swagger UI
@@ -185,20 +183,16 @@ class ServiceAppFactory(BaseAppFactory):
             media_type="text/html",
         )
 
-    async def metrics_view_func(
-        self,
-        _: "Request",
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def metrics_view_func(self, _: "Request") -> "Response":
         from starlette.responses import Response
 
         return Response(
             self.metrics_client.generate_latest(),
+            status_code=200,
             media_type=self.metrics_client.CONTENT_TYPE_LATEST,
         )
 
-    async def docs_view_func(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def docs_view_func(self, _: "Request") -> "Response":
         from starlette.responses import JSONResponse
 
         docs = self.bento_service.openapi_doc()
@@ -236,7 +230,11 @@ class ServiceAppFactory(BaseAppFactory):
 
         if self.enable_metrics:
             routes.append(
-                Route(path="/metrics", name="metrics", endpoint=self.metrics_view_func)
+                Route(
+                    path="/metrics",
+                    name="metrics",
+                    endpoint=self.metrics_view_func,
+                )
             )
 
         parent_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -283,11 +281,20 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(CORSMiddleware, **self.access_control_options)
             )
 
+        # metrics middleware
+        from .instruments import MetricsMiddleware
+
+        middlewares.append(
+            Middleware(MetricsMiddleware, bento_service=self.bento_service)
+        )
+
+        # otel middleware
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
 
         def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
-                ServiceContext.request_id_var.set(span.context.span_id)
+                span_id: int = span.context.span_id
+                ServiceContext.request_id_var.set(span_id)
 
         def client_response_hook(span: "Span", _message: t.Any) -> None:
             if span is not None:

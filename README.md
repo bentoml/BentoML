@@ -6,7 +6,7 @@
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 [![actions_status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
-[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
 BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
@@ -15,7 +15,7 @@ the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS). Version
 under active development, you can be of great help by testing out the preview release, 
 reporting issues, contribute to the documentation and create sample gallery projects.
 
-👉 [Join our Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg) to receive project updates and get involved with latest development.
+👉 [Join our Slack community](https://join.slack.bentoml.org) to receive project updates and get involved with latest development.
 
 ## Why BentoML ##
 
@@ -39,7 +39,7 @@ reporting issues, contribute to the documentation and create sample gallery proj
 
 - To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
 - For other discussions, use [Github Discussions](https://github.com/bentoml/BentoML/discussions).
-- To receive release announcements, please join us on [Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+- To receive release announcements, please join us on [Slack](https://join.slack.bentoml.org).
 
 ## Contributing ##
 

@@ -95,7 +95,7 @@ def load_project(
             " Refers to https://spacy.io/api/cli#project for more information."
         )
         return os.path.join(model.path, model.info.options["target_path"])
-    raise EnvironmentError(
+    raise BentoMLException(
         "Cannot use `bentoml.spacy.load_project()` to load non Spacy Projects. If your"
         " model is not a Spacy projects use `bentoml.spacy.load()` instead."
     )
@@ -147,7 +147,7 @@ def load(
         )
 
     if "projects_uri" in model.info.options:
-        raise EnvironmentError(
+        raise BentoMLException(
             "Cannot use `bentoml.spacy.load()` to load Spacy Projects. Use"
             " `bentoml.spacy.load_project()` instead."
         )
@@ -287,8 +287,7 @@ def projects(
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
-    .. admonition:: btw
-       :class: customWarningFmt
+    .. warning::
 
        This is an **EXPERIMENTAL** API as it is subjected to change. We are also looking for feedback.
 

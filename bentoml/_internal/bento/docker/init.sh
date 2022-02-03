@@ -58,12 +58,21 @@ fi
 
 # Install PyPI packages specified in requirements.lock.txt
 if [ $# -eq 0 ] || [ $1 == "install_pip_packages" ] ; then
+  if [ -f ./env/python/pip_args.txt ]; then
+    EXTRA_PIP_INSTALL_ARGS=$(cat ./env/python/pip_args.txt)
+  fi
+  # BentoML by default generates two requirment files:
+  #  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
+  #  - ./env/python/requirements.txt: all dependecies as user specified in code or requirements.txt file
+  # This build script will prioritize using `.lock.txt` file if it's available
   if [ -f ./env/python/requirements.lock.txt ]; then
-    echo "Installing pip packages.."
-    if [ -f ./env/python/pip_args.txt ]; then
-      EXTRA_PIP_INSTALL_ARGS=$(cat ./env/python/pip_args.txt)
-    fi
+    echo "Installing pip packages from 'requirements.lock.txt'.."
     pip install -r ./env/python/requirements.lock.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+  else
+    if [ -f ./env/python/requirements.txt ]; then
+      echo "Installing pip packages from 'requirements.txt'.."
+      pip install -r ./env/python/requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+    fi
   fi
 fi
 

@@ -1,9 +1,6 @@
 Detectron2
 ----------
 
-| Detectron2 is a platform for object detection, segmentation and other visual
-| recognition tasks. - `Source <https://github.com/facebookresearch/detectron2>`_
-
 Users can now use Detectron2 with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -64,8 +61,7 @@ Users can now use Detectron2 with BentoML with the following API: :code:`load`, 
     res = runner.run_batch(image)
     runner.run_batch(imarr)
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **Detectron2** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

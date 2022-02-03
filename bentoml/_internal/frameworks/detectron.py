@@ -53,10 +53,8 @@ def load(
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        device (:code:`str`, `optional`, default to :code:``cpu``):
-            Device type to cast model. Default behaviour similar
-             to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
-             If None is specified then return default config.MODEL.DEVICE
+        device (:code:`str`, `optional`, default to :code:`cpu`):
+            Device type to cast model. Default behaviour similar to :obj:`torch.device("cuda")` Options: "cuda" or "cpu". If None is specified then return default config.MODEL.DEVICE
         model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 

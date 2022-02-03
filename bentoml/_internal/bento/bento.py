@@ -286,6 +286,7 @@ class Bento(StoreItem):
     def creation_time(self) -> datetime:
         return self.info.creation_time
 
+    @inject
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
     ) -> "Bento":

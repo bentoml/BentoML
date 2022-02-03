@@ -4,7 +4,7 @@
 
 The decision-making process and governance structure of BentoML project can be found in the governance document: [BentoML Governance Doc](https://github.com/bentoml/BentoML/blob/main/GOVERNANCE.md).
 
-To follow development updates and discussion, join the [BentoML contributors mailing list](https://groups.google.com/forum/#!forum/bentoml) and the [BentoML Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+To follow development updates and discussion, join the #dev channel in [BentoML Slack community](https://join.slack.bentoml.org).
 
 
 ## Ways to contribute
@@ -13,7 +13,7 @@ There are many ways to contribute to BentoML.
 
 * Supporting new users by answering questions on the
     [github issues tracker](https://github.com/bentoml/BentoML/issues) and the 
-    [#bentoml-users slack channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+    [#bentoml-users slack channel](https://join.slack.bentoml.org).
  
 * Report issues you're facing and "Thumbs up" on issues and feature requests that are 
     relevant to you in BentoML's [issues tracker](https://github.com/bentoml/BentoML/issues).

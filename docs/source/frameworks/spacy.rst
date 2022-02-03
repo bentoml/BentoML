@@ -1,8 +1,6 @@
 SpaCy
 -----
 
-| Industrial-Strength Natural Language Processing in Python - `Source <https://spacy.io/>`_
-
 Users can now use SpaCy with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -42,8 +40,7 @@ Users can now use SpaCy with BentoML with the following API: :code:`load`, :code
    runner = bentoml.spacy.load_runner("cancer_clf:latest")
    runner.run(cbt.Pool(input_data))
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **SpaCy** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

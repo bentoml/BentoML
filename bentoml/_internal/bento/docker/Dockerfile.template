@@ -26,7 +26,7 @@ COPY --chown=bentoml:bentoml . ./
 # Default port for BentoServer
 EXPOSE 5000
 
-USER bentoml
 RUN chmod +x ./env/docker/entrypoint.sh
+USER bentoml
 ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
 CMD ["bentoml", "serve", ".", "--production"]

@@ -10,11 +10,29 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray as NpNDArray
     from pyarrow.plasma import ObjectID
     from pyarrow.plasma import PlasmaClient
+    from transformers.modeling_utils import PreTrainedModel
+    from transformers.pipelines.base import Pipeline as TransformersPipeline
+    from transformers.modeling_tf_utils import TFPreTrainedModel
+    from transformers.tokenization_utils import PreTrainedTokenizer
+    from transformers.modeling_flax_utils import FlaxPreTrainedModel
+    from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
+    from transformers.feature_extraction_sequence_utils import (
+        SequenceFeatureExtractor as PreTrainedFeatureExtractor,
+    )
+
+    TransformersModelType = t.Union[
+        PreTrainedModel, TFPreTrainedModel, FlaxPreTrainedModel
+    ]
+    TransformersTokenizerType = t.Union[PreTrainedTokenizer, PreTrainedTokenizerFast]
 
     DataFrameOrient = Literal["split", "records", "index", "columns", "values", "table"]
     SeriesOrient = Literal["split", "records", "index", "table"]
 
+    from starlette.types import Send as ASGISend
+    from starlette.types import Scope as ASGIScope
     from starlette.types import ASGIApp
+    from starlette.types import Message as ASGIMessage
+    from starlette.types import Receive as ASGIReceive
 
     class AsgiMiddleware(t.Protocol):
         def __call__(self, app: ASGIApp, **options: t.Any) -> ASGIApp:
@@ -31,4 +49,13 @@ if TYPE_CHECKING:
         "SeriesOrient",
         "AsgiMiddleware",
         "ASGIApp",
+        "ASGIScope",
+        "ASGISend",
+        "ASGIReceive",
+        "ASGIMessage",
+        # transformers-related types
+        "TransformersPipeline",
+        "TransformersModelType",
+        "TransformersTokenizerType",
+        "PreTrainedFeatureExtractor",
     ]

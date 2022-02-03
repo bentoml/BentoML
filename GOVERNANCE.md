@@ -29,7 +29,7 @@ As a contributor, you may find yourself doing one or more of the following:
 
 * Support new users by answering questions on the
     [github issue tracker](https://github.com/bentoml/BentoML/issues) and the 
-    [#bentoml-users slack channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+    [#bentoml-users slack channel](https://join.slack.bentoml.org).
 * Report issues you're facing and "Thumbs up" on issues and feature requests that are 
     relevant to you in BentoML's [issue tracker](https://github.com/bentoml/BentoML/issues).
 * Investigate bugs and reviewing other developer's pull requests.

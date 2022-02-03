@@ -1,12 +1,6 @@
 Keras
 -----
 
-| Deep learning for humans.
-| Keras is an API designed for human beings, not machines.
-| Keras follows best practices for reducing cognitive load: it offers consistent & simple APIs,
-| it minimizes the number of user actions required for common use cases, and it provides clear &
-| actionable error messages. It also has extensive documentation and developer guides. - `Source <https://keras.io/>`_
-
 Users can now use Keras (with Tensorflow v1 and v2 backend) with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. tabs::
@@ -81,8 +75,7 @@ Users can now use Keras (with Tensorflow v1 and v2 backend) with BentoML with th
       # `load` the model back in memory:
       loaded = bentoml.keras.load("keras_model:latest")
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **Keras** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

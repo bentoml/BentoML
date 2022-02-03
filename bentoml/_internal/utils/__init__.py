@@ -103,17 +103,6 @@ def reserve_free_port(host: str = "localhost") -> t.Iterator[int]:
     sock.close()
 
 
-def get_free_port(host: str = "localhost") -> int:
-    """
-    detect free port and reserve until exit the context
-    """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((host, 0))
-    port: int = sock.getsockname()[1]
-    sock.close()
-    return port
-
-
 def copy_file_to_fs_folder(
     src_path: str,
     dst_fs: "FS",

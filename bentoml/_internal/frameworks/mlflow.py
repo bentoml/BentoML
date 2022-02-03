@@ -86,7 +86,7 @@ def load(
 
 SAVE_WARNING = f"""\
 BentoML won't provide a :func:`save` API for MLflow. If one uses :code:`bentoml.mlflow.save`, it will
-raises :obj:`EnvironmentError`:
+raises :obj:`BentoMLException`:
 
     - If you currently working with :code:`mlflow.<flavor>.save_model`, we kindly suggest you
       to replace :code:`mlflow.<flavor>.save_model` with BentoML's `save` API as we also supports
@@ -165,7 +165,7 @@ BentoML :func:`save` API:
 
 
 def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
-    raise EnvironmentError(SAVE_WARNING)
+    raise BentoMLException(SAVE_WARNING)
 
 
 save.__doc__ = SAVE_WARNING
@@ -185,16 +185,15 @@ def import_from_uri(
     Args:
         name (:code:`str`):
             Name for your MLFlow model to be saved under BentoML modelstore.
-        uri (:code:`str`):
-            URI accepts all MLflow defined APIs in terms of referencing artifacts. All available accepted URI (extracted from `MLFlow Concept <https://mlflow.org/docs/latest/concepts.html>`_):
+        uri (:code:`str`): URI accepts all MLflow defined APIs in terms of referencing artifacts.
+            All available accepted URI (extracted from `MLFlow Concept <https://mlflow.org/docs/latest/concepts.html>`_):
                 - :code:`/Users/me/path/to/local/model`
                 - :code:`relative/path/to/local/model`
-                - :code:`<scheme>/<scheme-dependent-path>`. For example:
-                    - :code:`s3://my_bucket/path/to/model`
-                    - :code:`hdfs://<host>:<port>/<path>`
-                    - :code:`runs:/<mlflow_run_id>/run-relative/path/to/model`
-                    - :code:`models:/<model_name>/<model_version>`
-                    - :code:`models:/<model_name>/<stage>`
+                - :code:`s3://my_bucket/path/to/model`
+                - :code:`hdfs://<host>:<port>/<path>`
+                - :code:`runs:/<mlflow_run_id>/run-relative/path/to/model`
+                - :code:`models:/<model_name>/<model_version>`
+                - :code:`models:/<model_name>/<stage>`
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -337,10 +336,10 @@ def load_runner(
     Returns:
         :obj:`bentoml._internal.runner.Runner`: Runner instances loaded from `bentoml.mlflow`.
 
-    .. admonition:: btw
-       :class: customNotesFmt
+    .. note::
 
-       Currently this is an instance of :obj:`bentoml._internal.frameworks.mlflow._PyFuncRunner` which is the base
+
+       Currently this is an instance of :obj:`~bentoml._internal.frameworks.mlflow._PyFuncRunner` which is the base
        runner. We recommend users to use the correspond frameworks' Runner implementation provided by BentoML for the best performance.
 
     On our roadmap, the intention for this API is to load the coresponding framework runner automatically. For example:

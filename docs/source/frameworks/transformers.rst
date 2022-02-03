@@ -1,8 +1,6 @@
 Transformers
 ------------
 
-| State-of-the-art Machine Learning for Jax, Pytorch and TensorFlow - `Source <https://huggingface.co/docs/transformers/index>`_
-
 Users can now use Transformers with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 
 .. code-block:: python
@@ -45,8 +43,7 @@ We also offer :code:`import_from_huggingface_hub` which enables users to import 
    image = Image.open(requests.get(url, stream=True).raw)
    res = runner.run_batch(image)
 
-.. admonition:: btw
-   :class: customNotesFmt
+.. note::
 
    You can find more examples for **Transformers** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

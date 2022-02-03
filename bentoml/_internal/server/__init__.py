@@ -10,6 +10,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
+from bentoml._internal.utils.circus import create_standalone_arbiter
 
 from ..configuration import get_debug_mode
 from ..configuration.containers import DeploymentContainer
@@ -52,6 +53,21 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
 
 
 @inject
+def _ensure_prometheus_dir(
+    prometheus_multiproc_dir: str = Provide[
+        DeploymentContainer.prometheus_multiproc_dir
+    ],
+    clean: bool = True,
+):
+    if os.path.exists(prometheus_multiproc_dir):
+        if not os.path.isdir(prometheus_multiproc_dir):
+            shutil.rmtree(prometheus_multiproc_dir)
+        elif clean or os.listdir(prometheus_multiproc_dir):
+            shutil.rmtree(prometheus_multiproc_dir)
+    os.makedirs(prometheus_multiproc_dir, exist_ok=True)
+
+
+@inject
 def serve_development(
     bento_identifier: str,
     working_dir: str,
@@ -64,8 +80,6 @@ def serve_development(
     logger.info('Starting development BentoServer from "%s"', bento_identifier)
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
-    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
     from circus.arbiter import Arbiter  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
@@ -109,12 +123,8 @@ bentoml._internal.server.start_dev_api_server(
         )
     )
 
-    arbiter = Arbiter(
-        watchers=watchers,
-        endpoint=DEFAULT_ENDPOINT_DEALER,
-        pubsub_endpoint=DEFAULT_ENDPOINT_SUB,
-    )
-
+    arbiter = create_standalone_arbiter(watchers)
+    _ensure_prometheus_dir()
     arbiter.start()
 
 
@@ -145,9 +155,6 @@ def serve_production(
 
     import json
 
-    from circus.util import DEFAULT_ENDPOINT_SUB  # type: ignore
-    from circus.util import DEFAULT_ENDPOINT_DEALER  # type: ignore
-    from circus.arbiter import Arbiter  # type: ignore
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
@@ -208,13 +215,12 @@ bentoml._internal.server.start_prod_api_server(
         )
     )
 
-    arbiter = Arbiter(
+    arbiter = create_standalone_arbiter(
         watchers=watchers,
-        endpoint=DEFAULT_ENDPOINT_DEALER,
-        pubsub_endpoint=DEFAULT_ENDPOINT_SUB,
         sockets=[s for s in sockets_map.values()],
     )
 
+    _ensure_prometheus_dir()
     try:
         arbiter.start()
     finally:

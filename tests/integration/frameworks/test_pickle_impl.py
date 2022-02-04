@@ -14,12 +14,12 @@ if TYPE_CHECKING:
 
 class MyCoolModel:
     def predict(self, some_integer: int):
-        return some_integer**2
+        return some_integer ** 2
 
 
 class MyCoolBatchModel:
     def predict(self, some_integer: t.List):
-        return list(map(lambda x: x**2, some_integer))
+        return list(map(lambda x: x ** 2, some_integer))
 
 
 class MockBatchOptions:
@@ -53,6 +53,7 @@ def save_batch_procedure(
     )
     return tag_info
 
+
 @pytest.mark.parametrize(
     "metadata",
     [
@@ -68,9 +69,7 @@ def test_pickle_save_load(
     _model = bentoml.models.get(tag, _model_store=modelstore)
     assert _model.info.metadata is not None
 
-    loaded_model = bentoml.pickle.load(
-        _model.tag, model_store=modelstore
-    )
+    loaded_model = bentoml.pickle.load(_model.tag, model_store=modelstore)
     assert isinstance(loaded_model, MyCoolModel)
     assert loaded_model.predict(4) == np.array([16])
 
@@ -87,7 +86,9 @@ def test_pickle_runner_setup_run(modelstore: "ModelStore") -> None:
 def test_pickle_runner_setup_run_batch(modelstore: "ModelStore") -> None:
 
     tag = save_batch_procedure({}, _modelstore=modelstore)
-    runner = bentoml.pickle.load_runner(tag, model_store=modelstore, batch_options={'enabled': True})
+    runner = bentoml.pickle.load_runner(
+        tag, model_store=modelstore, batch_options={"enabled": True}
+    )
 
     assert tag in runner.required_models
     assert runner.run_batch([3, 9]) == [9, 81]

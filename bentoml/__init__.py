@@ -39,10 +39,10 @@ if TYPE_CHECKING:
     from bentoml import spacy
     from bentoml import mlflow
     from bentoml import paddle
+    from bentoml import pickle
     from bentoml import easyocr
     from bentoml import pycaret
     from bentoml import pytorch
-    from bentoml import pickle
     from bentoml import sklearn
     from bentoml import xgboost
     from bentoml import catboost

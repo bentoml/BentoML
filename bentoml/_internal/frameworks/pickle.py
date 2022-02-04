@@ -79,7 +79,7 @@ def load(
         unpickled_model = bentoml.pickle.load('my_model:latest')
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
-    with open(model_file, 'rb') as f:
+    with open(model_file, "rb") as f:
         # The protocol version used is detected automatically, so we do not
         # have to specify it.
         return pickle.load(f)
@@ -114,7 +114,7 @@ def save(
     .. code-block:: python
 
         import bentoml
-        
+
         class MyCoolModel:
             def predict(self, some_integer: int):
                 return some_integer**2
@@ -123,11 +123,9 @@ def save(
         tag_info = bentoml.pickle.save("test_pickle_model", model_to_save)
         runner = bentoml.pickle.load_runner(tag_info)
         runner.run(3)
-        
+
     """  # noqa
-    context = {
-        "framework_name": "pickle"
-    }
+    context = {"framework_name": "pickle"}
 
     _model = Model.create(
         name,
@@ -136,7 +134,7 @@ def save(
         context=context,
     )
 
-    with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), 'wb') as f:
+    with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
         cloudpickle.dump(model, f)
 
     _model.save(model_store)
@@ -172,7 +170,7 @@ class _PickleRunner(Runner):
 
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
-        with open(self._model_file, 'rb') as f:
+        with open(self._model_file, "rb") as f:
             self._model = pickle.load(f)
         self._infer_func = getattr(self._model, self._function_name)
 
@@ -213,7 +211,7 @@ class _PickleSimpleRunner(SimpleRunner):
 
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
-        with open(self._model_file, 'rb') as f:
+        with open(self._model_file, "rb") as f:
             self._model = pickle.load(f)
         self._infer_func = getattr(self._model, self._function_name)
 
@@ -267,7 +265,7 @@ def load_runner(
     if name is None:
         name = tag.name
 
-    if batch_options and batch_options.get('enabled'):
+    if batch_options and batch_options.get("enabled"):
         return _PickleRunner(
             tag=tag,
             function_name=function_name,

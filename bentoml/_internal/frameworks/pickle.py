@@ -24,23 +24,14 @@ if TYPE_CHECKING:
 
     from ..models import ModelStore
 
+import pickle
+
 try:
     import cloudpickle
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """cloudpickle is required in order to use the module `bentoml.pickle`, install
-         cloudpickle with `pip install cloudpickle`. For more information, refer to
-         https://scikit-learn.org/stable/install.html
-        """
-    )
-
-try:
-    import pickle
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        """pickle is required in order to use the module `bentoml.pickle`, install
-         sklearn with `pip install sklearn`. For more information, refer to
-         https://scikit-learn.org/stable/install.html
+         cloudpickle with `pip install cloudpickle`.
         """
     )
 
@@ -77,7 +68,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`Union[BaseEstimator, Pipeline]`: an instance of :obj:`sklearn` model from BentoML modelstore.
+        :obj:`Union[BaseEstimator, Pipeline]`: an instance of :obj: model from BentoML modelstore.
 
     Examples:
 
@@ -85,7 +76,7 @@ def load(
 
         import bentoml
 
-        sklearn = bentoml.sklearn.load('my_model:latest')
+        unpickled_model = bentoml.pickle.load('my_model:latest')
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
     with open(model_file, 'rb') as f:
@@ -124,11 +115,18 @@ def save(
 
         import bentoml
         
-        TODO Example here
+        class MyCoolModel:
+            def predict(self, some_integer: int):
+                return some_integer**2
+
+        model_to_save = MyCoolModel();
+        tag_info = bentoml.pickle.save("test_pickle_model", model_to_save)
+        runner = bentoml.pickle.load_runner(tag_info)
+        runner.run(3)
+        
     """  # noqa
     context = {
-        "framework_name": "sklearn",
-        "pip_dependencies": [f"scikit-learn=={get_pkg_version('scikit-learn')}"],
+        "framework_name": "pickle"
     }
 
     _model = Model.create(
@@ -238,14 +236,14 @@ def load_runner(
 ) -> "BaseRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. :func:`bentoml.sklearn.load_runner` implements a Runner class that
-    wrap around a Sklearn joblib model, which optimize it for the BentoML runtime.
+    maximize throughput. :func:`bentoml.pickle.load_runner` implements a Runner class that
+    wraps the commands that dump and load a pickled object, which optimizes it for the BentoML runtime.
 
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore..
         function_name (:code:`str`, `optional`, default to :code:`predict`):
-            Predict function used by a given sklearn model.
+            Predict function used by a given pickled model.
         resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
         batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
@@ -254,7 +252,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for the target :mod:`bentoml.sklearn` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for the target :mod:`bentoml.pickle` model
 
     Examples:
 

@@ -24,6 +24,7 @@ class MyCoolModel:
     def predict(self, some_integer: int):
         return some_integer**2
 
+
 class MyCoolBatchModel:
     def predict(self, some_integer: t.List):
         return list(map(lambda x: x**2, some_integer))
@@ -45,6 +46,7 @@ def save_procedure(
         model_store=_modelstore,
     )
     return tag_info
+
 
 def save_batch_procedure(
     metadata: t.Dict[str, t.Any],

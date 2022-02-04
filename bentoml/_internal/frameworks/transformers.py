@@ -189,9 +189,7 @@ def load(
     tag: t.Union[str, Tag],
     from_tf: bool = False,
     from_flax: bool = False,
-    framework: str = "pt",
     *,
-    lm_head: str = "base",
     return_config: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
@@ -224,12 +222,6 @@ def load(
             Load the model weights from a TensorFlow checkpoint save file.
         from_flax (:code:`bool`, `optional`, defaults to :code:`False`):
             Load the model weights from a Flax checkpoint save file
-        framework (:code:`str`, default to :code:`pt`):
-            Given frameworks supported by transformers: PyTorch, Tensorflow, Flax
-        lm_head (:code:`str`, default to :code:`causal`):
-            Language model head for your model. For most use cases causal are applied.
-            Refers to `transformers <https://huggingface.co/docs/transformers/index>`_ for more details on which type of
-            language model head is applied to your use case and model.
         return_config (:code:`bool`, `optional`, default to :code:`False`):
             Whether or not to return configuration of the Transformers model.
         kwargs (:code:`str`, `optional`):
@@ -243,17 +235,18 @@ def load(
 
     .. code-block:: python
         import bentoml
-        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal")
+        model, tokenizer = bentoml.transformers.load('custom_gpt2')
 
     If you want to returns an config object:
 
     .. code-block:: python
 
         import bentoml
-        config, model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="pt", lm_head="causal", return_config=True)
+        config, model, tokenizer = bentoml.transformers.load('custom_gpt2', return_config=True)
     """  # noqa
     check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
+    lm_head = model.info.context["lm_head"]
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
@@ -263,10 +256,10 @@ def load(
             """\
 Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
 be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
-given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
-model head should be used:
+given usecase. Make sure to use the correct type of language model head is used when saving or import from huggingface hub. 
+For example with GPT2, `causal` language model head should be used:
     import bentoml
-    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
+    model, tokenizer= bentoml.transformers.import_from_huggingface_hub('gpt2', lm_head='causal')
                 """
         )
 
@@ -294,29 +287,22 @@ model head should be used:
     # check for cases where a model doesn't have a tokenizer and a feature extractor
     assert tokenizer_or_fe is not None
 
-    try:
-        # Cover cases where some model repo doesn't include a model
-        #  name under their config.json. An example is
-        #  google/bert_uncased_L-2_H-128_A-2
-        t_model = load_autoclass(framework, lm_head).from_pretrained(  # type: ignore[reportUnknownMemberType]
-            model.path, config=config, **unused_kwargs
-        )
-    except Exception:  # noqa # pylint: disable=broad-except
-        if feature_extractor is not None:
-            if from_tf:
-                framework = "tf"
-            elif from_flax:
-                framework = "flax"
-            else:
-                framework = "pt"
-            loader = load_autoclass(framework, lm_head)
-        else:
-            loader = getattr(import_module("transformers"), _model)
-        t_model: "ext.TransformersModelType" = loader.from_pretrained(  # type: ignore[reportUnknownMemberType]
-            model.path,
-            config=config,
-            **unused_kwargs,
-        )
+    if from_tf:
+        framework = "tf"
+    elif from_flax:
+        framework = "flax"
+    else:
+        framework = "pt"
+    if feature_extractor is not None:
+        loader = load_autoclass(framework, lm_head)
+    else:
+        loader = getattr(import_module("transformers"), _model)
+
+    t_model: "ext.TransformersModelType" = loader.from_pretrained(
+        model.path,
+        config=config,
+        **unused_kwargs,
+    )
 
     if return_config:
         return config, t_model, tokenizer_or_fe
@@ -342,9 +328,9 @@ def _save(
 Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
 be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
 given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
-model head should be used:
+model head should be used when saving:
     import bentoml
-    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
+    tag = bentoml.transformers.save('gpt2', lm_head='causal', model=gpt2_model, tokenizer=gpt2_tokenizer)
                 """
         )
 
@@ -372,6 +358,7 @@ model head should be used:
         "feature_extractor": False,
         "pipeline": False,
         "tokenizer": False,
+        "lm_head": lm_head,
     }
     options: t.Dict[str, t.Any] = {"revision": revision}
 
@@ -708,7 +695,6 @@ class _TransformersRunner(Runner):
         tasks: str,
         *,
         framework: str,
-        lm_head: str,
         device: int,
         name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
@@ -729,7 +715,6 @@ class _TransformersRunner(Runner):
         self._tasks = tasks
         self._model_store = model_store
         self._framework = framework
-        self._lm_head = lm_head
         self._device = device
         self._pipeline_kwargs = pipeline_kwargs
 
@@ -770,8 +755,6 @@ class _TransformersRunner(Runner):
                 model_store=self._model_store,
                 from_flax=False,
                 from_tf="tf" in self._framework,
-                framework=self._framework,
-                lm_head=self._lm_head,
                 return_config=True,
             )
             if not self._has_tokenizer:
@@ -814,7 +797,6 @@ def load_runner(
     *,
     tasks: str,
     framework: str = "pt",
-    lm_head: str = "causal",
     device: int = -1,
     name: t.Optional[str] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
@@ -842,9 +824,6 @@ def load_runner(
             Given frameworks supported by transformers: PyTorch, Tensorflow
         device (`int`, `optional`, default to :code:`-1`):
             Default GPU devices to be used by runner.
-        lm_head (:code:`str`, default to :code:`causal`):
-            Language model attention head for your model. For most use case :obj:`causal` are applied.
-            Refers to `HuggingFace Docs <https://huggingface.co/docs/transformers/main_classes/model>`_
             for more details on which type of language model head is applied to your use case.
         resource_quota (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary to configure resources allocation for runner.
@@ -874,7 +853,6 @@ def load_runner(
         tag=tag,
         tasks=tasks,
         framework=framework,
-        lm_head=lm_head,
         device=device,
         name=name,
         resource_quota=resource_quota,

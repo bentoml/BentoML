@@ -87,9 +87,7 @@ def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     )
     model, tokenizer = bentoml.transformers.load(
         tag,
-        framework=framework,
         from_tf="tf" in framework,
-        lm_head="causal",
         model_store=modelstore,
     )
     assert (
@@ -106,7 +104,6 @@ def test_transformers_runner_setup_run_batch(modelstore):
     )
     runner = bentoml.transformers.load_runner(
         tag,
-        lm_head="sequence-classification",
         tasks="text-classification",
         model_store=modelstore,
     )
@@ -129,7 +126,6 @@ def test_transformers_runner_pipelines_kwargs(modelstore):
     runner = bentoml.transformers.load_runner(
         tag,
         tasks="image-classification",
-        lm_head="image-classification",
         device=-1,
         model_store=modelstore,
     )

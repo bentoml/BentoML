@@ -20,7 +20,7 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
-    from pandas.core.frame import DataFrame
+    from .. import ext_typing as ext
 
     from ..models import ModelStore
 
@@ -179,8 +179,8 @@ class _PickleRunner(Runner):
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        inputs: t.Union["ext.NpNDArray", "ext.PdDataFrame"],
+    ) -> "ext.NpNDArray":
         return self._infer_func(inputs)
 
 
@@ -219,8 +219,8 @@ class _PickleSimpleRunner(SimpleRunner):
 
     def _run(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        inputs: t.Union["ext.NpNDArray", "ext.PdDataFrame"],
+    ) -> "ext.NpNDArray":
         return self._infer_func(inputs)
 
 

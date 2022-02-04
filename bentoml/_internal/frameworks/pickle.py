@@ -269,7 +269,7 @@ def load_runner(
     if name is None:
         name = tag.name
 
-    if batch_options and batch_options.enabled:
+    if batch_options and batch_options.get('enabled'):
         return _PickleRunner(
             tag=tag,
             function_name=function_name,

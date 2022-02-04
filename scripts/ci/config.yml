@@ -139,6 +139,9 @@ paddle:
   external_scripts: |
     export SETUPTOOLS_USE_DISTUTILS=stdlib
 
+pickle:
+  <<: *tmpl
+
 pycaret:
   <<: *tmpl
   dependencies:

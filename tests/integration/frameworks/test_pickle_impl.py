@@ -2,18 +2,10 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-import psutil
 import pytest
-import cloudpickle
-import pickle
 
 import bentoml
 import bentoml.models
-from unittest.mock import MagicMock
-from bentoml._internal.runner.runner import BatchOptions
-
-from bentoml.exceptions import BentoMLException
-from tests.utils.helpers import assert_have_file_extension
 
 if TYPE_CHECKING:
     from bentoml._internal.store import Tag

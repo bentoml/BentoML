@@ -11,17 +11,26 @@ from fs.base import FS
 
 from .types import Tag
 from .types import PathType
+from .exportable import Exportable
 from ..exceptions import NotFound
 from ..exceptions import BentoMLException
 
 T = t.TypeVar("T")
 
 
-class StoreItem(ABC):
+class StoreItem(Exportable):
     @property
     @abstractmethod
     def tag(self) -> Tag:
         raise NotImplementedError
+
+    @property
+    def _fs(self) -> FS:
+        raise NotImplementedError
+
+    @property
+    def _export_name(self) -> str:
+        return f"{self.tag.name}-{self.tag.version}"
 
     @classmethod
     @abstractmethod

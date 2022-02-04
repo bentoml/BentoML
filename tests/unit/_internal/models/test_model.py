@@ -11,6 +11,7 @@ from bentoml import Tag
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.models.model import Model
 from bentoml._internal.models.model import ModelInfo
+from bentoml._internal.models.model import ModelStore
 from bentoml._internal.configuration import BENTOML_VERSION
 
 if TYPE_CHECKING:
@@ -79,8 +80,20 @@ def test_model_info(tmpdir: "Path"):
 
         assert modelinfo_b_from_yaml == modelinfo_b
 
+    # attempt to test that serialization is deterministic
+    det_check_filename = os.path.join(tmpdir, "det_check.yml")
+    with open(det_check_filename, "a+", encoding="utf-8") as det_check_yaml:
+        modelinfo_b.dump(det_check_yaml)
+        old_info = det_check_yaml.read()
+
+        # re-flush
+        modelinfo_b.dump(det_check_yaml)
+        assert det_check_yaml.read() == old_info
+
 
 def test_model(tmpdir: "Path"):
+    model_store = ModelStore(tmpdir)
+
     start = datetime.now(timezone.utc)
     model_a = Model.create("testmodel")
     end = datetime.now(timezone.utc)
@@ -141,29 +154,26 @@ def test_model(tmpdir: "Path"):
     with pytest.raises(fs.errors.NoSysPath):
         assert model_b_from_export.path
 
-    b_export_path = fs.path.join(str(tmpdir), "modelb")
+    # tmpdir/modelb.bentomodel
+    b_export_path = fs.path.join(str(tmpdir), "modelb.bentomodel")
     model_b.export(b_export_path)
 
-    becomes_syspath_model = Model.from_fs(fs.open_fs(b_export_path))
+    from_fs_model = Model.from_fs(fs.tarfs.TarFS(b_export_path, compression="xz"))
 
-    # check no changes are made when flushing no info changes
-    with open(
-        becomes_syspath_model.path_of("model.yaml"), encoding="utf-8"
-    ) as model_yaml:
-        old_yaml = model_yaml.read()
-    becomes_syspath_model.flush_info()
-    with open(
-        becomes_syspath_model.path_of("model.yaml"), encoding="utf-8"
-    ) as model_yaml:
-        assert model_yaml.read() == old_yaml
+    # can cause model.path to fail by using `from_fs`.
+    with pytest.raises(fs.errors.NoSysPath):
+        str(from_fs_model)
 
-    becomes_syspath_model_str = str(becomes_syspath_model)
-    sys_export_path = os.path.normpath(b_export_path) + os.path.sep
-    assert (
-        becomes_syspath_model_str
-        == f'Model(tag="{model_b.tag}", path="{sys_export_path}")'
+    from_fs_model.save(model_store)
+
+    from_fs_model_str = str(from_fs_model)
+    save_path = os.path.join(
+        tmpdir,
+        os.path.join(from_fs_model.tag.name, from_fs_model.tag.version) + os.path.sep,
     )
-    assert becomes_syspath_model.path is not None
+    assert from_fs_model_str == f'Model(tag="{model_b.tag}", path="{save_path}")'
+
+    print(from_fs_model.path)
 
     with pytest.raises(BentoMLException):
         Model.from_fs(fs.open_fs(os.path.join(tmpdir, "nonexistent"), create=True))

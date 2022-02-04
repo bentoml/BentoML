@@ -169,7 +169,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self._file_name)
 
-    def pack(self, model):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         fastai2_module = _import_fastai2_module()
 
         if not isinstance(model, fastai2_module.basics.Learner):

@@ -130,7 +130,7 @@ class _tf_function_wrapper:  # pragma: no cover
     ) -> None:
         self.origin_func = origin_func
         self.arg_names = arg_names or tuple()
-        self.arg_specs = arg_specs.copy()
+        self.arg_specs = arg_specs
         self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
         self.kwarg_specs.update(kwarg_specs or {})
 
@@ -189,7 +189,7 @@ def _load_tf_saved_model(path: str) -> "AutoTrackable":
         return tf.saved_model.load(path)
     else:
         loaded = tf.compat.v2.saved_model.load(path)
-        if LazyType["AutoTrackable"]("AutoTrackable").isinstance(
+        if LazyType["tracking.AutoTrackable"]("tracking.AutoTrackable").isinstance(
             loaded
         ) and not hasattr(loaded, "__call__"):
             logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)

@@ -30,9 +30,7 @@ try:
     import cloudpickle
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """cloudpickle is required in order to use the module `bentoml.pickle`, install
-         cloudpickle with `pip install cloudpickle`.
-        """
+        "cloudpickle is required in order to use the module `bentoml.pickle`, install cloudpickle with `pip install cloudpickle`."
     )
 
 MODULE_NAME = "bentoml.pickle"
@@ -46,7 +44,7 @@ def _get_model_info(tag: Tag, model_store: "ModelStore") -> t.Tuple["Model", Pat
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {tag} was saved with module {model.info.module}, cannot load with {MODULE_NAME}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
 

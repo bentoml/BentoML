@@ -57,7 +57,7 @@ def _get_model_info(tag: Tag, model_store: "ModelStore") -> t.Tuple["Model", Pat
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["BaseEstimator", "Pipeline"]:
+) -> t.Any:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -68,7 +68,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`Union[BaseEstimator, Pipeline]`: an instance of :obj: model from BentoML modelstore.
+        :obj: an instance of :obj: model from BentoML modelstore.
 
     Examples:
 
@@ -88,7 +88,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Union["BaseEstimator", "Pipeline"],
+    model: t.Any,
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -99,7 +99,7 @@ def save(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[BaseEstimator, Pipeline]`):
+        model:
             Instance of model to be saved.
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
@@ -157,7 +157,6 @@ class _PickleRunner(Runner):
         self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
-        self._backend = "loky"
         self._function_name = function_name
 
     @property
@@ -198,7 +197,6 @@ class _PickleSimpleRunner(SimpleRunner):
         self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
-        self._backend = "loky"
         self._function_name = function_name
 
     @property

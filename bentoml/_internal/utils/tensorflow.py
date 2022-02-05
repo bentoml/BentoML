@@ -1,7 +1,9 @@
+# type: ignore[reportMissingTypeStubs]
 import typing as t
 import importlib.util
 from typing import TYPE_CHECKING
 
+from ..types import LazyType
 from .lazy_loader import LazyLoader
 
 try:
@@ -12,13 +14,20 @@ except ImportError:
 if TYPE_CHECKING:
     import tensorflow as tf
     from tensorflow.python.eager.function import ConcreteFunction
-    from tensorflow.python.framework.type_spec import TypeSpec
     from tensorflow.python.training.tracking.base import Trackable
     from tensorflow.python.training.tracking.tracking import AutoTrackable
-    from tensorflow.python.saved_model.signature_serialization import (
-        _SignatureMap,  # type: ignore[reportPrivateUsage]
-    )
+    from tensorflow.python.saved_model.signature_serialization import _SignatureMap
     from tensorflow.python.saved_model.function_deserialization import RestoredFunction
+
+    TFTensorType = t.Union[
+        "tf.Tensor", "tf.RaggedTensor", "tf.SparseTensor", "tf.TensorArray"
+    ]
+    TFTensorSpec = t.Union[
+        "tf.TensorSpec",
+        "tf.RaggedTensorSpec",
+        "tf.SparseTensorSpec",
+        "tf.TensorArraySpec",
+    ]
 else:
     tf = LazyLoader(
         "tf",
@@ -68,9 +77,7 @@ def get_tf_version() -> str:
     return _tf_version
 
 
-def _isinstance_wrapper(
-    obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]
-) -> bool:
+def _isinstance_wrapper(obj: t.Any, sobj: t.Any) -> bool:
     """
     `isinstance` wrapper to check tensor spec
 
@@ -88,23 +95,23 @@ def _isinstance_wrapper(
     if isinstance(sobj, str):
         return type(obj).__name__ == sobj.split(".")[-1]
     if isinstance(sobj, (tuple, list, set)):
-        return any(_isinstance_wrapper(obj, k) for k in sobj)
-    return isinstance(obj, sobj)
+        return any(_isinstance_wrapper(obj, k) for k in sobj)  # type: ignore
+    return LazyType["TFTensorType"](sobj).isinstance(obj)
 
 
-def normalize_spec(value: t.Any) -> "TypeSpec":
+def normalize_spec(value: t.Any) -> "TFTensorSpec":
     """normalize tensor spec"""
     if not _isinstance_wrapper(value, TENSOR_CLASS_NAMES):
         return value
 
     if _isinstance_wrapper(value, "RaggedTensor"):
-        return tf.RaggedTensorSpec.from_value(value)
+        return t.cast("tf.RaggedTensorSpec", tf.RaggedTensorSpec.from_value(value))
     if _isinstance_wrapper(value, "SparseTensor"):
-        return tf.SparseTensorSpec.from_value(value)
+        return t.cast("tf.SparseTensorSpec", tf.SparseTensorSpec.from_value(value))
     if _isinstance_wrapper(value, "TensorArray"):
-        return tf.TensorArraySpec.from_tensor(value)
+        return t.cast("tf.TensorArraySpec", tf.TensorArraySpec.from_tensor(value))
     if _isinstance_wrapper(value, ("Tensor", "EagerTensor")):
-        return tf.TensorSpec.from_tensor(value)
+        return t.cast("tf.TensorSpec", tf.TensorSpec.from_tensor(value))
     return value
 
 
@@ -113,24 +120,25 @@ def get_input_signatures(
 ) -> t.Tuple[t.Any, ...]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         if func.function_spec.input_signature:
-            return ((func.function_spec.input_signature, {}),)
+            return ((func.function_spec.input_signature, {}),)  # type: ignore
         else:
             return tuple(
                 s
-                for conc in func.concrete_functions
-                for s in get_input_signatures(conc)
+                for conc in func.concrete_functions  # type: ignore
+                for s in get_input_signatures(conc)  # type: ignore
             )
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
         if func.structured_input_signature is not None:
-            return (func.structured_input_signature,)
+            return (func.structured_input_signature,)  # type: ignore
 
-        if func._arg_keywords is not None:  # TODO(bojiang): using private API
-            return (
+        # TODO(bojiang): using private API
+        if func._arg_keywords is not None:  # type: ignore
+            return (  # type: ignore
                 (
                     tuple(),
                     {
                         k: normalize_spec(v)
-                        for k, v in zip(func._arg_keywords, func.inputs)
+                        for k, v in zip(func._arg_keywords, func.inputs)  # type: ignore
                     },
                 ),
             )
@@ -141,28 +149,26 @@ def get_arg_names(
     func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
 ) -> t.Tuple[t.Any, ...]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
-        return func.function_spec.arg_names
+        return func.function_spec.arg_names  # type: ignore
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
-        return func._arg_keywords
+        return func._arg_keywords  # type: ignore
     return tuple()
 
 
 def get_output_signature(
     func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
-) -> t.Tuple[t.Any, ...]:
+) -> t.Union[t.Tuple[t.Any, ...], t.Dict[t.Any, "TFTensorSpec"]]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
-        return get_output_signature(func.concrete_functions[0])
+        return get_output_signature(func.concrete_functions[0])  # type: ignore
 
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
         if func.structured_outputs is not None:
             if isinstance(func.structured_outputs, dict):
-                return {
-                    k: normalize_spec(v) for k, v in func.structured_outputs.items()
-                }
-            return func.structured_outputs
+                return {k: normalize_spec(v) for k, v in func.structured_outputs.items()}  # type: ignore
+            return func.structured_outputs  # type: ignore
         else:
-            return tuple(normalize_spec(v) for v in func.outputs)
+            return tuple(normalize_spec(v) for v in func.outputs)  # type: ignore
 
     return tuple()
 
@@ -182,10 +188,10 @@ def get_serving_default_function(
     if not hasattr(m, "signatures"):
         raise EnvironmentError(f"{type(m)} is not a valid SavedModel format.")
     signatures: "_SignatureMap" = m.signatures
-    return signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
+    return signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)  # type: ignore
 
 
-def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tensor":
+def cast_tensor_by_spec(_input: "TFTensorType", spec: "TFTensorSpec") -> "tf.Tensor":
     """
     transform dtype & shape following spec
     """
@@ -195,9 +201,9 @@ def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tenso
     if _isinstance_wrapper(_input, ["Tensor", "EagerTensor"]):
         # TensorFlow issue #43038
         # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
-        return tf.cast(_input, dtype=spec.dtype, name=spec.name)
+        return tf.cast(_input, dtype=spec.dtype, name=spec.name)  # type: ignore
     else:
-        return tf.constant(_input, dtype=spec.dtype, name=spec.name)
+        return tf.constant(_input, dtype=spec.dtype, name=spec.name)  # type: ignore
 
 
 def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]):

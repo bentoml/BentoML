@@ -268,6 +268,55 @@ def _format_dt(d: t.Union[datetime, str], _: type) -> datetime:
 cattr.register_structure_hook(datetime, _format_dt)  # type: ignore[misc]
 
 
+class FrozenDict(t.Dict[str, t.Any]):
+    """Simple implementation of a frozendict. This can be used as default dictionary for arguments and parameters"""
+
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        super().__init__(*args, **kwargs)  # type: ignore
+        self._error = "Can't write to frozen dictionary."
+
+    def __setitem__(self, key: t.Any, value: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def pop(self, key: t.Any, default: t.Optional[t.Any] = None) -> None:
+        raise NotImplementedError(self._error)
+
+    def update(self, other: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+
+class FrozenList(t.List[t.Any]):
+    """Implementation of a frozenlist. This can be used as a default list for arguments and parameters"""
+
+    def __init__(self, *args: t.Any) -> None:
+        super().__init__(*args)  # type: ignore
+        self._error = "Can't write to frozen dictionary."
+
+    def append(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def clear(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def extend(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def insert(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def pop(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def remove(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def reverse(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+    def sort(self, *args: t.Any, **kwargs: t.Any) -> None:
+        raise NotImplementedError(self._error)
+
+
 @json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
 class FileLike:

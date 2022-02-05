@@ -1,3 +1,4 @@
+# type: ignore[reportMissingTypeStubs]
 import os
 import re
 import uuid
@@ -17,7 +18,10 @@ from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
+from ..types import LazyType
 from ..types import PathType
+from ..types import FrozenDict
+from ..types import FrozenList
 from ..runner.utils import Params
 from ..utils.tensorflow import get_arg_names
 from ..utils.tensorflow import get_tf_version
@@ -26,12 +30,6 @@ from ..utils.tensorflow import get_input_signatures
 from ..utils.tensorflow import get_restored_functions
 from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
-
-if TYPE_CHECKING:
-    import numpy as np
-    import tensorflow.keras as keras
-
-    from ..models import ModelStore
 
 try:
     import tensorflow as tf
@@ -48,6 +46,16 @@ try:
     import tensorflow.python.training.tracking.tracking as tracking
 except ImportError:  # pragma: no cover
     import tensorflow_core.python.training.tracking.tracking as tracking
+
+if TYPE_CHECKING:
+    import numpy as np
+    import tensorflow.keras as keras
+
+    from ..models import ModelStore
+    from ..utils.tensorflow import TFTensorSpec
+    from ..utils.tensorflow import TFTensorType
+
+    AutoTrackable = tracking.AutoTrackable
 
 try:
     import importlib.metadata as importlib_metadata
@@ -84,21 +92,21 @@ def _clean_name(name: str) -> str:  # pragma: no cover
     return re.sub(r"\W|^(?=\d)-", "_", name)
 
 
-AUTOTRACKABLE_CALLABLE_WARNING: str = """
+AUTOTRACKABLE_CALLABLE_WARNING: str = """\
 Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
  will not be supported by BentoML due to `tensorflow` API.\n
 See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
  more details.
 """
 
-TF_FUNCTION_WARNING: str = """
+TF_FUNCTION_WARNING: str = """\
 Due to TensorFlow's internal mechanism, only methods
  wrapped under `@tf.function` decorator and the Keras default function
  `__call__(inputs, training=False)` can be restored after a save & load.\n
 You can test the restored model object via `bentoml.tensorflow.load(path)`
 """
 
-KERAS_MODEL_WARNING: str = """
+KERAS_MODEL_WARNING: str = """\
 BentoML detected that {name} is being used to pack a Keras API
  based model. In order to get optimal serving performance, we recommend
  to wrap your keras model `call()` methods with `@tf.function` decorator.
@@ -107,7 +115,7 @@ BentoML detected that {name} is being used to pack a Keras API
 
 def _is_gpu_available() -> bool:
     try:
-        return len(tf.config.list_physical_devices("GPU")) > 0
+        return len(tf.config.list_physical_devices("GPU")) > 0  # type: ignore
     except AttributeError:
         return tf.test.is_gpu_available()  # type: ignore
 
@@ -116,17 +124,17 @@ class _tf_function_wrapper:  # pragma: no cover
     def __init__(
         self,
         origin_func: t.Callable[..., t.Any],
-        arg_names: t.Optional[t.List[str]] = None,
-        arg_specs: t.Optional[t.List[t.Any]] = None,
-        kwarg_specs: t.Optional[t.Dict[str, t.Any]] = None,
+        arg_names: t.Optional[t.Tuple[str]] = None,
+        arg_specs: t.List["TFTensorSpec"] = FrozenList(),
+        kwarg_specs: t.Dict[str, "TFTensorSpec"] = FrozenDict(),
     ) -> None:
         self.origin_func = origin_func
-        self.arg_names = arg_names
-        self.arg_specs = arg_specs
+        self.arg_names = arg_names or tuple()
+        self.arg_specs = arg_specs.copy()
         self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
         self.kwarg_specs.update(kwarg_specs or {})
 
-    def __call__(self, *args: str, **kwargs: str) -> t.Any:
+    def __call__(self, *args: "TFTensorType", **kwargs: "TFTensorType") -> t.Any:
         if self.arg_specs is None and self.kwarg_specs is None:
             return self.origin_func(*args, **kwargs)
 
@@ -143,7 +151,7 @@ class _tf_function_wrapper:  # pragma: no cover
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
         transformed_args: t.Tuple[t.Any, ...] = tuple(
-            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type] # noqa
+            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)
         )
 
         transformed_kwargs = {
@@ -176,14 +184,14 @@ class _tf_function_wrapper:  # pragma: no cover
             )
 
 
-def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
+def _load_tf_saved_model(path: str) -> "AutoTrackable":
     if TF2:
         return tf.saved_model.load(path)
     else:
         loaded = tf.compat.v2.saved_model.load(path)
-        if isinstance(loaded, tracking.AutoTrackable) and not hasattr(
-            loaded, "__call__"
-        ):
+        if LazyType["AutoTrackable"]("AutoTrackable").isinstance(
+            loaded
+        ) and not hasattr(loaded, "__call__"):
             logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
         return loaded
 
@@ -191,8 +199,8 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
 @inject
 def load(
     tag: Tag,
-    tfhub_tags: t.Optional[t.List[str]] = None,
-    tfhub_options: t.Optional[t.Any] = None,
+    tfhub_tags: t.List[str] = FrozenList(),
+    tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Any:  # returns tf.sessions or keras models
@@ -258,7 +266,9 @@ def load(
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
             assert hub is not None
-            wrapper_class = hub.KerasLayer if TF2 else hub.Module
+            wrapper_class: "t.Union[hub.KerasLayer, hub.Module]" = (
+                hub.KerasLayer if TF2 else hub.Module
+            )
             return wrapper_class(module_path)
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
@@ -266,10 +276,10 @@ def load(
             native_module.get_module_proto_path(module_path)
         )
         if tfhub_tags is None and is_hub_module_v1:
-            tfhub_tags = []
+            tfhub_tags = tfhub_tags.copy()
 
         if tfhub_options is not None:
-            if not isinstance(tfhub_options, tf.saved_model.SaveOptions):
+            if not LazyType("tf.saved_model.SaveOptions").isinstance(tfhub_options):
                 raise BentoMLException(
                     f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
                 )
@@ -289,7 +299,7 @@ def load(
         )
         return obj
     else:
-        tf_model = _load_tf_saved_model(model.path)
+        tf_model = _load_tf_saved_model(model.path)  # type: AutoTrackable
         _tf_function_wrapper.hook_loaded_model(tf_model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
@@ -303,7 +313,7 @@ def load(
 def import_from_tfhub(
     identifier: t.Union[str, "hub.Module", "hub.KerasLayer"],
     name: t.Optional[str] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    metadata: t.Dict[str, t.Any] = FrozenDict(),
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
@@ -402,7 +412,7 @@ def import_from_tfhub(
         module=MODULE_NAME,
         options=None,
         context=context,
-        metadata=metadata,
+        metadata=metadata.copy(),
     )
     if isinstance(identifier, str):
         os.environ["TFHUB_CACHE_DIR"] = _model.path
@@ -433,7 +443,7 @@ def save(
     *,
     signatures: t.Optional[t.Union[t.Callable[..., t.Any], t.Dict[str, t.Any]]] = None,
     options: t.Optional["tf.saved_model.SaveOptions"] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    metadata: t.Dict[str, t.Any] = FrozenDict(),
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
@@ -546,7 +556,7 @@ def save(
         module=MODULE_NAME,
         options=None,
         context=context,
-        metadata=metadata,
+        metadata=metadata.copy(),
     )
 
     if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType] # noqa
@@ -576,10 +586,10 @@ class _TensorflowRunner(Runner):
         tag: Tag,
         predict_fn_name: str,
         device_id: str,
-        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
+        partial_kwargs: t.Dict[str, t.Any],
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
+        resource_quota: t.Dict[str, t.Any],
+        batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
@@ -685,10 +695,10 @@ def load_runner(
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",
-    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    partial_kwargs: t.Dict[str, t.Any] = FrozenDict(),
     name: t.Optional[str] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    resource_quota: t.Dict[str, t.Any] = FrozenDict(),
+    batch_options: t.Dict[str, t.Any] = FrozenDict(),
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_TensorflowRunner":
     """

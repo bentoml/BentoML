@@ -22,55 +22,35 @@ from ..types import PathType
 from ..types import FrozenDict
 from ..types import FrozenList
 from ..runner.utils import Params
-from ..utils.tensorflow import get_arg_names
 from ..utils.tensorflow import get_tf_version
-from ..utils.tensorflow import cast_tensor_by_spec
-from ..utils.tensorflow import get_input_signatures
-from ..utils.tensorflow import get_restored_functions
+from ..utils.tensorflow import is_gpu_available
+from ..utils.tensorflow import tf_function_wrapper
 from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
 
-try:
-    import tensorflow as tf
-    from tensorflow.python.client import device_lib
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        """\
-    `tensorflow` is required in order to use `bentoml.tensorflow`.
-    Instruction: `pip install tensorflow`
-    """
-    )
-
-try:
-    import tensorflow.python.training.tracking.tracking as tracking
-except ImportError:  # pragma: no cover
-    import tensorflow_core.python.training.tracking.tracking as tracking
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
-    import tensorflow.keras as keras
-
+    from .. import external_typing as ext
+    from ..types import PathType
     from ..models import ModelStore
-    from ..utils.tensorflow import TensorSpec
-    from ..utils.tensorflow import TensorType
+    from ..external_typing import tensorflow as tf
 
-    AutoTrackable = tracking.AutoTrackable
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_tf_version = get_tf_version()
-logger = logging.getLogger(__name__)
-TF2 = _tf_version.startswith("2")
-
-MODULE_NAME = "bentoml.tensorflow"
-
+    TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf.Tensor"]
+else:
+    try:
+        import tensorflow as tf
+        from tensorflow.python.client import device_lib
+    except ImportError:  # pragma: no cover
+        raise MissingDependencyException(
+            """\
+        `tensorflow` is required in order to use `bentoml.tensorflow`.
+        Instruction: `pip install tensorflow`
+        """
+        )
 try:
     import tensorflow_hub as hub
     from tensorflow_hub import resolve
-    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -78,13 +58,15 @@ except ImportError:  # pragma: no cover
      make sure to `pip install --upgrade tensorflow_hub` before using.
      """
     )
-    hub = None
-    resolve, native_module = None, None
+    hub, resolve = None, None
+
 
 try:
-    _tfhub_version = importlib_metadata.version("tensorflow_hub")
-except importlib_metadata.PackageNotFoundError:
-    _tfhub_version = None
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+MODULE_NAME = "bentoml.tensorflow"
 
 
 def _clean_name(name: str) -> str:  # pragma: no cover
@@ -112,89 +94,6 @@ BentoML detected that {name} is being used to pack a Keras API
 """
 
 
-def _is_gpu_available() -> bool:
-    try:
-        return len(tf.config.list_physical_devices("GPU")) > 0  # type: ignore
-    except AttributeError:
-        return tf.test.is_gpu_available()  # type: ignore
-
-
-class tf_function_wrapper:  # pragma: no cover
-    def __init__(
-        self,
-        origin_func: t.Callable[..., t.Any],
-        arg_names: t.Optional[t.Tuple[str]] = None,
-        arg_specs: t.List["TensorSpec"] = FrozenList(),
-        kwarg_specs: t.Dict[str, "TensorSpec"] = FrozenDict(),
-    ) -> None:
-        self.origin_func = origin_func
-        self.arg_names = arg_names or tuple()
-        self.arg_specs = arg_specs
-        self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
-        self.kwarg_specs.update(kwarg_specs or {})
-
-    def __call__(self, *args: "TensorType", **kwargs: "TensorType") -> t.Any:
-        if self.arg_specs is None and self.kwarg_specs is None:
-            return self.origin_func(*args, **kwargs)
-
-        for k in kwargs:
-            if k not in self.kwarg_specs:
-                raise TypeError(f"Function got an unexpected keyword argument {k}")
-
-        arg_keys = {k for k, _ in zip(self.arg_names, args)}  # type: ignore[arg-type]
-        _ambiguous_keys = arg_keys & set(kwargs)  # type: t.Set[str]
-        if _ambiguous_keys:
-            raise TypeError(f"got two values for arguments '{_ambiguous_keys}'")
-
-        # INFO:
-        # how signature with kwargs works?
-        # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
-        transformed_args: t.Tuple[t.Any, ...] = tuple(
-            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)
-        )
-
-        transformed_kwargs = {
-            k: cast_tensor_by_spec(arg, self.kwarg_specs[k])
-            for k, arg in kwargs.items()
-        }
-        return self.origin_func(*transformed_args, **transformed_kwargs)
-
-    def __getattr__(self, k: t.Any) -> t.Any:
-        return getattr(self.origin_func, k)
-
-    @classmethod
-    def hook_loaded_model(cls, loaded_model: t.Any) -> None:
-        funcs = get_restored_functions(loaded_model)
-        for k, func in funcs.items():
-            arg_names = get_arg_names(func)
-            sigs = get_input_signatures(func)
-            if not sigs:
-                continue
-            arg_specs, kwarg_specs = sigs[0]
-            setattr(
-                loaded_model,
-                k,
-                cls(
-                    func,
-                    arg_names=arg_names,
-                    arg_specs=arg_specs,
-                    kwarg_specs=kwarg_specs,
-                ),
-            )
-
-
-def _load_tf_saved_model(path: str) -> "AutoTrackable":
-    if TF2:
-        return tf.saved_model.load(path)
-    else:
-        loaded = tf.compat.v2.saved_model.load(path)
-        if LazyType["tracking.AutoTrackable"]("tracking.AutoTrackable").isinstance(
-            loaded
-        ) and not hasattr(loaded, "__call__"):
-            logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
-        return loaded
-
-
 @inject
 def load(
     tag: Tag,
@@ -202,7 +101,7 @@ def load(
     tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Any:  # returns tf.sessions or keras models
+) -> t.Union["tf.AutoTrackable", "tf.HubModule"]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -257,48 +156,42 @@ def load(
             " the functionalities of the given model, set `load_as_wrapper=False`"
             " will return a SavedModel object."
         )
-        assert all(
-            i is not None for i in [hub, resolve, native_module]
-        ), MissingDependencyException(
-            "`tensorflow_hub` is required to load a tfhub module."
-        )
+        if hub is None:
+            raise MissingDependencyException(
+                """\
+            `tensorflow_hub` does not exists.
+            Make sure to `pip install --upgrade tensorflow_hub` before using.
+            """
+            )
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
-            assert hub is not None
-            wrapper_class: "t.Union[hub.KerasLayer, hub.Module]" = (
-                hub.KerasLayer if TF2 else hub.Module
-            )
-            return wrapper_class(module_path)
-        # In case users want to load as a SavedModel file object.
-        # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
-        is_hub_module_v1 = tf.io.gfile.exists(
-            native_module.get_module_proto_path(module_path)
-        )
-        if tfhub_tags is None and is_hub_module_v1:
-            tfhub_tags = tfhub_tags.copy()
-
-        if tfhub_options is not None:
+            return hub.Module(module_path)
+        elif tfhub_options is not None:
             if not LazyType("tf.saved_model.SaveOptions").isinstance(tfhub_options):
                 raise BentoMLException(
                     f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
                 )
-            if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
+            if not hasattr(getattr(tf, "saved_model"), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
-                    f" Current version: {_tf_version}"
+                    f" Current version: {get_tf_version()}"
                 )
             # tf.compat.v1.saved_model.load_v2() is TF2 tf.saved_model.load() before TF2
-            obj = tf.compat.v1.saved_model.load_v2(
+            tf_model: "tf.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags, options=tfhub_options
             )
         else:
-            obj = tf.compat.v1.saved_model.load_v2(module_path, tags=tfhub_tags)
-        obj._is_hub_module_v1 = (
-            is_hub_module_v1  # pylint: disable=protected-access # noqa
-        )
-        return obj
+            tf_model: "tf.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
+                module_path, tags=tfhub_tags
+            )
+        tf_model._is_hub_module_v1 = True  # pylint: disable=protected-access # noqa
+        return tf_model
     else:
-        tf_model = _load_tf_saved_model(model.path)  # type: AutoTrackable
+        tf_model = tf.compat.v1.saved_model.load_v2(model.path)
+        if LazyType["tf.AutoTrackable"](
+            "tensorflow.python.training.tracking.tracking.AutoTrackable"
+        ).isinstance(tf_model) and not hasattr(tf_model, "__call__"):
+            logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
         tf_function_wrapper.hook_loaded_model(tf_model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
@@ -310,7 +203,7 @@ def load(
 
 @inject
 def import_from_tfhub(
-    identifier: t.Union[str, "hub.Module", "hub.KerasLayer"],
+    identifier: t.Union[str, "tf.HubModule", "tf.KerasLayer"],
     name: t.Optional[str] = None,
     metadata: t.Dict[str, t.Any] = FrozenDict(),
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -390,11 +283,18 @@ def import_from_tfhub(
             model = _plus_one_model_tf2()
             tag = bentoml.tensorflow.import_from_tfhub(model)
     """  # noqa
+    if resolve is None:
+        raise MissingDependencyException(
+            """\
+        `tensorflow_hub` does not exists.
+        Make sure to `pip install --upgrade tensorflow_hub` before using.
+        """
+        )
     context: t.Dict[str, t.Any] = {
         "framework_name": "tensorflow",
         "pip_dependencies": [
-            f"tensorflow=={_tf_version}",
-            f"tensorflow_hub=={_tfhub_version}",
+            f"tensorflow=={get_tf_version()}",
+            f"tensorflow_hub=={importlib_metadata.version('tensorflow_hub')}",
         ],
         "import_from_tfhub": True,
     }
@@ -438,9 +338,9 @@ def import_from_tfhub(
 @inject
 def save(
     name: str,
-    model: t.Union["keras.Model", "tf.Module", PathType],
+    model: t.Union["PathType", "tf.KerasModel", "tf.Module"],
     *,
-    signatures: t.Optional[t.Union[t.Callable[..., t.Any], t.Dict[str, t.Any]]] = None,
+    signatures: t.Optional["tf.ConcreteFunction"] = None,
     options: t.Optional["tf.saved_model.SaveOptions"] = None,
     metadata: t.Dict[str, t.Any] = FrozenDict(),
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -451,7 +351,7 @@ def save(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[keras.Model, tf.Module, path-like objects]`):
+        model (:code:`Union[tf.keras.Model, tf.Module, path-like objects]`):
             Instance of model to be saved
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
@@ -546,7 +446,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "tensorflow",
-        "pip_dependencies": [f"tensorflow=={_tf_version}"],
+        "pip_dependencies": [f"tensorflow=={get_tf_version()}"],
         "import_from_tfhub": False,
     }
     _model = Model.create(
@@ -561,17 +461,12 @@ def save(
         assert os.path.isdir(model)
         copy_tree(str(model), _model.path)
     else:
-        if TF2:
-            tf.saved_model.save(
-                model, _model.path, signatures=signatures, options=options
+        if options:
+            logger.warning(
+                f"Parameter 'options: {str(options)}' is ignored when "
+                f"using tensorflow {tf.__version__}"
             )
-        else:
-            if options:
-                logger.warning(
-                    f"Parameter 'options: {str(options)}' is ignored when "
-                    f"using tensorflow {tf.__version__}"
-                )
-            tf.saved_model.save(model, _model.path, signatures=signatures)
+        tf.compat.v2.saved_model.save(model, _model.path, signatures=signatures)
 
     _model.save(model_store)
     return _model.tag
@@ -604,8 +499,7 @@ class _TensorflowRunner(Runner):
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
-        if TF2 and "GPU" in device_id:
-            tf.config.set_visible_devices(device_id, "GPU")
+        # TODO(aarnphm): setup GPU support for tensorflow v1
         self._config_proto = dict(
             allow_soft_placement=True,
             log_device_placement=False,
@@ -619,13 +513,13 @@ class _TensorflowRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        if _is_gpu_available() and self.resource_quota.on_gpu:
+        if is_gpu_available() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        if _is_gpu_available() and self.resource_quota.on_gpu:
+        if is_gpu_available() and self.resource_quota.on_gpu:
             return len(tf.config.list_physical_devices("GPU"))
         return 1
 
@@ -636,55 +530,25 @@ class _TensorflowRunner(Runner):
             config=tf.compat.v1.ConfigProto(**self._config_proto)
         )
         self._model = load(self._tag, model_store=self._model_store)
-        if not TF2:
-            raw_predict_fn = self._model.signatures["serving_default"]
-        else:
-            raw_predict_fn = getattr(self._model, self._predict_fn_name)
+        raw_predict_fn = self._model.signatures["serving_default"]
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
-    def _run_batch(
-        self,
-        *args: t.Union[
-            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
-        ],
-        **kwargs: t.Union[
-            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
-        ],
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        params = Params[
-            t.Union[
-                t.List[t.Union[int, float]],
-                "np.ndarray[t.Any, np.dtype[t.Any]]",
-                tf.Tensor,
-            ]
-        ](*args, **kwargs)
+    def _run_batch(self, *args: "TFArgType", **kwargs: "TFArgType") -> "ext.NpNDArray":
+        params = Params["TFArgType"](*args, **kwargs)
 
         with tf.device(self._device_id):
 
-            def _mapping(
-                item: t.Union[
-                    t.List[t.Union[int, float]],
-                    "np.ndarray[t.Any, np.dtype[t.Any]]",
-                    tf.Tensor,
-                ]
-            ) -> tf.Tensor:
-                if not isinstance(item, tf.Tensor):
+            def _mapping(item: "TFArgType") -> "tf.Tensor":
+                if not LazyType["tf.Tensor"]("tf.Tensor").isinstance(item):
                     return tf.convert_to_tensor(item, dtype=tf.float32)
                 else:
                     return item
 
             params = params.map(_mapping)
 
-            if TF2:
-                tf.compat.v1.global_variables_initializer()
-                res = self._predict_fn(*params.args, **params.kwargs)
-            else:
-                self._session.run(tf.compat.v1.global_variables_initializer())
-                res = self._session.run(self._predict_fn(*params.args, **params.kwargs))
-            return t.cast(
-                "np.ndarray[t.Any, np.dtype[t.Any]]",
-                res.numpy() if TF2 else res["prediction"],
-            )
+            self._session.run(tf.compat.v1.global_variables_initializer())
+            res = self._session.run(self._predict_fn(*params.args, **params.kwargs))
+            return t.cast("ext.NpNDArray", res["prediction"])
 
 
 @inject

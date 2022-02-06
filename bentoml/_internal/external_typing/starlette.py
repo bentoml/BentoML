@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    import typing as t
+
     from starlette.types import Send as ASGISend
     from starlette.types import Scope as ASGIScope
     from starlette.types import ASGIApp

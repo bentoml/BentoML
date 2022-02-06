@@ -11,8 +11,15 @@ if TYPE_CHECKING:
     DataFrameOrient = Literal["split", "records", "index", "columns", "values", "table"]
     SeriesOrient = Literal["split", "records", "index", "table"]
 
-    from .numpy import *
-    from .starlette import *
+    from .numpy import NpGeneric
+    from .numpy import NpNDArray
+    from .numpy import NpDTypeLike
+    from .starlette import ASGIApp
+    from .starlette import ASGISend
+    from .starlette import ASGIScope
+    from .starlette import ASGIMessage
+    from .starlette import ASGIReceive
+    from .starlette import AsgiMiddleware
 
     __all__ = [
         "PdSeries",

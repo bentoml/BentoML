@@ -18,7 +18,7 @@ from ...exceptions import InternalServerError
 if TYPE_CHECKING:
     import PIL.Image
 
-    from .. import external_typing as ext
+    from .. import external_typing as ext  # noqa
 
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
@@ -172,7 +172,7 @@ class Image(IODescriptor[ImageType]):
         return PIL.Image.open(io.BytesIO(bytes_))
 
     async def to_http_response(self, obj: ImageType) -> Response:
-        if LazyType["ext.NpNDArray[t.Any]"]("numpy.ndarray").isinstance(obj):
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
         elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
             image = obj

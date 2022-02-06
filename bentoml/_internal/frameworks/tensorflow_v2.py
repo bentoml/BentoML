@@ -22,37 +22,31 @@ from ..types import FrozenDict
 from ..types import FrozenList
 from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
+from ..utils.tensorflow import is_gpu_available
 from ..utils.tensorflow import tf_function_wrapper
 from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
 
-import bentoml._internal._patched_type_modules.tensorflow as tf
-try:
-    from tensorflow.python.client import device_lib
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        """\
-    `tensorflow` is required in order to use `bentoml.tensorflow`.
-    Instruction: `pip install tensorflow`
-    """
-    )
-
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import tensorflow.keras as keras
-
+    from .. import external_typing as ext
     from ..types import PathType
     from ..models import ModelStore
-    from .. import external_typing as ext
+    from ..external_typing import tensorflow as tf
 
     TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf.Tensor"]
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-logger = logging.getLogger(__name__)
+else:
+    try:
+        import tensorflow as tf
+        from tensorflow.python.client import device_lib
+    except ImportError:  # pragma: no cover
+        raise MissingDependencyException(
+            """\
+        `tensorflow` is required in order to use `bentoml.tensorflow`.
+        Instruction: `pip install tensorflow`
+        """
+        )
 
 try:
     import tensorflow_hub as hub
@@ -65,6 +59,12 @@ except ImportError:  # pragma: no cover
     """
     )
     hub, resolve = None, None
+
+
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 
 MODULE_NAME = "bentoml.tensorflow"
 
@@ -94,13 +94,6 @@ BentoML detected that {name} is being used to pack a Keras API
 """
 
 
-def _is_gpu_available() -> bool:
-    try:
-        return len(tf.config.list_physical_devices("GPU")) > 0  # type: ignore
-    except AttributeError:
-        return tf.test.is_gpu_available()  # type: ignore
-
-
 @inject
 def load(
     tag: Tag,
@@ -108,7 +101,7 @@ def load(
     tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Any:  # returns tf.sessions or keras models
+) -> "t.Union[tf.AutoTrackable, tf.KerasLayer]":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -175,10 +168,7 @@ def load(
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
             return hub.KerasLayer(module_path)
-        # In case users want to load as a SavedModel file object.
-        # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
-
-        if tfhub_options is not None:
+        elif tfhub_options is not None:
             if not LazyType("tf.saved_model.SaveOptions").isinstance(tfhub_options):
                 raise BentoMLException(
                     f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
@@ -188,13 +178,13 @@ def load(
                     "options are not supported for TF < 2.3.x,"
                     f" Current version: {get_tf_version()}"
                 )
-            obj = tf.saved_model.load(
+            tf_model = tf.saved_model.load(
                 module_path, tags=tfhub_tags, options=tfhub_options
             )
         else:
-            obj = tf.saved_model.load(module_path, tags=tfhub_tags)
-        obj._is_hub_module_v1 = False  # pylint: disable=protected-access # noqa
-        return obj
+            tf_model = tf.saved_model.load(module_path, tags=tfhub_tags)
+        tf_model._is_hub_module_v1 = False  # pylint: disable=protected-access # noqa
+        return tf_model
     else:
         tf_model: "tf.AutoTrackable" = tf.saved_model.load(model.path)
         tf_function_wrapper.hook_loaded_model(tf_model)
@@ -208,7 +198,7 @@ def load(
 
 @inject
 def import_from_tfhub(
-    identifier: t.Union[str, "tf.KerasLayer"],
+    identifier: t.Union[str, "tf.HubModule", "tf.KerasLayer"],
     name: t.Optional[str] = None,
     metadata: t.Dict[str, t.Any] = FrozenDict(),
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -324,7 +314,13 @@ def import_from_tfhub(
         folder = fpath.split("/")[-1]
         _model.info.options = {"model": identifier, "local_path": folder}
     else:
-        tf.saved_model.save(identifier, _model.path)
+        if hasattr(identifier, "export"):
+            # hub.Module.export()
+            with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:
+                sess.run(tf.compat.v1.global_variables_initializer())
+                identifier.export(_model.path, sess)
+        else:
+            tf.saved_model.save(identifier, _model.path)
         _model.info.options = {
             "model": identifier.__class__.__name__,
             "local_path": ".",
@@ -337,9 +333,9 @@ def import_from_tfhub(
 @inject
 def save(
     name: str,
-    model: t.Union["PathType", "keras.Model", "tf.Module"],
+    model: t.Union["PathType", "tf.KerasModel", "tf.Module"],
     *,
-    signatures: t.Optional[t.Union[t.Callable[..., t.Any], t.Dict[str, t.Any]]] = None,
+    signatures: t.Optional["tf.ConcreteFunction"] = None,
     options: t.Optional["tf.saved_model.SaveOptions"] = None,
     metadata: t.Dict[str, t.Any] = FrozenDict(),
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -456,8 +452,8 @@ def save(
         metadata=metadata.copy(),
     )
 
-    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore
-        assert os.path.isdir(model), "Given path is not a directory, meaning either users errors or internal bug from Tensorflow"
+    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType] # noqa
+        assert os.path.isdir(model)
         copy_tree(str(model), _model.path)
     else:
         tf.saved_model.save(model, _model.path, signatures=signatures, options=options)
@@ -508,13 +504,13 @@ class _TensorflowRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        if _is_gpu_available() and self.resource_quota.on_gpu:
+        if is_gpu_available() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        if _is_gpu_available() and self.resource_quota.on_gpu:
+        if is_gpu_available() and self.resource_quota.on_gpu:
             return len(tf.config.list_physical_devices("GPU"))
         return 1
 

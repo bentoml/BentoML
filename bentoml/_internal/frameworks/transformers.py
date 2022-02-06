@@ -28,8 +28,8 @@ if TYPE_CHECKING:
         _BaseAutoModelClass,  # type: ignore[reportPrivateUsage]
     )
 
-    from .. import ext_typing as ext
     from ..models import ModelStore
+    from ..external_typing import transformers as ext
 
 try:
     import transformers

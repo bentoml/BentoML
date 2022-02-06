@@ -15,7 +15,7 @@ from ...exceptions import MissingDependencyException
 if TYPE_CHECKING:
     import pydantic
 
-    from .. import ext_typing as ext
+    from .. import external_typing as ext
 
     _SerializableObj = t.Union[
         "ext.NpNDArray[t.Any]",

@@ -9,7 +9,7 @@ from simple_di import Provide
 from ..configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:
-    from .. import ext_typing as ext
+    from .. import external_typing as ext
     from ..service import Service
     from ..server.metrics.prometheus import PrometheusClient
 

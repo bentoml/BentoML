@@ -15,7 +15,7 @@ BatchType = t.TypeVar("BatchType")
 IndexType = t.Union[None, int]
 
 if TYPE_CHECKING:
-    from .. import ext_typing as ext
+    from .. import external_typing as ext
 
 
 class Payload(t.NamedTuple):

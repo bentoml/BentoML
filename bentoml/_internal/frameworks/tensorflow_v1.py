@@ -1,4 +1,3 @@
-# type: ignore[reportMissingTypeStubs]
 import os
 import re
 import uuid
@@ -52,8 +51,8 @@ if TYPE_CHECKING:
     import tensorflow.keras as keras
 
     from ..models import ModelStore
-    from ..utils.tensorflow import TFTensorSpec
-    from ..utils.tensorflow import TFTensorType
+    from ..utils.tensorflow import TensorSpec
+    from ..utils.tensorflow import TensorType
 
     AutoTrackable = tracking.AutoTrackable
 
@@ -120,13 +119,13 @@ def _is_gpu_available() -> bool:
         return tf.test.is_gpu_available()  # type: ignore
 
 
-class _tf_function_wrapper:  # pragma: no cover
+class tf_function_wrapper:  # pragma: no cover
     def __init__(
         self,
         origin_func: t.Callable[..., t.Any],
         arg_names: t.Optional[t.Tuple[str]] = None,
-        arg_specs: t.List["TFTensorSpec"] = FrozenList(),
-        kwarg_specs: t.Dict[str, "TFTensorSpec"] = FrozenDict(),
+        arg_specs: t.List["TensorSpec"] = FrozenList(),
+        kwarg_specs: t.Dict[str, "TensorSpec"] = FrozenDict(),
     ) -> None:
         self.origin_func = origin_func
         self.arg_names = arg_names or tuple()
@@ -134,7 +133,7 @@ class _tf_function_wrapper:  # pragma: no cover
         self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
         self.kwarg_specs.update(kwarg_specs or {})
 
-    def __call__(self, *args: "TFTensorType", **kwargs: "TFTensorType") -> t.Any:
+    def __call__(self, *args: "TensorType", **kwargs: "TensorType") -> t.Any:
         if self.arg_specs is None and self.kwarg_specs is None:
             return self.origin_func(*args, **kwargs)
 
@@ -300,7 +299,7 @@ def load(
         return obj
     else:
         tf_model = _load_tf_saved_model(model.path)  # type: AutoTrackable
-        _tf_function_wrapper.hook_loaded_model(tf_model)
+        tf_function_wrapper.hook_loaded_model(tf_model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
         logger.info(pretty_format_restored_model(tf_model))
@@ -540,7 +539,6 @@ def save(
             tag = bentoml.tensorflow.save("native_toy", model)
 
     .. note::
-
 
        :code:`bentoml.tensorflow.save` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
        with :code:`bentoml.tensorflow.save`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.

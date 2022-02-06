@@ -16,7 +16,7 @@ from ..utils.lazy_loader import LazyLoader
 if TYPE_CHECKING:
     import pandas as pd  # type: ignore[import]
 
-    from .. import ext_typing as ext
+    from .. import external_typing as ext
 else:
     pd = LazyLoader("pd", globals(), "pandas")
 

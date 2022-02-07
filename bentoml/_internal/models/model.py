@@ -39,8 +39,11 @@ class Model(StoreItem):
     _tag: Tag
     __fs: FS
 
-    info: "ModelInfo"
+    _info: "ModelInfo"
     _custom_objects: t.Optional[t.Dict[str, t.Any]] = None
+
+    _info_flushed = False
+    _custom_objects_flushed = False
 
     @staticmethod
     def _export_ext() -> str:
@@ -55,7 +58,19 @@ class Model(StoreItem):
         return self.__fs
 
     @property
+    def info(self) -> "ModelInfo":
+        self._info_flushed = False
+        return self._info
+
+    @info.setter
+    def info(self, new_info: "ModelInfo"):
+        self._info_flushed = False
+        self._info = new_info
+
+    @property
     def custom_objects(self) -> t.Dict[str, t.Any]:
+        self._custom_objects_flushed = False
+
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
@@ -139,9 +154,7 @@ class Model(StoreItem):
         logger.info(f"Successfully saved {self}")
         return self
 
-    def _save(
-        self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
-    ) -> "Model":
+    def _save(self, model_store: "ModelStore") -> "Model":
         self.flush_info()
         self.flush_custom_objects()
 
@@ -155,6 +168,7 @@ class Model(StoreItem):
             self._fs.close()
             self.__fs = out_fs
 
+        logger.info(f"Successfully saved {self}")
         return self
 
     @classmethod
@@ -171,6 +185,8 @@ class Model(StoreItem):
             logger.warning(f"Failed to import Model from {item_fs}.")
             raise BentoMLException("Failed to create Model because it was invalid")
 
+        res._info_flushed = True
+        res._custom_objects_flushed = True
         return res
 
     @property
@@ -181,16 +197,16 @@ class Model(StoreItem):
         return self._fs.getsyspath(item)
 
     def flush_info(self):
-        if self._flushed:
+        if self._info_flushed:
             return
 
         with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
             self.info.dump(model_yaml)
 
-        self._flushed = True
+        self._info_flushed = True
 
     def flush_custom_objects(self):
-        if self._flushed:
+        if self._custom_objects_flushed:
             return
 
         # pickle custom_objects if it is not None and not empty
@@ -198,7 +214,7 @@ class Model(StoreItem):
             with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
                 cloudpickle.dump(self.custom_objects, cofile)
 
-        self._flushed = True
+        self._custom_objects_flushed = True
 
     @property
     def creation_time(self) -> datetime:

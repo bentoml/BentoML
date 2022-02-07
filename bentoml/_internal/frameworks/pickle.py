@@ -25,13 +25,7 @@ if TYPE_CHECKING:
     from ..models import ModelStore
 
 import pickle
-
-try:
-    import cloudpickle
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "cloudpickle is required in order to use the module `bentoml.pickle`, install cloudpickle with `pip install cloudpickle`."
-    )
+import cloudpickle
 
 MODULE_NAME = "bentoml.pickle"
 
@@ -86,7 +80,9 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Any,
+    obj: t.Any,
+    batch: bool = False,
+    function_name: str = "__call__",
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -97,8 +93,12 @@ def save(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model:
-            Instance of model to be saved.
+        obj:
+            Instance of an object to be saved.
+        batch:
+            Determines whether the model supports batching
+        function_name:
+            Function to call on the pickled object
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -123,17 +123,22 @@ def save(
         runner.run(3)
 
     """  # noqa
-    context = {"framework_name": "pickle"}
+    context = { "framework_name": "pickle" }
+    options = {
+        "batch": batch,
+        "function_name": function_name
+    }
 
     _model = Model.create(
         name,
         module=MODULE_NAME,
         metadata=metadata,
         context=context,
+        options=options
     )
 
     with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
-        cloudpickle.dump(model, f)
+        cloudpickle.dump(obj, f)
 
     _model.save(model_store)
     return _model.tag
@@ -146,12 +151,11 @@ class _PickleRunner(Runner):
         tag: Tag,
         function_name: str,
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        model_info: "Model",
+        model_file: PathType,
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ):
-        super().__init__(name, resource_quota, batch_options)
-        model_info, model_file = _get_model_info(tag, model_store)
+        super().__init__(name, {}, {})
         self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
@@ -174,8 +178,8 @@ class _PickleRunner(Runner):
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        inputs: t.Union["ext.NpNDArray", "ext.PdDataFrame"],
-    ) -> "ext.NpNDArray":
+        inputs: t.Any,
+    ) -> t.Any:
         return self._infer_func(inputs)
 
 
@@ -186,12 +190,11 @@ class _PickleSimpleRunner(SimpleRunner):
         tag: Tag,
         function_name: str,
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
+        model_info: "Model",
+        model_file: PathType,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(name, resource_quota, batch_options)
-        model_info, model_file = _get_model_info(tag, model_store)
+        super().__init__(name, {}, {})
         self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
@@ -209,23 +212,24 @@ class _PickleSimpleRunner(SimpleRunner):
     def _setup(self) -> None:
         with open(self._model_file, "rb") as f:
             self._model = pickle.load(f)
-        self._infer_func = getattr(self._model, self._function_name)
+
+        if self._function_name == "__call__":
+            self._infer_func = self._model
+        else:
+            self._infer_func = getattr(self._model, self._function_name)
 
     def _run(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        inputs: t.Union["ext.NpNDArray", "ext.PdDataFrame"],
-    ) -> "ext.NpNDArray":
+        inputs: t.Any,
+    ) -> t.Any:
         return self._infer_func(inputs)
 
 
 @inject
 def load_runner(
     tag: t.Union[str, Tag],
-    function_name: str = "predict",
     *,
     name: t.Optional[str] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "BaseRunner":
     """
@@ -236,12 +240,6 @@ def load_runner(
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore..
-        function_name (:code:`str`, `optional`, default to :code:`predict`):
-            Predict function used by a given pickled model.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -261,21 +259,25 @@ def load_runner(
     if name is None:
         name = tag.name
 
-    if batch_options and batch_options.get("enabled"):
+    model_info, model_file = _get_model_info(tag, model_store)
+    batch_option = model_info.info.options.get('batch')
+    function_name = model_info.info.options.get('function_name')
+
+    if batch_option:
         return _PickleRunner(
             tag=tag,
             function_name=function_name,
             name=name,
-            resource_quota=resource_quota,
-            batch_options=batch_options,
             model_store=model_store,
+            model_info=model_info,
+            model_file=model_file
         )
     else:
         return _PickleSimpleRunner(
             tag=tag,
             function_name=function_name,
             name=name,
-            resource_quota=resource_quota,
-            batch_options=batch_options,
             model_store=model_store,
+            model_info=model_info,
+            model_file=model_file
         )

@@ -24,7 +24,7 @@ from ...exceptions import BentoMLConfigException
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
-    from .. import external_typing as ext
+    from .. import external_typing as ext  # noqa # pylint: disable=unused-import
     from ..server.metrics.prometheus import PrometheusClient
 
 

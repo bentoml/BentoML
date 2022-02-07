@@ -18,8 +18,6 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
-from ..types import FrozenDict
-from ..types import FrozenList
 from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import is_gpu_available
@@ -98,7 +96,7 @@ BentoML detected that {name} is being used to pack a Keras API
 @inject
 def load(
     tag: Tag,
-    tfhub_tags: t.List[str] = FrozenList(),
+    tfhub_tags: t.Optional[t.List[str]] = None,
     tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -178,6 +176,8 @@ def load(
         is_hub_module_v1 = tf.io.gfile.exists(
             native_module.get_module_proto_path(module_path)
         )
+        if tfhub_tags is None and is_hub_module_v1:
+            tfhub_tags = []
         if tfhub_options is not None:
             if not LazyType("tf.saved_model.SaveOptions").isinstance(tfhub_options):
                 raise BentoMLException(
@@ -212,7 +212,7 @@ def load(
 def import_from_tfhub(
     identifier: t.Union[str, "tf.HubModule", "tf.KerasLayer"],
     name: t.Optional[str] = None,
-    metadata: t.Dict[str, t.Any] = FrozenDict(),
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
@@ -349,7 +349,7 @@ def save(
     *,
     signatures: t.Optional["tf.ConcreteFunction"] = None,
     options: t.Optional["tf.saved_model.SaveOptions"] = None,
-    metadata: t.Dict[str, t.Any] = FrozenDict(),
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
@@ -461,7 +461,7 @@ def save(
         module=MODULE_NAME,
         options=None,
         context=context,
-        metadata=metadata.copy(),
+        metadata=metadata,
     )
 
     if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType] # noqa
@@ -561,9 +561,9 @@ def load_runner(
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",
     name: t.Optional[str] = None,
-    partial_kwargs: t.Dict[str, t.Any] = FrozenDict(),
-    resource_quota: t.Dict[str, t.Any] = FrozenDict(),
-    batch_options: t.Dict[str, t.Any] = FrozenDict(),
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_TensorflowRunner":
     """

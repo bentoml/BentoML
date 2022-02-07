@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING
 from bentoml.exceptions import BentoMLException
 
 from ..types import LazyType
-from ..types import FrozenDict
-from ..types import FrozenList
 from .lazy_loader import LazyLoader
 
 try:
@@ -99,11 +97,11 @@ def isinstance_spec_wrapper(
     Returns:
         `bool` if given tensor match a given spec
     """
-    if not tensor_spec:
+    if tensor_spec is None:
         return False
     if isinstance(tensor_spec, str):
         return type(tensor).__name__ == tensor_spec.split(".")[-1]
-    elif isinstance(tensor_spec, tuple):
+    elif isinstance(tensor_spec, (list, tuple, set)):
         return any(isinstance_spec_wrapper(tensor, k) for k in tensor_spec)
     else:
         assert class_name is not None
@@ -188,19 +186,16 @@ def get_arg_names(
         return getattr(func_spec, "arg_names")
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
         return getattr(func, "_arg_keywords")
-    raise BentoMLException(
-        f"given `func` is not either a RestoredFunction or ConcreteFunction, got type {type(func)} instead."
-    )
+    return list()
 
 
 def get_restored_functions(m: "tf.Trackable") -> t.Dict[str, "tf.RestoredFunction"]:
     function_map = {k: getattr(m, k) for k in dir(m)}
-    restore_funcs: t.Dict[str, "tf.RestoredFunction"] = {}
-    for k, v in function_map.items():
-        if k not in TF_KERAS_DEFAULT_FUNCTIONS and hasattr(v, "function_spec"):
-            restore_funcs[k] = v
-    return restore_funcs
-
+    return {
+        k: v
+        for k, v in function_map.items()
+        if k not in TF_KERAS_DEFAULT_FUNCTIONS and hasattr(v, "function_spec")
+    }
 
 def get_serving_default_function(m: "tf.Trackable") -> "tf.ConcreteFunction":
     if not hasattr(m, "signatures"):
@@ -245,6 +240,7 @@ def pretty_format_function(
         arg_names = getattr(function, "function_spec").arg_names
     else:
         arg_names = getattr(function, "_arg_keywords")
+        print(arg_names)
 
     ret += _pretty_format_function_call(obj, name, arg_names)
     ret += "\n------------\n"
@@ -261,59 +257,47 @@ def pretty_format_function(
 
 
 def pretty_format_restored_model(model: "tf.AutoTrackable") -> str:
-    WARNING_MSG = """\
-    No serving function was found in the saved model.
-    In the model implementation, use `tf.function` decorator to mark the method needed for model serving. \n
-    Find more details in related TensorFlow docs here
-    https://www.tensorflow.org/api_docs/python/tf/saved_model/save
-    """  # noqa
     part_functions = ""
 
-    if get_tf_version().startswith("2"):
-        restored_functions = get_restored_functions(model)
-        for name, func in restored_functions.items():
-            part_functions += pretty_format_function(func, "model", name)
-            part_functions += "\n"
-        if not restored_functions:
-            return WARNING_MSG
+    restored_functions = get_restored_functions(model)
+    for name, func in restored_functions.items():
+        part_functions += pretty_format_function(func, "model", name)
+        part_functions += "\n"
 
-    else:
-        serving_default = get_serving_default_function(model)
-        if serving_default:
-            part_functions += pretty_format_function(
-                serving_default, "model", "signatures['serving_default']"
-            )
-            part_functions += "\n"
-        if not serving_default:
-            return WARNING_MSG
+    serving_default = get_serving_default_function(model)
+    if serving_default:
+        part_functions += pretty_format_function(
+            serving_default, "model", "signatures['serving_default']"
+        )
+        part_functions += "\n"
 
     return f"Found restored functions:\n{part_functions}"
 
 
 def cast_tensor_by_spec(
     _input: "tf.TensorType", spec: "tf.TypeSpec"
-) -> "t.Union[tf.CastableTensorType, tf.TensorType]":
+) -> t.Union["tf.CastableTensorType", "tf.TensorType"]:
     """
     transform dtype & shape following spec
     """
-    print(spec)
     if not isinstance_spec_wrapper(spec, "TensorSpec"):
         return _input
 
-    if LazyType["tf.CastableTensorType"]("tf.Tensor").isinstance(_input):
+    if LazyType["tf.CastableTensorType"]("tf.Tensor").isinstance(_input) or LazyType["tf.CastableTensorType"]("tf.EagerTensor").isinstance(_input):
         # TensorFlow issue#43038
         # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
         return tf.cast(_input, dtype=spec.dtype, name=spec.name)  # type: ignore
-    return tf.constant(_input, dtype=spec.dtype, name=spec.name)  # type: ignore
+    else:
+        return tf.constant(_input, dtype=spec.dtype, name=spec.name)  # type: ignore
 
 
 class tf_function_wrapper:  # pragma: no cover
     def __init__(
         self,
         origin_func: t.Callable[..., t.Any],
-        arg_names: t.List[str] = FrozenList(),
-        arg_specs: t.Tuple["tf.TensorSpec"] = tuple(),
-        kwarg_specs: t.Dict[str, "tf.TensorSpec"] = FrozenDict(),
+        arg_names: t.Optional[t.List[str]] = None,
+        arg_specs: t.Optional[t.Tuple["tf.TensorSpec"]] = None,
+        kwarg_specs: t.Optional[t.Dict[str, "tf.TensorSpec"]] = None,
     ) -> None:
         self.origin_func = origin_func
         self.arg_names = arg_names
@@ -329,7 +313,7 @@ class tf_function_wrapper:  # pragma: no cover
             if k not in self.kwarg_specs:
                 raise TypeError(f"Function got an unexpected keyword argument {k}")
 
-        arg_keys = {k for k, _ in zip(self.arg_names, args)}
+        arg_keys = {k for k, _ in zip(self.arg_names, args)}  # type: ignore[arg-type]
         _ambiguous_keys = arg_keys & set(kwargs)  # type: t.Set[str]
         if _ambiguous_keys:
             raise TypeError(f"got two values for arguments '{_ambiguous_keys}'")
@@ -338,7 +322,7 @@ class tf_function_wrapper:  # pragma: no cover
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
         transformed_args: t.Tuple[t.Any, ...] = tuple(
-            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)
+            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type] # noqa
         )
 
         transformed_kwargs = {
@@ -358,15 +342,14 @@ class tf_function_wrapper:  # pragma: no cover
             sigs = get_input_signatures(func)
             if not sigs:
                 continue
-            arg_specs: "t.Tuple[tf.TensorSpec]" = sigs[0][0]  # type: ignore
-            kwarg_specs: "t.Dict[str, tf.TensorSpec]" = sigs[0][1]  # type: ignore
+            arg_specs, kwarg_specs = sigs[0]  # type: ignore
             setattr(
                 loaded_model,
                 k,
                 cls(
                     func,
                     arg_names=arg_names,
-                    arg_specs=arg_specs,
-                    kwarg_specs=kwarg_specs,
+                    arg_specs=arg_specs,  # type: ignore
+                    kwarg_specs=kwarg_specs,  # type: ignore
                 ),
             )

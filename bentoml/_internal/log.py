@@ -1,6 +1,7 @@
 import os
 import logging
 import logging.config
+from logging import Filter
 from pathlib import Path
 
 from simple_di import inject
@@ -8,6 +9,16 @@ from simple_di import Provide
 
 from .configuration import get_debug_mode
 from .configuration.containers import BentoMLContainer
+# from .server.service_app import ServiceContext
+
+
+# class TraceFilter(Filter):
+
+#     def filter(self, record):
+#         record.span_id = ServiceContext.span_id
+#         record.trace_id = ServiceContext.trace_id
+#         record.request_id = ServiceContext.request_id
+#         return Filter.filter(self, record)
 
 
 def get_logging_config_dict(

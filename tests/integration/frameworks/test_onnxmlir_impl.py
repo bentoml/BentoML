@@ -87,7 +87,6 @@ def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
     runner = bentoml.onnxmlir.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     res = runner.run_batch(test_df.to_numpy().astype(np.float64))

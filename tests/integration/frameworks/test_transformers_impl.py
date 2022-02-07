@@ -111,7 +111,7 @@ def test_transformers_runner_setup_run_batch(modelstore):
         model_store=modelstore,
     )
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == runner.num_replica == 1
+    assert runner.num_replica == 1
 
     res = runner.run_batch(batched_sentence)
     assert all(i["score"] >= 0.4 for i in res)

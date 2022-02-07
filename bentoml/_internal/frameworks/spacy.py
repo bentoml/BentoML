@@ -456,12 +456,6 @@ class _SpacyRunner(Runner):
     def required_models(self) -> t.List[Tag]:
         return [self._tag]
 
-    @property
-    def num_concurrency_per_replica(self) -> int:
-        if self.resource_quota.on_gpu:
-            return 1
-        return int(round(self.resource_quota.cpu))
-
     def _get_pytorch_gpu_count(self) -> t.Optional[int]:
         assert self._backend_options == "pytorch"
         devs = getattr(torch, "cuda").device_count()

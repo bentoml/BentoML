@@ -186,21 +186,15 @@ class _H2ORunner(Runner):
         return [self._tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
-        nthreads = int(self._init_params.get("nthreads", -1))
-
-        if nthreads == -1:
-            return int(round(self.resource_quota.cpu))
-        return nthreads
-
-    @property
     def num_replica(self) -> int:
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        _init_params = self._init_params or dict()
+        _init_params["nthreads"] = int(round(self.resource_quota.cpu))
         self._model = load(
-            self._tag, init_params=self._init_params, model_store=self._model_store
+            self._tag, init_params=_init_params, model_store=self._model_store
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 

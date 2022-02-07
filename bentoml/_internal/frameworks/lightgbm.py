@@ -242,12 +242,6 @@ class _LightGBMRunner(Runner):
         return [self._model_info.tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
-        if self._is_gpu() and self.resource_quota.on_gpu:
-            return 1
-        return int(round(self.resource_quota.cpu))
-
-    @property
     def num_replica(self) -> int:
         if self._is_gpu() and self.resource_quota.on_gpu:
             return len(self.resource_quota.gpus)

@@ -159,7 +159,7 @@ class _PickleRunner(Runner):
 
     @property
     def num_replica(self) -> int:
-        return 1
+        return max(int(self.resource_quota.cpu), 1)
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -199,7 +199,7 @@ class _PickleSimpleRunner(SimpleRunner):
 
     @property
     def num_replica(self) -> int:
-        return 1
+        return max(int(self.resource_quota.cpu), 1)
 
     @property
     def required_models(self) -> t.List[Tag]:

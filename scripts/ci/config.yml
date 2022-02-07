@@ -188,6 +188,7 @@ statsmodels:
   <<: *tmpl
   dependencies:
     - "statsmodels==0.12.2"
+    - "scipy==1.7.3"  # statsmodels 0.12.2 is using internal APIs of scipy
     - "joblib"
 
 tf1:

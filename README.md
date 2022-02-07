@@ -6,7 +6,7 @@
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 [![actions_status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
-[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
 BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
@@ -15,7 +15,7 @@ the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS). Version
 under active development, you can be of great help by testing out the preview release, 
 reporting issues, contribute to the documentation and create sample gallery projects.
 
-👉 [Join our Slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg) to receive project updates and get involved with latest development.
+👉 [Join our Slack community](https://join.slack.bentoml.org) to receive project updates and get involved with latest development.
 
 ## Why BentoML ##
 
@@ -39,7 +39,7 @@ reporting issues, contribute to the documentation and create sample gallery proj
 
 - To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
 - For other discussions, use [Github Discussions](https://github.com/bentoml/BentoML/discussions).
-- To receive release announcements, please join us on [Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+- To receive release announcements, please join us on [Slack](https://join.slack.bentoml.org).
 
 ## Contributing ##
 
@@ -57,7 +57,7 @@ There are many ways to contribute to the project:
 
 BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com/). 
 It only collects BentoML library's own actions and parameters, no user or model data will be collected. 
-Here is the [code](https://github.com/bentoml/BentoML/blob/main/bentoml/utils/usage_stats.py) that does it.
+Here is the [code](https://github.com/bentoml/BentoML/blob/main/bentoml/_internal/utils/usage_stats.py) that does it.
 
 This helps the BentoML team to understand how the community is using this tool and what to build next. 
 You can easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.

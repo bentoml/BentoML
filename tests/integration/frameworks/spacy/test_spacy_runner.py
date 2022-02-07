@@ -27,7 +27,6 @@ def test_spacy_runner_setup_run_batch(
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
 
     res = runner.run_batch([test_json["text"]])
     for i in res:
@@ -57,7 +56,6 @@ def test_spacy_runner_setup_run_batch_on_gpu(
     assert tag in runner.required_models
     assert runner.resource_quota.gpus == [str(dev)]
     assert runner.num_replica == 1
-    assert runner.num_concurrency_per_replica == 1
 
     res = runner.run_batch(test_json["text"])
     for i in res:

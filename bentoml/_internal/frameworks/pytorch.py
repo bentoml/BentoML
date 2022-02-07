@@ -229,7 +229,7 @@ class _PyTorchRunner(Runner):
         return [self._tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
+    def _num_threads(self) -> int:
         if _is_gpu_available() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
@@ -241,7 +241,7 @@ class _PyTorchRunner(Runner):
         return 1
 
     def _configure(self) -> None:
-        torch.set_num_threads(self.num_concurrency_per_replica)
+        torch.set_num_threads(self._num_threads)
         if self.resource_quota.on_gpu and _is_gpu_available():
             torch.set_default_tensor_type("torch.cuda.FloatTensor")
         else:

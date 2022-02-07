@@ -77,7 +77,6 @@ def test_mlflow_load_runner(modelstore):
     assert isinstance(runner, _PyFuncRunner)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     res = runner.run_batch(data)

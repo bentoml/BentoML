@@ -187,7 +187,6 @@ def test_tensorflow_v2_setup_run_batch(modelstore):
     runner = bentoml.tensorflow.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
     assert runner.run_batch(native_data) == np.array([[15.0]])
 
@@ -201,7 +200,6 @@ def test_tensorflow_v2_setup_on_gpu(modelstore):
         tag, model_store=modelstore, resource_quota=dict(gpus=0), device_id="GPU:0"
     )
 
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
     assert runner.run_batch(native_tensor) == np.array([[15.0]])
 

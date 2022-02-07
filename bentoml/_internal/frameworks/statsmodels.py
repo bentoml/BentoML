@@ -195,7 +195,7 @@ class _StatsModelsRunner(Runner):
         return [self._model_info.tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
+    def _num_threads(self) -> int:
         # NOTE: Statsmodels currently doesn't use GPU, so return max. no. of CPU's.
         return int(round(self.resource_quota.cpu))
 
@@ -215,7 +215,9 @@ class _StatsModelsRunner(Runner):
         parallel: "Parallel"
         p_func: t.Callable[..., t.Any]
         parallel, p_func, _ = parallel_func(
-            self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
+            self._predict_fn,
+            n_jobs=self._num_threads,
+            verbose=0,
         )
         return parallel(p_func(i) for i in input_data)[0]
 

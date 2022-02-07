@@ -126,6 +126,5 @@ def test_catboost_runner_setup_run_batch(modelstore: "ModelStore") -> None:
     runner = bentoml.catboost.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == psutil.cpu_count()
     assert runner.run_batch(test_df) == np.array([1])

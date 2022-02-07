@@ -320,8 +320,8 @@ class _ONNXRunner(Runner):
             return session_options
         _session_options = ort.SessionOptions()
         _session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
-        _session_options.intra_op_num_threads = self.num_concurrency_per_replica
-        _session_options.inter_op_num_threads = self.num_concurrency_per_replica
+        _session_options.intra_op_num_threads = self._num_threads
+        _session_options.inter_op_num_threads = self._num_threads
         _session_options.graph_optimization_level = (
             ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
         )
@@ -332,7 +332,7 @@ class _ONNXRunner(Runner):
         return [self._model_info.tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
+    def _num_threads(self) -> int:
         # TODO: support GPU threads
         if self.resource_quota.on_gpu:
             return 1

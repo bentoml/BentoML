@@ -225,8 +225,8 @@ def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]
     return f"{base}.{name}({part_sigs})"
 
 
-def _pretty_format_positional(positional: t.Tuple["tf.TensorSpec"]) -> str:
-    if len(positional) != 0:
+def _pretty_format_positional(positional: t.Optional[t.Tuple["tf.TensorSpec"]]) -> str:
+    if positional is not None:
         return f'Positional arguments ({len(positional)} total):\n    {"    * ".join(str(a) for a in positional)}'  # noqa
     return "No positional arguments.\n"
 

@@ -51,6 +51,7 @@ else:
 try:
     import tensorflow_hub as hub
     from tensorflow_hub import resolve
+    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -58,7 +59,7 @@ except ImportError:  # pragma: no cover
      make sure to `pip install --upgrade tensorflow_hub` before using.
      """
     )
-    hub, resolve = None, None
+    hub, resolve, native_module = None, None, None
 
 
 try:
@@ -163,20 +164,29 @@ def load(
             Make sure to `pip install --upgrade tensorflow_hub` before using.
             """
             )
+
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
-            return hub.Module(module_path)
-        elif tfhub_options is not None:
+            return (
+                hub.Module(module_path)
+                if get_tf_version().startswith("1")
+                else hub.KerasLayer(module_path)
+            )
+        # In case users want to load as a SavedModel file object.
+        # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
+        is_hub_module_v1 = tf.io.gfile.exists(
+            native_module.get_module_proto_path(module_path)
+        )
+        if tfhub_options is not None:
             if not LazyType("tf.saved_model.SaveOptions").isinstance(tfhub_options):
                 raise BentoMLException(
                     f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
                 )
-            if not hasattr(getattr(tf, "saved_model"), "LoadOptions"):
+            if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
                     f" Current version: {get_tf_version()}"
                 )
-            # tf.compat.v1.saved_model.load_v2() is TF2 tf.saved_model.load() before TF2
             tf_model: "tf.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags, options=tfhub_options
             )
@@ -184,7 +194,9 @@ def load(
             tf_model: "tf.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags
             )
-        tf_model._is_hub_module_v1 = True  # pylint: disable=protected-access # noqa
+        tf_model._is_hub_module_v1 = (
+            is_hub_module_v1  # pylint: disable=protected-access # noqa
+        )
         return tf_model
     else:
         tf_model = tf.compat.v1.saved_model.load_v2(model.path)

@@ -51,6 +51,7 @@ else:
 try:
     import tensorflow_hub as hub
     from tensorflow_hub import resolve
+    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -58,7 +59,7 @@ except ImportError:  # pragma: no cover
     make sure to `pip install --upgrade tensorflow_hub` before using.
     """
     )
-    hub, resolve = None, None
+    hub, resolve, native_module = None, None, None
 
 
 try:
@@ -101,7 +102,7 @@ def load(
     tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "t.Union[tf.AutoTrackable, tf.KerasLayer]":
+) -> "t.Union[tf.AutoTrackable, tf.KerasLayer, tf.HubModule]":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -167,8 +168,17 @@ def load(
 
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
-            return hub.KerasLayer(module_path)
-        elif tfhub_options is not None:
+            return (
+                hub.KerasLayer(module_path)
+                if get_tf_version().startswith("2")
+                else hub.Module(module_path)
+            )
+        # In case users want to load as a SavedModel file object.
+        # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
+        is_hub_module_v1 = tf.io.gfile.exists(
+            native_module.get_module_proto_path(module_path)
+        )
+        if tfhub_options is not None:
             if not LazyType("tf.saved_model.SaveOptions").isinstance(tfhub_options):
                 raise BentoMLException(
                     f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
@@ -183,7 +193,9 @@ def load(
             )
         else:
             tf_model = tf.saved_model.load(module_path, tags=tfhub_tags)
-        tf_model._is_hub_module_v1 = False  # pylint: disable=protected-access # noqa
+        tf_model._is_hub_module_v1 = (
+            is_hub_module_v1  # pylint: disable=protected-access # noqa
+        )
         return tf_model
     else:
         tf_model: "tf.AutoTrackable" = tf.saved_model.load(model.path)

@@ -214,10 +214,6 @@ class _DetectronRunner(Runner):
         return [self._tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
-        return 1
-
-    @property
     def num_replica(self) -> int:
         if self.resource_quota.on_gpu:
             return len(self.resource_quota.gpus)

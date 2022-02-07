@@ -81,7 +81,6 @@ def test_keras_v2_setup_run_batch(modelstore: "ModelStore") -> None:
     runner = bentoml.keras.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
     assert runner.run_batch([test_data]) == res
 
@@ -101,6 +100,5 @@ def test_tensorflow_v2_setup_on_gpu(modelstore: "ModelStore") -> None:
     tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
     runner = bentoml.keras.load_runner(tag, model_store=modelstore)
 
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
     assert runner.run_batch([test_data]) == res

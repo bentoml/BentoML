@@ -601,8 +601,8 @@ class _TensorflowRunner(Runner):
         self._config_proto = dict(
             allow_soft_placement=True,
             log_device_placement=False,
-            intra_op_parallelism_threads=self.num_concurrency_per_replica,
-            inter_op_parallelism_threads=self.num_concurrency_per_replica,
+            intra_op_parallelism_threads=self._num_threads,
+            inter_op_parallelism_threads=self._num_threads,
         )
 
     @property
@@ -610,7 +610,7 @@ class _TensorflowRunner(Runner):
         return [self._tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
+    def _num_threads(self) -> int:
         if _is_gpu_available() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))

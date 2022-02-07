@@ -171,7 +171,7 @@ class _SklearnRunner(Runner):
         self._function_name = function_name
 
     @property
-    def num_concurrency_per_replica(self) -> int:
+    def _num_threads(self) -> int:
         return int(round(self.resource_quota.cpu))
 
     @property
@@ -192,7 +192,7 @@ class _SklearnRunner(Runner):
         self,
         inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        with parallel_backend(self._backend, n_jobs=self.num_concurrency_per_replica):
+        with parallel_backend(self._backend, n_jobs=self._num_threads):
             return self._infer_func(inputs)
 
 

@@ -253,10 +253,6 @@ class _CatBoostRunner(Runner):
         return [self._model_info.tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
-        return 1
-
-    @property
     def num_replica(self) -> int:
         return int(round(self.resource_quota.cpu))
 

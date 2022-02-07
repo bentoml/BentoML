@@ -110,7 +110,6 @@ def test_pytorch_runner_setup_run_batch(modelstore, input_data):
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
 
     res = runner.run_batch(input_data)
     assert res.unsqueeze(dim=0).item() == 5.0
@@ -123,7 +122,6 @@ def test_pytorch_runner_setup_on_gpu(modelstore, dev):
     tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
     runner = bentoml.pytorch.load_runner(tag, model_store=modelstore, device_id=dev)
 
-    assert runner.num_concurrency_per_replica == 1
     assert torch.cuda.device_count() == runner.num_replica
 
 

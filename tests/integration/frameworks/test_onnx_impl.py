@@ -137,7 +137,6 @@ def test_onnx_runner_setup_run_batch(modelstore, save_proc, sklearn_onnx_model):
     np.testing.assert_array_equal(res[0], res_arr)
 
     assert info.tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
     assert isinstance(runner._model, ort.InferenceSession)
 
@@ -191,6 +190,5 @@ def test_sklearn_runner_setup_on_gpu(modelstore, save_proc, sklearn_onnx_model):
         info.tag, model_store=modelstore, backend="onnxruntime-gpu", gpu_device_id=0
     )
     _ = runner.run_batch(data)
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
     assert "CUDAExecutionProvider" in runner._model.get_providers()

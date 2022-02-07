@@ -27,24 +27,17 @@ from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from .. import external_typing as ext
-    from ..types import PathType
-    from ..models import ModelStore
-    from ..external_typing import tensorflow as tf
+try:
+    import tensorflow as tf
+    from tensorflow.python.client import device_lib
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        """\
+    `tensorflow` is required in order to use `bentoml.tensorflow`.
+    Instruction: `pip install tensorflow`
+    """
+    )
 
-    TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf.Tensor"]
-else:
-    try:
-        import tensorflow as tf
-        from tensorflow.python.client import device_lib
-    except ImportError:  # pragma: no cover
-        raise MissingDependencyException(
-            """\
-        `tensorflow` is required in order to use `bentoml.tensorflow`.
-        Instruction: `pip install tensorflow`
-        """
-        )
 try:
     import tensorflow_hub as hub
     from tensorflow_hub import resolve
@@ -63,6 +56,15 @@ try:
     import importlib.metadata as importlib_metadata
 except ImportError:
     import importlib_metadata
+
+
+if TYPE_CHECKING:
+    from .. import external_typing as ext
+    from ..types import PathType
+    from ..models import ModelStore
+    from ..external_typing import tensorflow as tf_ext
+
+    TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf_ext.Tensor"]
 
 MODULE_NAME = "bentoml.tensorflow"
 
@@ -490,10 +492,10 @@ class _TensorflowRunner(Runner):
         tag: Tag,
         predict_fn_name: str,
         device_id: str,
-        partial_kwargs: t.Dict[str, t.Any],
         name: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
@@ -524,7 +526,7 @@ class _TensorflowRunner(Runner):
 
     @property
     def _num_threads(self) -> int:
-        if _is_gpu_available() and self.resource_quota.on_gpu:
+        if is_gpu_available() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 

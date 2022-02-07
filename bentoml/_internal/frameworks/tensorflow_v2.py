@@ -27,24 +27,16 @@ from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from .. import external_typing as ext
-    from ..types import PathType
-    from ..models import ModelStore
-    from ..external_typing import tensorflow as tf
-
-    TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf.Tensor"]
-else:
-    try:
-        import tensorflow as tf
-        from tensorflow.python.client import device_lib
-    except ImportError:  # pragma: no cover
-        raise MissingDependencyException(
-            """\
-        `tensorflow` is required in order to use `bentoml.tensorflow`.
-        Instruction: `pip install tensorflow`
-        """
-        )
+try:
+    import tensorflow as tf
+    from tensorflow.python.client import device_lib
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        """\
+    `tensorflow` is required in order to use `bentoml.tensorflow`.
+    Instruction: `pip install tensorflow`
+    """
+    )
 
 try:
     import tensorflow_hub as hub
@@ -53,9 +45,9 @@ try:
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
-    `tensorflow_hub` does not exists. In order to use `import_from_tfhub`,
-    make sure to `pip install --upgrade tensorflow_hub` before using.
-    """
+    If you want to use `bentoml.tensorflow.import_from_tfhub(),
+     make sure to `pip install --upgrade tensorflow_hub` before using.
+     """
     )
     hub, resolve, native_module = None, None, None
 
@@ -64,6 +56,17 @@ try:
     import importlib.metadata as importlib_metadata
 except ImportError:
     import importlib_metadata
+
+
+if TYPE_CHECKING:
+    from .. import external_typing as ext
+    from ..types import PathType
+    from ..models import ModelStore
+    from ..external_typing import tensorflow as tf_ext
+
+    from tensorflow_hub import KerasLayer, Module
+
+    TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf_ext.Tensor"]
 
 MODULE_NAME = "bentoml.tensorflow"
 
@@ -97,10 +100,10 @@ BentoML detected that {name} is being used to pack a Keras API
 def load(
     tag: Tag,
     tfhub_tags: t.Optional[t.List[str]] = None,
-    tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
+    tfhub_options: t.Optional["tf_ext.SaveOptions"] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "t.Union[tf.AutoTrackable, tf.KerasLayer, tf.HubModule]":
+) -> t.Union["tf_ext.AutoTrackable", "KerasLayer", "Module"]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -173,7 +176,7 @@ def load(
             )
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
-        is_hub_module_v1 = tf.io.gfile.exists(
+        is_hub_module_v1: bool = tf.io.gfile.exists(
             native_module.get_module_proto_path(module_path)
         )
         if tfhub_tags is None and is_hub_module_v1:
@@ -198,7 +201,7 @@ def load(
         )
         return tf_model
     else:
-        tf_model: "tf.AutoTrackable" = tf.saved_model.load(model.path)
+        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(model.path)
         tf_function_wrapper.hook_loaded_model(tf_model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
@@ -506,8 +509,8 @@ class _TensorflowRunner(Runner):
         self._config_proto = dict(
             allow_soft_placement=True,
             log_device_placement=False,
-            intra_op_parallelism_threads=self.num_concurrency_per_replica,
-            inter_op_parallelism_threads=self.num_concurrency_per_replica,
+            intra_op_parallelism_threads=self._num_threads,
+            inter_op_parallelism_threads=self._num_threads,
         )
 
     @property
@@ -515,7 +518,7 @@ class _TensorflowRunner(Runner):
         return [self._tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
+    def _num_threads(self) -> int:
         if is_gpu_available() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))

@@ -197,6 +197,7 @@ def get_restored_functions(m: "tf.Trackable") -> t.Dict[str, "tf.RestoredFunctio
         if k not in TF_KERAS_DEFAULT_FUNCTIONS and hasattr(v, "function_spec")
     }
 
+
 def get_serving_default_function(m: "tf.Trackable") -> "tf.ConcreteFunction":
     if not hasattr(m, "signatures"):
         raise EnvironmentError(f"{type(m)} is not a valid SavedModel format.")
@@ -283,7 +284,9 @@ def cast_tensor_by_spec(
     if not isinstance_spec_wrapper(spec, "TensorSpec"):
         return _input
 
-    if LazyType["tf.CastableTensorType"]("tf.Tensor").isinstance(_input) or LazyType["tf.CastableTensorType"]("tf.EagerTensor").isinstance(_input):
+    if LazyType["tf.CastableTensorType"]("tf.Tensor").isinstance(_input) or LazyType[
+        "tf.CastableTensorType"
+    ]("tf.EagerTensor").isinstance(_input):
         # TensorFlow issue#43038
         # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
         return tf.cast(_input, dtype=spec.dtype, name=spec.name)  # type: ignore

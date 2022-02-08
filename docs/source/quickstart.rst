@@ -10,7 +10,7 @@ There are three parts to the BentoML workflow.
 #. :ref:`Save Models <save-models-section>`
     Once model training is complete, use one of our tool specific frameworks to save your model in BentoML's standard format.
 #. :ref:`Define and Debug as Web Service <define-and-debug-service-section>`
-    Now that we've stored your model in our universal format, define the webservice which will host the model. Easily add Pre/Post processing of data.
+    Now that we've stored your model in our standard format, we will define the webservice which will host the model. In this definition, you can easily add Pre/Post processing code along with your model inference.
 #. :ref:`Build and Deploy Bentos <build-and-deploy-bentos>`
     Finally, let BentoML build your deployable container (your bento) and assist you in deploying to your cloud service of choice
 

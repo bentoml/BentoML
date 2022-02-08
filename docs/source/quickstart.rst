@@ -3,11 +3,16 @@
 Getting Started
 ===============
 
+A "Bento" is a collection of models and methods which is packaged and optimized to run your Machine Learning workflows in your choice of either local or cloud service.
+
 There are three parts to the BentoML workflow.
 
 #. :ref:`Save Models <save-models-section>`
-#. :ref:`Define and Debug Services <define-and-debug-service-section>`
+    Once model training is complete, use one of our tool specific frameworks to save your model in BentoML's standard format.
+#. :ref:`Define and Debug as Web Service <define-and-debug-service-section>`
+    Now that we've stored your model in our universal format, define the webservice which will host the model. Easily add Pre/Post processing of data.
 #. :ref:`Build and Deploy Bentos <build-and-deploy-bentos>`
+    Finally, let BentoML build your deployable container (your bento) and assist you in deploying to your cloud service of choice
 
 .. _save-models-section:
 
@@ -26,8 +31,9 @@ Save Models
 -----------
 
 We begin by saving a trained model instance to BentoML's local
-:ref:`model store <bento-management-page>`.
-If models you wish to use are already saved to disk, they can also be added to BentoML with the
+:ref:`model store <bento-management-page>`. The local model store is used to version your models as well as control which models are packaged with your bento.
+
+If the models you wish to use are already saved to disk or available in a cloud repository, they can also be added to BentoML with the
 :ref:`import APIs <bento-management-page>`.
 
 .. code-block:: python
@@ -37,7 +43,7 @@ If models you wish to use are already saved to disk, they can also be added to B
     from sklearn import svm
     from sklearn import datasets
 
-    # Load training data
+    # Load predefined training set to build an example model
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
 
@@ -45,14 +51,21 @@ If models you wish to use are already saved to disk, they can also be added to B
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
+    # Call to bentoml.<FRAMEWORK>.save(<MODEL_NAME>, model)
+    # In order to save to BentoML's standard format in a local model store
     bentoml.sklearn.save("iris_clf", clf)
+
     # [08:34:16 AM] INFO     Successfully saved Model(tag="iris_clf:svcryrt5xgafweb5",
     #                        path="/home/user/bentoml/models/iris_clf/svcryrt5xgafweb5/")
     # Tag(name='iris_clf', version='svcryrt5xgafweb5')
 
-The :ref:`ML framework specific API <frameworks-page>`, :code:`bentoml.sklearn.save()`, will save
-the Iris Classifier to a local model store managed by BentoML. You can then load the runner for this
-model with the :code:`load_runner()` API:
+
+:code:`bentoml.sklearn.save()`, will save the Iris Classifier to a local model store managed by BentoML.
+See :ref:`ML framework specific API <frameworks-page>` for all supported modeling libraries.
+
+You can then load the the model to be run inline using the :code:`bentoml.<FRAMEWORK>.load(<TAG>)`
+
+Or you can use our performance optimized runners using the :code:`bentoml.<FRAMEWORK>.load_runner(<TAG>)` API:
 
 .. code-block:: python
 
@@ -75,7 +88,7 @@ Define and Debug Services
 -------------------------
 
 Services are the core components of BentoML, where the serving logic is defined. With the model
-saved in the model store, we can define the :ref:`service <service-definition-page>` by creating a
+saved in the model store, we can define the :ref:`web service <service-definition-page>` by creating a
 Python file :code:`bento.py` with the following contents:
 
 .. code-block:: python
@@ -104,6 +117,8 @@ Python file :code:`bento.py` with the following contents:
 In this example, we defined the input and output type to be :code:`numpy.ndarray`. More options, such as
 :code:`pandas.DataFrame` and :code:`PIL.image` are also supported. To see all supported options, see
 :ref:`API and IO Descriptors <api-io-descriptors>`.
+
+BentoML uses a performance optimized version of https://www.starlette.io/ in order to serve your model efficiently at scale.
 
 We now have everything we need to serve our first request. Launch the server in debug mode by
 running the :code:`bentoml serve` command in the current working directory. Using the

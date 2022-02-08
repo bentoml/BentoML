@@ -31,6 +31,7 @@ If models you wish to use are already saved to disk, they can also be added to B
 :ref:`import APIs <bento-management-page>`.
 
 .. code-block:: python
+
     import bentoml
 
     from sklearn import svm

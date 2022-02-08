@@ -338,7 +338,7 @@ def import_from_tfhub(
                 sess.run(tf.compat.v1.global_variables_initializer())
                 identifier.export(_model.path, sess)
         else:
-            tf.saved_model.save(identifier, _model.path)
+            tf.compat.v2.saved_model.save(identifier, _model.path)
         _model.info.options = {
             "model": identifier.__class__.__name__,
             "local_path": ".",

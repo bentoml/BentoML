@@ -321,7 +321,7 @@ def import_from_tfhub(
         module=MODULE_NAME,
         options=None,
         context=context,
-        metadata=metadata.copy(),
+        metadata=metadata,
     )
     if isinstance(identifier, str):
         os.environ["TFHUB_CACHE_DIR"] = _model.path

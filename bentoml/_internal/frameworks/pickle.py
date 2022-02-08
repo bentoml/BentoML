@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from ..models import ModelStore
 
 import pickle
+
 import cloudpickle
 
 MODULE_NAME = "bentoml.pickle"
@@ -123,18 +124,11 @@ def save(
         runner.run(3)
 
     """  # noqa
-    context = { "framework_name": "pickle" }
-    options = {
-        "batch": batch,
-        "function_name": function_name
-    }
+    context = {"framework_name": "pickle"}
+    options = {"batch": batch, "function_name": function_name}
 
     _model = Model.create(
-        name,
-        module=MODULE_NAME,
-        metadata=metadata,
-        context=context,
-        options=options
+        name, module=MODULE_NAME, metadata=metadata, context=context, options=options
     )
 
     with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
@@ -153,7 +147,7 @@ class _PickleRunner(Runner):
         name: str,
         model_info: "Model",
         model_file: PathType,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(name, {}, {})
         self._model_store = model_store
@@ -260,8 +254,8 @@ def load_runner(
         name = tag.name
 
     model_info, model_file = _get_model_info(tag, model_store)
-    batch_option = model_info.info.options.get('batch')
-    function_name = model_info.info.options.get('function_name')
+    batch_option = model_info.info.options.get("batch")
+    function_name = model_info.info.options.get("function_name")
 
     if batch_option:
         return _PickleRunner(
@@ -270,7 +264,7 @@ def load_runner(
             name=name,
             model_store=model_store,
             model_info=model_info,
-            model_file=model_file
+            model_file=model_file,
         )
     else:
         return _PickleSimpleRunner(
@@ -279,5 +273,5 @@ def load_runner(
             name=name,
             model_store=model_store,
             model_info=model_info,
-            model_file=model_file
+            model_file=model_file,
         )

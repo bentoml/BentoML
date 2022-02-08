@@ -36,7 +36,7 @@ def save_procedure(
         model_to_save,
         metadata=metadata,
         model_store=_modelstore,
-        function_name="predict"
+        function_name="predict",
     )
     return tag_info
 
@@ -52,7 +52,7 @@ def save_batch_procedure(
         batch=True,
         metadata=metadata,
         model_store=_modelstore,
-        function_name="predict"
+        function_name="predict",
     )
     return tag_info
 
@@ -89,10 +89,7 @@ def test_pickle_runner_setup_run(modelstore: "ModelStore") -> None:
 def test_pickle_runner_setup_run_function(modelstore: "ModelStore") -> None:
 
     tag = bentoml.pickle.save(
-        "test_pickle_model",
-        lambda x: x**2,
-        metadata={},
-        model_store=modelstore
+        "test_pickle_model", lambda x: x ** 2, metadata={}, model_store=modelstore
     )
     runner = bentoml.pickle.load_runner(tag, model_store=modelstore)
 
@@ -103,9 +100,7 @@ def test_pickle_runner_setup_run_function(modelstore: "ModelStore") -> None:
 def test_pickle_runner_setup_run_batch(modelstore: "ModelStore") -> None:
 
     tag = save_batch_procedure({}, _modelstore=modelstore)
-    runner = bentoml.pickle.load_runner(
-        tag, model_store=modelstore
-    )
+    runner = bentoml.pickle.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
     assert runner.run_batch([3, 9]) == [9, 81]

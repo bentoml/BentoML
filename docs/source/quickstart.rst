@@ -182,10 +182,6 @@ To build a Bento, first create a :code:`bentofile.yaml` in your project director
 
 Next, use the :code:`bentoml build` CLI command in the same directory to build a bento.
 
-Please ensure that:
-1. The "service" name is the same as the python file name where you're service is declared
-2. That you are instantiating your load runners as part of the main path of execution in your python file, not inside of a function. This is because BentoML inspects the code to determine which models to save with the Bento.
-
 .. code-block:: bash
 
     > bentoml build

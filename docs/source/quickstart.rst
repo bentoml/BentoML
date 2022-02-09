@@ -118,7 +118,7 @@ In this example, we defined the input and output type to be :code:`numpy.ndarray
 :code:`pandas.DataFrame` and :code:`PIL.image` are also supported. To see all supported options, see
 :ref:`API and IO Descriptors <api-io-descriptors>`.
 
-BentoML uses a performance optimized version of https://www.starlette.io/ in order to serve your model efficiently at scale.
+BentoML uses two of the fastest Python web framework `starlette https://www.starlette.io/`_ and `uvicorn https://www.uvicorn.org`, in order to serve your model efficiently at scale.
 
 We now have everything we need to serve our first request. Launch the server in debug mode by
 running the :code:`bentoml serve` command in the current working directory. Using the

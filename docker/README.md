@@ -1,6 +1,6 @@
 ![bentoml-docker](tools/bentoml-docker.png)
 
-BentoML let you create a machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
+BentoML enables users to create a machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
 👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 

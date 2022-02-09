@@ -88,7 +88,7 @@ Define and Debug Services
 -------------------------
 
 Services are the core components of BentoML, where the serving logic is defined. With the model
-saved in the model store, we can define the :ref:`web service <service-definition-page>` by creating a
+saved in the model store, we can define the :ref:`service <service-definition-page>` by creating a
 Python file :code:`bento.py` with the following contents:
 
 .. code-block:: python

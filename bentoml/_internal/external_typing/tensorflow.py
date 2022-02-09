@@ -2,25 +2,40 @@ import typing as t
 
 from tensorflow.python.framework.ops import Tensor
 from tensorflow.python.module.module import Module
+from tensorflow.python.client.session import Session
 from tensorflow.python.eager.function import FunctionSpec
-from tensorflow.python.eager.function import ConcreteFunction
 from tensorflow.python.eager.def_function import Function
 from tensorflow.python.framework.type_spec import TypeSpec
 from tensorflow.python.ops.tensor_array_ops import TensorArray
 from tensorflow.python.ops.tensor_array_ops import TensorArraySpec
 from tensorflow.python.framework.tensor_spec import TensorSpec
+from tensorflow.python.keras.engine.training import Model
 from tensorflow.python.training.tracking.base import Trackable
-from tensorflow.python.framework.sparse_tensor import SparseTensor
 from tensorflow.python.framework.sparse_tensor import SparseTensorSpec
+from tensorflow.python.keras.engine.sequential import Sequential
 from tensorflow.python.framework.indexed_slices import IndexedSlices
-from tensorflow.python.ops.ragged.ragged_tensor import RaggedTensor
 from tensorflow.python.ops.ragged.ragged_tensor import RaggedTensorSpec
+from tensorflow.python.saved_model.save_options import SaveOptions
+from tensorflow.python.framework.composite_tensor import CompositeTensor
 from tensorflow.python.training.tracking.tracking import AutoTrackable
 from tensorflow.python.saved_model.function_deserialization import RestoredFunction
-from tensorflow.python.saved_model.save_options import SaveOptions
 
+try:
+    from tensorflow.python.types.core import GenericFunction
+    from tensorflow.python.types.core import ConcreteFunction
+    from tensorflow.python.framework.ops import _EagerTensorBase as EagerTensor  # pylint: disable # noqa
+except ImportError:
+    from tensorflow.python.eager.function import ConcreteFunction
 
-class EagerTensor(Tensor): ...
+    class GenericFunction(t.Protocol):
+        def __call__(self, *args: t.Any, **kwargs: t.Any):
+            ...
+
+    # NOTE: future proof when tensorflow decided to remove EagerTensor
+    # and enable eager execution on Tensor by default. This class only serves
+    # as type fallback.
+    class EagerTensor(Tensor):
+        ...
 
 
 class SignatureMap(t.Mapping[str, t.Any], Trackable):
@@ -30,11 +45,6 @@ class SignatureMap(t.Mapping[str, t.Any], Trackable):
 
     def __init__(self) -> None:
         ...
-
-    # Ideally this object would be immutable, but restore is streaming so we do
-    # need a private API for adding new signatures to an existing object.
-    def _add_signature(self, name: str, concrete_function: ConcreteFunction) -> None:
-        """Adds a signature to the _SignatureMap."""
 
     def __getitem__(
         self, key: str
@@ -51,8 +61,14 @@ class SignatureMap(t.Mapping[str, t.Any], Trackable):
         ...
 
 
-CastableTensorType = t.Union[Tensor, EagerTensor, SparseTensor, IndexedSlices]
-TensorType = t.Union[Tensor, EagerTensor, SparseTensor, RaggedTensor, TensorArray]
+# This denotes all decorated function with `tf.function`
+DecoratedFunction = t.Union[RestoredFunction, ConcreteFunction, GenericFunction]
+
+# This denotes all possible tensor type that can be casted with `tf.cast`
+CastableTensorType = t.Union[Tensor, EagerTensor, CompositeTensor, IndexedSlices]
+# This encapsulates scenarios where input can be accepted as TensorArray
+TensorLike = t.Union[CastableTensorType, TensorArray]
+# This defines all possible TensorSpec from tensorflow API
 UnionTensorSpec = t.Union[
     TensorSpec,
     RaggedTensorSpec,
@@ -60,9 +76,18 @@ UnionTensorSpec = t.Union[
     TensorArraySpec,
 ]
 
+# TODO(aarnphm): Specify types instead of t.Any
+TensorSignature = t.Tuple[TensorSpec, bool, t.Optional[t.Any]]
+InputSignature = t.Tuple[TensorSignature, t.Dict[str, TypeSpec]]
+
+# This denotes all Keras Model API
+KerasModel = t.Union[Model, Sequential]
+
 __all__ = [
     "CastableTensorType",
-    "TensorType",
+    "TensorLike",
+    "InputSignature",
+    "TensorSignature",
     "UnionTensorSpec",
     "Trackable",
     "AutoTrackable",
@@ -72,5 +97,7 @@ __all__ = [
     "SignatureMap",
     "Module",
     "TypeSpec",
-    "SaveOptions"
+    "SaveOptions",
+    "Session",
+    "KerasModel",
 ]

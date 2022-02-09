@@ -196,6 +196,7 @@ tf1:
   override_name_or_path: test_tensorflow_impl.py
   dependencies:
     - "tensorflow==1.15"
+    - "tensorflow_text"
     - "tensorflow_hub"
 
 tf2:

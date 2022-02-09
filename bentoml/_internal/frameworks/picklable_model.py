@@ -9,19 +9,14 @@ from bentoml import Model
 from bentoml import Runner
 from bentoml import SimpleRunner
 from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import MissingDependencyException
 
 from ..types import PathType
 from ..utils import LazyLoader
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
-from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import numpy as np
-    from .. import ext_typing as ext
-
     from ..models import ModelStore
 
 import pickle

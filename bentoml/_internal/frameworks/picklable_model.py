@@ -28,7 +28,7 @@ import pickle
 
 import cloudpickle
 
-MODULE_NAME = "bentoml.pickle"
+MODULE_NAME = "bentoml.picklable_model"
 
 
 np = LazyLoader("np", globals(), "numpy")  # noqa: F811
@@ -69,7 +69,7 @@ def load(
 
         import bentoml
 
-        unpickled_model = bentoml.pickle.load('my_model:latest')
+        unpickled_model = bentoml.picklable_model.load('my_model:latest')
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
     with open(model_file, "rb") as f:
@@ -119,12 +119,12 @@ def save(
                 return some_integer**2
 
         model_to_save = MyCoolModel();
-        tag_info = bentoml.pickle.save("test_pickle_model", model_to_save)
-        runner = bentoml.pickle.load_runner(tag_info)
+        tag_info = bentoml.picklable_model.save("test_pickle_model", model_to_save)
+        runner = bentoml.picklable_model.load_runner(tag_info)
         runner.run(3)
 
     """  # noqa
-    context = {"framework_name": "pickle"}
+    context = {"framework_name": "picklable_model"}
     options = {"batch": batch, "function_name": function_name}
 
     _model = Model.create(
@@ -138,7 +138,7 @@ def save(
     return _model.tag
 
 
-class _PickleRunner(Runner):
+class _PicklableModelRunner(Runner):
     @inject
     def __init__(
         self,
@@ -177,7 +177,7 @@ class _PickleRunner(Runner):
         return self._infer_func(inputs)
 
 
-class _PickleSimpleRunner(SimpleRunner):
+class _PicklableModelSimpleRunner(SimpleRunner):
     @inject
     def __init__(
         self,
@@ -228,7 +228,7 @@ def load_runner(
 ) -> "BaseRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. :func:`bentoml.pickle.load_runner` implements a Runner class that
+    maximize throughput. :func:`bentoml.picklable_model.load_runner` implements a Runner class that
     wraps the commands that dump and load a pickled object, which optimizes it for the BentoML runtime.
 
     Args:
@@ -238,7 +238,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for the target :mod:`bentoml.pickle` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for the target :mod:`bentoml.picklable_model` model
 
     Examples:
 
@@ -246,7 +246,7 @@ def load_runner(
 
         import bentoml
 
-        runner = bentoml.pickle.load_runner("my_model:latest")
+        runner = bentoml.picklable_model.load_runner("my_model:latest")
         runner.run([[1,2,3,4]])
     """  # noqa
     tag = Tag.from_taglike(tag)
@@ -258,7 +258,7 @@ def load_runner(
     function_name = model_info.info.options.get("function_name")
 
     if batch_option:
-        return _PickleRunner(
+        return _PicklableModelRunner(
             tag=tag,
             function_name=function_name,
             name=name,
@@ -267,7 +267,7 @@ def load_runner(
             model_file=model_file,
         )
     else:
-        return _PickleSimpleRunner(
+        return _PicklableModelSimpleRunner(
             tag=tag,
             function_name=function_name,
             name=name,

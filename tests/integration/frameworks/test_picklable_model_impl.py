@@ -31,8 +31,8 @@ def save_procedure(
     _modelstore: "ModelStore",
 ) -> "Tag":
     model_to_save = MyCoolModel()
-    tag_info = bentoml.pickle.save(
-        "test_pickle_model",
+    tag_info = bentoml.picklable_model.save(
+        "test_picklable_model",
         model_to_save,
         metadata=metadata,
         model_store=_modelstore,
@@ -46,8 +46,8 @@ def save_batch_procedure(
     _modelstore: "ModelStore",
 ) -> "Tag":
     model_to_save = MyCoolBatchModel()
-    tag_info = bentoml.pickle.save(
-        "test_pickle_model",
+    tag_info = bentoml.picklable_model.save(
+        "test_picklable_model",
         model_to_save,
         batch=True,
         metadata=metadata,
@@ -59,12 +59,9 @@ def save_batch_procedure(
 
 @pytest.mark.parametrize(
     "metadata",
-    [
-        ({"model": "Pickle", "test": True}),
-        ({"acc": 0.876}),
-    ],
+    [({"model": "PicklableModel", "test": True})],
 )
-def test_pickle_save_load(
+def test_picklable_model_save_load(
     metadata: t.Dict[str, t.Any],
     modelstore: "ModelStore",
 ) -> None:
@@ -72,15 +69,15 @@ def test_pickle_save_load(
     _model = bentoml.models.get(tag, _model_store=modelstore)
     assert _model.info.metadata is not None
 
-    loaded_model = bentoml.pickle.load(_model.tag, model_store=modelstore)
+    loaded_model = bentoml.picklable_model.load(_model.tag, model_store=modelstore)
     assert isinstance(loaded_model, MyCoolModel)
     assert loaded_model.predict(4) == np.array([16])
 
 
-def test_pickle_runner_setup_run(modelstore: "ModelStore") -> None:
+def test_picklable_model_runner_setup_run(modelstore: "ModelStore") -> None:
 
     tag = save_procedure({}, _modelstore=modelstore)
-    runner = bentoml.pickle.load_runner(tag, model_store=modelstore)
+    runner = bentoml.picklable_model.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
     assert runner.run(3) == np.array([9])
@@ -88,10 +85,10 @@ def test_pickle_runner_setup_run(modelstore: "ModelStore") -> None:
 
 def test_pickle_runner_setup_run_function(modelstore: "ModelStore") -> None:
 
-    tag = bentoml.pickle.save(
+    tag = bentoml.picklable_model.save(
         "test_pickle_model", lambda x: x ** 2, metadata={}, model_store=modelstore
     )
-    runner = bentoml.pickle.load_runner(tag, model_store=modelstore)
+    runner = bentoml.picklable_model.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
     assert runner.run(3) == np.array([9])
@@ -100,7 +97,7 @@ def test_pickle_runner_setup_run_function(modelstore: "ModelStore") -> None:
 def test_pickle_runner_setup_run_batch(modelstore: "ModelStore") -> None:
 
     tag = save_batch_procedure({}, _modelstore=modelstore)
-    runner = bentoml.pickle.load_runner(tag, model_store=modelstore)
+    runner = bentoml.picklable_model.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
     assert runner.run_batch([3, 9]) == [9, 81]

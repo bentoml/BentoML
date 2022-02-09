@@ -30,7 +30,7 @@ jobs:
       onnx: ${{ steps.filter.outputs.onnx }}
       onnxmlir: ${{ steps.filter.outputs.onnxmlir }}
       paddle: ${{ steps.filter.outputs.paddle }}
-      pickle: ${{ steps.filter.outputs.pickle }}
+      picklable_model: ${{ steps.filter.outputs.picklable_model }}
       pycaret: ${{ steps.filter.outputs.pycaret }}
       pyspark_mllib: ${{ steps.filter.outputs.pyspark_mllib }}
       pytorch: ${{ steps.filter.outputs.pytorch }}
@@ -127,11 +127,11 @@ jobs:
               - bentoml/paddle.py
               - bentoml/_internal/frameworks/paddle.py
               - tests/integration/frameworks/paddle
-            pickle:
+            picklable_model:
               - *runner
-              - bentoml/pickle.py
-              - bentoml/_internal/frameworks/pickle.py
-              - tests/integration/frameworks/pickle
+              - bentoml/picklable_model.py
+              - bentoml/_internal/frameworks/picklable_model.py
+              - tests/integration/frameworks/picklable_model
             pycaret:
               - *runner
               - bentoml/pycaret.py
@@ -723,9 +723,10 @@ jobs:
           flags: paddle
           verbose: true
 
-  pickle_integration_tests:
+  picklable_model_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pickle == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.picklable_model == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.picklable_model == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -755,7 +756,7 @@ jobs:
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: make tests-pickle
+        run: make tests-picklable_model
         shell: bash
 
       - name: Upload test coverage to Codecov
@@ -763,8 +764,8 @@ jobs:
         uses: codecov/codecov-action@v2
         with:
           directory: ./
-          files: ./pickle.xml
-          flags: pickle
+          files: ./picklable_model.xml
+          flags: picklable_model
           verbose: true
 
   pycaret_integration_tests:

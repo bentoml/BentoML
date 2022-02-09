@@ -139,7 +139,7 @@ paddle:
   external_scripts: |
     export SETUPTOOLS_USE_DISTUTILS=stdlib
 
-pickle:
+picklable_model:
   <<: *tmpl
 
 pycaret:

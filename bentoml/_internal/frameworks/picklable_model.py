@@ -18,7 +18,6 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import ModelStore
-    from bentoml import BaseRunner
 
 import pickle
 

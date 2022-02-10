@@ -18,6 +18,7 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import ModelStore
+    from bentoml import BaseRunner
 
 import pickle
 
@@ -220,7 +221,7 @@ def load_runner(
     *,
     name: t.Optional[str] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "BaseRunner":
+) -> t.Union[_PicklableModelRunner, _PicklableModelSimpleRunner]:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. :func:`bentoml.picklable_model.load_runner` implements a Runner class that

@@ -197,11 +197,11 @@ def load(
                     "options are not supported for TF < 2.3.x,"
                     f" Current version: {get_tf_version()}"
                 )
-            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
+            tf_model: "tf_ext.AutoTrackable" = tf.compat.v2.saved_model.load(
                 module_path, tags=tfhub_tags, options=tfhub_options
             )
         else:
-            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
+            tf_model: "tf_ext.AutoTrackable" = tf.compat.v2.saved_model.load(
                 module_path, tags=tfhub_tags
             )
         tf_model._is_hub_module_v1 = (
@@ -209,7 +209,7 @@ def load(
         )
         return tf_model
     else:
-        tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(model.path)
+        tf_model: "tf_ext.AutoTrackable" = tf.compat.v2.saved_model.load(model.path)
         if LazyType["tf_ext.AutoTrackable"](
             "tensorflow.python.training.tracking.tracking.AutoTrackable"
         ).isinstance(tf_model) and not hasattr(tf_model, "__call__"):
@@ -340,14 +340,11 @@ def import_from_tfhub(
     else:
         if hasattr(identifier, "export"):
             # hub.Module.export()
-            sess: "tf_ext.Session" = tf.compat.v1.Session(
-                graph=tf.compat.v1.get_default_graph()
-            )
-            with sess.as_default():  # type: tf_ext.Session
+            with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
                 sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
-                identifier.export(_model.path, sess)
+                identifier.export(_model.path, sess)  # type: ignore
         else:
-            tf.compat.v2.saved_model.save(identifier, _model.path)
+            tf.saved_model.save(identifier, _model.path)
         _model.info.options = {
             "model": identifier.__class__.__name__,
             "local_path": ".",
@@ -549,8 +546,8 @@ class _TensorflowRunner(Runner):
     def _setup(self) -> None:
         # setup a global session for model runner
         self._session: "tf_ext.Session" = tf.compat.v1.Session(
-            config=tf.compat.v1.ConfigProto(**self._config_proto), 
-            graph = tf.compat.v1.get_default_graph()
+            config=tf.compat.v1.ConfigProto(**self._config_proto),
+            graph=tf.compat.v1.get_default_graph(),
         )
         self._model = load(self._tag, model_store=self._model_store)
         signatures: "tf_ext.SignatureMap" = getattr(self._model, "signatures")
@@ -572,7 +569,7 @@ class _TensorflowRunner(Runner):
                     return item
 
             params = params.map(_mapping)
-            
+
             with self._session.as_default():
                 self._session.run(tf.compat.v1.global_variables_initializer())  # type: ignore
                 res: t.Dict[str, t.Any] = self._session.run(

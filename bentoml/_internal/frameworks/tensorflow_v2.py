@@ -337,12 +337,9 @@ def import_from_tfhub(
     else:
         if hasattr(identifier, "export"):
             # hub.Module.export()
-            sess: "tf_ext.Session" = tf.compat.v1.Session(
-                graph=tf.compat.v1.get_default_graph()
-            )
-            with sess.as_default():  # type: tf_ext.Session
+            with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
                 sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
-                identifier.export(_model.path, sess)
+                identifier.export(_model.path, sess)  # type: ignore
         else:
             tf.saved_model.save(identifier, _model.path)
         _model.info.options = {
@@ -569,7 +566,7 @@ class _TensorflowRunner(Runner):
 
             params = params.map(_mapping)
 
-            # tf.compat.v1.global_variables_initializer()
+            tf.compat.v1.global_variables_initializer()
             res = self._predict_fn(*params.args, **params.kwargs)
             return t.cast("ext.NpNDArray", res.numpy())
 

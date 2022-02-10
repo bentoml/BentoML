@@ -23,7 +23,7 @@ from tensorflow.python.saved_model.function_deserialization import RestoredFunct
 try:
     from tensorflow.python.types.core import GenericFunction
     from tensorflow.python.types.core import ConcreteFunction
-    from tensorflow.python.framework.ops import _EagerTensorBase as EagerTensor  # pylint: disable # noqa
+    from tensorflow.python.framework.ops import _EagerTensorBase as EagerTensor
 except ImportError:
     from tensorflow.python.eager.function import ConcreteFunction
 

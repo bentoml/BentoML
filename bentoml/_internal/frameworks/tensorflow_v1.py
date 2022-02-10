@@ -197,11 +197,11 @@ def load(
                     "options are not supported for TF < 2.3.x,"
                     f" Current version: {get_tf_version()}"
                 )
-            tf_model: "tf_ext.AutoTrackable" = tf.compat.v2.saved_model.load(
+            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(
                 module_path, tags=tfhub_tags, options=tfhub_options
             )
         else:
-            tf_model: "tf_ext.AutoTrackable" = tf.compat.v2.saved_model.load(
+            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(
                 module_path, tags=tfhub_tags
             )
         tf_model._is_hub_module_v1 = (
@@ -209,7 +209,7 @@ def load(
         )
         return tf_model
     else:
-        tf_model: "tf_ext.AutoTrackable" = tf.compat.v2.saved_model.load(model.path)
+        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(model.path)
         if LazyType["tf_ext.AutoTrackable"](
             "tensorflow.python.training.tracking.tracking.AutoTrackable"
         ).isinstance(tf_model) and not hasattr(tf_model, "__call__"):
@@ -338,13 +338,13 @@ def import_from_tfhub(
         folder = fpath.split("/")[-1]
         _model.info.options = {"model": identifier, "local_path": folder}
     else:
-        if hasattr(identifier, "export"):
-            # hub.Module.export()
-            with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
-                sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
+        with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
+            sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
+            if hasattr(identifier, "export"):
+                # hub.Module.export()
                 identifier.export(_model.path, sess)  # type: ignore
-        else:
-            tf.saved_model.save(identifier, _model.path)
+            else:
+                tf.saved_model.save(identifier, _model.path)
         _model.info.options = {
             "model": identifier.__class__.__name__,
             "local_path": ".",

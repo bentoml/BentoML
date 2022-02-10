@@ -1,3 +1,4 @@
+from typing import Any
 from typing import List
 from typing import Union
 from typing import Callable
@@ -8,8 +9,6 @@ import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_hub as hub
-from schema import Optional
-from tensorflow.python.ops.gen_math_ops import Any
 
 import bentoml
 from tests.utils.helpers import assert_have_file_extension

@@ -21,6 +21,7 @@ from ..types import LazyType
 from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import is_gpu_available
+from ..utils.tensorflow import hook_loaded_model
 from ..utils.tensorflow import tf_function_wrapper
 from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
@@ -69,7 +70,7 @@ if TYPE_CHECKING:
 
     TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf_ext.Tensor"]
 
-MODULE_NAME = "bentoml.tensorflow"
+MODULE_NAME = "bentoml.tensorflow_v2"
 
 
 def _clean_name(name: str) -> str:  # pragma: no cover
@@ -78,27 +79,6 @@ def _clean_name(name: str) -> str:  # pragma: no cover
     else:
         name = name.split("/")[-1]
     return re.sub(r"\W|^(?=\d)-", "_", name)
-
-
-AUTOTRACKABLE_CALLABLE_WARNING: str = """\
-Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
- will not be supported by BentoML due to `tensorflow` API.\n
-See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
- more details.
-"""
-
-TF_FUNCTION_WARNING: str = """\
-Due to TensorFlow's internal mechanism, only methods
- wrapped under `@tf.function` decorator and the Keras default function
- `__call__(inputs, training=False)` can be restored after a save & load.\n
-You can test the restored model object via `bentoml.tensorflow.load(path)`
-"""
-
-KERAS_MODEL_WARNING: str = """\
-BentoML detected that {name} is being used to pack a Keras API
- based model. In order to get optimal serving performance, we recommend
- to wrap your keras model `call()` methods with `@tf.function` decorator.
-"""
 
 
 @inject
@@ -211,13 +191,7 @@ def load(
         return tf_model
     else:
         tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(model.path)
-        tf_function_wrapper.hook_loaded_model(tf_model)
-        logger.warning(TF_FUNCTION_WARNING)
-        # pretty format loaded model
-        logger.info(pretty_format_restored_model(tf_model))
-        if hasattr(tf_model, "keras_api"):
-            logger.warning(KERAS_MODEL_WARNING.format(name=MODULE_NAME))
-        return tf_model
+        return hook_loaded_model(tf_model, MODULE_NAME)
 
 
 @inject

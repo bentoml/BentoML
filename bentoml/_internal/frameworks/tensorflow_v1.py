@@ -21,6 +21,7 @@ from ..types import LazyType
 from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import is_gpu_available
+from ..utils.tensorflow import hook_loaded_model
 from ..utils.tensorflow import tf_function_wrapper
 from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
@@ -41,7 +42,6 @@ except ImportError:  # pragma: no cover
 try:
     import tensorflow_hub as hub
     from tensorflow_hub import resolve
-    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -69,7 +69,7 @@ if TYPE_CHECKING:
 
     TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf_ext.Tensor"]
 
-MODULE_NAME = "bentoml.tensorflow"
+MODULE_NAME = "bentoml.tensorflow_v1"
 
 
 def _clean_name(name: str) -> str:  # pragma: no cover
@@ -173,17 +173,10 @@ def load(
 
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
-            return (
-                hub.Module(module_path)
-                if get_tf_version().startswith("1")
-                else hub.KerasLayer(module_path)
-            )
+            hub.Module(module_path)
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
-        is_hub_module_v1: bool = tf.io.gfile.exists(
-            native_module.get_module_proto_path(module_path)
-        )
-        if tfhub_tags is None and is_hub_module_v1:
+        if tfhub_tags is None:
             tfhub_tags = []
         if tfhub_options is not None:
             if not LazyType(
@@ -204,9 +197,7 @@ def load(
             tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(
                 module_path, tags=tfhub_tags
             )
-        tf_model._is_hub_module_v1 = (
-            is_hub_module_v1  # pylint: disable=protected-access # noqa
-        )
+        tf_model._is_hub_module_v1 = True
         return tf_model
     else:
         tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(model.path)
@@ -214,18 +205,12 @@ def load(
             "tensorflow.python.training.tracking.tracking.AutoTrackable"
         ).isinstance(tf_model) and not hasattr(tf_model, "__call__"):
             logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
-        tf_function_wrapper.hook_loaded_model(tf_model)
-        logger.warning(TF_FUNCTION_WARNING)
-        # pretty format loaded model
-        logger.info(pretty_format_restored_model(tf_model))
-        if hasattr(tf_model, "keras_api"):
-            logger.warning(KERAS_MODEL_WARNING.format(name=MODULE_NAME))
-        return tf_model
+        return hook_loaded_model(tf_model, MODULE_NAME)
 
 
 @inject
 def import_from_tfhub(
-    identifier: t.Union[str, "HubModule", "KerasLayer"],
+    identifier: t.Union[str, "HubModule"],
     name: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

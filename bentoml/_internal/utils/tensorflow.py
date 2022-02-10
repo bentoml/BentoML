@@ -1,4 +1,5 @@
 import typing as t
+import logging
 import importlib.util
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,8 @@ else:
         exc_msg="`tensorflow` is required to use bentoml.tensorflow module.",
     )
 
+logger = logging.getLogger(__name__)
+
 TF_KERAS_DEFAULT_FUNCTIONS = {
     "_default_save_signature",
     "call_and_return_all_conditional_losses",
@@ -42,7 +45,33 @@ __all__ = [
     "tf_function_wrapper",
     "pretty_format_restored_model",
     "is_gpu_available",
+    "hook_loaded_model",
 ]
+
+TF_FUNCTION_WARNING: str = """\
+Due to TensorFlow's internal mechanism, only methods
+ wrapped under `@tf.function` decorator and the Keras default function
+ `__call__(inputs, training=False)` can be restored after a save & load.\n
+You can test the restored model object via `bentoml.tensorflow.load(path)`
+"""
+
+KERAS_MODEL_WARNING: str = """\
+BentoML detected that {name} is being used to pack a Keras API
+ based model. In order to get optimal serving performance, we recommend
+ to wrap your keras model `call()` methods with `@tf.function` decorator.
+"""
+
+
+def hook_loaded_model(
+    tf_model: "tf_ext.AutoTrackable", module_name: str
+) -> "tf_ext.AutoTrackable":
+    tf_function_wrapper.hook_loaded_model(tf_model)
+    logger.warning(TF_FUNCTION_WARNING)
+    # pretty format loaded model
+    logger.info(pretty_format_restored_model(tf_model))
+    if hasattr(tf_model, "keras_api"):
+        logger.warning(KERAS_MODEL_WARNING.format(name=module_name))
+    return tf_model
 
 
 def is_gpu_available() -> bool:

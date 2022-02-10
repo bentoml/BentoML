@@ -167,12 +167,12 @@ jobs:
               - *runner
               - bentoml/tensorflow.py
               - bentoml/_internal/frameworks/tensorflow_v1.py
-              - tests/integration/frameworks/test_tensorflow_impl.py
+              - tests/integration/frameworks/test_tensorflow_v1_impl.py
             tf2: &tf2
               - *runner
               - bentoml/tensorflow.py
               - bentoml/_internal/frameworks/tensorflow_v2.py
-              - tests/integration/frameworks/test_tensorflow_impl.py
+              - tests/integration/frameworks/test_tensorflow_v2_impl.py
             keras_tf1:
               - *runner
               - *tf1

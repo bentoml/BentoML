@@ -59,7 +59,7 @@ except ImportError:
 
 
 if TYPE_CHECKING:
-    from tensorflow_hub import Module
+    from tensorflow_hub import Module as HubModule
     from tensorflow_hub import KerasLayer
 
     from .. import external_typing as ext
@@ -103,12 +103,12 @@ BentoML detected that {name} is being used to pack a Keras API
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     tfhub_tags: t.Optional[t.List[str]] = None,
     tfhub_options: t.Optional["tf_ext.SaveOptions"] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["tf_ext.AutoTrackable", "Module", "KerasLayer"]:
+) -> t.Union["tf_ext.AutoTrackable", "tf_ext.Module", "HubModule", "KerasLayer"]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -225,7 +225,7 @@ def load(
 
 @inject
 def import_from_tfhub(
-    identifier: t.Union[str, "Module", "KerasLayer"],
+    identifier: t.Union[str, "HubModule", "KerasLayer"],
     name: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

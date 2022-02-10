@@ -190,17 +190,17 @@ def load(
                     "options are not supported for TF < 2.3.x,"
                     f" Current version: {get_tf_version()}"
                 )
-            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(
+            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags, options=tfhub_options
             )
         else:
-            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(
+            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags
             )
         tf_model._is_hub_module_v1 = True
         return tf_model
     else:
-        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(model.path)
+        tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(model.path)
         if LazyType["tf_ext.AutoTrackable"](
             "tensorflow.python.training.tracking.tracking.AutoTrackable"
         ).isinstance(tf_model) and not hasattr(tf_model, "__call__"):
@@ -470,7 +470,7 @@ def save(
                 f"Parameter 'options: {str(options)}' is ignored when "
                 f"using tensorflow {get_tf_version()}"
             )
-        tf.compat.v2.saved_model.save(model, _model.path, signatures=signatures)
+        tf.saved_model.save(model, _model.path, signatures=signatures)
 
     _model.save(model_store)
     return _model.tag
@@ -503,7 +503,8 @@ class _TensorflowRunner(Runner):
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
-        # TODO(aarnphm): setup GPU support for tensorflow v1
+        if "GPU" in device_id:
+            tf.config.set_visible_devices(device_id, "GPU")
         self._config_proto = dict(
             allow_soft_placement=True,
             log_device_placement=False,

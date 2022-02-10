@@ -55,26 +55,35 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
     },
 }
 
-SCRIPT_RUNNER = """import bentoml._internal.server
-bentoml._internal.server.start_prod_runner_server(
-    "{bento_identifier}",
-    "{runner_name}",
-    working_dir="{working_dir}",
-    instance_id=$(CIRCUS.WID),
-    fd=$(circus.sockets.{runner_name}),
-)"""
+SCRIPT_RUNNER = """
+import bentoml._internal.server;
+bentoml._internal.server.start_prod_runner_server("{bento_identifier}", "{runner_name}", working_dir="{working_dir}", instance_id=$(CIRCUS.WID), fd=$(circus.sockets.{runner_name}));
+"""
 
 SCRIPT_API_SERVER = """
-import bentoml._internal.server
-bentoml._internal.server.start_prod_api_server(
-    "{bento_identifier}",
-    port={port},
-    host="{host}",
-    working_dir="{working_dir}",
-    instance_id=$(CIRCUS.WID),
-    runner_map={cmd_runner_arg},
-    backlog={backlog},
-)"""
+import bentoml._internal.server;
+bentoml._internal.server.start_prod_api_server("{bento_identifier}", port={port}, host="{host}", working_dir="{working_dir}", instance_id=$(CIRCUS.WID), runner_map={cmd_runner_arg}, backlog={backlog});
+"""
+
+SCRIPT_NGROK = """
+import bentoml._internal.server;
+bentoml._internal.server.start_ngrok_server();
+"""
+
+SCRIPT_API_SERVER_DEBUG = """
+import bentoml._internal.server;
+bentoml._internal.server.start_dev_api_server("{bento_identifier}", port={port}, host="{host}", working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID));
+"""
+
+
+def escape_str_for_cmd(s: str) -> str:
+    """
+    Escape a string for use in a posix shell/windows batch command.
+    """
+    lines = s.strip().split("\n")
+    lines = [line.strip().replace('"', '\\"') for line in lines]
+    cmd = "".join(lines)
+    return cmd
 
 
 @inject
@@ -110,14 +119,12 @@ def serve_development(
     env = dict(os.environ)
 
     watchers: t.List[Watcher] = []
+
     if with_ngrok:
-        cmd_ngrok = """
-import bentoml._internal.server
-bentoml._internal.server.start_ngrok_server()"""
         watchers.append(
             Watcher(
                 name="ngrok",
-                cmd=f"{sys.executable} -c '{cmd_ngrok}'",
+                cmd=f'{sys.executable} -c "{escape_str_for_cmd(SCRIPT_NGROK)}"',
                 env=env,
                 numprocesses=1,
                 stop_children=True,
@@ -125,21 +132,19 @@ bentoml._internal.server.start_ngrok_server()"""
             )
         )
 
-    cmd_api_server = f"""
-import bentoml._internal.server
-bentoml._internal.server.start_dev_api_server(
-    "{bento_identifier}",
-    port={port},
-    host="{host}",
-    working_dir="{working_dir}",
-    reload={reload},
-    reload_delay={reload_delay},
-    instance_id=$(CIRCUS.WID),
-)"""
+    cmd_api_server = SCRIPT_API_SERVER_DEBUG.format(
+        bento_identifier=bento_identifier,
+        port=port,
+        host=host,
+        working_dir=working_dir,
+        reload=reload,
+        reload_delay=reload_delay,
+    )
+
     watchers.append(
         Watcher(
             name="api_server",
-            cmd=f"{sys.executable} -c '{cmd_api_server}'",
+            cmd=f'{sys.executable} -c "{escape_str_for_cmd(cmd_api_server)}"',
             env=env,
             numprocesses=1,
             stop_children=True,
@@ -235,7 +240,7 @@ def serve_production(
                 watchers.append(
                     Watcher(
                         name=f"runner_{runner_name}",
-                        cmd=f"{sys.executable} -c '{cmd_runner}'",
+                        cmd=f'{sys.executable} -c "{escape_str_for_cmd(cmd_runner)}"',
                         env=env,
                         numprocesses=runner.num_replica,
                         stop_children=True,
@@ -262,7 +267,7 @@ def serve_production(
     watchers.append(
         Watcher(
             name="api_server",
-            cmd=f"{sys.executable} -c '{cmd_api_server}'",
+            cmd=f'{sys.executable} -c "{escape_str_for_cmd(cmd_api_server)}"',
             env=env,
             numprocesses=app_workers or 1,
             stop_children=True,

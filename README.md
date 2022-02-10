@@ -8,7 +8,7 @@
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
-BentoML let you create a machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
+BentoML enables users to create a machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
 👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 

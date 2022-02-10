@@ -187,7 +187,7 @@ def serve_production(
     sockets_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
 
-    if psutil.POSIX and False:
+    if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         for runner_name, runner in svc.runners.items():
             sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
@@ -216,17 +216,17 @@ def serve_production(
                 )
             )
 
-    elif psutil.WINDOWS or True:
+    elif psutil.WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner_name, runner in svc.runners.items():
-                port = port_stack.enter_context(reserve_free_port())
+                runner_port = port_stack.enter_context(reserve_free_port())
                 sockets_map[runner_name] = CircusSocket(
                     name=runner_name,
-                    port=port,
+                    port=runner_port,
                     umask=0,
                 )
-                runner_bind_map[runner_name] = f"tcp://127.0.0.1:{port}"
+                runner_bind_map[runner_name] = f"tcp://127.0.0.1:{runner_port}"
                 cmd_runner = SCRIPT_RUNNER.format(
                     bento_identifier=bento_identifier,
                     runner_name=runner_name,
@@ -243,7 +243,9 @@ def serve_production(
                         working_dir=working_dir,
                     )
                 )
-            port = port_stack.enter_context(reserve_free_port())
+            port_stack.enter_context(reserve_free_port())
+    else:
+        raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
     logger.debug("Runner map: %s", runner_bind_map)
 

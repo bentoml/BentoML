@@ -16,12 +16,12 @@ Unified Model Serving Framework
 
 BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
+👉 `Pop into our Slack community! <https://join.slack.bentoml.org>`_ We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
+
 The BentoML version 1.0 is around the corner. For stable release version 0.13, see
 the `0.13-LTS branch <https://github.com/bentoml/BentoML/tree/0.13-LTS>`_. Version 1.0 is
 under active development, you can be of great help by testing out the preview release,
 reporting issues, contribute to the documentation and create sample gallery projects.
-
-👉 `Join our Slack community <https://join.slack.bentoml.org>`_ to receive project updates and get involved with latest development.
 
 Why BentoML
 -----------

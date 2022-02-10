@@ -8,14 +8,14 @@
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
-BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
+BentoML enables users to create a machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
+
+👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
 __The BentoML version 1.0 is around the corner.__ For stable release version 0.13, see
 the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS). Version 1.0 is 
 under active development, you can be of great help by testing out the preview release, 
 reporting issues, contribute to the documentation and create sample gallery projects.
-
-👉 [Join our Slack community](https://join.slack.bentoml.org) to receive project updates and get involved with latest development.
 
 ## Why BentoML ##
 

@@ -3,11 +3,17 @@
 Getting Started
 ===============
 
+In this guide we will show you how to create a local web service for your machine learning model(s). Then we will package that web service into a self contained package (Bento) which is ready for production deployment
+
 There are three parts to the BentoML workflow.
 
-#. :ref:`Save Models <save-models-section>`
-#. :ref:`Define and Debug Services <define-and-debug-service-section>`
-#. :ref:`Build and Deploy Bentos <build-and-deploy-bentos>`
+#. :ref:`Save your Model <save-models-section>`
+    Once model training is complete, use one of our tool specific frameworks to save your model in BentoML's standard format.
+#. :ref:`Define your Service <define-and-debug-service-section>`
+    Now that we've stored your model in our standard format, we will define the webservice which will host the model. In this definition, you can easily add Pre/Post processing code along with your model inference.
+#. :ref:`Build and Deploy your Bento <build-and-deploy-bentos>`
+    Finally, let BentoML build your deployable container (your bento) and assist you in deploying to your cloud service of choice
+
 
 .. _save-models-section:
 
@@ -26,8 +32,9 @@ Save Models
 -----------
 
 We begin by saving a trained model instance to BentoML's local
-:ref:`model store <bento-management-page>`.
-If models you wish to use are already saved to disk, they can also be added to BentoML with the
+:ref:`model store <bento-management-page>`. The local model store is used to version your models as well as control which models are packaged with your bento.
+
+If the models you wish to use are already saved to disk or available in a cloud repository, they can also be added to BentoML with the
 :ref:`import APIs <bento-management-page>`.
 
 .. code-block:: python
@@ -37,7 +44,7 @@ If models you wish to use are already saved to disk, they can also be added to B
     from sklearn import svm
     from sklearn import datasets
 
-    # Load training data
+    # Load predefined training set to build an example model
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
 
@@ -45,14 +52,21 @@ If models you wish to use are already saved to disk, they can also be added to B
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
+    # Call to bentoml.<FRAMEWORK>.save(<MODEL_NAME>, model)
+    # In order to save to BentoML's standard format in a local model store
     bentoml.sklearn.save("iris_clf", clf)
+
     # [08:34:16 AM] INFO     Successfully saved Model(tag="iris_clf:svcryrt5xgafweb5",
     #                        path="/home/user/bentoml/models/iris_clf/svcryrt5xgafweb5/")
     # Tag(name='iris_clf', version='svcryrt5xgafweb5')
 
-The :ref:`ML framework specific API <frameworks-page>`, :code:`bentoml.sklearn.save()`, will save
-the Iris Classifier to a local model store managed by BentoML. You can then load the runner for this
-model with the :code:`load_runner()` API:
+
+:code:`bentoml.sklearn.save()`, will save the Iris Classifier to a local model store managed by BentoML.
+See :ref:`ML framework specific API <frameworks-page>` for all supported modeling libraries.
+
+You can then load the the model to be run inline using the :code:`bentoml.<FRAMEWORK>.load(<TAG>)`
+
+Or you can use our performance optimized runners using the :code:`bentoml.<FRAMEWORK>.load_runner(<TAG>)` API:
 
 .. code-block:: python
 
@@ -91,9 +105,11 @@ Python file :code:`bento.py` with the following contents:
     iris_clf_runner = bentoml.sklearn.load_runner("iris_clf:latest")
 
     # Create the iris_classifier service with the ScikitLearn runner
+    # Multiple runners may be specified if needed in the runners array
+    # When packaged as a bento, the runners here will included
     svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-    # Create API function with pre- and post- processing logic
+    # Create API function with pre- and post- processing logic with your new "svc" annotation
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_ndarray: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
@@ -145,6 +161,10 @@ We can then send requests to the newly started service with any HTTP client:
 
 .. _build-and-deploy-bentos:
 
+BentoML optimizes your service in a number of ways for example we use two of the fastest Python web framework `Starlette <https://www.starlette.io/>`_ and `Uvicorn <https://www.uvicorn.org>`_, in order to serve your model efficiently at scale.
+
+For more information on our performance optimizations please see :ref:`BentoServer <bento-server-page>`.
+
 Build and Deploy Bentos
 -----------------------
 
@@ -153,17 +173,17 @@ bento. Bentos are the distribution format for services, and contains all the inf
 run or deploy those services, such as models and dependencies. For more information about building
 bentos, see :ref:`Building Bentos <building-bentos-page>`.
 
-To build a Bento, first create a :code:`bentofile.yaml` in your project directory:
+To build a Bento, first create a file named :code:`bentofile.yaml` in your project directory:
 
 .. code-block:: yaml
 
-     # bentofile.yaml
-    service: "bento.py:svc"
+    # bentofile.yaml
+    service: "bento.py:svc"  # A convention for locating your service: <YOUR_SERVICE_PY>:<YOUR_SERVICE_ANNOTATION>
     include:
-     - "*.py"
+     - "*.py"  # A pattern for matching which files to include in the bento
     python:
       packages:
-       - scikit-learn
+       - scikit-learn  # Additional libraries to be included in the bento
 
 Next, use the :code:`bentoml build` CLI command in the same directory to build a bento.
 

@@ -5,11 +5,15 @@ import shutil
 import typing as t
 import logging
 import tempfile
+import contextlib
 
+import psutil
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
+from bentoml._internal.utils import reserve_free_port
+from bentoml._internal.utils.uri import path_to_uri
 from bentoml._internal.utils.circus import create_standalone_arbiter
 
 from ..configuration import get_debug_mode
@@ -51,6 +55,27 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
     },
 }
 
+SCRIPT_RUNNER = """import bentoml._internal.server
+bentoml._internal.server.start_prod_runner_server(
+    "{bento_identifier}",
+    "{runner_name}",
+    working_dir="{working_dir}",
+    instance_id=$(CIRCUS.WID),
+    fd=$(circus.sockets.{runner_name}),
+)"""
+
+SCRIPT_API_SERVER = """
+import bentoml._internal.server
+bentoml._internal.server.start_prod_api_server(
+    "{bento_identifier}",
+    port={port},
+    host="{host}",
+    working_dir="{working_dir}",
+    instance_id=$(CIRCUS.WID),
+    runner_map={cmd_runner_arg},
+    backlog={backlog},
+)"""
+
 
 @inject
 def _ensure_prometheus_dir(
@@ -80,7 +105,6 @@ def serve_development(
     logger.info('Starting development BentoServer from "%s"', bento_identifier)
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
-    from circus.arbiter import Arbiter  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
     env = dict(os.environ)
@@ -161,48 +185,78 @@ def serve_production(
     uds_path = tempfile.mkdtemp()
     watchers: t.List[Watcher] = []
     sockets_map: t.Dict[str, CircusSocket] = {}
+    runner_bind_map: t.Dict[str, str] = {}
 
-    for runner_name, runner in svc.runners.items():
-        sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
-        assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
-        sockets_map[runner_name] = CircusSocket(
-            name=runner_name,
-            path=sockets_path,
-            umask=0,
-        )
-        cmd_runner = f"""import bentoml._internal.server
-bentoml._internal.server.start_prod_runner_server(
-    "{bento_identifier}",
-    "{runner_name}",
-    working_dir="{working_dir}",
-    instance_id=$(CIRCUS.WID),
-    fd=$(circus.sockets.{runner_name}),
-)"""
-        watchers.append(
-            Watcher(
-                name=f"runner_{runner_name}",
-                cmd=f"{sys.executable} -c '{cmd_runner}'",
-                env=env,
-                numprocesses=runner.num_replica,
-                stop_children=True,
-                use_sockets=True,
+    if psutil.POSIX and False:
+        # use AF_UNIX sockets for Circus
+        for runner_name, runner in svc.runners.items():
+            sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
+            assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
+            sockets_map[runner_name] = CircusSocket(
+                name=runner_name,
+                path=sockets_path,
+                umask=0,
+            )
+            runner_bind_map[runner_name] = path_to_uri(sockets_path)
+
+            cmd_runner = SCRIPT_RUNNER.format(
+                bento_identifier=bento_identifier,
+                runner_name=runner_name,
                 working_dir=working_dir,
             )
-        )
-    logger.debug("Runner sockets_map: %s", sockets_map)
+            watchers.append(
+                Watcher(
+                    name=f"runner_{runner_name}",
+                    cmd=f"{sys.executable} -c '{cmd_runner}'",
+                    env=env,
+                    numprocesses=runner.num_replica,
+                    stop_children=True,
+                    use_sockets=True,
+                    working_dir=working_dir,
+                )
+            )
 
-    cmd_runner_arg = json.dumps({k: f"{v.path}" for k, v in sockets_map.items()})
-    cmd_api_server = f"""
-import bentoml._internal.server
-bentoml._internal.server.start_prod_api_server(
-    "{bento_identifier}",
-    port={port},
-    host="{host}",
-    working_dir="{working_dir}",
-    instance_id=$(CIRCUS.WID),
-    runner_map={cmd_runner_arg},
-    backlog={backlog},
-)"""
+    elif psutil.WINDOWS or True:
+        # Windows doesn't (fully) support AF_UNIX sockets
+        with contextlib.ExitStack() as port_stack:
+            for runner_name, runner in svc.runners.items():
+                port = port_stack.enter_context(reserve_free_port())
+                sockets_map[runner_name] = CircusSocket(
+                    name=runner_name,
+                    port=port,
+                    umask=0,
+                )
+                runner_bind_map[runner_name] = f"tcp://127.0.0.1:{port}"
+                cmd_runner = SCRIPT_RUNNER.format(
+                    bento_identifier=bento_identifier,
+                    runner_name=runner_name,
+                    working_dir=working_dir,
+                )
+                watchers.append(
+                    Watcher(
+                        name=f"runner_{runner_name}",
+                        cmd=f"{sys.executable} -c '{cmd_runner}'",
+                        env=env,
+                        numprocesses=runner.num_replica,
+                        stop_children=True,
+                        use_sockets=True,
+                        working_dir=working_dir,
+                    )
+                )
+            port = port_stack.enter_context(reserve_free_port())
+
+    logger.debug("Runner map: %s", runner_bind_map)
+
+    cmd_runner_arg = json.dumps(runner_bind_map)
+    cmd_api_server = SCRIPT_API_SERVER.format(
+        bento_identifier=bento_identifier,
+        host=host,
+        port=port,
+        cmd_runner_arg=cmd_runner_arg,
+        runner_name="api_server",
+        working_dir=working_dir,
+        backlog=backlog,
+    )
     watchers.append(
         Watcher(
             name="api_server",

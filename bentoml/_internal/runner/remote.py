@@ -3,12 +3,14 @@ import typing as t
 import asyncio
 from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
+from urllib.parse import urlparse
 
 from simple_di import inject
 from simple_di import Provide
 
 from .runner import RunnerImpl
 from .container import Payload
+from ..utils.uri import uri_to_path
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import payload_params_to_multipart
@@ -23,6 +25,7 @@ class RemoteRunnerClient(RunnerImpl):
     _conn: t.Optional["BaseConnector"] = None
     _client: t.Optional["ClientSession"] = None
     _loop: t.Optional[asyncio.AbstractEventLoop] = None
+    _addr: t.Optional[str] = None
 
     @inject
     def _get_conn(
@@ -33,7 +36,6 @@ class RemoteRunnerClient(RunnerImpl):
     ) -> "BaseConnector":
         import aiohttp
 
-        uds: str = remote_runner_mapping[self._runner.name]
         if (
             self._loop is None
             or self._conn is None
@@ -41,7 +43,38 @@ class RemoteRunnerClient(RunnerImpl):
             or self._loop.is_closed()
         ):
             self._loop = asyncio.get_event_loop()
-            self._conn = aiohttp.UnixConnector(path=uds, loop=self._loop)
+            bind_uri = remote_runner_mapping[self._runner.name]
+            parsed = urlparse(bind_uri)
+            if parsed.scheme == "file":
+                path = uri_to_path(bind_uri)
+                self._conn = aiohttp.UnixConnector(
+                    path=path,
+                    loop=self._loop,
+                    limit=self._runner.batch_options.max_batch_size * 2,
+                    keepalive_timeout=self._runner.batch_options.max_latency_ms
+                    * 1000
+                    * 10,
+                )
+                self._addr = "http://127.0.0.1:8000"  # addr doesn't matter with UDS
+            elif parsed.scheme == "tcp":
+                try:
+                    host, port = parsed.netloc.split(":")
+                except IndexError:
+                    raise ValueError(
+                        f"Invalid bind address: {bind_uri}. "
+                        "Please specify the host and port as host:port."
+                    )
+                self._conn = aiohttp.TCPConnector(
+                    loop=self._loop,
+                    limit=self._runner.batch_options.max_batch_size * 2,
+                    verify_ssl=False,
+                    keepalive_timeout=self._runner.batch_options.max_latency_ms
+                    * 1000
+                    * 10,
+                )
+                self._addr = f"http://{host}:{port}"
+            else:
+                raise ValueError(f"Unsupported bind scheme: {parsed.scheme}")
         return self._conn
 
     @inject
@@ -73,13 +106,13 @@ class RemoteRunnerClient(RunnerImpl):
             )
         return self._client
 
-    async def _async_req(self, url: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    async def _async_req(self, path: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
         from ..runner.container import AutoContainer
 
         params = Params(*args, **kwargs).map(AutoContainer.single_to_payload)
         multipart = payload_params_to_multipart(params)
         client = self._get_client()
-        async with client.post(url, data=multipart) as resp:
+        async with client.post(f"{self._addr}/{path}", data=multipart) as resp:
             body = await resp.read()
         try:
             meta_header = resp.headers[PAYLOAD_META_HEADER]
@@ -98,12 +131,10 @@ class RemoteRunnerClient(RunnerImpl):
         return AutoContainer.payload_to_single(payload)
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        url = "http://127.0.0.1:8000/run"
-        return await self._async_req(url, *args, **kwargs)
+        return await self._async_req("run", *args, **kwargs)
 
     async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        url = "http://127.0.0.1:8000/run_batch"
-        return await self._async_req(url, *args, **kwargs)
+        return await self._async_req("run_batch", *args, **kwargs)
 
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         import anyio

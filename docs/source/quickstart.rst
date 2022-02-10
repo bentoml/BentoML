@@ -3,16 +3,17 @@
 Getting Started
 ===============
 
-A "Bento" is a collection of models and methods which is packaged and optimized to run your Machine Learning workflows in your choice of either local or cloud service.
+In this guide we will show you how to create a local web service for your machine learning model(s). Then we will package that web service into a self contained package (Bento) which is ready for production deployment
 
 There are three parts to the BentoML workflow.
 
-#. :ref:`Save Models <save-models-section>`
+#. :ref:`Save your Model <save-models-section>`
     Once model training is complete, use one of our tool specific frameworks to save your model in BentoML's standard format.
-#. :ref:`Define and Debug as Web Service <define-and-debug-service-section>`
+#. :ref:`Define your Service <define-and-debug-service-section>`
     Now that we've stored your model in our standard format, we will define the webservice which will host the model. In this definition, you can easily add Pre/Post processing code along with your model inference.
-#. :ref:`Build and Deploy Bentos <build-and-deploy-bentos>`
+#. :ref:`Build and Deploy your Bento <build-and-deploy-bentos>`
     Finally, let BentoML build your deployable container (your bento) and assist you in deploying to your cloud service of choice
+
 
 .. _save-models-section:
 
@@ -104,9 +105,11 @@ Python file :code:`bento.py` with the following contents:
     iris_clf_runner = bentoml.sklearn.load_runner("iris_clf:latest")
 
     # Create the iris_classifier service with the ScikitLearn runner
+    # Multiple runners may be specified if needed in the runners array
+    # When packaged as a bento, the runners here will included
     svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-    # Create API function with pre- and post- processing logic
+    # Create API function with pre- and post- processing logic with your new "svc" annotation
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_ndarray: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
@@ -117,8 +120,6 @@ Python file :code:`bento.py` with the following contents:
 In this example, we defined the input and output type to be :code:`numpy.ndarray`. More options, such as
 :code:`pandas.DataFrame` and :code:`PIL.image` are also supported. To see all supported options, see
 :ref:`API and IO Descriptors <api-io-descriptors>`.
-
-BentoML uses two of the fastest Python web framework `starlette https://www.starlette.io/`_ and `uvicorn https://www.uvicorn.org`, in order to serve your model efficiently at scale.
 
 We now have everything we need to serve our first request. Launch the server in debug mode by
 running the :code:`bentoml serve` command in the current working directory. Using the
@@ -160,6 +161,10 @@ We can then send requests to the newly started service with any HTTP client:
 
 .. _build-and-deploy-bentos:
 
+BentoML optimizes your service in a number of ways for example we use two of the fastest Python web framework `Starlette <https://www.starlette.io/>`_ and `Uvicorn <https://www.uvicorn.org>`_, in order to serve your model efficiently at scale.
+
+For more information on our performance optimizations please see :ref:`BentoServer <bento-server-page>`.
+
 Build and Deploy Bentos
 -----------------------
 
@@ -168,17 +173,17 @@ bento. Bentos are the distribution format for services, and contains all the inf
 run or deploy those services, such as models and dependencies. For more information about building
 bentos, see :ref:`Building Bentos <building-bentos-page>`.
 
-To build a Bento, first create a :code:`bentofile.yaml` in your project directory:
+To build a Bento, first create a file named :code:`bentofile.yaml` in your project directory:
 
 .. code-block:: yaml
 
-     # bentofile.yaml
-    service: "bento.py:svc"
+    # bentofile.yaml
+    service: "bento.py:svc"  # A convention for locating your service: <YOUR_SERVICE_PY>:<YOUR_SERVICE_ANNOTATION>
     include:
-     - "*.py"
+     - "*.py"  # A pattern for matching which files to include in the bento
     python:
       packages:
-       - scikit-learn
+       - scikit-learn  # Additional libraries to be included in the bento
 
 Next, use the :code:`bentoml build` CLI command in the same directory to build a bento.
 

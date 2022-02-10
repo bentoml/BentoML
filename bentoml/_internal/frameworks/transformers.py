@@ -191,7 +191,6 @@ def load(
     from_flax: bool = False,
     framework: str = "pt",
     *,
-    lm_head: str = "base",
     return_config: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
@@ -323,191 +322,15 @@ model head should be used:
     return t_model, tokenizer_or_fe
 
 
-def _save(
-    name: str,
-    *,
-    lm_head: str,
-    model_identifier: t.Union[
-        str, "ext.TransformersModelType", "ext.TransformersPipeline"
-    ],
-    tokenizer: t.Optional["ext.TransformersTokenizerType"],
-    metadata: t.Optional[t.Dict[str, t.Any]],
-    keep_download_from_hub: bool,
-    model_store: "ModelStore",
-    **transformers_options_kwargs: str,
-) -> Tag:
-    if lm_head == "base":
-        logger.warning(
-            """\
-Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
-be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
-given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
-model head should be used:
-    import bentoml
-    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
-                """
-        )
-
-    # AutoConfig kwargs options
-    cache_dir = transformers_options_kwargs.pop("cache_dir", None)
-    force_download = transformers_options_kwargs.pop("force_download", False)
-    resume_download = transformers_options_kwargs.pop("resume_download", True)
-    proxies = transformers_options_kwargs.pop("proxies", None)
-    revision = transformers_options_kwargs.pop("revision", "main")
-    trust_remote_code = transformers_options_kwargs.pop("trust_remote_code", False)
-
-    from_tf = transformers_options_kwargs.pop("from_tf", False)
-    from_flax = transformers_options_kwargs.pop("from_flax", False)
-    use_auth_token = transformers_options_kwargs.pop("use_auth_token", None)
-
-    # AutoTokenizer kwargs options
-    subfolder = transformers_options_kwargs.pop("subfolder", None)
-    use_fast = transformers_options_kwargs.pop("use_fast", True)
-    tokenizer_type = transformers_options_kwargs.pop("tokenizer_type", None)
-
-    check_flax_supported()  # pragma: no cover
-    context: t.Dict[str, t.Any] = {
-        "framework_name": "transformers",
-        "pip_dependencies": [f"transformers=={get_pkg_version('transformers')}"],
-        "feature_extractor": False,
-        "pipeline": False,
-        "tokenizer": False,
-    }
-    options: t.Dict[str, t.Any] = {"revision": revision}
-
-    _model = Model.create(
-        name,
-        module=MODULE_NAME,
-        context=context,
-        options=options,
-        metadata=metadata,
-    )
-
-    if from_tf:
-        framework = "tf"
-    elif from_flax:
-        framework = "flax"
-    else:
-        framework = "pt"
-
-    automodel_cls = load_autoclass(framework, lm_head)
-
-    if isinstance(model_identifier, str):
-        try:
-            meta = model_store.get(name)
-            rev = meta.info.options["revision"]
-            if rev == "main" and not keep_download_from_hub:
-                logger.warning(
-                    f"{name} is found under BentoML modelstore.\nFor most use cases of using pretrained model,"
-                    f" you don't have to re-download the model. returning {meta.tag} ...\nIf you"
-                    " still insist on downloading, then specify `keep_download_from_hub=True` in"
-                    " `import_from_huggingface_hub`."
-                )
-                return meta.tag
-            else:
-                pass
-        except (NotFound, FileNotFoundError):
-            pass
-
-        # Load the model from pretrained
-        # This is pretty slow approach
-        model = automodel_cls.from_pretrained(
-            model_identifier,
-            cache_dir=cache_dir,
-            force_download=force_download,
-            resume_download=resume_download,
-            proxies=proxies,
-            revision=revision,
-            **transformers_options_kwargs,
-        )
-        model.save_pretrained(_model.path)
-
-        with open(_model.path_of(CONFIG_NAME), "r", encoding="utf-8") as of:
-            _config = json.loads(of.read())
-            try:
-                arch = "".join(_config["architectures"])
-                if from_tf:
-                    _model.info.context["model"] = f"TF{arch}"
-                elif from_flax:
-                    _model.info.context["model"] = f"Flax{arch}"
-                else:
-                    _model.info.context["model"] = arch
-            except KeyError:
-                _model.info.context["model"] = ""
-
-        # NOTE: With Tokenizer there are way too many files
-        #  to be included, per frameworks. Thus we will load
-        #  a Tokenizer instance, then save it to path.
-        try:
-            _tokenizer: "ext.TransformersTokenizerType" = AutoTokenizer.from_pretrained(
-                # type: ignore[reportUnknownMemberType]
-                model_identifier,
-                force_download=force_download,
-                resume_download=resume_download,
-                proxies=proxies,
-                revision=revision,
-                subfolder=subfolder,
-                use_fast=use_fast,
-                tokenizer_type=tokenizer_type,
-                trust_remote_code=trust_remote_code,
-                **transformers_options_kwargs,
-            )
-            _ = _tokenizer.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
-            _model.info.context["tokenizer"] = type(_tokenizer).__name__
-        except (ValueError, KeyError):
-            # For pretrained model that doesn't have a tokenizer,
-            # it will have a feature extractor instead
-            _feature_extractor: "ext.PreTrainedFeatureExtractor" = (
-                AutoFeatureExtractor.from_pretrained(
-                    model_identifier,
-                    cache_dir=cache_dir,
-                    force_download=force_download,
-                    resume_download=resume_download,
-                    proxies=proxies,
-                    revision=revision,
-                    use_auth_token=use_auth_token,
-                    **transformers_options_kwargs,
-                )
-            )
-            _feature_extractor.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
-            _model.info.context["feature_extractor"] = type(_feature_extractor).__name__
-    elif LazyType["ext.TransformersPipeline"](
-        "transformers.pipelines.base.Pipeline"
-    ).isinstance(model_identifier):
-        _model.info.context["model"] = model_identifier.model.__class__.__name__
-        _model.info.context["tokenizer"] = model_identifier.tokenizer.__class__.__name__
-        _model.info.context["pipeline"] = True
-        model_identifier.save_pretrained(_model.path)
-    elif check_model_type(model_identifier):
-        assert tokenizer is not None and check_tokenizer_type(
-            tokenizer
-        ), _SAVE_CONFLICTS_ERR.format(tokenizer=tokenizer, model=type(model_identifier))
-        _model.info.context["model"] = model_identifier.__class__.__name__
-        _model.info.context["tokenizer"] = tokenizer.__class__.__name__
-        model_identifier.save_pretrained(_model.path)
-        tokenizer.save_pretrained(_model.path)
-    else:
-        raise BentoMLException(
-            "Unknown type for `model_identifier`."
-            f" Got {type(model_identifier)} while only accepted"
-            " one of the following three type: `str`,"
-            " `Pipeline` and `Union[PreTrainedModel,TFPreTrainedModel,FlaxPreTrainedModel]`"
-        )
-
-    _model.save(model_store)
-    return _model.tag
-
-
 @inject
 def save(
     name: str,
-    *,
-    lm_head: str = "base",
     model: t.Union["ext.TransformersModelType", "ext.TransformersPipeline"],
+    *,
     tokenizer: t.Optional["ext.TransformersTokenizerType"] = None,
+    feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **transformers_options_kwargs: str,
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -520,55 +343,22 @@ def save(
             :code:`AutoModel` class. You can also use any type of models/automodel provided
             by :obj:`transformers`. Refers to `Models API <https://huggingface.co/transformers/main_classes/model.html>`_
             for more information.
-        tokenizer (:code:`Union[transformers.PreTrainedTokenizer, transformers.PreTrainedTokenizerFast]`):
-            Toeknizer instance provided by :obj:`transformers`. This can be retrieved from their
+        tokenizer (:code:`Union[transformers.PreTrainedTokenizer, transformers.PreTrainedTokenizerFast]`, `optional`, default to `None`):
+            Tokenizer instance provided by :obj:`transformers`. This can be retrieved from their
             their :code:`AutoTokenizer` class. You can also use any type of Tokenizer
             accordingly to your use case provided by :obj:`transformers`. Refers to
-            `Tokenizer API <https://huggingface.co/transformers/main_classes/tokenizer.html>`_
+            `Tokenizer API <https://huggingface.co/docs/transformers/main_classes/tokenizer>`_
+            for more information
+        feature_extractor (:code:`transformers.PreTrainedFeatureExtractor`, `optional`, default to `None`):
+            Feature Extractor instance provided by :obj:`transformers`. This can be retrieved from their
+            their :code:`AutoFeatureExtractor` class. You can also use any type of Feature Extractor
+            accordingly to your use case provided by :obj:`transformers`. Refers to
+            `Feature Extractor API <https://huggingface.co/docs/transformers/main_classes/feature_extractor>`_
             for more information
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
-        from_tf (:code:`bool`, `optional`, defaults to :code:`False`):
-            Load the model weights from a TensorFlow checkpoint save file
-        from_flax (:code:`bool`, `optional`, defaults to :code:`False`):
-            Load the model weights from a Flax checkpoint save file
-        revision (:code:`str`, `optional`, defaults to :code:`"main"`):
-            The specific model version to use. It can be a branch name, a tag name, or a
-            commit id, since we use a git-based system for storing models and other
-            artifacts on *huggingface.co*, so ``revision`` can be any
-            identifier allowed by git.
-        mirror (:code:`str`, `optional`):
-            Mirror source to accelerate downloads in China. If you are from China and
-            have an accessibility problem, you can set this option to resolve it. Note
-            that we do not guarantee the timeliness or safety. Please refer to the
-            mirror site for more information.
-        proxies (:code:`Dict[str, str]`, `optional`):
-            A dictionary of proxy servers to use by protocol or endpoint, e.g.
-            :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
-            proxies are used on each request.
-        use_auth_token (:code:`str` or :code:`bool`, `optional`):
-            The token to use as HTTP bearer authorization for remote files. If
-            :obj:`True`, will use the token generated when running
-            :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
-        force_download (:code:`bool`, `optional`, defaults to :code:`False`):
-            Whether or not to force the (re-)download of the model weights and
-            configuration files, overriding the cached versions if they exist.
-        resume_download (:code:`bool`, `optional`, defaults to :code:`False`):
-            Whether or not to delete incompletely received files. Will attempt to resume
-            the download if such a file exists.
-
-    .. note::
-
-       Some parameters are direct port from :func:`from_pretrained` arguments. This is to
-       ensure that when doing :func:`save` operations we don't actually load the model class into memory
-
-    .. warning::
-
-        :code:`save` should **ONLY BE USED** when training or working with a customized pretrained transformers model.
-        Otherwise, use :code:`import_from_huggingface_hub` for most usecases.
-
     Returns:
         :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
@@ -579,7 +369,10 @@ def save(
         import bentoml
         model = AutoModelForQuestionAnswering.from_pretrained("gpt2", from_flax=True)
         tokenizer = AutoTokenizer.from_pretrained("gpt2", from_flax=True)
-        # custom training and modification goes here
+
+        # transfer training and modification goes here
+        ...
+
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
     """
     if not check_model_type(model):
@@ -587,22 +380,70 @@ def save(
             "transformers.pipelines.base.Pipeline"
         ).isinstance(model):
             raise BentoMLException(
-                "If you want to import model directly from huggingface hub"
-                " please use `import_from_huggingface_hub` instead. `save` should"
-                " only be used for saving custom pretrained model and tokenizer"
+                "`model` is neither a Transformers pipeline nor a Transformers model."
             )
-    return _save(
-        name=name,
-        model_identifier=model,
-        lm_head=lm_head,
-        tokenizer=tokenizer,
+
+    check_flax_supported()  # pragma: no cover
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "transformers",
+        "pip_dependencies": [f"transformers=={get_pkg_version('transformers')}"],
+        "feature_extractor": False,
+        "tokenizer": False,
+        "pipeline": False,
+    }
+    options: t.Dict[str, t.Any] = {}
+
+    _model = Model.create(
+        name,
+        module=MODULE_NAME,
+        context=context,
+        options=options,
         metadata=metadata,
-        keep_download_from_hub=False,
-        model_store=model_store,
-        **transformers_options_kwargs,
     )
+    if LazyType["ext.TransformersPipeline"](
+        "transformers.pipelines.base.Pipeline"
+    ).isinstance(model):
+        _model.info.context["model"] = model.model.__class__.__name__
+        _model.info.context["tokenizer"] = model.tokenizer.__class__.__name__
+        _model.info.context[
+            "feature_extractor"
+        ] = model.feature_extractor.__class__.__name__
+        _model.info.context["pipeline"] = True
+        model.save_pretrained(_model.path)
+    elif check_model_type(model):
+        if tokenizer is not None:
+            if not check_tokenizer_type(tokenizer):
+                raise BentoMLException(
+                    "`tokenizer` is neither type `PreTrainedTokenizer` nor `PreTrainedTokenizerFast`"
+                )
+            _model.info.context["tokenizer"] = tokenizer.__class__.__name__
+            tokenizer.save_pretrained(_model.path)
+        if feature_extractor is not None:
+            if not LazyType("transformers.PreTrainedFeatureExtractor").isinstance(
+                feature_extractor
+            ):
+                raise BentoMLException(
+                    "`tokenizer` is not of type `PreTrainedFeatureExtractor`"
+                )
+            _model.info.context[
+                "feature_extractor"
+            ] = feature_extractor.__class__.__name__
+            feature_extractor.save_pretrained(_model.path)
+        _model.info.context["model"] = model.__class__.__name__
+        model.save_pretrained(_model.path)
+    else:
+        raise BentoMLException(
+            "Unknown type for `model`."
+            f" Got {type(model)} while only accepted"
+            " one of the following three type: `str`,"
+            " `Pipeline` and `Union[PreTrainedModel,TFPreTrainedModel,FlaxPreTrainedModel]`"
+        )
+
+    _model.save(model_store)
+    return _model.tag
 
 
+# TODO: import_from_huggingface_hub
 @inject
 def import_from_huggingface_hub(
     name: str,
@@ -688,16 +529,143 @@ def import_from_huggingface_hub(
     """
     # TODO: pass down kwargs for AutoTokenizer
     save_namespace = clean_name(name) if save_namespace is None else save_namespace
-    return _save(
-        name=save_namespace,
-        model_identifier=name,
-        lm_head=lm_head,
-        tokenizer=None,
-        keep_download_from_hub=keep_download_from_hub,
+    if lm_head == "base":
+        logger.warning(
+            """\
+Given `lm_head=base`. This will use the base AutoModel class for given frameworks. Please
+be mindful that `AutoModel` will load a generic base model classes of the library, which might not work for your
+given usecase. Make sure to use the correct type of language model head. For example with GPT2, `causal` language
+model head should be used:
+    import bentoml
+    model, tokenizer= bentoml.transformers.load('gpt2', lm_head='causal')
+                """
+        )
+
+    # AutoConfig kwargs options
+    cache_dir = transformers_options_kwargs.pop("cache_dir", None)
+    force_download = transformers_options_kwargs.pop("force_download", False)
+    resume_download = transformers_options_kwargs.pop("resume_download", True)
+    proxies = transformers_options_kwargs.pop("proxies", None)
+    revision = transformers_options_kwargs.pop("revision", "main")
+    trust_remote_code = transformers_options_kwargs.pop("trust_remote_code", False)
+
+    from_tf = transformers_options_kwargs.pop("from_tf", False)
+    from_flax = transformers_options_kwargs.pop("from_flax", False)
+    use_auth_token = transformers_options_kwargs.pop("use_auth_token", None)
+
+    # AutoTokenizer kwargs options
+    subfolder = transformers_options_kwargs.pop("subfolder", None)
+    use_fast = transformers_options_kwargs.pop("use_fast", True)
+    tokenizer_type = transformers_options_kwargs.pop("tokenizer_type", None)
+
+    check_flax_supported()  # pragma: no cover
+    context: t.Dict[str, t.Any] = {
+        "framework_name": "transformers",
+        "pip_dependencies": [f"transformers=={get_pkg_version('transformers')}"],
+        "feature_extractor": False,
+        "pipeline": False,
+        "tokenizer": False,
+    }
+    options: t.Dict[str, t.Any] = {"revision": revision}
+
+    _model = Model.create(
+        save_namespace,
+        module=MODULE_NAME,
+        context=context,
+        options=options,
         metadata=metadata,
-        model_store=model_store,
+    )
+
+    if from_tf:
+        framework = "tf"
+    elif from_flax:
+        framework = "flax"
+    else:
+        framework = "pt"
+
+    automodel_cls = load_autoclass(framework, lm_head)
+
+    try:
+        meta = model_store.get(name)
+        rev = meta.info.options["revision"]
+        if rev == "main" and not keep_download_from_hub:
+            logger.warning(
+                f"{name} is found under BentoML modelstore.\nFor most use cases of using pretrained model,"
+                f" you don't have to re-download the model. returning {meta.tag} ...\nIf you"
+                " still insist on downloading, then specify `keep_download_from_hub=True` in"
+                " `import_from_huggingface_hub`."
+            )
+            return meta.tag
+        else:
+            pass
+    except (NotFound, FileNotFoundError):
+        pass
+
+    # Load the model from pretrained
+    # This is pretty slow approach
+    model = automodel_cls.from_pretrained(
+        name,
+        cache_dir=cache_dir,
+        force_download=force_download,
+        resume_download=resume_download,
+        proxies=proxies,
+        revision=revision,
         **transformers_options_kwargs,
     )
+    model.save_pretrained(_model.path)
+
+    with open(_model.path_of(CONFIG_NAME), "r", encoding="utf-8") as of:
+        _config = json.loads(of.read())
+        try:
+            arch = "".join(_config["architectures"])
+            if from_tf:
+                _model.info.context["model"] = f"TF{arch}"
+            elif from_flax:
+                _model.info.context["model"] = f"Flax{arch}"
+            else:
+                _model.info.context["model"] = arch
+        except KeyError:
+            _model.info.context["model"] = ""
+
+    # NOTE: With Tokenizer there are way too many files
+    #  to be included, per frameworks. Thus we will load
+    #  a Tokenizer instance, then save it to path.
+    try:
+        _tokenizer: "ext.TransformersTokenizerType" = AutoTokenizer.from_pretrained(
+            # type: ignore[reportUnknownMemberType]
+            name,
+            force_download=force_download,
+            resume_download=resume_download,
+            proxies=proxies,
+            revision=revision,
+            subfolder=subfolder,
+            use_fast=use_fast,
+            tokenizer_type=tokenizer_type,
+            trust_remote_code=trust_remote_code,
+            **transformers_options_kwargs,
+        )
+        _ = _tokenizer.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
+        _model.info.context["tokenizer"] = type(_tokenizer).__name__
+    except (ValueError, KeyError):
+        # For pretrained model that doesn't have a tokenizer,
+        # it will have a feature extractor instead
+        _feature_extractor: "ext.PreTrainedFeatureExtractor" = (
+            AutoFeatureExtractor.from_pretrained(
+                name,
+                cache_dir=cache_dir,
+                force_download=force_download,
+                resume_download=resume_download,
+                proxies=proxies,
+                revision=revision,
+                use_auth_token=use_auth_token,
+                **transformers_options_kwargs,
+            )
+        )
+        _feature_extractor.save_pretrained(_model.path)  # type: ignore[reportUnknownMemberType]
+        _model.info.context["feature_extractor"] = type(_feature_extractor).__name__
+
+    _model.save(model_store)
+    return _model.tag
 
 
 class _TransformersRunner(Runner):

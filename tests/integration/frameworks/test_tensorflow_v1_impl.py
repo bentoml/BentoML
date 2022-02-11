@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 MODEL_NAME = __name__.split(".")[-1]
 
 tf.compat.v1.disable_eager_execution()
+tf.compat.v1.disable_v2_behavior()
 
 test_data = [[1.1, 2.2]]
 test_tensor: "tf_ext.TensorLike" = tf.constant(test_data)
@@ -80,9 +81,7 @@ def tf1_multi_args_model_path() -> Generator[str, None, None]:
         x2 = tf.placeholder(shape=[None, 5], dtype=tf.float32, name="x2")
         factor = tf.placeholder(shape=(), dtype=tf.float32, name="factor")
 
-        init = tf.constant_initializer([1.0, 1.0, 1.0, 1.0, 1.0])
-        w = tf.Variable(init(shape=[5, 1], dtype=tf.float32))
-        sess.run(w.initializer)
+        w = tf.constant([[1.0], [1.0], [1.0], [1.0], [1.0]], dtype=tf.float32)
 
         x = x1 + x2 * factor
         p = tf.matmul(x, w)

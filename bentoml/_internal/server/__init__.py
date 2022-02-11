@@ -6,6 +6,7 @@ import typing as t
 import logging
 import tempfile
 import contextlib
+from urllib.parse import urlparse
 
 import psutil
 from simple_di import inject
@@ -14,6 +15,7 @@ from simple_di import Provide
 from bentoml import load
 from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils.uri import path_to_uri
+from bentoml._internal.utils.uri import uri_to_path
 from bentoml._internal.utils.circus import create_standalone_arbiter
 
 from ..configuration import get_debug_mode
@@ -57,7 +59,7 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
 
 SCRIPT_RUNNER = """
 import bentoml._internal.server;
-bentoml._internal.server.start_prod_runner_server("{bento_identifier}", "{runner_name}", working_dir="{working_dir}", instance_id=$(CIRCUS.WID), fd=$(circus.sockets.{runner_name}));
+bentoml._internal.server.start_prod_runner_server("{bento_identifier}", "{runner_name}", working_dir="{working_dir}", instance_id=$(CIRCUS.WID), bind="{bind}");
 """
 
 SCRIPT_API_SERVER = """
@@ -209,12 +211,14 @@ def serve_production(
                 path=sockets_path,
                 umask=0,
             )
-            runner_bind_map[runner_name] = path_to_uri(sockets_path)
+            bind = path_to_uri(sockets_path)
+            runner_bind_map[runner_name] = bind
 
             cmd_runner = SCRIPT_RUNNER.format(
                 bento_identifier=bento_identifier,
                 runner_name=runner_name,
                 working_dir=working_dir,
+                bind=bind,
             )
             watchers.append(
                 Watcher(
@@ -238,11 +242,14 @@ def serve_production(
                     port=runner_port,
                     umask=0,
                 )
-                runner_bind_map[runner_name] = f"tcp://127.0.0.1:{runner_port}"
+                bind = f"tcp://127.0.0.1:{runner_port}"
+                runner_bind_map[runner_name] = bind
+
                 cmd_runner = SCRIPT_RUNNER.format(
                     bento_identifier=bento_identifier,
                     runner_name=runner_name,
                     working_dir=working_dir,
+                    bind=bind,
                 )
                 watchers.append(
                     Watcher(
@@ -355,7 +362,7 @@ def start_prod_api_server(
 def start_prod_runner_server(
     bento_identifier: str,
     name: str,
-    fd: int,
+    bind: str,
     working_dir: t.Optional[str] = None,
     instance_id: t.Optional[int] = None,
 ):
@@ -367,6 +374,21 @@ def start_prod_runner_server(
     runner = svc.runners[name]
     app = RunnerAppFactory(runner, instance_id=instance_id)()
 
-    uvicorn.run(
-        app, fd=fd, log_level="info", log_config=UVICORN_LOGGING_CONFIG  # type: ignore
-    )
+    parsed = urlparse(bind)
+    if parsed.scheme == "file":
+        uvicorn.run(
+            app,  # type: ignore
+            uds=uri_to_path(bind),
+            log_level="info",
+            log_config=UVICORN_LOGGING_CONFIG,
+        )
+    elif parsed.scheme == "tcp":
+        uvicorn.run(
+            app,  # type: ignore
+            host=parsed.hostname,
+            port=parsed.port,
+            log_level="info",
+            log_config=UVICORN_LOGGING_CONFIG,
+        )
+    else:
+        raise ValueError(f"Unsupported bind scheme: {bind}")

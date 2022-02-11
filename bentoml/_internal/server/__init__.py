@@ -59,7 +59,7 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
 
 SCRIPT_RUNNER = """
 import bentoml._internal.server;
-bentoml._internal.server.start_runner_server("{bento_identifier}", "{runner_name}", working_dir="{working_dir}", bind="fd://$(circus.sockets.{runner_name})");
+bentoml._internal.server.start_runner_server();
 """
 
 SCRIPT_API_SERVER = """
@@ -82,7 +82,7 @@ def CMD(*args: str) -> str:
     """
     Wrap a command for different OS.
     """
-    return " ".join([escape_for_cmd(arg) for arg in args])
+    return args[0] + " " + " ".join([escape_for_cmd(arg) for arg in args[1:]])
 
 
 def escape_for_cmd(s: str) -> str:
@@ -215,15 +215,18 @@ def serve_production(
                 backlog=backlog,
             )
 
-            cmd_runner = SCRIPT_RUNNER.format(
-                bento_identifier=bento_identifier,
-                runner_name=runner_name,
-                working_dir=working_dir,
-            )
             watchers.append(
                 Watcher(
                     name=f"runner_{runner_name}",
-                    cmd=CMD(sys.executable, "-c", cmd_runner),
+                    cmd=CMD(
+                        sys.executable,
+                        "-c",
+                        SCRIPT_RUNNER,
+                        bento_identifier,
+                        runner_name,
+                        f"fd://$(circus.sockets.{runner_name})",
+                        working_dir,
+                    ),
                     env=env,
                     stop_children=True,
                     working_dir=working_dir,
@@ -246,15 +249,18 @@ def serve_production(
                     backlog=backlog,
                 )
 
-                cmd_runner = SCRIPT_RUNNER.format(
-                    bento_identifier=bento_identifier,
-                    runner_name=runner_name,
-                    working_dir=working_dir,
-                )
                 watchers.append(
                     Watcher(
                         name=f"runner_{runner_name}",
-                        cmd=CMD(sys.executable, "-c", cmd_runner),
+                        cmd=CMD(
+                            sys.executable,
+                            "-c",
+                            SCRIPT_RUNNER,
+                            bento_identifier,
+                            runner_name,
+                            f"fd://$(circus.sockets.{runner_name})",
+                            working_dir,
+                        ),
                         env=env,
                         stop_children=True,
                         use_sockets=True,
@@ -359,16 +365,11 @@ def start_api_server(
     uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
 
-def start_runner_server(
-    bento_identifier: str,
-    name: str,
-    bind: str,
-    working_dir: t.Optional[str] = None,
-):
+def start_runner_server():
     """
     Start a runner server.
 
-    Args:
+    Sys Args:
         bento_identifier: the Bento identifier
         name: the name of the runner
         bind: the bind address URI. Can be:
@@ -379,6 +380,15 @@ def start_runner_server(
             * Note: the fd:// scheme is only supported on Unix systems.
         working_dir: the working directory
     """
+    assert len(sys.argv) in (4, 5), "Invalid number of arguments"
+    bento_identifier: str = sys.argv[1]
+    name: str = sys.argv[2]
+    bind: str = sys.argv[3]
+    if len(sys.argv) == 5:
+        working_dir = sys.argv[4]
+    else:
+        working_dir = None
+
     import uvicorn  # type: ignore
 
     from bentoml._internal.server.runner_app import RunnerAppFactory

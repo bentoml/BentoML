@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 MODEL_NAME = __name__.split(".")[-1]
 
+tf.compat.v1.disable_eager_execution()
 
 test_data = [[1.1, 2.2]]
 test_tensor: "tf_ext.TensorLike" = tf.constant(test_data)
@@ -26,6 +27,8 @@ native_tensor: "tf_ext.TensorLike" = tf.constant(native_data, dtype=tf.float64)
 
 ragged_data = [[15], [7, 8], [1, 2, 3, 4, 5]]
 ragged_tensor: "tf_ext.TensorLike" = tf.ragged.constant(ragged_data, dtype=tf.float64)
+
+sess = tf.compat.v1.Session()
 
 
 def _model_dunder_call(
@@ -39,26 +42,26 @@ def _model_dunder_call(
 def tf1_model_path() -> Generator[str, None, None]:
     # Function below builds model graph
     def cnn_model_fn():
-        X = tf.compat.v1.placeholder(shape=[None, 2], dtype=tf.float32, name="X")
+        X = tf.placeholder(shape=[None, 2], dtype=tf.float32, name="X")
 
         # dense layer
-        inter1 = tf.compat.v1.layers.dense(inputs=X, units=1, activation=tf.nn.relu)
+        inter1 = tf.layers.dense(inputs=X, units=1, activation=tf.nn.relu)
         p = tf.argmax(input=inter1, axis=1)
 
         # loss
-        y = tf.compat.v1.placeholder(tf.float32, shape=[None, 1], name="y")
+        y = tf.placeholder(tf.float32, shape=[None, 1], name="y")
         loss = tf.losses.softmax_cross_entropy(y, inter1)
 
         # training operation
-        train_op = tf.compat.v1.train.AdamOptimizer().minimize(loss)
+        train_op = tf.train.AdamOptimizer().minimize(loss)
 
         return {"p": p, "loss": loss, "train_op": train_op, "X": X, "y": y}
 
     cnn_model = cnn_model_fn()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with tf.compat.v1.Session() as sess:
-            sess.run(tf.compat.v1.global_variables_initializer())
+        with sess.as_default():
+            sess.run(tf.global_variables_initializer())
             sess.run(cnn_model["p"], {cnn_model["X"]: test_data})
 
             inputs = {"X": cnn_model["X"]}
@@ -73,12 +76,13 @@ def tf1_model_path() -> Generator[str, None, None]:
 @pytest.fixture(scope="session")
 def tf1_multi_args_model_path() -> Generator[str, None, None]:
     def simple_model_fn():
-        x1 = tf.compat.v1.placeholder(shape=[None, 5], dtype=tf.float32, name="x1")
-        x2 = tf.compat.v1.placeholder(shape=[None, 5], dtype=tf.float32, name="x2")
-        factor = tf.compat.v1.placeholder(shape=(), dtype=tf.float32, name="factor")
+        x1 = tf.placeholder(shape=[None, 5], dtype=tf.float32, name="x1")
+        x2 = tf.placeholder(shape=[None, 5], dtype=tf.float32, name="x2")
+        factor = tf.placeholder(shape=(), dtype=tf.float32, name="factor")
 
         init = tf.constant_initializer([1.0, 1.0, 1.0, 1.0, 1.0])
         w = tf.Variable(init(shape=[5, 1], dtype=tf.float32))
+        sess.run(w.initializer)
 
         x = x1 + x2 * factor
         p = tf.matmul(x, w)
@@ -87,9 +91,9 @@ def tf1_multi_args_model_path() -> Generator[str, None, None]:
     simple_model = simple_model_fn()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with tf.compat.v1.Session() as sess:
-            tf.compat.v1.enable_resource_variables()
-            sess.run(tf.compat.v1.global_variables_initializer())
+        with sess.as_default():
+            tf.enable_resource_variables()
+            sess.run(tf.global_variables_initializer())
             inputs = {
                 "x1": simple_model["x1"],
                 "x2": simple_model["x2"],
@@ -113,8 +117,8 @@ def test_tensorflow_v1_save_load(
     model_info = modelstore.get(tag)
     assert_have_file_extension(model_info.path, ".pb")
     tf1_loaded = bentoml.tensorflow_v1.load("tensorflow_test", model_store=modelstore)
-    with tf.compat.v1.get_default_graph().as_default():
-        tf.compat.v1.global_variables_initializer()
+    with tf.get_default_graph().as_default():
+        tf.global_variables_initializer()
         prediction = _model_dunder_call(tf1_loaded, test_tensor)
         assert prediction.shape == (1,)
 
@@ -127,8 +131,9 @@ def test_tensorflow_v1_setup_run_batch(
     )
     runner = bentoml.tensorflow_v1.load_runner(tag, model_store=modelstore)
 
-    res = runner.run_batch(test_tensor)
-    assert res.shape == (1,)
+    with tf.get_default_graph().as_default():
+        res = runner.run_batch(test_tensor)
+        assert res.shape == (1,)
 
 
 def test_tensorflow_v1_multi_args(
@@ -142,22 +147,25 @@ def test_tensorflow_v1_multi_args(
     f1 = tf.convert_to_tensor(3.0, dtype=tf.float32)
     f2 = tf.convert_to_tensor(2.0, dtype=tf.float32)
 
-    runner1 = bentoml.tensorflow_v1.load_runner(
+    r1 = bentoml.tensorflow_v1.load_runner(
         tag,
         model_store=modelstore,
         partial_kwargs=dict(factor=f1),
     )
 
-    runner2 = bentoml.tensorflow_v1.load_runner(
+    r2 = bentoml.tensorflow_v1.load_runner(
         tag,
         model_store=modelstore,
         partial_kwargs=dict(factor=f2),
     )
 
-    res = runner1.run_batch(x1=x, x2=x)
-    assert np.isclose(res[0][0], 60.0)
-    res = runner2.run_batch(x1=x, x2=x)
-    assert np.isclose(res[0][0], 45.0)
+    tf.global_variables_initializer()
+    with sess.as_default():
+        res = r1.run_batch(x1=x, x2=x)
+        assert np.isclose(res.eval(), 60.0)
+
+        res = r2.run_batch(x1=x, x2=x)
+        assert np.isclose(res.eval(), 45.0)
 
 
 def _plus_one_model_tf1() -> "hub.Module":

@@ -540,16 +540,15 @@ class _TensorflowRunner(Runner):
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         # setup a global session for model runner
-        self._session: "tf_ext.Session" = tf.compat.v1.Session(
-            config=tf.compat.v1.ConfigProto(**self._config_proto),
-        )
         self._model = load(self._tag, model_store=self._model_store)
         raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[
             "serving_default"
         ]
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
-    def _run_batch(self, *args: "TFArgType", **kwargs: "TFArgType") -> "ext.NpNDArray":
+    def _run_batch(
+        self, *args: "TFArgType", **kwargs: "TFArgType"
+    ) -> "tf_ext.TensorLike":
         params = Params["TFArgType"](*args, **kwargs)
 
         with tf.device(self._device_id):
@@ -565,10 +564,13 @@ class _TensorflowRunner(Runner):
 
             params = params.map(_mapping)
 
-            with self._session.as_default():
-                self._session.run(tf.compat.v1.global_variables_initializer())  # type: ignore
-                res = self._session.run(self._predict_fn(*params.args, **params.kwargs))  # type: ignore
-            return t.cast("ext.NpNDArray", res["prediction"])
+            with tf.compat.v1.Session(
+                graph=tf.compat.v1.get_default_graph(),
+                config=tf.compat.v1.ConfigProto(**self._config_proto),
+            ) as sess:
+                sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
+                res = self._predict_fn(*params.args, **params.kwargs)["prediction"]  # type: ignore
+                return t.cast("tf_ext.TensorLike", res)
 
 
 @inject

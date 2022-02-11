@@ -189,4 +189,4 @@ def test_import_from_tfhub(modelstore: "ModelStore"):
     module = bentoml.tensorflow_v1.load(
         tag, tfhub_tags=[], load_as_wrapper=False, model_store=modelstore
     )
-    assert module._is_hub_module_v1 == True
+    assert module._is_hub_module_v1 is True

@@ -61,7 +61,7 @@ if TYPE_CHECKING:
     from tensorflow_hub import Module as HubModule
     from tensorflow_hub import KerasLayer
 
-    from .. import external_typing as ext
+    from .. import external_typing as ext  # pylint: disable # noqa
     from ..types import PathType
     from ..models import ModelStore
     from ..external_typing import tensorflow as tf_ext

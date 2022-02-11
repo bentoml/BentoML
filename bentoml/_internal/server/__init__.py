@@ -193,25 +193,21 @@ def serve_production(
 
     import json
 
-    from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
-    uds_path = tempfile.mkdtemp()
     watchers: t.List[Watcher] = []
-    sockets_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
 
-    if psutil.POSIX:
+    uds_path = None
+
+    if not psutil.POSIX:
         # use AF_UNIX sockets for Circus
+        uds_path = tempfile.mkdtemp()
         for runner_name, runner in svc.runners.items():
             sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
             assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
-            sockets_map[runner_name] = CircusSocket(
-                name=runner_name,
-                path=sockets_path,
-                umask=0,
-            )
             bind = path_to_uri(sockets_path)
+
             runner_bind_map[runner_name] = bind
 
             cmd_runner = SCRIPT_RUNNER.format(
@@ -227,22 +223,17 @@ def serve_production(
                     env=env,
                     numprocesses=runner.num_replica,
                     stop_children=True,
-                    use_sockets=True,
                     working_dir=working_dir,
                 )
             )
 
-    elif psutil.WINDOWS:
+    elif not psutil.WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner_name, runner in svc.runners.items():
                 runner_port = port_stack.enter_context(reserve_free_port())
-                sockets_map[runner_name] = CircusSocket(
-                    name=runner_name,
-                    port=runner_port,
-                    umask=0,
-                )
                 bind = f"tcp://127.0.0.1:{runner_port}"
+
                 runner_bind_map[runner_name] = bind
 
                 cmd_runner = SCRIPT_RUNNER.format(
@@ -258,22 +249,23 @@ def serve_production(
                         env=env,
                         numprocesses=runner.num_replica,
                         stop_children=True,
-                        use_sockets=True,
                         working_dir=working_dir,
                     )
                 )
-            port_stack.enter_context(reserve_free_port())
+
+            port_stack.enter_context(
+                reserve_free_port()
+            )  # reserve one more port to avoid conflicts
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
     logger.debug("Runner map: %s", runner_bind_map)
 
-    cmd_runner_arg = json.dumps(runner_bind_map)
     cmd_api_server = SCRIPT_API_SERVER.format(
         bento_identifier=bento_identifier,
         host=host,
         port=port,
-        cmd_runner_arg=cmd_runner_arg,
+        cmd_runner_arg=json.dumps(runner_bind_map),
         runner_name="api_server",
         working_dir=working_dir,
         backlog=backlog,
@@ -285,22 +277,18 @@ def serve_production(
             env=env,
             numprocesses=app_workers or 1,
             stop_children=True,
-            use_sockets=True,
             working_dir=working_dir,
         )
     )
 
-    arbiter = create_standalone_arbiter(
-        watchers=watchers,
-        sockets=[s for s in sockets_map.values()],
-    )
+    arbiter = create_standalone_arbiter(watchers=watchers)
 
     _ensure_prometheus_dir()
     try:
         arbiter.start()
     finally:
-
-        shutil.rmtree(uds_path)
+        if uds_path is not None:
+            shutil.rmtree(uds_path)
 
 
 def start_dev_api_server(
@@ -323,6 +311,7 @@ def start_dev_api_server(
         "reload": reload,
         "reload_delay": reload_delay,
         "log_config": UVICORN_LOGGING_CONFIG,
+        "workers": 1,
     }
 
     if reload:
@@ -355,6 +344,7 @@ def start_prod_api_server(
         "log_level": log_level,
         "backlog": backlog,
         "log_config": UVICORN_LOGGING_CONFIG,
+        "workers": 1,
     }
     uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
@@ -375,20 +365,23 @@ def start_prod_runner_server(
     app = RunnerAppFactory(runner, instance_id=instance_id)()
 
     parsed = urlparse(bind)
+    uvicorn_options = {
+        "log_level": "info",
+        "log_config": UVICORN_LOGGING_CONFIG,
+        "workers": 1,
+    }
     if parsed.scheme == "file":
         uvicorn.run(
             app,  # type: ignore
             uds=uri_to_path(bind),
-            log_level="info",
-            log_config=UVICORN_LOGGING_CONFIG,
+            **uvicorn_options,
         )
     elif parsed.scheme == "tcp":
         uvicorn.run(
             app,  # type: ignore
             host=parsed.hostname,
             port=parsed.port,
-            log_level="info",
-            log_config=UVICORN_LOGGING_CONFIG,
+            **uvicorn_options,
         )
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")

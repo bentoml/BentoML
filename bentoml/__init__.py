@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from bentoml import tensorflow
     from bentoml import statsmodels
     from bentoml import transformers
+    from bentoml import tensorflow_v1
     from bentoml import pytorch_lightning
 else:
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
@@ -74,6 +75,9 @@ else:
     spacy = _LazyLoader("bentoml.spacy", globals(), "bentoml.spacy")
     statsmodels = _LazyLoader("bentoml.statsmodels", globals(), "bentoml.statsmodels")
     tensorflow = _LazyLoader("bentoml.tensorflow", globals(), "bentoml.tensorflow")
+    tensorflow_v1 = _LazyLoader(
+        "bentoml.tensorflow_v1", globals(), "bentoml.tensorflow_v1"
+    )
     transformers = _LazyLoader(
         "bentoml.transformers", globals(), "bentoml.transformers"
     )
@@ -118,6 +122,7 @@ __all__ = [
     "spacy",
     "statsmodels",
     "tensorflow",
+    "tensorflow_v1",
     "transformers",
     "xgboost",
 ]

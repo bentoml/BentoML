@@ -22,8 +22,6 @@ from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import is_gpu_available
 from ..utils.tensorflow import hook_loaded_model
-from ..utils.tensorflow import tf_function_wrapper
-from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -113,19 +111,20 @@ def load(
 
     .. tabs::
 
-        .. code-tab:: tensorflow_v1
-
-            import bentoml
-
-            # load a model back into memory
-            model = bentoml.tensorflow.load("my_tensorflow_model")
-
         .. code-tab:: tensorflow_v2
 
             import bentoml
 
             # load a model back into memory
             model = bentoml.tensorflow.load("my_tensorflow_model")
+
+        .. code-tab:: tensorflow_v1
+
+            import bentoml
+
+            # load a model back into memory
+            model = bentoml.tensorflow_v1.load("my_tensorflow_model")
+
 
     """  # noqa: LN001
     model = model_store.get(tag)
@@ -155,9 +154,9 @@ def load(
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
             return (
-                hub.KerasLayer(module_path)
-                if get_tf_version().startswith("2")
-                else hub.Module(module_path)
+                hub.Module(module_path)
+                if get_tf_version().startswith("1")
+                else hub.KerasLayer(module_path)
             )
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
@@ -178,11 +177,11 @@ def load(
                     "options are not supported for TF < 2.3.x,"
                     f" Current version: {get_tf_version()}"
                 )
-            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(
+            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags, options=tfhub_options
             )
         else:
-            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(
+            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags
             )
         tf_model._is_hub_module_v1 = (
@@ -190,7 +189,7 @@ def load(
         )
         return tf_model
     else:
-        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(model.path)
+        tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(model.path)
         return hook_loaded_model(tf_model, MODULE_NAME)
 
 
@@ -219,15 +218,27 @@ def import_from_tfhub(
 
     Example for importing a model from Tensorflow Hub:
 
-    .. code-block:: python
+    .. tabs::
 
-        import tensorflow_text as text # noqa # pylint: disable
-        import bentoml
+        .. code-tab:: tensorflow_v2
 
-        tag = bentoml.tensorflow.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
+            import tensorflow_text as text # noqa # pylint: disable
+            import bentoml
 
-        # load model back with `load`:
-        model = bentoml.tensorflow.load(tag, load_as_wrapper=True)
+            tag = bentoml.tensorflow.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
+
+            # load model back with `load`:
+            model = bentoml.tensorflow.load(tag, load_as_wrapper=True)
+
+        .. code-tab:: tensorflow_v1
+
+            import bentoml
+
+            tag = bentoml.tensorflow_v1.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
+
+            # load model back with `load`:
+            model = bentoml.tensorflow_v1.load(tag, load_as_wrapper=True)
+
 
     Example for importing a custom Tensorflow Hub model:
 
@@ -581,16 +592,6 @@ def load_runner(
 
     .. tabs::
 
-        .. code-tab:: tensorflow_v1
-
-            import bentoml
-
-            # load a runner from a given flag
-            runner = bentoml.tensorflow.load_runner(tag)
-
-            # load a runner on GPU:0
-            runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
-
         .. code-tab:: tensorflow_v2
 
             import bentoml
@@ -600,6 +601,16 @@ def load_runner(
 
             # load a runner on GPU:0
             runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
+
+        .. code-tab:: tensorflow_v1
+
+            import bentoml
+
+            # load a runner from a given flag
+            runner = bentoml.tensorflow_v1.load_runner(tag)
+
+            # load a runner on GPU:0
+            runner = bentoml.tensorflow_v1.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
 
     """  # noqa
     tag = Tag.from_taglike(tag)

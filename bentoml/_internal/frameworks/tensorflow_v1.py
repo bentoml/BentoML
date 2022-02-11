@@ -22,8 +22,6 @@ from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import is_gpu_available
 from ..utils.tensorflow import hook_loaded_model
-from ..utils.tensorflow import tf_function_wrapper
-from ..utils.tensorflow import pretty_format_restored_model
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -42,6 +40,7 @@ except ImportError:  # pragma: no cover
 try:
     import tensorflow_hub as hub
     from tensorflow_hub import resolve
+    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -163,6 +162,7 @@ def load(
             " the functionalities of the given model, set `load_as_wrapper=False`"
             " will return a SavedModel object."
         )
+
         if hub is None:
             raise MissingDependencyException(
                 """\
@@ -173,10 +173,17 @@ def load(
 
         module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
-            hub.Module(module_path)
+            return (
+                hub.Module(module_path)
+                if get_tf_version().startswith("1")
+                else hub.KerasLayer(module_path)
+            )
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
-        if tfhub_tags is None:
+        is_hub_module_v1: bool = tf.io.gfile.exists(
+            native_module.get_module_proto_path(module_path)
+        )
+        if tfhub_tags is None and is_hub_module_v1:
             tfhub_tags = []
         if tfhub_options is not None:
             if not LazyType(
@@ -197,7 +204,9 @@ def load(
             tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
                 module_path, tags=tfhub_tags
             )
-        tf_model._is_hub_module_v1 = True
+        tf_model._is_hub_module_v1 = (
+            is_hub_module_v1  # pylint: disable=protected-access # noqa
+        )
         return tf_model
     else:
         tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(model.path)
@@ -323,13 +332,13 @@ def import_from_tfhub(
         folder = fpath.split("/")[-1]
         _model.info.options = {"model": identifier, "local_path": folder}
     else:
-        with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
-            sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
-            if hasattr(identifier, "export"):
-                # hub.Module.export()
+        if hasattr(identifier, "export"):
+            # hub.Module.export()
+            with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
+                sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
                 identifier.export(_model.path, sess)  # type: ignore
-            else:
-                tf.saved_model.save(identifier, _model.path)
+        else:
+            tf.saved_model.save(identifier, _model.path)
         _model.info.options = {
             "model": identifier.__class__.__name__,
             "local_path": ".",
@@ -498,7 +507,7 @@ class _TensorflowRunner(Runner):
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
         self._partial_kwargs: t.Dict[str, t.Any] = (
-            partial_kwargs if partial_kwargs is not None else dict()
+            partial_kwargs if partial_kwargs is not None else {}
         )
         self._model_store = model_store
 
@@ -533,11 +542,11 @@ class _TensorflowRunner(Runner):
         # setup a global session for model runner
         self._session: "tf_ext.Session" = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto),
-            graph=tf.compat.v1.get_default_graph(),
         )
         self._model = load(self._tag, model_store=self._model_store)
-        signatures: "tf_ext.SignatureMap" = getattr(self._model, "signatures")
-        raw_predict_fn: t.Callable[..., t.Any] = signatures.get("serving_default", None)
+        raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[
+            "serving_default"
+        ]
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
     def _run_batch(self, *args: "TFArgType", **kwargs: "TFArgType") -> "ext.NpNDArray":
@@ -558,10 +567,8 @@ class _TensorflowRunner(Runner):
 
             with self._session.as_default():
                 self._session.run(tf.compat.v1.global_variables_initializer())  # type: ignore
-                res: t.Dict[str, t.Any] = self._session.run(
-                    self._predict_fn(*params.args, **params.kwargs)
-                )
-                return t.cast("ext.NpNDArray", res["prediction"])
+                res = self._session.run(self._predict_fn(*params.args, **params.kwargs))  # type: ignore
+            return t.cast("ext.NpNDArray", res["prediction"])
 
 
 @inject
@@ -604,16 +611,6 @@ def load_runner(
 
     .. tabs::
 
-        .. code-tab:: tensorflow_v1
-
-            import bentoml
-
-            # load a runner from a given flag
-            runner = bentoml.tensorflow.load_runner(tag)
-
-            # load a runner on GPU:0
-            runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
-
         .. code-tab:: tensorflow_v2
 
             import bentoml
@@ -623,6 +620,16 @@ def load_runner(
 
             # load a runner on GPU:0
             runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
+
+        .. code-tab:: tensorflow_v1
+
+            import bentoml
+
+            # load a runner from a given flag
+            runner = bentoml.tensorflow_v1.load_runner(tag)
+
+            # load a runner on GPU:0
+            runner = bentoml.tensorflow_v1.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
 
     """  # noqa
     tag = Tag.from_taglike(tag)

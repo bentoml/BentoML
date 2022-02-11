@@ -76,14 +76,21 @@ bentoml._internal.server.start_dev_api_server("{bento_identifier}", port={port},
 """
 
 
-def escape_str_for_cmd(s: str) -> str:
+def CMD(*args: str) -> str:
+    """
+    Wrap a command for different OS.
+    """
+    return " ".join([escape_for_cmd(arg) for arg in args])
+
+
+def escape_for_cmd(s: str) -> str:
     """
     Escape a string for use in a posix shell/windows batch command.
     """
     lines = s.strip().split("\n")
-    lines = [line.strip().replace('"', '\\"') for line in lines]
+    lines = [line.strip().replace("\\", "\\\\").replace('"', '\\"') for line in lines]
     cmd = "".join(lines)
-    return cmd
+    return f'"{cmd}"'
 
 
 @inject
@@ -124,7 +131,7 @@ def serve_development(
         watchers.append(
             Watcher(
                 name="ngrok",
-                cmd=f'{sys.executable} -c "{escape_str_for_cmd(SCRIPT_NGROK)}"',
+                cmd=CMD(sys.executable, "-c", SCRIPT_NGROK),
                 env=env,
                 numprocesses=1,
                 stop_children=True,
@@ -144,7 +151,7 @@ def serve_development(
     watchers.append(
         Watcher(
             name="api_server",
-            cmd=f'{sys.executable} -c "{escape_str_for_cmd(cmd_api_server)}"',
+            cmd=CMD(sys.executable, "-c", cmd_api_server),
             env=env,
             numprocesses=1,
             stop_children=True,
@@ -212,7 +219,7 @@ def serve_production(
             watchers.append(
                 Watcher(
                     name=f"runner_{runner_name}",
-                    cmd=f"{sys.executable} -c '{cmd_runner}'",
+                    cmd=CMD(sys.executable, "-c", cmd_runner),
                     env=env,
                     numprocesses=runner.num_replica,
                     stop_children=True,
@@ -240,7 +247,7 @@ def serve_production(
                 watchers.append(
                     Watcher(
                         name=f"runner_{runner_name}",
-                        cmd=f'{sys.executable} -c "{escape_str_for_cmd(cmd_runner)}"',
+                        cmd=CMD(sys.executable, "-c", cmd_runner),
                         env=env,
                         numprocesses=runner.num_replica,
                         stop_children=True,
@@ -267,7 +274,7 @@ def serve_production(
     watchers.append(
         Watcher(
             name="api_server",
-            cmd=f'{sys.executable} -c "{escape_str_for_cmd(cmd_api_server)}"',
+            cmd=CMD(sys.executable, "-c", cmd_api_server),
             env=env,
             numprocesses=app_workers or 1,
             stop_children=True,

@@ -9,6 +9,7 @@ import platform
 import tempfile
 import subprocess
 from pathlib import Path
+from threading import Thread
 
 import requests
 
@@ -33,22 +34,37 @@ def _get_command():
     return command
 
 
-def _run_ngrok(port):
+def _print_url():
+    localhost_url = "http://localhost:4040/api/tunnels"  # Url with tunnel details
+    while True:
+        time.sleep(1)
+        response = requests.get(localhost_url)
+        if response.status_code == 200:
+            data = json.loads(response.text)
+            if data["tunnels"]:
+                tunnel = data["tunnels"][0]
+                logger.info(
+                    " * Ngrok running at: %s",
+                    tunnel["public_url"].replace("https://", "http://"),
+                )
+                logger.info(" * Traffic stats available on http://127.0.0.1:4040")
+                return
+        else:
+            logger.info("Waiting for ngrok to start...")
+
+
+def start_ngrok(port: int):
+    """
+    Start ngrok server synchronously
+    """
     command = _get_command()
     ngrok_path = str(Path(tempfile.gettempdir(), "ngrok"))
     _download_ngrok(ngrok_path)
     executable = str(Path(ngrok_path, command))
     os.chmod(executable, 0o777)
-    ngrok = subprocess.Popen([executable, "http", str(port)])
-    atexit.register(ngrok.terminate)
-    localhost_url = "http://localhost:4040/api/tunnels"  # Url with tunnel details
-    time.sleep(1)
-    tunnel_url = requests.get(localhost_url).text  # Get the tunnel information
-    j = json.loads(tunnel_url)
-
-    tunnel_url = j["tunnels"][0]["public_url"]  # Do the parsing of the get
-    tunnel_url = tunnel_url.replace("https", "http")
-    return tunnel_url
+    Thread(target=_print_url).start()
+    with subprocess.Popen([executable, "http", str(port)]) as ngrok_process:
+        ngrok_process.wait()
 
 
 def _download_ngrok(ngrok_path):
@@ -83,12 +99,3 @@ def _download_file(url):
     with open(download_path, "wb") as f:
         shutil.copyfileobj(r.raw, f)
     return download_path
-
-
-def start_ngrok(port):
-    """
-    Start ngrok server
-    """
-    ngrok_address = _run_ngrok(port)
-    logger.info(f" * Running on {ngrok_address}")
-    logger.info(" * Traffic stats available on http://127.0.0.1:4040")

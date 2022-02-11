@@ -59,12 +59,12 @@ UVICORN_LOGGING_CONFIG: t.Dict[str, t.Any] = {
 
 SCRIPT_RUNNER = """
 import bentoml._internal.server;
-bentoml._internal.server.start_prod_runner_server("{bento_identifier}", "{runner_name}", working_dir="{working_dir}", instance_id=$(CIRCUS.WID), bind="{bind}");
+bentoml._internal.server.start_prod_runner_server("{bento_identifier}", "{runner_name}", working_dir="{working_dir}", bind="{bind}");
 """
 
 SCRIPT_API_SERVER = """
 import bentoml._internal.server;
-bentoml._internal.server.start_prod_api_server("{bento_identifier}", port={port}, host="{host}", working_dir="{working_dir}", instance_id=$(CIRCUS.WID), runner_map={cmd_runner_arg}, backlog={backlog});
+bentoml._internal.server.start_prod_api_server("{bento_identifier}", port={port}, host="{host}", working_dir="{working_dir}", runner_map={cmd_runner_arg}, backlog={backlog});
 """
 
 SCRIPT_NGROK = """
@@ -74,7 +74,7 @@ bentoml._internal.server.start_ngrok_server();
 
 SCRIPT_API_SERVER_DEBUG = """
 import bentoml._internal.server;
-bentoml._internal.server.start_dev_api_server("{bento_identifier}", port={port}, host="{host}", working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID));
+bentoml._internal.server.start_dev_api_server("{bento_identifier}", port={port}, host="{host}", working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay});
 """
 
 
@@ -203,8 +203,8 @@ def serve_production(
     if not psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
-        for runner_name, runner in svc.runners.items():
-            sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
+        for runner_name in svc.runners:
+            sockets_path = os.path.join(uds_path, f"{id(runner_name)}.sock")
             assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
             bind = path_to_uri(sockets_path)
 
@@ -221,7 +221,6 @@ def serve_production(
                     name=f"runner_{runner_name}",
                     cmd=CMD(sys.executable, "-c", cmd_runner),
                     env=env,
-                    numprocesses=runner.num_replica,
                     stop_children=True,
                     working_dir=working_dir,
                 )
@@ -230,7 +229,7 @@ def serve_production(
     elif not psutil.WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
-            for runner_name, runner in svc.runners.items():
+            for runner_name in svc.runners:
                 runner_port = port_stack.enter_context(reserve_free_port())
                 bind = f"tcp://127.0.0.1:{runner_port}"
 
@@ -247,15 +246,13 @@ def serve_production(
                         name=f"runner_{runner_name}",
                         cmd=CMD(sys.executable, "-c", cmd_runner),
                         env=env,
-                        numprocesses=runner.num_replica,
                         stop_children=True,
                         working_dir=working_dir,
                     )
                 )
-
             port_stack.enter_context(
                 reserve_free_port()
-            )  # reserve one more port to avoid conflicts
+            )  # reserve one more to avoid conflicts
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
@@ -266,7 +263,6 @@ def serve_production(
         host=host,
         port=port,
         cmd_runner_arg=json.dumps(runner_bind_map),
-        runner_name="api_server",
         working_dir=working_dir,
         backlog=backlog,
     )
@@ -298,7 +294,6 @@ def start_dev_api_server(
     working_dir: t.Optional[str] = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
-    instance_id: t.Optional[int] = None,  # pylint: disable=unused-argument
 ):
     import uvicorn  # type: ignore
 
@@ -331,7 +326,6 @@ def start_prod_api_server(
     runner_map: t.Dict[str, str],
     backlog: int,
     working_dir: t.Optional[str] = None,
-    instance_id: t.Optional[int] = None,  # pylint: disable=unused-argument
 ):
     import uvicorn  # type: ignore
 
@@ -346,6 +340,7 @@ def start_prod_api_server(
         "log_config": UVICORN_LOGGING_CONFIG,
         "workers": 1,
     }
+
     uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
 
@@ -354,34 +349,44 @@ def start_prod_runner_server(
     name: str,
     bind: str,
     working_dir: t.Optional[str] = None,
-    instance_id: t.Optional[int] = None,
 ):
+    """
+    Start a runner server.
+
+    Args:
+        bento_identifier: the Bento identifier
+        name: the name of the runner
+        bind: the bind address URI. Can be:
+            - tcp://host:port
+            - unix://path/to/unix.sock
+            - file:///path/to/unix.sock
+        working_dir: the working directory
+    """
     import uvicorn  # type: ignore
 
     from bentoml._internal.server.runner_app import RunnerAppFactory
 
     svc = load(bento_identifier, working_dir=working_dir)
     runner = svc.runners[name]
-    app = RunnerAppFactory(runner, instance_id=instance_id)()
+    app = RunnerAppFactory(runner)()
 
     parsed = urlparse(bind)
-    uvicorn_options = {
-        "log_level": "info",
-        "log_config": UVICORN_LOGGING_CONFIG,
-        "workers": 1,
-    }
-    if parsed.scheme == "file":
-        uvicorn.run(
-            app,  # type: ignore
-            uds=uri_to_path(bind),
-            **uvicorn_options,
-        )
+    if parsed.scheme in ("file", "unix"):
+        uvicorn_options = {
+            "log_level": "info",
+            "log_config": UVICORN_LOGGING_CONFIG,
+            "workers": runner.num_replica,
+            "uds": uri_to_path(bind),
+        }
     elif parsed.scheme == "tcp":
-        uvicorn.run(
-            app,  # type: ignore
-            host=parsed.hostname,
-            port=parsed.port,
-            **uvicorn_options,
-        )
+        uvicorn_options = {
+            "log_level": "info",
+            "log_config": UVICORN_LOGGING_CONFIG,
+            "workers": runner.num_replica,
+            "host": parsed.hostname,
+            "port": parsed.port,
+        }
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")
+
+    uvicorn.run(app, **uvicorn_options)  # type: ignore

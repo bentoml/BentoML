@@ -1,11 +1,9 @@
 import pytest
 import requests
 import transformers.pipelines
-from transformers import set_seed
+from transformers.trainer_utils import set_seed
 
 import bentoml.transformers
-from bentoml.exceptions import BentoMLException
-from tests.utils.helpers import assert_have_file_extension
 
 set_seed(123)
 
@@ -36,79 +34,55 @@ def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
 
 
 @pytest.mark.parametrize(
-    "autoclass, exc",
-    [
-        ({"framework": "xgboost", "lm_head": "test"}, AttributeError),
-        ({"framework": "xgb", "lm_head": "test"}, AttributeError),
-        ({"framework": "pt", "lm_head": "test"}, AttributeError),
-        ({"framework": "flax", "lm_head": "ctc"}, BentoMLException),
-    ],
-)
-def test_load_autoclass(autoclass, exc):
-    with pytest.raises(exc):
-        bentoml._internal.frameworks.transformers.load_autoclass(**autoclass)
-
-
-@pytest.mark.parametrize(
-    "kwargs",
-    [
-        ({"from_tf": True, "keep_download_from_hub": True}),
-        ({"from_flax": True, "keep_download_from_hub": True}),
-    ],
-)
-def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
-    tag = bentoml.transformers.import_from_huggingface_hub(
-        model_name, model_store=modelstore, lm_head="causal", **kwargs
-    )
-    info = modelstore.get(tag)
-    try:
-        if kwargs["from_tf"]:
-            assert_have_file_extension(
-                info.path,
-                ".h5",
-            )
-    except KeyError:
-        assert_have_file_extension(
-            info.path,
-            ".msgpack",
-        )
-
-
-@pytest.mark.parametrize(
     "kwargs, framework, tensors_type",
     [
-        ({"from_tf": False, "keep_download_from_hub": True}, "pt", "pt"),
-        ({"from_tf": True, "keep_download_from_hub": True}, "tf", "tf"),
+        ({"from_tf": False}, "pt", "pt"),
+        ({"from_tf": True}, "tf", "tf"),
     ],
 )
 def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
-    tag = bentoml.transformers.import_from_huggingface_hub(
-        model_name, lm_head="causal", model_store=modelstore, **kwargs
+    model = transformers.AutoModelForSequenceClassification.from_pretrained(
+        model_name, **kwargs
     )
-    model, tokenizer = bentoml.transformers.load(
-        tag,
-        framework=framework,
-        from_tf="tf" in framework,
-        lm_head="causal",
-        model_store=modelstore,
+    tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, **kwargs)
+    tag = bentoml.transformers.save(
+        model_name, model, tokenizer=tokenizer, model_store=modelstore
+    )
+    lmodel, ltokenizer = bentoml.transformers.load(
+        tag, from_tf="tf" in framework, model_store=modelstore
     )
     assert (
-        generate_from_text(model, tokenizer, test_sentence, return_tensors=tensors_type)
+        generate_from_text(
+            lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
+        )
         == result
     )
 
 
+def test_transformers_save_load_pipeline(modelstore):
+    from PIL import Image
+
+    pipeline = transformers.pipeline("image-classification")
+    tag = bentoml.transformers.save(
+        "vit-image-classification", pipeline, model_store=modelstore
+    )
+    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+    image = Image.open(requests.get(url, stream=True).raw)
+    model, fe = bentoml.transformers.load(tag, model_store=modelstore)
+    loaded = transformers.pipeline(
+        "image-classification", model=model, feature_extractor=fe
+    )
+    res = loaded(image)
+    assert res[0]["label"] == "Egyptian cat"
+
+
 def test_transformers_runner_setup_run_batch(modelstore):
-    tag = bentoml.transformers.import_from_huggingface_hub(
-        "distilbert-base-uncased-finetuned-sst-2-english",
-        lm_head="sequence-classification",
-        model_store=modelstore,
+    pipeline = transformers.pipeline("text-classification")
+    tag = bentoml.transformers.save(
+        "text-classification-pipeline", pipeline, model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
-        tag,
-        lm_head="sequence-classification",
-        tasks="text-classification",
-        model_store=modelstore,
+        tag, "text-classification", model_store=modelstore
     )
     assert tag in runner.required_models
     assert runner.num_replica == 1
@@ -121,17 +95,12 @@ def test_transformers_runner_setup_run_batch(modelstore):
 def test_transformers_runner_pipelines_kwargs(modelstore):
     from PIL import Image
 
-    tag = bentoml.transformers.import_from_huggingface_hub(
-        "google/vit-base-patch16-224",
-        lm_head="image-classification",
-        model_store=modelstore,
+    pipeline = transformers.pipeline("image-classification")
+    tag = bentoml.transformers.save(
+        "vit-image-classification", pipeline, model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
-        tag,
-        tasks="image-classification",
-        lm_head="image-classification",
-        device=-1,
-        model_store=modelstore,
+        tag, "image-classification", device=-1, model_store=modelstore
     )
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)

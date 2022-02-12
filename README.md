@@ -21,7 +21,7 @@ reporting issues, contribute to the documentation and create sample gallery proj
 
 - The easiest way to turn your ML models into production-ready API endpoints.
 - High performance model serving, all in Python.
-- Standardlize model packaging and ML service definition to streamline deployment.
+- Standardize model packaging and ML service definition to streamline deployment.
 - Support all major machine-learning training [frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html).
 - Deploy and operate ML serving workload at scale on Kubernetes via [Yatai](https://github.com/bentoml/yatai).
 

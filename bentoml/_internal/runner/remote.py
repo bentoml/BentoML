@@ -27,6 +27,13 @@ class RemoteRunnerClient(RunnerImpl):
     _loop: t.Optional[asyncio.AbstractEventLoop] = None
     _addr: t.Optional[str] = None
 
+    def shutdown(self) -> None:
+        if self._conn:
+            self._conn.close()
+
+    def __del__(self) -> None:
+        self.shutdown()
+
     @inject
     def _get_conn(
         self,

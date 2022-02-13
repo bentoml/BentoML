@@ -223,7 +223,7 @@ def serve_production(
                 f"{backlog}",
             ],
             copy_env=True,
-            numprocesses=2,
+            numprocesses=app_workers or 1,
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,

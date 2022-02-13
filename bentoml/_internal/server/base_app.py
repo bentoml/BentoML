@@ -62,8 +62,8 @@ class BaseAppFactory(abc.ABC):
             debug=get_debug_mode(),
             routes=self.routes,
             middleware=self.middlewares,
-            on_shutdown=self.on_shutdown,
             on_startup=self.on_startup,
+            on_shutdown=self.on_shutdown,
         )
 
     @property

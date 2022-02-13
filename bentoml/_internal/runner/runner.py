@@ -218,6 +218,9 @@ class RunnerImpl:
     def setup(self) -> None:
         pass
 
+    def shutdown(self) -> None:
+        pass
+
     @abstractmethod
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...

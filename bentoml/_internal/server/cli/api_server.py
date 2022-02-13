@@ -1,3 +1,4 @@
+import json
 import socket
 import typing as t
 from typing import TYPE_CHECKING
@@ -31,8 +32,6 @@ def main(
 
     log_level = "info"
     if runner_map is not None:
-        import json
-
         from ...configuration.containers import DeploymentContainer
 
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))

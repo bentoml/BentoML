@@ -9,16 +9,17 @@ from simple_di import Provide
 
 from .configuration import get_debug_mode
 from .configuration.containers import BentoMLContainer
-# from .server.service_app import ServiceContext
+from .tracing import ServiceContext
 
 
-# class TraceFilter(Filter):
+class TraceFilter(Filter):
 
-#     def filter(self, record):
-#         record.span_id = ServiceContext.span_id
-#         record.trace_id = ServiceContext.trace_id
-#         record.request_id = ServiceContext.request_id
-#         return Filter.filter(self, record)
+    def filter(self, record):
+        record.span_id = ServiceContext.span_id
+        record.trace_id = ServiceContext.trace_id
+        record.request_id = ServiceContext.request_id
+        record.dummy = "DOO DOOO DOOOOO"
+        return Filter.filter(self, record)
 
 
 def get_logging_config_dict(
@@ -38,6 +39,7 @@ def get_logging_config_dict(
             {
                 "console": {
                     "level": logging_level,
+                    "filters": ["tracing"],
                     "formatter": "console",
                     "class": "rich.logging.RichHandler",
                     "rich_tracebacks": True,
@@ -53,6 +55,7 @@ def get_logging_config_dict(
             {
                 "local": {
                     "level": logging_level,
+                    "filters": ["tracing"],
                     "class": "logging.handlers.RotatingFileHandler",
                     "filename": os.path.join(base_log_directory, "active.log"),
                     "maxBytes": 100 * MEGABYTES,
@@ -82,7 +85,7 @@ def get_logging_config_dict(
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "console": {"format": "%(message)s", "datefmt": "[%X]"},
+            "console": {"format": "[%(trace_id)s] [%(span_id)s] %(message)s", "datefmt": "[%X]"},
             "prediction": {
                 "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "format": "%(request_id)s %(request)s %(response)s",
@@ -90,6 +93,11 @@ def get_logging_config_dict(
             "feedback": {
                 "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "format": "%(request_id)s %(data)s",
+            },
+        },
+        "filters": {
+            "tracing": {
+                "()": "bentoml._internal.log.TraceFilter",
             },
         },
         "handlers": handlers,

@@ -36,7 +36,6 @@ def main(
             - unix://path/to/unix.sock
             - file:///path/to/unix.sock
             - fd://12
-            * Note: the fd:// scheme is only supported on Unix systems.
         working_dir: (Optional) the working directory
     """
 

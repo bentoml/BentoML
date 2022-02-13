@@ -26,24 +26,6 @@ SCRIPT_DEV_API_SERVER = "bentoml._internal.server.entrypoint.dev_api_server"
 SCRIPT_NGROK = "bentoml._internal.server.entrypoint.ngrok"
 
 
-def CMD(*args: t.Optional[str]) -> str:
-    """
-    Wrap a command for different OS.
-    """
-    cmd = " ".join([arg for arg in args if arg is not None])
-    print(cmd)
-    return cmd
-
-
-def escape_for_cmd(s: str) -> str:
-    """
-    Escape a string for use in a posix shell/windows batch command.
-    """
-    assert "'" not in s, "String cannot contain single quotes"
-    s = s.replace('"', '"')
-    return f"'{s}'"
-
-
 @inject
 def _ensure_prometheus_dir(
     prometheus_multiproc_dir: str = Provide[
@@ -157,16 +139,16 @@ def serve_production(
             watchers.append(
                 Watcher(
                     name=f"runner_{runner_name}",
-                    cmd=CMD(
-                        sys.executable,
+                    cmd=sys.executable,
+                    args=[
                         "-m",
                         SCRIPT_RUNNER,
                         bento_identifier,
                         runner_name,
                         f"fd://$(circus.sockets.{runner_name})",
                         "--working-dir",
-                        escape_for_cmd(working_dir),
-                    ),
+                        working_dir,
+                    ],
                     copy_env=True,
                     stop_children=True,
                     working_dir=working_dir,
@@ -193,16 +175,16 @@ def serve_production(
                 watchers.append(
                     Watcher(
                         name=f"runner_{runner_name}",
-                        cmd=CMD(
-                            sys.executable,
+                        cmd=sys.executable,
+                        args=[
                             "-m",
                             SCRIPT_RUNNER,
                             bento_identifier,
                             runner_name,
                             f"fd://$(circus.sockets.{runner_name})",
                             "--working-dir",
-                            escape_for_cmd(working_dir),
-                        ),
+                            working_dir,
+                        ],
                         copy_env=True,
                         stop_children=True,
                         use_sockets=True,

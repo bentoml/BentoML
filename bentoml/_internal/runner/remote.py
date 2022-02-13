@@ -64,13 +64,6 @@ class RemoteRunnerClient(RunnerImpl):
                 )
                 self._addr = "http://127.0.0.1:8000"  # addr doesn't matter with UDS
             elif parsed.scheme == "tcp":
-                try:
-                    host, port = parsed.netloc.split(":")
-                except IndexError:
-                    raise ValueError(
-                        f"Invalid bind address: {bind_uri}. "
-                        "Please specify the host and port as host:port."
-                    )
                 self._conn = aiohttp.TCPConnector(
                     loop=self._loop,
                     limit=self._runner.batch_options.max_batch_size * 2,
@@ -79,7 +72,7 @@ class RemoteRunnerClient(RunnerImpl):
                     * 1000
                     * 10,
                 )
-                self._addr = f"http://{host}:{port}"
+                self._addr = f"http://{parsed.netloc}"
             else:
                 raise ValueError(f"Unsupported bind scheme: {parsed.scheme}")
         return self._conn

@@ -20,10 +20,10 @@ from ..configuration.containers import DeploymentContainer
 
 logger = logging.getLogger(__name__)
 
-SCRIPT_RUNNER = "bentoml._internal.server.entrypoint.runner"
-SCRIPT_API_SERVER = "bentoml._internal.server.entrypoint.api_server"
-SCRIPT_DEV_API_SERVER = "bentoml._internal.server.entrypoint.dev_api_server"
-SCRIPT_NGROK = "bentoml._internal.server.entrypoint.ngrok"
+SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
+SCRIPT_API_SERVER = "bentoml._internal.server.cli.api_server"
+SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
+SCRIPT_NGROK = "bentoml._internal.server.cli.ngrok"
 
 
 @inject
@@ -200,6 +200,12 @@ def serve_production(
 
     logger.debug("Runner map: %s", runner_bind_map)
 
+    circus_socket_map["_bento_api_server"] = CircusSocket(
+        name="_bento_api_server",
+        host=host,
+        port=port,
+        backlog=backlog,
+    )
     watchers.append(
         Watcher(
             name="api_server",
@@ -208,7 +214,7 @@ def serve_production(
                 "-m",
                 SCRIPT_API_SERVER,
                 bento_identifier,
-                f"tcp://{host}:{port}",
+                "fd://$(circus.sockets._bento_api_server)",
                 "--runner-map",
                 json.dumps(runner_bind_map),
                 "--working-dir",
@@ -217,7 +223,7 @@ def serve_production(
                 f"{backlog}",
             ],
             copy_env=True,
-            numprocesses=app_workers or 1,
+            numprocesses=2,
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,

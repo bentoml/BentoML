@@ -79,11 +79,11 @@ def serve_development(
         watchers.append(
             Watcher(
                 name="ngrok",
-                cmd=CMD(
-                    sys.executable,
+                cmd=sys.executable,
+                args=[
                     "-m",
                     SCRIPT_NGROK,
-                ),
+                ],
                 copy_env=True,
                 numprocesses=1,
                 stop_children=True,
@@ -94,18 +94,16 @@ def serve_development(
     watchers.append(
         Watcher(
             name="api_server",
-            cmd=CMD(
-                sys.executable,
+            cmd=sys.executable,
+            args=[
                 "-m",
                 SCRIPT_DEV_API_SERVER,
                 bento_identifier,
                 f"tcp://{host}:{port}",
                 "--working-dir",
-                escape_for_cmd(working_dir),
-                "--reload" if reload else None,
-                "--reload-delay",
-                f"{reload_delay}",
-            ),
+                working_dir,
+            ]
+            + (["--reload", "--reload-delay", f"{reload_delay}"] if reload else []),
             copy_env=True,
             numprocesses=1,
             stop_children=True,
@@ -223,19 +221,19 @@ def serve_production(
     watchers.append(
         Watcher(
             name="api_server",
-            cmd=CMD(
-                sys.executable,
+            cmd=sys.executable,
+            args=[
                 "-m",
                 SCRIPT_API_SERVER,
                 bento_identifier,
                 f"tcp://{host}:{port}",
                 "--runner-map",
-                escape_for_cmd(json.dumps(runner_bind_map)),
+                json.dumps(runner_bind_map),
                 "--working-dir",
-                escape_for_cmd(working_dir),
+                working_dir,
                 "--backlog",
                 f"{backlog}",
-            ),
+            ],
             copy_env=True,
             numprocesses=app_workers or 1,
             stop_children=True,

@@ -9,8 +9,8 @@ WINDOWS_PATHS = [
     r"C:\foo\bar with space",
     r"C:\\foo\\中文",
     r"relative\path",
-    r"\\localhost\c$\WINDOWS\network",
-    r"\\networkstorage\homes\user",
+    # r"\\localhost\c$\WINDOWS\network",
+    # r"\\networkstorage\homes\user",
 ]
 POSIX_PATHS = ["/foo/bar", "/foo/bar with space", "/foo/中文", "relative/path"]
 

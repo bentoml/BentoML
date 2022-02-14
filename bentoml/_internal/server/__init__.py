@@ -17,6 +17,7 @@ from bentoml._internal.utils.uri import path_to_uri
 from bentoml._internal.utils.circus import create_standalone_arbiter
 
 from ..configuration.containers import DeploymentContainer
+from ..log import LOGGING_CONFIG
 
 logger = logging.getLogger(__name__)
 

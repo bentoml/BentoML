@@ -14,7 +14,7 @@ from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 from ..configuration.containers import DeploymentContainer
 from ..io_descriptors.multipart import Multipart
-from ..tracing import ServiceContext
+from ..trace import ServiceContext
 
 if TYPE_CHECKING:
     from starlette.routing import BaseRoute
@@ -325,15 +325,7 @@ class ServiceAppFactory(BaseAppFactory):
             request: "Request",
         ) -> "Response":
             # handle_request may raise 4xx or 5xx exception.
-            import time
-            start = time.perf_counter()
             try:
-                logger.info({
-                    "method": request.method,
-                    "url": request.url,
-                    "headers": request.headers,
-                    "payload": await request.body(),
-                })
                 input_data = await api.input.from_http_request(request)
                 if asyncio.iscoroutinefunction(api.func):
                     if isinstance(api.input, Multipart):
@@ -365,20 +357,6 @@ class ServiceAppFactory(BaseAppFactory):
                     "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
                     status_code=500,
                 )
-            logger.info({
-                "status": 200,
-                "headers": response.headers,
-                "body": response.body,
-            })
-            end = time.perf_counter()
-            logger.info(
-                "(scheme=%s,method=%s,path=%s) (status=%d,length=%d) %3fms",
-                request.url.scheme,
-                request.method,
-                request.url.path,
-                200,
-                1,
-                end-start)
             return response
 
         return api_func

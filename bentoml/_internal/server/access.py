@@ -29,6 +29,11 @@ response_content_type: ContextVar[bytes] = ContextVar(
 
 
 class AccessLogMiddleware(Middleware):
+    """
+    ASGI Middleware implementation that intercepts and decorates the send
+    and receive callables to generate the BentoML access log.
+    """
+
     def __init__(self, app: "ext.ASGIApp", fields: List[str] = []) -> None:
         self.app = app
         self.fields = fields
@@ -68,23 +73,27 @@ class AccessLogMiddleware(Middleware):
                             response_content_type.set(value)
 
             elif message["type"] == "http.response.body":
-                
+
                 request = [f"scheme={scheme}",
                            f"method={method}", f"path={path}"]
                 if REQ_CONTENT_TYPE in self.fields:
-                    request.append(f"type={request_content_type.get().decode()}")
+                    request.append(
+                        f"type={request_content_type.get().decode()}")
                 if REQ_CONTENT_LENGTH in self.fields:
-                    request.append(f"length={request_content_length.get().decode()}")
-                           
+                    request.append(
+                        f"length={request_content_length.get().decode()}")
+
                 response = [f"status={status.get()}"]
                 if RESP_CONTENT_TYPE in self.fields:
-                    response.append(f"type={response_content_type.get().decode()}")
+                    response.append(
+                        f"type={response_content_type.get().decode()}")
                 if RESP_CONTENT_LENGTH in self.fields:
-                    response.append(f"length={response_content_length.get().decode()}")
+                    response.append(
+                        f"length={response_content_length.get().decode()}")
 
                 latency = max(default_timer() - start, 0)
 
-                self.logger.info("%s (%s) (%s) %.3fms", client, ",".join(
+                self.logger.info("%s:%s (%s) (%s) %.3fms", client[0], client[1], ",".join(
                     request), ",".join(response), latency)
 
             await send(message)

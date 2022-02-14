@@ -501,7 +501,7 @@ def load_runner(
 
     Examples:
 
-    .. code-tab:: python
+    .. code-block:: python
 
         import bentoml
 

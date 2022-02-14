@@ -12,6 +12,7 @@ comment:
 ignore:
   - "bentoml/testing/**/*"
   - "bentoml/_internal/types.py"
+  - "bentoml/_internal/external_typing/**/*"
   - "bentoml/__main__.py"
   - "bentoml/build_utils.py"
   - "bentoml/io.py"

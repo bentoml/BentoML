@@ -5,7 +5,7 @@ import click
 
 from bentoml import load
 
-from .common import UVICORN_LOGGING_CONFIG
+from ...log import LOGGING_CONFIG
 
 
 @click.command()
@@ -36,7 +36,7 @@ def main(
             "log_level": log_level,
             "reload": reload,
             "reload_delay": reload_delay,
-            "log_config": UVICORN_LOGGING_CONFIG,
+            "log_config": LOGGING_CONFIG,
             "workers": 1,
         }
 

@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
-from .common import UVICORN_LOGGING_CONFIG
+from ...log import LOGGING_CONFIG
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -50,7 +50,7 @@ def main(
     parsed = urlparse(bind)
     uvicorn_options = {
         "log_level": "info",
-        "log_config": UVICORN_LOGGING_CONFIG,
+        "log_config": LOGGING_CONFIG,
         "workers": 1,
     }
     if parsed.scheme in ("file", "unix"):

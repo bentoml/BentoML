@@ -15,15 +15,6 @@ Users can now save any given python method or object as a loadable model in Bent
    model = MyPicklableModel()
    tag = bentoml.picklable_model.save('mypicklablemodel', model, batch=False, method="predict")
 
-   # Or load save a model which takes in a batch of values to take advantage of BentoML's adaptive batching
-   # class MyPicklableModelBatch:
-   #         def predict(self, some_integers: t.List[int]):
-   #             return list(map(lambda x: x ** 2, some_integers))
-   #
-   # model = MyPicklableModel()
-   # tag = bentoml.picklable_model.save('mypicklablemodel', model, batch=True, method="predict")
-
-
    # retrieve metadata with `bentoml.models.get`:
    metadata = bentoml.models.get(tag)
 

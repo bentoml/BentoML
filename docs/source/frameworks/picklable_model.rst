@@ -43,7 +43,7 @@ Users can also save models which take advantage of BentoML's adaptive batching c
    runner = bentoml.picklable_model.load_runner(tag)
 
    # runner is sent an array of values in batch mode for inference
-   runner.run([7, 6, 8])
+   runner.run_batch([7, 6, 8])
 
 .. note::
 

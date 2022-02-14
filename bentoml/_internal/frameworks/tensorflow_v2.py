@@ -66,7 +66,7 @@ if TYPE_CHECKING:
     from ..models import ModelStore
     from ..external_typing import tensorflow as tf_ext
 
-    TFArgType = t.Union[t.List[t.Union[int, float]], "ext.NpNDArray", "tf_ext.Tensor"]
+    TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
 MODULE_NAME = "bentoml.tensorflow_v2"
 
@@ -81,24 +81,24 @@ def _clean_name(name: str) -> str:  # pragma: no cover
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
-    tfhub_tags: t.Optional[t.List[str]] = None,
-    tfhub_options: t.Optional["tf_ext.SaveOptions"] = None,
-    load_as_wrapper: t.Optional[bool] = None,
+    bento_tag: t.Union[str, Tag],
+    tags: t.Optional[t.List[str]] = None,
+    options: t.Optional["tf_ext.SaveOptions"] = None,
+    load_as_hub_module: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Union["tf_ext.AutoTrackable", "tf_ext.Module", "HubModule", "KerasLayer"]:
     """
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
+        bento_tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        tfhub_tags (:code:`str`, `optional`, defaults to `None`):
+        tags (:code:`str`, `optional`, defaults to `None`):
             A set of strings specifying the graph variant to use, if loading from a v1 module.
-        tfhub_options (:code:`tensorflow.saved_model.SaveOptions`, `optional`, default to :code:`None`):
+        options (:code:`tensorflow.saved_model.SaveOptions`, `optional`, default to :code:`None`):
             :code:`tensorflow.saved_model.LoadOptions` object that specifies options for loading. This
             argument can only be used from TensorFlow 2.3 onwards.
-        load_as_wrapper (`bool`, `optional`, default to :code:`True`):
+        load_as_hub_module (`bool`, `optional`, default to :code:`True`):
             Load the given weight that is saved from tfhub as either `hub.KerasLayer` or `hub.Module`.
             The latter only applies for TF1.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -109,37 +109,27 @@ def load(
 
     Examples:
 
-    .. tabs::
+    .. code-block:: python
 
-        .. code-tab:: tensorflow_v2
+        import bentoml
 
-            import bentoml
-
-            # load a model back into memory
-            model = bentoml.tensorflow.load("my_tensorflow_model")
-
-        .. code-tab:: tensorflow_v1
-
-            import bentoml
-
-            # load a model back into memory
-            model = bentoml.tensorflow_v1.load("my_tensorflow_model")
-
+        # load a model back into memory
+        model = bentoml.tensorflow.load("my_tensorflow_model")
 
     """  # noqa: LN001
-    model = model_store.get(tag)
+    model = model_store.get(bento_tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bento_tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
     if model.info.context["import_from_tfhub"]:
-        assert load_as_wrapper is not None, (
-            "You have to specified `load_as_wrapper=True | False`"
+        assert load_as_hub_module is not None, (
+            "You have to specified `load_as_hub_module=True | False`"
             " to load a `tensorflow_hub` module. If True is chosen,"
             " then BentoML will return either an instance of `hub.KerasLayer`"
             " or `hub.Module` depending on your TF version. For most usecase,"
-            " we recommend to keep `load_as_wrapper=True`. If you wish to extend"
-            " the functionalities of the given model, set `load_as_wrapper=False`"
+            " we recommend to keep `load_as_hub_module=True`. If you wish to extend"
+            " the functionalities of the given model, set `load_as_hub_module=False`"
             " will return a SavedModel object."
         )
 
@@ -152,7 +142,7 @@ def load(
             )
 
         module_path = model.path_of(model.info.options["local_path"])
-        if load_as_wrapper:
+        if load_as_hub_module:
             return (
                 hub.Module(module_path)
                 if get_tf_version().startswith("1")
@@ -163,14 +153,14 @@ def load(
         is_hub_module_v1: bool = tf.io.gfile.exists(
             native_module.get_module_proto_path(module_path)
         )
-        if tfhub_tags is None and is_hub_module_v1:
-            tfhub_tags = []
-        if tfhub_options is not None:
+        if tags is None and is_hub_module_v1:
+            tags = []
+        if options is not None:
             if not LazyType(
                 "tensorflow.python.saved_model.save_options.SaveOptions"
-            ).isinstance(tfhub_options):
+            ).isinstance(options):
                 raise BentoMLException(
-                    f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
+                    f"`options` has to be of type `tf.saved_model.SaveOptions`, got {type(options)} instead."
                 )
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
@@ -178,11 +168,11 @@ def load(
                     f" Current version: {get_tf_version()}"
                 )
             tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
-                module_path, tags=tfhub_tags, options=tfhub_options
+                module_path, tags=tags, options=options
             )
         else:
             tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(
-                module_path, tags=tfhub_tags
+                module_path, tags=tags
             )
         tf_model._is_hub_module_v1 = (
             is_hub_module_v1  # pylint: disable=protected-access # noqa
@@ -208,6 +198,8 @@ def import_from_tfhub(
             two type of inputs:
                 - if `type` of :code:`identifier` either of type :code:`tensorflow_hub.Module` (**legacy** `tensorflow_hub`) or :code:`tensorflow_hub.KerasLayer` (`tensorflow_hub`), then we will save the given model to a :code:`SavedModel` format.
                 - if `type` of :code:`identifier` is a :obj:`str`, we assume that this is the URI retrieved from Tensorflow Hub. We then clean the given URI, and get a local copy of a given model to BentoML modelstore. name (:code:`str`, `optional`, defaults to `None`): An optional name for the model. If :code:`identifier` is a :obj:`str`, then name can be autogenerated from the given URI.
+        name (:code:`str`, `optional`, default to `None`):
+            Optional name for the saved model. If None, then name will be generated from :code:`identifier`.
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -218,74 +210,38 @@ def import_from_tfhub(
 
     Example for importing a model from Tensorflow Hub:
 
-    .. tabs::
+    .. code-block:: python
 
-        .. code-tab:: tensorflow_v2
+        import tensorflow_text as text # noqa # pylint: disable
+        import bentoml
 
-            import tensorflow_text as text # noqa # pylint: disable
-            import bentoml
+        tag = bentoml.tensorflow.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
 
-            tag = bentoml.tensorflow.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
-
-            # load model back with `load`:
-            model = bentoml.tensorflow.load(tag, load_as_wrapper=True)
-
-        .. code-tab:: tensorflow_v1
-
-            import bentoml
-
-            tag = bentoml.tensorflow_v1.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
-
-            # load model back with `load`:
-            model = bentoml.tensorflow_v1.load(tag, load_as_wrapper=True)
+        # load model back with `load`:
+        model = bentoml.tensorflow.load(tag, load_as_hub_module=True)
 
 
     Example for importing a custom Tensorflow Hub model:
 
-    .. tabs::
+    .. code-block:: python
 
-        .. code-tab:: tensorflow_v1
+        import tensorflow as tf
+        import tensorflow_hub as hub
+        import bentoml
 
-            import tensorflow as tf
-            import tensorflow_hub as hub
-            import bentoml
+        def _plus_one_model_tf2():
+            obj = tf.train.Checkpoint()
 
-            # Simple toy Tensorflow Hub model
-            def _plus_one_model_tf1():
-                def plus_one():
-                    x = tf.compat.v1.placeholder(dtype=tf.float32, name="x")
-                    y = x + 1
-                    hub.add_signature(inputs=x, outputs=y)
+            @tf.function(input_signature=[tf.TensorSpec(None, dtype=tf.float32)])
+            def plus_one(x):
+                return x + 1
 
-                spec = hub.create_module_spec(plus_one)
-                with tf.compat.v1.get_default_graph().as_default():
-                    module = hub.Module(spec, trainable=True)
-                    return module
+            obj.__call__ = plus_one
+            return obj
 
-            model = _plus_one_model_tf1()
-
-            # retrieve the given tag:
-            tag = bentoml.tensorflow.import_from_tfhub(model)
-
-        .. code-tab:: tensorflow_v2
-
-            import tensorflow as tf
-            import tensorflow_hub as hub
-            import bentoml
-
-            def _plus_one_model_tf2():
-                obj = tf.train.Checkpoint()
-
-                @tf.function(input_signature=[tf.TensorSpec(None, dtype=tf.float32)])
-                def plus_one(x):
-                    return x + 1
-
-                obj.__call__ = plus_one
-                return obj
-
-            # then save the given model to BentoML modelstore:
-            model = _plus_one_model_tf2()
-            tag = bentoml.tensorflow.import_from_tfhub(model)
+        # then save the given model to BentoML modelstore:
+        model = _plus_one_model_tf2()
+        tag = bentoml.tensorflow.import_from_tfhub(model)
     """  # noqa
     if hub is None:
         raise MissingDependencyException(
@@ -315,10 +271,13 @@ def import_from_tfhub(
         metadata=metadata,
     )
     if isinstance(identifier, str):
+        current_cache_dir = os.environ.get("TFHUB_CACHE_DIR")
         os.environ["TFHUB_CACHE_DIR"] = _model.path
         fpath: str = resolve(identifier)
         folder = fpath.split("/")[-1]
         _model.info.options = {"model": identifier, "local_path": folder}
+        if current_cache_dir is not None:
+            os.environ["TFHUB_CACHE_DIR"] = current_cache_dir
     else:
         if hasattr(identifier, "export"):
             # hub.Module.export()
@@ -372,72 +331,27 @@ def save(
 
     Examples:
 
-    .. tabs::
+    .. code-block:: python
 
-        .. code-tab:: tensorflow_v1
+        import tensorflow as tf
+        import numpy as np
+        import bentoml
 
-            import tensorflow as tf
-            import tempfile
-            import bentoml
+        class NativeModel(tf.Module):
+            def __init__(self):
+                super().__init__()
+                self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
+                self.dense = lambda inputs: tf.matmul(inputs, self.weights)
 
-            location = ""
+            @tf.function(
+                input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="inputs")]
+            )
+            def __call__(self, inputs):
+                return self.dense(inputs)
 
-            # Function below builds model graph
-            def cnn_model_fn():
-                X = tf.compat.v1.placeholder(shape=[None, 2], dtype=tf.float32, name="X")
-
-                # dense layer
-                inter1 = tf.compat.v1.layers.dense(inputs=X, units=1, activation=tf.nn.relu)
-                p = tf.argmax(input=inter1, axis=1)
-
-                # loss
-                y = tf.compat.v1.placeholder(tf.float32, shape=[None, 1], name="y")
-                loss = tf.losses.softmax_cross_entropy(y, inter1)
-
-                # training operation
-                train_op = tf.compat.v1.train.AdamOptimizer().minimize(loss)
-
-                return {"p": p, "loss": loss, "train_op": train_op, "X": X, "y": y}
-
-            cnn_model = cnn_model_fn()
-
-            with tempfile.TemporaryDirectory() as temp_dir:
-                with tf.compat.v1.Session() as sess:
-                    sess.run(tf.compat.v1.global_variables_initializer())
-                    sess.run(cnn_model["p"], {cnn_model["X"]: test_data})
-
-                    inputs = {"X": cnn_model["X"]}
-                    outputs = {"prediction": cnn_model["p"]}
-
-                    tf.compat.v1.saved_model.simple_save(
-                        sess, temp_dir, inputs=inputs, outputs=outputs
-                    )
-                    location = temp_dir
-
-            # then save the given model to BentoML modelstore:
-            tag = bentoml.tensorflow.save("cnn_model", location)
-
-        .. code-tab:: tensorflow_v2
-
-            import tensorflow as tf
-            import numpy as np
-            import bentoml
-
-            class NativeModel(tf.Module):
-                def __init__(self):
-                    super().__init__()
-                    self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
-                    self.dense = lambda inputs: tf.matmul(inputs, self.weights)
-
-                @tf.function(
-                    input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="inputs")]
-                )
-                def __call__(self, inputs):
-                    return self.dense(inputs)
-
-            # then save the given model to BentoML modelstore:
-            model = NativeModel()
-            tag = bentoml.tensorflow.save("native_toy", model)
+        # then save the given model to BentoML modelstore:
+        model = NativeModel()
+        tag = bentoml.tensorflow.save("native_toy", model)
 
     .. note::
 
@@ -458,7 +372,7 @@ def save(
         metadata=metadata,
     )
 
-    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType] # noqa
+    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType]
         assert os.path.isdir(model)
         copy_tree(str(model), _model.path)
     else:
@@ -538,10 +452,7 @@ class _TensorflowRunner(Runner):
 
             def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
                 if not LazyType["tf_ext.TensorLike"]("tf.Tensor").isinstance(item):
-                    return t.cast(
-                        "tf_ext.TensorLike",
-                        tf.convert_to_tensor(item, dtype=tf.float32),
-                    )
+                    return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
                 else:
                     return item
 
@@ -590,27 +501,15 @@ def load_runner(
 
     Examples:
 
-    .. tabs::
+    .. code-tab:: python
 
-        .. code-tab:: tensorflow_v2
+        import bentoml
 
-            import bentoml
+        # load a runner from a given flag
+        runner = bentoml.tensorflow.load_runner(tag)
 
-            # load a runner from a given flag
-            runner = bentoml.tensorflow.load_runner(tag)
-
-            # load a runner on GPU:0
-            runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
-
-        .. code-tab:: tensorflow_v1
-
-            import bentoml
-
-            # load a runner from a given flag
-            runner = bentoml.tensorflow_v1.load_runner(tag)
-
-            # load a runner on GPU:0
-            runner = bentoml.tensorflow_v1.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
+        # load a runner on GPU:0
+        runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
 
     """  # noqa
     tag = Tag.from_taglike(tag)

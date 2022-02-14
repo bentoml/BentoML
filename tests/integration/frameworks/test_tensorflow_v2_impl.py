@@ -159,6 +159,6 @@ def test_import_from_tfhub(
     model = modelstore.get(tag)
     assert model.info.context["import_from_tfhub"]
     module = bentoml.tensorflow.load(
-        tag, tfhub_tags=tags, load_as_wrapper=wrapped, model_store=modelstore
+        tag, tags=tags, load_as_hub_module=wrapped, model_store=modelstore
     )
     assert module._is_hub_module_v1 == is_module_v1  # pylint: disable

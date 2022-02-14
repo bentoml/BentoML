@@ -118,10 +118,13 @@ def check_tensor_spec(
     :code:`isinstance` wrapper to check spec for a given tensor.
 
     Args:
-        tensor (`Union[tf.Tensor, tf.EagerTensor, tf.SparseTensor, tf.RaggedTensor]`):
+        tensor (:code:`Union[tf.Tensor, tf.EagerTensor, tf.SparseTensor, tf.RaggedTensor]`):
             tensor class to check.
-        tensor_spec (`Union[str, Tuple[str,...]]`):
+        tensor_spec (:code:`Union[str, Tuple[str,...]]`):
             class used to check with :obj:`tensor`. Follows :obj:`TENSOR_CLASS_NAME`
+        class_name (:code:`str`, `optional`, default to :code:`None`):
+            Optional class name to pass for correct path of tensor spec. If none specified,
+            then :code:`class_name` will be determined via given spec class.
 
     Returns:
         `bool` if given tensor match a given spec.
@@ -246,7 +249,9 @@ def get_serving_default_function(m: "tf_ext.Trackable") -> "tf_ext.ConcreteFunct
     if func is not None:
         return func
     raise BentoMLException(
-        "Given Trackable objects doesn't contain a default functions from SignatureMap. Most likely Tensorflow internal error."
+        "Given Trackable objects doesn't contain a"
+        " default functions from SignatureMap."
+        " Most likely Tensorflow internal error."
     )
 
 

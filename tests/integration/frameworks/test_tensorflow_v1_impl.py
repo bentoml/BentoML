@@ -187,6 +187,6 @@ def test_import_from_tfhub(modelstore: "ModelStore"):
     model = modelstore.get(tag)
     assert model.info.context["import_from_tfhub"]
     module = bentoml.tensorflow_v1.load(
-        tag, tfhub_tags=[], load_as_wrapper=False, model_store=modelstore
+        tag, tags=[], load_as_hub_module=False, model_store=modelstore
     )
     assert module._is_hub_module_v1 is True

@@ -61,6 +61,7 @@ class RunnerAppFactory(BaseAppFactory):
     @property
     def on_shutdown(self) -> t.List[t.Callable[[], None]]:
         on_shutdown = super().on_shutdown
+        on_shutdown.insert(0, self.runner._impl.shutdown)  # type: ignore[reportPrivateUsage]
         if self.dispatcher is not None:
             on_shutdown.insert(0, self.dispatcher.shutdown)
         return on_shutdown

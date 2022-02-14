@@ -1,5 +1,6 @@
 import os
 import uuid
+import random
 import socket
 import typing as t
 import functools
@@ -92,12 +93,32 @@ class catch_exceptions(t.Generic[_T_co], object):
 
 
 @contextlib.contextmanager
-def reserve_free_port(host: str = "localhost") -> t.Iterator[int]:
+def reserve_free_port(
+    host: str = "localhost",
+    prefix: t.Optional[str] = None,
+    max_retry: int = 50,
+) -> t.Iterator[int]:
     """
     detect free port and reserve until exit the context
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((host, 0))
+    if prefix is not None:
+        prefix_num = int(prefix) * 10 ** (5 - len(prefix))
+        suffix_range = min(65535 - prefix_num, 10 ** (5 - len(prefix)))
+        for _ in range(max_retry):
+            suffix = random.randint(0, suffix_range)
+            port = int(f"{prefix_num + suffix}")
+            try:
+                sock.bind((host, port))
+                break
+            except OSError:
+                continue
+        else:
+            raise RuntimeError(
+                f"cannot find free port with prefix {prefix} after {max_retry} retries"
+            )
+    else:
+        sock.bind((host, 0))
     port = sock.getsockname()[1]
     yield port
     sock.close()

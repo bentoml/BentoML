@@ -8,6 +8,7 @@ from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
 from ...log import LOGGING_CONFIG
+from ...trace import ServiceContext
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -29,6 +30,8 @@ def main(
     working_dir: t.Optional[str] = None,
 ):
     import uvicorn  # type: ignore
+
+    ServiceContext.component_name_var.set("api_server")
 
     log_level = "info"
     if runner_map is not None:

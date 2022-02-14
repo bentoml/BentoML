@@ -6,6 +6,7 @@ import click
 from bentoml import load
 
 from ...log import LOGGING_CONFIG
+from ...trace import ServiceContext
 
 
 @click.command()
@@ -24,6 +25,8 @@ def main(
     import uvicorn  # type: ignore
 
     from ...configuration import get_debug_mode
+
+    ServiceContext.component_name_var.set("dev_api_server")
 
     parsed = urlparse(bind)
 

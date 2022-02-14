@@ -7,6 +7,7 @@ from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
 from ...log import LOGGING_CONFIG
+from ...trace import ServiceContext
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -42,6 +43,8 @@ def main(
     import uvicorn  # type: ignore
 
     from bentoml._internal.server.runner_app import RunnerAppFactory
+
+    ServiceContext.component_name_var.set(runner_name)
 
     svc = load(bento_identifier, working_dir=working_dir)
     runner = svc.runners[runner_name]

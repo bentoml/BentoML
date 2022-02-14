@@ -20,6 +20,7 @@ class TraceFilter(Filter):
         record.trace_id = ServiceContext.trace_id
         record.span_id = ServiceContext.span_id
         record.request_id = ServiceContext.request_id
+        record.component = ServiceContext.component_name
         return Filter.filter(self, record)
 
 
@@ -31,9 +32,9 @@ class TraceFormatter(Formatter):
     """
 
     def __init__(self):
-        Formatter.__init__(self, fmt="[%(trace_id)s] [%(span_id)s] %(message)s", datefmt="[%X]")
-        self.control_formmater = Formatter("%(message)s")
-        self.trace_formatter = Formatter("[%(trace_id)s] [%(span_id)s] %(message)s")
+        Formatter.__init__(self, fmt="[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s", datefmt="[%X]")
+        self.control_formmater = Formatter("[%(component)s] %(message)s")
+        self.trace_formatter = Formatter("[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s")
 
     def format(self, record):
         if record.trace_id == 0:

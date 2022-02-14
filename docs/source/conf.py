@@ -81,7 +81,6 @@ autodoc_mock_imports = [
     "paddlehub",
     "paddlehub.module.manager",
     "paddlehub.server.server",
-    "picklable_model",
     "pycaret",
     "pycaret.internal.tabular",
     "pyspark",

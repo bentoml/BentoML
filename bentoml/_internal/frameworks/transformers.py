@@ -1,5 +1,4 @@
 import re
-import json
 import typing as t
 import logging
 import importlib.util
@@ -22,7 +21,6 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from transformers.configuration_utils import PretrainedConfig
 
     from ..models import ModelStore
     from ..external_typing import transformers as ext
@@ -133,7 +131,7 @@ def load(
     **kwargs: str,
 ) -> t.Union[
     t.Tuple[
-        "PretrainedConfig",
+        "ext.PretrainedConfig",
         "ext.TransformersModelType",
         t.Union[
             t.Optional["ext.TransformersTokenizerType"],
@@ -175,6 +173,7 @@ def load(
     Examples:
 
     .. code-block:: python
+
         import bentoml
         model, tokenizer = bentoml.transformers.load('custom_gpt2')
 
@@ -198,8 +197,6 @@ def load(
 
     _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
     _feature_extractor = model.info.options["feature_extractor"]
-    # logger.warning("Given pipeline doesn't include either a tokenizer or a feature extractor. Make sure"
-    #         f" that {type(model)} is a correct Transformers pipeline.")
 
     if _tokenizer is False:
         tokenizer: t.Optional["ext.TransformersTokenizerType"] = None
@@ -273,6 +270,7 @@ def save(
     Examples:
 
     .. code-block:: python
+
         from transformers import AutoModelForQuestionAnswering, AutoTokenizer
         import bentoml
         model = AutoModelForQuestionAnswering.from_pretrained("gpt2", from_flax=True)
@@ -514,6 +512,7 @@ def load_runner(
     Examples:
 
     .. code-block:: python
+
         import transformers
         import bentoml
         runner = bentoml.transformers.load_runner("gpt2:latest", tasks='zero-shot-classification', framework=tf)

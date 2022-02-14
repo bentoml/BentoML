@@ -1,6 +1,8 @@
+import pickle
 import typing as t
 from typing import TYPE_CHECKING
 
+import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
@@ -18,10 +20,6 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import ModelStore
-
-import pickle
-
-import cloudpickle
 
 MODULE_NAME = "bentoml.picklable_model"
 
@@ -78,7 +76,7 @@ def save(
     name: str,
     obj: t.Any,
     batch: bool = False,
-    function_name: str = "__call__",
+    method: str = "__call__",
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -93,8 +91,8 @@ def save(
             Instance of an object to be saved.
         batch:
             Determines whether the model supports batching
-        function_name:
-            Function to call on the pickled object
+        method:
+            Method to call on the pickled object
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -120,7 +118,7 @@ def save(
 
     """  # noqa
     context = {"framework_name": "picklable_model"}
-    options = {"batch": batch, "function_name": function_name}
+    options = {"batch": batch, "method": method}
 
     _model = Model.create(
         name, module=MODULE_NAME, metadata=metadata, context=context, options=options
@@ -138,7 +136,7 @@ class _PicklableModelRunner(Runner):
     def __init__(
         self,
         tag: Tag,
-        function_name: str,
+        method: str,
         name: str,
         model_info: "Model",
         model_file: PathType,
@@ -148,7 +146,7 @@ class _PicklableModelRunner(Runner):
         self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
-        self._function_name = function_name
+        self._method = method
 
     @property
     def num_replica(self) -> int:
@@ -162,7 +160,7 @@ class _PicklableModelRunner(Runner):
     def _setup(self) -> None:
         with open(self._model_file, "rb") as f:
             self._model = pickle.load(f)
-        self._infer_func = getattr(self._model, self._function_name)
+        self._infer_func = getattr(self._model, self._method)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
@@ -177,7 +175,7 @@ class _PicklableModelSimpleRunner(SimpleRunner):
     def __init__(
         self,
         tag: Tag,
-        function_name: str,
+        method: str,
         name: str,
         model_info: "Model",
         model_file: PathType,
@@ -187,7 +185,7 @@ class _PicklableModelSimpleRunner(SimpleRunner):
         self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
-        self._function_name = function_name
+        self._method = method
 
     @property
     def num_replica(self) -> int:
@@ -202,10 +200,10 @@ class _PicklableModelSimpleRunner(SimpleRunner):
         with open(self._model_file, "rb") as f:
             self._model = pickle.load(f)
 
-        if self._function_name == "__call__":
+        if self._method == "__call__":
             self._infer_func = self._model
         else:
-            self._infer_func = getattr(self._model, self._function_name)
+            self._infer_func = getattr(self._model, self._method)
 
     def _run(  # type: ignore[reportIncompatibleMethodOverride]
         self,
@@ -250,12 +248,12 @@ def load_runner(
 
     model_info, model_file = _get_model_info(tag, model_store)
     batch_option = model_info.info.options.get("batch")
-    function_name = model_info.info.options.get("function_name")
+    method = model_info.info.options.get("method")
 
     if batch_option:
         return _PicklableModelRunner(
             tag=tag,
-            function_name=function_name,
+            method=method,
             name=name,
             model_store=model_store,
             model_info=model_info,
@@ -264,7 +262,7 @@ def load_runner(
     else:
         return _PicklableModelSimpleRunner(
             tag=tag,
-            function_name=function_name,
+            method=method,
             name=name,
             model_store=model_store,
             model_info=model_info,

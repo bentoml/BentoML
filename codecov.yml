@@ -49,6 +49,7 @@ coverage:
           - onnx
           - onnxmlir
           - paddle
+          - pickable_model
           - pycaret
           - pyspark
           - pytorch
@@ -136,6 +137,11 @@ coverage:
         threshold: 10%
         flags:
           - paddle
+      picklable_model:
+        target: auto
+        threshold: 10%
+        flags:
+          - picklable_model
       pycaret:
         target: auto
         threshold: 10%
@@ -261,6 +267,10 @@ flags:
     carryforward: true
     paths:
       - bentoml/_internal/frameworks/paddle.py
+  picklable_model:
+    carryforward: true
+    paths:
+      - bentoml/_internal/frameworks/picklable_model.py
   pycaret:
     carryforward: true
     paths:

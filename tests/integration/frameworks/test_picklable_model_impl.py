@@ -18,7 +18,7 @@ class MyCoolModel:
 
 
 class MyCoolBatchModel:
-    def predict(self, some_integer: t.List):
+    def predict(self, some_integer: t.List[int]):
         return list(map(lambda x: x ** 2, some_integer))
 
 
@@ -36,7 +36,7 @@ def save_procedure(
         model_to_save,
         metadata=metadata,
         model_store=_modelstore,
-        function_name="predict",
+        method="predict",
     )
     return tag_info
 
@@ -52,7 +52,7 @@ def save_batch_procedure(
         batch=True,
         metadata=metadata,
         model_store=_modelstore,
-        function_name="predict",
+        method="predict",
     )
     return tag_info
 
@@ -83,7 +83,7 @@ def test_picklable_model_runner_setup_run(modelstore: "ModelStore") -> None:
     assert runner.run(3) == np.array([9])
 
 
-def test_pickle_runner_setup_run_function(modelstore: "ModelStore") -> None:
+def test_pickle_runner_setup_run_method(modelstore: "ModelStore") -> None:
 
     tag = bentoml.picklable_model.save(
         "test_pickle_model", lambda x: x ** 2, metadata={}, model_store=modelstore

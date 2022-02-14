@@ -10,7 +10,7 @@ class ServiceContextClass:
             "request_id_var", default=t.cast("t.Optional[int]", None)
         )
         self.component_name_var : ContextVar[str] = ContextVar(
-            "COMPONENT_NAME", default="boot"
+            "component_name", default="boot"
         )
 
     @property

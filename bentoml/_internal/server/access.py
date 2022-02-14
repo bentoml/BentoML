@@ -73,6 +73,10 @@ class AccessLogMiddleware(Middleware):
                             response_content_type.set(value)
 
             elif message["type"] == "http.response.body":
+                if client:
+                    address = f"{client[0]}:{client[1]}"
+                else:
+                    address = "unknown_client"
 
                 request = [f"scheme={scheme}",
                            f"method={method}", f"path={path}"]
@@ -93,7 +97,7 @@ class AccessLogMiddleware(Middleware):
 
                 latency = max(default_timer() - start, 0)
 
-                self.logger.info("%s:%s (%s) (%s) %.3fms", client[0], client[1], ",".join(
+                self.logger.info("%s (%s) (%s) %.3fms", address, ",".join(
                     request), ",".join(response), latency)
 
             await send(message)

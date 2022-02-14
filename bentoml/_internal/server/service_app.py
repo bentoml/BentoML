@@ -286,7 +286,17 @@ class ServiceAppFactory(BaseAppFactory):
 
         from .access import AccessLogMiddleware
 
-        middlewares.append(Middleware(AccessLogMiddleware, fields=["REQUEST_CONTENT_TYPE", "REQUEST_CONTENT_LENGTH", "RESPONSE_CONTENT_TYPE", "RESPONSE_CONTENT_LENGTH"]))
+        middlewares.append(
+            Middleware(
+                AccessLogMiddleware,
+                fields=[
+                    "REQUEST_CONTENT_TYPE",
+                    "REQUEST_CONTENT_LENGTH",
+                    "RESPONSE_CONTENT_TYPE",
+                    "RESPONSE_CONTENT_LENGTH"
+                ]
+            )
+        )
 
         return middlewares
 

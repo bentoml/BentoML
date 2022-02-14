@@ -32,9 +32,11 @@ class TraceFormatter(Formatter):
     """
 
     def __init__(self):
-        Formatter.__init__(self, fmt="[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s", datefmt="[%X]")
+        Formatter.__init__(
+            self, fmt="[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s", datefmt="[%X]")
         self.control_formmater = Formatter("[%(component)s] %(message)s")
-        self.trace_formatter = Formatter("[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s")
+        self.trace_formatter = Formatter(
+            "[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s")
 
     def format(self, record):
         if record.trace_id == 0:

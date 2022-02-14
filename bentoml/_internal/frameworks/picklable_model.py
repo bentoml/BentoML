@@ -112,7 +112,7 @@ def save(
                 return some_integer**2
 
         model_to_save = MyCoolModel();
-        tag_info = bentoml.picklable_model.save("test_pickle_model", model_to_save)
+        tag_info = bentoml.picklable_model.save("test_pickle_model", model_to_save, batch=False, method="predict")
         runner = bentoml.picklable_model.load_runner(tag_info)
         runner.run(3)
 

@@ -1,4 +1,4 @@
-onnx-mlir
+ONNX-mlir
 ---------
 
 Users can now use onnx-mlir with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:

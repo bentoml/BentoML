@@ -1,9 +1,17 @@
+import typing as t
+from typing import TYPE_CHECKING
+
 import pytest
 import requests
 import transformers.pipelines
 from transformers.trainer_utils import set_seed
 
-import bentoml.transformers
+import bentoml
+
+if TYPE_CHECKING:
+    from bentoml._internal.models import ModelStore
+    from bentoml._internal.external_typing import transformers as ext
+
 
 set_seed(123)
 
@@ -24,7 +32,12 @@ result = (
 )
 
 
-def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
+def generate_from_text(
+    model: "ext.TransformersModelType",
+    tokenizer: "ext.TransformersTokenizerType",
+    jsons: t.Dict[str, str],
+    return_tensors: str = "pt",
+) -> str:
     text = jsons.get("text")
     input_ids = tokenizer.encode(text, return_tensors=return_tensors)
     output = model.generate(
@@ -37,13 +50,20 @@ def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
     "kwargs, framework, tensors_type",
     [
         ({"from_tf": False}, "pt", "pt"),
-        ({"from_tf": True}, "tf", "tf"),
+        ({}, "tf", "tf"),
     ],
 )
-def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
-    model = transformers.AutoModelForSequenceClassification.from_pretrained(
-        model_name, **kwargs
-    )
+def test_transformers_save_load(
+    modelstore: "ModelStore",
+    framework: str,
+    tensors_type: str,
+    kwargs: t.Dict[str, t.Any],
+):
+    if "tf" in framework:
+        loader = transformers.TFAutoModelForCausalLM
+    else:
+        loader = transformers.AutoModelForCausalLM
+    model = loader.from_pretrained(model_name, **kwargs)
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, **kwargs)
     tag = bentoml.transformers.save(
         model_name, model, tokenizer=tokenizer, model_store=modelstore
@@ -51,15 +71,13 @@ def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     lmodel, ltokenizer = bentoml.transformers.load(
         tag, from_tf="tf" in framework, model_store=modelstore
     )
-    assert (
-        generate_from_text(
-            lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
-        )
-        == result
+    res = generate_from_text(
+        lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
     )
+    assert res == result
 
 
-def test_transformers_save_load_pipeline(modelstore):
+def test_transformers_save_load_pipeline(modelstore: "ModelStore"):
     from PIL import Image
 
     pipeline = transformers.pipeline("image-classification")
@@ -76,13 +94,13 @@ def test_transformers_save_load_pipeline(modelstore):
     assert res[0]["label"] == "Egyptian cat"
 
 
-def test_transformers_runner_setup_run_batch(modelstore):
+def test_transformers_runner_setup_run_batch(modelstore: "ModelStore"):
     pipeline = transformers.pipeline("text-classification")
     tag = bentoml.transformers.save(
         "text-classification-pipeline", pipeline, model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
-        tag, "text-classification", model_store=modelstore
+        tag, tasks="text-classification", model_store=modelstore
     )
     assert tag in runner.required_models
     assert runner.num_replica == 1
@@ -92,7 +110,7 @@ def test_transformers_runner_setup_run_batch(modelstore):
     assert isinstance(runner._pipeline, transformers.pipelines.Pipeline)
 
 
-def test_transformers_runner_pipelines_kwargs(modelstore):
+def test_transformers_runner_pipelines_kwargs(modelstore: "ModelStore"):
     from PIL import Image
 
     pipeline = transformers.pipeline("image-classification")
@@ -100,7 +118,7 @@ def test_transformers_runner_pipelines_kwargs(modelstore):
         "vit-image-classification", pipeline, model_store=modelstore
     )
     runner = bentoml.transformers.load_runner(
-        tag, "image-classification", device=-1, model_store=modelstore
+        tag, tasks="image-classification", device=-1, model_store=modelstore
     )
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)

@@ -116,7 +116,7 @@ openapi
 openzipkin
 outcoming
 param
-pickable_model
+picklable_model
 pre
 pretrained
 prometheus

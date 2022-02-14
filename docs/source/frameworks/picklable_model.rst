@@ -7,31 +7,31 @@ Users can now save any given python method or object as a loadable model in Bent
 
    import bentoml
 
-    class MyPickableModel:
+    class MyPicklableModel:
         def predict(self, some_integer: int):
             return some_integer ** 2
 
    # `save` a given model or function
-   model = MyPickableModel()
-   tag = bentoml.pickable_model.save('mypicklablemodel', model, batch=False, method="predict")
+   model = MyPicklableModel()
+   tag = bentoml.picklable_model.save('mypicklablemodel', model, batch=False, method="predict")
 
    # Or load save a model which takes in a batch of values to take advantage of BentoML's adaptive batching
-   # class MyPickableModelBatch:
+   # class MyPicklableModelBatch:
    #         def predict(self, some_integers: t.List[int]):
    #             return list(map(lambda x: x ** 2, some_integers))
    #
-   # model = MyPickableModel()
-   # tag = bentoml.pickable_model.save('mypicklablemodel', model, batch=True, method="predict")
+   # model = MyPicklableModel()
+   # tag = bentoml.picklable_model.save('mypicklablemodel', model, batch=True, method="predict")
 
 
    # retrieve metadata with `bentoml.models.get`:
    metadata = bentoml.models.get(tag)
 
    # load the model back:
-   loaded = bentoml.pickable_model.load("mypicklablemodel:latest")
+   loaded = bentoml.picklable_model.load("mypicklablemodel:latest")
 
    # Run a given model under `Runner` abstraction with `load_runner`
-   runner = bentoml.pickable_model.load_runner(tag)
+   runner = bentoml.picklable_model.load_runner(tag)
    runner.run(7)
 
 .. note::

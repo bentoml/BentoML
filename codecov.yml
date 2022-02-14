@@ -49,7 +49,7 @@ coverage:
           - onnx
           - onnxmlir
           - paddle
-          - pickable_model
+          - picklable_model
           - pycaret
           - pyspark
           - pytorch

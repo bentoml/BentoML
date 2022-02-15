@@ -10,7 +10,6 @@ from simple_di import Provide
 
 from .runner import RunnerImpl
 from .container import Payload
-from ..configuration.containers import DeploymentContainer
 from ..utils.uri import uri_to_path
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
@@ -82,7 +81,6 @@ class RemoteRunnerClient(RunnerImpl):
     def _get_client(
         self,
         timeout_sec: t.Optional[float] = None,
-        
     ) -> "ClientSession":
         import aiohttp
 
@@ -105,11 +103,13 @@ class RemoteRunnerClient(RunnerImpl):
                 DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=5 * 60)
                 timeout = DEFAULT_TIMEOUT
             self._client = aiohttp.ClientSession(
-                trace_configs=[create_trace_config(
-                    # Remove all query params from the URL attribute on the span.
-                    url_filter=strip_query_params,
-                    tracer_provider=DeploymentContainer.tracer_provider.get(),
-                )],
+                trace_configs=[
+                    create_trace_config(
+                        # Remove all query params from the URL attribute on the span.
+                        url_filter=strip_query_params,
+                        tracer_provider=DeploymentContainer.tracer_provider.get(),
+                    )
+                ],
                 connector=self._get_conn(),
                 auto_decompress=False,
                 cookie_jar=jar,

@@ -1,14 +1,15 @@
+import typing
 import logging
 import logging.config
-from logging import Filter, Formatter
-import typing
+from logging import Filter
+from logging import Formatter
 
 from simple_di import inject
 from simple_di import Provide
 
+from .trace import ServiceContext
 from .configuration import get_debug_mode
 from .configuration.containers import BentoMLContainer
-from .trace import ServiceContext
 
 
 class TraceFilter(Filter):
@@ -33,10 +34,14 @@ class TraceFormatter(Formatter):
 
     def __init__(self):
         Formatter.__init__(
-            self, fmt="[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s", datefmt="[%X]")
+            self,
+            fmt="[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s",
+            datefmt="[%X]",
+        )
         self.control_formmater = Formatter("[%(component)s] %(message)s")
         self.trace_formatter = Formatter(
-            "[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s")
+            "[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s"
+        )
 
     def format(self, record):
         if record.trace_id == 0:
@@ -48,11 +53,7 @@ class TraceFormatter(Formatter):
 LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": {
-        "tracing": {
-            "()": "bentoml._internal.log.TraceFormatter"
-        }
-    },
+    "formatters": {"tracing": {"()": "bentoml._internal.log.TraceFormatter"}},
     "filters": {
         "tracing": {
             "()": "bentoml._internal.log.TraceFilter",
@@ -82,20 +83,9 @@ LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
             "level": "INFO",
             "propagate": False,
         },
-        "uvicorn": {
-            "handlers": [],
-            "level": "INFO"
-        },
-        "uvicorn.error": {
-            "handlers": ["uvicorn"],
-            "level": "INFO",
-            "propagate": False
-        },
-        "uvicorn.access": {
-            "handlers": [],
-            "level": "INFO",
-            "propagate": False
-        },
+        "uvicorn": {"handlers": [], "level": "INFO"},
+        "uvicorn.error": {"handlers": ["uvicorn"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {"handlers": [], "level": "INFO", "propagate": False},
     },
 }
 

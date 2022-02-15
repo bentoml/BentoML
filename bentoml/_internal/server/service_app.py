@@ -9,12 +9,12 @@ from simple_di import inject
 from simple_di import Provide
 from opentelemetry import trace  # type: ignore[import]
 
+from ..trace import ServiceContext
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 from ..configuration.containers import DeploymentContainer
 from ..io_descriptors.multipart import Multipart
-from ..trace import ServiceContext
 
 if TYPE_CHECKING:
     from starlette.routing import BaseRoute
@@ -293,8 +293,8 @@ class ServiceAppFactory(BaseAppFactory):
                     "REQUEST_CONTENT_TYPE",
                     "REQUEST_CONTENT_LENGTH",
                     "RESPONSE_CONTENT_TYPE",
-                    "RESPONSE_CONTENT_LENGTH"
-                ]
+                    "RESPONSE_CONTENT_LENGTH",
+                ],
             )
         )
 

@@ -5,23 +5,23 @@ import logging
 from typing import TYPE_CHECKING
 from functools import partial
 
-from ..configuration.containers import DeploymentContainer
+from ..trace import ServiceContext
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
-from ..trace import ServiceContext
+from ..configuration.containers import DeploymentContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from starlette.middleware import Middleware
     from starlette.routing import BaseRoute
     from starlette.requests import Request
     from starlette.responses import Response
+    from starlette.middleware import Middleware
     from opentelemetry.sdk.trace import Span
 
     from ..runner import Runner
@@ -98,10 +98,9 @@ class RunnerAppFactory(BaseAppFactory):
     def middlewares(self) -> t.List["Middleware"]:
         middlewares = super().middlewares
 
-        from starlette.middleware import Middleware
-
-         # otel middleware
+        # otel middleware
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
+        from starlette.middleware import Middleware
 
         def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
@@ -133,8 +132,8 @@ class RunnerAppFactory(BaseAppFactory):
                     "REQUEST_CONTENT_TYPE",
                     "REQUEST_CONTENT_LENGTH",
                     "RESPONSE_CONTENT_TYPE",
-                    "RESPONSE_CONTENT_LENGTH"
-                ]
+                    "RESPONSE_CONTENT_LENGTH",
+                ],
             )
         )
 

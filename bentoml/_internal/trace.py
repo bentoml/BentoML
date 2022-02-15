@@ -1,6 +1,6 @@
 import typing as t
-
 from contextvars import ContextVar
+
 from opentelemetry import trace  # type: ignore[import]
 
 
@@ -9,7 +9,7 @@ class ServiceContextClass:
         self.request_id_var = ContextVar(
             "request_id_var", default=t.cast("t.Optional[int]", None)
         )
-        self.component_name_var : ContextVar[str] = ContextVar(
+        self.component_name_var: ContextVar[str] = ContextVar(
             "component_name", default="boot"
         )
 

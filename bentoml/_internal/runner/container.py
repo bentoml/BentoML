@@ -252,8 +252,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
 
     @classmethod
     def single_to_payload(cls, single: t.Any) -> Payload:
-        if isinstance(single, t.Iterable):
-            # Generators can't be pickled.
+        if isinstance(single, t.Iterable):  # Generators can't be pickled
             single = list(single)  # type: ignore
         return cls.create_payload(pickle.dumps(single))
 

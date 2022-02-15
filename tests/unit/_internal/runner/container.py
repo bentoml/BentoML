@@ -15,16 +15,24 @@ def test_default_container(batch_axis_exc, wrong_batch_axis):
 
     # Iterable should work with default container
     _iterable = ("apple", "banana", "cherry")
-    assert c.DefaultContainer.singles_to_batch(_iterable) == list(_iterable)
-    assert c.DefaultContainer.batch_to_singles(_iterable) == list(_iterable)
+    assert c.DefaultContainer.payload_to_single(
+        c.DefaultContainer.single_to_payload(_iterable)
+    ) == list(_iterable)
+    assert c.DefaultContainer.payload_to_batch(
+        c.DefaultContainer.batch_to_payload(_iterable)
+    ) == list(_iterable)
 
     def _generator():
         yield "apple"
         yield "banana"
         yield "cherry"
 
-    assert c.DefaultContainer.singles_to_batch(_generator()) == list(_generator())
-    assert c.DefaultContainer.batch_to_singles(_generator()) == list(_generator())
+    assert c.DefaultContainer.payload_to_single(
+        c.DefaultContainer.single_to_payload(_generator())
+    ) == list(_generator())
+    assert c.DefaultContainer.payload_to_batch(
+        c.DefaultContainer.batch_to_payload(_generator())
+    ) == list(_generator())
 
     # DefaultContainer should only allow batch_axis = 0
     with pytest.raises(batch_axis_exc):

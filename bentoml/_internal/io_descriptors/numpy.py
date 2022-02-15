@@ -71,7 +71,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
-        [INFO] API Server running on http://0.0.0.0:5000
+        [INFO] API Server running on http://0.0.0.0:3000
 
     Users can then send requests to the newly started services with any client:
 
@@ -79,7 +79,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
 
     .. code-block:: bash
 
-        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:3000/predict
 
         [1]%
 

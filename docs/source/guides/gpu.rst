@@ -147,7 +147,7 @@ Preface
     .. code-block:: bash
 
         # start our container and check for GPU usages:
-        $ docker run --gpus all ${DEVICE_ARGS} -p 5000:5000 tf_svc:latest --workers=2
+        $ docker run --gpus all ${DEVICE_ARGS} -p 3000:3000 tf_svc:latest --workers=2
 
 .. note::
     see :ref:`general-workaround` for ``$DEVICE_ARGS``.

@@ -1,7 +1,6 @@
 import abc
 import pickle
 import typing as t
-from types import GeneratorType
 from typing import TYPE_CHECKING
 
 from simple_di import inject
@@ -237,21 +236,25 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     def singles_to_batch(
         cls, singles: t.Sequence[t.Any], batch_axis: int = 0
     ) -> t.List[t.Any]:
-        assert batch_axis == 0
+        assert (
+            batch_axis == 0
+        ), "Default Runner DataContainer does not support batch_axies other than 0"
         return list(singles)
 
     @classmethod
     def batch_to_singles(
         cls, batch: t.List[t.Any], batch_axis: int = 0
     ) -> t.List[t.Any]:
-        assert batch_axis == 0
-        if isinstance(batch, GeneratorType):
+        assert (
+            batch_axis == 0
+        ), "Default Runner DataContainer does not support batch_axies other than 0"
+        if isinstance(batch, t.Iterable):
             batch = list(batch)
         return batch
 
     @classmethod
     def single_to_payload(cls, single: t.Any) -> Payload:
-        if isinstance(single, GeneratorType):
+        if isinstance(single, t.Iterable):
             # Generators can't be pickled.
             single = list(single)  # type: ignore
         return cls.create_payload(pickle.dumps(single))
@@ -347,10 +350,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def batch_to_singles(cls, batch: t.Any, batch_axis: int = 0) -> t.List[t.Any]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        ret = container_cls.batch_to_singles(batch, batch_axis=batch_axis)
-        if isinstance(ret, GeneratorType):
-            ret = list(ret)  # Ensure the result is a list
-        return ret
+        return container_cls.batch_to_singles(batch, batch_axis=batch_axis)
 
     @classmethod
     def single_to_payload(cls, single: SingleType) -> Payload:  # type: ignore[override]
@@ -378,10 +378,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     @abc.abstractmethod
     def batch_to_payload(cls, batch: BatchType) -> Payload:  # type: ignore[override]
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        ret = container_cls.batch_to_payload(batch)
-        if isinstance(ret, GeneratorType):
-            ret = list(ret)  # Ensure the result is a list
-        return ret
+        return container_cls.batch_to_payload(batch)
 
     @classmethod
     def payloads_to_batch(cls, payload_list: t.Sequence[Payload], batch_axis: int = 0):
@@ -397,7 +394,4 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         batch_axis: int = 0,
     ) -> t.List[Payload]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        ret = container_cls.batch_to_payloads(batch, batch_axis=batch_axis)
-        if isinstance(ret, GeneratorType):
-            ret = list(ret)  # Ensure the result is a list
-        return ret
+        return container_cls.batch_to_payloads(batch, batch_axis=batch_axis)

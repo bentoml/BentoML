@@ -13,13 +13,27 @@ def test_default_container(batch_axis_exc, wrong_batch_axis):
     assert c.DefaultContainer.singles_to_batch(_list) == _list
     assert c.DefaultContainer.batch_to_singles(_list) == _list
 
-    # DefaultContainer should only allow batch_axis = 0
+    # Iterable should work with default container
+    _iterable = ("apple", "banana", "cherry")
+    assert c.DefaultContainer.singles_to_batch(_iterable) == list(_iterable)
+    assert c.DefaultContainer.batch_to_singles(_iterable) == list(_iterable)
 
+
+    def _generator():
+        yield "apple"
+        yield "banana"
+        yield "cherry"
+    assert c.DefaultContainer.singles_to_batch(_generator()) == list(_generator())
+    assert c.DefaultContainer.batch_to_singles(_generator()) == list(_generator())
+
+
+    # DefaultContainer should only allow batch_axis = 0
     with pytest.raises(batch_axis_exc):
         c.DefaultContainer.singles_to_batch(_list, batch_axis=wrong_batch_axis)
 
     with pytest.raises(batch_axis_exc):
         c.DefaultContainer.batch_to_singles(_list, batch_axis=wrong_batch_axis)
+
 
 
 @pytest.mark.parametrize("batch_axis", [0, 1])

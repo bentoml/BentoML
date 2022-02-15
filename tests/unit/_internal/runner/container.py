@@ -13,8 +13,19 @@ def test_default_container(batch_axis_exc, wrong_batch_axis):
     assert c.DefaultContainer.singles_to_batch(_list) == _list
     assert c.DefaultContainer.batch_to_singles(_list) == _list
 
-    # DefaultContainer should only allow batch_axis = 0
+    def _generator():
+        yield "apple"
+        yield "banana"
+        yield "cherry"
 
+    assert c.DefaultContainer.payload_to_single(
+        c.DefaultContainer.single_to_payload(_generator())
+    ) == list(_generator())
+    assert c.DefaultContainer.payload_to_batch(
+        c.DefaultContainer.batch_to_payload(_generator())
+    ) == list(_generator())
+
+    # DefaultContainer should only allow batch_axis = 0
     with pytest.raises(batch_axis_exc):
         c.DefaultContainer.singles_to_batch(_list, batch_axis=wrong_batch_axis)
 

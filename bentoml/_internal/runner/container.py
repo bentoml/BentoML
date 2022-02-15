@@ -236,18 +236,24 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     def singles_to_batch(
         cls, singles: t.Sequence[t.Any], batch_axis: int = 0
     ) -> t.List[t.Any]:
-        assert batch_axis == 0
+        assert (
+            batch_axis == 0
+        ), "Default Runner DataContainer does not support batch_axies other than 0"
         return list(singles)
 
     @classmethod
     def batch_to_singles(
         cls, batch: t.List[t.Any], batch_axis: int = 0
     ) -> t.List[t.Any]:
-        assert batch_axis == 0
+        assert (
+            batch_axis == 0
+        ), "Default Runner DataContainer does not support batch_axies other than 0"
         return batch
 
     @classmethod
     def single_to_payload(cls, single: t.Any) -> Payload:
+        if isinstance(single, t.Generator):  # Generators can't be pickled
+            single = list(single)  # type: ignore
         return cls.create_payload(pickle.dumps(single))
 
     @classmethod

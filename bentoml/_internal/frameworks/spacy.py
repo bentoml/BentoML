@@ -401,8 +401,6 @@ class _SpacyRunner(Runner):
         tag: Tag,
         gpu_device_id: t.Optional[int],
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         vocab: t.Union["Vocab", bool],  # type: ignore[reportUnknownParameterType]
         disable: t.Iterable[str],
         exclude: t.Iterable[str],
@@ -414,7 +412,7 @@ class _SpacyRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
         self._tag = in_store_tag
 
         self._vocab: t.Union["Vocab", bool] = vocab
@@ -426,16 +424,10 @@ class _SpacyRunner(Runner):
         self._backend_options = backend_options
         self._gpu_device_id = gpu_device_id
 
-        if self._gpu_device_id is not None:
-            if resource_quota is None:
-                resource_quota = dict(gpus=self._gpu_device_id)
-            else:
-                resource_quota["gpus"] = self._gpu_device_id
         self._configure(backend_options)
         self._as_tuples = as_tuples
         self._batch_size = batch_size
         self._component_cfg = component_cfg
-        super().__init__(str(tag), resource_quota, batch_options)
 
     def _configure(self, backend_options: t.Optional[str]) -> None:
         if self._gpu_device_id is not None and thinc_util.prefer_gpu(
@@ -561,10 +553,6 @@ def load_runner(
             GPU device ID.
         backend_options (`Literal['pytorch', 'tensorflow'], `optional`, defaults to `None`):
             Backend options for Thinc. Either PyTorch or Tensorflow.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
         vocab (:code:`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
@@ -607,8 +595,6 @@ def load_runner(
         gpu_device_id=gpu_device_id,
         backend_options=backend_options,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         vocab=vocab,
         disable=disable,
         exclude=exclude,

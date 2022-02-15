@@ -215,11 +215,9 @@ class _LightGBMRunner(Runner):
         infer_api_callback: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
         model_info, model_file, booster_params = _get_model_info(
             tag, booster_params, model_store
         )
@@ -268,8 +266,6 @@ def load_runner(
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     name: t.Optional[str] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_LightGBMRunner":
     """
@@ -286,10 +282,6 @@ def load_runner(
         booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
             Parameters for boosters. Refers to `Parameters Doc <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -313,7 +305,5 @@ def load_runner(
         infer_api_callback=infer_api_callback,
         name=name,
         booster_params=booster_params,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )

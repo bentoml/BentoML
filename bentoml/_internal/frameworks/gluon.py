@@ -150,11 +150,9 @@ class _GluonRunner(Runner):
         tag: Tag,
         predict_fn_name: str,
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
         self._tag = tag
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
@@ -205,9 +203,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "__call__",
     *,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _GluonRunner:
     """
@@ -220,10 +216,6 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (:code:`str`, default to :code:`__call__`):
             Options for inference functions. Default to `__call__`
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -244,9 +236,8 @@ def load_runner(
     if name is None:
         name = tag.name
     return _GluonRunner(
+        name=name,
         tag=tag,
         predict_fn_name=predict_fn_name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )

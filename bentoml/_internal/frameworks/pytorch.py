@@ -203,13 +203,11 @@ class _PyTorchRunner(Runner):
         device_id: str,
         name: str,
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         in_store_tag = model_store.get(tag).tag
 
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         if "cuda" in device_id:
@@ -304,8 +302,6 @@ def load_runner(
     device_id: str = "cpu",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyTorchRunner":
     """
@@ -322,10 +318,6 @@ def load_runner(
          to put the given model on. Refers to `device attributes <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_.
         partial_kwargs (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Common kwargs passed to model for this runner
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -351,8 +343,6 @@ def load_runner(
         device_id=device_id,
         partial_kwargs=partial_kwargs,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )
 

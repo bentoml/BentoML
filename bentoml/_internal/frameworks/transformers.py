@@ -371,14 +371,12 @@ class _TransformersRunner(Runner):
         framework: str,
         device: int,
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
         **pipeline_kwargs: t.Any,
     ):
         in_store_tag = model_store.get(tag).tag
         self._tag = in_store_tag
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
 
         try:
             transformers.pipelines.check_task(tasks)
@@ -471,8 +469,6 @@ def load_runner(
     framework: str = "pt",
     device: int = -1,
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **pipeline_kwargs: t.Any,
 ) -> "_TransformersRunner":
@@ -496,10 +492,6 @@ def load_runner(
             Given frameworks supported by transformers: PyTorch, Tensorflow
         device (`int`, `optional`, default to :code:`-1`):
             Default GPU devices to be used by runner.
-        resource_quota (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
         **pipeline_kwargs(`Any`):
@@ -527,8 +519,6 @@ def load_runner(
         framework=framework,
         device=device,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
         **pipeline_kwargs,
     )

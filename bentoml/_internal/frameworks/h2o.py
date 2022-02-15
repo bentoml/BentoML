@@ -170,11 +170,9 @@ class _H2ORunner(Runner):
         predict_fn_name: str,
         init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
 
         self._tag = Tag.from_taglike(tag)
         self._predict_fn_name = predict_fn_name
@@ -218,8 +216,6 @@ def load_runner(
     *,
     init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _H2ORunner:
     """Runner represents a unit of serving logic that can be scaled
@@ -235,10 +231,6 @@ def load_runner(
         init_params (:code:`Dict[str, Union[str, Any]]`, default to :code:`None`):
             Parameters for h2o.init(). Refers to `H2O Python API <https://docs.h2o.ai/h2o/latest-stable/h2o-docs/starting-h2o.html#from-python>`_
             for more information
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -263,7 +255,5 @@ def load_runner(
         predict_fn_name=predict_fn_name,
         init_params=init_params,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )

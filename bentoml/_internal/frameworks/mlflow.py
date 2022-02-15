@@ -280,11 +280,9 @@ class _PyFuncRunner(Runner):
         self,
         tag: Tag,
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
         self._model_store = model_store
         self._model_tag = tag
 
@@ -309,8 +307,6 @@ class _PyFuncRunner(Runner):
 def load_runner(
     tag: t.Union[str, Tag],
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyFuncRunner":
     """
@@ -322,10 +318,6 @@ def load_runner(
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -366,7 +358,5 @@ def load_runner(
     return _PyFuncRunner(
         tag,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )

@@ -188,11 +188,9 @@ class _EasyOCRRunner(Runner):
         predict_fn_name: str,
         name: str,
         predict_params: t.Optional[t.Dict[str, t.Any]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
         self._tag = tag
         self._predict_fn_name = predict_fn_name
         self._predict_params = predict_params
@@ -208,9 +206,8 @@ class _EasyOCRRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        self._model = load(self._tag, self.resource_quota.on_gpu, self._model_store)
+        self._model = load(self._tag)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
@@ -228,8 +225,6 @@ def load_runner(
     *,
     name: t.Optional[str] = None,
     predict_params: t.Union[None, t.Dict[str, t.Union[str, t.Any]]] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _EasyOCRRunner:
     """
@@ -245,10 +240,6 @@ def load_runner(
         predict_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
             Parameters for prediction. Refers `here <https://github.com/JaidedAI/EasyOCR/blob/master/easyocr/easyocr.py#L460>`_
             for more information.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -277,7 +268,5 @@ def load_runner(
         predict_fn_name=predict_fn_name,
         predict_params=predict_params,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )

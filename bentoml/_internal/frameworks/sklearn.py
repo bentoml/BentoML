@@ -162,7 +162,7 @@ class _SklearnRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(name)
         model_info, model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._model_info = model_info
@@ -202,8 +202,6 @@ def load_runner(
     function_name: str = "predict",
     *,
     name: t.Optional[str] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SklearnRunner":
     """
@@ -216,10 +214,6 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore..
         function_name (:code:`str`, `optional`, default to :code:`predict`):
             Predict function used by a given sklearn model.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -242,7 +236,5 @@ def load_runner(
         tag=tag,
         function_name=function_name,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )

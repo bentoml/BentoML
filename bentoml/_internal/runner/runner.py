@@ -30,8 +30,8 @@ if TYPE_CHECKING:
 
 @attr.define
 class ResourceQuota:
-    cpu: float = attr.field(converter=cpu_converter)
-    mem: int = attr.field(converter=mem_converter)
+    cpu: float = attr.field(converter=cpu_converter, default=None)
+    mem: int = attr.field(converter=mem_converter, default=None)
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
@@ -91,13 +91,15 @@ VARNAME_RE = re.compile(r"\W|^(?=\d)")
 
 
 class BaseRunner:
+    """
+    This class should not be implemented directly. Instead, implement the SimpleRunner or Runner.
+    """
+
     EXIST_NAMES: t.Set[str] = set()
 
     def __init__(
         self,
         name: t.Union[str, Tag],
-        resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-        batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         # probe an unique name
         if isinstance(name, Tag):
@@ -105,11 +107,13 @@ class BaseRunner:
         if not name.isidentifier():
             name = VARNAME_RE.sub("_", name)
         self.name = name
-        self.resource_quota = ResourceQuota(
-            **(resource_quota if resource_quota else {})
-        )
-        self.batch_options = BatchOptions(**(batch_options if batch_options else {}))
+        self.resource_quota = ResourceQuota()
+        self.batch_options = BatchOptions()
         self._impl_provider = SingletonFactory(create_runner_impl, self)
+
+    @property
+    def resource_quota(self) -> ResourceQuota:
+        return self.resource_quota
 
     @property
     def num_replica(self) -> int:

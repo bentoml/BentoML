@@ -351,8 +351,6 @@ class _KerasRunner(_TensorflowRunner):
         device_id: str,
         predict_kwargs: t.Optional[t.Dict[str, t.Any]],
         name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(
@@ -361,8 +359,6 @@ class _KerasRunner(_TensorflowRunner):
             device_id=device_id,
             name=name,
             partial_kwargs=predict_kwargs,
-            resource_quota=resource_quota,
-            batch_options=batch_options,
             model_store=model_store,
         )
         self._session = get_session()
@@ -405,8 +401,6 @@ def load_runner(
     device_id: str = "CPU:0",
     predict_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_KerasRunner":
     """
@@ -423,10 +417,6 @@ def load_runner(
             Dictionary of `predict()` kwargs that can be shared across different model.
         device_id (:code:`str`, `optional`, default to the first CPU):
             Optional devices to put the given model on. Refers to `Logical Devices <https://www.tensorflow.org/api_docs/python/tf/config/list_logical_devices>`_ from TF documentation.
-        resource_quota (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -464,7 +454,5 @@ def load_runner(
         device_id=device_id,
         name=name,
         predict_kwargs=predict_kwargs,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         model_store=model_store,
     )

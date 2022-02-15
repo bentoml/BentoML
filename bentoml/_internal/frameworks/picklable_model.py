@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 MODULE_NAME = "bentoml.picklable_model"
 
 
-np = LazyLoader("np", globals(), "numpy")  # noqa: F811
-pd = LazyLoader("pd", globals(), "pandas")
 
 
 def _get_model_info(tag: Tag, model_store: "ModelStore") -> t.Tuple["Model", PathType]:

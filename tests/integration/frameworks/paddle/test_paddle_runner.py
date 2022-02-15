@@ -16,7 +16,6 @@ def test_paddlepaddle_load_runner(modelstore, train_paddle_model):  # noqa: F811
     runner = bentoml.paddle.load_runner(tag, model_store=modelstore)
 
     assert info.tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     input_data = test_df.to_numpy().astype(np.float32)
@@ -50,7 +49,6 @@ def test_paddlepaddle_load_runner_gpu(modelstore, train_paddle_model):  # noqa: 
     )
 
     assert info.tag in runner.required_models
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == bentoml.paddle.device_count()
 
     input_data = test_df.to_numpy().astype(np.float32)

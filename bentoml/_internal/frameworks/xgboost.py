@@ -207,15 +207,6 @@ class _XgBoostRunner(Runner):
         return [self._model_info.tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
-        if self.resource_quota.on_gpu:
-            return 1
-        nthreads = self._booster_params.get("nthread", -1)  # type: int
-        if nthreads == -1:
-            return int(round(self.resource_quota.cpu))
-        return nthreads
-
-    @property
     def num_replica(self) -> int:
         if self.resource_quota.on_gpu:
             return len(self.resource_quota.gpus)

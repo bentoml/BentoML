@@ -527,7 +527,7 @@ class _PaddlePaddleRunner(Runner):
         else:
             # If not specific mkldnn, you can set the blas thread.
             # `num_threads` should not be greater than the number of cores in the CPU.
-            _config.set_cpu_math_library_num_threads(self.num_concurrency_per_replica)
+            _config.set_cpu_math_library_num_threads(self._num_threads)
             _config.enable_mkldnn()
             _config.disable_gpu()
         paddle.set_device(device)
@@ -538,7 +538,7 @@ class _PaddlePaddleRunner(Runner):
         return [self._tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
+    def _num_threads(self) -> int:
         if self._enable_gpu and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))

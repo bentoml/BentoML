@@ -169,21 +169,28 @@ jobs:
               - bentoml/statsmodels.py
               - bentoml/_internal/frameworks/statsmodels.py
               - tests/integration/frameworks/test_statsmodels_impl.py
-            tf1: &tf
+            tf1: &tf1
               - *runner
               - bentoml/tensorflow.py
-              - bentoml/_internal/frameworks/tensorflow.py
-              - tests/integration/frameworks/test_tensorflow_impl.py
-            tf2:
-              - *tf
-            keras_tf1: &keras
+              - bentoml/_internal/frameworks/tensorflow_v1.py
+              - tests/integration/frameworks/test_tensorflow_v1_impl.py
+            tf2: &tf2
               - *runner
-              - *tf
+              - bentoml/tensorflow.py
+              - bentoml/_internal/frameworks/tensorflow_v2.py
+              - tests/integration/frameworks/test_tensorflow_v2_impl.py
+            keras_tf1:
+              - *runner
+              - *tf1
               - bentoml/keras.py
               - bentoml/_internal/frameworks/keras.py
               - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
-              - *keras
+              - *runner
+              - *tf2
+              - bentoml/keras.py
+              - bentoml/_internal/frameworks/keras.py
+              - tests/integration/frameworks/test_keras_impl.py
             transformers:
               - *runner
               - bentoml/transformers.py
@@ -642,42 +649,7 @@ jobs:
           flags: onnx
           verbose: true
 
-#   onnxmlir_integration_tests:
-#     needs: diff
-#     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnxmlir == 'true') || github.event_name == 'push' }}
-#     defaults:
-#       run:
-#         shell: bash
-#     runs-on: ubuntu-latest
-#     container:
-#       image: onnxmlirczar/onnx-mlir-dev:latest
-# 
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0 # fetch all tags and branches
-# 
-#       - name: Run tests and generate coverage report
-#         shell: bash
-#         run: |
-#           set -x
-#           apt-get update && apt-get install -y curl python3.8-venv
-#           python3 -m venv /opt/venv
-#           source /opt/venv/bin/activate
-#           export PATH="/opt/venv/bin:/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
-#           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
-#           pip install -e .
-#           pip install -r requirements/tests-requirements.txt
-#           USE_VERBOSE=true make tests-onnxmlir vvv
-# 
-#       - name: Upload test coverage to Codecov
-#         if: ${{ needs.diff.outputs.onnxmlir == 'true' }}
-#         uses: codecov/codecov-action@v2
-#         with:
-#           directory: ./
-#           files: ./onnxmlir.xml
-#           flags: onnxmlir
-#           verbose: true
+  # TODO:onnxmlir_integration_tests
 
   paddle_integration_tests:
     needs: diff

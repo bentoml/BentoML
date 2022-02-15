@@ -1,7 +1,11 @@
 import typing as t
+import logging
 import importlib.util
 from typing import TYPE_CHECKING
 
+from bentoml.exceptions import BentoMLException
+
+from ..types import LazyType
 from .lazy_loader import LazyLoader
 
 try:
@@ -11,21 +15,17 @@ except ImportError:
 
 if TYPE_CHECKING:
     import tensorflow as tf
-    from tensorflow.python.eager.function import ConcreteFunction
-    from tensorflow.python.framework.type_spec import TypeSpec
-    from tensorflow.python.training.tracking.base import Trackable
-    from tensorflow.python.training.tracking.tracking import AutoTrackable
-    from tensorflow.python.saved_model.signature_serialization import (
-        _SignatureMap,  # type: ignore[reportPrivateUsage]
-    )
-    from tensorflow.python.saved_model.function_deserialization import RestoredFunction
+
+    from ..external_typing import tensorflow as tf_ext
 else:
     tf = LazyLoader(
         "tf",
         globals(),
         "tensorflow",
-        exc_msg=f"tensorflow is required to use {__name__}",
+        exc_msg="`tensorflow` is required to use bentoml.tensorflow module.",
     )
+
+logger = logging.getLogger(__name__)
 
 TF_KERAS_DEFAULT_FUNCTIONS = {
     "_default_save_signature",
@@ -40,9 +40,50 @@ TENSOR_CLASS_NAMES = (
     "Tensor",
 )
 
+__all__ = [
+    "get_tf_version",
+    "tf_function_wrapper",
+    "pretty_format_restored_model",
+    "is_gpu_available",
+    "hook_loaded_model",
+]
+
+TF_FUNCTION_WARNING: str = """\
+Due to TensorFlow's internal mechanism, only methods
+ wrapped under `@tf.function` decorator and the Keras default function
+ `__call__(inputs, training=False)` can be restored after a save & load.\n
+You can test the restored model object via `bentoml.tensorflow.load(path)`
+"""
+
+KERAS_MODEL_WARNING: str = """\
+BentoML detected that {name} is being used to pack a Keras API
+ based model. In order to get optimal serving performance, we recommend
+ to wrap your keras model `call()` methods with `@tf.function` decorator.
+"""
+
+
+def hook_loaded_model(
+    tf_model: "tf_ext.AutoTrackable", module_name: str
+) -> "tf_ext.AutoTrackable":
+    tf_function_wrapper.hook_loaded_model(tf_model)
+    logger.warning(TF_FUNCTION_WARNING)
+    # pretty format loaded model
+    logger.info(pretty_format_restored_model(tf_model))
+    if hasattr(tf_model, "keras_api"):
+        logger.warning(KERAS_MODEL_WARNING.format(name=module_name))
+    return tf_model
+
+
+def is_gpu_available() -> bool:
+    try:
+        return len(tf.config.list_physical_devices("GPU")) > 0
+    except AttributeError:
+        return tf.test.is_gpu_available()
+
 
 def get_tf_version() -> str:
     # courtesy of huggingface/transformers
+
     _tf_version = ""
     _tf_available = importlib.util.find_spec("tensorflow") is not None
     if _tf_available:
@@ -68,107 +109,131 @@ def get_tf_version() -> str:
     return _tf_version
 
 
-def _isinstance_wrapper(
-    obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]
+def check_tensor_spec(
+    tensor: "tf_ext.TensorLike",
+    tensor_spec: t.Union[str, t.Tuple[str, ...], t.List[str], "tf_ext.UnionTensorSpec"],
+    class_name: t.Optional[str] = None,
 ) -> bool:
     """
-    `isinstance` wrapper to check tensor spec
+    :code:`isinstance` wrapper to check spec for a given tensor.
 
     Args:
-        obj:
+        tensor (:code:`Union[tf.Tensor, tf.EagerTensor, tf.SparseTensor, tf.RaggedTensor]`):
             tensor class to check.
-        sobj:
-            class used to check with :obj:`obj`. Follows `TENSOR_CLASS_NAME`
+        tensor_spec (:code:`Union[str, Tuple[str,...]]`):
+            class used to check with :obj:`tensor`. Follows :obj:`TENSOR_CLASS_NAME`
+        class_name (:code:`str`, `optional`, default to :code:`None`):
+            Optional class name to pass for correct path of tensor spec. If none specified,
+            then :code:`class_name` will be determined via given spec class.
 
     Returns:
-        :obj:`bool`
+        `bool` if given tensor match a given spec.
     """
-    if not sobj:
-        return False
-    if isinstance(sobj, str):
-        return type(obj).__name__ == sobj.split(".")[-1]
-    if isinstance(sobj, (tuple, list, set)):
-        return any(_isinstance_wrapper(obj, k) for k in sobj)
-    return isinstance(obj, sobj)
+    if tensor_spec is None:
+        raise BentoMLException("`tensor` should not be None")
+    tensor_cls = type(tensor).__name__
+    if isinstance(tensor_spec, str):
+        return tensor_cls == tensor_spec.split(".")[-1]
+    elif isinstance(tensor_spec, (list, tuple, set)):
+        return all(check_tensor_spec(tensor, k) for k in tensor_spec)
+    else:
+        if class_name is None:
+            class_name = (
+                str(tensor_spec.__class__).replace("<class '", "").replace("'>", "")
+            )
+        return LazyType["tf_ext.TensorSpec"](class_name).isinstance(tensor)
 
 
-def normalize_spec(value: t.Any) -> "TypeSpec":
+def normalize_spec(value: t.Any) -> "tf_ext.TypeSpec":
     """normalize tensor spec"""
-    if not _isinstance_wrapper(value, TENSOR_CLASS_NAMES):
+    if not check_tensor_spec(value, TENSOR_CLASS_NAMES):
         return value
-
-    if _isinstance_wrapper(value, "RaggedTensor"):
+    if check_tensor_spec(value, "RaggedTensor"):
         return tf.RaggedTensorSpec.from_value(value)
-    if _isinstance_wrapper(value, "SparseTensor"):
+    if check_tensor_spec(value, "SparseTensor"):
         return tf.SparseTensorSpec.from_value(value)
-    if _isinstance_wrapper(value, "TensorArray"):
-        return tf.TensorArraySpec.from_tensor(value)
-    if _isinstance_wrapper(value, ("Tensor", "EagerTensor")):
+    if check_tensor_spec(value, "TensorArray"):
+        return tf.TensorArraySpec.from_value(value)
+    if check_tensor_spec(value, ("Tensor", "EagerTensor")):
         return tf.TensorSpec.from_tensor(value)
-    return value
+    raise BentoMLException(f"Unknown type for tensor spec, got{type(value)}.")
 
 
 def get_input_signatures(
-    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
-) -> t.Tuple[t.Any, ...]:
-    if hasattr(func, "function_spec"):  # for RestoredFunction
-        if func.function_spec.input_signature:
-            return ((func.function_spec.input_signature, {}),)
+    func: "tf_ext.DecoratedFunction",
+) -> t.Tuple["tf_ext.InputSignature"]:
+    if hasattr(func, "function_spec"):  # RestoredFunction
+        func_spec: "tf_ext.FunctionSpec" = getattr(func, "function_spec")
+        input_spec: "tf_ext.TensorSignature" = getattr(func_spec, "input_signature")
+        if input_spec is not None:
+            return ((input_spec, {}),)
         else:
-            return tuple(
-                s
-                for conc in func.concrete_functions
-                for s in get_input_signatures(conc)
+            concrete_func: t.List["tf_ext.ConcreteFunction"] = getattr(
+                func, "concrete_functions"
             )
-    if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
-        if func.structured_input_signature is not None:
-            return (func.structured_input_signature,)
-
-        if func._arg_keywords is not None:  # TODO(bojiang): using private API
+            return tuple(
+                s for conc in concrete_func for s in get_input_signatures(conc)
+            )
+    else:
+        sis: "tf_ext.InputSignature" = getattr(func, "structured_input_signature")
+        if sis is not None:
+            return (sis,)
+        # NOTE: we can use internal `_arg_keywords` here.
+        # Seems that this is a attributes of all ConcreteFunction and
+        # does seem safe to access and use externally.
+        if getattr(func, "_arg_keywords") is not None:
             return (
                 (
                     tuple(),
                     {
                         k: normalize_spec(v)
-                        for k, v in zip(func._arg_keywords, func.inputs)
+                        for k, v in zip(
+                            getattr(func, "_arg_keywords"), getattr(func, "inputs")
+                        )
                     },
                 ),
             )
     return tuple()
 
 
-def get_arg_names(
-    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
-) -> t.Tuple[t.Any, ...]:
-    if hasattr(func, "function_spec"):  # for RestoredFunction
-        return func.function_spec.arg_names
-    if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
-        return func._arg_keywords
-    return tuple()
-
-
 def get_output_signature(
-    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
-) -> t.Tuple[t.Any, ...]:
+    func: "tf_ext.DecoratedFunction",
+) -> t.Union[
+    "tf_ext.ConcreteFunction", t.Tuple[t.Any, ...], t.Dict[str, "tf_ext.TypeSpec"]
+]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
-        return get_output_signature(func.concrete_functions[0])
+        concrete_function_wrapper: "tf_ext.ConcreteFunction" = getattr(
+            func, "concrete_functions"
+        )[0]
+        return get_output_signature(concrete_function_wrapper)
 
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
-        if func.structured_outputs is not None:
-            if isinstance(func.structured_outputs, dict):
-                return {
-                    k: normalize_spec(v) for k, v in func.structured_outputs.items()
-                }
-            return func.structured_outputs
+        if getattr(func, "structured_outputs") is not None:
+            outputs = getattr(func, "structured_outputs")
+            if LazyType[t.Dict[str, "tf_ext.TensorSpec"]](dict).isinstance(outputs):
+                return {k: normalize_spec(v) for k, v in outputs.items()}
+            return outputs
         else:
-            return tuple(normalize_spec(v) for v in func.outputs)
+            outputs: t.Tuple["tf_ext.TensorSpec"] = getattr(func, "outputs")
+            return tuple(normalize_spec(v) for v in outputs)
 
     return tuple()
 
 
-def get_restored_functions(m: "Trackable") -> t.Dict[str, t.Any]:
-    function_map = {k: getattr(m, k, None) for k in dir(m)}
+def get_arg_names(func: "tf_ext.DecoratedFunction") -> t.Optional[t.List[str]]:
+    if hasattr(func, "function_spec"):  # for RestoredFunction
+        func_spec: "tf_ext.FunctionSpec" = getattr(func, "function_spec")
+        return getattr(func_spec, "arg_names")
+    if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
+        return getattr(func, "_arg_keywords")
+    return list()
+
+
+def get_restored_functions(
+    m: "tf_ext.Trackable",
+) -> t.Dict[str, "tf_ext.RestoredFunction"]:
+    function_map = {k: getattr(m, k) for k in dir(m)}
     return {
         k: v
         for k, v in function_map.items()
@@ -176,28 +241,18 @@ def get_restored_functions(m: "Trackable") -> t.Dict[str, t.Any]:
     }
 
 
-def get_serving_default_function(
-    m: "Trackable",
-) -> t.Callable[..., t.Any]:
+def get_serving_default_function(m: "tf_ext.Trackable") -> "tf_ext.ConcreteFunction":
     if not hasattr(m, "signatures"):
         raise EnvironmentError(f"{type(m)} is not a valid SavedModel format.")
-    signatures: "_SignatureMap" = m.signatures
-    return signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
-
-
-def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tensor":
-    """
-    transform dtype & shape following spec
-    """
-    if not _isinstance_wrapper(spec, "TensorSpec"):
-        return _input
-
-    if _isinstance_wrapper(_input, ["Tensor", "EagerTensor"]):
-        # TensorFlow issue #43038
-        # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
-        return tf.cast(_input, dtype=spec.dtype, name=spec.name)
-    else:
-        return tf.constant(_input, dtype=spec.dtype, name=spec.name)
+    signatures: "tf_ext.SignatureMap" = getattr(m, "signatures")
+    func = signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)  # type: ignore
+    if func is not None:
+        return func
+    raise BentoMLException(
+        "Given Trackable objects doesn't contain a"
+        " default functions from SignatureMap."
+        " Most likely Tensorflow internal error."
+    )
 
 
 def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]):
@@ -211,12 +266,16 @@ def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]
     return f"{base}.{name}({part_sigs})"
 
 
-def _pretty_format_positional(positional: t.List[t.Any]) -> str:
-    return f'Positional arguments ({len(positional)} total):\n    * \n{"    * ".join(str(a) for a in positional)}'  # noqa
+def _pretty_format_positional(positional: t.Optional["tf_ext.TensorSignature"]) -> str:
+    if positional is not None:
+        return f'Positional arguments ({len(positional)} total):\n    {"    * ".join(str(a) for a in positional)}'  # noqa
+    return "No positional arguments.\n"
 
 
 def pretty_format_function(
-    function: t.Callable[..., t.Any], obj: str = "<object>", name: str = "<function>"
+    function: "tf_ext.DecoratedFunction",
+    obj: str = "<object>",
+    name: str = "<function>",
 ) -> str:
     ret = ""
     outs = get_output_signature(function)
@@ -226,7 +285,7 @@ def pretty_format_function(
     if hasattr(function, "function_spec"):
         arg_names = getattr(function, "function_spec").arg_names
     else:
-        arg_names = function._arg_keywords  # type: ignore[reportFunctionMemberAccess]
+        arg_names = getattr(function, "_arg_keywords")
 
     ret += _pretty_format_function_call(obj, name, arg_names)
     ret += "\n------------\n"
@@ -236,9 +295,7 @@ def pretty_format_function(
     for index, sig in enumerate(sigs):
         positional, keyword = sig
         signature_descriptions.append(
-            "Arguments Option {}:\n  {}\n  Keyword arguments:\n    {}".format(
-                index + 1, _pretty_format_positional(positional), keyword
-            )
+            f"Arguments Option {index + 1}:\n  {_pretty_format_positional(positional)}\n  Keyword arguments:\n    {keyword}"
         )
 
     ret += "\n\n".join(signature_descriptions)
@@ -246,7 +303,7 @@ def pretty_format_function(
     return ret
 
 
-def pretty_format_restored_model(model: "AutoTrackable") -> str:
+def pretty_format_restored_model(model: "tf_ext.AutoTrackable") -> str:
     part_functions = ""
 
     restored_functions = get_restored_functions(model)
@@ -254,19 +311,107 @@ def pretty_format_restored_model(model: "AutoTrackable") -> str:
         part_functions += pretty_format_function(func, "model", name)
         part_functions += "\n"
 
-    serving_default = get_serving_default_function(model)
-    if serving_default:
-        part_functions += pretty_format_function(
-            serving_default, "model", "signature['serving_default']"
-        )
-        part_functions += "\n"
+    if get_tf_version().startswith("1"):
+        serving_default = get_serving_default_function(model)
+        if serving_default:
+            part_functions += pretty_format_function(
+                serving_default, "model", "signatures['serving_default']"
+            )
+            part_functions += "\n"
 
-    if not restored_functions and not serving_default:
-        return (
-            "No serving function was found in the saved model. "
-            "In the model implementation, use `tf.function` decorator to mark "
-            "the method needed for model serving. \n"
-            "Find more details in related TensorFlow docs here "
-            "https://www.tensorflow.org/api_docs/python/tf/saved_model/save"
-        )
     return f"Found restored functions:\n{part_functions}"
+
+
+def cast_tensor_by_spec(
+    _input: "tf_ext.TensorLike", spec: "tf_ext.TypeSpec"
+) -> "tf_ext.TensorLike":
+    """
+    transform dtype & shape following spec
+    """
+    if not LazyType["tf_ext.TensorSpec"](
+        "tensorflow.python.framework.tensor_spec.TensorSpec"
+    ).isinstance(spec):
+        return _input
+
+    if LazyType["tf_ext.CastableTensorType"]("tf.Tensor").isinstance(
+        _input
+    ) or LazyType["tf_ext.CastableTensorType"](
+        "tensorflow.python.framework.ops.EagerTensor"
+    ).isinstance(
+        _input
+    ):
+        # TensorFlow Issues #43038
+        # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
+        return t.cast(
+            "tf_ext.TensorLike", tf.cast(_input, dtype=spec.dtype, name=spec.name)
+        )
+    else:
+        return t.cast(
+            "tf_ext.TensorLike", tf.constant(_input, dtype=spec.dtype, name=spec.name)
+        )
+
+
+class tf_function_wrapper:  # pragma: no cover
+    def __init__(
+        self,
+        origin_func: t.Callable[..., t.Any],
+        arg_names: t.Optional[t.List[str]] = None,
+        arg_specs: t.Optional[t.Tuple["tf_ext.TensorSpec"]] = None,
+        kwarg_specs: t.Optional[t.Dict[str, "tf_ext.TensorSpec"]] = None,
+    ) -> None:
+        self.origin_func = origin_func
+        self.arg_names = arg_names
+        self.arg_specs = arg_specs
+        self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
+        self.kwarg_specs.update(kwarg_specs or {})
+
+    def __call__(
+        self, *args: "tf_ext.TensorLike", **kwargs: "tf_ext.TensorLike"
+    ) -> t.Any:
+        if self.arg_specs is None and self.kwarg_specs is None:
+            return self.origin_func(*args, **kwargs)
+
+        for k in kwargs:
+            if k not in self.kwarg_specs:
+                raise TypeError(f"Function got an unexpected keyword argument {k}")
+
+        arg_keys = {k for k, _ in zip(self.arg_names, args)}  # type: ignore[arg-type]
+        _ambiguous_keys = arg_keys & set(kwargs)  # type: t.Set[str]
+        if _ambiguous_keys:
+            raise TypeError(f"got two values for arguments '{_ambiguous_keys}'")
+
+        # INFO:
+        # how signature with kwargs works?
+        # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
+        transformed_args: t.Tuple[t.Any, ...] = tuple(
+            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type]
+        )
+
+        transformed_kwargs = {
+            k: cast_tensor_by_spec(arg, self.kwarg_specs[k])
+            for k, arg in kwargs.items()
+        }
+        return self.origin_func(*transformed_args, **transformed_kwargs)
+
+    def __getattr__(self, k: t.Any) -> t.Any:
+        return getattr(self.origin_func, k)
+
+    @classmethod
+    def hook_loaded_model(cls, loaded_model: t.Any) -> None:
+        funcs = get_restored_functions(loaded_model)
+        for k, func in funcs.items():
+            arg_names = get_arg_names(func)
+            sigs = get_input_signatures(func)
+            if not sigs:
+                continue
+            arg_specs, kwarg_specs = sigs[0]
+            setattr(
+                loaded_model,
+                k,
+                cls(
+                    func,
+                    arg_names=arg_names,
+                    arg_specs=arg_specs,  # type: ignore
+                    kwarg_specs=kwarg_specs,  # type: ignore
+                ),
+            )

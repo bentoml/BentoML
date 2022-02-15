@@ -14,7 +14,7 @@ from .inference_api import InferenceAPI
 from ..utils.validation import validate_tag_str
 
 if TYPE_CHECKING:
-    from .. import ext_typing as ext
+    from .. import external_typing as ext
     from ..bento import Bento
 
 

@@ -119,7 +119,6 @@ def test_xgboost_runner_setup_run_batch(modelstore, save_proc):
     runner = bentoml.xgboost.load_runner(info.tag, model_store=modelstore)
 
     assert info.tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     assert np.asarray([np.argmax(_l) for _l in runner.run_batch(test_df)]) == 1
@@ -135,5 +134,4 @@ def test_xgboost_runner_setup_on_gpu(modelstore, save_proc):
         info.tag, model_store=modelstore, resource_quota=resource_quota
     )
 
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1

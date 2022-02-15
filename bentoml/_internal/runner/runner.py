@@ -112,10 +112,6 @@ class BaseRunner:
         self._impl_provider = SingletonFactory(create_runner_impl, self)
 
     @property
-    def num_concurrency_per_replica(self) -> int:
-        return 1
-
-    @property
     def num_replica(self) -> int:
         return 1
 
@@ -220,6 +216,9 @@ class RunnerImpl:
         self._state: RunnerState = RunnerState.INIT
 
     def setup(self) -> None:
+        pass
+
+    def shutdown(self) -> None:
         pass
 
     @abstractmethod

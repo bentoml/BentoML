@@ -293,10 +293,6 @@ class _PyFuncRunner(Runner):
         return [self._model_tag]
 
     @property
-    def num_concurrency_per_replica(self) -> int:
-        return int(round(self.resource_quota.cpu))
-
-    @property
     def num_replica(self) -> int:
         return 1
 

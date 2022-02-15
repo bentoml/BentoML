@@ -52,3 +52,7 @@ class LocalRunner(RunnerImpl):
             return self._runner._run_batch(*args, **kwargs)  # type: ignore[reportPrivateUsage]
         if isinstance(self._runner, SimpleRunner):
             raise RuntimeError("shall not call run_batch on a" " simple runner")
+
+    def __del__(self):
+        if self._state is not RunnerState.INIT:
+            self.shutdown()

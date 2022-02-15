@@ -30,9 +30,9 @@ repository.
   spacy
   statsmodels
   tensorflow
+  tensorflow_v1
   transformers
   xgboost
-
 
 
 

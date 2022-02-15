@@ -191,18 +191,19 @@ statsmodels:
   <<: *tmpl
   dependencies:
     - "statsmodels==0.12.2"
+    - "scipy==1.7.3"  # statsmodels 0.12.2 is using internal APIs of scipy
     - "joblib"
 
 tf1:
   <<: *tmpl
-  override_name_or_path: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_v1_impl.py
   dependencies:
     - "tensorflow==1.15"
     - "tensorflow_hub"
 
 tf2:
   <<: *tmpl
-  override_name_or_path: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_v2_impl.py
   dependencies:
     - "tensorflow_text"
     - "tensorflow_hub"

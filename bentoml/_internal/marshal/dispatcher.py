@@ -12,7 +12,6 @@ from ..utils import cached_property
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 
 class NonBlockSema:
@@ -77,8 +76,8 @@ class Optimizer:
 
         self.o_a, self.o_b = max(0.000001, _o_a), max(0, _o_b)
         self.wait = max(0, _o_w)
-        logger.info(
-            "optimizer params updated: o_a: %.6f, o_b: %.6f, wait: %.6f",
+        logger.debug(
+            "Dynamic batching optimizer params updated: o_a: %.6f, o_b: %.6f, wait: %.6f",
             _o_a,
             _o_b,
             _o_w,
@@ -220,7 +219,7 @@ class CorkDispatcher:
     async def outbound_call(self, inputs_info):
         _time_start = time.time()
         _done = False
-        logger.info("outbound function called: %d", len(inputs_info))
+        logger.debug("Dynamic batching cork released, batch size: %d", len(inputs_info))
         try:
             outputs = await self.callback(tuple(d for _, d, _ in inputs_info))
             assert len(outputs) == len(inputs_info)

@@ -3,13 +3,13 @@ import sys
 import typing as t
 import asyncio
 import logging
-import contextvars
 from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
 from opentelemetry import trace  # type: ignore[import]
 
+from ..trace import ServiceContext
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -103,34 +103,6 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
     logger.error(
         "Exception on %s [%s]", request.url.path, request.method, exc_info=exc_info
     )
-
-
-class ServiceContextClass:
-    def __init__(self) -> None:
-        self.request_id_var = contextvars.ContextVar(
-            "request_id_var", default=t.cast("t.Optional[int]", None)
-        )
-
-    @property
-    def trace_id(self) -> t.Optional[int]:
-        span = trace.get_current_span()
-        if span is None:
-            return None
-        return span.get_span_context().trace_id
-
-    @property
-    def span_id(self) -> t.Optional[int]:
-        span = trace.get_current_span()
-        if span is None:
-            return None
-        return span.get_span_context().span_id
-
-    @property
-    def request_id(self) -> t.Optional[int]:
-        return self.request_id_var.get()
-
-
-ServiceContext = ServiceContextClass()
 
 
 class ServiceAppFactory(BaseAppFactory):
@@ -311,6 +283,21 @@ class ServiceAppFactory(BaseAppFactory):
                 tracer_provider=DeploymentContainer.tracer_provider.get(),
             )
         )
+
+        from .access import AccessLogMiddleware
+
+        middlewares.append(
+            Middleware(
+                AccessLogMiddleware,
+                fields=[
+                    "REQUEST_CONTENT_TYPE",
+                    "REQUEST_CONTENT_LENGTH",
+                    "RESPONSE_CONTENT_TYPE",
+                    "RESPONSE_CONTENT_LENGTH",
+                ],
+            )
+        )
+
         return middlewares
 
     @property
@@ -380,7 +367,6 @@ class ServiceAppFactory(BaseAppFactory):
                     "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
                     status_code=500,
                 )
-
             return response
 
         return api_func

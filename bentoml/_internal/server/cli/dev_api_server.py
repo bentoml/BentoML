@@ -5,7 +5,8 @@ import click
 
 from bentoml import load
 
-from .common import UVICORN_LOGGING_CONFIG
+from ...log import LOGGING_CONFIG
+from ...trace import ServiceContext
 
 
 @click.command()
@@ -25,6 +26,8 @@ def main(
 
     from ...configuration import get_debug_mode
 
+    ServiceContext.component_name_var.set("dev_api_server")
+
     parsed = urlparse(bind)
 
     if parsed.scheme == "tcp":
@@ -36,7 +39,7 @@ def main(
             "log_level": log_level,
             "reload": reload,
             "reload_delay": reload_delay,
-            "log_config": UVICORN_LOGGING_CONFIG,
+            "log_config": LOGGING_CONFIG,
             "workers": 1,
         }
 

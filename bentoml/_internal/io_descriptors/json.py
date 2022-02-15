@@ -15,10 +15,10 @@ from ...exceptions import MissingDependencyException
 if TYPE_CHECKING:
     import pydantic
 
-    from .. import ext_typing as ext
+    from .. import external_typing as ext  # noqa
 
     _SerializableObj = t.Union[
-        "ext.NpNDArray[t.Any]",
+        "ext.NpNDArray",
         "ext.PdDataFrame",
         t.Type["pydantic.BaseModel"],
         t.Any,
@@ -52,7 +52,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
 
 class JSON(IODescriptor[JSONType]):
     """
-    `JSON` defines API specification for the inputs/outputs of a Service, where either
+    :code:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
     as specified in your API function signature.
 
@@ -88,24 +88,35 @@ class JSON(IODescriptor[JSONType]):
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session:
+    Users can then send requests to the newly started services with any client:
 
-    .. code-block:: bash
+    .. tabs::
 
-        % curl -X POST -H "Content-Type: application/json" --data
-          '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
+        .. code-tab:: python
 
-        {"res":"[{\"0\":1}]"}%
+            import requests
+            requests.post(
+                "http://0.0.0.0:5000/predict",
+                headers={"content-type": "application/json"},
+                data='[{"0":5,"1":4,"2":3,"3":2}]'
+            ).text
+
+        .. code-tab:: bash
+
+            % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
+
+            {"res":"[{\"0\":1}]"}%
 
     Args:
-        pydantic_model (`pydantic.BaseModel`, `optional`, default to `None`):
+        pydantic_model (:code:`pydantic.BaseModel`, `optional`, default to :code:`None`):
             Pydantic model schema.
-        validate_json (`bool`, `optional`, default to `True`): If True, then use
+        validate_json (:code:`bool`, `optional`, default to :code:`True`): If True, then use
             Pydantic model specified above to validate given JSON.
-        json_encoder (`Type[json.JSONEncoder]`, default to `bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
+        json_encoder (:code:`Type[json.JSONEncoder]`, default to :code:`~bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
             JSON encoder class.
+
     Returns:
-        IO Descriptor that in JSON format.
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that in JSON format.
     """
 
     def __init__(

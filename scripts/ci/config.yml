@@ -1,3 +1,10 @@
+# NOTE: PUT YOUR PYPI dependencies under `dependencies`
+# `dependencies` will pass all given arguments to a `requirements.txt`
+#  then `./scripts/ci/run_tests.sh` will try to install all given dependencies
+#  for given tests
+#  `external_scripts` will be run AFTER installing dependencies, and can be used
+#  to setup external envvar
+
 template: &tmpl
   root_test_dir: "tests/integration/frameworks"
   is_dir: false
@@ -46,6 +53,7 @@ easyocr:
   <<: *tmpl
   dependencies:
     - "easyocr"
+    - "opencv-python-headless==4.5.4.60"
 
 evalml:
   <<: *tmpl
@@ -90,13 +98,16 @@ lightgbm:
   dependencies:
     - "lightgbm"
 
+# we need to use external_scripts to update scikit-learn here due to some error
+# with mismatch scikit-learn from mlflow side
 mlflow:
   <<: *tmpl
   is_dir: true
   override_name_or_path: mlflow
   dependencies:
     - "mlflow"
-    - "scikit-learn"
+  external_scripts: |
+    python -m pip install -U scikit-learn
 
 onnx:
   <<: *tmpl
@@ -125,6 +136,8 @@ paddle:
     - "paddlepaddle"
     - "paddlehub"
     - "gast==0.3.3"
+  external_scripts: |
+    export SETUPTOOLS_USE_DISTUTILS=stdlib
 
 pycaret:
   <<: *tmpl
@@ -169,23 +182,25 @@ spacy:
     - "tensorflow==2.6.0"
   external_scripts: |
     python -m spacy download en_core_web_sm
+    python -m pip install "typing_extensions>=3.10"
 
 statsmodels:
   <<: *tmpl
   dependencies:
     - "statsmodels==0.12.2"
+    - "scipy==1.7.3"  # statsmodels 0.12.2 is using internal APIs of scipy
     - "joblib"
 
 tf1:
   <<: *tmpl
-  override_name_or_path: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_v1_impl.py
   dependencies:
     - "tensorflow==1.15"
     - "tensorflow_hub"
 
 tf2:
   <<: *tmpl
-  override_name_or_path: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_v2_impl.py
   dependencies:
     - "tensorflow_text"
     - "tensorflow_hub"
@@ -194,9 +209,8 @@ tf2:
 transformers:
   <<: *tmpl
   dependencies:
-    - "transformers==4.9.2"
+    - "transformers"
     - "tensorflow_hub"
-    - "tensorflow"
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.9.0+cpu"
     - "torchvision==0.10.0+cpu"
@@ -206,6 +220,8 @@ transformers:
     - "tensorflow==2.5.0"
     - "importlib_metadata"
     - "Pillow==8.4.0"
+  external_scripts: |
+    python -m pip install "typing_extensions>=3.10"
 
 xgboost:
   <<: *tmpl

@@ -49,15 +49,6 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.spacy"
 
-_spacy_version = get_pkg_version("spacy")
-
-_check_compat = _spacy_version.startswith("3")
-if not _check_compat:  # pragma: no cover
-    raise EnvironmentError(
-        "BentoML will only provide supports for spacy 3.x and above"
-        " as we can provide more supports for Spacy new design. Currently"
-        f" detected spacy to have version {_spacy_version}"
-    )
 
 util = LazyLoader("util", globals(), "spacy.util")
 thinc_util = LazyLoader("thinc_util", globals(), "thinc.util")
@@ -104,7 +95,7 @@ def load_project(
             " Refers to https://spacy.io/api/cli#project for more information."
         )
         return os.path.join(model.path, model.info.options["target_path"])
-    raise EnvironmentError(
+    raise BentoMLException(
         "Cannot use `bentoml.spacy.load_project()` to load non Spacy Projects. If your"
         " model is not a Spacy projects use `bentoml.spacy.load()` instead."
     )
@@ -112,13 +103,43 @@ def load_project(
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     vocab: t.Union["Vocab", bool] = True,  # type: ignore[reportUnknownParameterType]
     disable: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
     exclude: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
     config: t.Union[t.Dict[str, t.Any], "Config"] = util.SimpleFrozenDict(),  # noqa
 ) -> "spacy.language.Language":
+    """
+    Load a model from BentoML local modelstore with given name.
+
+    Args:
+        tag (:code:`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+        vocab (:code:`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
+            Optional vocab to pass in on initialization. If True, a new Vocab object will be created.
+        disable (`Iterable[str]`, `optional`):
+            Names of pipeline components to disable.
+        exclude (`Iterable[str]`, `optional`):
+            Names of pipeline components to exclude. Excluded
+            components won't be loaded.
+        config (:code:`Union[Dict[str, Any], spacy.Config]`, `optional`):
+            Config overrides as nested dict or dict
+            keyed by section values in dot notation.
+
+    Returns:
+        :obj:`spacy.language.Language`: an instance of :obj:`spacy.Language` from BentoML modelstore.
+
+    Examples:
+
+    .. code-block:: python
+
+        import bentoml
+
+        model = bentoml.spacy.load('custom_roberta')
+    """
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
@@ -126,7 +147,7 @@ def load(
         )
 
     if "projects_uri" in model.info.options:
-        raise EnvironmentError(
+        raise BentoMLException(
             "Cannot use `bentoml.spacy.load()` to load Spacy Projects. Use"
             " `bentoml.spacy.load_project()` instead."
         )
@@ -138,15 +159,15 @@ def load(
         try:
             from spacy.cli.download import download
 
-            # TODO move this to runner on startup hook
+            # TODO: move this to runner on startup hook
             download(required)
         except (SystemExit, Exception):  # pylint: disable=broad-except
             logger.warning(
                 f"{required} cannot be downloaded as pip package. If this"
-                f" is a custom pipeline there is nothing to worry about."
-                f" If this is a pretrained model provided by Explosion make"
-                f" sure that you save the correct package and model to BentoML"
-                f" via `bentoml.spacy.save()`"
+                " is a custom pipeline there is nothing to worry about."
+                " If this is a pretrained model provided by Explosion make"
+                " sure that you save the correct package and model to BentoML"
+                " via `bentoml.spacy.save()`"
             )
     try:
         # check if pipeline has additional requirements then all related
@@ -181,20 +202,22 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (`str`):
+        name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`spacy.language.Language`):
             Instance of model to be saved
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        tag (`str` with a format `name:version`) where `name` is the defined name user
-        set for their models, and version will be generated by BentoML.
+        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
-    Examples::
+    Examples:
+
+    .. code-block:: python
+
         import spacy
         import bentoml.spacy
         nlp = spacy.load("en_core_web_trf")
@@ -205,7 +228,7 @@ def save(
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "spacy",
-        "pip_dependencies": [f"spacy=={_spacy_version}"],
+        "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
     }
     _model = Model.create(
         name,
@@ -240,6 +263,59 @@ def projects(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
+    """
+    Enables users to use :code:`spacy cli` and integrate SpaCy `Projects <https://spacy.io/usage/projects>`_ to BentoML.
+
+    Args:
+        save_name (:code:`str`):
+            Name for given model instance. This should pass Python identifier check.
+        tasks (:code:`str`):
+            Given SpaCy CLI tasks. Currently only support :code:`pull` and :code:`clone`
+        repo_or_store(:code:`str`, `optional`, defaults to `None`):
+            URL of Git repo or given S3 store containing project templates.
+        model (`spacy.language.Language`):
+            Instance of model to be saved
+        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
+            Custom metadata for given model.
+        branch (:code:`str`, `optional`, defaults to `None`):
+            The branch to clone from. If not specified, defaults to :code:`main` branch
+        verbose (`bool`, `optional`, default to :code:`True`):
+            Verbosely post all logs.
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+
+    Returns:
+        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+
+    .. warning::
+
+       This is an **EXPERIMENTAL** API as it is subjected to change. We are also looking for feedback.
+
+    Examples:
+
+    .. code-block:: python
+
+        import bentoml
+
+        clone_tag = bentoml.spacy.projects(
+            "test_spacy_project",
+            "clone",
+            name="integrations/huggingface_hub",
+            repo_or_store="https://github.com/aarnphm/bentoml-spacy-projects-integration-tests",
+        )
+        project_path = bentoml.spacy.load_project(clone_tag)
+
+
+        project_yml = {
+            "remotes": {
+                "default": "https://github.com/aarnphm/bentoml-spacy-projects-integration-tests/tree/v3/pipelines/tagger_parser_ud",
+            }
+        }
+        pull_tag = bentoml.spacy.projects("test_pull", "pull", remotes_config=project_yml)
+        project_path = bentoml.spacy.load_project(pull_tag)
+    """  # noqa
+    # EXPERIMENTAL: note that these functions are direct modified implementation
+    # from spacy internal API. Subject to change, use with care!
     from spacy.cli.project.pull import project_pull
     from spacy.cli.project.clone import project_clone
 
@@ -260,7 +336,7 @@ def projects(
         )
     context: t.Dict[str, t.Any] = {
         "framework_name": "spacy",
-        "pip_dependencies": [f"spacy=={_spacy_version}"],
+        "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
         "tasks": tasks,
     }
     _model = Model.create(
@@ -380,12 +456,6 @@ class _SpacyRunner(Runner):
     def required_models(self) -> t.List[Tag]:
         return [self._tag]
 
-    @property
-    def num_concurrency_per_replica(self) -> int:
-        if self.resource_quota.on_gpu:
-            return 1
-        return int(round(self.resource_quota.cpu))
-
     def _get_pytorch_gpu_count(self) -> t.Optional[int]:
         assert self._backend_options == "pytorch"
         devs = getattr(torch, "cuda").device_count()
@@ -479,6 +549,56 @@ def load_runner(
     component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SpacyRunner":
+    """
+    Runner represents a unit of serving logic that can be scaled horizontally to
+    maximize throughput. :func:`bentoml.spacy.load_runner` implements a Runner class that
+    wrap around :obj:`spacy.language.Language` model, which optimize it for the BentoML runtime.
+
+    Args:
+        tag (:code:`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore..
+        gpu_device_id (`int`, `optional`, defaults to `None`):
+            GPU device ID.
+        backend_options (`Literal['pytorch', 'tensorflow'], `optional`, defaults to `None`):
+            Backend options for Thinc. Either PyTorch or Tensorflow.
+        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
+            Dictionary to configure resources allocation for runner.
+        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
+            Dictionary to configure batch options for runner in a service context.
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+        vocab (:code:`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
+            Optional vocab to pass in on initialization. If True, a new Vocab object will be created.
+        disable (`Iterable[str]`, `optional`):
+            Names of pipeline components to disable.
+        exclude (`Iterable[str]`, `optional`):
+            Names of pipeline components to exclude. Excluded
+            components won't be loaded.
+        config (:code:`Union[Dict[str, Any], spacy.Config]`, `optional`):
+            Config overrides as nested dict or dict
+            keyed by section values in dot notation.
+        as_tuples (`Literal[False, True]`, `optional`, defaults to `False`):
+            If set to True, inputs should be a sequence of
+            (text, context) tuples. Output will then be a sequence of
+            (doc, context) tuples.
+        batch_size (`int`, `optional`, defaults to `None`):
+            The number of texts to buffer.
+        component_cfg (:code:`Dict[str, :code:`Dict[str, Any]]`, `optional`, defaults to `None`):
+            An optional dictionary with extra keyword
+            arguments for specific components.
+
+    Returns:
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for the target :mod:`bentoml.sklearn` model
+
+    Examples:
+
+    .. code-block:: python
+
+        import bentoml
+
+        runner = bentoml.sklearn.load_runner("my_model:latest")
+        runner.run([[1,2,3,4]])
+    """
     tag = Tag.from_taglike(tag)
     if name is None:
         name = tag.name

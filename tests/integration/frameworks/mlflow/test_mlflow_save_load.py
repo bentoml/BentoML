@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import psutil
 import pytest
+import mlflow.sklearn
 
 import bentoml
 from bentoml.exceptions import BentoMLException
@@ -31,14 +32,18 @@ res_arr = np.array(
 
 
 def test_mlflow_save():
-    with pytest.raises(EnvironmentError):
+    with pytest.raises(BentoMLException):
         bentoml.mlflow.save()
 
 
 def test_mlflow_save_load(modelstore):
     (model, data) = sklearn_model_data()
-    uri = Path(current_file, "sklearn_clf").resolve()
-    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
+    uri = Path(current_file, "sklearn_clf")
+    if not uri.exists():
+        mlflow.sklearn.save_model(model, uri.resolve())
+    tag = bentoml.mlflow.import_from_uri(
+        MODEL_NAME, str(uri.resolve()), model_store=modelstore
+    )
     model_info = modelstore.get(tag)
     assert_have_file_extension(os.path.join(model_info.path, "sklearn_clf"), ".pkl")
 
@@ -65,7 +70,6 @@ def test_invalid_load(modelstore, invalid_save_with_no_mlmodel):
 def test_mlflow_load_runner(modelstore):
     (_, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf").resolve()
-    print(uri)
     tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
     runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
     from bentoml._internal.frameworks.mlflow import _PyFuncRunner
@@ -73,7 +77,6 @@ def test_mlflow_load_runner(modelstore):
     assert isinstance(runner, _PyFuncRunner)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     res = runner.run_batch(data)

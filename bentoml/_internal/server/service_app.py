@@ -3,13 +3,13 @@ import sys
 import typing as t
 import asyncio
 import logging
-import contextvars
 from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
 from opentelemetry import trace  # type: ignore[import]
 
+from ..trace import ServiceContext
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -105,34 +105,6 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
     )
 
 
-class ServiceContextClass:
-    def __init__(self) -> None:
-        self.request_id_var = contextvars.ContextVar(
-            "request_id_var", default=t.cast("t.Optional[int]", None)
-        )
-
-    @property
-    def trace_id(self) -> t.Optional[int]:
-        span = trace.get_current_span()
-        if span is None:
-            return None
-        return span.get_span_context().trace_id
-
-    @property
-    def span_id(self) -> t.Optional[int]:
-        span = trace.get_current_span()
-        if span is None:
-            return None
-        return span.get_span_context().span_id
-
-    @property
-    def request_id(self) -> t.Optional[int]:
-        return self.request_id_var.get()
-
-
-ServiceContext = ServiceContextClass()
-
-
 class ServiceAppFactory(BaseAppFactory):
     """
     ServiceApp creates a REST API server based on APIs defined with a BentoService
@@ -170,9 +142,7 @@ class ServiceAppFactory(BaseAppFactory):
     def name(self) -> str:
         return self.bento_service.name
 
-    async def index_view_func(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def index_view_func(self, _: "Request") -> "Response":
         """
         The default index view for BentoML API server. This includes the readme
         generated from docstring and swagger UI
@@ -185,21 +155,16 @@ class ServiceAppFactory(BaseAppFactory):
             media_type="text/html",
         )
 
-    @inject
-    async def metrics_view_func(
-        self,
-        _: "Request",
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def metrics_view_func(self, _: "Request") -> "Response":
         from starlette.responses import Response
 
         return Response(
             self.metrics_client.generate_latest(),
+            status_code=200,
             media_type=self.metrics_client.CONTENT_TYPE_LATEST,
         )
 
-    async def docs_view_func(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def docs_view_func(self, _: "Request") -> "Response":
         from starlette.responses import JSONResponse
 
         docs = self.bento_service.openapi_doc()
@@ -237,7 +202,11 @@ class ServiceAppFactory(BaseAppFactory):
 
         if self.enable_metrics:
             routes.append(
-                Route(path="/metrics", name="metrics", endpoint=self.metrics_view_func)
+                Route(
+                    path="/metrics",
+                    name="metrics",
+                    endpoint=self.metrics_view_func,
+                )
             )
 
         parent_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -284,11 +253,20 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(CORSMiddleware, **self.access_control_options)
             )
 
+        # metrics middleware
+        from .instruments import MetricsMiddleware
+
+        middlewares.append(
+            Middleware(MetricsMiddleware, bento_service=self.bento_service)
+        )
+
+        # otel middleware
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
 
         def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
-                ServiceContext.request_id_var.set(span.context.span_id)
+                span_id: int = span.context.span_id
+                ServiceContext.request_id_var.set(span_id)
 
         def client_response_hook(span: "Span", _message: t.Any) -> None:
             if span is not None:
@@ -305,6 +283,21 @@ class ServiceAppFactory(BaseAppFactory):
                 tracer_provider=DeploymentContainer.tracer_provider.get(),
             )
         )
+
+        from .access import AccessLogMiddleware
+
+        middlewares.append(
+            Middleware(
+                AccessLogMiddleware,
+                fields=[
+                    "REQUEST_CONTENT_TYPE",
+                    "REQUEST_CONTENT_LENGTH",
+                    "RESPONSE_CONTENT_TYPE",
+                    "RESPONSE_CONTENT_LENGTH",
+                ],
+            )
+        )
+
         return middlewares
 
     @property
@@ -374,7 +367,6 @@ class ServiceAppFactory(BaseAppFactory):
                     "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
                     status_code=500,
                 )
-
             return response
 
         return api_func

@@ -81,6 +81,21 @@ def test_pytorch_save_load(test_type, modelstore, models):
     assert predict_df(pytorch_loaded, test_df) == 5.0
 
 
+@pytest.mark.gpus
+@pytest.mark.parametrize("dev", ["cpu", "cuda", "cuda:0"])
+@pytest.mark.parametrize("test_type", ["", "tracedmodel", "scriptedmodel"])
+def test_pytorch_save_load_across_devices(dev, test_type, modelstore, models):
+    def is_cuda(model):
+        return next(model.parameters()).is_cuda
+
+    tag = models(test_type)
+    loaded: nn.Module = bentoml.pytorch.load(tag, model_store=modelstore, device_id=dev)
+    if dev == "cpu":
+        assert not is_cuda(loaded)
+    else:
+        assert is_cuda(loaded)
+
+
 @pytest.mark.parametrize(
     "input_data",
     [
@@ -95,7 +110,6 @@ def test_pytorch_runner_setup_run_batch(modelstore, input_data):
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
 
     res = runner.run_batch(input_data)
     assert res.unsqueeze(dim=0).item() == 5.0
@@ -108,7 +122,6 @@ def test_pytorch_runner_setup_on_gpu(modelstore, dev):
     tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
     runner = bentoml.pytorch.load_runner(tag, model_store=modelstore, device_id=dev)
 
-    assert runner.num_concurrency_per_replica == 1
     assert torch.cuda.device_count() == runner.num_replica
 
 

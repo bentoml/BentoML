@@ -9,7 +9,7 @@ latest version.
 
 If you are using an older version of BentoML and would like to receive
 security patches, let us know via
-[BentoML Slack Channel](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+[BentoML Slack Channel](https://join.slack.bentoml.org)
 or [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 
 

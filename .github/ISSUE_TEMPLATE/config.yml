@@ -3,7 +3,7 @@ contact_links:
     url: https://github.com/bentoml/BentoML/discussions
     about: Please ask general questions here.
   - name: BentoML Slack Community
-    url: https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg
+    url: https://join.slack.bentoml.org
     about: For connecting with others in the community
   - name: BentoML Enterprise Support
     url: contact@bentoml.ai

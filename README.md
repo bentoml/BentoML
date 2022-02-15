@@ -1,14 +1,16 @@
 [<img src="https://raw.githubusercontent.com/bentoml/BentoML/main/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
 
-# Model Serving Made Easy  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20Machine%20Learning%20Model%20Serving%20Made%20Easy%20&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
+# Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 [![actions_status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
-[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
-BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
+BentoML enables users to create a machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
+
+👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
 __The BentoML version 1.0 is around the corner.__ For stable release version 0.13, see
 the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS). Version 1.0 is 
@@ -19,22 +21,25 @@ reporting issues, contribute to the documentation and create sample gallery proj
 
 - The easiest way to turn your ML models into production-ready API endpoints.
 - High performance model serving, all in Python.
-- Standardlize model packaging and ML service definition to streamline deployment.
+- Standardize model packaging and ML service definition to streamline deployment.
 - Support all major machine-learning training [frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html).
+- Deploy and operate ML serving workload at scale on Kubernetes via [Yatai](https://github.com/bentoml/yatai).
 
 ## Getting Started ##
 
 - [Quickstart guide](https://docs.bentoml.org/en/latest/quickstart.html) will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
 - [Main concepts](https://docs.bentoml.org/en/latest/concepts/index.html) will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
-- Playground notebook gets your hands dirty in a notebook environment, for you to try out all the core features in BentoML.
 - [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html) lays out best practices and example usages by the ML framework used for training models.
-- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) show cases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) showcases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+- Check out other projects from the [BentoML team](https://github.com/bentoml):
+  - [🦄️ Yatai](https://github.com/bentoml/yatai): Run BentoML workflow at scale on Kubernetes
+  - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment with BentoML on cloud platforms
 
 ## Community ##
 
 - To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
 - For other discussions, use [Github Discussions](https://github.com/bentoml/BentoML/discussions).
-- To receive release announcements, please subscribe to our mailing list or join us on [Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
+- To receive release announcements, please join us on [Slack](https://join.slack.bentoml.org).
 
 ## Contributing ##
 
@@ -52,7 +57,7 @@ There are many ways to contribute to the project:
 
 BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com/). 
 It only collects BentoML library's own actions and parameters, no user or model data will be collected. 
-Here is the [code](https://github.com/bentoml/BentoML/blob/main/bentoml/utils/usage_stats.py) that does it.
+Here is the [code](https://github.com/bentoml/BentoML/blob/main/bentoml/_internal/utils/usage_stats.py) that does it.
 
 This helps the BentoML team to understand how the community is using this tool and what to build next. 
 You can easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.

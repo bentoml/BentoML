@@ -126,7 +126,6 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     )
 
     assert info.tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     res_pd = runner.run_batch(test_df)
@@ -145,7 +144,6 @@ def test_statsmodels_runner_setup_on_gpu(modelstore, save_proc):
         info.tag, model_store=modelstore, resource_quota=resource_quota
     )
 
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
 
 

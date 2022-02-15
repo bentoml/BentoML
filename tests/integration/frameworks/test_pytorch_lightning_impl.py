@@ -66,7 +66,6 @@ def test_pytorch_lightning_runner_setup_run_batch(modelstore):
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
 
     res = runner.run_batch(torch.from_numpy(test_df.to_numpy()))
     assert res.numpy().tolist() == [[6, 5, 4, 3]]
@@ -83,7 +82,6 @@ def test_pytorch_lightning_runner_setup_on_gpu(modelstore, dev):
         tag, model_store=modelstore, device_id=dev
     )
 
-    assert runner.num_concurrency_per_replica == 1
     assert torch.cuda.device_count() == runner.num_replica
 
 

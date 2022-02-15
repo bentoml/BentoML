@@ -53,6 +53,7 @@ bentoml.build(
         extra_index_url=["..."],
         pip_args="ANY ADDITIONAL PIP INSTALL ARGS",
         wheels=["./wheels/*"],
+        lock_packages=True,
     ),
     docker=dict(
         # "base_image": "mycompany.com/registry/name/tag",
@@ -107,6 +108,7 @@ python:
   pip_args: "-- "
   wheels:
     - ./build/my_lib.whl
+  lock_packages: true
 ```
 
 Another bentofile example:
@@ -176,8 +178,7 @@ Inside a Bento archive, you will find the following file structure:
       - setup_script
     - /conda
       - environment.yml
-
-- /FraudDetector  # this folder is mostly identical to user's development directory
+- /src
   - bento.py
   - /common
       - my_lib.py
@@ -190,6 +191,10 @@ Inside a Bento archive, you will find the following file structure:
       - model.pkl
     - latest
 ```
+
+`src` directory here is mostly identical to user's development directory, as well as
+user Python code's CWD(current working directory), which is used as the default Path for
+importing local module and relative file path root.
 
 An example `bento.yaml` file in a Bento directory:
 

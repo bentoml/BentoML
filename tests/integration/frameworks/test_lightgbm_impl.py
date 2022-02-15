@@ -132,7 +132,6 @@ def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
 
     runner = bentoml.lightgbm.load_runner(info.tag, model_store=modelstore)
     assert info.tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     assert runner.run_batch(np.array([[0]])) == np.array([0.0])
@@ -159,7 +158,6 @@ def test_lightgbm_sklearn_runner_setup_run_batch(modelstore, save_sklearn_proc):
     )
 
     assert info.tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     assert runner.run_batch(np.array([[0] * 10] * 10))[0][0] == 0.999999999999999
@@ -181,7 +179,6 @@ def test_lightgbm_gpu_runner(modelstore, save_proc):
         resource_quota={"gpus": 0},
     )
 
-    assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
     assert info.tag in runner.required_models
     assert runner.resource_quota.on_gpu is True

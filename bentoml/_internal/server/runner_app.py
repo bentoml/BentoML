@@ -5,12 +5,14 @@ import logging
 from typing import TYPE_CHECKING
 from functools import partial
 
+from ..trace import ServiceContext
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
+from ..configuration.containers import DeploymentContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -19,6 +21,8 @@ if TYPE_CHECKING:
     from starlette.routing import BaseRoute
     from starlette.requests import Request
     from starlette.responses import Response
+    from starlette.middleware import Middleware
+    from opentelemetry.sdk.trace import Span
 
     from ..runner import Runner
     from ..runner import SimpleRunner
@@ -61,6 +65,7 @@ class RunnerAppFactory(BaseAppFactory):
     @property
     def on_shutdown(self) -> t.List[t.Callable[[], None]]:
         on_shutdown = super().on_shutdown
+        on_shutdown.insert(0, self.runner._impl.shutdown)  # type: ignore[reportPrivateUsage]
         if self.dispatcher is not None:
             on_shutdown.insert(0, self.dispatcher.shutdown)
         return on_shutdown
@@ -88,6 +93,51 @@ class RunnerAppFactory(BaseAppFactory):
         else:
             routes.append(Route("/run", self.async_run, methods=["POST"]))
         return routes
+
+    @property
+    def middlewares(self) -> t.List["Middleware"]:
+        middlewares = super().middlewares
+
+        # otel middleware
+        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
+        from starlette.middleware import Middleware
+
+        def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
+            if span is not None:
+                span_id: int = span.context.span_id
+                ServiceContext.request_id_var.set(span_id)
+
+        def client_response_hook(span: "Span", _message: t.Any) -> None:
+            if span is not None:
+                ServiceContext.request_id_var.set(None)
+
+        middlewares.append(
+            Middleware(
+                otel_asgi.OpenTelemetryMiddleware,
+                excluded_urls=None,
+                default_span_details=None,
+                server_request_hook=None,
+                client_request_hook=client_request_hook,
+                client_response_hook=client_response_hook,
+                tracer_provider=DeploymentContainer.tracer_provider.get(),
+            )
+        )
+
+        from .access import AccessLogMiddleware
+
+        middlewares.append(
+            Middleware(
+                AccessLogMiddleware,
+                fields=[
+                    "REQUEST_CONTENT_TYPE",
+                    "REQUEST_CONTENT_LENGTH",
+                    "RESPONSE_CONTENT_TYPE",
+                    "RESPONSE_CONTENT_LENGTH",
+                ],
+            )
+        )
+
+        return middlewares
 
     async def _async_cork_run(
         self, requests: t.Iterable["Request"]

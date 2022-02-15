@@ -13,6 +13,7 @@ repository.
 
   sklearn
   tensorflow
+  tensorflow_v1
   keras
   xgboost
   pytorch
@@ -25,13 +26,12 @@ repository.
   gluon
   h2o
   lightgbm
-  pycaret
+  catboost
   spacy
+  pycaret
   statsmodels
   easyocr
-  catboost
   detectron
-
 
 
 Support for the following libraries are coming soon:

@@ -30,14 +30,10 @@ def predict_df(inference_sess: ExecutionSession, df: pd.DataFrame):
     return inference_sess.run(input_data)
 
 
-@pytest.fixture()
-def tensorflow_model(tmpdir):
+@pytest.fixture(name="convert_to_onnx")
+def fixture_convert_to_onnx(tmpdir):
     model = NativeModel()
     tf.saved_model.save(model, str(tmpdir))
-
-
-@pytest.fixture()
-def convert_to_onnx(tensorflow_model, tmpdir):
     model_path = os.path.join(str(tmpdir), "model.onnx")
     command = [
         "python",
@@ -51,12 +47,12 @@ def convert_to_onnx(tensorflow_model, tmpdir):
     docker_proc = subprocess.Popen(  # noqa
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=tmpdir, text=True
     )
-    stdout, stderr = docker_proc.communicate()
+    _, stderr = docker_proc.communicate()
     assert "ONNX model is saved" in stderr, "Failed to convert TF model"
 
 
-@pytest.fixture()
-def compile_model(convert_to_onnx, tmpdir):
+@pytest.fixture(name="compile_model")
+def fixture_compile_model(convert_to_onnx, tmpdir):
     sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
     model_location = os.path.join(str(tmpdir), "model.onnx")
     command = ["./onnx-mlir", "--EmitLib", model_location]
@@ -91,7 +87,6 @@ def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
     runner = bentoml.onnxmlir.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models
-    assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     res = runner.run_batch(test_df.to_numpy().astype(np.float64))

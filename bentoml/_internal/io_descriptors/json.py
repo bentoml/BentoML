@@ -15,10 +15,10 @@ from ...exceptions import MissingDependencyException
 if TYPE_CHECKING:
     import pydantic
 
-    from .. import ext_typing as ext
+    from .. import external_typing as ext  # noqa
 
     _SerializableObj = t.Union[
-        "ext.NpNDArray[t.Any]",
+        "ext.NpNDArray",
         "ext.PdDataFrame",
         t.Type["pydantic.BaseModel"],
         t.Any,

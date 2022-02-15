@@ -31,7 +31,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = "-rafEX -p pytester"
+addopts = "-rfEX -p pytester -p no:warnings"
 python_files = ["test_*.py","*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus"]

@@ -13,6 +13,7 @@ repository.
 
   sklearn
   tensorflow
+  tensorflow_v1
   keras
   xgboost
   pytorch
@@ -31,7 +32,6 @@ repository.
   statsmodels
   easyocr
   detectron
-
 
 
 Support for the following libraries are coming soon:

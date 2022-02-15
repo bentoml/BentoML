@@ -44,13 +44,15 @@ except ImportError:  # pragma: no cover
         """
     )
 
-from .tensorflow import _TensorflowRunner  # type: ignore[reportPrivateUsage]
-
 MODULE_NAME = "bentoml.keras"
 
 _tf_version = get_tf_version()
 TF2 = _tf_version.startswith("2")
 
+if TF2:
+    from .tensorflow_v2 import _TensorflowRunner  # type: ignore[reportPrivateUsage]
+else:
+    from .tensorflow_v1 import _TensorflowRunner  # type: ignore[reportPrivateUsage]
 
 # Global instance of tf.Session()
 _graph: "Graph" = tf.compat.v1.get_default_graph()

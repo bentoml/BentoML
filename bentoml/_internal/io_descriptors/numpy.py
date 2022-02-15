@@ -14,7 +14,7 @@ from ...exceptions import InternalServerError
 if TYPE_CHECKING:
     import numpy as np
 
-    from .. import ext_typing as ext
+    from .. import external_typing as ext
 
 logger = logging.getLogger(__name__)
 

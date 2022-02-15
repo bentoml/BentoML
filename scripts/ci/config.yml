@@ -193,14 +193,14 @@ statsmodels:
 
 tf1:
   <<: *tmpl
-  override_name_or_path: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_v1_impl.py
   dependencies:
     - "tensorflow==1.15"
     - "tensorflow_hub"
 
 tf2:
   <<: *tmpl
-  override_name_or_path: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_v2_impl.py
   dependencies:
     - "tensorflow_text"
     - "tensorflow_hub"

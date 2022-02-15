@@ -98,6 +98,7 @@ class MemoryFS(FS):
         def opendir(
             self: _M, path: Text, factory: Optional[_OpendirFactory] = ...
         ) -> SubFS[_M]: ...
+
     def makedir(
         self: _M,
         path: Text,

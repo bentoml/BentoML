@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 MODULE_NAME = "bentoml.picklable_model"
 
 
-
-
 def _get_model_info(tag: Tag, model_store: "ModelStore") -> t.Tuple["Model", PathType]:
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):

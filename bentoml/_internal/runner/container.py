@@ -248,8 +248,6 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         assert (
             batch_axis == 0
         ), "Default Runner DataContainer does not support batch_axies other than 0"
-        if isinstance(batch, t.Iterable):
-            batch = list(batch)
         return batch
 
     @classmethod

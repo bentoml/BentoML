@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from bentoml import statsmodels
     from bentoml import transformers
     from bentoml import tensorflow_v1
+    from bentoml import picklable_model
     from bentoml import pytorch_lightning
 else:
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
@@ -72,6 +73,9 @@ else:
         "bentoml.pytorch_lightning", globals(), "bentoml.pytorch_lightning"
     )
     sklearn = _LazyLoader("bentoml.sklearn", globals(), "bentoml.sklearn")
+    picklable_model = _LazyLoader(
+        "bentoml.picklable_model", globals(), "bentoml.picklable_model"
+    )
     spacy = _LazyLoader("bentoml.spacy", globals(), "bentoml.spacy")
     statsmodels = _LazyLoader("bentoml.statsmodels", globals(), "bentoml.statsmodels")
     tensorflow = _LazyLoader("bentoml.tensorflow", globals(), "bentoml.tensorflow")
@@ -114,6 +118,7 @@ __all__ = [
     "onnx",
     "onnxmlir",
     "paddle",
+    "picklable_model",
     "pycaret",
     "pytorch",
     "pytorch_lightning",

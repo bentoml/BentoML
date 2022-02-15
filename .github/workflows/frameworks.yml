@@ -30,6 +30,7 @@ jobs:
       onnx: ${{ steps.filter.outputs.onnx }}
       onnxmlir: ${{ steps.filter.outputs.onnxmlir }}
       paddle: ${{ steps.filter.outputs.paddle }}
+      picklable_model: ${{ steps.filter.outputs.picklable_model }}
       pycaret: ${{ steps.filter.outputs.pycaret }}
       pyspark_mllib: ${{ steps.filter.outputs.pyspark_mllib }}
       pytorch: ${{ steps.filter.outputs.pytorch }}
@@ -126,6 +127,11 @@ jobs:
               - bentoml/paddle.py
               - bentoml/_internal/frameworks/paddle.py
               - tests/integration/frameworks/paddle
+            picklable_model:
+              - *runner
+              - bentoml/picklable_model.py
+              - bentoml/_internal/frameworks/picklable_model.py
+              - tests/integration/frameworks/picklable_model
             pycaret:
               - *runner
               - bentoml/pycaret.py
@@ -687,6 +693,50 @@ jobs:
           directory: ./
           files: ./paddle.xml
           flags: paddle
+          verbose: true
+
+  picklable_model_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.picklable_model == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install -r requirements/tests-requirements.txt
+
+      - name: Run tests and generate coverage report
+        run: make tests-picklable_model
+        shell: bash
+
+      - name: Upload test coverage to Codecov
+        if: ${{ needs.diff.outputs.paddle == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./picklable_model.xml
+          flags: picklable_model
           verbose: true
 
   pycaret_integration_tests:

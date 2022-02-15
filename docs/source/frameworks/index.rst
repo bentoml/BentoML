@@ -11,27 +11,29 @@ repository.
 .. toctree::
   :glob:
 
-  sklearn
-  tensorflow
-  tensorflow_v1
-  keras
-  xgboost
-  pytorch
-  pytorch_lightning
-  mlflow
-  transformers
-  onnx
-  onnxmlir
-  paddle
+  catboost
+  detectron
+  easyocr
   gluon
   h2o
+  mlflow
+  onnx
+  onnxmlir
   lightgbm
-  catboost
-  spacy
+  paddle
+  picklable_model
   pycaret
+  pytorch
+  pytorch_lightning
+  keras
+  sklearn
+  spacy
   statsmodels
-  easyocr
-  detectron
+  tensorflow
+  tensorflow_v1
+  transformers
+  xgboost
+
 
 
 Support for the following libraries are coming soon:

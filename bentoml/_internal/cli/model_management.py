@@ -54,8 +54,8 @@ def add_model_management_commands(
     @click.option(
         "-o",
         "--output",
-        type=click.Choice(["tree", "json", "yaml", "path"]),
-        default="tree",
+        type=click.Choice(["json", "yaml", "path"]),
+        default="yaml",
     )
     def get(model_tag, output):
         """Print Model details by providing the model_tag
@@ -63,7 +63,18 @@ def add_model_management_commands(
         bentoml model get FraudDetector:latest
         bentoml model get FraudDetector:20210709_DE14C9
         """
-        pass
+        res = model_store.get(model_tag).info
+        console = Console()
+
+        if output == "path":
+            path = model_store._fs.getsyspath(res.tag.path())
+            console.print(path)
+        elif output == "json":
+            info = json.dumps(res.to_dict(), indent=2, default=str)
+            console.print_json(info)
+        else:
+            info = yaml.dump(res, indent=2)
+            console.print(info)
 
     @model_cli.command(name="list", help="List Models in local model store")
     @click.argument("model_name", type=click.STRING, required=False)

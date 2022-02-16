@@ -60,20 +60,19 @@ def add_model_management_commands(
     def get(model_tag, output):
         """Print Model details by providing the model_tag
 
-        bentoml model get FraudDetector:latest
-        bentoml model get FraudDetector:20210709_DE14C9
+        bentoml models get FraudDetector:latest
+        bentoml models get --output=json FraudDetector:20210709_DE14C9
         """
-        res = model_store.get(model_tag).info
+        model = model_store.get(model_tag)
         console = Console()
 
         if output == "path":
-            path = model_store._fs.getsyspath(res.tag.path())
-            console.print(path)
+            console.print(model.path)
         elif output == "json":
-            info = json.dumps(res.to_dict(), indent=2, default=str)
+            info = json.dumps(model.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            info = yaml.dump(res, indent=2)
+            info = yaml.dump(model.info, indent=2)
             console.print(info)
 
     @model_cli.command(name="list", help="List Models in local model store")
@@ -93,10 +92,10 @@ def add_model_management_commands(
         """Print list of models in local store
 
         # show all models saved
-        > bentoml model list
+        > bentoml models list
 
         # show all verions of bento with the name FraudDetector
-        > bentoml model list FraudDetector
+        > bentoml models list FraudDetector
         """
         models = model_store.list(model_name)
         res = [
@@ -157,9 +156,9 @@ def add_model_management_commands(
 
         Specify target Models to remove:
 
-        * Delete single model by "name:version", e.g: `bentoml model delete IrisClassifier:v1`
-        * Bulk delete all models with a specific name, e.g.: `bentoml model delete IrisClassifier`
-        * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml model delete Irisclassifier:v1,MyPredictService:v2`
+        * Delete single model by "name:version", e.g: `bentoml models delete IrisClassifier:v1`
+        * Bulk delete all models with a specific name, e.g.: `bentoml models delete IrisClassifier`
+        * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
 
         def delete_target(target):
@@ -186,8 +185,8 @@ def add_model_management_commands(
     def export(model_tag, out_file):
         """Export Model files to a tar file
 
-        bentoml model export FraudDetector:latest > my_model.tar
-        bentoml model export FraudDetector:20210709_DE14C9 ./my_model.tar
+        bentoml models export FraudDetector:latest > my_model.tar
+        bentoml models export FraudDetector:20210709_DE14C9 ./my_model.tar
         """
         pass
 
@@ -200,8 +199,8 @@ def add_model_management_commands(
     def import_model(model_path):
         """Export Model files to a tar file
 
-        bentoml model import < ./my_model.tar
-        bentoml model import ./my_model.tar
+        bentoml models import < ./my_model.tar
+        bentoml models import ./my_model.tar
         """
         pass
 

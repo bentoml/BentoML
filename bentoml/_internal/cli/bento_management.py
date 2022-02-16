@@ -59,19 +59,18 @@ def add_bento_management_commands(
         """Print Bento details by providing the bento_tag
 
         bentoml get FraudDetector:latest
-        bentoml get FraudDetector:20210709_DE14C9
+        bentoml get --output=json FraudDetector:20210709_DE14C9
         """
-        res = bento_store.get(bento_tag).info
+        bento = bento_store.get(bento_tag)
         console = Console()
 
         if output == "path":
-            path = bento_store._fs.getsyspath(res.tag.path())
-            console.print(path)
+            console.print(bento.path)
         elif output == "json":
-            info = json.dumps(res.to_dict(), indent=2, default=str)
+            info = json.dumps(bento.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            info = yaml.dump(res, indent=2)
+            info = yaml.dump(bento.info, indent=2)
             console.print(info)
 
     @cli.command(name="list", help="List Bentos in local bento store")

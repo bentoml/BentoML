@@ -118,7 +118,6 @@ def import_service(
             # Importing by module name:
             module_name = import_path
 
-        default_model_store = BentoMLContainer.model_store
         # Import the service using the Bento's own model store
         BentoMLContainer.model_store.set(model_store)
         try:
@@ -131,7 +130,7 @@ def import_service(
             )
         finally:
             # Reset to default local model store
-            BentoMLContainer.model_store.set(default_model_store)
+            BentoMLContainer.model_store.reset()
 
         if attrs_str:
             instance = module

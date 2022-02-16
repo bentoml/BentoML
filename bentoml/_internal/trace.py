@@ -14,6 +14,13 @@ class ServiceContextClass:
         )
 
     @property
+    def sampled(self) -> t.Optional[bool]:
+        span = trace.get_current_span()
+        if span is None:
+            return None
+        return span.get_span_context().trace_flags.sampled
+
+    @property
     def trace_id(self) -> t.Optional[int]:
         span = trace.get_current_span()
         if span is None:

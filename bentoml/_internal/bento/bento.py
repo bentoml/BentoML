@@ -79,25 +79,26 @@ python:
     return doc
 
 
-def _Bento_set_fs(bento: "Bento", _: t.Any, new_fs: "FS") -> "FS":
-    new_fs.makedir("models", recreate=True)
-    bento._model_store = ModelStore(new_fs.opendir("models"))  # type: ignore[reportPrivateUsage]
-    return new_fs
-
-
 @attr.define(repr=False, auto_attribs=False)
 class Bento(StoreItem):
     _tag: Tag = attr.field()
-    _fs: "FS" = attr.field(on_setattr=_Bento_set_fs)
+    _fs: "FS" = attr.field()
 
     info: "BentoInfo"
 
     _model_store: ModelStore
     _doc: t.Optional[str] = None
 
+    @_fs.validator
+    def check_fs(self, _attr: t.Any, new_fs: "FS"):
+        print(f"TYPE: {type(attr)}")
+        new_fs.makedir("models", recreate=True)
+        self._model_store = ModelStore(new_fs.opendir("models"))
+
     def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
         self._tag = tag
-        self._fs = _Bento_set_fs(self, None, bento_fs)
+        self._fs = bento_fs
+        self.check_fs(None, bento_fs)
         self.info = info
         self.validate()
 

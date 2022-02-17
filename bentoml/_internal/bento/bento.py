@@ -332,6 +332,17 @@ class BentoInfo:
     def __attrs_post_init__(self):
         self.validate()
 
+    def to_dict(self) -> t.Dict[str, t.Any]:
+        return {
+            "service": self.service,
+            "name": self.tag.name,
+            "version": self.tag.version,
+            "bentoml_version": self.bentoml_version,
+            "creation_time": self.creation_time,
+            "labels": self.labels,
+            "models": [str(model) for model in self.models],
+        }
+
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
 
@@ -360,17 +371,7 @@ class BentoInfo:
 
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
-    return dumper.represent_dict(
-        {
-            "service": info.service,
-            "name": info.tag.name,
-            "version": info.tag.version,
-            "bentoml_version": info.bentoml_version,
-            "creation_time": info.creation_time,
-            "labels": info.labels,
-            "models": [str(model) for model in info.models],
-        }
-    )
+    return dumper.represent_dict(info.to_dict())
 
 
 yaml.add_representer(BentoInfo, _BentoInfo_dumper)

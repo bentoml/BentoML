@@ -80,7 +80,7 @@ class AccessLogMiddleware(Middleware):
                 if client:
                     address = f"{client[0]}:{client[1]}"
                 else:
-                    address = "unknown_client"
+                    address = "_"
 
                 request = [f"scheme={scheme}", f"method={method}", f"path={path}"]
                 if REQ_CONTENT_TYPE in self.fields:

@@ -91,7 +91,6 @@ class Bento(StoreItem):
 
     @_fs.validator
     def check_fs(self, _attr: t.Any, new_fs: "FS"):
-        print(f"TYPE: {type(attr)}")
         new_fs.makedir("models", recreate=True)
         self._model_store = ModelStore(new_fs.opendir("models"))
 

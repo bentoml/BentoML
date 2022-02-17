@@ -18,6 +18,7 @@ class TraceFilter(Filter):
     """
 
     def filter(self, record):
+        record.sampled = ServiceContext.sampled
         record.trace_id = ServiceContext.trace_id
         record.span_id = ServiceContext.span_id
         record.request_id = ServiceContext.request_id
@@ -35,12 +36,12 @@ class TraceFormatter(Formatter):
     def __init__(self):
         Formatter.__init__(
             self,
-            fmt="[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s",
+            fmt="[%(component)s] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)",
             datefmt="[%X]",
         )
         self.control_formmater = Formatter("[%(component)s] %(message)s")
         self.trace_formatter = Formatter(
-            "[%(component)s] [%(trace_id)s] [%(span_id)s] %(message)s"
+            "[%(component)s] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)"
         )
 
     def format(self, record):

@@ -161,46 +161,38 @@ class _PycaretRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: Tag,
-        name: str,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        tag: t.Union[str, Tag],
+        name: t.Optional[str] = None,
     ):
         super().__init__(name)
-        model_info, model_file, pycaret_config = _get_model_info(tag, model_store)
-
-        self._model_info = model_info
-        self._model_file = model_file
-        self._pycaret_config = pycaret_config
+        self._tag = Tag.from_taglike(tag)
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._tag]
 
     @property
     def num_replica(self) -> int:
+        if self.resource_quota.cpu > 1:
+            logger.warning(
+                "PyCaret is not designed to be ran"
+                " in parallel. See https://github.com/pycaret/pycaret/issues/758."
+                "Allocating more than 1 CPU will be ignored."
+            )
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        load_config(self._pycaret_config)
-        self._model = load_model(self._model_file)
+    def _setup(self) -> None:
+        self._model = load(self._tag)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":  # type: ignore[override] # noqa # pylint: disable
-        logger.warning(
-            "PyCaret is not designed to be ran"
-            " in parallel. See https://github.com/pycaret/pycaret/issues/758"  # noqa # pylint: disable
-        )
-        output = predict_model(self._model, input_data)  # type: pd.DataFrame
+    def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":  # type: ignore
+        output: "pd.DataFrame" = predict_model(self._model, input_data)
         return output
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     *,
     name: t.Optional[str] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PycaretRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -236,11 +228,7 @@ def load_runner(
 
         prediction = runner.run_batch(input_data=data_unseen)
     """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
     return _PycaretRunner(
         tag=tag,
         name=name,
-        model_store=model_store,
     )

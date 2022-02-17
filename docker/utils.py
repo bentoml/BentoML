@@ -8,6 +8,11 @@ import operator
 from types import FunctionType
 from functools import reduce
 
+if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+    from functools import cached_property
+else:
+    from backports.cached_property import cached_property
+
 from absl import flags
 from glom import glom
 from glom import Path
@@ -396,36 +401,6 @@ class _Missing(object):
 
     def __reduce__(self) -> str:
         return "_missing"
-
-
-class cached_property(property):
-    """Direct ports from bentoml/utils/__init__.py"""
-
-    _missing = _Missing()
-
-    def __init__(
-        self,
-        func: FunctionType,
-        name: t.Optional[str] = None,
-        doc: t.Optional[str] = None,
-    ) -> None:
-        super(cached_property, self).__init__(doc=doc)
-        self.__name__ = name or func.__name__
-        self.__doc__ = doc or func.__doc__
-        self.__module__ = func.__module__
-        self.func = func
-
-    def __set__(self, obj, value):  # type: ignore
-        obj.__dict__[self.__name__] = value
-
-    def __get__(self, obj, types=None):  # type: ignore
-        if obj is None:
-            return self
-        value = obj.__dict__.get(self.__name__, self._missing)
-        if value is self._missing:
-            value = self.func(obj)
-            obj.__dict__[self.__name__] = value
-        return value
 
 
 class ColoredFormatter(logging.Formatter):

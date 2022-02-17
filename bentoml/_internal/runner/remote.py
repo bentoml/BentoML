@@ -31,9 +31,6 @@ class RemoteRunnerClient(RunnerImpl):
         if self._conn:
             self._conn.close()
 
-    def __del__(self) -> None:
-        self.shutdown()
-
     @inject
     def _get_conn(
         self,
@@ -158,3 +155,6 @@ class RemoteRunnerClient(RunnerImpl):
         import anyio
 
         return anyio.from_thread.run(self.async_run_batch, *args, **kwargs)
+
+    def __del__(self) -> None:
+        self.shutdown()

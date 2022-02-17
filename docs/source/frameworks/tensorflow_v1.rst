@@ -59,13 +59,11 @@ Users can now use Tensorflow (v1 and v2 supported) with BentoML with the followi
     # Run a given model under `Runner` abstraction with `load_runner`
     r1 = bentoml.tensorflow_v1.load_runner(
         tag,
-        model_store=modelstore,
         partial_kwargs=dict(factor=f1),
     )
 
     r2 = bentoml.tensorflow_v1.load_runner(
         tag,
-        model_store=modelstore,
         partial_kwargs=dict(factor=f2),
     )
 

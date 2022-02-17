@@ -2,7 +2,7 @@ import os
 import typing as t
 from typing import TYPE_CHECKING
 
-import joblib
+import joblib  # type: ignore[reportMissingTypeStubs]
 from simple_di import inject
 from simple_di import Provide
 
@@ -19,12 +19,11 @@ from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import numpy as np
-
     from ..models import ModelStore
+    from ..external_typing.numpy import NpNDArray
 
 try:
-    import lightgbm as lgb  # noqa: F811
+    import lightgbm as lgb  # type: ignore[reportMissingTypeStubs]
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """lightgbm is required in order to use module `bentoml.lightgbm`, install
@@ -39,7 +38,10 @@ MODULE_NAME = "bentoml.lightgbm"
 _LightGBMModelType = t.TypeVar(
     "_LightGBMModelType",
     bound=t.Union[
-        "lgb.LGBMModel", "lgb.LGBMClassifier", "lgb.LGBMRegressor", "lgb.LGBMRanker"
+        "lgb.LGBMModel",
+        "lgb.LGBMClassifier",
+        "lgb.LGBMRegressor",
+        "lgb.LGBMRanker",
     ],
 )
 
@@ -211,33 +213,33 @@ class _LightGBMRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[Tag, str],
         infer_api_callback: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-        name: str,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
         super().__init__(name)
-        model_info, model_file, booster_params = _get_model_info(
-            tag, booster_params, model_store
-        )
-
-        self._model_store = model_store
-        self._model_info = model_info
-        self._model_file = model_file
-        self._booster_params = booster_params
+        self._booster_params = booster_params if booster_params is not None else {}
         self._infer_api_callback = infer_api_callback
-        self._tag = model_store.get(tag).tag
+        self._tag = Tag.from_taglike(tag)
+        self._predict_fn: t.Any = None
+        self._model: t.Any = None
+
+    @property
+    def default_name(self) -> str:
+        return self._tag.name
 
     def _is_gpu(self):
         try:
-            return "gpu" in self._booster_params["device"]
+            if "device" in self._booster_params:
+                assert isinstance(self._booster_params["device"], str)
+                return "gpu" in self._booster_params["device"]
         except KeyError:
             return False
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        return [self._tag]
 
     @property
     def num_replica(self) -> int:
@@ -245,17 +247,14 @@ class _LightGBMRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         self._model = load(
             tag=self._tag,
             booster_params=self._booster_params,
-            model_store=self._model_store,
         )
         self._predict_fn = getattr(self._model, self._infer_api_callback)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":  # type: ignore[override]
+    def _run_batch(self, input_data: "NpNDArray") -> "NpNDArray":  # type: ignore[reportIncompatibleMethodOverride]
         return self._predict_fn(input_data)
 
 
@@ -266,7 +265,6 @@ def load_runner(
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     name: t.Optional[str] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_LightGBMRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -282,8 +280,6 @@ def load_runner(
         booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, defaults to `None`):
             Parameters for boosters. Refers to `Parameters Doc <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_
             for more information.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.lightgbm` model
@@ -297,13 +293,9 @@ def load_runner(
         runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
         runner.run_batch(X_test, num_iteration=gbm.best_iteration)
     """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
     return _LightGBMRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,
         name=name,
         booster_params=booster_params,
-        model_store=model_store,
     )

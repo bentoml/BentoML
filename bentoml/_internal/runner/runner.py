@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 import attr
 import psutil
-from simple_di.providers import SingletonFactory
 
 from .utils import cpu_converter
 from .utils import gpu_converter
 from .utils import mem_converter
 from .utils import query_cgroup_cpu_count
 from ..types import Tag
+from ..utils import cached_property
 from ..configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:
@@ -95,25 +95,22 @@ class BaseRunner:
     This class should not be implemented directly. Instead, implement the SimpleRunner or Runner.
     """
 
-    EXIST_NAMES: t.Set[str] = set()
-
-    def __init__(
-        self,
-        name: t.Union[str, Tag],
-    ):
-        # probe an unique name
-        if isinstance(name, Tag):
-            name = name.name
-        if not name.isidentifier():
-            name = VARNAME_RE.sub("_", name)
-        self.name = name
-        self.resource_quota = ResourceQuota()
-        self.batch_options = BatchOptions()
-        self._impl_provider = SingletonFactory(create_runner_impl, self)
+    def __init__(self, name: t.Optional[str]) -> None:
+        self._name = name
 
     @property
-    def resource_quota(self) -> ResourceQuota:
-        return self.resource_quota
+    def default_name(self) -> str:
+        """
+        Return the default name of the runner. Will be used if no name is provided.
+        """
+        return type(self).__name__
+
+    @abstractmethod
+    def _setup(self) -> None:
+        ...
+
+    def _shutdown(self) -> None:
+        pass
 
     @property
     def num_replica(self) -> int:
@@ -123,23 +120,45 @@ class BaseRunner:
     def required_models(self) -> t.List[Tag]:
         return []
 
-    @abstractmethod
-    def _setup(self) -> None:
-        ...
+    @cached_property
+    @t.final
+    def name(self) -> str:
+        if self._name is None:
+            name = self.default_name
+        else:
+            name = self._name
+        if not name.isidentifier():
+            return VARNAME_RE.sub("_", name)
+        return name
 
-    @property
+    @cached_property
+    @t.final
+    def resource_quota(self) -> ResourceQuota:
+        return ResourceQuota()
+
+    @cached_property
+    @t.final
+    def batch_options(self) -> BatchOptions:
+        return BatchOptions()
+
+    @t.final
+    @cached_property
     def _impl(self) -> "RunnerImpl":
-        return self._impl_provider.get()
+        return create_runner_impl(self)
 
+    @t.final
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run(*args, **kwargs)
 
+    @t.final
     async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run_batch(*args, **kwargs)
 
+    @t.final
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl.run(*args, **kwargs)
 
+    @t.final
     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl.run_batch(*args, **kwargs)
 
@@ -212,6 +231,8 @@ class RunnerState(enum.IntEnum):
     INIT = 0
     SETTING = 1
     SET = 2
+    SHUTIING_DOWN = 3
+    SHUTDOWN = 4
 
 
 class RunnerImpl:

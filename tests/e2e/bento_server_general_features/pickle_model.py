@@ -1,7 +1,7 @@
 import typing as t
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore
 
 from bentoml._internal.types import FileLike
 from bentoml._internal.types import JSONSerializable
@@ -41,6 +41,10 @@ class PickleModel:
     @staticmethod
     def predict_dataframe(df: "pd.DataFrame") -> "pd.DataFrame":
         assert isinstance(df, pd.DataFrame)
-        output = df[["col1"]] * 2
+        output = df[["col1"]] * 2  # type: ignore
         assert isinstance(output, pd.DataFrame)
         return output
+
+    @staticmethod
+    def raise_user_error(_: JSONSerializable) -> t.NoReturn:
+        raise RuntimeError()

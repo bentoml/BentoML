@@ -53,6 +53,11 @@ echo_multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
     function_name="echo_multi_ndarray",
     name="echo_multi_ndarray_pred_runner",
 )
+raise_user_error_runner = bentoml.sklearn.load_runner(
+    "sk_model",
+    function_name="raise_user_error",
+    name="raise_user_error",
+)
 
 
 svc = bentoml.Service(
@@ -64,6 +69,7 @@ svc = bentoml.Service(
         file_pred_runner,
         multi_ndarray_pred_runner,
         echo_multi_ndarray_pred_runner,
+        raise_user_error_runner,
     ],
 )
 
@@ -150,3 +156,8 @@ async def predict_multi_images(
     )
     img = fromarray(output_array)
     return dict(img1=img, img2=img)
+
+
+@svc.api(input=JSON(), output=JSON())
+async def raise_user_error(json: JSONSerializable):
+    return await raise_user_error_runner.async_run(json)

@@ -14,7 +14,7 @@ Unified Model Serving Framework
 
 |pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
 
-BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
+BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 
 👉 `Pop into our Slack community! <https://join.slack.bentoml.org>`_ We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 

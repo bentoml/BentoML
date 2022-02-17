@@ -155,6 +155,12 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
             must be specified
 
+        from_parquet (`bool`, `optional`, default to :code:`False`):
+            Read DataFrame from binary parquet format, rather than from JSON.
+
+        to_parquet (`bool`, `optional`, default to :code:`False`):
+            Return DataFrame in binary parquet format, rather than JSON.
+
     Returns:
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that `pd.DataFrame`.
     """
@@ -168,6 +174,8 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
+        from_parquet: bool = False,
+        to_parquet: bool = False,
     ):
         self._orient = orient
         self._columns = columns
@@ -176,18 +184,21 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         self._enforce_dtype = enforce_dtype
         self._shape = shape
         self._enforce_shape = enforce_shape
-        self._mime_type = "application/json"
+        self._mime_type_request = "application/octet-stream" if from_parquet else "application/json"
+        self._mime_type_response = "application/octet-stream" if to_parquet else "application/json"
+        self._from_parquet = from_parquet
+        self._to_parquet = to_parquet
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._dtype)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+        return {self._mime_type_request: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+        return {self._mime_type_response: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> "ext.PdDataFrame":
         """
@@ -211,11 +222,17 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
             # TODO(jiang): check dtype
-        res = pd.read_json(  # type: ignore[arg-type]
-            io.BytesIO(obj),
-            dtype=self._dtype,  # type: ignore[arg-type]
-            orient=self._orient,
-        )
+
+        if self._from_parquet:
+            res = pd.read_parquet(  # type: ignore[arg-type]
+                io.BytesIO(obj),
+            )
+        else:
+            res = pd.read_json(  # type: ignore[arg-type]
+                io.BytesIO(obj),
+                dtype=self._dtype,  # type: ignore[arg-type]
+                orient=self._orient,
+            )
         assert isinstance(res, pd.DataFrame)
 
         if self._apply_column_names:
@@ -248,7 +265,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         Args:
             obj (`pd.DataFrame`):
-                `pd.DataFrame` that will be serialized to JSON
+                `pd.DataFrame` that will be serialized to JSON or parquet
         Returns:
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
@@ -257,8 +274,13 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             raise InvalidArgument(
                 f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
             )
-        resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
-        return Response(resp, media_type=MIME_TYPE_JSON)
+        if self._to_parquet:
+            resp = io.BytesIO()
+            obj.to_parquet(resp)  # type: ignore[arg-type]
+            resp = resp.getvalue()
+        else:
+            resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
+        return Response(resp, media_type=self._mime_type_response)
 
     @classmethod
     def from_sample(
@@ -268,6 +290,8 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         apply_column_names: bool = True,
         enforce_shape: bool = True,
         enforce_dtype: bool = False,
+        from_parquet: bool = False,
+        to_parquet: bool = False,
     ) -> "PandasDataFrame":
         """
         Create a PandasDataFrame IO Descriptor from given inputs.
@@ -294,6 +318,10 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 Enforce a certain shape. `shape` must be specified at function
                 signature. If you don't want to enforce a specific shape then change
                 `enforce_shape=False`.
+            from_parquet (`bool`, `optional`, default to :code:`False`):
+                Read DataFrame from binary parquet format, rather than from JSON.
+            to_parquet (`bool`, `optional`, default to :code:`False`):
+                Return DataFrame in binary parquet format, rather than JSON.
 
         Returns:
             :obj:`bentoml._internal.io_descriptors.PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
@@ -320,6 +348,8 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             columns=columns,
             enforce_dtype=enforce_dtype,
             dtype=None,  # TODO: not breaking atm
+            from_parquet=from_parquet,
+            to_parquet=to_parquet,
         )
 
 

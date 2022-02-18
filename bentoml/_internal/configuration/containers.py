@@ -22,9 +22,9 @@ from ..utils import validate_or_create_dir
 from ...exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
-    from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
+    from bentoml._internal.models import ModelStore
 
-    from .. import external_typing as ext  # noqa # pylint: disable=unused-import
+    from .. import external_typing as ext
     from ..server.metrics.prometheus import PrometheusClient
 
 
@@ -212,7 +212,7 @@ class BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def model_store(base_dir: str = default_model_store_base_dir):
+    def model_store(base_dir: str = default_model_store_base_dir) -> "ModelStore":
         from ..models import ModelStore
 
         return ModelStore(base_dir)

@@ -26,6 +26,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from tensorflow.python.framework.ops import Graph
     from tensorflow.python.client.session import BaseSession
 
+    from .. import external_typing as ext
     from ..models import ModelStore
 
 try:
@@ -343,44 +344,21 @@ def save(
 
 
 class _KerasRunner(_TensorflowRunner):
-    @inject
-    def __init__(
-        self,
-        tag: Tag,
-        predict_fn_name: str,
-        device_id: str,
-        predict_kwargs: t.Optional[t.Dict[str, t.Any]],
-        name: str,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        super().__init__(
-            tag=tag,
-            predict_fn_name=predict_fn_name,
-            device_id=device_id,
-            name=name,
-            partial_kwargs=predict_kwargs,
-            model_store=model_store,
-        )
-        self._session = get_session()
-
-    @property
-    def session(self) -> "BaseSession":
-        return self._session
-
-    # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
+        self._session = get_session()
         self._session.config = self._config_proto
         self._model = load(self._tag, model_store=self._model_store)
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
+    def _run_batch(  # type: ignore
         self,
         input_data: t.Union[
-            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
+            t.List[t.Union[int, float]],
+            "ext.NpNDArray",
+            tf.Tensor,
         ],
-    ) -> t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor]:
+    ) -> t.Union["ext.NpNDArray", tf.Tensor]:
         if not isinstance(input_data, (np.ndarray, tf.Tensor)):
             input_data = np.array(input_data)
         with tf.device(self._device_id):
@@ -399,9 +377,8 @@ def load_runner(
     *,
     predict_fn_name: str = "predict",
     device_id: str = "CPU:0",
-    predict_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_KerasRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -417,8 +394,6 @@ def load_runner(
             Dictionary of `predict()` kwargs that can be shared across different model.
         device_id (:code:`str`, `optional`, default to the first CPU):
             Optional devices to put the given model on. Refers to `Logical Devices <https://www.tensorflow.org/api_docs/python/tf/config/list_logical_devices>`_ from TF documentation.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.keras` model
@@ -444,15 +419,11 @@ def load_runner(
             runner = bentoml.keras.load_runner(tag)
             runner.run_batch([1,2,3])
 
-    """  # noqa: LN001
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _KerasRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
         name=name,
-        predict_kwargs=predict_kwargs,
-        model_store=model_store,
+        partial_kwargs=partial_kwargs,
     )

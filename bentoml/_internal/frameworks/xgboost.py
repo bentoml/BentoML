@@ -7,18 +7,17 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import JSON_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import pandas as pd
-
+    from .. import external_typing as ext
     from ..models import ModelStore
 
 try:
@@ -178,31 +177,19 @@ def save(
     return _model.tag
 
 
-class _XgBoostRunner(Runner):
-    @inject
+class _XgBoostRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-        name: str,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        super().__init__(name)
-        model_info, model_file, booster_params = _get_model_info(
-            tag, booster_params, model_store
-        )
+        super().__init__(tag=tag, name=name)
 
-        self._model_store = model_store
-        self._model_info = model_info
-        self._model_file = model_file
         self._predict_fn_name = predict_fn_name
         booster_params = dict() if booster_params is None else booster_params
         self._booster_params = self._setup_booster_params(booster_params)
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
 
     @property
     def num_replica(self) -> int:
@@ -225,32 +212,29 @@ class _XgBoostRunner(Runner):
 
         return booster_params
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._model = xgb.core.Booster(
-            params=self._booster_params,
-            model_file=self._model_file,
+    def _setup(self) -> None:
+        self._model = load(
+            self._tag,
+            booster_params=self._booster_params,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
-    ) -> "np.ndarray":
+    def _run_batch(  # type: ignore
+        self,
+        input_data: t.Union["ext.NpNDArray", "ext.PdDataFrame", xgb.DMatrix],
+    ) -> "ext.NpNDArray":
         if not isinstance(input_data, xgb.DMatrix):
             input_data = xgb.DMatrix(input_data)
         res = self._predict_fn(input_data)
         return np.asarray(res)
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "predict",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     name: t.Optional[str] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_XgBoostRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -266,8 +250,6 @@ def load_runner(
             Otherwise, `predict` are the de facto functions.
         booster_params (:code:`t.Dict[str, t.Union[str, int]]`, default to :code:`None`):
             Parameters for boosters. Refers to `Parameters docs <https://xgboost.readthedocs.io/en/latest/parameter.html>`_ for more information.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.xgboost` model
@@ -283,14 +265,10 @@ def load_runner(
         input_data = pd.from_csv("/path/to/csv")
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _XgBoostRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,
         name=name,
-        model_store=model_store,
     )

@@ -9,19 +9,16 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import PTH_EXT
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
-    from ..models import ModelStore
-
 try:
-    import easyocr
+    import easyocr  # type: ignore
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """easyocr is required in order to use module `bentoml.easyocr`, install
@@ -30,12 +27,17 @@ except ImportError:  # pragma: no cover
         """
     )
 
+if TYPE_CHECKING:
+    from .. import external_typing as ext
+    from ..models import ModelStore
+
+
 MODULE_NAME = "bentoml.easyocr"
 
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     gpu: bool = True,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> easyocr.Reader:
@@ -180,25 +182,20 @@ def save(
     return _model.tag
 
 
-class _EasyOCRRunner(Runner):
-    @inject
+class _EasyOCRRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
-        name: str,
         predict_params: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        super().__init__(name)
-        self._tag = tag
+        assert easyocr.__version__ >= "1.4", BentoMLException(
+            "Only easyocr>=1.4 is supported by BentoML"
+        )
+        super().__init__(tag, name=name)
         self._predict_fn_name = predict_fn_name
         self._predict_params = predict_params
-        self._model_store = model_store
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
 
     @property
     def num_replica(self) -> int:
@@ -206,16 +203,13 @@ class _EasyOCRRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         self._model = load(self._tag)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: np.ndarray
-    ) -> "np.ndarray":
+    def _run_batch(self, input_data: "ext.NpNDArray") -> "ext.NpNDArray":  # type: ignore
         res = self._predict_fn(input_data, **self._predict_params)
-        return np.asarray(res, dtype=object)
+        return np.asarray(res, dtype=object)  # type: ignore
 
 
 @inject
@@ -225,7 +219,6 @@ def load_runner(
     *,
     name: t.Optional[str] = None,
     predict_params: t.Union[None, t.Dict[str, t.Union[str, t.Any]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _EasyOCRRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -240,8 +233,6 @@ def load_runner(
         predict_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
             Parameters for prediction. Refers `here <https://github.com/JaidedAI/EasyOCR/blob/master/easyocr/easyocr.py#L460>`_
             for more information.
-        model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.easyocr` model
@@ -257,16 +248,9 @@ def load_runner(
         runner = bentoml.easyocr.load_runner("my_easyocr_model")
         runner.run(pd.DataFrame(input_data))
     """
-    assert easyocr.__version__ >= "1.4", BentoMLException(
-        "Only easyocr>=1.4 is supported by BentoML"
-    )
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
     return _EasyOCRRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         predict_params=predict_params,
         name=name,
-        model_store=model_store,
     )

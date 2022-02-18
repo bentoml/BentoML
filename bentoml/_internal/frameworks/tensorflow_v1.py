@@ -13,7 +13,6 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -22,13 +21,13 @@ from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import is_gpu_available
 from ..utils.tensorflow import hook_loaded_model
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 try:
-    import tensorflow as tf
-    from tensorflow.python.client import device_lib
+    import tensorflow as tf  # type: ignore
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -38,9 +37,9 @@ except ImportError:  # pragma: no cover
     )
 
 try:
-    import tensorflow_hub as hub
-    from tensorflow_hub import resolve
-    from tensorflow_hub import native_module
+    import tensorflow_hub as hub  # type: ignore
+    from tensorflow_hub import resolve  # type: ignore
+    from tensorflow_hub import native_module  # type: ignore
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -58,8 +57,8 @@ except ImportError:
 
 
 if TYPE_CHECKING:
-    from tensorflow_hub import Module as HubModule
-    from tensorflow_hub import KerasLayer
+    from tensorflow_hub import Module as HubModule  # type: ignore
+    from tensorflow_hub import KerasLayer  # type: ignore
 
     from .. import external_typing as ext
     from ..types import PathType
@@ -123,8 +122,7 @@ def load(
 
         # load a model back into memory
         model = bentoml.tensorflow_v1.load("my_tensorflow_model")
-
-    """  # noqa: LN001
+    """
     model = model_store.get(bento_tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
@@ -175,11 +173,11 @@ def load(
                     "options are not supported for TF < 2.3.x,"
                     f" Current version: {get_tf_version()}"
                 )
-            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(
+            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(  # type: ignore
                 module_path, tags=tags, options=options
             )
         else:
-            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(
+            tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(  # type: ignore
                 module_path, tags=tags
             )
         tf_model._is_hub_module_v1 = (
@@ -187,7 +185,7 @@ def load(
         )
         return tf_model
     else:
-        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(model.path)
+        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load_v2(model.path)  # type: ignore
         if LazyType["tf_ext.AutoTrackable"](
             "tensorflow.python.training.tracking.tracking.AutoTrackable"
         ).isinstance(tf_model) and not hasattr(tf_model, "__call__"):
@@ -423,31 +421,22 @@ def save(
     return _model.tag
 
 
-class _TensorflowRunner(Runner):
-    @inject
+class _TensorflowRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
-        name: str,
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        in_store_tag = model_store.get(tag).tag
-        self._tag = in_store_tag
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(tag=tag, name=name)
 
         self._device_id = device_id
-        self._configure(device_id)
         self._predict_fn_name = predict_fn_name
-        assert any(device_id in d.name for d in device_lib.list_local_devices())
         self._partial_kwargs: t.Dict[str, t.Any] = (
             partial_kwargs if partial_kwargs is not None else {}
         )
-        self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
         if "GPU" in device_id:
@@ -460,10 +449,6 @@ class _TensorflowRunner(Runner):
         )
 
     @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
-
-    @property
     def _num_threads(self) -> int:
         if is_gpu_available() and self.resource_quota.on_gpu:
             return 1
@@ -472,14 +457,14 @@ class _TensorflowRunner(Runner):
     @property
     def num_replica(self) -> int:
         if is_gpu_available() and self.resource_quota.on_gpu:
-            return len(tf.config.list_physical_devices("GPU"))
+            return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         # setup a global session for model runner
-        self._model = load(self._tag, model_store=self._model_store)
-        raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[
+        self._configure(self._device_id)
+        self._model = load(self._tag)
+        raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[  # type: ignore
             "serving_default"
         ]
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
@@ -508,7 +493,6 @@ class _TensorflowRunner(Runner):
                 return t.cast("tf_ext.TensorLike", res)
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     *,
@@ -516,9 +500,6 @@ def load_runner(
     device_id: str = "CPU:0",
     name: t.Optional[str] = None,
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_TensorflowRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -534,12 +515,6 @@ def load_runner(
             Dictionary of partial kwargs that can be shared across different model.
         device_id (:code:`str`, `optional`, default to the first CPU):
             Optional devices to put the given model on. Refers to `Logical Devices <https://www.tensorflow.org/api_docs/python/tf/config/list_logical_devices>`_ from TF documentation.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.tensorflow` model
@@ -556,17 +531,11 @@ def load_runner(
         # load a runner on GPU:0
         runner = bentoml.tensorflow_v1.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
 
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _TensorflowRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
         partial_kwargs=partial_kwargs,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-        model_store=model_store,
     )

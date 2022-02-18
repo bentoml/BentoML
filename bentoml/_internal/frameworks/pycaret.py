@@ -7,7 +7,6 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -15,6 +14,7 @@ from ..types import PathType
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 PYCARET_CONFIG = "pycaret_config"
@@ -64,7 +64,7 @@ def _get_model_info(
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Any:
     """
@@ -157,20 +157,7 @@ def save(
     return _model.tag
 
 
-class _PycaretRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        name: t.Optional[str] = None,
-    ):
-        super().__init__(name)
-        self._tag = Tag.from_taglike(tag)
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
-
+class _PycaretRunner(BaseModelRunner):
     @property
     def num_replica(self) -> int:
         if self.resource_quota.cpu > 1:
@@ -202,8 +189,6 @@ def load_runner(
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pycaret` model
@@ -227,7 +212,7 @@ def load_runner(
         runner = bentoml.pycaret.load_runner(tag="my_model:latest")
 
         prediction = runner.run_batch(input_data=data_unseen)
-    """  # noqa
+    """
     return _PycaretRunner(
         tag=tag,
         name=name,

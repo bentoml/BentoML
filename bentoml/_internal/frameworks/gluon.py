@@ -1,13 +1,12 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
+from bentoml._internal.types import LazyType
 
 from ..models import JSON_EXT
 from ..models import SAVE_NAMESPACE
@@ -15,15 +14,16 @@ from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..runner.utils import Params
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    # pylint: disable=unused-import
+    from .. import external_typing as ext
     from ..models import ModelStore
 
 try:
-    import mxnet
-    import mxnet.gluon as gluon
+    import mxnet  # type: ignore
+    import mxnet.gluon as gluon  # type: ignore
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """mxnet is required in order to use module `bentoml.gluon`, install
@@ -143,24 +143,16 @@ def save(
     return _model.tag
 
 
-class _GluonRunner(Runner):
-    @inject
+class _GluonRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
-        name: str,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        super().__init__(name)
-        self._tag = tag
+        super().__init__(tag, name=name)
         self._predict_fn_name = predict_fn_name
-        self._model_store = model_store
         self._ctx = None
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
 
     @property
     def num_replica(self) -> int:
@@ -168,27 +160,27 @@ class _GluonRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         if self.resource_quota.on_gpu:
             ctx = mxnet.gpu()
         else:
             ctx = mxnet.cpu()
         self._ctx = ctx
-        self._model = load(self._tag, ctx, self._model_store)
+        self._model = load(self._tag, ctx)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
     def _run_batch(
         self,
-        *args: t.Union[np.ndarray, mxnet.ndarray.NDArray],
-        **kwargs: t.Union[np.ndarray, mxnet.ndarray.NDArray],
-    ) -> np.ndarray:
-        params = Params[t.Union[np.ndarray, mxnet.ndarray.NDArray]](*args, **kwargs)
-        if isinstance(params.sample, np.ndarray):
-            params = params.map(lambda i: mxnet.nd.array(i, ctx=self._ctx))
-        elif isinstance(params.sample, mxnet.ndarray.NDArray):
-            params = params.map(lambda i: i.as_in_context(self._ctx))
+        *args: t.Union["ext.NpNDArray", mxnet.ndarray.NDArray],
+        **kwargs: t.Union["ext.NpNDArray", mxnet.ndarray.NDArray],
+    ) -> "ext.NpNDArray":
+        params = Params(*args, **kwargs)
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(params.sample):
+            params = params.map(lambda i: mxnet.nd.array(i, ctx=self._ctx))  # type: ignore
+        elif LazyType["mxnet.ndarray.NDArray"](mxnet.ndarray.NDArray).isinstance(
+            params.sample
+        ):
+            params = params.map(lambda i: i.as_in_context(self._ctx))  # type: ignore
         else:
             raise TypeError(
                 "`_run_batch` of {self.__class__.__name__} only takes "
@@ -204,7 +196,6 @@ def load_runner(
     predict_fn_name: str = "__call__",
     *,
     name: t.Optional[str] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _GluonRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -216,8 +207,6 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (:code:`str`, default to :code:`__call__`):
             Options for inference functions. Default to `__call__`
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.detectron` model
@@ -231,13 +220,9 @@ def load_runner(
         runner = bentoml.gluon.load_runner("gluon_block")
         runner.run_batch(data)
 
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _GluonRunner(
         name=name,
         tag=tag,
         predict_fn_name=predict_fn_name,
-        model_store=model_store,
     )

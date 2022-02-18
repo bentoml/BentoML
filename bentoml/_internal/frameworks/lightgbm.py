@@ -8,7 +8,6 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -16,11 +15,8 @@ from ..models import PKL_EXT
 from ..models import TXT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
-
-if TYPE_CHECKING:
-    from ..models import ModelStore
-    from ..external_typing.numpy import NpNDArray
 
 try:
     import lightgbm as lgb  # type: ignore[reportMissingTypeStubs]
@@ -32,18 +28,19 @@ except ImportError:  # pragma: no cover
         """
     )
 
-MODULE_NAME = "bentoml.lightgbm"
 
+if TYPE_CHECKING:
+    from .. import external_typing as ext
+    from ..models import ModelStore
 
-_LightGBMModelType = t.TypeVar(
-    "_LightGBMModelType",
-    bound=t.Union[
+    _LightGBMModelType = t.Union[
         "lgb.LGBMModel",
         "lgb.LGBMClassifier",
         "lgb.LGBMRegressor",
         "lgb.LGBMRanker",
-    ],
-)
+    ]
+
+MODULE_NAME = "bentoml.lightgbm"
 
 
 def _get_model_info(
@@ -77,7 +74,7 @@ def load(
     tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["lgb.basic.Booster", _LightGBMModelType]:
+) -> t.Union["lgb.basic.Booster", "_LightGBMModelType"]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -113,7 +110,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Union["lgb.basic.Booster", _LightGBMModelType],
+    model: t.Union["lgb.basic.Booster", "_LightGBMModelType"],
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -202,14 +199,14 @@ def save(
         joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
         _model.info.options["sklearn_api"] = True
     else:
-        model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{TXT_EXT}"))
+        model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{TXT_EXT}"))  # type: ignore
 
     _model.save(model_store)
 
     return _model.tag
 
 
-class _LightGBMRunner(Runner):
+class _LightGBMRunner(BaseModelRunner):
     @inject
     def __init__(
         self,
@@ -218,16 +215,12 @@ class _LightGBMRunner(Runner):
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         name: t.Optional[str] = None,
     ):
-        super().__init__(name)
+        super().__init__(tag, name=name)
         self._booster_params = booster_params if booster_params is not None else {}
         self._infer_api_callback = infer_api_callback
-        self._tag = Tag.from_taglike(tag)
+
         self._predict_fn: t.Any = None
         self._model: t.Any = None
-
-    @property
-    def default_name(self) -> str:
-        return self._tag.name
 
     def _is_gpu(self):
         try:
@@ -236,10 +229,6 @@ class _LightGBMRunner(Runner):
                 return "gpu" in self._booster_params["device"]
         except KeyError:
             return False
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
 
     @property
     def num_replica(self) -> int:
@@ -254,7 +243,7 @@ class _LightGBMRunner(Runner):
         )
         self._predict_fn = getattr(self._model, self._infer_api_callback)
 
-    def _run_batch(self, input_data: "NpNDArray") -> "NpNDArray":  # type: ignore[reportIncompatibleMethodOverride]
+    def _run_batch(self, input_data: "ext.NpNDArray") -> "ext.NpNDArray":  # type: ignore[reportIncompatibleMethodOverride]
         return self._predict_fn(input_data)
 
 
@@ -292,7 +281,7 @@ def load_runner(
 
         runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
         runner.run_batch(X_test, num_iteration=gbm.best_iteration)
-    """  # noqa
+    """
     return _LightGBMRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,

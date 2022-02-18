@@ -10,7 +10,6 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
@@ -18,6 +17,7 @@ from bentoml.exceptions import MissingDependencyException
 from ..utils import LazyLoader
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ Instruction for installing `paddlepaddle`:
 - CPU support only: `pip install paddlepaddle -i https://mirror.baidu.com/pypi/simple`
 - GPU support: (latest version): `python -m pip install paddlepaddle-gpu==2.1.3.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html`.
     For other version of CUDA or different platforms refer to https://www.paddlepaddle.org.cn/ for more information
-"""  # noqa: LN001
+"""
 
 if TYPE_CHECKING:
     import numpy as np
@@ -84,17 +84,10 @@ _hub_exc = (
 # Instruction: `pip install -U pandas`
 # """
 
-hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)  # noqa: F811
+hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)
 manager = LazyLoader("manager", globals(), "paddlehub.module.manager", exc_msg=_hub_exc)
 server = LazyLoader("server", globals(), "paddlehub.server.server", exc_msg=_hub_exc)
-np = LazyLoader("np", globals(), "numpy")  # noqa: F811
-
-
-def device_count() -> int:  # pragma: no cover
-    num_gpus = (
-        core.get_cuda_device_count() if hasattr(core, "get_cuda_device_count") else 0
-    )
-    return num_gpus
+np = LazyLoader("np", globals(), "numpy")
 
 
 def _clean_name(name: str) -> str:  # pragma: no cover
@@ -114,7 +107,7 @@ def _load_paddle_bentoml_default_config(model: "Model") -> "paddle.inference.Con
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     config: t.Optional["paddle.inference.Config"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
@@ -145,7 +138,7 @@ def load(
 
         model = bentoml.paddle.load(tag)
 
-    """  # noqa
+    """
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
@@ -367,7 +360,7 @@ def save(
         model = train_paddle_model()
         # `save` a pretrained model to BentoML modelstore:
         tag = bentoml.paddle.save("linear_model", model, input_spec=InputSpec(shape=[IN_FEATURES], dtype="float32"))
-    """  # noqa
+    """
     return _save(
         name=name,
         model=model,
@@ -448,7 +441,7 @@ def import_from_paddlehub(
 
         tag = bentoml.paddle.import_from_paddlehub("senta_bilstm")
 
-    """  # noqa
+    """
     _name = model_name.split("/")[-1] if os.path.isdir(model_name) else model_name
 
     return _save(
@@ -467,73 +460,55 @@ def import_from_paddlehub(
     )
 
 
-class _PaddlePaddleRunner(Runner):
-    @inject
+class _PaddlePaddleRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         infer_api_callback: str,
         *,
-        device: str,
-        enable_gpu: bool,
-        gpu_mem_pool_mb: int,
+        gpu_mem_pool_mb: int = 1024,
         config: t.Optional["paddle.inference.Config"],
-        name: str,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        import paddle
+        super().__init__(tag=tag, name=name)
 
-        if enable_gpu and not paddle.is_compiled_with_cuda():
+        self._infer_api_callback = infer_api_callback
+        self._config = config
+        self._gpu_mem_pool_mb = gpu_mem_pool_mb
+
+    @property
+    def _enable_gpu(self):
+        enable_gpu = self.resource_quota.on_gpu
+        if enable_gpu and not paddle.is_compiled_with_cuda():  # type: ignore
             raise BentoMLException(
-                "`enable_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
+                "`resource_quota.on_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
                 " Make sure to install `paddlepaddle-gpu` and try again."
             )
-        in_store_tag = model_store.get(tag).tag
+        return enable_gpu
 
-        super().__init__(name)
-        self._infer_api_callback = infer_api_callback
-        self._model_store = model_store
-        self._enable_gpu = enable_gpu
-        self._tag = in_store_tag
-        self._setup_runner_config(device, enable_gpu, gpu_mem_pool_mb, config=config)
-
-    # pylint: disable=attribute-defined-outside-init
-    def _setup_runner_config(
-        self,
-        device: str,
-        enable_gpu: bool,
-        gpu_mem_pool_mb: int,
-        config: t.Optional["paddle.inference.Config"],
-    ) -> None:
+    def _setup_runner_config(self) -> None:
         _config = (
             _load_paddle_bentoml_default_config(self._model_store.get(self._tag))
-            if not config
-            else config
+            if not self._config
+            else self._config
         )
-        if "xpu" in device:
-            raise RuntimeError("XPU is not yet supported by BentoML")
-        if enable_gpu:
-            if gpu_mem_pool_mb == 0:
-                gpu_mem_pool_mb = 1024  # default init to 1GB for gpu memory
-            if "gpu" not in device:
-                logger.debug(
-                    f"`enable_gpu=True`, while `device={device}`, changing device to gpu..."
-                )
-                # this will default to gpu:0
-                device = "gpu"
-            _config.enable_use_gpu(gpu_mem_pool_mb)
+        if self._enable_gpu:
+            _config.enable_use_gpu(self._gpu_mem_pool_mb)
         else:
             # If not specific mkldnn, you can set the blas thread.
             # `num_threads` should not be greater than the number of cores in the CPU.
             _config.set_cpu_math_library_num_threads(self._num_threads)
             _config.enable_mkldnn()
             _config.disable_gpu()
-        paddle.set_device(device)
+        paddle.set_device(self._device)
         self._runner_config = _config
 
     @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+    def _device(self) -> str:
+        if self._enable_gpu:
+            # this will default to gpu:0
+            return "gpu"
+        return "cpu"
 
     @property
     def _num_threads(self) -> int:
@@ -544,26 +519,23 @@ class _PaddlePaddleRunner(Runner):
     @property
     def num_replica(self) -> int:
         if self._enable_gpu:
-            count = device_count()  # type: int
+            count = len(self.resource_quota.gpus)
             return count
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._model = load(
-            self._tag, config=self._runner_config, model_store=self._model_store
-        )
+    def _setup(self) -> None:
+        self._setup_runner_config()
+        self._model = load(self._tag, config=self._config)
         self._infer_func = getattr(self._model, self._infer_api_callback)
 
-    # pylint: disable=arguments-differ
     def _run_batch(
         self,
         input_data: t.Optional[t.Any],
         *args: str,
         return_argmax: bool = False,
         **kwargs: str,
-    ) -> t.Union[t.Any, t.List["np.ndarray"]]:  # type: ignore[override]
-        model_info = self._model_store.get(self._tag)
+    ) -> t.Any:
+        model_info = self._model_info
         if "paddlehub" in model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:
@@ -608,12 +580,9 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     infer_api_callback: str = "run",
-    device: str = "cpu",
-    enable_gpu: bool = False,
     gpu_mem_pool_mb: int = 0,
     name: t.Optional[str] = None,
     config: t.Optional["paddle.inference.Config"] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PaddlePaddleRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -630,15 +599,8 @@ def load_runner(
             to corresponding API endpoint offered by given module.
         config (`paddle.inference.Config`, `optional`, default to :code:`None`):
             Config for inference. If None is specified, then use BentoML default.
-        device (:code:`str`, `optional`, default to :code:`cpu`):
-            Type of device either paddle Predictor or :obj:`hub.Module` will be running on.
-            Currently only supports CPU and GPU. Kunlun XPUs is currently **NOT SUPPORTED**.
-        enable_gpu (`bool`, `optional`, default to :code:`False`):
-            Whether to enable GPU.
         gpu_mem_pool_mb (`int`, `optional`, default to 0):
             Amount of memory one wants to allocate to GPUs. By default we will allocate None.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.paddle` model
@@ -652,23 +614,16 @@ def load_runner(
 
         runner = bentoml.paddle.load_runner(
             tag,
-            enable_gpu=True,
             device="gpu:0",
         )
 
         _ = runner.run_batch(pd_dataframe.to_numpy().astype(np.float32))
 
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _PaddlePaddleRunner(
         tag=tag,
         infer_api_callback=infer_api_callback,
-        device=device,
-        enable_gpu=enable_gpu,
         gpu_mem_pool_mb=gpu_mem_pool_mb,
         config=config,
         name=name,
-        model_store=model_store,
     )

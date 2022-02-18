@@ -3,6 +3,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
+from torch._C import device
 from simple_di import inject
 from simple_di import Provide
 
@@ -20,6 +21,7 @@ from ..runner.utils import Params
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from .. import external_typing as ext
     from ..models import ModelStore
 try:
     # pylint: disable=unused-import
@@ -43,7 +45,7 @@ MODULE_NAME = "bentoml.detectron"
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     device: str = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "torch.nn.Module":
@@ -192,24 +194,18 @@ def save(
     return _model.tag
 
 
-class _DetectronRunner(Runner):
-    @inject
-    # TODO: add partial_kwargs @larme
+from .common.model_runner import BaseModelRunner
+
+
+class _DetectronRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
-        name: str,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        super().__init__(name)
-        self._tag = tag
+        super().__init__(tag, name=name)
         self._predict_fn_name = predict_fn_name
-        self._model_store = model_store
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
 
     @property
     def num_replica(self) -> int:
@@ -217,45 +213,40 @@ class _DetectronRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=attribute-defined-outside-init
-    def _setup(self) -> None:
+    @property
+    def _device(self) -> str:
         if self.resource_quota.on_gpu:
-            device = "cuda"
-        else:
-            device = "cpu"
-        self._model = load(self._tag, device, self._model_store)
+            return "cuda"
+        return "cpu"
+
+    def _setup(self) -> None:
+        self._model = load(self._tag, self._device)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(
+    def _run_batch(  # type: ignore
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](
-            *args
-        )
+        *args: t.Union["ext.NpNDArray", torch.Tensor],
+    ) -> "ext.NpNDArray":
+        params = Params[t.Union["ext.NpNDArray", torch.Tensor]](*args)
 
-        def _mapping(
-            item: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]
-        ) -> torch.Tensor:
+        def _mapping(item: t.Union["ext.NpNDArray", torch.Tensor]) -> torch.Tensor:
             if isinstance(item, np.ndarray):
-                return torch.from_numpy(item)
+                return torch.Tensor(item, device=self._device)
             return item
 
         params = params.map(_mapping)
 
         inputs = [{"image": image} for image in params.args]
 
-        res = self._predict_fn(inputs)
-        return np.asarray(res, dtype=object)
+        res: "torch.Tensor" = self._predict_fn(inputs)
+        return res.numpy()
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "__call__",
     *,
     name: t.Optional[str] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _DetectronRunner:
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -282,13 +273,9 @@ def load_runner(
 
         runner = bentoml.detectron.load_runner(tag)
         runner.run_batch(np.array([[1,2,3,]]))
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _DetectronRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
-        model_store=model_store,
         name=name,
     )

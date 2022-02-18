@@ -13,6 +13,7 @@ from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from .pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 _PL_IMPORT_ERROR = f"""\
@@ -172,7 +173,6 @@ def load_runner(
     device_id: str = "cpu:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyTorchLightningRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -189,8 +189,6 @@ def load_runner(
             for more information.
         partial_kwargs (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Common kwargs passed to model for this runner
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pytorch_lightning` model
@@ -202,15 +200,11 @@ def load_runner(
         import bentoml.pytorch_lightning
         runner = bentoml.pytorch_lightning.load_runner("lit_classifier:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _PyTorchLightningRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         name=name,
         device_id=device_id,
         partial_kwargs=partial_kwargs,
-        model_store=model_store,
     )

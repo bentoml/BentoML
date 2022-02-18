@@ -30,15 +30,8 @@ if TYPE_CHECKING:
 
 @attr.define
 class ResourceQuota:
-    cpu: float = attr.field(converter=cpu_converter)
-    mem: int = attr.field(converter=mem_converter)
-
-    # Example gpus value: "all", 2, "device=1,2"
-    # Default to "None", returns all available GPU devices in current environment
-    gpus: t.List[str] = attr.field(converter=gpu_converter)
-
-    @cpu.default  # type: ignore
-    def _get_default_cpu(self) -> float:
+    @staticmethod
+    def _get_default_cpu() -> float:
         # Default to the total CPU count available in current node or cgroup
         if psutil.POSIX:
             return query_cgroup_cpu_count()
@@ -48,13 +41,20 @@ class ResourceQuota:
                 return float(cpu_count)
             raise ValueError("CPU count is NoneType")
 
-    @mem.default  # type: ignore
-    def _get_default_mem(self) -> int:
+    @staticmethod
+    def _get_default_mem() -> int:
         # Default to the total memory available
         from psutil import virtual_memory
 
         mem: "svmem" = virtual_memory()
         return mem.total
+
+    cpu: float = attr.field(converter=cpu_converter, default=_get_default_cpu)
+    mem: int = attr.field(converter=mem_converter, default=_get_default_mem)
+
+    # Example gpus value: "all", 2, "device=1,2"
+    # Default to "None", returns all available GPU devices in current environment
+    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
 
     @property
     def on_gpu(self) -> bool:

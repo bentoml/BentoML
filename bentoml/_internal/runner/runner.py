@@ -30,12 +30,12 @@ if TYPE_CHECKING:
 
 @attr.define
 class ResourceQuota:
-    cpu: float = attr.field(converter=cpu_converter, default=None)
-    mem: int = attr.field(converter=mem_converter, default=None)
+    cpu: float = attr.field(converter=cpu_converter)
+    mem: int = attr.field(converter=mem_converter)
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
+    gpus: t.List[str] = attr.field(converter=gpu_converter)
 
     @cpu.default  # type: ignore
     def _get_default_cpu(self) -> float:
@@ -110,6 +110,7 @@ class BaseRunner:
         ...
 
     def _shutdown(self) -> None:
+        # still a hidden SDK API
         pass
 
     @property

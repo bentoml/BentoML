@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import enum
 import typing as t
 from abc import ABC
@@ -26,6 +27,11 @@ if TYPE_CHECKING:
         from psutil._pslinux import svmem
     else:
         from psutil._pswindows import svmem
+
+if sys.version_info >= (3, 8):
+    from typing import final
+else:
+    final = lambda x: x
 
 
 @attr.define
@@ -122,7 +128,7 @@ class BaseRunner:
         return []
 
     @cached_property
-    @t.final
+    @final
     def name(self) -> str:
         if self._name is None:
             name = self.default_name
@@ -133,33 +139,33 @@ class BaseRunner:
         return name
 
     @cached_property
-    @t.final
+    @final
     def resource_quota(self) -> ResourceQuota:
         return ResourceQuota()
 
     @cached_property
-    @t.final
+    @final
     def batch_options(self) -> BatchOptions:
         return BatchOptions()
 
-    @t.final
+    @final
     @cached_property
     def _impl(self) -> "RunnerImpl":
         return create_runner_impl(self)
 
-    @t.final
+    @final
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run(*args, **kwargs)
 
-    @t.final
+    @final
     async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run_batch(*args, **kwargs)
 
-    @t.final
+    @final
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl.run(*args, **kwargs)
 
-    @t.final
+    @final
     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl.run_batch(*args, **kwargs)
 

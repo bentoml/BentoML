@@ -109,17 +109,6 @@ def check_flax_supported() -> None:  # pragma: no cover
 MODULE_NAME = "bentoml.transformers"
 
 
-PIPELINE_LOAD_WARNING = """\
-BentoML won't support loading pipeline if users decide to save pipeline with `save()`.
-Since `load()` will always return model, and tokenizer. Users can easily create a new pipeline:
-    import bentoml
-    import transformers
-
-    model, tokenizer = bentoml.transformers.load(tag)
-    pipe = transformers.pipeline('text-classification', model=model, tokenizer=tokenizer)
-"""
-
-
 @inject
 def load(
     tag: t.Union[str, Tag],
@@ -128,22 +117,17 @@ def load(
     *,
     return_config: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **kwargs: str,
+    **kwargs: t.Any,
 ) -> t.Union[
+    "ext.TransformersPipeline",
     t.Tuple[
         "ext.PretrainedConfig",
         "ext.TransformersModelType",
-        t.Union[
-            t.Optional["ext.TransformersTokenizerType"],
-            t.Optional["ext.PreTrainedFeatureExtractor"],
-        ],
+        t.Union["ext.TransformersTokenizerType", "ext.PreTrainedFeatureExtractor"],
     ],
     t.Tuple[
         "ext.TransformersModelType",
-        t.Union[
-            t.Optional["ext.TransformersTokenizerType"],
-            t.Optional["ext.PreTrainedFeatureExtractor"],
-        ],
+        t.Union["ext.TransformersTokenizerType", "ext.PreTrainedFeatureExtractor"],
     ],
 ]:
     """
@@ -160,15 +144,15 @@ def load(
             Load the model weights from a Flax checkpoint save file
         return_config (:code:`bool`, `optional`, default to :code:`False`):
             Whether or not to return configuration of the Transformers model.
-        kwargs (:code:`str`, `optional`):
+        kwargs (:code:`Dict[str, Any]`, `optional`):
             kwargs that can be parsed to transformers.
 
     .. warning::
-        :code:`kwargs` currenlty only accepts `Config` and `Model` kwargs. Tokenizer/FeatureExtractor kwargs is currently not yet SUPPORTED.
+        :code:`kwargs` currenlty only accepts :code:`Config`, :code:`Model`, and :code:`Pipeline` kwargs. Tokenizer/FeatureExtractor kwargs is currently not yet SUPPORTED.
 
     Returns:
-        :obj:`Tuple[PretrainedConfig, Union[PreTrainedModel, TFPreTrainedModel, FlaxPreTrainedModel], Optional[Union[PreTrainedTokenizer, PreTrainedTokenizerFast]]]`: a tuple containing
-        :obj:`PretrainedConfig`, :obj:`Model` class object defined by :obj:`transformers`, with an optional :obj:`Tokenizer` class, or :obj:`FeatureExtractor` class for the given model saved in BentoML modelstore.
+        :obj:`Union[Pipeline, Tuple[Optional[PretrainedConfig], Union[PreTrainedModel, TFPreTrainedModel, FlaxPreTrainedModel], Optional[Union[PreTrainedTokenizer, PreTrainedTokenizerFast, PreTrainedFeatureExtractor]]]]`: either returning a
+        pipeline or a tuple containing :obj:`PretrainedConfig`, :obj:`Model` class object defined by :obj:`transformers`, with an optional :obj:`Tokenizer` class, or :obj:`FeatureExtractor` class for the given model saved in BentoML modelstore.
 
     Examples:
 
@@ -183,6 +167,13 @@ def load(
 
         import bentoml
         config, model, tokenizer = bentoml.transformers.load('custom_gpt2', return_config=True)
+
+    If the pipeline is saved with :code:`bentoml.transformers.save()`, then :code:`load()` will return pipeline objects:
+
+    .. code-block:: python
+
+        import bentoml
+        pipeline = bentoml.transformers.load("roberta_text_classification", return_all_scores=True)
     """  # noqa
     check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
@@ -191,40 +182,48 @@ def load(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    config, unused_kwargs = AutoConfig.from_pretrained(
-        model.path, return_unused_kwargs=True, **kwargs
-    )  # type: ignore[reportUnknownMemberType]
-
-    _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
-    _feature_extractor = model.info.options["feature_extractor"]
-
-    if _tokenizer is False:
-        tokenizer: t.Optional["ext.TransformersTokenizerType"] = None
-    else:
-        tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
-            model.path, from_tf=from_tf, from_flax=from_flax
-        )
-    if _feature_extractor is False:
-        feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None
-    else:
-        feature_extractor = getattr(
-            import_module("transformers"), _feature_extractor
-        ).from_pretrained(model.path)
-
-    tfe = tokenizer if tokenizer is not None else feature_extractor
-
-    tmodel: "ext.TransformersModelType" = getattr(import_module("transformers"), _model).from_pretrained(  # type: ignore[reportUnknownMemberType]
-        model.path,
-        config=config,
-        **unused_kwargs,
-    )
-
     if model.info.context["pipeline"]:
-        logger.warning(PIPELINE_LOAD_WARNING)
+        _tasks = model.info.context["task"]
+        return transformers.pipeline(_tasks, model.path, **kwargs)
+    else:
+        configs: t.Tuple[
+            "ext.PretrainedConfig", t.Dict[str, t.Any]
+        ] = AutoConfig.from_pretrained(
+            model.path, return_unused_kwargs=True, **kwargs
+        )  # type: ignore[reportUnknownMemberType]
+        config, unused_kwargs = configs
 
-    if return_config:
-        return config, tmodel, tfe
-    return tmodel, tfe
+        _model, _tokenizer = (
+            model.info.options["model"],
+            model.info.options["tokenizer"],
+        )
+        _feature_extractor = model.info.options["feature_extractor"]
+
+        if _tokenizer is False:
+            tokenizer: t.Optional["ext.TransformersTokenizerType"] = None
+        else:
+            tokenizer = getattr(
+                import_module("transformers"), _tokenizer
+            ).from_pretrained(model.path, from_tf=from_tf, from_flax=from_flax)
+        if _feature_extractor is False:
+            feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None
+        else:
+            feature_extractor = getattr(
+                import_module("transformers"), _feature_extractor
+            ).from_pretrained(model.path)
+
+        tfe = tokenizer if tokenizer is not None else feature_extractor
+        assert tfe is not None
+
+        tmodel: "ext.TransformersModelType" = getattr(import_module("transformers"), _model).from_pretrained(  # type: ignore[reportUnknownMemberType]
+            model.path,
+            config=config,
+            **unused_kwargs,
+        )
+
+        if return_config:
+            return config, tmodel, tfe
+        return tmodel, tfe
 
 
 @inject
@@ -294,6 +293,7 @@ def save(
         "framework_name": "transformers",
         "pip_dependencies": [f"transformers=={get_pkg_version('transformers')}"],
         "pipeline": False,
+        "task": False,
     }
     options: t.Dict[str, t.Any] = {
         "model": "",
@@ -317,6 +317,7 @@ def save(
             )
         obj.save_pretrained(_model.path)
         _model.info.context["pipeline"] = True
+        _model.info.context["task"] = getattr(obj, "task")
         _model.info.options["model"] = getattr(obj, "model").__class__.__name__
         _tokenizer, _fe = getattr(obj, "tokenizer"), getattr(obj, "feature_extractor")
         if getattr(obj, "feature_extractor") is not None:
@@ -409,6 +410,7 @@ class _TransformersRunner(Runner):
             model_store.get(tag).info.options["feature_extractor"] is False
         )
         self._tokenizer = None
+        self._pipeline = None
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -422,32 +424,14 @@ class _TransformersRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
         try:
-            _ = self._model_store.get(self._tag)
-            self._config, self._model, _tfe = load(
+            meta = self._model_store.get(self._tag)
+            params = load(
                 self._tag,
-                from_flax=False,
+                from_flax="flax" in self._framework,
                 from_tf="tf" in self._framework,
                 return_config=True,
                 model_store=self._model_store,
-            )
-            if not self._has_tokenizer:
-                self._feature_extractor = _tfe
-            else:
-                self._tokenizer = _tfe
-        except FileNotFoundError:
-            self._config, self._model, self._tokenizer = None, None, None
-        if self._tokenizer is None:
-            self._pipeline: "ext.TransformersPipeline" = transformers.pipeline(
-                self._tasks
-            )
-        else:
-            self._pipeline = transformers.pipeline(
-                self._tasks,
-                config=self._config,
-                model=self._model,
-                tokenizer=self._tokenizer,  # type: ignore[reportGeneralTypeIssues]
                 framework=self._framework,
-                feature_extractor=self._feature_extractor,
                 revision=self._revision,
                 use_fast=self._use_fast,
                 use_auth_token=self._use_auth_token,
@@ -456,12 +440,38 @@ class _TransformersRunner(Runner):
                 **self._kwargs,
             )
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]  # noqa
-        self, input_data: t.Union[t.Any, t.List[t.Any]]
-    ) -> t.Union[t.Any, t.List[t.Any]]:
-        res: t.Any = self._pipeline(input_data)
-        return res
+            if meta.info.context["pipeline"]:
+                self._pipeline = params
+            else:
+                self._config, self._model, _tfe = params
+                if not self._has_tokenizer:
+                    self._feature_extractor = _tfe
+                else:
+                    self._tokenizer = _tfe
+        except FileNotFoundError:
+            self._config, self._model = None, None
+        finally:
+            if self._pipeline is None:
+                if self._tokenizer is None or self._model is None:
+                    self._pipeline = transformers.pipeline(self._tasks)
+                else:
+                    self._pipeline = transformers.pipeline(
+                        self._tasks,
+                        config=self._config,
+                        model=self._model,
+                        tokenizer=self._tokenizer,  # type: ignore[reportGeneralTypeIssues]
+                        framework=self._framework,
+                        feature_extractor=self._feature_extractor,
+                        revision=self._revision,
+                        use_fast=self._use_fast,
+                        use_auth_token=self._use_auth_token,
+                        model_kwargs=self._model_kwargs,
+                        device=self._device,
+                        **self._kwargs,
+                    )
+
+    def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return self._pipeline(*args, **kwargs)  # type: ignore
 
 
 def load_runner(

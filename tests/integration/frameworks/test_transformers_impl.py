@@ -80,17 +80,14 @@ def test_transformers_save_load(
 def test_transformers_save_load_pipeline(modelstore: "ModelStore"):
     from PIL import Image
 
-    pipeline = transformers.pipeline("image-classification")
+    pipe = transformers.pipeline("image-classification")
     tag = bentoml.transformers.save(
-        "vit-image-classification", pipeline, model_store=modelstore
+        "vit-image-classification", pipe, model_store=modelstore
     )
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
-    model, fe = bentoml.transformers.load(tag, model_store=modelstore)
-    loaded = transformers.pipeline(
-        "image-classification", model=model, feature_extractor=fe
-    )
-    res = loaded(image)
+    pipeline = bentoml.transformers.load(tag, model_store=modelstore)
+    res = pipeline(image)
     assert res[0]["label"] == "Egyptian cat"
 
 

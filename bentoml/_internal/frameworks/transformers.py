@@ -18,8 +18,7 @@ from ..types import LazyType
 from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
-logging.captureWarnings(True)
-logger = logging.getLogger("bentoml")
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
 
@@ -29,9 +28,6 @@ if TYPE_CHECKING:
 try:
     import transformers
     from transformers.models.auto.configuration_auto import AutoConfig
-
-    transformers_logger = transformers.utils.logging.get_logger()
-    transformers_logger.root.handlers = logger.handlers
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -196,6 +192,7 @@ def load(
             model.path, return_unused_kwargs=True, **kwargs
         )  # type: ignore[reportUnknownMemberType]
         config, unused_kwargs = configs
+        use_fast = unused_kwargs.pop("use_fast", True)  # type: bool
 
         _model, _tokenizer = (
             model.info.options["model"],
@@ -208,7 +205,9 @@ def load(
         else:
             tokenizer = getattr(
                 import_module("transformers"), _tokenizer
-            ).from_pretrained(model.path, from_tf=from_tf, from_flax=from_flax)
+            ).from_pretrained(
+                model.path, from_tf=from_tf, from_flax=from_flax, use_fast=use_fast
+            )
         if _feature_extractor is False:
             feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None
         else:
@@ -217,7 +216,6 @@ def load(
             ).from_pretrained(model.path)
 
         tfe = tokenizer if tokenizer is not None else feature_extractor
-        assert tfe is not None
 
         tmodel: "ext.TransformersModelType" = getattr(import_module("transformers"), _model).from_pretrained(  # type: ignore[reportUnknownMemberType]
             model.path,
@@ -226,8 +224,8 @@ def load(
         )
 
         if return_config:
-            return config, tmodel, tfe
-        return tmodel, tfe
+            return config, tmodel, tfe  # type: ignore
+        return tmodel, tfe  # type: ignore
 
 
 @inject
@@ -410,11 +408,15 @@ class _TransformersRunner(Runner):
         self._kwargs = pipeline_kwargs
 
         # tokenizer-related
-        self._has_tokenizer = (
-            model_store.get(tag).info.options["feature_extractor"] is False
-        )
+        try:
+            self._has_tokenizer = (
+                model_store.get(tag).info.options["feature_extractor"] is False
+            )
+        except Exception:
+            self._has_tokenizer = False
         self._tokenizer = None
         self._pipeline = None
+        self._config = None
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -427,15 +429,33 @@ class _TransformersRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        try:
-            meta = self._model_store.get(self._tag)
-            params = load(
-                self._tag,
-                from_flax="flax" in self._framework,
-                from_tf="tf" in self._framework,
-                return_config=True,
-                model_store=self._model_store,
+        meta = self._model_store.get(self._tag)
+        params = load(
+            self._tag,
+            from_flax="flax" in self._framework,
+            from_tf="tf" in self._framework,
+            return_config=True,
+            model_store=self._model_store,
+            revision=self._revision,
+            use_fast=self._use_fast,
+            use_auth_token=self._use_auth_token,
+        )
+
+        if meta.info.context["pipeline"]:
+            self._pipeline = params
+        else:
+            self._config, self._model, _tfe = params
+            if not self._has_tokenizer:
+                self._feature_extractor = _tfe
+            else:
+                self._tokenizer = _tfe
+            self._pipeline = transformers.pipeline(
+                self._tasks,
+                config=self._config,
+                model=self._model,
+                tokenizer=self._tokenizer,  # type: ignore[reportGeneralTypeIssues]
                 framework=self._framework,
+                feature_extractor=self._feature_extractor,
                 revision=self._revision,
                 use_fast=self._use_fast,
                 use_auth_token=self._use_auth_token,
@@ -443,36 +463,6 @@ class _TransformersRunner(Runner):
                 device=self._device,
                 **self._kwargs,
             )
-
-            if meta.info.context["pipeline"]:
-                self._pipeline = params
-            else:
-                self._config, self._model, _tfe = params
-                if not self._has_tokenizer:
-                    self._feature_extractor = _tfe
-                else:
-                    self._tokenizer = _tfe
-        except FileNotFoundError:
-            self._config, self._model = None, None
-        finally:
-            if self._pipeline is None:
-                if self._tokenizer is None or self._model is None:
-                    self._pipeline = transformers.pipeline(self._tasks)
-                else:
-                    self._pipeline = transformers.pipeline(
-                        self._tasks,
-                        config=self._config,
-                        model=self._model,
-                        tokenizer=self._tokenizer,  # type: ignore[reportGeneralTypeIssues]
-                        framework=self._framework,
-                        feature_extractor=self._feature_extractor,
-                        revision=self._revision,
-                        use_fast=self._use_fast,
-                        use_auth_token=self._use_auth_token,
-                        model_kwargs=self._model_kwargs,
-                        device=self._device,
-                        **self._kwargs,
-                    )
 
     def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._pipeline(*args, **kwargs)  # type: ignore

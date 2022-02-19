@@ -18,7 +18,8 @@ from ..types import LazyType
 from ..utils.pkg import get_pkg_version
 from ..configuration.containers import BentoMLContainer
 
-logger = logging.getLogger(__name__)
+logging.captureWarnings(True)
+logger = logging.getLogger("bentoml")
 
 if TYPE_CHECKING:
 
@@ -28,6 +29,9 @@ if TYPE_CHECKING:
 try:
     import transformers
     from transformers.models.auto.configuration_auto import AutoConfig
+
+    transformers_logger = transformers.utils.logging.get_logger()
+    transformers_logger.root.handlers = logger.handlers
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

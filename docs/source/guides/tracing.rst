@@ -61,10 +61,10 @@ Similarly when serving with BentoML API server docker image, assuming you have a
 
 .. code-block:: bash
 
-    docker run -v $(PWD):/tmp my-bento-api-server -p 3000:3000 --config /tmp/my_config_file.yml
+    docker run -v $(PWD):/tmp my-bento-api-server -p 5000:5000 --config /tmp/my_config_file.yml
 
     # after version 0.13.0
-    docker run -v $(PWD):/tmp -p 3000:3000 -e BENTOML_CONFIG=/tmp/my_config_file.yml my-bento-api-server
+    docker run -v $(PWD):/tmp -p 5000:5000 -e BENTOML_CONFIG=/tmp/my_config_file.yml my-bento-api-server
 
 .. spelling::
 

@@ -44,8 +44,9 @@ We can run the images with `docker run`.
     > docker run IrisClassifierService:20210919_UN30CA
     [INFO] Starting BentoML API server in development mode with auto-reload enabled
     [INFO] Serving BentoML Service "IrisClassifierService" defined in "bento.py"
-    [INFO] API Server running on http://0.0.0.0:3000
+    [INFO] API Server running on http://0.0.0.0:5000
 
 .. todo::
 
     Add a further reading section
+

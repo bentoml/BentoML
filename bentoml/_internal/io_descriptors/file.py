@@ -42,7 +42,7 @@ class File(IODescriptor[FileLike]):
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
         [INFO] Serving BentoML Service "vit-object-detection" defined in "vit_svc.py"
-        [INFO] API Server running on http://0.0.0.0:3000
+        [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send requests to the newly started services with any client:
 
@@ -52,7 +52,7 @@ class File(IODescriptor[FileLike]):
 
             import requests
             requests.post(
-                "http://0.0.0.0:3000/predict",
+                "http://0.0.0.0:5000/predict",
                 files = {"upload_file": open('test.pdf', 'rb')},
                 headers = {"content-type": "multipart/form-data"}
             ).text
@@ -60,7 +60,7 @@ class File(IODescriptor[FileLike]):
 
         .. code-tab:: bash
 
-            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:3000/predict
+            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
 
     Args:
         mime_type (:code:`str`, `optional`, default to :code:`None`):

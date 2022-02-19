@@ -253,7 +253,7 @@ class BenchmarkClient:
 
     ``` test.py
     def test_case_producer():
-        return ('http://localhost:5000',
+        return ('http://localhost:3000',
                 "POST",
                 {"Content-Type": "application/json"},
                 '{"x": 1.0}')

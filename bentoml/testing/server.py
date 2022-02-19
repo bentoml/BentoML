@@ -252,7 +252,7 @@ def run_api_server_in_docker(image, config_file=None, timeout=90):
         image=image.id,
         command=command_args,
         tty=True,
-        ports={"5000/tcp": port},
+        ports={"3000/tcp": port},
         detach=True,
         volumes=volumes,
         environment=environment,

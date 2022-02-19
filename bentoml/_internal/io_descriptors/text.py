@@ -43,7 +43,7 @@ class Text(IODescriptor[str]):
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
         [INFO] Serving BentoML Service "gpt2-generation" defined in "gpt2_svc.py"
-        [INFO] API Server running on http://0.0.0.0:5000
+        [INFO] API Server running on http://0.0.0.0:3000
 
     Users can then send requests to the newly started services with any client:
 
@@ -53,7 +53,7 @@ class Text(IODescriptor[str]):
 
             import requests
             requests.post(
-                "http://0.0.0.0:5000/predict",
+                "http://0.0.0.0:3000/predict",
                 headers = {"content-type":"text/plain"},
                 data = 'Not for nothing did Orin say that people outdoors down here just scuttle in vectors from air conditioning to air conditioning.'
             ).text
@@ -62,7 +62,7 @@ class Text(IODescriptor[str]):
 
             % curl -X POST -H "Content-Type: text/plain" --data 'Not for nothing did Orin
             say that people outdoors down here just scuttle in vectors from air
-            conditioning to air conditioning.' http://0.0.0.0:5000/predict
+            conditioning to air conditioning.' http://0.0.0.0:3000/predict
 
     .. note::
 

@@ -24,7 +24,7 @@ RUN ./env/docker/init.sh user_setup_script
 COPY --chown=bentoml:bentoml . ./
 
 # Default port for BentoServer
-EXPOSE 3000
+EXPOSE 5000
 
 RUN chmod +x ./env/docker/entrypoint.sh
 USER bentoml

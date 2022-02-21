@@ -51,14 +51,29 @@ class MetricsMiddleware:
             multiprocess_mode="livesum",
         )
 
+    @inject
     async def __call__(
         self,
         scope: "ext.ASGIScope",
         receive: "ext.ASGIReceive",
         send: "ext.ASGISend",
+        metrics_client: "PrometheusClient" = Provide[
+            DeploymentContainer.metrics_client
+        ],
     ) -> None:
         if not scope["type"].startswith("http"):
             await self.app(scope, receive, send)
+            return
+
+        if scope["path"] == "/metrics":
+            from starlette.responses import Response
+
+            response = Response(
+                metrics_client.generate_latest(),
+                status_code=200,
+                media_type=metrics_client.CONTENT_TYPE_LATEST,
+            )
+            await response(scope, receive, send)
             return
 
         service_version = (

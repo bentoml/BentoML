@@ -122,10 +122,14 @@ class ServiceAppFactory(BaseAppFactory):
         access_control_options: t.Dict[str, t.Union[t.List[str], int]] = Provide[
             DeploymentContainer.access_control_options
         ],
+        enable_metrics: bool = Provide[
+            DeploymentContainer.api_server_config.metrics.enabled
+        ],
     ) -> None:
         self.bento_service = bento_service
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
+        self.enable_metrics = enable_metrics
 
     @property
     def name(self) -> str:
@@ -225,14 +229,18 @@ class ServiceAppFactory(BaseAppFactory):
             )
 
         # metrics middleware
-        from .instruments import MetricsMiddleware
+        if self.enable_metrics:
+            from .instruments import MetricsMiddleware
 
-        middlewares.append(
-            Middleware(MetricsMiddleware, bento_service=self.bento_service)
-        )
+            middlewares.append(
+                Middleware(
+                    MetricsMiddleware,
+                    bento_service=self.bento_service,
+                )
+            )
 
         # otel middleware
-        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
+        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore
 
         def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:

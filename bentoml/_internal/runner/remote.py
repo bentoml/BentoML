@@ -11,6 +11,7 @@ from simple_di import Provide
 from .runner import RunnerImpl
 from .container import Payload
 from ..utils.uri import uri_to_path
+from ...exceptions import BadInput
 from ...exceptions import RemoteException
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
@@ -132,15 +133,15 @@ class RemoteRunnerClient(RunnerImpl):
             meta_header = resp.headers[PAYLOAD_META_HEADER]
         except KeyError:
             raise RemoteException(
-                f"Bento payload decode error: {PAYLOAD_META_HEADER} not exist. "
-                "An exception might have occurred in the upstream server."
-                f"[{resp.status}] {body.decode()}"
+                f"An exception might have occurred in the upstream server."
+                f"[{resp.status}] {body.decode()}",
+                error_code=resp.status,
             ) from None
 
         try:
             payload = Payload(data=body, meta=json.loads(meta_header))
         except JSONDecodeError:
-            raise ValueError(f"Bento payload decode error: {meta_header}")
+            raise BadInput(f"Bento payload decode error: {meta_header}")
 
         return AutoContainer.payload_to_single(payload)
 

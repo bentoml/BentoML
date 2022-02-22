@@ -1,3 +1,4 @@
+import typing as t
 from http import HTTPStatus
 
 
@@ -19,9 +20,14 @@ class RemoteException(BentoMLException):
     Raise when known exceptions happened in remote process
     """
 
-    def __init__(self, message: str, payload: BentoMLException = None):
-        self.payload = payload
+    def __init__(
+        self,
+        message: str,
+        error_code: t.Optional[int] = None,
+    ):
         super().__init__(message)
+        if error_code is not None:
+            self.error_code = error_code
 
 
 class InvalidArgument(BentoMLException):

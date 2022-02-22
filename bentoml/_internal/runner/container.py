@@ -86,16 +86,16 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
 class NdarrayContainer(
     DataContainer[
-        "ext.NpNDArray[t.Any]",
-        "ext.NpNDArray[t.Any]",
+        "ext.NpNDArray",
+        "ext.NpNDArray",
     ]
 ):
     @classmethod
     def singles_to_batch(
         cls,
-        singles: t.Sequence["ext.NpNDArray[t.Any]"],
+        singles: t.Sequence["ext.NpNDArray"],
         batch_axis: int = 0,
-    ) -> "ext.NpNDArray[t.Any]":
+    ) -> "ext.NpNDArray":
         import numpy as np
 
         return np.stack(  # type: ignore[reportGeneralTypeIssues]
@@ -106,14 +106,14 @@ class NdarrayContainer(
     @classmethod
     def batch_to_singles(
         cls,
-        batch: "ext.NpNDArray[t.Any]",
+        batch: "ext.NpNDArray",
         batch_axis: int = 0,
-    ) -> t.List["ext.NpNDArray[t.Any]"]:
+    ) -> t.List["ext.NpNDArray"]:
         import numpy as np
 
         return [
             np.squeeze(arr, axis=batch_axis)  # type: ignore
-            for arr in np.split(  # type: ignore[list-item]
+            for arr in np.split(  # type: ignore
                 batch,
                 batch.shape[batch_axis],
                 axis=batch_axis,
@@ -122,9 +122,9 @@ class NdarrayContainer(
 
     @classmethod
     @inject
-    def single_to_payload(  # pylint: disable=arguments-differ
+    def single_to_payload(
         cls,
-        single: "ext.NpNDArray[t.Any]",
+        single: "ext.NpNDArray",
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
@@ -140,11 +140,11 @@ class NdarrayContainer(
 
     @classmethod
     @inject
-    def payload_to_single(  # pylint: disable=arguments-differ
+    def payload_to_single(
         cls,
         payload: Payload,
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
-    ) -> "ext.NpNDArray[t.Any]":
+    ) -> "ext.NpNDArray":
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
 
@@ -153,7 +153,7 @@ class NdarrayContainer(
 
         return pickle.loads(payload.data)
 
-    batch_to_payload = single_to_payload  # type: ignore[assignment]
+    batch_to_payload = single_to_payload  # type: ignore
     payload_to_batch = payload_to_single
 
 
@@ -166,7 +166,7 @@ class PandasDataFrameContainer(
         singles: t.Sequence[t.Union["ext.PdDataFrame", "ext.PdSeries"]],
         batch_axis: int = 0,
     ) -> "ext.PdDataFrame":
-        import pandas as pd  # type: ignore[import]
+        import pandas as pd  # type: ignore
 
         assert batch_axis == 0, "PandasDataFrameContainer requires batch_axis = 0"
 
@@ -183,7 +183,7 @@ class PandasDataFrameContainer(
         return pd.concat(singles, axis=1).T  # type: ignore[arg-type]
 
     @classmethod
-    def batch_to_singles(  # type: ignore[override]
+    def batch_to_singles(  # type: ignore
         cls,
         batch: "ext.PdDataFrame",
         batch_axis: int = 0,
@@ -196,7 +196,7 @@ class PandasDataFrameContainer(
 
     @classmethod
     @inject
-    def single_to_payload(  # pylint: disable=arguments-differ
+    def single_to_payload(
         cls,
         single: "t.Union[ext.PdDataFrame, ext.PdSeries]",
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
@@ -214,7 +214,7 @@ class PandasDataFrameContainer(
 
     @classmethod
     @inject
-    def payload_to_single(  # pylint: disable=arguments-differ
+    def payload_to_single(
         cls,
         payload: Payload,
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
@@ -227,7 +227,7 @@ class PandasDataFrameContainer(
 
         return pickle.loads(payload.data)
 
-    batch_to_payload = single_to_payload  # type: ignore[assignment]
+    batch_to_payload = single_to_payload  # type: ignore
     payload_to_batch = payload_to_single
 
 
@@ -261,7 +261,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     def payload_to_single(cls, payload: Payload):
         return pickle.loads(payload.data)
 
-    batch_to_payload = single_to_payload  # type: ignore[assignment]
+    batch_to_payload = single_to_payload  # type: ignore
     payload_to_batch = payload_to_single
 
 
@@ -289,7 +289,7 @@ class DataContainerRegistry:
     @classmethod
     def find_by_single_type(
         cls, type_: t.Union[t.Type[SingleType], LazyType[t.Any]]
-    ) -> t.Type[DataContainer[SingleType, BatchType]]:  # type: ignore[override]
+    ) -> t.Type[DataContainer[SingleType, BatchType]]:  # type: ignore
         typeref = LazyType.from_type(type_)
         return cls.CONTAINER_SINGLE_TYPE_MAP.get(
             typeref,
@@ -299,7 +299,7 @@ class DataContainerRegistry:
     @classmethod
     def find_by_batch_type(
         cls, type_: t.Union[t.Type[BatchType], LazyType[t.Any]]
-    ) -> t.Type[DataContainer[SingleType, BatchType]]:  # type: ignore[override]
+    ) -> t.Type[DataContainer[SingleType, BatchType]]:  # type: ignore
         typeref = LazyType.from_type(type_)
         return cls.CONTAINER_BATCH_TYPE_MAP.get(
             typeref,
@@ -318,9 +318,10 @@ class DataContainerRegistry:
 
 def register_builtin_containers():
     DataContainerRegistry.register_container(
-        LazyType("numpy", "ndarray"), LazyType("numpy", "ndarray"), NdarrayContainer
+        LazyType("numpy", "ndarray"),
+        LazyType("numpy", "ndarray"),
+        NdarrayContainer,
     )
-    # DataContainerRegistry.register_container(np.ndarray, np.ndarray, NdarrayContainer)
 
     DataContainerRegistry.register_container(
         LazyType("pandas.core.series", "Series"),
@@ -350,7 +351,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.batch_to_singles(batch, batch_axis=batch_axis)
 
     @classmethod
-    def single_to_payload(cls, single: SingleType) -> Payload:  # type: ignore[override]
+    def single_to_payload(cls, single: t.Any) -> Payload:
         container_cls = DataContainerRegistry.find_by_single_type(type(single))
         return container_cls.single_to_payload(single)
 
@@ -358,14 +359,14 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     def payload_to_single(
         cls,
         payload: Payload,
-    ) -> SingleType:  # type: ignore[override]
+    ) -> t.Any:
         container_cls = DataContainerRegistry.find_by_name(
             str(payload.meta.get("container"))
         )
         return container_cls.payload_to_single(payload)
 
     @classmethod
-    def payload_to_batch(cls, payload: Payload) -> BatchType:  # type: ignore[override]
+    def payload_to_batch(cls, payload: Payload) -> t.Any:
         container_cls = DataContainerRegistry.find_by_name(
             str(payload.meta.get("container"))
         )
@@ -373,7 +374,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
 
     @classmethod
     @abc.abstractmethod
-    def batch_to_payload(cls, batch: BatchType) -> Payload:  # type: ignore[override]
+    def batch_to_payload(cls, batch: t.Any) -> Payload:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
         return container_cls.batch_to_payload(batch)
 
@@ -387,7 +388,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def batch_to_payloads(
         cls,
-        batch: BatchType,  # type: ignore[override]
+        batch: t.Any,
         batch_axis: int = 0,
     ) -> t.List[Payload]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))

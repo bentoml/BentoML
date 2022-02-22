@@ -163,7 +163,7 @@ class JSON(IODescriptor[JSONType]):
                     "`pydantic` must be installed to use `pydantic_model`"
                 ) from None
             try:
-                return self._pydantic_model.parse_obj(json_str)
+                return self._pydantic_model.parse_raw(json_str)
             except pydantic.ValidationError as e:
                 raise BadInput(f"Json validation error: {e}") from None
         else:

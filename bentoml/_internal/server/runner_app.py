@@ -2,8 +2,11 @@ import json
 import typing as t
 import asyncio
 import logging
+import traceback
 from typing import TYPE_CHECKING
 from functools import partial
+
+from bentoml.exceptions import BentoMLException
 
 from ..trace import ServiceContext
 from ..runner.utils import Params
@@ -179,7 +182,13 @@ class RunnerAppFactory(BaseAppFactory):
 
         params = await multipart_to_payload_params(request)
         params = params.map(AutoContainer.payload_to_single)
-        ret = await self.runner.async_run(*params.args, **params.kwargs)
+        try:
+            ret = await self.runner.async_run(*params.args, **params.kwargs)
+        except BentoMLException as e:
+            ret = e
+        except Exception as e:  # pylint: disable=broad-except
+            ret = BentoMLException(str(e))
+
         payload = AutoContainer.single_to_payload(ret)
         return Response(
             payload.data,
@@ -196,7 +205,16 @@ class RunnerAppFactory(BaseAppFactory):
 
         params = await multipart_to_payload_params(request)
         params = params.map(AutoContainer.payload_to_batch)
-        ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
+
+        try:
+            ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
+        except BentoMLException as e:
+            ret = [e] * len(params.sample)
+        except Exception as e:
+            ret = [BentoMLException(traceback.format_exc(chain=False))] * len(
+                params.sample
+            )
+
         payload = AutoContainer.batch_to_payload(ret)
         return Response(
             payload.data,

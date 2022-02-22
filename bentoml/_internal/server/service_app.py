@@ -10,6 +10,7 @@ from simple_di import Provide
 from opentelemetry import trace  # type: ignore[import]
 
 from ..trace import ServiceContext
+from ...exceptions import RemoteException
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -328,6 +329,7 @@ class ServiceAppFactory(BaseAppFactory):
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
+        from starlette.responses import Response
         from starlette.responses import JSONResponse
         from starlette.concurrency import run_in_threadpool
 
@@ -336,7 +338,11 @@ class ServiceAppFactory(BaseAppFactory):
         ) -> "Response":
             # handle_request may raise 4xx or 5xx exception.
             try:
+                exception_scope = f"Input: {api.input}"
                 input_data = await api.input.from_http_request(request)
+
+                exception_scope = f"Service API function: {api.name}"
+
                 if asyncio.iscoroutinefunction(api.func):
                     if isinstance(api.input, Multipart):
                         output = await api.func(**input_data)
@@ -347,7 +353,17 @@ class ServiceAppFactory(BaseAppFactory):
                         output: t.Any = await run_in_threadpool(api.func, **input_data)
                     else:
                         output: t.Any = await run_in_threadpool(api.func, input_data)
+
+                exception_scope = f"Output: {api.output}"
                 response = await api.output.to_http_response(output)
+
+            except RemoteException as e:
+                exception_scope = f"Remote service"
+                response = Response(
+                    f"BentoService error handling runner request: {e.message}",
+                    status_code=e.error_code,
+                    media_type="text/plain",
+                )
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 

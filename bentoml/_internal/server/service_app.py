@@ -284,17 +284,19 @@ class ServiceAppFactory(BaseAppFactory):
             )
         )
 
-        from .access import AccessLogMiddleware
+        access_log_config = DeploymentContainer.api_server_config.logging.access
+        if access_log_config.enabled.get():
+            from .access import AccessLogMiddleware
 
-        middlewares.append(
-            Middleware(
-                AccessLogMiddleware,
-                has_request_content_length=True,
-                has_request_content_type=True,
-                has_response_content_length=True,
-                has_response_content_type=True,
+            middlewares.append(
+                Middleware(
+                    AccessLogMiddleware,
+                    has_request_content_length=access_log_config.request_content_length.get(),
+                    has_request_content_type=access_log_config.request_content_type.get(),
+                    has_response_content_length=access_log_config.response_content_length.get(),
+                    has_response_content_type=access_log_config.response_content_type.get(),
+                )
             )
-        )
 
         return middlewares
 

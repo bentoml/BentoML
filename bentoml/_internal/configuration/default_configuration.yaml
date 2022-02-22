@@ -15,7 +15,6 @@ bento_server:
     enabled: True
     namespace: BENTOML
   logging:
-    level: INFO
     access:
       enabled: True
       request_content_length: True
@@ -33,7 +32,6 @@ bento_server:
 
 runners:
   logging:
-    level: INFO
     access:
       enabled: True
       request_content_length: True

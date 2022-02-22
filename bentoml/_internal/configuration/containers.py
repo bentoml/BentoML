@@ -77,11 +77,7 @@ SCHEMA = Schema(
             "ngrok": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},
             "logging": {
-                "level": And(
-                    str,
-                    _is_upper,
-                    error="bento_server.logging.level must be all upper case letters",
-                ),
+                # TODO add logging level configuration
                 "access": {
                     "enabled": bool,
                     "request_content_length": Or(bool, None),
@@ -102,11 +98,7 @@ SCHEMA = Schema(
         },
         "runners": {
             "logging": {
-                "level": And(
-                    str,
-                    _is_upper,
-                    error="bento_server.logging.level must be all upper case letters",
-                ),
+                # TODO add logging level configuration
                 "access": {
                     "enabled": bool,
                     "request_content_length": Or(bool, None),
@@ -236,16 +228,6 @@ class BentoMLContainerClass:
 
         return ModelStore(base_dir)
 
-    logging_file_directory = providers.Factory[str](
-        lambda default, customized: customized if customized is not None else default,
-        providers.Factory[str](
-            os.path.join,
-            bentoml_home,
-            "logs",
-        ),
-        config.logging.file.directory,
-    )
-
 
 BentoMLContainer = BentoMLContainerClass()
 
@@ -256,6 +238,7 @@ class DeploymentContainerClass:
     bentoml_container = BentoMLContainer
     config = bentoml_container.config
     api_server_config = config.bento_server
+    runners_config = config.runners
 
     @providers.SingletonFactory
     @staticmethod

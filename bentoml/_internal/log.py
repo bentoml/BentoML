@@ -4,12 +4,8 @@ import logging.config
 from logging import Filter
 from logging import Formatter
 
-from simple_di import inject
-from simple_di import Provide
-
 from .trace import ServiceContext
 from .configuration import get_debug_mode
-from .configuration.containers import BentoMLContainer
 
 
 class TraceFilter(Filter):
@@ -27,8 +23,8 @@ class TraceFilter(Filter):
         return Filter.filter(self, record)
 
 
-TRACED_LOG_FORMAT = "[\"%(component)s\"] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)"
-SERVICE_LOG_FORMAT = "[\"%(component)s\"] %(message)s"
+TRACED_LOG_FORMAT = "[%(component)s] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)"
+SERVICE_LOG_FORMAT = "[%(component)s] %(message)s"
 DATE_FORMAT = "%x %X"
 
 

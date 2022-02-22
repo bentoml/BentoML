@@ -33,18 +33,9 @@ class RunnerAppFactory(BaseAppFactory):
         self,
         runner: "t.Union[Runner, SimpleRunner]",
         instance_id: t.Optional[int] = None,
-        enable_access_logs: bool = False,
-        request_content_length: bool = False,
-        request_content_type: bool = False,
-        response_content_length: bool = False,
-        response_content_type: bool = False,
     ) -> None:
         self.runner = runner
         self.instance_id = instance_id
-        self.request_content_length = request_content_length
-        self.request_content_type = request_content_type
-        self.response_content_length = response_content_length
-        self.response_content_type = response_content_type
 
         from starlette.responses import Response
 
@@ -132,17 +123,19 @@ class RunnerAppFactory(BaseAppFactory):
             )
         )
 
-        from .access import AccessLogMiddleware
+        access_log_config = DeploymentContainer.runners_config.logging.access
+        if access_log_config.enabled.get():
+            from .access import AccessLogMiddleware
 
-        middlewares.append(
-            Middleware(
-                AccessLogMiddleware,
-                has_request_content_length=True,
-                has_request_content_type=True,
-                has_response_content_length=True,
-                has_response_content_type=True,
+            middlewares.append(
+                Middleware(
+                    AccessLogMiddleware,
+                    has_request_content_length=access_log_config.request_content_length.get(),
+                    has_request_content_type=access_log_config.request_content_type.get(),
+                    has_response_content_length=access_log_config.response_content_length.get(),
+                    has_response_content_type=access_log_config.response_content_type.get(),
+                )
             )
-        )
 
         return middlewares
 

@@ -39,7 +39,7 @@ class RunnerAppFactory(BaseAppFactory):
 
         from starlette.responses import Response
 
-        TooManyRequests = partial(Response, status_code=427)
+        TooManyRequests = partial(Response, status_code=429)
 
         options = self.runner.batch_options
         if options.enabled:

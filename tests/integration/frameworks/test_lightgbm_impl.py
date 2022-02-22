@@ -61,7 +61,6 @@ def save_proc(
             lightgbm_model,
             booster_params=params,
             metadata=metadata,
-            model_store=modelstore,
         )
         model = modelstore.get(tag)
         return model
@@ -79,7 +78,6 @@ def save_sklearn_proc(
             TEST_MODEL_NAME,
             lightgbm_sklearn_model,
             metadata=metadata,
-            model_store=modelstore,
         )
         model = modelstore.get(tag)
         return model
@@ -114,7 +112,6 @@ def test_lightgbm_save_load(metadata, modelstore, save_proc):
 
     lgb_loaded = bentoml.lightgbm.load(
         model.tag,
-        model_store=modelstore,
     )
 
     assert isinstance(lgb_loaded, lgb.basic.Booster)
@@ -124,13 +121,13 @@ def test_lightgbm_save_load(metadata, modelstore, save_proc):
 @pytest.mark.parametrize("exc", [BentoMLException])
 def test_lightgbm_load_exc(wrong_module, exc, modelstore):
     with pytest.raises(exc):
-        bentoml.lightgbm.load(wrong_module, model_store=modelstore)
+        bentoml.lightgbm.load(wrong_module)
 
 
 def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
     info = save_proc(None)
 
-    runner = bentoml.lightgbm.load_runner(info.tag, model_store=modelstore)
+    runner = bentoml.lightgbm.load_runner(info.tag)
     assert info.tag in runner.required_models
     assert runner.num_replica == 1
 
@@ -144,7 +141,6 @@ def test_lightgbm_sklearn_save_load(modelstore, save_sklearn_proc):
 
     sklearn_loaded = bentoml.lightgbm.load(
         info.tag,
-        model_store=modelstore,
     )
 
     assert isinstance(sklearn_loaded, lgb.LGBMClassifier)
@@ -153,9 +149,7 @@ def test_lightgbm_sklearn_save_load(modelstore, save_sklearn_proc):
 
 def test_lightgbm_sklearn_runner_setup_run_batch(modelstore, save_sklearn_proc):
     info = save_sklearn_proc(None)
-    runner = bentoml.lightgbm.load_runner(
-        info.tag, infer_api_callback="predict_proba", model_store=modelstore
-    )
+    runner = bentoml.lightgbm.load_runner(info.tag, infer_api_callback="predict_proba")
 
     assert info.tag in runner.required_models
     assert runner.num_replica == 1
@@ -175,7 +169,6 @@ def test_lightgbm_gpu_runner(modelstore, save_proc):
     runner = bentoml.lightgbm.load_runner(
         info.tag,
         booster_params=booster_params,
-        model_store=modelstore,
         resource_quota={"gpus": 0},
     )
 

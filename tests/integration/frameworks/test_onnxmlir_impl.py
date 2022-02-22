@@ -72,19 +72,19 @@ def fixture_compile_model(convert_to_onnx, tmpdir):
 
 def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
     model = os.path.join(tmpdir, "model.so")
-    tag = bentoml.onnxmlir.save("onnx_model_tests", model, model_store=modelstore)
+    tag = bentoml.onnxmlir.save("onnx_model_tests", model)
     _model = modelstore.get(tag)
     assert "compiled_path" in _model.info.options
     assert_have_file_extension(str(_model.path), ".so")
 
-    session = bentoml.onnxmlir.load(tag, model_store=modelstore)
+    session = bentoml.onnxmlir.load(tag)
     assert predict_df(session, test_df)[0] == np.array([[15.0]])
 
 
 def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
     model = os.path.join(tmpdir, "model.so")
-    tag = bentoml.onnxmlir.save("onnx_model_tests", model, model_store=modelstore)
-    runner = bentoml.onnxmlir.load_runner(tag, model_store=modelstore)
+    tag = bentoml.onnxmlir.save("onnx_model_tests", model)
+    runner = bentoml.onnxmlir.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1

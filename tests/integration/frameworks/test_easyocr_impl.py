@@ -56,7 +56,6 @@ def save_proc(
             recog_network=recog_network,
             detect_model=detect_model,
             metadata=metadata,
-            model_store=modelstore,
         )
         model = modelstore.get(tag)
         return model
@@ -74,11 +73,7 @@ def test_easyocr_save_load(metadata, image_array, modelstore, save_proc):
     _model = save_proc(LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata)
     assert _model.info.metadata is not None
 
-    easyocr_loaded = bentoml.easyocr.load(
-        _model.tag,
-        gpu=False,
-        model_store=modelstore,
-    )
+    easyocr_loaded = bentoml.easyocr.load(_model.tag)
 
     raw_res = easyocr_loaded.readtext(image_array)
 

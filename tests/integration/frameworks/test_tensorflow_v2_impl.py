@@ -56,10 +56,10 @@ def test_tensorflow_v2_save_load(
     modelstore: "ModelStore",
     is_ragged: bool,
 ):
-    tag = bentoml.tensorflow.save(MODEL_NAME, mcls, model_store=modelstore)
+    tag = bentoml.tensorflow.save(MODEL_NAME, mcls)
     _model = modelstore.get(tag)
     assert_have_file_extension(_model.path, ".pb")
-    model = bentoml.tensorflow.load(MODEL_NAME, model_store=modelstore)
+    model = bentoml.tensorflow.load(MODEL_NAME)
     output = predict_fn(model, tensor)
     if is_ragged:
         assert all(output.numpy() == np.array([[15.0]] * 3))
@@ -69,8 +69,8 @@ def test_tensorflow_v2_save_load(
 
 def test_tensorflow_v2_setup_run_batch(modelstore: "ModelStore"):
     model_class = NativeModel()
-    tag = bentoml.tensorflow.save(MODEL_NAME, model_class, model_store=modelstore)
-    runner = bentoml.tensorflow.load_runner(tag, model_store=modelstore)
+    tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
+    runner = bentoml.tensorflow.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
@@ -80,10 +80,8 @@ def test_tensorflow_v2_setup_run_batch(modelstore: "ModelStore"):
 @pytest.mark.gpus
 def test_tensorflow_v2_setup_on_gpu(modelstore: "ModelStore"):
     model_class = NativeModel()
-    tag = bentoml.tensorflow.save(MODEL_NAME, model_class, model_store=modelstore)
-    runner = bentoml.tensorflow.load_runner(
-        tag, model_store=modelstore, resource_quota=dict(gpus=0), device_id="GPU:0"
-    )
+    tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
+    runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0))
 
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
     assert runner.run_batch(native_tensor) == np.array([[15.0]])
@@ -91,15 +89,13 @@ def test_tensorflow_v2_setup_on_gpu(modelstore: "ModelStore"):
 
 def test_tensorflow_v2_multi_args(modelstore: "ModelStore"):
     model_class = MultiInputModel()
-    tag = bentoml.tensorflow.save(MODEL_NAME, model_class, model_store=modelstore)
+    tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
     runner1 = bentoml.tensorflow.load_runner(
         tag,
-        model_store=modelstore,
         partial_kwargs=dict(factor=tf.constant(3.0, dtype=tf.float64)),
     )
     runner2 = bentoml.tensorflow.load_runner(
         tag,
-        model_store=modelstore,
         partial_kwargs=dict(factor=tf.constant(2.0, dtype=tf.float64)),
     )
 
@@ -155,10 +151,8 @@ def test_import_from_tfhub(
     if isinstance(identifier, str):
         import tensorflow_text as text  # noqa # pylint: disable
 
-    tag = bentoml.tensorflow.import_from_tfhub(identifier, name, model_store=modelstore)
+    tag = bentoml.tensorflow.import_from_tfhub(identifier, name)
     model = modelstore.get(tag)
     assert model.info.context["import_from_tfhub"]
-    module = bentoml.tensorflow.load(
-        tag, tags=tags, load_as_hub_module=wrapped, model_store=modelstore
-    )
+    module = bentoml.tensorflow.load(tag, tags=tags, load_as_hub_module=wrapped)
     assert module._is_hub_module_v1 == is_module_v1  # pylint: disable

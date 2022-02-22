@@ -44,25 +44,19 @@ def predict_df(model: pl.LightningModule, df: pd.DataFrame):
 
 def test_pl_save_load(modelstore):
     model: "pl.LightningModule" = AdditionModel()
-    tag = bentoml.pytorch_lightning.save(
-        "pytorch_lightning_test", model, model_store=modelstore
-    )
+    tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
     info = modelstore.get(tag)
     assert_have_file_extension(info.path, ".pt")
 
-    pl_loaded: "pl.LightningModule" = bentoml.pytorch_lightning.load(
-        tag, model_store=modelstore
-    )
+    pl_loaded: "pl.LightningModule" = bentoml.pytorch_lightning.load(tag)
 
     assert predict_df(pl_loaded, test_df) == [[6, 5, 4, 3]]
 
 
 def test_pytorch_lightning_runner_setup_run_batch(modelstore):
     model: "pl.LightningModule" = AdditionModel()
-    tag = bentoml.pytorch_lightning.save(
-        "pytorch_lightning_test", model, model_store=modelstore
-    )
-    runner = bentoml.pytorch_lightning.load_runner(tag, model_store=modelstore)
+    tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
+    runner = bentoml.pytorch_lightning.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
@@ -75,12 +69,8 @@ def test_pytorch_lightning_runner_setup_run_batch(modelstore):
 @pytest.mark.parametrize("dev", ["cuda", "cuda:0"])
 def test_pytorch_lightning_runner_setup_on_gpu(modelstore, dev):
     model: "pl.LightningModule" = AdditionModel()
-    tag = bentoml.pytorch_lightning.save(
-        "pytorch_lightning_test", model, model_store=modelstore
-    )
-    runner = bentoml.pytorch_lightning.load_runner(
-        tag, model_store=modelstore, device_id=dev
-    )
+    tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
+    runner = bentoml.pytorch_lightning.load_runner(tag)
 
     assert torch.cuda.device_count() == runner.num_replica
 
@@ -95,16 +85,14 @@ def test_pytorch_lightning_runner_with_partial_kwargs(modelstore, bias_pair):
     x = torch.randn(N, D_in)
     model = ExtendedModel(D_in, H, D_out)
 
-    tag = bentoml.pytorch_lightning.save(
-        "pytorch_test_extended", model, model_store=modelstore
-    )
+    tag = bentoml.pytorch_lightning.save("pytorch_test_extended", model)
     bias1, bias2 = bias_pair
     runner1 = bentoml.pytorch_lightning.load_runner(
-        tag, model_store=modelstore, partial_kwargs=dict(bias=bias1)
+        tag, partial_kwargs=dict(bias=bias1)
     )
 
     runner2 = bentoml.pytorch_lightning.load_runner(
-        tag, model_store=modelstore, partial_kwargs=dict(bias=bias2)
+        tag, partial_kwargs=dict(bias=bias2)
     )
 
     res1 = runner1.run_batch(x)[0][0].item()

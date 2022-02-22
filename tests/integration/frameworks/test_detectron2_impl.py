@@ -75,7 +75,6 @@ def save_procedure(metadata: t.Dict[str, t.Any], _modelstore: "ModelStore") -> "
         model,
         model_config=config,
         metadata=metadata,
-        model_store=_modelstore,
     )
     return tag_info
 
@@ -94,7 +93,6 @@ def test_detectron2_save_load(
     detectron_loaded = bentoml.detectron.load(
         _model.tag,
         device="cpu",
-        model_store=modelstore,
     )
     assert next(detectron_loaded.parameters()).device.type == "cpu"
 
@@ -111,7 +109,7 @@ def test_detectron2_setup_run_batch(
     image_array: "np.ndarray[t.Any, np.dtype[t.Any]]", modelstore: "ModelStore"
 ) -> None:
     tag = save_procedure({}, _modelstore=modelstore)
-    runner = bentoml.detectron.load_runner(tag, model_store=modelstore)
+    runner = bentoml.detectron.load_runner(tag)
     assert tag in runner.required_models
     assert runner.num_replica == 1
     image = torch.as_tensor(prepare_image(image_array))

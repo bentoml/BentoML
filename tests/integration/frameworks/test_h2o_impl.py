@@ -56,13 +56,10 @@ def test_h2o_save_load(train_h2o_aml, metadata, modelstore):
     test_df: pd.DataFrame = pd.read_json(json.dumps(TEST_DATA))
     model = train_h2o_aml.leader
 
-    tag = bentoml.h2o.save(
-        TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
-    )
+    tag = bentoml.h2o.save(TEST_MODEL_NAME, model, metadata=metadata)
 
     h2o_loaded: h2o.model.model_base.ModelBase = bentoml.h2o.load(
         tag,
-        model_store=modelstore,
         init_params=dict(port=H2O_PORT),
     )
     # fmt: off

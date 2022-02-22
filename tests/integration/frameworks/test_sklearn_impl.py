@@ -35,7 +35,6 @@ def save_procedure(metadata: t.Dict[str, t.Any], _modelstore: "ModelStore") -> "
         "test_sklearn_model",
         model,
         metadata=metadata,
-        model_store=_modelstore,
     )
     return tag_info
 
@@ -71,7 +70,7 @@ def test_sklearn_save_load(
     assert _model.info.metadata is not None
     assert_have_file_extension(_model.path, ".pkl")
 
-    loaded = bentoml.sklearn.load(_model.tag, model_store=modelstore)
+    loaded = bentoml.sklearn.load(_model.tag)
 
     assert isinstance(loaded, RandomForestClassifier)
 
@@ -81,13 +80,13 @@ def test_sklearn_save_load(
 def test_get_model_info_exc(modelstore: "ModelStore") -> None:
     tag = forbidden_procedure(_modelstore=modelstore)
     with pytest.raises(BentoMLException):
-        _ = bentoml.sklearn.load(tag, model_store=modelstore)
+        _ = bentoml.sklearn.load(tag)
 
 
 def test_sklearn_runner_setup_run_batch(modelstore: "ModelStore") -> None:
     _, data = sklearn_model_data(clf=RandomForestClassifier)
     tag = save_procedure({}, _modelstore=modelstore)
-    runner = bentoml.sklearn.load_runner(tag, model_store=modelstore)
+    runner = bentoml.sklearn.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1

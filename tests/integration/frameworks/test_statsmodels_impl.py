@@ -36,7 +36,7 @@ def save_proc(
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
     def _(metadata, holt_model) -> "Model":
         tag = bentoml.statsmodels.save(
-            TEST_MODEL_NAME, holt_model, metadata=metadata, model_store=modelstore
+            TEST_MODEL_NAME, holt_model, metadata=metadata
         )
         model = modelstore.get(tag)
         return model
@@ -93,14 +93,12 @@ def holt_model() -> "HoltWintersResults":
 def test_statsmodels_save_load(
     metadata, modelstore, holt_model
 ):  # noqa # pylint: disable
-    tag = bentoml.statsmodels.save(
-        TEST_MODEL_NAME, holt_model, metadata=metadata, model_store=modelstore
-    )
+    tag = bentoml.statsmodels.save(TEST_MODEL_NAME, holt_model, metadata=metadata)
     _model = modelstore.get(tag)
     assert _model.info.metadata is not None
     assert_have_file_extension(_model.path, ".pkl")
 
-    statsmodels_loaded = bentoml.statsmodels.load(tag, model_store=modelstore)
+    statsmodels_loaded = bentoml.statsmodels.load(tag)
 
     assert isinstance(
         statsmodels_loaded,
@@ -114,16 +112,12 @@ def test_statsmodels_save_load(
 def test_get_model_info_exc(exc, modelstore, holt_model):
     tag = wrong_module(modelstore, holt_model)
     with pytest.raises(exc):
-        bentoml._internal.frameworks.statsmodels._get_model_info(
-            tag, model_store=modelstore
-        )
+        bentoml._internal.frameworks.statsmodels._get_model_info(tag)
 
 
 def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     info = save_proc(None, holt_model)
-    runner = bentoml.statsmodels.load_runner(
-        info.tag, predict_fn_name="predict", model_store=modelstore
-    )
+    runner = bentoml.statsmodels.load_runner(info.tag, predict_fn_name="predict")
 
     assert info.tag in runner.required_models
     assert runner.num_replica == 1
@@ -140,9 +134,7 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
 def test_statsmodels_runner_setup_on_gpu(modelstore, save_proc):
     info = save_proc(None)
     resource_quota = dict(gpus=0, cpu=0.4)
-    runner = bentoml.statsmodels.load_runner(
-        info.tag, model_store=modelstore, resource_quota=resource_quota
-    )
+    runner = bentoml.statsmodels.load_runner(info.tag, resource_quota=resource_quota)
 
     assert runner.num_replica == 1
 

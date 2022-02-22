@@ -47,7 +47,7 @@ def test_mlflow_save_load(modelstore):
     model_info = modelstore.get(tag)
     assert_have_file_extension(os.path.join(model_info.path, "sklearn_clf"), ".pkl")
 
-    loaded = bentoml.mlflow.load(tag, model_store=modelstore)
+    loaded = bentoml.mlflow.load(tag)
     np.testing.assert_array_equal(loaded.predict(data), res_arr)  # noqa
 
 
@@ -64,14 +64,14 @@ def invalid_save_with_no_mlmodel(modelstore):
 
 def test_invalid_load(modelstore, invalid_save_with_no_mlmodel):
     with pytest.raises(FileNotFoundError):
-        _ = bentoml.mlflow.load(invalid_save_with_no_mlmodel, model_store=modelstore)
+        _ = bentoml.mlflow.load(invalid_save_with_no_mlmodel)
 
 
 def test_mlflow_load_runner(modelstore):
     (_, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf").resolve()
-    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
-    runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
+    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri))
+    runner = bentoml.mlflow.load_runner(tag)
     from bentoml._internal.frameworks.mlflow import _PyFuncRunner
 
     assert isinstance(runner, _PyFuncRunner)

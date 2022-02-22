@@ -20,10 +20,11 @@ MODEL_NAME = __name__.split(".")[-1]
 
 
 def test_spacy_runner_setup_run_batch(
-    modelstore: "ModelStore", spacy_model: spacy.language.Language
+    modelstore: "ModelStore",
+    spacy_model: spacy.language.Language,
 ):
-    tag = bentoml.spacy.save(MODEL_NAME, spacy_model, model_store=modelstore)
-    runner = bentoml.spacy.load_runner(tag, model_store=modelstore)
+    tag = bentoml.spacy.save(MODEL_NAME, spacy_model)
+    runner = bentoml.spacy.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
@@ -45,11 +46,9 @@ def test_spacy_runner_setup_run_batch_on_gpu(
     backend: Literal["pytorch", "tensorflow"],
     resource_quota: Dict[str, str],
 ):
-    tag = bentoml.spacy.save(MODEL_NAME, spacy_model, model_store=modelstore)
+    tag = bentoml.spacy.save(MODEL_NAME, spacy_model)
     runner = bentoml.spacy.load_runner(
         tag,
-        model_store=modelstore,
-        gpu_device_id=dev,
         backend_options=backend,
         resource_quota=resource_quota,
     )

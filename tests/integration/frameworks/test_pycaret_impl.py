@@ -51,9 +51,7 @@ def save_proc(
     modelstore: "ModelStore",
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
     def _(metadata) -> "Model":
-        tag = bentoml.pycaret.save(
-            TEST_MODEL_NAME, pycaret_model, metadata=metadata, model_store=modelstore
-        )
+        tag = bentoml.pycaret.save(TEST_MODEL_NAME, pycaret_model, metadata=metadata)
         model = modelstore.get(tag)
         return model
 
@@ -89,7 +87,6 @@ def test_pycaret_save_load(
 
     pycaret_loaded = bentoml.pycaret.load(
         _model.tag,
-        model_store=modelstore,
     )
     assert isinstance(pycaret_loaded, sklearn.pipeline.Pipeline)
     assert predict_model(pycaret_loaded, data=test_data)["Score"][0] == 0.7609
@@ -98,14 +95,14 @@ def test_pycaret_save_load(
 @pytest.mark.parametrize("exc", [BentoMLException])
 def test_pycaret_load_exc(wrong_module, exc, modelstore):
     with pytest.raises(exc):
-        bentoml.pycaret.load(wrong_module, model_store=modelstore)
+        bentoml.pycaret.load(wrong_module)
 
 
 def test_pycaret_runner_setup_run_batch(get_pycaret_data, modelstore, save_proc):
     _, test_data = get_pycaret_data
     info = save_proc(None)
 
-    runner = bentoml.pycaret.load_runner(tag=info.tag, model_store=modelstore)
+    runner = bentoml.pycaret.load_runner(tag=info.tag)
 
     assert info.tag in runner.required_models
     assert runner.num_replica == 1

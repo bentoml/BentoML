@@ -65,12 +65,8 @@ def test_transformers_save_load(
         loader = transformers.AutoModelForCausalLM
     model = loader.from_pretrained(model_name, **kwargs)
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, **kwargs)
-    tag = bentoml.transformers.save(
-        model_name, model, tokenizer=tokenizer, model_store=modelstore
-    )
-    lmodel, ltokenizer = bentoml.transformers.load(
-        tag, from_tf="tf" in framework, model_store=modelstore
-    )
+    tag = bentoml.transformers.save(model_name, model, tokenizer=tokenizer)
+    lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
     res = generate_from_text(
         lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
     )
@@ -81,12 +77,10 @@ def test_transformers_save_load_pipeline(modelstore: "ModelStore"):
     from PIL import Image
 
     pipeline = transformers.pipeline("image-classification")
-    tag = bentoml.transformers.save(
-        "vit-image-classification", pipeline, model_store=modelstore
-    )
+    tag = bentoml.transformers.save("vit-image-classification", pipeline)
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
-    model, fe = bentoml.transformers.load(tag, model_store=modelstore)
+    model, fe = bentoml.transformers.load(tag)
     loaded = transformers.pipeline(
         "image-classification", model=model, feature_extractor=fe
     )
@@ -96,12 +90,8 @@ def test_transformers_save_load_pipeline(modelstore: "ModelStore"):
 
 def test_transformers_runner_setup_run_batch(modelstore: "ModelStore"):
     pipeline = transformers.pipeline("text-classification")
-    tag = bentoml.transformers.save(
-        "text-classification-pipeline", pipeline, model_store=modelstore
-    )
-    runner = bentoml.transformers.load_runner(
-        tag, tasks="text-classification", model_store=modelstore
-    )
+    tag = bentoml.transformers.save("text-classification-pipeline", pipeline)
+    runner = bentoml.transformers.load_runner(tag, tasks="text-classification")
     assert tag in runner.required_models
     assert runner.num_replica == 1
 
@@ -114,12 +104,8 @@ def test_transformers_runner_pipelines_kwargs(modelstore: "ModelStore"):
     from PIL import Image
 
     pipeline = transformers.pipeline("image-classification")
-    tag = bentoml.transformers.save(
-        "vit-image-classification", pipeline, model_store=modelstore
-    )
-    runner = bentoml.transformers.load_runner(
-        tag, tasks="image-classification", device=-1, model_store=modelstore
-    )
+    tag = bentoml.transformers.save("vit-image-classification", pipeline)
+    runner = bentoml.transformers.load_runner(tag, tasks="image-classification")
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
     res = runner.run_batch(image)

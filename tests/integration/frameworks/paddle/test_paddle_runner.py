@@ -13,7 +13,7 @@ def test_paddlepaddle_load_runner(modelstore, train_paddle_model):  # noqa: F811
         "linear_model", train_paddle_model, model_store=modelstore
     )
     info = modelstore.get(tag)
-    runner = bentoml.paddle.load_runner(tag, model_store=modelstore)
+    runner = bentoml.paddle.load_runner(tag)
 
     assert info.tag in runner.required_models
     assert runner.num_replica == 1

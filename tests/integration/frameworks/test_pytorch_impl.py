@@ -66,7 +66,7 @@ def models(modelstore):
             model = torch.jit.script(_model)
         else:
             model = _model
-        tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
+        tag = bentoml.pytorch.save("pytorch_test", model)
         return tag
 
     return _
@@ -77,7 +77,7 @@ def test_pytorch_save_load(test_type, modelstore, models):
     tag = models(test_type)
     assert_have_file_extension(modelstore.get(tag).path, ".pt")
 
-    pytorch_loaded: nn.Module = bentoml.pytorch.load(tag, model_store=modelstore)
+    pytorch_loaded: nn.Module = bentoml.pytorch.load(tag)
     assert predict_df(pytorch_loaded, test_df) == 5.0
 
 
@@ -89,7 +89,7 @@ def test_pytorch_save_load_across_devices(dev, test_type, modelstore, models):
         return next(model.parameters()).is_cuda
 
     tag = models(test_type)
-    loaded: nn.Module = bentoml.pytorch.load(tag, model_store=modelstore, device_id=dev)
+    loaded: nn.Module = bentoml.pytorch.load(tag)
     if dev == "cpu":
         assert not is_cuda(loaded)
     else:
@@ -105,8 +105,8 @@ def test_pytorch_save_load_across_devices(dev, test_type, modelstore, models):
 )
 def test_pytorch_runner_setup_run_batch(modelstore, input_data):
     model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
-    runner = bentoml.pytorch.load_runner(tag, model_store=modelstore)
+    tag = bentoml.pytorch.save("pytorch_test", model)
+    runner = bentoml.pytorch.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
@@ -119,8 +119,8 @@ def test_pytorch_runner_setup_run_batch(modelstore, input_data):
 @pytest.mark.parametrize("dev", ["cuda", "cuda:0"])
 def test_pytorch_runner_setup_on_gpu(modelstore, dev):
     model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
-    runner = bentoml.pytorch.load_runner(tag, model_store=modelstore, device_id=dev)
+    tag = bentoml.pytorch.save("pytorch_test", model)
+    runner = bentoml.pytorch.load_runner(tag)
 
     assert torch.cuda.device_count() == runner.num_replica
 
@@ -135,15 +135,11 @@ def test_pytorch_runner_with_partial_kwargs(modelstore, bias_pair):
     x = torch.randn(N, D_in)
     model = ExtendedModel(D_in, H, D_out)
 
-    tag = bentoml.pytorch.save("pytorch_test_extended", model, model_store=modelstore)
+    tag = bentoml.pytorch.save("pytorch_test_extended", model)
     bias1, bias2 = bias_pair
-    runner1 = bentoml.pytorch.load_runner(
-        tag, model_store=modelstore, partial_kwargs=dict(bias=bias1)
-    )
+    runner1 = bentoml.pytorch.load_runner(tag, partial_kwargs=dict(bias=bias1))
 
-    runner2 = bentoml.pytorch.load_runner(
-        tag, model_store=modelstore, partial_kwargs=dict(bias=bias2)
-    )
+    runner2 = bentoml.pytorch.load_runner(tag, partial_kwargs=dict(bias=bias2))
 
     res1 = runner1.run_batch(x)[0][0].item()
     res2 = runner2.run_batch(x)[0][0].item()
@@ -170,14 +166,13 @@ def test_pytorch_container(modelstore, batch_axis):
     ).all()
 
     model = LinearModelWithBatchAxis()
-    tag = bentoml.pytorch.save("pytorch_test_container", model, model_store=modelstore)
+    tag = bentoml.pytorch.save("pytorch_test_container", model)
     batch_options = {
         "input_batch_axis": batch_axis,
         "output_batch_axis": batch_axis,
     }
     runner = bentoml.pytorch.load_runner(
         tag,
-        model_store=modelstore,
         batch_options=batch_options,
         partial_kwargs=dict(batch_axis=batch_axis),
     )

@@ -16,6 +16,12 @@ bento_server:
     namespace: BENTOML
   logging:
     level: INFO
+    access:
+      enabled: True
+      request_content_length: True
+      request_content_type: True
+      response_content_length: True
+      response_content_type: True
   cors:
     enabled: False
     access_control_allow_origin: Null
@@ -25,16 +31,15 @@ bento_server:
     access_control_max_age: Null
     access_control_expose_headers: Null
 
-logging:
-  level: INFO
-  console:
-    enabled: True
-  file:
-    enabled: True
-    directory: Null
-  advanced:
-    enabled: False
-    config: Null
+runners:
+  logging:
+    level: INFO
+    access:
+      enabled: True
+      request_content_length: True
+      request_content_type: True
+      response_content_length: True
+      response_content_type: True
 
 tracing:
   type: zipkin

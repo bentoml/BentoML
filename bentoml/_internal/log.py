@@ -23,7 +23,13 @@ class TraceFilter(Filter):
         record.span_id = ServiceContext.span_id
         record.request_id = ServiceContext.request_id
         record.component = ServiceContext.component_name
+
         return Filter.filter(self, record)
+
+
+TRACED_LOG_FORMAT = "[\"%(component)s\"] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)"
+SERVICE_LOG_FORMAT = "[\"%(component)s\"] %(message)s"
+DATE_FORMAT = "%x %X"
 
 
 class TraceFormatter(Formatter):
@@ -36,13 +42,11 @@ class TraceFormatter(Formatter):
     def __init__(self):
         Formatter.__init__(
             self,
-            fmt="[%(component)s] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)",
-            datefmt="[%X]",
+            fmt=TRACED_LOG_FORMAT,
+            datefmt=DATE_FORMAT,
         )
-        self.control_formmater = Formatter("[%(component)s] %(message)s")
-        self.trace_formatter = Formatter(
-            "[%(component)s] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)"
-        )
+        self.control_formmater = Formatter(SERVICE_LOG_FORMAT, datefmt=DATE_FORMAT)
+        self.trace_formatter = Formatter(TRACED_LOG_FORMAT, datefmt=DATE_FORMAT)
 
     def format(self, record):
         if record.trace_id == 0:
@@ -66,6 +70,7 @@ LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
             "filters": ["tracing"],
             "formatter": "tracing",
             "()": "rich.logging.RichHandler",
+            "omit_repeated_times": False,
             "rich_tracebacks": True,
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },
@@ -74,6 +79,7 @@ LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
             "filters": ["tracing"],
             "formatter": "tracing",
             "()": "rich.logging.RichHandler",
+            "omit_repeated_times": False,
             "rich_tracebacks": True,
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },

@@ -289,12 +289,10 @@ class ServiceAppFactory(BaseAppFactory):
         middlewares.append(
             Middleware(
                 AccessLogMiddleware,
-                fields=[
-                    "REQUEST_CONTENT_TYPE",
-                    "REQUEST_CONTENT_LENGTH",
-                    "RESPONSE_CONTENT_TYPE",
-                    "RESPONSE_CONTENT_LENGTH",
-                ],
+                has_request_content_length=True,
+                has_request_content_type=True,
+                has_response_content_length=True,
+                has_response_content_type=True,
             )
         )
 

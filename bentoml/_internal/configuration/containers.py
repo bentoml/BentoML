@@ -76,7 +76,20 @@ SCHEMA = Schema(
             },
             "ngrok": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},
-            "logging": {"level": str},
+            "logging": {
+                "level": And(
+                    str,
+                    _is_upper,
+                    error="bento_server.logging.level must be all upper case letters",
+                ),
+                "access": {
+                    "enabled": bool,
+                    "request_content_length": Or(bool, None),
+                    "request_content_type": Or(bool, None),
+                    "response_content_length": Or(bool, None),
+                    "response_content_type": Or(bool, None),
+                },
+            },
             "cors": {
                 "enabled": bool,
                 "access_control_allow_origin": Or(str, None),
@@ -87,15 +100,21 @@ SCHEMA = Schema(
                 "access_control_expose_headers": Or([str], str, None),
             },
         },
-        "logging": {
-            "level": And(
-                str,
-                _is_upper,
-                error="logging.level must be all upper case letters",
-            ),
-            "console": {"enabled": bool},
-            "file": {"enabled": bool, "directory": Or(str, None)},
-            "advanced": {"enabled": bool, "config": Or(dict, None)},
+        "runners": {
+            "logging": {
+                "level": And(
+                    str,
+                    _is_upper,
+                    error="bento_server.logging.level must be all upper case letters",
+                ),
+                "access": {
+                    "enabled": bool,
+                    "request_content_length": Or(bool, None),
+                    "request_content_type": Or(bool, None),
+                    "response_content_length": Or(bool, None),
+                    "response_content_type": Or(bool, None),
+                },
+            },
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),

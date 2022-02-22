@@ -1,6 +1,5 @@
 import logging
 from timeit import default_timer
-from typing import List
 from typing import TYPE_CHECKING
 from contextvars import ContextVar
 
@@ -38,9 +37,19 @@ class AccessLogMiddleware(Middleware):
     and receive callables to generate the BentoML access log.
     """
 
-    def __init__(self, app: "ext.ASGIApp", fields: List[str] = []) -> None:
+    def __init__(
+        self,
+        app: "ext.ASGIApp",
+        has_request_content_length: bool = False,
+        has_request_content_type: bool = False,
+        has_response_content_length: bool = False,
+        has_response_content_type: bool = False,
+    ) -> None:
         self.app = app
-        self.fields = fields
+        self.has_request_content_length = has_request_content_length
+        self.has_request_content_type = has_request_content_type
+        self.has_response_content_length = has_response_content_length
+        self.has_response_content_type = has_response_content_type
         self.logger = logging.getLogger("bentoml.access")
 
     async def __call__(
@@ -59,7 +68,7 @@ class AccessLogMiddleware(Middleware):
         method = scope["method"]
         path = scope["path"]
 
-        if len(self.fields) > 0:
+        if self.has_request_content_length or self.has_request_content_type:
             for key, value in scope["headers"]:
                 if key == CONTENT_LENGTH:
                     request_content_length.set(value)
@@ -69,7 +78,7 @@ class AccessLogMiddleware(Middleware):
         async def wrapped_send(message: "ext.ASGIMessage") -> None:
             if message["type"] == "http.response.start":
                 status.set(message["status"])
-                if len(self.fields) > 0:
+                if self.has_response_content_length or self.has_response_content_type:
                     for key, value in message["headers"]:
                         if key == CONTENT_LENGTH:
                             response_content_length.set(value)
@@ -77,21 +86,25 @@ class AccessLogMiddleware(Middleware):
                             response_content_type.set(value)
 
             elif message["type"] == "http.response.body":
+                if "more_body" in message and message["more_body"]:
+                    await send(message)
+                    return
+
                 if client:
                     address = f"{client[0]}:{client[1]}"
                 else:
                     address = "_"
 
                 request = [f"scheme={scheme}", f"method={method}", f"path={path}"]
-                if REQ_CONTENT_TYPE in self.fields:
+                if self.has_request_content_type:
                     request.append(f"type={request_content_type.get().decode()}")
-                if REQ_CONTENT_LENGTH in self.fields:
+                if self.has_request_content_length:
                     request.append(f"length={request_content_length.get().decode()}")
 
                 response = [f"status={status.get()}"]
-                if RESP_CONTENT_TYPE in self.fields:
+                if self.has_response_content_type:
                     response.append(f"type={response_content_type.get().decode()}")
-                if RESP_CONTENT_LENGTH in self.fields:
+                if self.has_response_content_length:
                     response.append(f"length={response_content_length.get().decode()}")
 
                 latency = max(default_timer() - start, 0)

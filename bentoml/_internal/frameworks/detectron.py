@@ -239,7 +239,7 @@ class _DetectronRunner(BaseModelRunner):
         inputs = [{"image": image} for image in params.args]
 
         res: "torch.Tensor" = self._predict_fn(inputs)
-        return res.numpy()
+        return np.asarray(res)  # type: ignore
 
 
 def load_runner(

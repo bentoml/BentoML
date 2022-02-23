@@ -3,7 +3,6 @@ import math
 import numpy as np
 import torch
 import pandas as pd
-import psutil
 import pytest
 import torch.nn as nn
 
@@ -167,13 +166,8 @@ def test_pytorch_container(batch_axis):
 
     model = LinearModelWithBatchAxis()
     tag = bentoml.pytorch.save("pytorch_test_container", model)
-    batch_options = {
-        "input_batch_axis": batch_axis,
-        "output_batch_axis": batch_axis,
-    }
     runner = bentoml.pytorch.load_runner(
         tag,
-        batch_options=batch_options,
         partial_kwargs=dict(batch_axis=batch_axis),
     )
 

@@ -79,7 +79,7 @@ def test_tensorflow_v2_setup_run_batch():
 def test_tensorflow_v2_setup_on_gpu():
     model_class = NativeModel()
     tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
-    runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0))
+    runner = bentoml.tensorflow.load_runner(tag)
 
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
     assert runner.run_batch(native_tensor) == np.array([[15.0]])

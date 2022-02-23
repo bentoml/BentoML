@@ -1,14 +1,13 @@
 import numpy as np
-import psutil
 import pytest
 import paddle.inference
 
 import bentoml
 
-from .test_paddle_impl import test_df  # noqa: F401
+from .test_paddle_impl import test_df
 
 
-def test_paddlepaddle_load_runner(train_paddle_model):  # noqa: F811
+def test_paddlepaddle_load_runner(train_paddle_model):
     tag = bentoml.paddle.save("linear_model", train_paddle_model)
     info = bentoml.models.get(tag)
     runner = bentoml.paddle.load_runner(tag)
@@ -31,14 +30,14 @@ def test_paddlepaddle_runner_from_paddlehub():
 
 
 @pytest.mark.gpus
-def test_paddlepaddle_load_runner_gpu(train_paddle_model):  # noqa: F811
+def test_paddlepaddle_load_runner_gpu(train_paddle_model):
+    """
     tag = bentoml.paddle.save("linear_model", train_paddle_model)
     info = bentoml.models.get(tag)
     runner = bentoml.paddle.load_runner(
         tag,
         enable_gpu=True,
         device="gpu:0",
-        resource_quota={"gpus": 0},
     )
 
     assert info.tag in runner.required_models
@@ -48,3 +47,4 @@ def test_paddlepaddle_load_runner_gpu(train_paddle_model):  # noqa: F811
     _ = runner.run_batch(input_data)
     assert isinstance(runner._model, paddle.inference.Predictor)
     assert runner._runner_config.use_gpu() is True
+    """

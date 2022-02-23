@@ -123,7 +123,6 @@ def test_xgboost_runner_setup_run_batch(save_proc):
 def test_xgboost_runner_setup_on_gpu(save_proc):
     booster_params = dict()
     info = save_proc(booster_params, None)
-    resource_quota = dict(gpus=0, cpu=0.4)
-    runner = bentoml.xgboost.load_runner(info.tag, resource_quota=resource_quota)
+    runner = bentoml.xgboost.load_runner(info.tag)
 
     assert runner.num_replica == 1

@@ -127,8 +127,7 @@ def test_statsmodels_runner_setup_run_batch(save_proc, holt_model):
 @pytest.mark.gpus
 def test_statsmodels_runner_setup_on_gpu(save_proc):
     info = save_proc(None)
-    resource_quota = dict(gpus=0, cpu=0.4)
-    runner = bentoml.statsmodels.load_runner(info.tag, resource_quota=resource_quota)
+    runner = bentoml.statsmodels.load_runner(info.tag)
 
     assert runner.num_replica == 1
 

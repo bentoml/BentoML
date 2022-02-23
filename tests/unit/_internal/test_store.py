@@ -1,8 +1,8 @@
+import os
 import sys
 import typing as t
 from typing import TYPE_CHECKING
 from datetime import datetime
-import os
 
 import fs
 import attr

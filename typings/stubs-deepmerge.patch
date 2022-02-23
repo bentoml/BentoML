@@ -1,0 +1,202 @@
+From 8db914d5f752529d839c002b00a12274d3476d6f Mon Sep 17 00:00:00 2001
+From: Aaron Pham <29749331+aarnphm@users.noreply.github.com>
+Date: Wed, 23 Feb 2022 04:27:05 -0500
+Subject: chore(typings): add deepmerge stubs
+
+Signed-off-by: Aaron Pham <29749331+aarnphm@users.noreply.github.com>
+---
+ typings/deepmerge/__init__.pyi               |  9 ++++++++
+ typings/deepmerge/compat.pyi                 |  0
+ typings/deepmerge/exception.pyi              | 12 ++++++++++
+ typings/deepmerge/merger.pyi                 | 23 ++++++++++++++++++++
+ typings/deepmerge/strategy/core.pyi          | 13 +++++++++++
+ typings/deepmerge/strategy/dict.pyi          | 12 ++++++++++
+ typings/deepmerge/strategy/fallback.pyi      |  8 +++++++
+ typings/deepmerge/strategy/list.pyi          | 10 +++++++++
+ typings/deepmerge/strategy/set.pyi           | 10 +++++++++
+ typings/deepmerge/strategy/type_conflict.pyi | 16 ++++++++++++++
+ 10 files changed, 113 insertions(+)
+ create mode 100644 typings/deepmerge/__init__.pyi
+ create mode 100644 typings/deepmerge/compat.pyi
+ create mode 100644 typings/deepmerge/exception.pyi
+ create mode 100644 typings/deepmerge/merger.pyi
+ create mode 100644 typings/deepmerge/strategy/core.pyi
+ create mode 100644 typings/deepmerge/strategy/dict.pyi
+ create mode 100644 typings/deepmerge/strategy/fallback.pyi
+ create mode 100644 typings/deepmerge/strategy/list.pyi
+ create mode 100644 typings/deepmerge/strategy/set.pyi
+ create mode 100644 typings/deepmerge/strategy/type_conflict.pyi
+
+diff --git a/typings/deepmerge/__init__.pyi b/typings/deepmerge/__init__.pyi
+new file mode 100644
+index 00000000..9ba2ffdc
+--- /dev/null
++++ b/typings/deepmerge/__init__.pyi
+@@ -0,0 +1,9 @@
++from typing import List, Literal, Tuple, Union
++from .merger import Merger
++
++DEFAULT_TYPE_SPECIFIC_MERGE_STRATEGIES: List[
++    Tuple[type, Union[Literal["append"], Literal["merge"], Literal["union"]]]
++] = ...
++always_merger: Merger = ...
++merge_or_raise: Merger = ...
++conservative_merger: Merger = ...
+diff --git a/typings/deepmerge/compat.pyi b/typings/deepmerge/compat.pyi
+new file mode 100644
+index 00000000..e69de29b
+diff --git a/typings/deepmerge/exception.pyi b/typings/deepmerge/exception.pyi
+new file mode 100644
+index 00000000..cb7d882f
+--- /dev/null
++++ b/typings/deepmerge/exception.pyi
+@@ -0,0 +1,12 @@
++from typing import Any, Dict, Tuple
++
++class DeepMergeException(Exception): ...
++class StrategyNotFound(DeepMergeException): ...
++
++class InvalidMerge(DeepMergeException):
++    def __init__(
++        self,
++        strategy_list_name: str,
++        merge_args: Tuple[Any],
++        merge_kwargs: Dict[str, Any],
++    ) -> None: ...
+diff --git a/typings/deepmerge/merger.pyi b/typings/deepmerge/merger.pyi
+new file mode 100644
+index 00000000..49d741f9
+--- /dev/null
++++ b/typings/deepmerge/merger.pyi
+@@ -0,0 +1,23 @@
++from typing import Any, Dict, List, Tuple, Union
++from .strategy.core import StrategyList
++from .strategy.dict import DictStrategies
++from .strategy.list import ListStrategies
++from .strategy.set import SetStrategies
++
++ConfigDictType = Dict[str, Any]
++
++class Merger:
++    PROVIDED_TYPE_STRATEGIES: Dict[
++        type, Union[ListStrategies, DictStrategies, SetStrategies]
++    ] = ...
++    def __init__(
++        self,
++        type_strategies: List[Tuple[type, str]],
++        fallback_strategies: List[str],
++        type_conflict_strategies: List[str],
++    ) -> None: ...
++    def merge(self, base: ConfigDictType, nxt: ConfigDictType) -> None: ...
++    def type_conflict_strategy(self, *args: Any) -> Any: ...
++    def value_strategy(
++        self, path: str, base: StrategyList, nxt: StrategyList
++    ) -> None: ...
+diff --git a/typings/deepmerge/strategy/core.pyi b/typings/deepmerge/strategy/core.pyi
+new file mode 100644
+index 00000000..cb9a283b
+--- /dev/null
++++ b/typings/deepmerge/strategy/core.pyi
+@@ -0,0 +1,13 @@
++from typing import Any, Callable, List, Optional, Union
++
++_StringOrFunction = Union[str, Callable[..., Any]]
++STRATEGY_END: object = ...
++
++class StrategyList:
++    NAME: Optional[str] = ...
++    def __init__(
++        self, strategy_list: Union[_StringOrFunction, List[_StringOrFunction]]
++    ) -> None: ...
++    @classmethod
++    def _expand_strategy(cls, strategy: _StringOrFunction) -> _StringOrFunction: ...
++    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
+diff --git a/typings/deepmerge/strategy/dict.pyi b/typings/deepmerge/strategy/dict.pyi
+new file mode 100644
+index 00000000..9012863b
+--- /dev/null
++++ b/typings/deepmerge/strategy/dict.pyi
+@@ -0,0 +1,12 @@
++from ..merger import Merger
++from .core import StrategyList
++
++class DictStrategies(StrategyList):
++    @staticmethod
++    def strategy_merge(
++        config: Merger, path: str, base: StrategyList, nxt: StrategyList
++    ) -> StrategyList: ...
++    @staticmethod
++    def strategy_override(
++        config: Merger, path: str, base: StrategyList, nxt: StrategyList
++    ) -> StrategyList: ...
+diff --git a/typings/deepmerge/strategy/fallback.pyi b/typings/deepmerge/strategy/fallback.pyi
+new file mode 100644
+index 00000000..b594292c
+--- /dev/null
++++ b/typings/deepmerge/strategy/fallback.pyi
+@@ -0,0 +1,8 @@
++from .core import StrategyList
++
++class FallbackStrategies(StrategyList):
++    NAME = ...
++    @staticmethod
++    def strategy_override(config, path, base, nxt): ...
++    @staticmethod
++    def strategy_use_existing(config, path, base, nxt): ...
+diff --git a/typings/deepmerge/strategy/list.pyi b/typings/deepmerge/strategy/list.pyi
+new file mode 100644
+index 00000000..d5d61d79
+--- /dev/null
++++ b/typings/deepmerge/strategy/list.pyi
+@@ -0,0 +1,10 @@
++from .core import StrategyList
++
++class ListStrategies(StrategyList):
++    NAME = ...
++    @staticmethod
++    def strategy_override(config, path, base, nxt): ...
++    @staticmethod
++    def strategy_prepend(config, path, base, nxt): ...
++    @staticmethod
++    def strategy_append(config, path, base, nxt): ...
+diff --git a/typings/deepmerge/strategy/set.pyi b/typings/deepmerge/strategy/set.pyi
+new file mode 100644
+index 00000000..a071e8d2
+--- /dev/null
++++ b/typings/deepmerge/strategy/set.pyi
+@@ -0,0 +1,10 @@
++from .core import StrategyList
++
++class SetStrategies(StrategyList):
++    NAME = ...
++    @staticmethod
++    def strategy_union(config, path, base, nxt): ...
++    @staticmethod
++    def strategy_intersect(config, path, base, nxt): ...
++    @staticmethod
++    def strategy_override(config, path, base, nxt): ...
+diff --git a/typings/deepmerge/strategy/type_conflict.pyi b/typings/deepmerge/strategy/type_conflict.pyi
+new file mode 100644
+index 00000000..e022e068
+--- /dev/null
++++ b/typings/deepmerge/strategy/type_conflict.pyi
+@@ -0,0 +1,16 @@
++from ..merger import Merger
++from .core import StrategyList
++
++class TypeConflictStrategies(StrategyList):
++    @staticmethod
++    def strategy_override(
++        config: Merger, path: str, base: StrategyList, nxt: StrategyList
++    ) -> StrategyList: ...
++    @staticmethod
++    def strategy_use_existing(
++        config: Merger, path: str, base: StrategyList, nxt: StrategyList
++    ) -> StrategyList: ...
++    @staticmethod
++    def strategy_override_if_not_empty(
++        config: Merger, path: str, base: StrategyList, nxt: StrategyList
++    ) -> StrategyList: ...
+-- 
+2.34.1
+

@@ -223,6 +223,20 @@ class ModelInfo:
     def __attrs_post_init__(self):
         self.validate()
 
+    def to_dict(self) -> t.Dict[str, t.Any]:
+        return {
+            "name": self.tag.name,
+            "version": self.tag.version,
+            "bentoml_version": self.bentoml_version,
+            "creation_time": self.creation_time,
+            "api_version": self.api_version,
+            "module": self.module,
+            "context": self.context,
+            "labels": self.labels,
+            "options": self.options,
+            "metadata": self.metadata,
+        }
+
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
 
@@ -276,20 +290,7 @@ def copy_model(
 
 
 def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:
-    return dumper.represent_dict(
-        {
-            "name": info.tag.name,
-            "version": info.tag.version,
-            "bentoml_version": info.bentoml_version,
-            "creation_time": info.creation_time,
-            "api_version": info.api_version,
-            "module": info.module,
-            "context": info.context,
-            "labels": info.labels,
-            "options": info.options,
-            "metadata": info.metadata,
-        },
-    )
+    return dumper.represent_dict(info.to_dict())
 
 
 yaml.add_representer(ModelInfo, _ModelInfo_dumper)

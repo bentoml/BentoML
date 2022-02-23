@@ -79,25 +79,25 @@ python:
     return doc
 
 
-def _Bento_set_fs(bento: "Bento", _: t.Any, new_fs: "FS") -> "FS":
-    new_fs.makedir("models", recreate=True)
-    bento._model_store = ModelStore(new_fs.opendir("models"))  # type: ignore[reportPrivateUsage]
-    return new_fs
-
-
 @attr.define(repr=False, auto_attribs=False)
 class Bento(StoreItem):
     _tag: Tag = attr.field()
-    _fs: "FS" = attr.field(on_setattr=_Bento_set_fs)
+    _fs: "FS" = attr.field()
 
     info: "BentoInfo"
 
     _model_store: ModelStore
     _doc: t.Optional[str] = None
 
+    @_fs.validator
+    def check_fs(self, _attr: t.Any, new_fs: "FS"):
+        new_fs.makedir("models", recreate=True)
+        self._model_store = ModelStore(new_fs.opendir("models"))
+
     def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
         self._tag = tag
-        self._fs = _Bento_set_fs(self, None, bento_fs)
+        self._fs = bento_fs
+        self.check_fs(None, bento_fs)
         self.info = info
         self.validate()
 
@@ -332,6 +332,17 @@ class BentoInfo:
     def __attrs_post_init__(self):
         self.validate()
 
+    def to_dict(self) -> t.Dict[str, t.Any]:
+        return {
+            "service": self.service,
+            "name": self.tag.name,
+            "version": self.tag.version,
+            "bentoml_version": self.bentoml_version,
+            "creation_time": self.creation_time,
+            "labels": self.labels,
+            "models": [str(model) for model in self.models],
+        }
+
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
 
@@ -360,17 +371,7 @@ class BentoInfo:
 
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
-    return dumper.represent_dict(
-        {
-            "service": info.service,
-            "name": info.tag.name,
-            "version": info.tag.version,
-            "bentoml_version": info.bentoml_version,
-            "creation_time": info.creation_time,
-            "labels": info.labels,
-            "models": [str(model) for model in info.models],
-        }
-    )
+    return dumper.represent_dict(info.to_dict())
 
 
 yaml.add_representer(BentoInfo, _BentoInfo_dumper)

@@ -11,8 +11,7 @@ if TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
     from starlette.middleware import Middleware
-
-    from .. import ext_typing as ext
+    from starlette.applications import Starlette
 
 
 logger = logging.getLogger(__name__)
@@ -37,23 +36,19 @@ class BaseAppFactory(abc.ABC):
     def mark_as_ready(self) -> None:
         self._is_ready = True
 
-    async def livez(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def livez(self, _: "Request") -> "Response":
         """
         Health check for BentoML API server.
         Make sure it works with Kubernetes liveness probe
         """
         return PlainTextResponse("\n", status_code=200)
 
-    async def readyz(
-        self, _: "Request"
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def readyz(self, _: "Request") -> "Response":
         if self._is_ready:
             return PlainTextResponse("\n", status_code=200)
         raise HTTPException(500)
 
-    def __call__(self) -> "ext.ASGIApp":
+    def __call__(self) -> "Starlette":
         from starlette.applications import Starlette
 
         from bentoml._internal.configuration import get_debug_mode

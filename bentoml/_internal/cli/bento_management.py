@@ -52,16 +52,26 @@ def add_bento_management_commands(
     @click.option(
         "-o",
         "--output",
-        type=click.Choice(["tree", "json", "yaml", "path"]),
-        default="tree",
+        type=click.Choice(["json", "yaml", "path"]),
+        default="yaml",
     )
     def get(bento_tag, output):
         """Print Bento details by providing the bento_tag
 
         bentoml get FraudDetector:latest
-        bentoml get FraudDetector:20210709_DE14C9
+        bentoml get --output=json FraudDetector:20210709_DE14C9
         """
-        pass
+        bento = bento_store.get(bento_tag)
+        console = Console()
+
+        if output == "path":
+            console.print(bento.path)
+        elif output == "json":
+            info = json.dumps(bento.info.to_dict(), indent=2, default=str)
+            console.print_json(info)
+        else:
+            info = yaml.dump(bento.info, indent=2)
+            console.print(info)
 
     @cli.command(name="list", help="List Bentos in local bento store")
     @click.argument("bento_name", type=click.STRING, required=False)

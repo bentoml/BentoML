@@ -7,7 +7,7 @@ from contextvars import ContextVar
 from starlette.middleware import Middleware
 
 if TYPE_CHECKING:
-    from .. import ext_typing as ext
+    from .. import external_typing as ext
 
 REQ_CONTENT_LENGTH = "REQUEST_CONTENT_LENGTH"
 REQ_CONTENT_TYPE = "REQUEST_CONTENT_TYPE"
@@ -80,7 +80,7 @@ class AccessLogMiddleware(Middleware):
                 if client:
                     address = f"{client[0]}:{client[1]}"
                 else:
-                    address = "unknown_client"
+                    address = "_"
 
                 request = [f"scheme={scheme}", f"method={method}", f"path={path}"]
                 if REQ_CONTENT_TYPE in self.fields:

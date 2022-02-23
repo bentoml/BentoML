@@ -1,4 +1,5 @@
 import typing as t
+import tempfile
 from typing import TYPE_CHECKING
 
 import pytest
@@ -8,7 +9,6 @@ from bentoml._internal.models import ModelStore
 if TYPE_CHECKING:
     from _pytest.nodes import Item
     from _pytest.config import Config
-    from _pytest.tmpdir import TempPathFactory
     from _pytest.config.argparsing import Parser
 
 
@@ -30,10 +30,8 @@ def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> No
             item.add_marker(skip_gpus)
 
 
-@pytest.fixture(scope="session", name="modelstore")
-def fixture_modelstore(tmp_path_factory: "TempPathFactory"):
-    # we need to get consistent cache folder, thus tmpdir is not usable here
-    # NOTE: after using modelstore, also use `delete_cache_model` to remove model after
-    #  load tests.
-    path = tmp_path_factory.mktemp("bentoml")
-    return ModelStore(path)
+def pytest_sessionstart(session):
+    path = tempfile.mkdtemp("bentoml")
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
+    BentoMLContainer.model_store.set(ModelStore(path))

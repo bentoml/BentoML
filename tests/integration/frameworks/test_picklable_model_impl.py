@@ -61,11 +61,10 @@ def test_picklable_model_runner_setup_run() -> None:
 
 
 def test_pickle_runner_setup_run_method() -> None:
-
     tag = bentoml.picklable_model.save(
         "test_pickle_model", lambda x: x ** 2, metadata={}
     )
-    runner = bentoml.picklable_model.load_runner(tag, method_name="predict")
+    runner = bentoml.picklable_model.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.run(3) == np.array([9])

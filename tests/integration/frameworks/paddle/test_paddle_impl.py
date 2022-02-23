@@ -15,33 +15,28 @@ from .conftest import predict_df
 @pytest.mark.parametrize(
     "input_spec", [None, [InputSpec(shape=[IN_FEATURES], dtype="float32")]]
 )
-def test_paddle_save_load(train_paddle_model, input_spec, modelstore):
+def test_paddle_save_load(train_paddle_model, input_spec):
     tag = bentoml.paddle.save(
         "linear_model",
         train_paddle_model,
-        model_store=modelstore,
         input_spec=input_spec,
     )
-    info = modelstore.get(tag)
+    info = bentoml.models.get(tag)
     assert_have_file_extension(info.path, ".pdmodel")
-    loaded = bentoml.paddle.load(tag, model_store=modelstore)
+    loaded = bentoml.paddle.load(tag)
     assert predict_df(loaded, test_df) == np.array([[0.9003858]], dtype=np.float32)
 
 
-def test_paddle_load_custom_conf(train_paddle_model, modelstore):
-    tag = bentoml.paddle.save(
-        "linear_model", train_paddle_model, model_store=modelstore
-    )
-    info = modelstore.get(tag)
+def test_paddle_load_custom_conf(train_paddle_model):
+    tag = bentoml.paddle.save("linear_model", train_paddle_model)
+    info = bentoml.models.get(tag)
     conf = paddle.inference.Config(
         info.path + "/saved_model.pdmodel", info.path + "/saved_model.pdiparams"
     )
     conf.enable_memory_optim()
     conf.set_cpu_math_library_num_threads(1)
     paddle.set_device("cpu")
-    loaded_with_customs: nn.Layer = bentoml.paddle.load(
-        tag, config=conf, model_store=modelstore
-    )
+    loaded_with_customs: nn.Layer = bentoml.paddle.load(tag, config=conf)
     assert predict_df(loaded_with_customs, test_df) == np.array(
         [[0.9003858]], dtype=np.float32
     )

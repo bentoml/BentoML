@@ -3,7 +3,6 @@ import math
 import numpy as np
 import torch
 import pandas as pd
-import psutil
 import pytest
 import torch.nn as nn
 
@@ -56,7 +55,7 @@ class ExtendedModel(nn.Module):
 
 
 @pytest.fixture(scope="module")
-def models(modelstore):
+def models():
     def _(test_type):
         _model: nn.Module = LinearModel()
         if "trace" in test_type:
@@ -66,30 +65,30 @@ def models(modelstore):
             model = torch.jit.script(_model)
         else:
             model = _model
-        tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
+        tag = bentoml.pytorch.save("pytorch_test", model)
         return tag
 
     return _
 
 
 @pytest.mark.parametrize("test_type", ["", "tracedmodel", "scriptedmodel"])
-def test_pytorch_save_load(test_type, modelstore, models):
+def test_pytorch_save_load(test_type, models):
     tag = models(test_type)
-    assert_have_file_extension(modelstore.get(tag).path, ".pt")
+    assert_have_file_extension(bentoml.models.get(tag).path, ".pt")
 
-    pytorch_loaded: nn.Module = bentoml.pytorch.load(tag, model_store=modelstore)
+    pytorch_loaded: nn.Module = bentoml.pytorch.load(tag)
     assert predict_df(pytorch_loaded, test_df) == 5.0
 
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("dev", ["cpu", "cuda", "cuda:0"])
 @pytest.mark.parametrize("test_type", ["", "tracedmodel", "scriptedmodel"])
-def test_pytorch_save_load_across_devices(dev, test_type, modelstore, models):
+def test_pytorch_save_load_across_devices(dev, test_type, models):
     def is_cuda(model):
         return next(model.parameters()).is_cuda
 
     tag = models(test_type)
-    loaded: nn.Module = bentoml.pytorch.load(tag, model_store=modelstore, device_id=dev)
+    loaded: nn.Module = bentoml.pytorch.load(tag)
     if dev == "cpu":
         assert not is_cuda(loaded)
     else:
@@ -103,10 +102,10 @@ def test_pytorch_save_load_across_devices(dev, test_type, modelstore, models):
         torch.from_numpy(test_df.to_numpy().astype(np.float32)),
     ],
 )
-def test_pytorch_runner_setup_run_batch(modelstore, input_data):
+def test_pytorch_runner_setup_run_batch(input_data):
     model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
-    runner = bentoml.pytorch.load_runner(tag, model_store=modelstore)
+    tag = bentoml.pytorch.save("pytorch_test", model)
+    runner = bentoml.pytorch.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
@@ -117,10 +116,10 @@ def test_pytorch_runner_setup_run_batch(modelstore, input_data):
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("dev", ["cuda", "cuda:0"])
-def test_pytorch_runner_setup_on_gpu(modelstore, dev):
+def test_pytorch_runner_setup_on_gpu(dev):
     model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
-    runner = bentoml.pytorch.load_runner(tag, model_store=modelstore, device_id=dev)
+    tag = bentoml.pytorch.save("pytorch_test", model)
+    runner = bentoml.pytorch.load_runner(tag)
 
     assert torch.cuda.device_count() == runner.num_replica
 
@@ -129,21 +128,17 @@ def test_pytorch_runner_setup_on_gpu(modelstore, dev):
     "bias_pair",
     [(0.0, 1.0), (-0.212, 1.1392)],
 )
-def test_pytorch_runner_with_partial_kwargs(modelstore, bias_pair):
+def test_pytorch_runner_with_partial_kwargs(bias_pair):
 
     N, D_in, H, D_out = 64, 1000, 100, 1
     x = torch.randn(N, D_in)
     model = ExtendedModel(D_in, H, D_out)
 
-    tag = bentoml.pytorch.save("pytorch_test_extended", model, model_store=modelstore)
+    tag = bentoml.pytorch.save("pytorch_test_extended", model)
     bias1, bias2 = bias_pair
-    runner1 = bentoml.pytorch.load_runner(
-        tag, model_store=modelstore, partial_kwargs=dict(bias=bias1)
-    )
+    runner1 = bentoml.pytorch.load_runner(tag, partial_kwargs=dict(bias=bias1))
 
-    runner2 = bentoml.pytorch.load_runner(
-        tag, model_store=modelstore, partial_kwargs=dict(bias=bias2)
-    )
+    runner2 = bentoml.pytorch.load_runner(tag, partial_kwargs=dict(bias=bias2))
 
     res1 = runner1.run_batch(x)[0][0].item()
     res2 = runner2.run_batch(x)[0][0].item()
@@ -154,7 +149,7 @@ def test_pytorch_runner_with_partial_kwargs(modelstore, bias_pair):
 
 
 @pytest.mark.parametrize("batch_axis", [0, 1])
-def test_pytorch_container(modelstore, batch_axis):
+def test_pytorch_container(batch_axis):
 
     single_tensor = torch.arange(6).reshape(2, 3)
     singles = [single_tensor, single_tensor + 1]
@@ -170,15 +165,9 @@ def test_pytorch_container(modelstore, batch_axis):
     ).all()
 
     model = LinearModelWithBatchAxis()
-    tag = bentoml.pytorch.save("pytorch_test_container", model, model_store=modelstore)
-    batch_options = {
-        "input_batch_axis": batch_axis,
-        "output_batch_axis": batch_axis,
-    }
+    tag = bentoml.pytorch.save("pytorch_test_container", model)
     runner = bentoml.pytorch.load_runner(
         tag,
-        model_store=modelstore,
-        batch_options=batch_options,
         partial_kwargs=dict(batch_axis=batch_axis),
     )
 

@@ -60,20 +60,22 @@ def sklearn_onnx_model():
 
 
 @pytest.fixture()
-def save_proc(modelstore, sklearn_onnx_model):
+def save_proc(sklearn_onnx_model):
     def _(metadata):
         model, _ = sklearn_onnx_model
         tag = bentoml.onnx.save(
-            TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
+            TEST_MODEL_NAME,
+            model,
+            metadata=metadata,
         )
-        info = modelstore.get(tag)
+        info = bentoml.models.get(tag)
         return info
 
     return _
 
 
 @pytest.fixture()
-def wrong_module(modelstore, sklearn_onnx_model):
+def wrong_module(sklearn_onnx_model):
     model, _ = sklearn_onnx_model
     with bentoml.models.create(
         "wrong_module",
@@ -94,7 +96,7 @@ def wrong_module(modelstore, sklearn_onnx_model):
         ({"acc": 0.876}),
     ],
 )
-def test_onnx_save_load(metadata, save_proc, modelstore, sklearn_onnx_model):
+def test_onnx_save_load(metadata, save_proc, sklearn_onnx_model):
     model, data = sklearn_onnx_model
     model = save_proc(metadata)
     assert model.info.metadata is not None
@@ -103,16 +105,14 @@ def test_onnx_save_load(metadata, save_proc, modelstore, sklearn_onnx_model):
     opts = ort.SessionOptions()
     opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
     opts.log_verbosity_level = 1
-    loaded = bentoml.onnx.load(model.tag, model_store=modelstore, session_options=opts)
+    loaded = bentoml.onnx.load(model.tag, session_options=opts)
     assert predict_arr(loaded, data)[0] == 0
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
-def test_get_model_info_exc(exc, modelstore, wrong_module):
+def test_get_model_info_exc(exc, wrong_module):
     with pytest.raises(exc):
-        bentoml._internal.frameworks.onnx._get_model_info(
-            wrong_module, model_store=modelstore
-        )
+        bentoml._internal.frameworks.onnx._get_model_info(wrong_module)
 
 
 @pytest.mark.parametrize(
@@ -122,17 +122,17 @@ def test_get_model_info_exc(exc, modelstore, wrong_module):
         ({"providers": ["NotSupported"]}, BentoMLException),
     ],
 )
-def test_load_raise_exc(kwargs, exc, modelstore, sklearn_onnx_model):
+def test_load_raise_exc(kwargs, exc, sklearn_onnx_model):
     with pytest.raises(exc):
         model, _ = sklearn_onnx_model
-        tag = bentoml.onnx.save("test", model, model_store=modelstore)
-        _ = bentoml.onnx.load(tag, **kwargs, model_store=modelstore)
+        tag = bentoml.onnx.save("test", model)
+        _ = bentoml.onnx.load(tag, **kwargs)
 
 
-def test_onnx_runner_setup_run_batch(modelstore, save_proc, sklearn_onnx_model):
+def test_onnx_runner_setup_run_batch(save_proc, sklearn_onnx_model):
     _, data = sklearn_onnx_model
     info = save_proc(None)
-    runner = bentoml.onnx.load_runner(info.tag, model_store=modelstore)
+    runner = bentoml.onnx.load_runner(info.tag)
     res = runner.run_batch(data)
     np.testing.assert_array_equal(res[0], res_arr)
 
@@ -145,7 +145,7 @@ def test_onnx_runner_setup_run_batch(modelstore, save_proc, sklearn_onnx_model):
     "bias_pair",
     [(0.0, 1.0), (-0.212, 1.1392)],
 )
-def test_onnx_runner_with_partial_inputs(tmpdir, modelstore, bias_pair):
+def test_onnx_runner_with_partial_inputs(tmpdir, bias_pair):
 
     N, D_in, H, D_out = 64, 1000, 100, 1
     x = torch.randn(N, D_in)
@@ -162,17 +162,11 @@ def test_onnx_runner_with_partial_inputs(tmpdir, modelstore, bias_pair):
         output_names=output_names,
     )
 
-    tag = bentoml.onnx.save("onnx_test_partial", model_path, model_store=modelstore)
+    tag = bentoml.onnx.save("onnx_test_partial", model_path)
     bias1, bias2 = bias_pair
-    runner1 = bentoml.onnx.load_runner(
-        tag,
-        model_store=modelstore,
-    )
+    runner1 = bentoml.onnx.load_runner(tag)
 
-    runner2 = bentoml.onnx.load_runner(
-        tag,
-        model_store=modelstore,
-    )
+    runner2 = bentoml.onnx.load_runner(tag)
 
     res1 = runner1.run_batch(x, np.array([bias1]).astype(np.float32))[0][0].item()
     res2 = runner2.run_batch(x, np.array([bias2]).astype(np.float32))[0][0].item()
@@ -183,12 +177,10 @@ def test_onnx_runner_with_partial_inputs(tmpdir, modelstore, bias_pair):
 
 
 @pytest.mark.gpus
-def test_sklearn_runner_setup_on_gpu(modelstore, save_proc, sklearn_onnx_model):
+def test_sklearn_runner_setup_on_gpu(save_proc, sklearn_onnx_model):
     _, data = sklearn_onnx_model
     info = save_proc(None)
-    runner = bentoml.onnx.load_runner(
-        info.tag, model_store=modelstore, backend="onnxruntime-gpu", gpu_device_id=0
-    )
+    runner = bentoml.onnx.load_runner(info.tag, backend="onnxruntime-gpu")
     _ = runner.run_batch(data)
     assert runner.num_replica == 1
     assert "CUDAExecutionProvider" in runner._model.get_providers()

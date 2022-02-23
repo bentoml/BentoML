@@ -74,7 +74,7 @@ class Image(IODescriptor[ImageType]):
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
         [INFO] Serving BentoML Service "vit-object-detection" defined in "obj_detc.py"
-        [INFO] API Server running on http://0.0.0.0:3000
+        [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send requests to the newly started services with any client:
 
@@ -84,7 +84,7 @@ class Image(IODescriptor[ImageType]):
 
             import requests
             requests.post(
-                "http://0.0.0.0:3000/predict",
+                "http://0.0.0.0:5000/predict",
                 files = {"upload_file": open('test.jpg', 'rb')},
                 headers = {"content-type": "multipart/form-data"}
             ).text
@@ -93,7 +93,7 @@ class Image(IODescriptor[ImageType]):
 
             # we will run on our input image test.png
             # image can get from http://images.cocodataset.org/val2017/000000039769.jpg
-            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:3000/predict
+            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:5000/predict
 
             [{"score":0.8610631227493286,"label":"Egyptian cat"},
             {"score":0.08770329505205154,"label":"tabby, tabby cat"},

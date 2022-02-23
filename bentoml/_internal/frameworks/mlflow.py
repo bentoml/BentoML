@@ -9,11 +9,11 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model as BentoModel
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -51,7 +51,7 @@ def _validate_file_exists(fname: str, parent: str) -> t.Tuple[bool, str]:
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "PyFuncModel":
     """
@@ -81,7 +81,7 @@ def load(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
     mlflow_folder = model.path_of(model.info.options["mlflow_folder"])
-    return mlflow.pyfunc.load_model(mlflow_folder, suppress_warnings=False)
+    return mlflow.pyfunc.load_model(mlflow_folder, suppress_warnings=False)  # type: ignore
 
 
 SAVE_WARNING = f"""\
@@ -274,44 +274,22 @@ def import_from_uri(
     return _model.tag
 
 
-class _PyFuncRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: Tag,
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        super().__init__(name, resource_quota, batch_options)
-        self._model_store = model_store
-        self._model_tag = tag
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_tag]
-
+class _PyFuncRunner(BaseModelRunner):
     @property
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._model = load(self._model_tag, model_store=self._model_store)
+    def _setup(self) -> None:
+        self._model = load(self._tag)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]
-        return self._model.predict(input_data)
+    def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return self._model.predict(*args, **kwargs)  # type: ignore
 
 
 @inject
 def load_runner(
     tag: t.Union[str, Tag],
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyFuncRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -322,12 +300,6 @@ def load_runner(
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`bentoml._internal.runner.Runner`: Runner instances loaded from `bentoml.mlflow`.
@@ -359,14 +331,8 @@ def load_runner(
         runner = bentoml.mlflow.load_runner(tag)
         runner.run_batch([[1,2,3,4,5]])
 
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _PyFuncRunner(
         tag,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-        model_store=model_store,
     )

@@ -26,21 +26,19 @@ res_arr = np.array(
 # fmt: on
 if t.TYPE_CHECKING:
     from bentoml._internal.types import Tag
-    from bentoml._internal.models import ModelStore
 
 
-def save_procedure(metadata: t.Dict[str, t.Any], _modelstore: "ModelStore") -> "Tag":
+def save_procedure(metadata: t.Dict[str, t.Any]) -> "Tag":
     model, _ = sklearn_model_data(clf=RandomForestClassifier)
     tag_info = bentoml.sklearn.save(
         "test_sklearn_model",
         model,
         metadata=metadata,
-        model_store=_modelstore,
     )
     return tag_info
 
 
-def forbidden_procedure(_modelstore: "ModelStore") -> "Tag":
+def forbidden_procedure() -> "Tag":
     model, _ = sklearn_model_data(clf=RandomForestClassifier)
     with bentoml.models.create(
         "invalid_module",
@@ -49,7 +47,6 @@ def forbidden_procedure(_modelstore: "ModelStore") -> "Tag":
         options=None,
         context=None,
         metadata=None,
-        _model_store=_modelstore,
     ) as ctx:
         joblib.dump(model, ctx.path_of("saved_model.pkl"))
         return ctx.tag
@@ -62,32 +59,30 @@ def forbidden_procedure(_modelstore: "ModelStore") -> "Tag":
         ({"acc": 0.876}),
     ],
 )
-def test_sklearn_save_load(
-    metadata: t.Dict[str, t.Any], modelstore: "ModelStore"
-) -> None:
+def test_sklearn_save_load(metadata: t.Dict[str, t.Any]) -> None:
     _, data = sklearn_model_data(clf=RandomForestClassifier)
-    tag = save_procedure(metadata, _modelstore=modelstore)
-    _model = bentoml.models.get(tag, _model_store=modelstore)
+    tag = save_procedure(metadata)
+    _model = bentoml.models.get(tag)
     assert _model.info.metadata is not None
     assert_have_file_extension(_model.path, ".pkl")
 
-    loaded = bentoml.sklearn.load(_model.tag, model_store=modelstore)
+    loaded = bentoml.sklearn.load(_model.tag)
 
     assert isinstance(loaded, RandomForestClassifier)
 
     np.testing.assert_array_equal(loaded.predict(data), res_arr)
 
 
-def test_get_model_info_exc(modelstore: "ModelStore") -> None:
-    tag = forbidden_procedure(_modelstore=modelstore)
+def test_get_model_info_exc() -> None:
+    tag = forbidden_procedure()
     with pytest.raises(BentoMLException):
-        _ = bentoml.sklearn.load(tag, model_store=modelstore)
+        _ = bentoml.sklearn.load(tag)
 
 
-def test_sklearn_runner_setup_run_batch(modelstore: "ModelStore") -> None:
+def test_sklearn_runner_setup_run_batch() -> None:
     _, data = sklearn_model_data(clf=RandomForestClassifier)
-    tag = save_procedure({}, _modelstore=modelstore)
-    runner = bentoml.sklearn.load_runner(tag, model_store=modelstore)
+    tag = save_procedure({})
+    runner = bentoml.sklearn.load_runner(tag)
 
     assert tag in runner.required_models
     assert runner.num_replica == 1

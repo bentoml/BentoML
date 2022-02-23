@@ -1,31 +1,19 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..types import PathType
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
-from ..utils.lazy_loader import LazyLoader
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
-
-_MT = t.TypeVar("_MT")
-
-if TYPE_CHECKING:
-    import pandas as pd
-    from joblib.parallel import Parallel
-
-    from ..models import ModelStore
-
 
 try:
     import statsmodels.api as sm
@@ -38,6 +26,15 @@ except ImportError:  # pragma: no cover
          """
     )
 
+if TYPE_CHECKING:
+    from joblib.parallel import Parallel  # type: ignore
+
+    from .. import external_typing as ext
+    from ..models import ModelStore
+
+    ModelType = t.Any
+
+
 MODULE_NAME = "bentoml.statsmodels"
 
 _exc_msg = """\
@@ -45,28 +42,13 @@ _exc_msg = """\
  `pip install pandas`. For more information, refer to
  https://pandas.pydata.org/docs/getting_started/install.html
 """
-pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)  # noqa: F811
-
-
-def _get_model_info(
-    tag: Tag,
-    model_store: "ModelStore",
-) -> t.Tuple["Model", PathType]:
-    model = model_store.get(tag)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
-        )
-    model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
-
-    return model, model_file
 
 
 @inject
 def load(
-    tag: Tag,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> _MT:
+) -> ModelType:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -87,20 +69,24 @@ def load(
 
         model = bentoml.statsmodels.load("holtswinter")
 
-    """  # noqa
-    _, model_file = _get_model_info(tag, model_store)
-    _load: t.Callable[[PathType], _MT] = sm.load
-    return _load(model_file)
+    """
+    model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
+    return sm.load(model_file)
 
 
 @inject
 def save(
     name: str,
-    model: _MT,
+    model: ModelType,
     *,
     metadata: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -172,27 +158,15 @@ def save(
     return _model.tag
 
 
-class _StatsModelsRunner(Runner):
-    @inject
+class _StatsModelsRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        super().__init__(name, resource_quota, batch_options)
-        model_info, model_file = _get_model_info(tag, model_store)
+        super().__init__(tag, name=name)
         self._predict_fn_name = predict_fn_name
-        self._model_info = model_info
-        self._model_file = model_file
-        self._model_store = model_store
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
 
     @property
     def _num_threads(self) -> int:
@@ -204,33 +178,25 @@ class _StatsModelsRunner(Runner):
         # NOTE: Statsmodels currently doesn't use GPU, so just return 1.
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._model = sm.load(self._model_file)
+    def _setup(self) -> None:
+        self._model = load(self._tag)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override] # noqa
+    def _run_batch(self, input_data: t.Union["ext.NpNDArray", "ext.PdDataFrame"]) -> t.Any:  # type: ignore[override] # noqa
         # TODO: type hint return type.
-        parallel: "Parallel"
-        p_func: t.Callable[..., t.Any]
-        parallel, p_func, _ = parallel_func(
+        parallel, p_func, _ = parallel_func(  # type: ignore[arg-type]
             self._predict_fn,
             n_jobs=self._num_threads,
             verbose=0,
         )
-        return parallel(p_func(i) for i in input_data)[0]
+        return parallel(p_func(i) for i in input_data)[0]  # type: ignore
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "predict",
     name: t.Optional[str] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_StatsModelsRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -242,12 +208,6 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (:code:`str`, default to :code:`predict`):
             Options for inference functions
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.statsmodels` model
@@ -262,15 +222,9 @@ def load_runner(
         runner = bentoml.statsmodels.load_runner("holtswinter")
         runner.run_batch(pd.DataFrame("/path/to/data"))
 
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _StatsModelsRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-        model_store=model_store,
     )

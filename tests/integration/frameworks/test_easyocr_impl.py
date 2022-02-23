@@ -9,7 +9,6 @@ import bentoml
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models import Model
-    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 TEST_RESULT: t.List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]
@@ -44,9 +43,7 @@ def image_array():
 
 
 @pytest.fixture(scope="module")
-def save_proc(
-    modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+def save_proc() -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
     def _(lang_list, recog_network, detect_model, metadata) -> "Model":
         model = easyocr_model()
         tag = bentoml.easyocr.save(
@@ -56,16 +53,15 @@ def save_proc(
             recog_network=recog_network,
             detect_model=detect_model,
             metadata=metadata,
-            model_store=modelstore,
         )
-        model = modelstore.get(tag)
+        model = bentoml.models.get(tag)
         return model
 
     return _
 
 
 @pytest.mark.parametrize("metadata", [{"acc": 0.876}])
-def test_easyocr_save_load(metadata, image_array, modelstore, save_proc):
+def test_easyocr_save_load(metadata, image_array, save_proc):
 
     model = easyocr_model()
     raw_res = model.readtext(IMAGE_PATH)
@@ -74,11 +70,7 @@ def test_easyocr_save_load(metadata, image_array, modelstore, save_proc):
     _model = save_proc(LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata)
     assert _model.info.metadata is not None
 
-    easyocr_loaded = bentoml.easyocr.load(
-        _model.tag,
-        gpu=False,
-        model_store=modelstore,
-    )
+    easyocr_loaded = bentoml.easyocr.load(_model.tag)
 
     raw_res = easyocr_loaded.readtext(image_array)
 

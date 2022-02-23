@@ -90,11 +90,11 @@ Define and Debug Services
 
 Services are the core components of BentoML, where the serving logic is defined. With the model
 saved in the model store, we can define the :ref:`service <service-definition-page>` by creating a
-Python file :code:`bento.py` with the following contents:
+Python file :code:`service.py` with the following contents:
 
 .. code-block:: python
 
-    # bento.py
+    # service.py
     import bentoml
     import bentoml.sklearn
     import numpy as np
@@ -123,17 +123,17 @@ In this example, we defined the input and output type to be :code:`numpy.ndarray
 
 We now have everything we need to serve our first request. Launch the server in debug mode by
 running the :code:`bentoml serve` command in the current working directory. Using the
-:code:`--reload` option allows the server to reflect any changes made to the :code:`bento.py` module
+:code:`--reload` option allows the server to reflect any changes made to the :code:`service.py` module
 without restarting:
 
 .. code-block:: bash
 
-    > bentoml serve ./bento.py:svc --reload
+    > bentoml serve ./service.py:svc --reload
 
-    [10:18:42 AM] INFO     Starting development BentoServer from "./bento.py:svc"
+    [10:18:42 AM] INFO     Starting development BentoServer from "./service.py:svc"
     [10:18:42 AM] INFO     Service imported from source: bentoml.Service(name="iris_classifier", import_str="bento:svc", working_dir="/home/user/devel/bentoml-quickstart")
     [10:18:42 AM] INFO     Will watch for changes in these directories: ['/home/user/devel/bentoml-quickstart']                                                              config.py:334
-                  INFO     Uvicorn running on http://127.0.0.1:3000 (Press CTRL+C to quit)                                                                                   config.py:554
+                  INFO     Uvicorn running on http://127.0.0.1:5000 (Press CTRL+C to quit)                                                                                   config.py:554
                   INFO     Started reloader process [97796] using statreload                                                                                              basereload.py:56
     [10:18:43 AM] INFO     Started server process [97808]                                                                                                                     server.py:84
                   INFO     Waiting for application startup.                                                                                                                       on.py:45
@@ -147,7 +147,7 @@ We can then send requests to the newly started service with any HTTP client:
 
         import requests
         requests.post(
-            "http://127.0.0.1:3000/predict",
+            "http://127.0.0.1:5000/predict",
             headers={"content-type": "application/json"},
             data="[5,4,3,2]").text
 
@@ -157,7 +157,7 @@ We can then send requests to the newly started service with any HTTP client:
           -X POST \
           -H "content-type: application/json" \
           --data "[5,4,3,2]" \
-          http://127.0.0.1:3000/predict
+          http://127.0.0.1:5000/predict
 
 .. _build-and-deploy-bentos:
 
@@ -178,7 +178,7 @@ To build a Bento, first create a file named :code:`bentofile.yaml` in your proje
 .. code-block:: yaml
 
     # bentofile.yaml
-    service: "bento.py:svc"  # A convention for locating your service: <YOUR_SERVICE_PY>:<YOUR_SERVICE_ANNOTATION>
+    service: "service.py:svc"  # A convention for locating your service: <YOUR_SERVICE_PY>:<YOUR_SERVICE_ANNOTATION>
     include:
      - "*.py"  # A pattern for matching which files to include in the bento
     python:
@@ -229,7 +229,7 @@ command. Using the :code:`--production` option will serve the bento in productio
     [09:04:19 PM] INFO     Started server process [28396]                                                                                                                     server.py:84
                   INFO     Waiting for application startup.                                                                                                                       on.py:45
                   INFO     Application startup complete.                                                                                                                          on.py:59
-                  INFO     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)                                                                                     server.py:222
+                  INFO     Uvicorn running on http://0.0.0.0:5000 (Press CTRL+C to quit)                                                                                     server.py:222
                   INFO     Application startup complete.                                                                                                                          on.py:59
                   INFO     Uvicorn running on socket /run/user/1000/tmpy16ao7fo/140574878932496.sock (Press CTRL+C to quit)                                                  server.py:191
 

@@ -1,27 +1,19 @@
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..utils import LazyLoader
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
-
-if TYPE_CHECKING:
-    import numpy as np
-    from pandas.core.frame import DataFrame
-
-    from ..models import ModelStore
-else:
-    np = LazyLoader("np", globals(), "numpy")
 
 try:
     import catboost as cbt
@@ -32,6 +24,16 @@ except ImportError:  # pragma: no cover
         https://catboost.ai/docs/concepts/python-installation.html
         """
     )
+
+if TYPE_CHECKING:
+    from .. import external_typing as ext
+    from ..models import ModelStore
+
+    CatBoostModel = t.Union[
+        cbt.core.CatBoost,
+        cbt.core.CatBoostClassifier,
+        cbt.core.CatBoostRegressor,
+    ]
 
 MODULE_NAME = "bentoml.catboost"
 
@@ -63,13 +65,9 @@ def _get_model_info(
 
 
 def _load_helper(
-    model_file: str, model_params: t.Optional[t.Dict[str, t.Union[str, int]]]
-) -> t.Union[
-    cbt.core.CatBoost,
-    cbt.core.CatBoostClassifier,
-    cbt.core.CatBoostRegressor,
-]:
-
+    model_file: str,
+    model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+) -> "CatBoostModel":
     if model_params is not None:
         model_type = model_params["model_type"]
 
@@ -82,11 +80,7 @@ def _load_helper(
     else:
         model = cbt.core.CatBoost()
 
-    _m: t.Union[
-        cbt.core.CatBoost,
-        cbt.core.CatBoostClassifier,
-        cbt.core.CatBoostRegressor,
-    ] = model.load_model(model_file)
+    _m: "CatBoostModel" = model.load_model(model_file)
     return _m
 
 
@@ -95,9 +89,7 @@ def load(
     tag: t.Union[str, Tag],
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union[
-    cbt.core.CatBoost, cbt.core.CatBoostClassifier, cbt.core.CatBoostRegressor
-]:
+) -> "CatBoostModel":
     """
     Load a CatBoost model from BentoML local modelstore with given name.
 
@@ -130,11 +122,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Union[
-        cbt.core.CatBoost,
-        cbt.core.CatBoostClassifier,
-        cbt.core.CatBoostRegressor,
-    ],
+    model: "CatBoostModel",
     *,
     model_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]] = None,
     model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
@@ -227,59 +215,43 @@ def save(
     return _model.tag
 
 
-class _CatBoostRunner(Runner):
+class _CatBoostRunner(BaseModelRunner):
     @inject
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
-        model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+        name: t.Optional[str] = None,
     ):
-        model_info, model_file, _model_params = _get_model_info(
-            tag, model_params, model_store
-        )
-        super().__init__(name, resource_quota, batch_options)
-        self._model_info = model_info
-        self._model_file = model_file
+        super().__init__(tag=tag, name=name)
         self._predict_fn_name = predict_fn_name
-        self._model_params = _model_params
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
+        self._model_params = model_params
+        self._model: "CatBoostModel"
+        self._predict_fn: t.Any = None
 
     @property
     def num_replica(self) -> int:
         return int(round(self.resource_quota.cpu))
 
-    # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
-        self._model = _load_helper(self._model_file, self._model_params)
+        self._model = load(self._tag, model_params=self._model_params)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame", cbt.Pool],
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        inputs: t.Union["ext.NpNDArray", "ext.PdDataFrame", cbt.Pool],
+    ) -> "ext.NpNDArray":
         res = self._predict_fn(inputs)
-        return np.asarray(res)
+        return t.cast("ext.NpNDArray", np.asarray(res))
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     predict_fn_name: str = "predict",
     *,
     model_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     name: t.Optional[str] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
 ) -> "_CatBoostRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -294,12 +266,6 @@ def load_runner(
         model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): Parameters for
             a CatBoost model. Following parameters can be specified:
                 - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.catboost` model
@@ -314,16 +280,10 @@ def load_runner(
         input_data = pd.read_csv("/path/to/csv")
         runner = bentoml.catboost.load_runner("my_model:latest"")
         runner.run(cbt.Pool(input_data))
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _CatBoostRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         model_params=model_params,
-        model_store=model_store,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
     )

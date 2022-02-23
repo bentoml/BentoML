@@ -8,23 +8,24 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
+from ..types import LazyType
 from ..types import PathType
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ..runner.utils import Params
 from ..runner.utils import get_gpu_memory
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
 try:
-    import onnx
-    import onnxruntime as ort
+    import onnx  # type: ignore
+    import onnxruntime as ort  # type: ignore
 except ImportError:
     raise MissingDependencyException(
         """\
@@ -36,11 +37,10 @@ more information.
     )
 
 if TYPE_CHECKING:
-    import numpy as np
     import torch
-    from pandas.core.frame import DataFrame
-    from tensorflow.python.framework.ops import Tensor as TFTensor
+    import tensorflow as tf  # type: ignore
 
+    from .. import external_typing as ext
     from ..models import ModelStore
 
     _ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
@@ -104,7 +104,7 @@ def load(
     tag: t.Union[str, Tag],
     backend: t.Optional[str] = "onnxruntime",
     providers: t.Optional[t.Union["_ProviderType", "_GPUProviderType"]] = None,
-    session_options: t.Optional["ort.SessionOptions"] = None,
+    session_options: t.Optional["ort.SessionOptions"] = None,  # type: ignore
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "ort.InferenceSession":
     """
@@ -149,7 +149,9 @@ def load(
         providers = ort.get_available_providers()
 
     return ort.InferenceSession(
-        model_file, sess_options=session_options, providers=providers  # type: ignore[reportGeneralTypeIssues] # noqa: LN001
+        model_file,
+        sess_options=session_options,
+        providers=providers,
     )
 
 
@@ -219,7 +221,7 @@ def save(
         )
 
         tag = bentoml.onnx.save("onnx_model", model_path, model_store=modelstore)
-    """  # noqa
+    """
     context: t.Dict[str, t.Any] = {
         "framework_name": "onnx",
         "pip_dependencies": [
@@ -245,29 +247,18 @@ def save(
     return _model.tag
 
 
-class _ONNXRunner(Runner):
-    @inject
+class _ONNXRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         backend: str,
         gpu_device_id: int,
         disable_copy_in_default_stream: bool,
         providers: t.Optional["_ProviderType"],
-        session_options: t.Optional["ort.SessionOptions"],
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore",
+        session_options: t.Optional["ort.SessionOptions"],  # type: ignore
+        name: t.Optional[str] = None,
     ):
-        if gpu_device_id != -1:
-            resource_quota = dict() if not resource_quota else resource_quota
-            if "gpus" not in resource_quota:
-                resource_quota["gpus"] = gpu_device_id
-
-        super().__init__(name, resource_quota, batch_options)
-        self._model_info, self._model_file = _get_model_info(tag, model_store)
-        self._model_store = model_store
+        super().__init__(tag, name=name)
         self._backend = backend
 
         if backend not in SUPPORTED_ONNX_BACKEND:
@@ -281,14 +272,16 @@ class _ONNXRunner(Runner):
                 )
         else:
             providers = self._get_default_providers(
-                gpu_device_id, disable_copy_in_default_stream
+                gpu_device_id,
+                disable_copy_in_default_stream,
             )
         self._providers = providers
-        self._session_options = self._get_default_session_options(session_options)
+        self._session_options = session_options
 
     @staticmethod
     def _get_default_providers(
-        gpu_device_id: int, disable_copy_in_default_stream: bool
+        gpu_device_id: int,
+        disable_copy_in_default_stream: bool,
     ) -> "_ProviderType":
         if gpu_device_id != -1:
             _, free = get_gpu_memory(gpu_device_id)
@@ -314,7 +307,8 @@ class _ONNXRunner(Runner):
         return providers  # type: ignore[return-value]
 
     def _get_default_session_options(
-        self, session_options: t.Optional["ort.SessionOptions"]
+        self,
+        session_options: t.Optional["ort.SessionOptions"],
     ) -> "ort.SessionOptions":
         if session_options is not None:
             return session_options
@@ -328,12 +322,7 @@ class _ONNXRunner(Runner):
         return _session_options
 
     @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._model_info.tag]
-
-    @property
     def _num_threads(self) -> int:
-        # TODO: support GPU threads
         if self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
@@ -344,55 +333,49 @@ class _ONNXRunner(Runner):
             return len(self.resource_quota.gpus)
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
+        session_options = self._get_default_session_options(self._session_options)
         self._model = load(
-            self._model_info.tag,
+            self._tag,
             backend=self._backend,
             providers=self._providers,
-            session_options=self._session_options,
-            model_store=self._model_store,
+            session_options=session_options,
         )
         self._infer_func = getattr(self._model, "run")
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
+    def _run_batch(  # type: ignore
         self,
         *args: t.Union[
-            "np.ndarray[t.Any, np.dtype[t.Any]]",
-            "DataFrame",
+            "ext.NpNDArray",
+            "ext.PdDataFrame",
             "torch.Tensor",
-            "TFTensor",
+            "tf.Tensor",
         ],
     ) -> t.Any:
         params = Params[
             t.Union[
+                "ext.NpNDArray",
+                "ext.PdDataFrame",
                 "torch.Tensor",
-                "TFTensor",
-                "np.ndarray[t.Any, np.dtype[t.Any]]",
-                "DataFrame",
+                "tf.Tensor",
             ]
         ](*args)
 
         def _mapping(
             item: t.Union[
+                "ext.NpNDArray",
+                "ext.PdDataFrame",
                 "torch.Tensor",
-                "TFTensor",
-                "np.ndarray[t.Any, np.dtype[t.Any]]",
-                "DataFrame",
+                "tf.Tensor",
             ]
         ) -> t.Any:
-            # TODO: check if imported before actual eval
-            import numpy as np
-            import torch
-            import pandas as pd
-            import tensorflow as tf
-
-            if isinstance(item, np.ndarray):
-                item = item.astype(np.float32)
-            elif isinstance(item, pd.DataFrame):
+            if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
+                pass
+            elif LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
                 item = item.to_numpy()
-            elif isinstance(item, (tf.Tensor, torch.Tensor)):
+            elif LazyType["tf.Tensor"]("tensorflow.Tensor").isinstance(item):
+                item = item.numpy()  # type: ignore
+            elif LazyType["torch.Tensor"]("torch.Tensor").isinstance(item):
                 item = item.numpy()
             else:
                 raise TypeError(
@@ -420,9 +403,6 @@ def load_runner(
     providers: t.Optional["_ProviderType"] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_ONNXRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -445,12 +425,6 @@ def load_runner(
             loading a model.
         session_options (`onnxruntime.SessionOptions`, `optional`, default to :code:`None`):
             :obj:`SessionOptions` per use case. If not specified, then default to :code:`None`.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.onnx` model
@@ -463,10 +437,7 @@ def load_runner(
             tag, model_store=modelstore, backend="onnxruntime-gpu", gpu_device_id=0
         )
         runner.run_batch(data)
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _ONNXRunner(
         tag=tag,
         backend=backend,
@@ -475,7 +446,4 @@ def load_runner(
         providers=providers,
         session_options=session_options,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-        model_store=model_store,
     )

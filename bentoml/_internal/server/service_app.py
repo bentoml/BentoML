@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
-from opentelemetry import trace  # type: ignore[import]
 
-from ..trace import ServiceContext
+from ..context import trace_context
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -25,7 +24,6 @@ if TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
 
     from ..service.inference_api import InferenceAPI
-    from ..server.metrics.prometheus import PrometheusClient
 
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -118,25 +116,20 @@ class ServiceAppFactory(BaseAppFactory):
     def __init__(
         self,
         bento_service: Service,
-        enable_metrics: bool = Provide[
-            DeploymentContainer.api_server_config.metrics.enabled
-        ],
-        metrics_client: "PrometheusClient" = Provide[
-            DeploymentContainer.metrics_client
-        ],
         enable_access_control: bool = Provide[
             DeploymentContainer.api_server_config.cors.enabled
         ],
         access_control_options: t.Dict[str, t.Union[t.List[str], int]] = Provide[
             DeploymentContainer.access_control_options
         ],
+        enable_metrics: bool = Provide[
+            DeploymentContainer.api_server_config.metrics.enabled
+        ],
     ) -> None:
         self.bento_service = bento_service
-
-        self.enable_metrics = enable_metrics
-        self.metrics_client = metrics_client
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
+        self.enable_metrics = enable_metrics
 
     @property
     def name(self) -> str:
@@ -153,15 +146,6 @@ class ServiceAppFactory(BaseAppFactory):
             content=DEFAULT_INDEX_HTML.format(readme=self.bento_service.doc),
             status_code=200,
             media_type="text/html",
-        )
-
-    async def metrics_view_func(self, _: "Request") -> "Response":
-        from starlette.responses import Response
-
-        return Response(
-            self.metrics_client.generate_latest(),
-            status_code=200,
-            media_type=self.metrics_client.CONTENT_TYPE_LATEST,
         )
 
     async def docs_view_func(self, _: "Request") -> "Response":
@@ -199,15 +183,6 @@ class ServiceAppFactory(BaseAppFactory):
                 endpoint=self.docs_view_func,
             )
         )
-
-        if self.enable_metrics:
-            routes.append(
-                Route(
-                    path="/metrics",
-                    name="metrics",
-                    endpoint=self.metrics_view_func,
-                )
-            )
 
         parent_dir_path = os.path.dirname(os.path.realpath(__file__))
         routes.append(
@@ -254,23 +229,26 @@ class ServiceAppFactory(BaseAppFactory):
             )
 
         # metrics middleware
-        from .instruments import MetricsMiddleware
+        if self.enable_metrics:
+            from .instruments import MetricsMiddleware
 
-        middlewares.append(
-            Middleware(MetricsMiddleware, bento_service=self.bento_service)
-        )
+            middlewares.append(
+                Middleware(
+                    MetricsMiddleware,
+                    bento_service=self.bento_service,
+                )
+            )
 
         # otel middleware
-        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
+        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore
 
         def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
-                span_id: int = span.context.span_id
-                ServiceContext.request_id_var.set(span_id)
+                trace_context.request_id = span.context.span_id  # type: ignore
 
         def client_response_hook(span: "Span", _message: t.Any) -> None:
             if span is not None:
-                ServiceContext.request_id_var.set(None)
+                del trace_context.request_id
 
         middlewares.append(
             Middleware(
@@ -314,10 +292,8 @@ class ServiceAppFactory(BaseAppFactory):
 
     def __call__(self) -> "Starlette":
         app = super().__call__()
-
         for mount_app, path, name in self.bento_service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)
-
         return app
 
     @staticmethod

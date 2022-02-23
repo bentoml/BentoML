@@ -12,9 +12,9 @@ class LocalRunner(RunnerImpl):
     def setup(self) -> None:
         if self._state != RunnerState.INIT:
             return
-        self._state = RunnerState.SETTING
+        self._state = RunnerState.SETTING_UP
         self._runner._setup()  # type: ignore[reportPrivateUsage]
-        self._state = RunnerState.SET
+        self._state = RunnerState.READY
 
     def shutdown(self) -> None:
         if self._state in (
@@ -23,7 +23,7 @@ class LocalRunner(RunnerImpl):
             RunnerState.SHUTDOWN,
         ):
             return
-        if self._state in (RunnerState.SET, RunnerState.SETTING):
+        if self._state in (RunnerState.READY, RunnerState.SETTING_UP):
             self._state = RunnerState.SHUTIING_DOWN
             self._runner._shutdown()  # type: ignore[reportPrivateUsage]
             self._state = RunnerState.SHUTDOWN

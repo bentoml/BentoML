@@ -21,7 +21,7 @@ class BaseModelRunner(Runner):
         name: t.Optional[str] = None,
     ):
         super().__init__(name)
-        self._tag = tag
+        self._tag = Tag.from_taglike(tag)
 
     @property
     @inject
@@ -33,11 +33,11 @@ class BaseModelRunner(Runner):
 
     @property
     def default_name(self) -> str:
-        return Tag.from_taglike(self._tag).name
+        return self._tag.name
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [Tag.from_taglike(self._tag)]
+        return [self._tag]
 
 
 class BaseModelSimpleRunner(SimpleRunner):
@@ -47,12 +47,20 @@ class BaseModelSimpleRunner(SimpleRunner):
         name: t.Optional[str] = None,
     ):
         super().__init__(name)
-        self._tag = tag
+        self._tag = Tag.from_taglike(tag)
+
+    @property
+    @inject
+    def _model_info(
+        self,
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    ):
+        return model_store.get(self._tag)
 
     @property
     def default_name(self) -> str:
-        return Tag.from_taglike(self._tag).name
+        return self._tag.name
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [Tag.from_taglike(self._tag)]
+        return [self._tag]

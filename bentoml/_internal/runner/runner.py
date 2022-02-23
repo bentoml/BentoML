@@ -235,8 +235,8 @@ class SimpleRunner(BaseRunner, ABC):
 
 class RunnerState(enum.IntEnum):
     INIT = 0
-    SETTING = 1
-    SET = 2
+    SETTING_UP = 1
+    READY = 2
     SHUTIING_DOWN = 3
     SHUTDOWN = 4
 

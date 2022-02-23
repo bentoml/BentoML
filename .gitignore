@@ -101,13 +101,8 @@ venv.bak/
 # vscode config
 .vscode/
 
-# Integration test data
-tests/integration/data
-
 # Emacs buffers
 *~
 
 # setuptools_scm generated version file
-typings
 bentoml/_version.py
-typings

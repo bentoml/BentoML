@@ -297,15 +297,20 @@ make hooks
 ## Stubs
 Refers to [Installation](https://github.com/microsoft/pyright#installation) to install pyright correctly.
 
-In order to make pyright function correctly one also need to run the following scripts alongside with the stubs provided
- in the main repository.
-
-One can also clone a [copy](https://github.com/bentoml/stubs) of all dependencies stubs used by BentoML to `typings/` via:
+Apply the patch locally for a given library, (i.e: tensorflow):
 ```bash
-# Assuming at $GIT_ROOT
-git clone git@github.com:bentoml/stubs.git
-\rm -rf typings/.git* typings/*.{sh,toml,txt,cfg,py,md}
+python -m scripts.typestubs apply tensorflow -S
 ```
+
+To quickly add stubs generated from pyright for a library:
+```bash
+python -m scripts.typestubs create <library>
+```
+This will create a `stubs-<library>.patch` under `typings/`.
+Then open a Pull Request for to check-in the patch files.
+
+If you want to manually fix the stubs, refers to
+[typings/README.md](./typings/README.md) for more information.
 
 ## Creating Pull Request on GitHub
 

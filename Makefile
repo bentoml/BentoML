@@ -14,8 +14,6 @@ lint: ## Running lint checker: pylint
 	@./scripts/tools/linter.sh
 type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
-stubs-cleanup: ## Cleanup stubs
-	@./scripts/tools/stubs_cleanup.sh
 hooks: __check_defined_FORCE ## Install pre-defined hooks
 	@./scripts/install_hooks.sh
 

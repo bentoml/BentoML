@@ -8,13 +8,9 @@ source ./scripts/ci/helpers.sh
 
 INFO "(black) Formatting codebase..."
 
-black --config ./pyproject.toml bentoml/ tests/ docker/ docs/
+black --config ./pyproject.toml bentoml/ tests/ docker/ docs/ scripts/
 
 INFO "(isort) Reordering imports..."
 
 isort .
-
-INFO "(black) Formatting VCS stubs..."
-
-git ls-files -z -cm -- typings ':!:*.md' | xargs -0 -I {} -r sh -c 'echo "Processing "{}"..."; black --config ./pyproject.toml --pyi {}'
 

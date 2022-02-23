@@ -1,19 +1,24 @@
-Library stubs used by bentoml
+# Type stubs for BentoML
 
-Make sure to add an upstream remotes to bentoml main repository, find out more [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/configuring-a-remote-for-a-fork)
-If you want to contribute stubs that is not yet existed in our VCS, make sure to follow the below steps:
+This directory contains patch files for 3rd party stubs that is used by BentoML.
+The reason for using `.patch` instead of checking-in the stubs itself is to
+minimize the library size, as well as make it easier for new developers to
+create and contains a consistent stubs for pyright.
 
-1. Generate stubs with `pyright`: `pyright --createstub <imports_library>`
+# Instruction
 
-2. Minimize stubs with `./scripts/tools/stubs_cleanup.sh`
+To manually edit and fix a given library stubs, the workflows for creating a new
+patch file are as follow:
+- Run `pyright --createstubs <library>`.
+- Run `./scripts/tools/clean_stubs.sh`.
+- Commit the stubs with `--signoff` with msg: "chore(typings): add <library> stubs.". Don't push this to remotes.
+- After commit, `git format-patch -k --stdout HEAD~1 > typings/stubs-<library>.patch`
+- Add `typings/<library>` to `$GIT_ROOT/.gitignore`
+- `git reset --soft HEAD~1`
+- `git reset --hard HEAD~1`
+- `git add` and then check-in `.gitignore` and `stubs-<library>.patch`.
 
-3. Commit the typings repo, with `git add -f typings/<imports_library>`
-
-4. Edit changes and get a diff files:
-```bash
-git diff HEAD upstream/main > <imports_library>.diff
-```
-
-5. Commit the diff files
-
-Done.
+To apply a patch file:
+- `git apply --stat typings/stubs-<library>.patch`
+- `git apply --check typings/stubs-<library>.patch`
+- `git am --signoff < typings/stubs-<library>.patch`

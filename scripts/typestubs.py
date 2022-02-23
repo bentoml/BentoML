@@ -34,12 +34,12 @@ flags.DEFINE_string(
 )
 
 
-def call_cmd(cmd: str, shell: bool = True, check: bool = True) -> None:
+def call_cmd(cmd: str, shell: bool = True, check: bool = False) -> None:
     subprocess.run(cmd, shell=shell, check=check)
 
 
 def commit_msg(msg: str) -> t.List[str]:
-    args = ["-sam", f'"{msg}"']
+    args = ["-sm", f'"{msg}"']
     if FLAGS.gpgsign:
         args = ["-S"] + args
     return args
@@ -47,7 +47,9 @@ def commit_msg(msg: str) -> t.List[str]:
 
 def action_create(library: str) -> None:
     G.pull("--rebase", "origin", FLAGS.branch)
-    branch = f"feat/{library}_stubs"
+    branch = f"feat/__{library}_stubs__"
+    if branch in G.branch("--all").split():
+        G.branch("-D", branch)
     G.checkout("-b", branch)
     # create stubs with pyright
     call_cmd(f"pyright --createstub {library}")
@@ -56,6 +58,7 @@ def action_create(library: str) -> None:
         f". {Path(SCRIPT_DIR, 'tools', 'clean_stubs.sh').resolve()} {Path(GIT_ROOT, TYPINGS, library).resolve()}"
     )
     # commit this change with signoff
+    G.add(".")
     G.commit(*commit_msg(f"chore({TYPINGS}): add {library} stubs."))
 
     # format-patch
@@ -63,7 +66,10 @@ def action_create(library: str) -> None:
         "w", encoding="utf-8"
     ) as stubs_file:
         stubs_file.write(G.format_patch("-k", "--stdout", "HEAD~1"))  # type: ignore
-    call_cmd(f"\\rm -rf {Path(GIT_ROOT, TYPINGS, library).resolve()}")
+    call_cmd(f"rm -rf {Path(GIT_ROOT, TYPINGS, library).resolve()}")
+    with Path(GIT_ROOT, ".gitignore").open("a+") as ignore_file:
+        ignore_file.write(f"# added via scripts/typestubs.py DO NOT EDIT THE LINE BELOW #\ntypings/{library}\n")
+    G.add(".")
     G.commit(
         *commit_msg(f"refactor({TYPINGS}): add stubs-{library}.patch.")
     )
@@ -71,8 +77,6 @@ def action_create(library: str) -> None:
     # rebase non-interactively
     # git reset --soft HEAD~2 then commit
     G.reset("--soft", "HEAD~2")
-    with Path(GIT_ROOT, ".gitignore").open("w", encoding='utf-8') as ignore:
-        ignore.write(f"# added via scripts/typestubs.py DO NOT EDIT #\ntypings/{library}\n")
     G.commit(*commit_msg(f"feat({TYPINGS}): add stubs-{library}.patch"))
     G.push("origin", branch)
 

@@ -345,6 +345,7 @@ def save(
 
 class _KerasRunner(_TensorflowRunner):
     def _setup(self) -> None:
+        super()._setup()
         self._session = get_session()
         self._session.config = self._config_proto
         self._model = load(self._tag, model_store=self._model_store)

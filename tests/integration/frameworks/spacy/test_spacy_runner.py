@@ -9,8 +9,6 @@ import pytest
 import bentoml
 from tests.integration.frameworks.spacy.test_spacy_impl import test_json
 
-if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
@@ -20,7 +18,6 @@ MODEL_NAME = __name__.split(".")[-1]
 
 
 def test_spacy_runner_setup_run_batch(
-    modelstore: "ModelStore",
     spacy_model: spacy.language.Language,
 ):
     tag = bentoml.spacy.save(MODEL_NAME, spacy_model)
@@ -41,7 +38,6 @@ def test_spacy_runner_setup_run_batch(
 )
 def test_spacy_runner_setup_run_batch_on_gpu(
     spacy_model: spacy.language.Language,
-    modelstore: "ModelStore",
     dev: int,
     backend: Literal["pytorch", "tensorflow"],
     resource_quota: Dict[str, str],

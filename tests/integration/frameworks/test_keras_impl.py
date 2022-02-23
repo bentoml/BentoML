@@ -13,9 +13,6 @@ from tests.utils.frameworks.tensorflow_utils import CustomLayer
 from tests.utils.frameworks.tensorflow_utils import custom_activation
 from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
 
-if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
-
 try:
     import importlib.metadata as importlib_metadata
 except ImportError:
@@ -51,10 +48,11 @@ def predict_assert_equal(model: "keras.Model") -> None:
     ],
 )
 def test_keras_save_load(
-    model: "keras.Model", kwargs: t.Dict[str, t.Any], modelstore: "ModelStore"
+    model: "keras.Model",
+    kwargs: t.Dict[str, t.Any],
 ) -> None:
     tag = bentoml.keras.save(MODEL_NAME, model, **kwargs)
-    model_info = modelstore.get(tag)
+    model_info = bentoml.models.get(tag)
     if kwargs["custom_objects"] is not None:
         assert_have_file_extension(model_info.path, ".pkl")
     if kwargs["store_as_json"]:
@@ -75,7 +73,7 @@ def test_keras_save_load(
 
 
 @pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")
-def test_keras_v2_setup_run_batch(modelstore: "ModelStore") -> None:
+def test_keras_v2_setup_run_batch() -> None:
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class)
     runner = bentoml.keras.load_runner(tag)
@@ -86,7 +84,7 @@ def test_keras_v2_setup_run_batch(modelstore: "ModelStore") -> None:
 
 
 @pytest.mark.skipif(TF2, reason="Tests for Tensorflow 1.x")
-def test_keras_v1_setup_run_batch(modelstore: "ModelStore") -> None:
+def test_keras_v1_setup_run_batch() -> None:
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class)
     runner = bentoml.keras.load_runner(tag)
@@ -95,7 +93,7 @@ def test_keras_v1_setup_run_batch(modelstore: "ModelStore") -> None:
 
 
 @pytest.mark.gpus
-def test_tensorflow_v2_setup_on_gpu(modelstore: "ModelStore") -> None:
+def test_tensorflow_v2_setup_on_gpu() -> None:
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class)
     runner = bentoml.keras.load_runner(tag)

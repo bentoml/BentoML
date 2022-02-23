@@ -17,7 +17,6 @@ from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models import Model
-    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -48,18 +47,17 @@ def pycaret_model(get_pycaret_data) -> t.Any:
 @pytest.fixture()
 def save_proc(
     pycaret_model,
-    modelstore: "ModelStore",
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
     def _(metadata) -> "Model":
         tag = bentoml.pycaret.save(TEST_MODEL_NAME, pycaret_model, metadata=metadata)
-        model = modelstore.get(tag)
+        model = bentoml.models.get(tag)
         return model
 
     return _
 
 
 @pytest.fixture()
-def wrong_module(pycaret_model, modelstore: "ModelStore"):
+def wrong_module(pycaret_model):
     with bentoml.models.create(
         "wrong_module",
         module=__name__,
@@ -78,7 +76,7 @@ def wrong_module(pycaret_model, modelstore: "ModelStore"):
     ],
 )
 def test_pycaret_save_load(
-    get_pycaret_data, metadata, modelstore, save_proc
+    get_pycaret_data, metadata, save_proc
 ):  # noqa # pylint: disable
     _, test_data = get_pycaret_data
     _model = save_proc(metadata)
@@ -93,12 +91,12 @@ def test_pycaret_save_load(
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
-def test_pycaret_load_exc(wrong_module, exc, modelstore):
+def test_pycaret_load_exc(wrong_module, exc):
     with pytest.raises(exc):
         bentoml.pycaret.load(wrong_module)
 
 
-def test_pycaret_runner_setup_run_batch(get_pycaret_data, modelstore, save_proc):
+def test_pycaret_runner_setup_run_batch(get_pycaret_data, save_proc):
     _, test_data = get_pycaret_data
     info = save_proc(None)
 

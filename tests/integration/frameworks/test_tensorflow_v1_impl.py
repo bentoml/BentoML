@@ -12,7 +12,6 @@ import bentoml
 from tests.utils.helpers import assert_have_file_extension
 
 if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
     from bentoml._internal.external_typing import tensorflow as tf_ext
 
 MODEL_NAME = __name__.split(".")[-1]
@@ -108,10 +107,10 @@ def tf1_multi_args_model_path() -> Generator[str, None, None]:
 
 
 def test_tensorflow_v1_save_load(
-    tf1_model_path: Callable[[], Generator[str, None, None]], modelstore: "ModelStore"
+    tf1_model_path: Callable[[], Generator[str, None, None]]
 ):
     tag = bentoml.tensorflow_v1.save("tensorflow_test", tf1_model_path)
-    model_info = modelstore.get(tag)
+    model_info = bentoml.models.get(tag)
     assert_have_file_extension(model_info.path, ".pb")
     tf1_loaded = bentoml.tensorflow_v1.load("tensorflow_test")
     with tf.get_default_graph().as_default():
@@ -121,7 +120,7 @@ def test_tensorflow_v1_save_load(
 
 
 def test_tensorflow_v1_setup_run_batch(
-    tf1_model_path: Callable[[], Generator[str, None, None]], modelstore: "ModelStore"
+    tf1_model_path: Callable[[], Generator[str, None, None]],
 ):
     tag = bentoml.tensorflow_v1.save("tensorflow_test", tf1_model_path)
     runner = bentoml.tensorflow_v1.load_runner(tag)
@@ -133,7 +132,6 @@ def test_tensorflow_v1_setup_run_batch(
 
 def test_tensorflow_v1_multi_args(
     tf1_multi_args_model_path: Callable[[], Generator[str, None, None]],
-    modelstore: "ModelStore",
 ):
     tag = bentoml.tensorflow_v1.save("tensorflow_test", tf1_multi_args_model_path)
     x = tf.convert_to_tensor([[1.0, 2.0, 3.0, 4.0, 5.0]], dtype=tf.float32)
@@ -171,10 +169,10 @@ def _plus_one_model_tf1() -> "hub.Module":
         return module
 
 
-def test_import_from_tfhub(modelstore: "ModelStore"):
+def test_import_from_tfhub():
     identifier = _plus_one_model_tf1()
     tag = bentoml.tensorflow_v1.import_from_tfhub(identifier, "module_hub_tf1")
-    model = modelstore.get(tag)
+    model = bentoml.models.get(tag)
     assert model.info.context["import_from_tfhub"]
     module = bentoml.tensorflow_v1.load(tag, tags=[], load_as_hub_module=False)
     assert module._is_hub_module_v1 is True

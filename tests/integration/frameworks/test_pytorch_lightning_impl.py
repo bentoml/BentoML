@@ -42,10 +42,10 @@ def predict_df(model: pl.LightningModule, df: pd.DataFrame):
     return model(input_tensor).numpy().tolist()
 
 
-def test_pl_save_load(modelstore):
+def test_pl_save_load():
     model: "pl.LightningModule" = AdditionModel()
     tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
-    info = modelstore.get(tag)
+    info = bentoml.models.get(tag)
     assert_have_file_extension(info.path, ".pt")
 
     pl_loaded: "pl.LightningModule" = bentoml.pytorch_lightning.load(tag)
@@ -53,7 +53,7 @@ def test_pl_save_load(modelstore):
     assert predict_df(pl_loaded, test_df) == [[6, 5, 4, 3]]
 
 
-def test_pytorch_lightning_runner_setup_run_batch(modelstore):
+def test_pytorch_lightning_runner_setup_run_batch():
     model: "pl.LightningModule" = AdditionModel()
     tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
     runner = bentoml.pytorch_lightning.load_runner(tag)
@@ -67,7 +67,7 @@ def test_pytorch_lightning_runner_setup_run_batch(modelstore):
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("dev", ["cuda", "cuda:0"])
-def test_pytorch_lightning_runner_setup_on_gpu(modelstore, dev):
+def test_pytorch_lightning_runner_setup_on_gpu(dev):
     model: "pl.LightningModule" = AdditionModel()
     tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
     runner = bentoml.pytorch_lightning.load_runner(tag)
@@ -79,7 +79,7 @@ def test_pytorch_lightning_runner_setup_on_gpu(modelstore, dev):
     "bias_pair",
     [(0.0, 1.0), (-0.212, 1.1392)],
 )
-def test_pytorch_lightning_runner_with_partial_kwargs(modelstore, bias_pair):
+def test_pytorch_lightning_runner_with_partial_kwargs(bias_pair):
 
     N, D_in, H, D_out = 64, 1000, 100, 1
     x = torch.randn(N, D_in)

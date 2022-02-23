@@ -31,7 +31,7 @@ def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> No
 
 
 @pytest.fixture(scope="session", name="modelstore")
-def fixture_modelstore(tmp_path_factory: "TempPathFactory") -> "ModelStore":
+def fixture_modelstore(tmp_path_factory: "TempPathFactory"):
     # we need to get consistent cache folder, thus tmpdir is not usable here
     # NOTE: after using modelstore, also use `delete_cache_model` to remove model after
     #  load tests.

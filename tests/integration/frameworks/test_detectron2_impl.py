@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from detectron2.config import CfgNode
 
     from bentoml._internal.types import Tag
-    from bentoml._internal.models import ModelStore
 
 
 IMAGE_URL: str = "./tests/utils/_static/detectron2_sample.jpg"
@@ -68,7 +67,7 @@ def fixture_image_array() -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     return np.asarray(imageio.imread(IMAGE_URL))
 
 
-def save_procedure(metadata: t.Dict[str, t.Any], _modelstore: "ModelStore") -> "Tag":
+def save_procedure(metadata: t.Dict[str, t.Any]) -> "Tag":
     model, config = detectron_model_and_config()
     tag_info = bentoml.detectron.save(
         "test_detectron2_model",
@@ -83,10 +82,9 @@ def save_procedure(metadata: t.Dict[str, t.Any], _modelstore: "ModelStore") -> "
 def test_detectron2_save_load(
     metadata: t.Dict[str, t.Any],
     image_array: "np.ndarray[t.Any, np.dtype[t.Any]]",
-    modelstore: "ModelStore",
 ) -> None:
-    tag = save_procedure(metadata, _modelstore=modelstore)
-    _model = bentoml.models.get(tag, _model_store=modelstore)
+    tag = save_procedure(metadata)
+    _model = bentoml.models.get(tag)
 
     assert _model.info.metadata is not None
 
@@ -106,9 +104,9 @@ def test_detectron2_save_load(
 
 
 def test_detectron2_setup_run_batch(
-    image_array: "np.ndarray[t.Any, np.dtype[t.Any]]", modelstore: "ModelStore"
+    image_array: "np.ndarray[t.Any, np.dtype[t.Any]]",
 ) -> None:
-    tag = save_procedure({}, _modelstore=modelstore)
+    tag = save_procedure({})
     runner = bentoml.detectron.load_runner(tag)
     assert tag in runner.required_models
     assert runner.num_replica == 1

@@ -14,7 +14,6 @@ if t.TYPE_CHECKING:
     import lightgbm as lgb  # noqa: F81
 
     from bentoml._internal.models import Model
-    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -53,7 +52,6 @@ def lightgbm_sklearn_model() -> "lgb.LGBMClassifier":
 @pytest.fixture()
 def save_proc(
     lightgbm_model,
-    modelstore: "ModelStore",
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
     def _(metadata) -> "Model":
         tag = bentoml.lightgbm.save(
@@ -62,7 +60,7 @@ def save_proc(
             booster_params=params,
             metadata=metadata,
         )
-        model = modelstore.get(tag)
+        model = bentoml.models.get(tag)
         return model
 
     return _
@@ -71,7 +69,6 @@ def save_proc(
 @pytest.fixture()
 def save_sklearn_proc(
     lightgbm_sklearn_model,
-    modelstore: "ModelStore",
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
     def _(metadata) -> "Model":
         tag = bentoml.lightgbm.save(
@@ -79,14 +76,14 @@ def save_sklearn_proc(
             lightgbm_sklearn_model,
             metadata=metadata,
         )
-        model = modelstore.get(tag)
+        model = bentoml.models.get(tag)
         return model
 
     return _
 
 
 @pytest.fixture()
-def wrong_module(lightgbm_model, modelstore: "ModelStore"):
+def wrong_module(lightgbm_model):
     with bentoml.models.create(
         "wrong_module",
         module=__name__,
@@ -105,7 +102,7 @@ def wrong_module(lightgbm_model, modelstore: "ModelStore"):
         ({"acc": 0.876}),
     ],
 )
-def test_lightgbm_save_load(metadata, modelstore, save_proc):
+def test_lightgbm_save_load(metadata, save_proc):
     model = save_proc(metadata)
     assert model.info.metadata is not None
     assert_have_file_extension(model.path, ".txt")
@@ -119,12 +116,12 @@ def test_lightgbm_save_load(metadata, modelstore, save_proc):
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
-def test_lightgbm_load_exc(wrong_module, exc, modelstore):
+def test_lightgbm_load_exc(wrong_module, exc):
     with pytest.raises(exc):
         bentoml.lightgbm.load(wrong_module)
 
 
-def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
+def test_lightgbm_runner_setup_run_batch(save_proc):
     info = save_proc(None)
 
     runner = bentoml.lightgbm.load_runner(info.tag)
@@ -135,7 +132,7 @@ def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
     assert isinstance(runner._model, lgb.basic.Booster)
 
 
-def test_lightgbm_sklearn_save_load(modelstore, save_sklearn_proc):
+def test_lightgbm_sklearn_save_load(save_sklearn_proc):
     info = save_sklearn_proc(None)
     assert_have_file_extension(info.path, ".pkl")
 
@@ -147,7 +144,7 @@ def test_lightgbm_sklearn_save_load(modelstore, save_sklearn_proc):
     assert sklearn_loaded.predict(np.array([[0] * 10] * 10)).any() == np.array([0])
 
 
-def test_lightgbm_sklearn_runner_setup_run_batch(modelstore, save_sklearn_proc):
+def test_lightgbm_sklearn_runner_setup_run_batch(save_sklearn_proc):
     info = save_sklearn_proc(None)
     runner = bentoml.lightgbm.load_runner(info.tag, infer_api_callback="predict_proba")
 
@@ -159,7 +156,7 @@ def test_lightgbm_sklearn_runner_setup_run_batch(modelstore, save_sklearn_proc):
 
 
 @pytest.mark.gpus
-def test_lightgbm_gpu_runner(modelstore, save_proc):
+def test_lightgbm_gpu_runner(save_proc):
     booster_params = {
         "device": "gpu",
         "gpu_platform_id": 0,
@@ -169,7 +166,6 @@ def test_lightgbm_gpu_runner(modelstore, save_proc):
     runner = bentoml.lightgbm.load_runner(
         info.tag,
         booster_params=booster_params,
-        resource_quota={"gpus": 0},
     )
 
     assert runner.num_replica == 1

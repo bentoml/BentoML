@@ -16,7 +16,6 @@ from tests.utils.frameworks.sklearn_utils import test_df
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models import Model
-    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -46,9 +45,7 @@ def xgboost_model() -> "xgb.Booster":
 
 
 @pytest.fixture(scope="module")
-def save_proc(
-    modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+def save_proc() -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
     def _(booster_params, metadata) -> "Model":
         model = xgboost_model()
         tag = bentoml.xgboost.save(
@@ -57,13 +54,13 @@ def save_proc(
             booster_params=booster_params,
             metadata=metadata,
         )
-        model = modelstore.get(tag)
+        model = bentoml.models.get(tag)
         return model
 
     return _
 
 
-def wrong_module(modelstore: "ModelStore"):
+def wrong_module():
     model = xgboost_model()
     with bentoml.models.create(
         "wrong_module",
@@ -87,7 +84,7 @@ def wrong_module(modelstore: "ModelStore"):
     ],
 )
 def test_xgboost_save_load(
-    booster_params, metadata, modelstore, save_proc
+    booster_params, metadata, save_proc
 ):  # noqa # pylint: disable
     _model = save_proc(booster_params, metadata)
     assert _model.info.metadata is not None
@@ -104,13 +101,13 @@ def test_xgboost_save_load(
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
-def test_xgboost_load_exc(exc, modelstore):
-    tag = wrong_module(modelstore)
+def test_xgboost_load_exc(exc):
+    tag = wrong_module()
     with pytest.raises(exc):
         bentoml.xgboost.load(tag)
 
 
-def test_xgboost_runner_setup_run_batch(modelstore, save_proc):
+def test_xgboost_runner_setup_run_batch(save_proc):
     booster_params = dict()
     info = save_proc(booster_params, None)
     runner = bentoml.xgboost.load_runner(info.tag)
@@ -123,7 +120,7 @@ def test_xgboost_runner_setup_run_batch(modelstore, save_proc):
 
 
 @pytest.mark.gpus
-def test_xgboost_runner_setup_on_gpu(modelstore, save_proc):
+def test_xgboost_runner_setup_on_gpu(save_proc):
     booster_params = dict()
     info = save_proc(booster_params, None)
     resource_quota = dict(gpus=0, cpu=0.4)

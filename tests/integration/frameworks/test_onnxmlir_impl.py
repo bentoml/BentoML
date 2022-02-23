@@ -70,10 +70,13 @@ def fixture_compile_model(convert_to_onnx, tmpdir):
     assert "has been compiled" in stdout, "Failed to compile model"
 
 
-def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
+def test_onnxmlir_save_load(
+    compile_model,
+    tmpdir,
+):  # noqa
     model = os.path.join(tmpdir, "model.so")
     tag = bentoml.onnxmlir.save("onnx_model_tests", model)
-    _model = modelstore.get(tag)
+    _model = bentoml.models.get(tag)
     assert "compiled_path" in _model.info.options
     assert_have_file_extension(str(_model.path), ".so")
 
@@ -81,7 +84,10 @@ def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
     assert predict_df(session, test_df)[0] == np.array([[15.0]])
 
 
-def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
+def test_onnxmlir_load_runner(
+    compile_model,
+    tmpdir,
+):  # noqa
     model = os.path.join(tmpdir, "model.so")
     tag = bentoml.onnxmlir.save("onnx_model_tests", model)
     runner = bentoml.onnxmlir.load_runner(tag)

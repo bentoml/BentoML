@@ -9,7 +9,6 @@ from transformers.trainer_utils import set_seed
 import bentoml
 
 if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
     from bentoml._internal.external_typing import transformers as ext
 
 
@@ -54,7 +53,6 @@ def generate_from_text(
     ],
 )
 def test_transformers_save_load(
-    modelstore: "ModelStore",
     framework: str,
     tensors_type: str,
     kwargs: t.Dict[str, t.Any],
@@ -73,7 +71,7 @@ def test_transformers_save_load(
     assert res == result
 
 
-def test_transformers_save_load_pipeline(modelstore: "ModelStore"):
+def test_transformers_save_load_pipeline():
     from PIL import Image
 
     pipeline = transformers.pipeline("image-classification")
@@ -88,7 +86,7 @@ def test_transformers_save_load_pipeline(modelstore: "ModelStore"):
     assert res[0]["label"] == "Egyptian cat"
 
 
-def test_transformers_runner_setup_run_batch(modelstore: "ModelStore"):
+def test_transformers_runner_setup_run_batch():
     pipeline = transformers.pipeline("text-classification")
     tag = bentoml.transformers.save("text-classification-pipeline", pipeline)
     runner = bentoml.transformers.load_runner(tag, tasks="text-classification")
@@ -100,7 +98,7 @@ def test_transformers_runner_setup_run_batch(modelstore: "ModelStore"):
     assert isinstance(runner._pipeline, transformers.pipelines.Pipeline)
 
 
-def test_transformers_runner_pipelines_kwargs(modelstore: "ModelStore"):
+def test_transformers_runner_pipelines_kwargs():
     from PIL import Image
 
     pipeline = transformers.pipeline("image-classification")

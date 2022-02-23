@@ -18,7 +18,6 @@ from tests.utils.frameworks.tensorflow_utils import NativeRaggedModel
 from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
 
 if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
     from bentoml._internal.external_typing import tensorflow as tf_ext
 
 MODEL_NAME = __name__.split(".")[-1]
@@ -53,11 +52,10 @@ def test_tensorflow_v2_save_load(
     predict_fn: Callable[
         ["tf_ext.AutoTrackable", "tf_ext.TensorLike"], "tf_ext.TensorLike"
     ],
-    modelstore: "ModelStore",
     is_ragged: bool,
 ):
     tag = bentoml.tensorflow.save(MODEL_NAME, mcls)
-    _model = modelstore.get(tag)
+    _model = bentoml.models.get(tag)
     assert_have_file_extension(_model.path, ".pb")
     model = bentoml.tensorflow.load(MODEL_NAME)
     output = predict_fn(model, tensor)
@@ -67,7 +65,7 @@ def test_tensorflow_v2_save_load(
         assert all(output.numpy() == np.array([[15.0]]))
 
 
-def test_tensorflow_v2_setup_run_batch(modelstore: "ModelStore"):
+def test_tensorflow_v2_setup_run_batch():
     model_class = NativeModel()
     tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
     runner = bentoml.tensorflow.load_runner(tag)
@@ -78,7 +76,7 @@ def test_tensorflow_v2_setup_run_batch(modelstore: "ModelStore"):
 
 
 @pytest.mark.gpus
-def test_tensorflow_v2_setup_on_gpu(modelstore: "ModelStore"):
+def test_tensorflow_v2_setup_on_gpu():
     model_class = NativeModel()
     tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
     runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0))
@@ -87,7 +85,7 @@ def test_tensorflow_v2_setup_on_gpu(modelstore: "ModelStore"):
     assert runner.run_batch(native_tensor) == np.array([[15.0]])
 
 
-def test_tensorflow_v2_multi_args(modelstore: "ModelStore"):
+def test_tensorflow_v2_multi_args():
     model_class = MultiInputModel()
     tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
     runner1 = bentoml.tensorflow.load_runner(
@@ -141,7 +139,6 @@ def _plus_one_model_tf1():
     ],
 )
 def test_import_from_tfhub(
-    modelstore: "ModelStore",
     identifier: Union[Callable[[], Union["hub.Module", "hub.KerasLayer"]], str],
     name: Optional[str],
     tags: Optional[List[Any]],
@@ -152,7 +149,7 @@ def test_import_from_tfhub(
         import tensorflow_text as text  # noqa # pylint: disable
 
     tag = bentoml.tensorflow.import_from_tfhub(identifier, name)
-    model = modelstore.get(tag)
+    model = bentoml.models.get(tag)
     assert model.info.context["import_from_tfhub"]
     module = bentoml.tensorflow.load(tag, tags=tags, load_as_hub_module=wrapped)
     assert module._is_hub_module_v1 == is_module_v1  # pylint: disable

@@ -390,7 +390,7 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (:code:`str`, `optional`, default to :code:`predict`):
             Inference function to be used.
-        predict_kwargs (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
+        partial_kwargs (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary of `predict()` kwargs that can be shared across different model.
         device_id (:code:`str`, `optional`, default to the first CPU):
             Optional devices to put the given model on. Refers to `Logical Devices <https://www.tensorflow.org/api_docs/python/tf/config/list_logical_devices>`_ from TF documentation.

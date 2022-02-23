@@ -86,19 +86,6 @@ def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
     return [k for i in lst for k in _yield_providers(i)]
 
 
-def _get_model_info(
-    tag: t.Union[str, Tag],
-    model_store: "ModelStore",
-) -> t.Tuple["Model", str]:
-    model = model_store.get(tag)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
-        )
-    model_file = model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}")
-    return model, model_file
-
-
 @inject
 def load(
     tag: t.Union[str, Tag],
@@ -136,7 +123,12 @@ def load(
         model = bentoml.onnx.load(tag)
 
     """  # noqa
-    _, model_file = _get_model_info(tag, model_store)
+    model = model_store.get(tag)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    model_file = model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}")
 
     if backend not in SUPPORTED_ONNX_BACKEND:
         raise BentoMLException(

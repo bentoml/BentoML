@@ -15,9 +15,7 @@ class MyCoolModel:
     def predict(self, some_integer: int):
         return some_integer ** 2
 
-
-class MyCoolBatchModel:
-    def predict(self, some_integer: t.List[int]):
+    def batch_predict(self, some_integer: t.List[int]):
         return list(map(lambda x: x ** 2, some_integer))
 
 
@@ -75,7 +73,11 @@ def test_pickle_runner_setup_run_method() -> None:
 
 def test_pickle_runner_setup_run_batch() -> None:
     tag = save_procedure({})
-    runner = bentoml.picklable_model.load_runner(tag, method_name="predict", batch=True)
+    runner = bentoml.picklable_model.load_runner(
+        tag,
+        method_name="batch_predict",
+        batch=True,
+    )
 
     assert tag in runner.required_models
     assert runner.run_batch([3, 9]) == [9, 81]

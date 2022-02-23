@@ -39,7 +39,7 @@ def call_cmd(cmd: str, shell: bool = True, check: bool = True) -> None:
 
 
 def commit_msg(msg: str) -> t.List[str]:
-    args = ["-sm", msg]
+    args = ["-sam", f'"{msg}"']
     if FLAGS.gpgsign:
         args = ["-S"] + args
     return args
@@ -63,15 +63,17 @@ def action_create(library: str) -> None:
         "w", encoding="utf-8"
     ) as stubs_file:
         stubs_file.write(G.format_patch("-k", "--stdout", "HEAD~1"))  # type: ignore
-    stubs_file.close()
+    call_cmd(f"\\rm -rf {Path(GIT_ROOT, TYPINGS, library).resolve()}")
     G.commit(
-        *commit_msg(f"refactor({TYPINGS}): add {library}.patch for stubs changes.")
+        *commit_msg(f"refactor({TYPINGS}): add stubs-{library}.patch.")
     )
 
     # rebase non-interactively
     # git reset --soft HEAD~2 then commit
     G.reset("--soft", "HEAD~2")
-    G.commit(*commit_msg(f"feat({TYPINGS}): add {library}.patch"))
+    with Path(GIT_ROOT, ".gitignore").open("w", encoding='utf-8') as ignore:
+        ignore.write(f"# added via scripts/typestubs.py DO NOT EDIT #\ntypings/{library}\n")
+    G.commit(*commit_msg(f"feat({TYPINGS}): add stubs-{library}.patch"))
     G.push("origin", branch)
 
 

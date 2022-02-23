@@ -15,6 +15,7 @@ patch file are as follow:
 - After commit, `git format-patch -k --stdout HEAD~1 > typings/stubs-<library>.patch`
 - Commit this changes with message: "refactor(typings): add <library> patch."
 - Rebase with `git rebase -i -S --signoff HEAD~2`, squash into 1, only keep the second commit message.
+- Add `typings/<library>` to `$GIT_ROOT/.gitignore`
 - `git push` to check in the patch file.
 
 To apply a patch file:

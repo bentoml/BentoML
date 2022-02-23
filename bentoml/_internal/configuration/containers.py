@@ -76,7 +76,16 @@ SCHEMA = Schema(
             },
             "ngrok": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},
-            "logging": {"level": str},
+            "logging": {
+                # TODO add logging level configuration
+                "access": {
+                    "enabled": bool,
+                    "request_content_length": Or(bool, None),
+                    "request_content_type": Or(bool, None),
+                    "response_content_length": Or(bool, None),
+                    "response_content_type": Or(bool, None),
+                },
+            },
             "cors": {
                 "enabled": bool,
                 "access_control_allow_origin": Or(str, None),
@@ -87,15 +96,17 @@ SCHEMA = Schema(
                 "access_control_expose_headers": Or([str], str, None),
             },
         },
-        "logging": {
-            "level": And(
-                str,
-                _is_upper,
-                error="logging.level must be all upper case letters",
-            ),
-            "console": {"enabled": bool},
-            "file": {"enabled": bool, "directory": Or(str, None)},
-            "advanced": {"enabled": bool, "config": Or(dict, None)},
+        "runners": {
+            "logging": {
+                # TODO add logging level configuration
+                "access": {
+                    "enabled": bool,
+                    "request_content_length": Or(bool, None),
+                    "request_content_type": Or(bool, None),
+                    "response_content_length": Or(bool, None),
+                    "response_content_type": Or(bool, None),
+                },
+            },
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
@@ -217,16 +228,6 @@ class BentoMLContainerClass:
 
         return ModelStore(base_dir)
 
-    logging_file_directory = providers.Factory[str](
-        lambda default, customized: customized if customized is not None else default,
-        providers.Factory[str](
-            os.path.join,
-            bentoml_home,
-            "logs",
-        ),
-        config.logging.file.directory,
-    )
-
 
 BentoMLContainer = BentoMLContainerClass()
 
@@ -237,6 +238,7 @@ class DeploymentContainerClass:
     bentoml_container = BentoMLContainer
     config = bentoml_container.config
     api_server_config = config.bento_server
+    runners_config = config.runners
 
     @providers.SingletonFactory
     @staticmethod

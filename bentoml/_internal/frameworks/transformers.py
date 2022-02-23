@@ -144,11 +144,22 @@ def load(
             Load the model weights from a Flax checkpoint save file
         return_config (:code:`bool`, `optional`, default to :code:`False`):
             Whether or not to return configuration of the Transformers model.
+        config_kwargs (:code:`Dict[str, Any]`, `optional`):
+            Kwargs to pass into :code:`Config` object.
+        model_kwargs (:code:`Dict[str, Any]`, `optional`):
+            Kwargs to pass into :code:`Model` object.
+        tokenizer_kwargs (:code:`Dict[str, Any]`, `optional`):
+            Kwargs to pass into :code:`Tokenizer` object.
+        feature_extractor_kwargs (:code:`Dict[str, Any]`, `optional`):
+            Kwargs to pass into :code:`FeatureExtractor` object.
         kwargs (:code:`Dict[str, Any]`, `optional`):
-            kwargs that can be parsed to transformers.
+            Other kwargs that can be parsed to transformers that is neither configs, model, tokenizer, and feature extractor.
 
-    .. warning::
-        :code:`kwargs` currenlty only accepts :code:`Config`, :code:`Model`, and :code:`Pipeline` kwargs. Tokenizer/FeatureExtractor kwargs is currently not yet SUPPORTED.
+        .. warnings::
+            Make sure to add the corresponding kwargs for your Transformers :code:`Model`, :code:`Tokenizer`, :code:`Config`, :code:`FeatureExtractor` to the correct kwargs dict.
+
+        .. warnings::
+            Currently :code:`kwargs` accepts all kwargs for corresponding Pipeline.
 
     Returns:
         :obj:`Union[Pipeline, Tuple[Optional[PretrainedConfig], Union[PreTrainedModel, TFPreTrainedModel, FlaxPreTrainedModel], Optional[Union[PreTrainedTokenizer, PreTrainedTokenizerFast, PreTrainedFeatureExtractor]]]]`: either returning a
@@ -166,7 +177,7 @@ def load(
     .. code-block:: python
 
         import bentoml
-        config, model, tokenizer = bentoml.transformers.load('custom_gpt2', return_config=True)
+        config, model, tokenizer = bentoml.transformers.load('custom_gpt2', return_config=True, tokenizer_kwargs={"use_fast":True})
 
     If the pipeline is saved with :code:`bentoml.transformers.save()`, then :code:`load()` will return pipeline objects:
 
@@ -186,13 +197,12 @@ def load(
         _tasks = model.info.context["task"]
         return transformers.pipeline(_tasks, model.path, **kwargs)
     else:
-        configs: t.Tuple[
-            "ext.PretrainedConfig", t.Dict[str, t.Any]
-        ] = AutoConfig.from_pretrained(
-            model.path, return_unused_kwargs=True, **kwargs
-        )  # type: ignore[reportUnknownMemberType]
-        config, unused_kwargs = configs
-        use_fast = unused_kwargs.pop("use_fast", True)  # type: bool
+        config_kwargs = kwargs.pop("config_kwargs", {})
+        config: "ext.PretrainedConfig" = AutoConfig.from_pretrained(
+            model.path, **config_kwargs
+        )
+
+        model_kwargs = kwargs.pop("model_kwargs", {})
 
         _model, _tokenizer = (
             model.info.options["model"],
@@ -203,24 +213,26 @@ def load(
         if _tokenizer is False:
             tokenizer: t.Optional["ext.TransformersTokenizerType"] = None
         else:
+            tokenizer_kwargs = kwargs.pop("tokenizer_kwargs", {})
             tokenizer = getattr(
                 import_module("transformers"), _tokenizer
             ).from_pretrained(
-                model.path, from_tf=from_tf, from_flax=from_flax, use_fast=use_fast
+                model.path, from_tf=from_tf, from_flax=from_flax, **tokenizer_kwargs
             )
         if _feature_extractor is False:
             feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None
         else:
+            feature_extractor_kwargs = kwargs.pop("feature_extractor_kwargs ", {})
             feature_extractor = getattr(
                 import_module("transformers"), _feature_extractor
-            ).from_pretrained(model.path)
+            ).from_pretrained(model.path, **feature_extractor_kwargs)
 
         tfe = tokenizer if tokenizer is not None else feature_extractor
 
         tmodel: "ext.TransformersModelType" = getattr(import_module("transformers"), _model).from_pretrained(  # type: ignore[reportUnknownMemberType]
             model.path,
             config=config,
-            **unused_kwargs,
+            **model_kwargs,
         )
 
         if return_config:
@@ -439,6 +451,7 @@ class _TransformersRunner(Runner):
             revision=self._revision,
             use_fast=self._use_fast,
             use_auth_token=self._use_auth_token,
+            **self._kwargs,
         )
 
         if meta.info.context["pipeline"]:

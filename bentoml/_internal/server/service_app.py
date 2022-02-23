@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ..trace import ServiceContext
+from ..context import trace_context
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -244,12 +244,11 @@ class ServiceAppFactory(BaseAppFactory):
 
         def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
-                span_id: int = span.context.span_id
-                ServiceContext.request_id_var.set(span_id)
+                trace_context.request_id = span.context.span_id  # type: ignore
 
         def client_response_hook(span: "Span", _message: t.Any) -> None:
             if span is not None:
-                ServiceContext.request_id_var.set(None)
+                del trace_context.request_id
 
         middlewares.append(
             Middleware(
@@ -293,10 +292,8 @@ class ServiceAppFactory(BaseAppFactory):
 
     def __call__(self) -> "Starlette":
         app = super().__call__()
-
         for mount_app, path, name in self.bento_service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)
-
         return app
 
     @staticmethod

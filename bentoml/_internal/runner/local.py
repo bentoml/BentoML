@@ -12,9 +12,23 @@ class LocalRunner(RunnerImpl):
     def setup(self) -> None:
         if self._state != RunnerState.INIT:
             return
-        self._state = RunnerState.SETTING
+        self._state = RunnerState.SETTING_UP
         self._runner._setup()  # type: ignore[reportPrivateUsage]
-        self._state = RunnerState.SET
+        self._state = RunnerState.READY
+
+    def shutdown(self) -> None:
+        if self._state in (
+            RunnerState.INIT,
+            RunnerState.SHUTIING_DOWN,
+            RunnerState.SHUTDOWN,
+        ):
+            return
+        if self._state in (RunnerState.READY, RunnerState.SETTING_UP):
+            self._state = RunnerState.SHUTIING_DOWN
+            self._runner._shutdown()  # type: ignore[reportPrivateUsage]
+            self._state = RunnerState.SHUTDOWN
+            return
+        raise RuntimeError("Runner is in unknown state")
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self.run(*args, **kwargs)
@@ -54,5 +68,4 @@ class LocalRunner(RunnerImpl):
             raise RuntimeError("shall not call run_batch on a" " simple runner")
 
     def __del__(self):
-        if self._state is not RunnerState.INIT:
-            self.shutdown()
+        self.shutdown()

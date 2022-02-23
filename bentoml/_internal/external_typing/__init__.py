@@ -1,3 +1,4 @@
+import typing as t
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -11,9 +12,13 @@ if TYPE_CHECKING:
     DataFrameOrient = Literal["split", "records", "index", "columns", "values", "table"]
     SeriesOrient = Literal["split", "records", "index", "table"]
 
-    from .numpy import NpGeneric
-    from .numpy import NpNDArray
-    from .numpy import NpDTypeLike
+    # numpy is always required by bentoml
+    from numpy import generic as NpGeneric
+    from numpy.typing import NDArray as _NDArray
+    from numpy.typing import DTypeLike as NpDTypeLike
+
+    NpNDArray = _NDArray[t.Any]
+
     from .starlette import ASGIApp
     from .starlette import ASGISend
     from .starlette import ASGIScope

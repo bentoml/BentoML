@@ -10,12 +10,12 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -129,7 +129,7 @@ def load(
     return_config: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
-) -> t.Union[
+) -> t.Union[  # type: ignore
     t.Tuple[
         "ext.PretrainedConfig",
         "ext.TransformersModelType",
@@ -139,6 +139,7 @@ def load(
         ],
     ],
     t.Tuple[
+        None,
         "ext.TransformersModelType",
         t.Union[
             t.Optional["ext.TransformersTokenizerType"],
@@ -191,7 +192,7 @@ def load(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    config, unused_kwargs = AutoConfig.from_pretrained(
+    config, unused_kwargs = AutoConfig.from_pretrained(  # type: ignore
         model.path, return_unused_kwargs=True, **kwargs
     )  # type: ignore[reportUnknownMemberType]
 
@@ -211,7 +212,7 @@ def load(
             import_module("transformers"), _feature_extractor
         ).from_pretrained(model.path)
 
-    tfe = tokenizer if tokenizer is not None else feature_extractor
+    tfe = tokenizer if tokenizer is not None else feature_extractor  # type: ignore
 
     tmodel: "ext.TransformersModelType" = getattr(import_module("transformers"), _model).from_pretrained(  # type: ignore[reportUnknownMemberType]
         model.path,
@@ -223,17 +224,17 @@ def load(
         logger.warning(PIPELINE_LOAD_WARNING)
 
     if return_config:
-        return config, tmodel, tfe
-    return tmodel, tfe
+        return config, tmodel, tfe  # type: ignore
+    return None, tmodel, tfe  # type: ignore
 
 
 @inject
 def save(
     name: str,
-    obj: t.Union["ext.TransformersModelType", "ext.TransformersPipeline"],
+    obj: t.Union["ext.TransformersModelType", "ext.TransformersPipeline"],  # type: ignore
     *,
-    tokenizer: t.Optional["ext.TransformersTokenizerType"] = None,
-    feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None,
+    tokenizer: t.Optional["ext.TransformersTokenizerType"] = None,  # type: ignore
+    feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None,  # type: ignore
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -317,9 +318,9 @@ def save(
             )
         obj.save_pretrained(_model.path)
         _model.info.context["pipeline"] = True
-        _model.info.options["model"] = getattr(obj, "model").__class__.__name__
-        _tokenizer, _fe = getattr(obj, "tokenizer"), getattr(obj, "feature_extractor")
-        if getattr(obj, "feature_extractor") is not None:
+        _model.info.options["model"] = getattr(obj, "model").__class__.__name__  # type: ignore
+        _tokenizer, _fe = getattr(obj, "tokenizer"), getattr(obj, "feature_extractor")  # type: ignore
+        if getattr(obj, "feature_extractor") is not None:  # type: ignore
             _model.info.options["feature_extractor"] = _fe.__class__.__name__
         elif check_tokenizer_type(_tokenizer):
             _model.info.options["tokenizer"] = _tokenizer.__class__.__name__
@@ -361,33 +362,26 @@ def save(
 # TODO: import_from_huggingface_hub
 
 
-class _TransformersRunner(Runner):
-    @inject
+class _TransformersRunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         tasks: str,
         *,
         framework: str,
         device: int,
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
         **pipeline_kwargs: t.Any,
     ):
-        in_store_tag = model_store.get(tag).tag
-        self._tag = in_store_tag
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(tag=tag, name=name)
 
         try:
-            transformers.pipelines.check_task(tasks)
+            transformers.pipelines.check_task(tasks)  # type: ignore
         except KeyError as e:
             raise BentoMLException(
                 f"{e}, as `{tasks}` is not recognized by transformers."
             )
         self._tasks = tasks
-        self._model_store = model_store
         self._framework = framework
         self._device = device
         self._pipeline_kwargs = pipeline_kwargs
@@ -406,29 +400,22 @@ class _TransformersRunner(Runner):
 
         # tokenizer-related
         self._has_tokenizer = (
-            model_store.get(tag).info.options["feature_extractor"] is False
+            self._model_info.info.options["feature_extractor"] is False
         )
         self._tokenizer = None
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
 
     @property
     def num_replica(self) -> int:
         # TODO: supports multiple GPUS
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
         try:
-            _ = self._model_store.get(self._tag)
-            self._config, self._model, _tfe = load(
+            self._config, self._model, _tfe = load(  # type: ignore
                 self._tag,
                 from_flax=False,
                 from_tf="tf" in self._framework,
                 return_config=True,
-                model_store=self._model_store,
             )
             if not self._has_tokenizer:
                 self._feature_extractor = _tfe
@@ -437,11 +424,11 @@ class _TransformersRunner(Runner):
         except FileNotFoundError:
             self._config, self._model, self._tokenizer = None, None, None
         if self._tokenizer is None:
-            self._pipeline: "ext.TransformersPipeline" = transformers.pipeline(
+            self._pipeline: "ext.TransformersPipeline" = transformers.pipeline(  # type: ignore
                 self._tasks
             )
         else:
-            self._pipeline = transformers.pipeline(
+            self._pipeline = transformers.pipeline(  # type: ignore
                 self._tasks,
                 config=self._config,
                 model=self._model,
@@ -456,9 +443,9 @@ class _TransformersRunner(Runner):
                 **self._kwargs,
             )
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]  # noqa
-        self, input_data: t.Union[t.Any, t.List[t.Any]]
+    def _run_batch(  # type: ignore
+        self,
+        input_data: t.Union[t.Any, t.List[t.Any]],
     ) -> t.Union[t.Any, t.List[t.Any]]:
         res: t.Any = self._pipeline(input_data)
         return res
@@ -471,9 +458,6 @@ def load_runner(
     framework: str = "pt",
     device: int = -1,
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **pipeline_kwargs: t.Any,
 ) -> "_TransformersRunner":
     """
@@ -496,12 +480,6 @@ def load_runner(
             Given frameworks supported by transformers: PyTorch, Tensorflow
         device (`int`, `optional`, default to :code:`-1`):
             Default GPU devices to be used by runner.
-        resource_quota (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
         **pipeline_kwargs(`Any`):
             Refers to `Pipeline Docs <https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline>`_ for more information
             on :obj:`kwargs` that is applicable for your specific pipeline.
@@ -518,17 +496,11 @@ def load_runner(
         runner = bentoml.transformers.load_runner("gpt2:latest", tasks='zero-shot-classification', framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
     """
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
     return _TransformersRunner(
         tag=tag,
         tasks=tasks,
         framework=framework,
         device=device,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-        model_store=model_store,
         **pipeline_kwargs,
     )

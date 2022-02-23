@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import enum
 import typing as t
 from abc import ABC
@@ -8,13 +9,13 @@ from typing import TYPE_CHECKING
 
 import attr
 import psutil
-from simple_di.providers import SingletonFactory
 
 from .utils import cpu_converter
 from .utils import gpu_converter
 from .utils import mem_converter
 from .utils import query_cgroup_cpu_count
 from ..types import Tag
+from ..utils import cached_property
 from ..configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:
@@ -27,34 +28,38 @@ if TYPE_CHECKING:
     else:
         from psutil._pswindows import svmem
 
+if sys.version_info >= (3, 8):
+    from typing import final
+else:
+    final = lambda x: x
+
+
+def _get_default_cpu() -> float:
+    # Default to the total CPU count available in current node or cgroup
+    if psutil.POSIX:
+        return query_cgroup_cpu_count()
+    else:
+        cpu_count = os.cpu_count()
+        if cpu_count is not None:
+            return float(cpu_count)
+        raise ValueError("CPU count is NoneType")
+
+
+def _get_default_mem() -> int:
+    # Default to the total memory available
+    from psutil import virtual_memory
+
+    mem: "svmem" = virtual_memory()
+    return mem.total
+
 
 @attr.define
 class ResourceQuota:
-    cpu: float = attr.field(converter=cpu_converter)
-    mem: int = attr.field(converter=mem_converter)
-
+    cpu: float = attr.field(converter=cpu_converter, factory=_get_default_cpu)
+    mem: int = attr.field(converter=mem_converter, factory=_get_default_mem)
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
     gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
-
-    @cpu.default  # type: ignore
-    def _get_default_cpu(self) -> float:
-        # Default to the total CPU count available in current node or cgroup
-        if psutil.POSIX:
-            return query_cgroup_cpu_count()
-        else:
-            cpu_count = os.cpu_count()
-            if cpu_count is not None:
-                return float(cpu_count)
-            raise ValueError("CPU count is NoneType")
-
-    @mem.default  # type: ignore
-    def _get_default_mem(self) -> int:
-        # Default to the total memory available
-        from psutil import virtual_memory
-
-        mem: "svmem" = virtual_memory()
-        return mem.total
 
     @property
     def on_gpu(self) -> bool:
@@ -91,25 +96,27 @@ VARNAME_RE = re.compile(r"\W|^(?=\d)")
 
 
 class BaseRunner:
-    EXIST_NAMES: t.Set[str] = set()
+    """
+    This class should not be implemented directly. Instead, implement the SimpleRunner or Runner.
+    """
 
-    def __init__(
-        self,
-        name: t.Union[str, Tag],
-        resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-        batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    ):
-        # probe an unique name
-        if isinstance(name, Tag):
-            name = name.name
-        if not name.isidentifier():
-            name = VARNAME_RE.sub("_", name)
-        self.name = name
-        self.resource_quota = ResourceQuota(
-            **(resource_quota if resource_quota else {})
-        )
-        self.batch_options = BatchOptions(**(batch_options if batch_options else {}))
-        self._impl_provider = SingletonFactory(create_runner_impl, self)
+    def __init__(self, name: t.Optional[str]) -> None:
+        self._name = name
+
+    @property
+    def default_name(self) -> str:
+        """
+        Return the default name of the runner. Will be used if no name is provided.
+        """
+        return type(self).__name__
+
+    @abstractmethod
+    def _setup(self) -> None:
+        ...
+
+    def _shutdown(self) -> None:
+        # still a hidden SDK API
+        pass
 
     @property
     def num_replica(self) -> int:
@@ -119,23 +126,45 @@ class BaseRunner:
     def required_models(self) -> t.List[Tag]:
         return []
 
-    @abstractmethod
-    def _setup(self) -> None:
-        ...
+    @cached_property
+    @final
+    def name(self) -> str:
+        if self._name is None:
+            name = self.default_name
+        else:
+            name = self._name
+        if not name.isidentifier():
+            return VARNAME_RE.sub("_", name)
+        return name
 
-    @property
+    @cached_property
+    @final
+    def resource_quota(self) -> ResourceQuota:
+        return ResourceQuota()
+
+    @cached_property
+    @final
+    def batch_options(self) -> BatchOptions:
+        return BatchOptions()
+
+    @final
+    @cached_property
     def _impl(self) -> "RunnerImpl":
-        return self._impl_provider.get()
+        return create_runner_impl(self)
 
+    @final
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run(*args, **kwargs)
 
+    @final
     async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl.async_run_batch(*args, **kwargs)
 
+    @final
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl.run(*args, **kwargs)
 
+    @final
     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl.run_batch(*args, **kwargs)
 
@@ -206,8 +235,10 @@ class SimpleRunner(BaseRunner, ABC):
 
 class RunnerState(enum.IntEnum):
     INIT = 0
-    SETTING = 1
-    SET = 2
+    SETTING_UP = 1
+    READY = 2
+    SHUTIING_DOWN = 3
+    SHUTDOWN = 4
 
 
 class RunnerImpl:

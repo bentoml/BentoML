@@ -1,11 +1,9 @@
 import os
-import sys
 import typing as t
 import logging
 import importlib
 from typing import TYPE_CHECKING
 from pathlib import Path
-from functools import partial
 from distutils.dir_util import copy_tree
 
 import yaml
@@ -14,7 +12,6 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -23,6 +20,7 @@ from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ..bento.pip_pkg import split_requirement
 from ..bento.pip_pkg import packages_distributions
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -31,11 +29,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from spacy.tokens.doc import Doc
 
     from ..models import ModelStore
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:  # pragma: no cover
-    from typing_extensions import Literal
 
 try:
     import spacy
@@ -50,10 +43,6 @@ except ImportError:  # pragma: no cover
 MODULE_NAME = "bentoml.spacy"
 
 
-util = LazyLoader("util", globals(), "spacy.util")
-thinc_util = LazyLoader("thinc_util", globals(), "thinc.util")
-thinc_backends = LazyLoader("thinc_backends", globals(), "thinc.backends")
-
 torch = LazyLoader("torch", globals(), "torch")
 tensorflow = LazyLoader("tensorflow", globals(), "tensorflow")
 
@@ -65,7 +54,7 @@ Refers to {link} for more information.
 We also detected that you choose to run on GPUs, thus in order to utilize
  BentoML Runners features with GPUs you should also install `{package}` with
  CUDA support.
-"""  # noqa
+"""
 
 PROJECTS_CMD_NOT_SUPPORTED = [
     "assets",
@@ -106,9 +95,9 @@ def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     vocab: t.Union["Vocab", bool] = True,  # type: ignore[reportUnknownParameterType]
-    disable: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
-    exclude: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
-    config: t.Union[t.Dict[str, t.Any], "Config"] = util.SimpleFrozenDict(),  # noqa
+    disable: t.Sequence[str] = tuple(),
+    exclude: t.Sequence[str] = tuple(),
+    config: t.Union[t.Dict[str, t.Any], "Config", None] = None,
 ) -> "spacy.language.Language":
     """
     Load a model from BentoML local modelstore with given name.
@@ -120,9 +109,9 @@ def load(
             BentoML modelstore, provided by DI Container.
         vocab (:code:`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
             Optional vocab to pass in on initialization. If True, a new Vocab object will be created.
-        disable (`Iterable[str]`, `optional`):
+        disable (`Sequence[str]`, `optional`):
             Names of pipeline components to disable.
-        exclude (`Iterable[str]`, `optional`):
+        exclude (`Sequence[str]`, `optional`):
             Names of pipeline components to exclude. Excluded
             components won't be loaded.
         config (:code:`Union[Dict[str, Any], spacy.Config]`, `optional`):
@@ -185,8 +174,14 @@ def load(
                 )
     except KeyError:
         pass
-    return util.load_model(
-        model.path, vocab=vocab, disable=disable, exclude=exclude, config=config
+    import spacy.util
+
+    return spacy.util.load_model(
+        model.path,
+        vocab=vocab,
+        disable=disable,
+        exclude=exclude,
+        config=config if config else {},
     )
 
 
@@ -313,7 +308,7 @@ def projects(
         }
         pull_tag = bentoml.spacy.projects("test_pull", "pull", remotes_config=project_yml)
         project_path = bentoml.spacy.load_project(pull_tag)
-    """  # noqa
+    """
     # EXPERIMENTAL: note that these functions are direct modified implementation
     # from spacy internal API. Subject to change, use with care!
     from spacy.cli.project.pull import project_pull
@@ -384,60 +379,51 @@ def projects(
         with Path(output_path, "project.yml").open("w") as inf:
             yaml.dump(remotes_config, inf)
         for remote in remotes_config.get("remotes", {}):
-            pull: "partial[t.Generator[t.Tuple[str, str], None, None]]" = partial(
-                project_pull, remote=remote, verbose=verbose
-            )
-            for url, res_path in pull(Path(output_path)):
+            for url, res_path in project_pull(  # type: ignore
+                Path(output_path),
+                remote=remote,
+                verbose=verbose,
+            ):
                 if url is not None:  # pragma: no cover
                     logger.info(f"Pulled {res_path} from {repo_or_store}")
     _model.save(model_store)
     return _model.tag
 
 
-class _SpacyRunner(Runner):
+class _SpacyRunner(BaseModelRunner):
     @inject
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         gpu_device_id: t.Optional[int],
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        vocab: t.Union["Vocab", bool],  # type: ignore[reportUnknownParameterType]
-        disable: t.Iterable[str],
-        exclude: t.Iterable[str],
-        config: t.Union[t.Dict[str, t.Any], "Config"],
-        as_tuples: t.Union[Literal[True], Literal[False]],
+        vocab: t.Union["Vocab", bool],
+        disable: t.Sequence[str],
+        exclude: t.Sequence[str],
+        config: t.Union[t.Dict[str, t.Any], "Config", None],
+        as_tuples: bool,
         batch_size: t.Optional[int],
         component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]],
-        backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = "pytorch",
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        backend_options: t.Optional[str] = "pytorch",
+        name: t.Optional[str] = None,
     ):
-        in_store_tag = model_store.get(tag).tag
-        super().__init__(name, resource_quota, batch_options)
-        self._tag = in_store_tag
+        super().__init__(tag=tag, name=name)
 
         self._vocab: t.Union["Vocab", bool] = vocab
         self._disable = disable
         self._exclude = exclude
         self._config = config
 
-        self._model_store = model_store
         self._backend_options = backend_options
         self._gpu_device_id = gpu_device_id
 
-        if self._gpu_device_id is not None:
-            if resource_quota is None:
-                resource_quota = dict(gpus=self._gpu_device_id)
-            else:
-                resource_quota["gpus"] = self._gpu_device_id
-        self._configure(backend_options)
         self._as_tuples = as_tuples
         self._batch_size = batch_size
         self._component_cfg = component_cfg
-        super().__init__(str(tag), resource_quota, batch_options)
 
     def _configure(self, backend_options: t.Optional[str]) -> None:
+        import thinc.util as thinc_util
+        import thinc.backends as thinc_backends
+
         if self._gpu_device_id is not None and thinc_util.prefer_gpu(
             self._gpu_device_id
         ):  # pragma: no cover
@@ -451,10 +437,6 @@ class _SpacyRunner(Runner):
             thinc_util.set_active_gpu(self._gpu_device_id)
         else:
             thinc_util.require_cpu()
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
 
     def _get_pytorch_gpu_count(self) -> t.Optional[int]:
         assert self._backend_options == "pytorch"
@@ -474,7 +456,7 @@ class _SpacyRunner(Runner):
     def _get_tensorflow_gpu_count(self) -> t.Optional[int]:
         assert self._backend_options == "tensorflow"
         from tensorflow.python.client import (
-            device_lib,  # type: ignore; pylint: disable=E0611
+            device_lib,  # FIXME: using private API; type: ignore
         )
 
         try:
@@ -505,25 +487,26 @@ class _SpacyRunner(Runner):
             return num_devices if num_devices is not None else 1
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
+        self._configure(self._backend_options)
         self._model = load(
             self._tag,
-            model_store=self._model_store,
             vocab=self._vocab,
             exclude=self._exclude,
             disable=self._disable,
             config=self._config,
         )
 
-    # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        input_data: t.Union[t.Iterable[t.Tuple[t.Union[str, "Doc"], t.Any]], t.Union[str, "Doc"]],  # type: ignore[reportUnknownParameterType] # noqa: LN001
-    ) -> t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]]:  # type: ignore[reportUnknownParameterType] # noqa: LN001
+        input_data: t.Union[
+            t.Sequence[t.Tuple[t.Union[str, "Doc"], t.Any]],
+            t.Union[str, "Doc"],
+        ],  # type: ignore[reportUnknownParameterType]
+    ) -> t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]]:  # type: ignore[reportUnknownParameterType]
         return self._model.pipe(  # type: ignore[reportGeneralTypeIssues]
             input_data,  # type: ignore[reportGeneralTypeIssues]
-            as_tuples=self._as_tuples,
+            as_tuples=self._as_tuples,  # type: ignore
             batch_size=self._batch_size,
             disable=self._disable,
             component_cfg=self._component_cfg,
@@ -536,18 +519,15 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     gpu_device_id: t.Optional[int] = None,
-    backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = None,
+    backend_options: t.Optional[str] = None,
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     vocab: t.Union["Vocab", bool] = True,  # type: ignore[reportUnknownParameterType]
-    disable: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
-    exclude: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
-    config: t.Union[t.Dict[str, t.Any], "Config"] = util.SimpleFrozenDict(),  # noqa
-    as_tuples: t.Union[Literal[True], Literal[False]] = False,
+    disable: t.Sequence[str] = tuple(),
+    exclude: t.Sequence[str] = tuple(),
+    config: t.Union[t.Dict[str, t.Any], "Config", None] = None,
+    as_tuples: bool = False,
     batch_size: t.Optional[int] = None,
     component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SpacyRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -559,25 +539,19 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore..
         gpu_device_id (`int`, `optional`, defaults to `None`):
             GPU device ID.
-        backend_options (`Literal['pytorch', 'tensorflow'], `optional`, defaults to `None`):
-            Backend options for Thinc. Either PyTorch or Tensorflow.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        backend_options (`str`, `optional`, defaults to `None`):
+            Backend options for Thinc. Either "pytorch" or "tensorflow".
         vocab (:code:`Union[spacy.vocab.Vocab, bool]`, `optional`, defaults to `True`):
             Optional vocab to pass in on initialization. If True, a new Vocab object will be created.
-        disable (`Iterable[str]`, `optional`):
+        disable (`Sequence[str]`, `optional`):
             Names of pipeline components to disable.
-        exclude (`Iterable[str]`, `optional`):
+        exclude (`Sequence[str]`, `optional`):
             Names of pipeline components to exclude. Excluded
             components won't be loaded.
         config (:code:`Union[Dict[str, Any], spacy.Config]`, `optional`):
             Config overrides as nested dict or dict
             keyed by section values in dot notation.
-        as_tuples (`Literal[False, True]`, `optional`, defaults to `False`):
+        as_tuples (`bool`, `optional`, defaults to `False`):
             If set to True, inputs should be a sequence of
             (text, context) tuples. Output will then be a sequence of
             (doc, context) tuples.
@@ -599,16 +573,11 @@ def load_runner(
         runner = bentoml.sklearn.load_runner("my_model:latest")
         runner.run([[1,2,3,4]])
     """
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
     return _SpacyRunner(
         tag=tag,
         gpu_device_id=gpu_device_id,
         backend_options=backend_options,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
         vocab=vocab,
         disable=disable,
         exclude=exclude,
@@ -616,5 +585,4 @@ def load_runner(
         as_tuples=as_tuples,
         batch_size=batch_size,
         component_cfg=component_cfg,
-        model_store=model_store,
     )

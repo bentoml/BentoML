@@ -3,24 +3,24 @@ import shutil
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import SAVE_NAMESPACE
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from .. import external_typing as ext
     from ..models import ModelStore
 
 try:
-    from PyRuntime import __spec__ as _spec  # pylint: disable=W0622
+    from PyRuntime import __spec__ as _spec
     from PyRuntime import ExecutionSession
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -69,14 +69,14 @@ def load(
         session = bentoml.onnxmlir.load(tag)
         session.run(data)
 
-    """  # noqa
+    """
     model = model_store.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
     compiled_path = model.path_of(model.info.options["compiled_path"])
-    return ExecutionSession(compiled_path, "run_main_graph")
+    return ExecutionSession(compiled_path, "run_main_graph")  # type: ignore
 
 
 @inject
@@ -166,7 +166,7 @@ def save(
         model_path = os.path.join(directory, "model.so")
         tag = bentoml.onnxmlir.save("compiled_model", model)
 
-    """  # noqa
+    """
     context: t.Dict[str, t.Any] = {
         "framework_name": "onnxmlir",
         "onnxmlir_version": _spec.origin,
@@ -186,47 +186,22 @@ def save(
     return _model.tag
 
 
-class _ONNXMLirRunner(Runner):
-    @inject
-    def __init__(
-        self,
-        tag: Tag,
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        in_store_tag = model_store.get(tag).tag
-        super().__init__(name, resource_quota, batch_options)
-
-        self._model_store = model_store
-        self._tag = in_store_tag
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
-
+class _ONNXMLirRunner(BaseModelRunner):
     @property
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._session = load(self._tag, self._model_store)
+    def _setup(self) -> None:
+        self._session = load(self._tag)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: np.ndarray) -> np.ndarray:  # type: ignore[override] # noqa: LN001
-        return self._session.run(input_data)
+    def _run_batch(self, input_data: "ext.NpNDArray") -> "ext.NpNDArray":  # type: ignore
+        return self._session.run(input_data)  # type: ignore
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     *,
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_ONNXMLirRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -236,12 +211,6 @@ def load_runner(
     Args:
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.xgboost` model
@@ -255,14 +224,5 @@ def load_runner(
         runner = bentoml.onnxmlir.load_runner(tag)
         res = runner.run_batch(pd_dataframe.to_numpy().astype(np.float64))
 
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
-    return _ONNXMLirRunner(
-        tag=tag,
-        name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-        model_store=model_store,
-    )
+    """
+    return _ONNXMLirRunner(tag=tag, name=name)

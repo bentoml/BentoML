@@ -7,23 +7,22 @@ from simple_di import Provide
 
 from bentoml import Tag
 from bentoml import Model
-from bentoml import Runner
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import pandas as pd
-
-    from ..models import ModelStore  # noqa
+    from .. import external_typing as ext
+    from ..models import ModelStore
 
 
 try:
-    import h2o
-    import h2o.model
+    import h2o  # type: ignore
+    import h2o.model  # type: ignore
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """h2o is required in order to use module `bentoml.h2o`, install h2o
@@ -162,53 +161,44 @@ def save(
     return _model.tag
 
 
-class _H2ORunner(Runner):
-    @inject
+class _H2ORunner(BaseModelRunner):
     def __init__(
         self,
-        tag: Tag,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
-        name: str,
-        resource_quota: t.Optional[t.Dict[str, t.Any]],
-        batch_options: t.Optional[t.Dict[str, t.Any]],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        name: t.Optional[str] = None,
     ):
-        super().__init__(name, resource_quota, batch_options)
+        super().__init__(tag, name=name)
 
-        self._tag = Tag.from_taglike(tag)
         self._predict_fn_name = predict_fn_name
         self._init_params = init_params
-        self._model_store = model_store
-
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return [self._tag]
 
     @property
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    def _setup(self) -> None:
         _init_params = self._init_params or dict()
         _init_params["nthreads"] = int(round(self.resource_quota.cpu))
-        self._model = load(
-            self._tag, init_params=_init_params, model_store=self._model_store
-        )
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        self._model = load(self._tag, init_params=_init_params)
+        self._predict_fn = getattr(self._model, self._predict_fn_name)  # type: ignore
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame", h2o.H2OFrame]
-    ) -> np.ndarray:
+    def _run_batch(  # type: ignore
+        self,
+        input_data: t.Union[
+            "ext.NpNDArray",
+            "ext.PdDataFrame",
+            h2o.H2OFrame,
+        ],
+    ) -> "ext.NpNDArray":
         if not isinstance(input_data, h2o.H2OFrame):
             input_data = h2o.H2OFrame(input_data)
         res = self._predict_fn(input_data)
 
         if isinstance(res, h2o.H2OFrame):
-            res = res.as_data_frame()
-        return np.asarray(res)
+            res = res.as_data_frame()  # type: ignore
+        return np.asarray(res)  # type: ignore
 
 
 @inject
@@ -218,9 +208,6 @@ def load_runner(
     *,
     init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
     name: t.Optional[str] = None,
-    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
-    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _H2ORunner:
     """Runner represents a unit of serving logic that can be scaled
     horizontally to maximize throughput. `bentoml.h2o.load_runner`
@@ -235,12 +222,6 @@ def load_runner(
         init_params (:code:`Dict[str, Union[str, Any]]`, default to :code:`None`):
             Parameters for h2o.init(). Refers to `H2O Python API <https://docs.h2o.ai/h2o/latest-stable/h2o-docs/starting-h2o.html#from-python>`_
             for more information
-        resource_quota (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure resources allocation for runner.
-        batch_options (:code:`Dict[str, Any]`, default to :code:`None`):
-            Dictionary to configure batch options for runner in a service context.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.h2o`
@@ -254,16 +235,10 @@ def load_runner(
         runner = bentoml.h2o.load_runner("h2o_model")
         runner.run_batch(data)
 
-    """  # noqa
-    tag = Tag.from_taglike(tag)
-    if name is None:
-        name = tag.name
+    """
     return _H2ORunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         init_params=init_params,
         name=name,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-        model_store=model_store,
     )

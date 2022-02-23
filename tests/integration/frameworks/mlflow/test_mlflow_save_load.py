@@ -36,42 +36,38 @@ def test_mlflow_save():
         bentoml.mlflow.save()
 
 
-def test_mlflow_save_load(modelstore):
+def test_mlflow_save_load():
     (model, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf")
     if not uri.exists():
         mlflow.sklearn.save_model(model, uri.resolve())
-    tag = bentoml.mlflow.import_from_uri(
-        MODEL_NAME, str(uri.resolve()), model_store=modelstore
-    )
-    model_info = modelstore.get(tag)
+    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri.resolve()))
+    model_info = bentoml.models.get(tag)
     assert_have_file_extension(os.path.join(model_info.path, "sklearn_clf"), ".pkl")
 
-    loaded = bentoml.mlflow.load(tag, model_store=modelstore)
+    loaded = bentoml.mlflow.load(tag)
     np.testing.assert_array_equal(loaded.predict(data), res_arr)  # noqa
 
 
 @pytest.fixture()
-def invalid_save_with_no_mlmodel(modelstore):
+def invalid_save_with_no_mlmodel():
     uri = Path(current_file, "sklearn_clf").resolve()
-    tag = bentoml.mlflow.import_from_uri(
-        "sklearn_clf", str(uri), model_store=modelstore
-    )
-    info = modelstore.get(tag)
+    tag = bentoml.mlflow.import_from_uri("sklearn_clf", str(uri))
+    info = bentoml.models.get(tag)
     os.remove(str(Path(info.path, "sklearn_clf", "MLmodel").resolve()))
     return tag
 
 
-def test_invalid_load(modelstore, invalid_save_with_no_mlmodel):
+def test_invalid_load(invalid_save_with_no_mlmodel):
     with pytest.raises(FileNotFoundError):
-        _ = bentoml.mlflow.load(invalid_save_with_no_mlmodel, model_store=modelstore)
+        _ = bentoml.mlflow.load(invalid_save_with_no_mlmodel)
 
 
-def test_mlflow_load_runner(modelstore):
+def test_mlflow_load_runner():
     (_, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf").resolve()
-    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
-    runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
+    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri))
+    runner = bentoml.mlflow.load_runner(tag)
     from bentoml._internal.frameworks.mlflow import _PyFuncRunner
 
     assert isinstance(runner, _PyFuncRunner)
@@ -90,6 +86,6 @@ def test_mlflow_load_runner(modelstore):
         Path(current_file, "NestedMNIST").resolve(),
     ],
 )
-def test_mlflow_invalid_import_mlproject(uri, modelstore):
+def test_mlflow_invalid_import_mlproject(uri):
     with pytest.raises(BentoMLException):
-        _ = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
+        _ = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri))

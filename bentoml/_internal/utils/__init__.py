@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 import random
 import socket
@@ -10,7 +11,11 @@ from pathlib import Path
 
 import fs
 import fs.copy
-from backports.cached_property import cached_property
+
+if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+    from functools import cached_property
+else:
+    from backports.cached_property import cached_property
 
 from ..types import PathType
 from .lazy_loader import LazyLoader
@@ -28,7 +33,6 @@ __all__ = [
     "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
-    "get_free_port",
     "catch_exceptions",
     "LazyLoader",
     "validate_or_create_dir",

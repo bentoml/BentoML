@@ -373,7 +373,7 @@ class _TransformersRunner(BaseModelRunner):
         name: t.Optional[str] = None,
         **pipeline_kwargs: t.Any,
     ):
-        super().__init__(tag=tag, name=name)
+        super().__init__(model=tag, name=name)
 
         try:
             transformers.pipelines.check_task(tasks)  # type: ignore
@@ -399,9 +399,7 @@ class _TransformersRunner(BaseModelRunner):
         self._kwargs = pipeline_kwargs
 
         # tokenizer-related
-        self._has_tokenizer = (
-            self._model_info.info.options["feature_extractor"] is False
-        )
+        self._has_tokenizer = self.model_info.info.options["feature_extractor"] is False
         self._tokenizer = None
 
     @property
@@ -412,7 +410,7 @@ class _TransformersRunner(BaseModelRunner):
     def _setup(self) -> None:
         try:
             self._config, self._model, _tfe = load(  # type: ignore
-                self._tag,
+                self.model_tag,
                 from_flax=False,
                 from_tf="tf" in self._framework,
                 return_config=True,

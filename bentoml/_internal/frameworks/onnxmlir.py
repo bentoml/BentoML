@@ -192,7 +192,7 @@ class _ONNXMLirRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._session = load(self._tag)
+        self._session = load(self.model_tag)
 
     def _run_batch(self, input_data: "ext.NpNDArray") -> "ext.NpNDArray":  # type: ignore
         return self._session.run(input_data)  # type: ignore
@@ -225,4 +225,4 @@ def load_runner(
         res = runner.run_batch(pd_dataframe.to_numpy().astype(np.float64))
 
     """
-    return _ONNXMLirRunner(tag=tag, name=name)
+    return _ONNXMLirRunner(model=tag, name=name)

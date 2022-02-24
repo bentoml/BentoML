@@ -475,7 +475,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
         config: t.Optional["paddle.inference.Config"],
         name: t.Optional[str] = None,
     ):
-        super().__init__(tag=tag, name=name)
+        super().__init__(model=tag, name=name)
 
         self._infer_api_callback = infer_api_callback
         self._config = config
@@ -493,7 +493,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
 
     def _setup_runner_config(self) -> None:
         _config = (
-            _load_paddle_bentoml_default_config(self._tag)
+            _load_paddle_bentoml_default_config(self.model_info)
             if not self._config
             else self._config
         )
@@ -530,7 +530,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
 
     def _setup(self) -> None:
         self._setup_runner_config()
-        self._model = load(self._tag, config=self._config)
+        self._model = load(self.model_tag, config=self._config)
         self._infer_func = getattr(self._model, self._infer_api_callback)
 
     def _run_batch(
@@ -540,7 +540,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
         return_argmax: bool = False,
         **kwargs: str,
     ) -> t.Any:
-        model_info = self._model_info
+        model_info = self.model_info
         if "paddlehub" in model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:

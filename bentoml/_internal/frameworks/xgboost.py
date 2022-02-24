@@ -185,7 +185,7 @@ class _XgBoostRunner(BaseModelRunner):
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         name: t.Optional[str] = None,
     ):
-        super().__init__(tag=tag, name=name)
+        super().__init__(model=tag, name=name)
 
         self._predict_fn_name = predict_fn_name
         booster_params = dict() if booster_params is None else booster_params
@@ -214,7 +214,7 @@ class _XgBoostRunner(BaseModelRunner):
 
     def _setup(self) -> None:
         self._model = load(
-            self._tag,
+            self.model_tag,
             booster_params=self._booster_params,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)

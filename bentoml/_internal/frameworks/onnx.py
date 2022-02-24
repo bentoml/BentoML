@@ -328,7 +328,7 @@ class _ONNXRunner(BaseModelRunner):
     def _setup(self) -> None:
         session_options = self._get_default_session_options(self._session_options)
         self._model = load(
-            self._tag,
+            self.model_tag,
             backend=self._backend,
             providers=self._providers,
             session_options=session_options,

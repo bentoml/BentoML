@@ -202,7 +202,7 @@ class _PyTorchRunner(BaseModelRunner):
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         name: t.Optional[str] = None,
     ):
-        super().__init__(tag=tag, name=name)
+        super().__init__(model=tag, name=name)
 
         self._predict_fn_name = predict_fn_name
         self._partial_kwargs = partial_kwargs or dict()
@@ -257,7 +257,7 @@ class _PyTorchRunner(BaseModelRunner):
             self._no_grad_context.enter_context(torch.inference_mode())
 
         self._configure()
-        model = load(self._tag, device_id=self._device_id)
+        model = load(self.model_tag, device_id=self._device_id)
         model.eval()
         if self._on_gpu:
             self._model = parallel.DataParallel(model)

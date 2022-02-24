@@ -8,6 +8,7 @@ from bentoml import Runner
 from bentoml import SimpleRunner
 
 from ...types import Tag
+from ...models.model import Model
 from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -17,27 +18,44 @@ if TYPE_CHECKING:
 class BaseModelRunner(Runner):
     def __init__(
         self,
-        tag: t.Union[str, Tag],
+        model: t.Union[str, Tag, Model],
         name: t.Optional[str] = None,
     ):
         super().__init__(name)
-        self._tag = Tag.from_taglike(tag)
+
+        if isinstance(model, (str, Tag)):
+            self._model_tag = Tag.from_taglike(model)
+
+        if isinstance(model, Model):
+            self._model_info = model
+
+    @property
+    def model_tag(self) -> Tag:
+        if self._model_tag is not None:
+            return self._model_tag
+        if self._model_info is not None:
+            return self._model_info.tag
+        assert False, "model is not set"
 
     @property
     @inject
-    def _model_info(
+    def model_info(
         self,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        return model_store.get(self._tag)
+    ) -> "Model":
+        if self._model_tag is not None:
+            return model_store.get(self.model_tag)
+        if self._model_info is not None:
+            return self._model_info
+        assert False, "model is not set"
 
     @property
     def default_name(self) -> str:
-        return self._tag.name
+        return self.model_tag.name
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._tag]
+        return [self.model_tag]
 
 
 class BaseModelSimpleRunner(SimpleRunner):

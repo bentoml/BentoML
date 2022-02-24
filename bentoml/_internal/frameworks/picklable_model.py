@@ -114,7 +114,7 @@ def save(
 
 class _PicklableModelRunner(BaseModelRunner):
     def __init__(self, tag: t.Union[Tag, str], method_name: str, name: t.Optional[str]):
-        super().__init__(tag=tag, name=name)
+        super().__init__(model=tag, name=name)
 
         self._method_name = method_name
 
@@ -126,7 +126,7 @@ class _PicklableModelRunner(BaseModelRunner):
         return max(int(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self.model_tag)
         if self._method_name == "__call__":
             self._infer_func = self._model
         else:

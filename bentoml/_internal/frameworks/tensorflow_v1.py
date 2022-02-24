@@ -430,7 +430,7 @@ class _TensorflowRunner(BaseModelRunner):
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         name: t.Optional[str] = None,
     ):
-        super().__init__(tag=tag, name=name)
+        super().__init__(model=tag, name=name)
 
         self._device_id = device_id
         self._predict_fn_name = predict_fn_name
@@ -463,7 +463,7 @@ class _TensorflowRunner(BaseModelRunner):
     def _setup(self) -> None:
         # setup a global session for model runner
         self._configure(self._device_id)
-        self._model = load(self._tag)
+        self._model = load(self.model_tag)
         raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[  # type: ignore
             "serving_default"
         ]

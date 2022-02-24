@@ -406,7 +406,7 @@ class _SpacyRunner(BaseModelRunner):
         backend_options: t.Optional[str] = "pytorch",
         name: t.Optional[str] = None,
     ):
-        super().__init__(tag=tag, name=name)
+        super().__init__(model=tag, name=name)
 
         self._vocab: t.Union["Vocab", bool] = vocab
         self._disable = disable
@@ -490,7 +490,7 @@ class _SpacyRunner(BaseModelRunner):
     def _setup(self) -> None:
         self._configure(self._backend_options)
         self._model = load(
-            self._tag,
+            self.model_tag,
             vocab=self._vocab,
             exclude=self._exclude,
             disable=self._disable,

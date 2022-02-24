@@ -181,7 +181,7 @@ class _H2ORunner(BaseModelRunner):
     def _setup(self) -> None:
         _init_params = self._init_params or dict()
         _init_params["nthreads"] = int(round(self.resource_quota.cpu))
-        self._model = load(self._tag, init_params=_init_params)
+        self._model = load(self.model_tag, init_params=_init_params)
         self._predict_fn = getattr(self._model, self._predict_fn_name)  # type: ignore
 
     def _run_batch(  # type: ignore

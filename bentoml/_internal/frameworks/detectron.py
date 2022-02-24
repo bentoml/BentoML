@@ -220,7 +220,7 @@ class _DetectronRunner(BaseModelRunner):
         return "cpu"
 
     def _setup(self) -> None:
-        self._model = load(self._tag, self._device)
+        self._model = load(self.model_tag, self._device)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(  # type: ignore

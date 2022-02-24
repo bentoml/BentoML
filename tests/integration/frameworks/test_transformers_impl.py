@@ -64,7 +64,7 @@ def test_transformers_save_load(
     model = loader.from_pretrained(model_name, **kwargs)
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, **kwargs)
     tag = bentoml.transformers.save(model_name, model, tokenizer=tokenizer)
-    lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
+    _, lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
     res = generate_from_text(
         lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
     )

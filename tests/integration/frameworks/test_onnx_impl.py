@@ -55,7 +55,7 @@ def sklearn_onnx_model():
     model_with_data = sklearn_model_data(clf=RandomForestClassifier, num_data=30)
     return (
         convert_sklearn(model_with_data.model, initial_types=init_types),
-        model_with_data.data,
+        model_with_data.data.astype(np.float32),
     )
 
 
@@ -110,9 +110,9 @@ def test_onnx_save_load(metadata, save_proc, sklearn_onnx_model):
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
-def test_get_model_info_exc(exc, wrong_module):
+def test_load_model_exc(exc, wrong_module):
     with pytest.raises(exc):
-        bentoml._internal.frameworks.onnx._get_model_info(wrong_module)
+        bentoml._internal.frameworks.onnx.load(wrong_module)
 
 
 @pytest.mark.parametrize(

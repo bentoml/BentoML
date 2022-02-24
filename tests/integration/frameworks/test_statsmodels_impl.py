@@ -103,10 +103,10 @@ def test_statsmodels_save_load(metadata, holt_model):  # noqa # pylint: disable
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
-def test_get_model_info_exc(exc, holt_model):
+def test_load_model_exc(exc, holt_model):
     tag = wrong_module(holt_model)
     with pytest.raises(exc):
-        bentoml._internal.frameworks.statsmodels._get_model_info(tag)
+        bentoml._internal.frameworks.statsmodels.load(tag)
 
 
 def test_statsmodels_runner_setup_run_batch(save_proc, holt_model):

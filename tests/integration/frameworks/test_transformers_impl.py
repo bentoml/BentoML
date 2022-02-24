@@ -64,7 +64,7 @@ def test_transformers_save_load(
     model = loader.from_pretrained(model_name, **kwargs)
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, **kwargs)
     tag = bentoml.transformers.save(model_name, model, tokenizer=tokenizer)
-    _, lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
+    lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
     res = generate_from_text(
         lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
     )
@@ -78,7 +78,7 @@ def test_transformers_save_load_pipeline():
     tag = bentoml.transformers.save("vit-image-classification", pipeline)
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
-    _, model, fe = bentoml.transformers.load(tag)
+    model, fe = bentoml.transformers.load(tag)
     loaded = transformers.pipeline(
         "image-classification", model=model, feature_extractor=fe
     )

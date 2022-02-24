@@ -356,9 +356,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         if serialization_format is SerializationFormat.JSON:
             resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
         elif serialization_format is SerializationFormat.PARQUET:
-            resp = io.BytesIO()
-            obj.to_parquet(resp)
-            resp = resp.getvalue()
+            resp = obj.to_parquet()
         elif serialization_format is SerializationFormat.CSV:
             resp = obj.to_csv()
         else:

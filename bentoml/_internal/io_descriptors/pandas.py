@@ -222,6 +222,8 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that `pd.DataFrame`.
     """
 
+    has_parquet = _HAS_PARQUET
+
     def __init__(
         self,
         orient: "ext.DataFrameOrient" = "records",
@@ -247,11 +249,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {
-            f'request.headers["content-type"] (default: {self._default_format.mime_type})': {
-                "schema": self.openapi_schema_type()
-            }
-        }
+        return {self._default_format.mime_type: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""

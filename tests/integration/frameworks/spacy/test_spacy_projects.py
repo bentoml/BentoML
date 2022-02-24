@@ -28,7 +28,11 @@ def test_spacy_projects_pull():
             "default": "https://github.com/aarnphm/bentoml-spacy-projects-integration-tests/tree/v3/pipelines/tagger_parser_ud",
         }
     }
-    tag = bentoml.spacy.projects("test_pull", "pull")
+    tag = bentoml.spacy.projects(
+        "test_pull",
+        "pull",
+        remotes_config=project_yml,
+    )
     project_path = bentoml.spacy.load_project(tag)
     assert "project.yml" in [i.name for i in Path(project_path).iterdir()]
 

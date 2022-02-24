@@ -10,6 +10,7 @@ from pathlib import Path
 
 import fs
 import fs.copy
+from backports.cached_property import cached_property
 
 from ..types import PathType
 from .lazy_loader import LazyLoader
@@ -158,30 +159,6 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
             return os.path.realpath(_path)
 
     raise FileNotFoundError(f"file {filepath} not found")
-
-
-class cached_property(t.Generic[C, T]):
-    """A property that is only computed once per instance and then replaces
-    itself with an ordinary attribute. Deleting the attribute resets the
-    property.
-    """
-
-    def __init__(self, func: t.Callable[[C], T]):
-        try:
-            functools.update_wrapper(self, func)
-        except AttributeError:
-            pass
-        self.func = func
-
-    # pylint: disable=attribute-defined-outside-init
-    def __set_name__(self, owner, name):
-        self.name = name
-
-    def __get__(self, obj: C, cls: t.Type[C]) -> T:
-        if obj is None:
-            raise AttributeError(f"'{cls}' has no member '{self.name}'")
-        value = obj.__dict__[self.name] = self.func(obj)
-        return value
 
 
 VT = t.TypeVar("VT")

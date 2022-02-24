@@ -96,8 +96,8 @@ def _clean_name(name: str) -> str:  # pragma: no cover
 
 @inject
 def _load_paddle_bentoml_default_config(
-        tag: t.Union[str, Tag],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
+    tag: t.Union[str, Tag],
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "paddle.inference.Config":
     # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
     model = model_store.get(tag)

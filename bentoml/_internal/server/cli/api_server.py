@@ -1,7 +1,7 @@
 import json
 import socket
 import typing as t
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from bentoml import load
@@ -41,7 +41,7 @@ def main(
     svc = load(bento_identifier, working_dir=working_dir)
 
     parsed = urlparse(bind)
-    uvicorn_options = {
+    uvicorn_options: dict[str, Any] = {
         "log_level": log_level,
         "backlog": backlog,
         "log_config": LOGGING_CONFIG,
@@ -49,18 +49,15 @@ def main(
     }
     app = t.cast("ASGI3Application", svc.asgi_app)
     if parsed.scheme in ("file", "unix"):
-        uvicorn.run(
-            app,
-            uds=uri_to_path(bind),
-            **uvicorn_options,
-        )
+        path = uri_to_path(bind)
+        uvicorn_options["uds"] = path
+        config = uvicorn.Config(app, **uvicorn_options)
+        uvicorn.Server(config).run()
     elif parsed.scheme == "tcp":
-        uvicorn.run(
-            app,
-            host=parsed.hostname,
-            port=parsed.port,
-            **uvicorn_options,
-        )
+        uvicorn_options["host"] = parsed.hostname
+        uvicorn_options["port"] = parsed.port
+        config = uvicorn.Config(app, **uvicorn_options)
+        uvicorn.Server(config).run()
     elif parsed.scheme == "fd":
         # when fd is provided, we will skip the uvicorn internal supervisor, thus there is only one process
         fd = int(parsed.netloc)

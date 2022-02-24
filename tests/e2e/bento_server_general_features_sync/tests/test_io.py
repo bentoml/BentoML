@@ -103,6 +103,24 @@ async def test_pandas(host):
         assert_data=b"[202]",
     )
 
+    await async_request(
+        "POST",
+        f"http://{host}/predict_dataframe",
+        headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
+        data=df.to_parquet(),
+        assert_status=200,
+        assert_data=b"[202]",
+    )
+
+    await async_request(
+        "POST",
+        f"http://{host}/predict_dataframe",
+        headers=(("Content-Type", "text/csv"), ("Origin", ORIGIN)),
+        data=df.to_csv(),
+        assert_status=200,
+        assert_data=b"[202]",
+    )
+
 
 @pytest.mark.asyncio
 async def test_file(host, bin_file):

@@ -28,13 +28,13 @@ logger = logging.getLogger(__name__)
 # Check for parquet support
 _HAS_PARQUET = True
 try:
-    import pyarrow
+    import pyarrow  # noqa: F401
 except ModuleNotFoundError:
     try:
-        import fastparquet
+        import fastparquet  # noqa: F401
     except ModuleNotFoundError:
         logger.warning(
-            f"Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
+            "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
         )
         _HAS_PARQUET = False
 
@@ -77,12 +77,11 @@ class SerializationFormat(Enum):
 
 
 def _infer_serialization_format_from_request(
-        request: Request,
-        default_format: SerializationFormat
+    request: Request, default_format: SerializationFormat
 ) -> SerializationFormat:
     """Determine the serialization format from the request's headers['content-type']"""
 
-    content_type = request.headers.get('content-type')
+    content_type = request.headers.get("content-type")
 
     if content_type == "application/json":
         return SerializationFormat.JSON
@@ -248,8 +247,11 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {f"request.headers[\"content-type\"] (default: {self._default_format.mime_type})":
-                    {"schema": self.openapi_schema_type()}}
+        return {
+            f'request.headers["content-type"] (default: {self._default_format.mime_type})': {
+                "schema": self.openapi_schema_type()
+            }
+        }
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
@@ -271,7 +273,9 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 Raised when the incoming requests are bad formatted.
         """
 
-        serialization_format = _infer_serialization_format_from_request(request, self._default_format)
+        serialization_format = _infer_serialization_format_from_request(
+            request, self._default_format
+        )
         _validate_serialization_format(serialization_format)
 
         obj = await request.body()

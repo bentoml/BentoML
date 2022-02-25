@@ -1,23 +1,22 @@
 import pickle
-import functools
 import typing as t
-import contextlib
 import logging
+import functools
+import contextlib
 from abc import ABC
 from abc import abstractmethod
 
 from simple_di import inject
 
-from ....exceptions import MissingDependencyException
-from ...utils.pkg import get_pkg_version
-from ...runner.utils import Params
-from .model_runner import BaseModelRunner
-from ...types import LazyType
 from ...types import Tag
+from ...types import LazyType
+from ...utils.pkg import get_pkg_version
+from .model_runner import BaseModelRunner
+from ....exceptions import MissingDependencyException
+from ...runner.utils import Params
 from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
-
 
 if t.TYPE_CHECKING:
     import pytorch_lightning as pl

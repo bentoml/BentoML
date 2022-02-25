@@ -7,13 +7,13 @@ import pytest
 import torch.nn as nn
 
 import bentoml
-from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
 from tests.utils.helpers import assert_have_file_extension
+from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
 from tests.utils.frameworks.pytorch_utils import test_df
-from tests.utils.frameworks.pytorch_utils import LinearModel
-from tests.utils.frameworks.pytorch_utils import LinearModelWithBatchAxis
-from tests.utils.frameworks.pytorch_utils import ExtendedModel
 from tests.utils.frameworks.pytorch_utils import predict_df
+from tests.utils.frameworks.pytorch_utils import LinearModel
+from tests.utils.frameworks.pytorch_utils import ExtendedModel
+from tests.utils.frameworks.pytorch_utils import LinearModelWithBatchAxis
 
 
 @pytest.fixture(scope="module")

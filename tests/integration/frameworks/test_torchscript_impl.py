@@ -9,8 +9,8 @@ import torch.nn as nn
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.pytorch_utils import test_df
-from tests.utils.frameworks.pytorch_utils import LinearModel
 from tests.utils.frameworks.pytorch_utils import predict_df
+from tests.utils.frameworks.pytorch_utils import LinearModel
 
 
 @pytest.fixture(scope="module")

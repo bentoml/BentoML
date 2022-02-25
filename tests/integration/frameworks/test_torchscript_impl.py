@@ -1,8 +1,5 @@
-import math
-
 import numpy as np
 import torch
-import pandas as pd
 import pytest
 import torch.nn as nn
 
@@ -73,7 +70,8 @@ def test_torchscript_runner_setup_run_batch(input_data, models, test_type):
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("dev", ["cuda", "cuda:0"])
-def test_torchscript_runner_setup_on_gpu(dev):
+@pytest.mark.parametrize("test_type", ["tracedmodel", "scriptedmodel"])
+def test_torchscript_runner_setup_on_gpu(dev, models, test_type):
     tag = models(test_type)
     runner = bentoml.torchscript.load_runner(tag)
 

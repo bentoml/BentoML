@@ -19,7 +19,7 @@ from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
 
 if t.TYPE_CHECKING:
-    import pytorch_lightning as pl
+    import pytorch_lightning as pl  # disable=unused-import
 
 try:
     import numpy as np

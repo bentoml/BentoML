@@ -174,7 +174,6 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "__call__",
-    device_id: str = "cpu:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
 ) -> "_PyTorchLightningRunner":

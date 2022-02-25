@@ -16,7 +16,7 @@ from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from .common.pytorch import BasePyTorchRunner
-from .common.pytorch import PyTorchTensorContainer
+from .common.pytorch import PyTorchTensorContainer  # disable=unused-import
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:

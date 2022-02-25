@@ -37,7 +37,9 @@ if importlib.util.find_spec("pyarrow") is not None:
 elif importlib.util.find_spec("fastparquet") is not None:
     _PARQUET_ENGINE = "fastparquet"
 else:
-    logger.warning("Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available.")
+    logger.warning(
+        "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
+    )
     _PARQUET_ENGINE = None
 
 

@@ -110,8 +110,8 @@ def serve_development(
     _ensure_prometheus_dir()
 
     arbiter.start(
-        cb=lambda _ : logger.info(
-            f"Starting development BentoServer from \"{bento_identifier}\" "
+        cb=lambda _: logger.info(  # type: ignore
+            f'Starting development BentoServer from "{bento_identifier}" '
             f"running on http://{host}:{port} (Press CTRL+C to quit)"
         ),
     )
@@ -256,8 +256,8 @@ def serve_production(
     _ensure_prometheus_dir()
     try:
         arbiter.start(
-            cb=lambda _ : logger.info(
-                f"Starting production BentoServer from \"bento_identifier\" "
+            cb=lambda _: logger.info(  # type: ignore
+                f'Starting production BentoServer from "bento_identifier" '
                 f"running on http://{host}:{port} (Press CTRL+C to quit)"
             ),
         )

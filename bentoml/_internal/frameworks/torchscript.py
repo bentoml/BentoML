@@ -53,14 +53,14 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`Union[torch.jit.ScriptModule, torch.nn.Module]`: an instance of either :code:`torch.jit.ScriptModule` or :code:`torch.nn.Module` from BentoML modelstore.
+        :obj:`torch.jit.ScriptModule`: an instance of :code:`torch.jit.ScriptModule` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
         import bentoml
-        model = bentoml.pytorch.load('lit_classifier:latest', device_id="cuda:0")
+        model = bentoml.torchscript.load('lit_classifier:latest', device_id="cuda:0")
     """  # noqa
     bentoml_model = model_store.get(tag)
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
@@ -95,7 +95,7 @@ def save(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[torch.nn.Module, torch.jit.ScriptModule]`):
+        model (:code:`torch.jit.ScriptModule`):
             Instance of model to be saved
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
@@ -127,7 +127,9 @@ def save(
                 log_probs = F.log_softmax(out, dim=1)
                 return log_probs
 
-        tag = bentoml.pytorch.save("ngrams", NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE))
+        _model = NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+        model = torch.jit.script(_model)
+        tag = bentoml.torchscript.save("ngrams", model)
         # example tag: ngrams:20201012_DE43A2
 
     Integration with Torch Hub and BentoML:
@@ -141,7 +143,7 @@ def save(
         ...
         # trained a custom resnet50
 
-        tag = bentoml.pytorch.save("resnet50", resnet50)
+        tag = bentoml.torchscript.save("resnet50", resnet50)
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "torch",
@@ -176,7 +178,7 @@ def load_runner(
 ) -> "_TorchScriptRunner":
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
-        maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
+        maximize throughput. `bentoml.torchscript.load_runner` implements a Runner class that
         wrap around a pytorch instance, which optimize it for the BentoML runtime.
 
     Args:
@@ -188,7 +190,7 @@ def load_runner(
             Common kwargs passed to model for this runner
 
     Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pytorch` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.torchscript` model
 
     Examples:
 
@@ -197,7 +199,7 @@ def load_runner(
         import bentoml
         import pandas as pd
 
-        runner = bentoml.pytorch.load_runner("ngrams:latest")
+        runner = bentoml.torchscript.load_runner("ngrams:latest")
         runner.run(pd.DataFrame("/path/to/csv"))
     """
     return _TorchScriptRunner(

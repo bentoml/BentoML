@@ -56,7 +56,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`Union[torch.jit.ScriptModule, torch.nn.Module]`: an instance of either :code:`torch.jit.ScriptModule` or :code:`torch.nn.Module` from BentoML modelstore.
+        :obj:`torch.nn.Module`: an instance of :code:`torch.nn.Module` from BentoML modelstore.
 
     Examples:
 
@@ -102,7 +102,7 @@ def save(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[torch.nn.Module, torch.jit.ScriptModule]`):
+        model (:code:`Uniontorch.nn.Module`):
             Instance of model to be saved
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.

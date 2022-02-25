@@ -1,4 +1,5 @@
 import io
+import sys
 import typing as t
 import logging
 from enum import Enum
@@ -21,6 +22,10 @@ if TYPE_CHECKING:
 else:
     pd = LazyLoader("pd", globals(), "pandas")
 
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +238,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
-        default_format: t.Literal["json", "parquet", "csv"] = "json",
+        default_format: Literal["json", "parquet", "csv"] = "json",
     ):
         self._orient = orient
         self._columns = columns
@@ -372,7 +377,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         apply_column_names: bool = True,
         enforce_shape: bool = True,
         enforce_dtype: bool = False,
-        default_format: t.Literal["json", "parquet", "csv"] = "json",
+        default_format: Literal["json", "parquet", "csv"] = "json",
     ) -> "PandasDataFrame":
         """
         Create a PandasDataFrame IO Descriptor from given inputs.

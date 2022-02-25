@@ -102,7 +102,7 @@ def save(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`Uniontorch.nn.Module`):
+        model (:code:`torch.nn.Module`):
             Instance of model to be saved
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.

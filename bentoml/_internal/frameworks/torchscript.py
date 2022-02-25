@@ -1,9 +1,7 @@
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from pathlib import Path
 
-import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
@@ -16,7 +14,6 @@ from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from .common.pytorch import BasePyTorchRunner
-from .common.pytorch import PyTorchTensorContainer
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -27,13 +24,13 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """
-        torch is required in order to use module `bentoml.pytorch`.
+        torch is required in order to use module `bentoml.torchscript`.
          Instruction: Refers to https://pytorch.org/get-started/locally/
          to setup PyTorch correctly.
         """  # noqa
     )
 
-MODULE_NAME = "bentoml.pytorch"
+MODULE_NAME = "bentoml.torchscript"
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +40,7 @@ def load(
     tag: t.Union[Tag, str],
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "torch.nn.Module":
+) -> "torch.jit.ScriptModule":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -74,14 +71,10 @@ def load(
     model_format = bentoml_model.info.context.get("model_format")
     # backward compatibility
     if not model_format:
-        model_format = "cloudpickle:v1"
+        model_format = "torchscript:v1"
 
-    if model_format == "cloudpickle:v1":
-        with Path(weight_file).open("rb") as file:
-            model: "torch.nn.Module" = cloudpickle.load(file).to(device_id)
-    elif model_format == "torch.save:v1":
-        with Path(weight_file).open("rb") as file:
-            model: "torch.nn.Module" = torch.load(file, map_location=device_id)
+    if model_format == "torchscript:v1":
+        model: "torch.jit.ScriptModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
     else:
         raise BentoMLException(f"Unknown model format {model_format}")
 
@@ -91,7 +84,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: "torch.nn.Module",
+    model: "torch.jit.ScriptModule",
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -162,15 +155,14 @@ def save(
         metadata=metadata,
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    _model.info.context["model_format"] = "torch.save:v1"
-    with open(weight_file, "wb") as file:
-        torch.save(model, file, pickle_module=cloudpickle)
+    _model.info.context["model_format"] = "torchscript:v1"
+    torch.jit.save(model, weight_file)  # type: ignore[reportUnknownMemberType]
 
     _model.save(model_store)
     return _model.tag
 
 
-class _PyTorchRunner(BasePyTorchRunner):
+class _TorchScriptRunner(BasePyTorchRunner):
     def _load_model(self):
         return load(self._tag, device_id=self._device_id)
 
@@ -181,7 +173,7 @@ def load_runner(
     predict_fn_name: str = "__call__",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
-) -> "_PyTorchRunner":
+) -> "_TorchScriptRunner":
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
         maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
@@ -208,7 +200,7 @@ def load_runner(
         runner = bentoml.pytorch.load_runner("ngrams:latest")
         runner.run(pd.DataFrame("/path/to/csv"))
     """
-    return _PyTorchRunner(
+    return _TorchScriptRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         partial_kwargs=partial_kwargs,

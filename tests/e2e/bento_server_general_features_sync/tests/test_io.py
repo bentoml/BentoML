@@ -7,9 +7,9 @@ import numpy as np
 import pytest
 import aiohttp
 
+from bentoml.io import PandasDataFrame
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form
-from bentoml.io import PandasDataFrame
 
 
 @pytest.fixture()

@@ -12,7 +12,8 @@ from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ..types import LazyType
 from ...exceptions import BadInput
-from ...exceptions import InvalidArgument, MissingDependencyException
+from ...exceptions import InvalidArgument
+from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:

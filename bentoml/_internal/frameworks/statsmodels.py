@@ -27,8 +27,6 @@ except ImportError:  # pragma: no cover
     )
 
 if TYPE_CHECKING:
-    from joblib.parallel import Parallel  # type: ignore
-
     from .. import external_typing as ext
     from ..models import ModelStore
 
@@ -48,7 +46,7 @@ _exc_msg = """\
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> ModelType:
+) -> "ModelType":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -82,7 +80,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: ModelType,
+    model: "ModelType",
     *,
     metadata: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

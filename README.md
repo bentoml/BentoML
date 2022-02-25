@@ -49,7 +49,7 @@ There are many ways to contribute to the project:
 - Report issues you're facing and "Thumbs up" on issues and feature requests that are relevant to you.
 - Investigate bugs and reviewing other developer's pull requests.
 - Contributing code or documentation to the project by submitting a Github pull request. See the [development guide](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md).
-- See more in the [contributing guide](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md>).
+- See more in the [contributing guide](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md).
 
 ---
 

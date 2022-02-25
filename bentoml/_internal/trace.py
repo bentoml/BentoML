@@ -10,15 +10,15 @@ class ServiceContextClass:
             "request_id_var", default=t.cast("t.Optional[int]", None)
         )
         self.component_name_var: ContextVar[str] = ContextVar(
-            "component_name", default="boot"
+            "component_name", default="cli"
         )
 
     @property
-    def sampled(self) -> t.Optional[bool]:
+    def sampled(self) -> t.Optional[int]:
         span = trace.get_current_span()
         if span is None:
             return None
-        return span.get_span_context().trace_flags.sampled
+        return 1 if span.get_span_context().trace_flags.sampled else 0
 
     @property
     def trace_id(self) -> t.Optional[int]:

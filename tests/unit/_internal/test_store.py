@@ -1,3 +1,4 @@
+import os
 import sys
 import typing as t
 from typing import TYPE_CHECKING
@@ -65,6 +66,8 @@ class DummyStore(Store[DummyItem]):
 
 def test_store(tmpdir: "Path"):
     store = DummyStore(tmpdir)
+
+    open(os.path.join(tmpdir, ".DS_store"), "a")
 
     DummyItem.store = store
     oldtime = datetime.now()

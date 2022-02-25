@@ -39,10 +39,12 @@ class RunnerAppFactory(BaseAppFactory):
 
         from starlette.responses import Response
 
+        from ..runner import Runner
+
         TooManyRequests = partial(Response, status_code=429)
 
         options = self.runner.batch_options
-        if options.enabled:
+        if isinstance(self.runner, Runner) and options.enabled:
             options = self.runner.batch_options
             self.dispatcher = CorkDispatcher(
                 max_latency_in_ms=options.max_latency_ms,
@@ -123,19 +125,19 @@ class RunnerAppFactory(BaseAppFactory):
             )
         )
 
-        from .access import AccessLogMiddleware
+        access_log_config = DeploymentContainer.runners_config.logging.access
+        if access_log_config.enabled.get():
+            from .access import AccessLogMiddleware
 
-        middlewares.append(
-            Middleware(
-                AccessLogMiddleware,
-                fields=[
-                    "REQUEST_CONTENT_TYPE",
-                    "REQUEST_CONTENT_LENGTH",
-                    "RESPONSE_CONTENT_TYPE",
-                    "RESPONSE_CONTENT_LENGTH",
-                ],
+            middlewares.append(
+                Middleware(
+                    AccessLogMiddleware,
+                    has_request_content_length=access_log_config.request_content_length.get(),
+                    has_request_content_type=access_log_config.request_content_type.get(),
+                    has_response_content_length=access_log_config.response_content_length.get(),
+                    has_response_content_type=access_log_config.response_content_type.get(),
+                )
             )
-        )
 
         return middlewares
 

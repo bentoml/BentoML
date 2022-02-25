@@ -1,6 +1,8 @@
 import io
 import typing as t
 import logging
+import importlib.util
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -11,17 +13,34 @@ from .json import MIME_TYPE_JSON
 from ..types import LazyType
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
+from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     import pandas as pd  # type: ignore[import]
 
     from .. import external_typing as ext
-else:
-    pd = LazyLoader("pd", globals(), "pandas")
 
+else:
+    pd = LazyLoader(
+        "pd",
+        globals(),
+        "pandas",
+        exc_msg="`pandas` is required to use PandasDataFrame or PandasSeries. Install with `pip install -U pandas`",
+    )
 
 logger = logging.getLogger(__name__)
+
+# Check for parquet support
+if importlib.util.find_spec("pyarrow") is not None:
+    _parquet_engine = "pyarrow"
+elif importlib.util.find_spec("fastparquet") is not None:
+    _parquet_engine = "fastparquet"
+else:
+    logger.warning(
+        "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
+    )
+    _parquet_engine = None
 
 
 def _infer_type(item: str) -> str:  # pragma: no cover
@@ -50,6 +69,47 @@ def _schema_type(
         }
     else:
         return {"type": "object"}
+
+
+class SerializationFormat(Enum):
+    JSON = "application/json"
+    PARQUET = "application/octet-stream"
+    CSV = "text/csv"
+
+    def __init__(self, mime_type: str):
+        self.mime_type = mime_type
+
+
+def _infer_serialization_format_from_request(
+    request: Request, default_format: SerializationFormat
+) -> SerializationFormat:
+    """Determine the serialization format from the request's headers['content-type']"""
+
+    content_type = request.headers.get("content-type")
+
+    if content_type == "application/json":
+        return SerializationFormat.JSON
+    elif content_type == "application/octet-stream":
+        return SerializationFormat.PARQUET
+    elif content_type == "text/csv":
+        return SerializationFormat.CSV
+    elif content_type:
+        logger.warning(
+            f"Unknown content-type ({content_type}), falling back to {default_format} serialization format."
+        )
+        return default_format
+    else:
+        logger.warning(
+            f"Content-type not specified, falling back to {default_format} serialization format."
+        )
+        return default_format
+
+
+def _validate_serialization_format(serialization_format: SerializationFormat):
+    if serialization_format is SerializationFormat.PARQUET and _parquet_engine is None:
+        raise MissingDependencyException(
+            "Parquet serialization is not available. Try installing pyarrow or fastparquet first."
+        )
 
 
 class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
@@ -155,9 +215,18 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
             must be specified
 
+        default_format (:code:`str`, `optional`, default to :obj:`json`):
+            The default serialization format to use if the request does not specify a :code:`headers['content-type']`.
+            It is also the serialization format used for the response. Possible values are:
+                - :obj:`json` - JSON text format (inferred from content-type "application/json")
+                - :obj:`parquet` - Parquet binary format (inferred from content-type "application/octet-stream")
+                - :obj:`csv` - CSV text format (inferred from content-type "text/csv")
+
     Returns:
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that `pd.DataFrame`.
     """
+
+    parquet_engine = _parquet_engine
 
     def __init__(
         self,
@@ -168,6 +237,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
+        default_format: "t.Literal['json', 'parquet', 'csv']" = "json",
     ):
         self._orient = orient
         self._columns = columns
@@ -176,18 +246,18 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         self._enforce_dtype = enforce_dtype
         self._shape = shape
         self._enforce_shape = enforce_shape
-        self._mime_type = "application/json"
+        self._default_format = SerializationFormat[default_format.upper()]
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._dtype)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+        return {self._default_format.mime_type: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+        return {self._default_format.mime_type: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> "ext.PdDataFrame":
         """
@@ -204,6 +274,12 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             BadInput:
                 Raised when the incoming requests are bad formatted.
         """
+
+        serialization_format = _infer_serialization_format_from_request(
+            request, self._default_format
+        )
+        _validate_serialization_format(serialization_format)
+
         obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:
@@ -211,11 +287,28 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
             # TODO(jiang): check dtype
-        res = pd.read_json(  # type: ignore[arg-type]
-            io.BytesIO(obj),
-            dtype=self._dtype,  # type: ignore[arg-type]
-            orient=self._orient,
-        )
+
+        if serialization_format is SerializationFormat.JSON:
+            res = pd.read_json(  # type: ignore[arg-type]
+                io.BytesIO(obj),
+                dtype=self._dtype,  # type: ignore[arg-type]
+                orient=self._orient,
+            )
+        elif serialization_format is SerializationFormat.PARQUET:
+            res = pd.read_parquet(  # type: ignore[arg-type]
+                io.BytesIO(obj),
+                engine=self.parquet_engine,
+            )
+        elif serialization_format is SerializationFormat.CSV:
+            res = pd.read_csv(  # type: ignore[arg-type]
+                io.BytesIO(obj),
+                dtype=self._dtype,  # type: ignore[arg-type]
+            )
+        else:
+            raise InvalidArgument(
+                f"Unknown serialization format ({serialization_format})."
+            )
+
         assert isinstance(res, pd.DataFrame)
 
         if self._apply_column_names:
@@ -248,17 +341,33 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         Args:
             obj (`pd.DataFrame`):
-                `pd.DataFrame` that will be serialized to JSON
+                `pd.DataFrame` that will be serialized to JSON or parquet
         Returns:
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
+
+        # For the response it doesn't make sense to enforce the same serialization format as specified
+        # by the request's headers['content-type']. Instead we simply use the _default_format.
+        serialization_format = self._default_format
+        _validate_serialization_format(serialization_format)
+
         if not LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
             raise InvalidArgument(
                 f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
             )
-        resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
-        return Response(resp, media_type=MIME_TYPE_JSON)
+        if serialization_format is SerializationFormat.JSON:
+            resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
+        elif serialization_format is SerializationFormat.PARQUET:
+            resp = obj.to_parquet(engine=self.parquet_engine)
+        elif serialization_format is SerializationFormat.CSV:
+            resp = obj.to_csv()
+        else:
+            raise InvalidArgument(
+                f"Unknown serialization format ({serialization_format})."
+            )
+
+        return Response(resp, media_type=serialization_format.mime_type)
 
     @classmethod
     def from_sample(
@@ -268,6 +377,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         apply_column_names: bool = True,
         enforce_shape: bool = True,
         enforce_dtype: bool = False,
+        default_format: "t.Literal['json', 'parquet', 'csv']" = "json",
     ) -> "PandasDataFrame":
         """
         Create a PandasDataFrame IO Descriptor from given inputs.
@@ -294,6 +404,12 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 Enforce a certain shape. `shape` must be specified at function
                 signature. If you don't want to enforce a specific shape then change
                 `enforce_shape=False`.
+            default_format (:code:`str`, `optional`, default to :code:`json`):
+                The default serialization format to use if the request does not specify a :code:`headers['content-type']`.
+                It is also the serialization format used for the response. Possible values are:
+                    - :obj:`json` - JSON text format (inferred from content-type "application/json")
+                    - :obj:`parquet` - Parquet binary format (inferred from content-type "application/octet-stream")
+                    - :obj:`csv` - CSV text format (inferred from content-type "text/csv")
 
         Returns:
             :obj:`bentoml._internal.io_descriptors.PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
@@ -320,6 +436,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             columns=columns,
             enforce_dtype=enforce_dtype,
             dtype=None,  # TODO: not breaking atm
+            default_format=default_format,
         )
 
 

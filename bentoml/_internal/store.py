@@ -61,7 +61,10 @@ class Store(ABC, t.Generic[Item]):
     def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:
         if not tag:
             return [
-                ver for _d in sorted(self._fs.listdir("/")) for ver in self.list(_d)
+                ver
+                for _d in sorted(self._fs.listdir("/"))
+                if self._fs.isdir(_d)
+                for ver in self.list(_d)
             ]
 
         _tag = Tag.from_taglike(tag)

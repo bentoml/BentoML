@@ -94,8 +94,13 @@ def _clean_name(name: str) -> str:  # pragma: no cover
     return re.sub(r"\W|^(?=\d)-", "_", name)
 
 
-def _load_paddle_bentoml_default_config(model: "Model") -> "paddle.inference.Config":
+@inject
+def _load_paddle_bentoml_default_config(
+    tag: t.Union[str, Tag],
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> "paddle.inference.Config":
     # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
+    model = model_store.get(tag)
     config = paddle.inference.Config(
         model.path_of(f"{SAVE_NAMESPACE}{PADDLE_MODEL_EXTENSION}"),
         model.path_of(f"{SAVE_NAMESPACE}{PADDLE_PARAMS_EXTENSION}"),
@@ -160,7 +165,7 @@ def load(
             )
             return hub.Module(directory=directory, **kwargs)
     else:
-        _config = _load_paddle_bentoml_default_config(model) if not config else config
+        _config = _load_paddle_bentoml_default_config(tag) if not config else config
         return paddle.inference.create_predictor(_config)
 
 
@@ -488,7 +493,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
 
     def _setup_runner_config(self) -> None:
         _config = (
-            _load_paddle_bentoml_default_config(self._model_store.get(self._tag))
+            _load_paddle_bentoml_default_config(self._tag)
             if not self._config
             else self._config
         )

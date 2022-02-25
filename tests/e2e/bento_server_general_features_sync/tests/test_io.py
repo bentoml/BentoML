@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import aiohttp
 
+from bentoml.io import PandasDataFrame
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form
 
@@ -99,6 +100,25 @@ async def test_pandas(host):
         f"http://{host}/predict_dataframe",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
         data=df.to_json(orient="records"),
+        assert_status=200,
+        assert_data=b"[202]",
+    )
+
+    if PandasDataFrame.parquet_engine:
+        await async_request(
+            "POST",
+            f"http://{host}/predict_dataframe",
+            headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
+            data=df.to_parquet(engine=PandasDataFrame.parquet_engine),
+            assert_status=200,
+            assert_data=b"[202]",
+        )
+
+    await async_request(
+        "POST",
+        f"http://{host}/predict_dataframe",
+        headers=(("Content-Type", "text/csv"), ("Origin", ORIGIN)),
+        data=df.to_csv(),
         assert_status=200,
         assert_data=b"[202]",
     )

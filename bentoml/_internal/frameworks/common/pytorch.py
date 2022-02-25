@@ -123,8 +123,8 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
 
     def _run_batch(
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
-        **kwargs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
+        *args: t.Union["ext.NpNDArray", torch.Tensor],
+        **kwargs: t.Union["ext.NpNDArray", torch.Tensor],
     ) -> torch.Tensor:
 
         params = Params[t.Union["ext.NpNDArray", torch.Tensor]](

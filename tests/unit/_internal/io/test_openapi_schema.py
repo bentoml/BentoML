@@ -125,6 +125,14 @@ def test_text_openapi_schema():
                 "columns": ["int64", "str"],
             },
         ),
+        (
+            {"application/octet-stream": {"schema": {"type": "object"}}},
+            {"default_format": "parquet"},
+        ),
+        (
+            {"text/csv": {"schema": {"type": "object"}}},
+            {"default_format": "csv"},
+        ),
     ],
 )
 def test_pandas_openapi_schema(exp: t.Dict[str, t.Any], kwargs: t.Dict[str, t.Any]):

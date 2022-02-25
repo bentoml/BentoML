@@ -39,10 +39,12 @@ class RunnerAppFactory(BaseAppFactory):
 
         from starlette.responses import Response
 
+        from ..runner import Runner
+
         TooManyRequests = partial(Response, status_code=429)
 
         options = self.runner.batch_options
-        if options.enabled:
+        if isinstance(self.runner, Runner) and options.enabled:
             options = self.runner.batch_options
             self.dispatcher = CorkDispatcher(
                 max_latency_in_ms=options.max_latency_ms,

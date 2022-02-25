@@ -1,3 +1,4 @@
+import socket
 import typing as t
 from urllib.parse import urlparse
 
@@ -21,6 +22,7 @@ def main(
     working_dir: t.Optional[str] = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
+    backlog: int = 2048,
 ):
     import uvicorn  # type: ignore
 
@@ -30,13 +32,14 @@ def main(
 
     parsed = urlparse(bind)
 
-    if parsed.scheme == "tcp":
+    if parsed.scheme == "fd":
+        fd = int(parsed.netloc)
+        sock = socket.socket(fileno=fd)
         log_level = "debug" if get_debug_mode() else "info"
         svc = load(bento_identifier, working_dir=working_dir)
         uvicorn_options = {
-            "host": parsed.hostname,
-            "port": parsed.port,
             "log_level": log_level,
+            "backlog": backlog,
             "reload": reload,
             "reload_delay": reload_delay,
             "log_config": LOGGING_CONFIG,
@@ -48,9 +51,11 @@ def main(
             asgi_app_import_str = f"{svc._import_str}.asgi_app"  # type: ignore[reportPrivateUsage]
             # TODO: use svc.build_args.include/exclude as default files to watch
             # TODO: watch changes in model store when "latest" model tag is used
-            uvicorn.run(asgi_app_import_str, **uvicorn_options)
+            config = uvicorn.Config(asgi_app_import_str, **uvicorn_options)
+            uvicorn.Server(config).run(sockets=[sock])
         else:
-            uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
+            config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
+            uvicorn.Server(config).run(sockets=[sock])
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")
 

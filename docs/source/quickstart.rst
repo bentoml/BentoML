@@ -3,7 +3,9 @@
 Getting Started
 ===============
 
-In this guide we will show you how to create a local web service for your machine learning model(s). Then we will package that web service into a self contained package (Bento) which is ready for production deployment
+In this guide we will show you how to create a local web service for your machine learning model(s). 
+Then we will package that web service into a self contained package (Bento) which is ready for production deployment. 
+The source code of this guide is avaialble in the `gallery <https://github.com/bentoml/gallery/tree/main/quickstart>`_ project.
 
 There are three parts to the BentoML workflow.
 
@@ -95,10 +97,8 @@ Python file :code:`service.py` with the following contents:
 .. code-block:: python
 
     # service.py
-    import bentoml
-    import bentoml.sklearn
     import numpy as np
-
+    import bentoml
     from bentoml.io import NumpyNdarray
 
     # Load the runner for the latest ScikitLearn model we just saved
@@ -111,9 +111,9 @@ Python file :code:`service.py` with the following contents:
 
     # Create API function with pre- and post- processing logic with your new "svc" annotation
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-    def predict(input_ndarray: np.ndarray) -> np.ndarray:
+    def classify(input_series: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
-        result = iris_clf_runner.run(input_ndarray)
+        result = iris_clf_runner.run(input_series)
         # Define post-processing logic
         return result
 
@@ -130,14 +130,12 @@ without restarting:
 
     > bentoml serve ./service.py:svc --reload
 
-    [10:18:42 AM] INFO     Starting development BentoServer from "./service.py:svc"
-    [10:18:42 AM] INFO     Service imported from source: bentoml.Service(name="iris_classifier", import_str="bento:svc", working_dir="/home/user/devel/bentoml-quickstart")
-    [10:18:42 AM] INFO     Will watch for changes in these directories: ['/home/user/devel/bentoml-quickstart']                                                              config.py:334
-                  INFO     Uvicorn running on http://127.0.0.1:3000 (Press CTRL+C to quit)                                                                                   config.py:554
-                  INFO     Started reloader process [97796] using statreload                                                                                              basereload.py:56
-    [10:18:43 AM] INFO     Started server process [97808]                                                                                                                     server.py:84
-                  INFO     Waiting for application startup.                                                                                                                       on.py:45
-                  INFO     Application startup complete.                                                                                                                          on.py:59
+    02/24/2022 02:43:40 INFO     [cli] Starting development BentoServer from "./service.py:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)                                                                                                                                                                   
+    02/24/2022 02:43:41 INFO     [dev_api_server] Service imported from source: bentoml.Service(name="iris_classifier", import_str="service:svc", working_dir="/home/user/gallery/quickstart")                                                                                                                  
+    02/24/2022 02:43:41 INFO     [dev_api_server] Will watch for changes in these directories: ['/home/user/gallery/quickstart']                                                                                                                                                                                
+    02/24/2022 02:43:41 INFO     [dev_api_server] Started server process [25915]                                                                                                                                                                                                                                          
+    02/24/2022 02:43:41 INFO     [dev_api_server] Waiting for application startup.                                                                                                                                                                                                                                        
+    02/24/2022 02:43:41 INFO     [dev_api_server] Application startup complete.                                                                                                                          on.py:59
 
 We can then send requests to the newly started service with any HTTP client:
 
@@ -147,7 +145,7 @@ We can then send requests to the newly started service with any HTTP client:
 
         import requests
         requests.post(
-            "http://127.0.0.1:3000/predict",
+            "http://127.0.0.1:3000/classify",
             headers={"content-type": "application/json"},
             data="[5,4,3,2]").text
 
@@ -157,7 +155,7 @@ We can then send requests to the newly started service with any HTTP client:
           -X POST \
           -H "content-type: application/json" \
           --data "[5,4,3,2]" \
-          http://127.0.0.1:3000/predict
+          http://127.0.0.1:3000/classify
 
 .. _build-and-deploy-bentos:
 
@@ -179,11 +177,16 @@ To build a Bento, first create a file named :code:`bentofile.yaml` in your proje
 
     # bentofile.yaml
     service: "service.py:svc"  # A convention for locating your service: <YOUR_SERVICE_PY>:<YOUR_SERVICE_ANNOTATION>
+    description: "file: ./README.md"
+    labels:
+        owner: bentoml-team
+        stage: demo
     include:
      - "*.py"  # A pattern for matching which files to include in the bento
     python:
       packages:
        - scikit-learn  # Additional libraries to be included in the bento
+       - pandas
 
 Next, use the :code:`bentoml build` CLI command in the same directory to build a bento.
 
@@ -191,17 +194,18 @@ Next, use the :code:`bentoml build` CLI command in the same directory to build a
 
     > bentoml build
 
-    [10:25:51 AM] INFO     Building BentoML service "iris_classifier:foereut5zgw3ceb5" from build context "/home/user/devel/bentoml-quickstart"
-                  INFO     Packing model "iris_clf:svcryrt5xgafweb5" from "/home/user/bentoml/models/iris_clf/svcryrt5xgafweb5"
-                  INFO
-                           ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-                           ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-                           ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-                           ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-                           ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-                           ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-
-                  INFO     Successfully built Bento(tag="iris_classifier:foereut5zgw3ceb5") at "/home/user/bentoml/bentos/iris_classifier/foereut5zgw3ceb5/"
+    02/24/2022 02:47:06 INFO     [cli] Building BentoML service "iris_classifier:dpijemevl6nlhlg6" from build context "/home/user/gallery/quickstart"                                                                                                                                                           
+    02/24/2022 02:47:06 INFO     [cli] Packing model "iris_clf:tf773jety6jznlg6" from "/home/user//bentoml/models/iris_clf/tf773jety6jznlg6"                                                                                                                                                                            
+    02/24/2022 02:47:06 INFO     [cli] Locking PyPI package versions..                                                                                                                                                                                                                                                    
+    02/24/2022 02:47:08 INFO     [cli]                                                                                                                                                                                                                                                                                    
+                                ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░                                                                                                                                                                                                                            
+                                ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░                                                                                                                                                                                                                            
+                                ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░                                                                                                                                                                                                                            
+                                ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░                                                                                                                                                                                                                            
+                                ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗                                                                                                                                                                                                                            
+                                ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                        
+    02/24/2022 02:47:08 INFO     [cli] Successfully built Bento(tag="iris_classifier:dpijemevl6nlhlg6") at "/home/user//bentoml/bentos/iris_classifier/dpijemevl6nlhlg6/"
 
 Bentos built will be saved in the local :ref:`bento store <bento-management-page>`, which you can
 view using the :code:`bentoml list` CLI command.
@@ -210,8 +214,8 @@ view using the :code:`bentoml list` CLI command.
 
     > bentoml list
 
-    Tag                               Service    Path                                                          Size       Creation Time
-    iris_classifier:foereut5zgw3ceb5  bento:svc  /home/user/bentoml/bentos/iris_classifier/foereut5zgw3ceb5  13.97 KiB  2022-01-25 10:25:51
+    Tag                               Service      Path                                                        Size       Creation Time
+    iris_classifier:dpijemevl6nlhlg6  service:svc  /home/user/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6  19.46 KiB  2022-02-24 10:47:08
 
 We can serve bentos from the bento store using the :code:`bentoml serve --production` CLI
 command. Using the :code:`--production` option will serve the bento in production mode.
@@ -220,18 +224,16 @@ command. Using the :code:`--production` option will serve the bento in productio
 
     > bentoml serve iris_classifier:latest --production
 
-    [09:04:18 PM] INFO     Starting production BentoServer from "iris_classifier:latest"
-                  INFO     Service loaded from Bento store: bentoml.Service(tag="iris_classifier:2qcg23t5zgzlseb5", path="/home/user/bentoml/bentos/iris_classifier/2qcg23t5zgzlseb5")
-    [09:04:19 PM] INFO     Service loaded from Bento store: bentoml.Service(tag="iris_classifier:2qcg23t5zgzlseb5", path="/home/user/bentoml/bentos/iris_classifier/2qcg23t5zgzlseb5")
-    [09:04:19 PM] INFO     Service loaded from Bento store: bentoml.Service(tag="iris_classifier:2qcg23t5zgzlseb5", path="/home/user/bentoml/bentos/iris_classifier/2qcg23t5zgzlseb5")
-    [09:04:19 PM] INFO     Started server process [28395]                                                                                                                     server.py:84
-                  INFO     Waiting for application startup.                                                                                                                       on.py:45
-    [09:04:19 PM] INFO     Started server process [28396]                                                                                                                     server.py:84
-                  INFO     Waiting for application startup.                                                                                                                       on.py:45
-                  INFO     Application startup complete.                                                                                                                          on.py:59
-                  INFO     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)                                                                                     server.py:222
-                  INFO     Application startup complete.                                                                                                                          on.py:59
-                  INFO     Uvicorn running on socket /run/user/1000/tmpy16ao7fo/140574878932496.sock (Press CTRL+C to quit)                                                  server.py:191
+    02/24/2022 03:01:19 INFO     [cli] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="/Users/ssheng/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")                                                                                                                                                                
+    02/24/2022 03:01:19 INFO     [cli] Starting production BentoServer from "bento_identifier" running on http://0.0.0.0:3000 (Press CTRL+C to quit)                                                                                                                                                                                                                 
+    02/24/2022 03:01:20 INFO     [iris_clf] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="/Users/ssheng/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")                                                                                                                                                           
+    02/24/2022 03:01:20 INFO     [api_server] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="/Users/ssheng/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")                                                                                                                                                         
+    02/24/2022 03:01:20 INFO     [iris_clf] Started server process [28761]                                                                                                                                                                                                                                                                                           
+    02/24/2022 03:01:20 INFO     [iris_clf] Waiting for application startup.                                                                                                                                                                                                                                                                                         
+    02/24/2022 03:01:20 INFO     [api_server] Started server process [28762]                                                                                                                                                                                                                                                                                         
+    02/24/2022 03:01:20 INFO     [api_server] Waiting for application startup.                                                                                                                                                                                                                                                                                       
+    02/24/2022 03:01:20 INFO     [api_server] Application startup complete.                                                                                                                                                                                                                                                                                          
+    02/24/2022 03:01:20 INFO     [iris_clf] Application startup complete. 
 
 Lastly, we can :ref:`containerize bentos as Docker images <containerize-bentos-page>` using the
 :code:`bentoml container` CLI command and manage bentos at scale using the

@@ -1,7 +1,8 @@
-import click
 import socket
 import typing as t
 from urllib.parse import urlparse
+
+import click
 
 from bentoml import load
 

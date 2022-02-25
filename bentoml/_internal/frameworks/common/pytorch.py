@@ -127,7 +127,7 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
         **kwargs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
     ) -> torch.Tensor:
 
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](
+        params = Params[t.Union["ext.NpNDArray", torch.Tensor]](
             *args, **kwargs
         )
 

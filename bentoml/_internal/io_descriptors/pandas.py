@@ -1,5 +1,4 @@
 import io
-import sys
 import typing as t
 import logging
 import importlib.util
@@ -21,26 +20,27 @@ if TYPE_CHECKING:
     import pandas as pd  # type: ignore[import]
 
     from .. import external_typing as ext
-else:
-    pd = LazyLoader("pd", globals(), "pandas")
 
-if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
-    from typing import Literal
 else:
-    from typing_extensions import Literal
+    pd = LazyLoader(
+        "pd",
+        globals(),
+        "pandas",
+        exc_msg="`pandas` is required to use PandasDataFrame or PandasSeries. Install with `pip install -U pandas`",
+    )
 
 logger = logging.getLogger(__name__)
 
 # Check for parquet support
 if importlib.util.find_spec("pyarrow") is not None:
-    _PARQUET_ENGINE = "pyarrow"
+    _parquet_engine = "pyarrow"
 elif importlib.util.find_spec("fastparquet") is not None:
-    _PARQUET_ENGINE = "fastparquet"
+    _parquet_engine = "fastparquet"
 else:
     logger.warning(
         "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
     )
-    _PARQUET_ENGINE = None
+    _parquet_engine = None
 
 
 def _infer_type(item: str) -> str:  # pragma: no cover
@@ -106,7 +106,7 @@ def _infer_serialization_format_from_request(
 
 
 def _validate_serialization_format(serialization_format: SerializationFormat):
-    if serialization_format is SerializationFormat.PARQUET and _PARQUET_ENGINE is None:
+    if serialization_format is SerializationFormat.PARQUET and _parquet_engine is None:
         raise MissingDependencyException(
             "Parquet serialization is not available. Try installing pyarrow or fastparquet first."
         )
@@ -226,7 +226,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that `pd.DataFrame`.
     """
 
-    parquet_engine = _PARQUET_ENGINE
+    parquet_engine = _parquet_engine
 
     def __init__(
         self,
@@ -237,7 +237,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
-        default_format: Literal["json", "parquet", "csv"] = "json",
+        default_format: "t.Literal['json', 'parquet', 'csv']" = "json",
     ):
         self._orient = orient
         self._columns = columns
@@ -377,7 +377,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         apply_column_names: bool = True,
         enforce_shape: bool = True,
         enforce_dtype: bool = False,
-        default_format: Literal["json", "parquet", "csv"] = "json",
+        default_format: "t.Literal['json', 'parquet', 'csv']" = "json",
     ) -> "PandasDataFrame":
         """
         Create a PandasDataFrame IO Descriptor from given inputs.

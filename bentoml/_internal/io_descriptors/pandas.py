@@ -2,6 +2,7 @@ import io
 import sys
 import typing as t
 import logging
+import importlib.util
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -30,19 +31,14 @@ else:
 
 logger = logging.getLogger(__name__)
 
-
 # Check for parquet support
-_HAS_PARQUET = True
-try:
-    import pyarrow  # noqa: F401
-except ModuleNotFoundError:
-    try:
-        import fastparquet  # noqa: F401
-    except ModuleNotFoundError:
-        logger.warning(
-            "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
-        )
-        _HAS_PARQUET = False
+if importlib.util.find_spec("pyarrow") is not None:
+    _PARQUET_ENGINE = "pyarrow"
+elif importlib.util.find_spec("fastparquet") is not None:
+    _PARQUET_ENGINE = "fastparquet"
+else:
+    logger.warning("Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available.")
+    _PARQUET_ENGINE = None
 
 
 def _infer_type(item: str) -> str:  # pragma: no cover
@@ -108,7 +104,7 @@ def _infer_serialization_format_from_request(
 
 
 def _validate_serialization_format(serialization_format: SerializationFormat):
-    if (serialization_format is SerializationFormat.PARQUET) and (not _HAS_PARQUET):
+    if serialization_format is SerializationFormat.PARQUET and _PARQUET_ENGINE is None:
         raise MissingDependencyException(
             "Parquet serialization is not available. Try installing pyarrow or fastparquet first."
         )
@@ -228,7 +224,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that `pd.DataFrame`.
     """
 
-    has_parquet = _HAS_PARQUET
+    parquet_engine = _PARQUET_ENGINE
 
     def __init__(
         self,
@@ -299,6 +295,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         elif serialization_format is SerializationFormat.PARQUET:
             res = pd.read_parquet(  # type: ignore[arg-type]
                 io.BytesIO(obj),
+                engine=parquet_engine,
             )
         elif serialization_format is SerializationFormat.CSV:
             res = pd.read_csv(  # type: ignore[arg-type]
@@ -360,7 +357,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         if serialization_format is SerializationFormat.JSON:
             resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
         elif serialization_format is SerializationFormat.PARQUET:
-            resp = obj.to_parquet()
+            resp = obj.to_parquet(engine=parquet_engine)
         elif serialization_format is SerializationFormat.CSV:
             resp = obj.to_csv()
         else:

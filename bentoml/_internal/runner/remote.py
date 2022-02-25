@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from simple_di import inject
 from simple_di import Provide
 
+from .runner import Runner
 from .runner import RunnerImpl
 from .container import Payload
 from ..utils.uri import uri_to_path
@@ -47,27 +48,33 @@ class RemoteRunnerClient(RunnerImpl):
             or self._loop.is_closed()
         ):
             self._loop = asyncio.get_event_loop()
-            bind_uri = remote_runner_mapping[self._runner.name]
+
+            runner = self._runner
+            if isinstance(runner, Runner):
+                limit = runner.batch_options.max_batch_size * 2
+                keepalive_timeout = runner.batch_options.max_latency_ms * 1000 * 10
+            else:
+                limit = 100
+                keepalive_timeout = None
+
+            bind_uri = remote_runner_mapping[runner.name]
             parsed = urlparse(bind_uri)
+
             if parsed.scheme == "file":
                 path = uri_to_path(bind_uri)
                 self._conn = aiohttp.UnixConnector(
                     path=path,
                     loop=self._loop,
-                    limit=self._runner.batch_options.max_batch_size * 2,
-                    keepalive_timeout=self._runner.batch_options.max_latency_ms
-                    * 1000
-                    * 10,
+                    limit=limit,
+                    keepalive_timeout=keepalive_timeout,
                 )
                 self._addr = "http://127.0.0.1:8000"  # addr doesn't matter with UDS
             elif parsed.scheme == "tcp":
                 self._conn = aiohttp.TCPConnector(
                     loop=self._loop,
-                    limit=self._runner.batch_options.max_batch_size * 2,
+                    limit=limit,
                     verify_ssl=False,
-                    keepalive_timeout=self._runner.batch_options.max_latency_ms
-                    * 1000
-                    * 10,
+                    keepalive_timeout=keepalive_timeout,
                 )
                 self._addr = f"http://{parsed.netloc}"
             else:
@@ -103,7 +110,7 @@ class RemoteRunnerClient(RunnerImpl):
                 trace_configs=[
                     create_trace_config(
                         # Remove all query params from the URL attribute on the span.
-                        url_filter=strip_query_params,
+                        url_filter=strip_query_params,  # type: ignore
                         tracer_provider=DeploymentContainer.tracer_provider.get(),
                     )
                 ],

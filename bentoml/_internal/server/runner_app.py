@@ -43,8 +43,7 @@ class RunnerAppFactory(BaseAppFactory):
 
         TooManyRequests = partial(Response, status_code=429)
 
-        options = self.runner.batch_options
-        if isinstance(self.runner, Runner) and options.enabled:
+        if isinstance(self.runner, Runner) and self.runner.batch_options.enabled:
             options = self.runner.batch_options
             self.dispatcher = CorkDispatcher(
                 max_latency_in_ms=options.max_latency_ms,
@@ -144,9 +143,15 @@ class RunnerAppFactory(BaseAppFactory):
     async def _async_cork_run(
         self, requests: t.Iterable["Request"]
     ) -> t.List["Response"]:
-        from starlette.responses import Response
 
         assert self._is_ready
+
+        from starlette.responses import Response
+
+        from ..runner import Runner
+
+        runner = self.runner
+        assert isinstance(runner, Runner)
 
         params_list = await asyncio.gather(
             *tuple(multipart_to_payload_params(r) for r in requests)
@@ -155,13 +160,13 @@ class RunnerAppFactory(BaseAppFactory):
             params_list,
             lambda i: AutoContainer.payloads_to_batch(
                 i,
-                batch_axis=self.runner.batch_options.input_batch_axis,
+                batch_axis=runner.input_batch_axis,
             ),
         )
         batch_ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
         payloads = AutoContainer.batch_to_payloads(
             batch_ret,
-            batch_axis=self.runner.batch_options.input_batch_axis,
+            batch_axis=runner.input_batch_axis,
         )
         return [
             Response(

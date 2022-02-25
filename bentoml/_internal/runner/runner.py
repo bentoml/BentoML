@@ -88,8 +88,6 @@ class BatchOptions:
             DeploymentContainer.api_server_config.batch_options.max_latency_ms.get
         ),
     )
-    input_batch_axis = attr.ib(type=int, default=0)
-    output_batch_axis = attr.ib(type=int, default=0)
 
 
 VARNAME_RE = re.compile(r"\W|^(?=\d)")
@@ -141,11 +139,6 @@ class BaseRunner:
     @final
     def resource_quota(self) -> ResourceQuota:
         return ResourceQuota()
-
-    @cached_property
-    @final
-    def batch_options(self) -> BatchOptions:
-        return BatchOptions()
 
     @final
     @cached_property
@@ -211,6 +204,22 @@ class Runner(BaseRunner, ABC):
 
     Note: for pandas.DataFrame and List, the batch_axis must be 0
     """
+
+    def __init__(
+        self,
+        name: t.Optional[str] = None,
+        *,
+        input_batch_axis: int = 0,
+        output_batch_axis: int = 0,
+    ) -> None:
+        self._name = name
+        self.input_batch_axis = input_batch_axis
+        self.output_batch_axis = output_batch_axis
+
+    @cached_property
+    @final
+    def batch_options(self) -> BatchOptions:
+        return BatchOptions()
 
     @abstractmethod
     def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:

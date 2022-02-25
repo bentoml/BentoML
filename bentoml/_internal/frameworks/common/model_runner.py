@@ -19,8 +19,14 @@ class BaseModelRunner(Runner):
         self,
         tag: t.Union[str, Tag],
         name: t.Optional[str] = None,
+        input_batch_axis: int = 0,
+        output_batch_axis: int = 0,
     ):
-        super().__init__(name)
+        super().__init__(
+            name,
+            input_batch_axis=input_batch_axis,
+            output_batch_axis=output_batch_axis,
+        )
         self._tag = Tag.from_taglike(tag)
 
     @property

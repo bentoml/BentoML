@@ -39,12 +39,13 @@ class LocalRunner(RunnerImpl):
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         if self._state is RunnerState.INIT:
             self.setup()
-        if isinstance(self._runner, Runner):
+        runner = self._runner
+        if isinstance(runner, Runner):
             params = Params(*args, **kwargs)
             params = params.map(
                 lambda i: AutoContainer.singles_to_batch(
                     [i],
-                    batch_axis=self._runner.batch_options.input_batch_axis,
+                    batch_axis=runner.input_batch_axis,
                 )
             )
             batch_result = self._runner._run_batch(  # type: ignore[reportPrivateUsage]
@@ -52,7 +53,7 @@ class LocalRunner(RunnerImpl):
             )
             single_results = AutoContainer.batch_to_singles(
                 batch_result,
-                batch_axis=self._runner.batch_options.output_batch_axis,
+                batch_axis=runner.output_batch_axis,
             )
             return single_results[0]
 

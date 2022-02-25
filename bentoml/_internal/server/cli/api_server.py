@@ -1,7 +1,8 @@
 import json
 import socket
 import typing as t
-from typing import TYPE_CHECKING, Any
+from typing import Any
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from bentoml import load

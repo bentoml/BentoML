@@ -132,7 +132,7 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
         )
 
         def _mapping(
-            item: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]
+            item: t.Union["ext.NpNDArray", torch.Tensor]
         ) -> torch.Tensor:
             if LazyType["ext.NpNDArray"]("np.ndarray").isinstance(item):
                 item = torch.Tensor(item, device=self._device_id)

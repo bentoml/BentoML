@@ -1,5 +1,6 @@
 import pickle
 import typing as t
+from typing import TYPE_CHECKING
 import logging
 import functools
 import contextlib

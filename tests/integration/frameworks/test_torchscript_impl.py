@@ -28,7 +28,9 @@ def models():
 @pytest.mark.parametrize("test_type", ["tracedmodel", "scriptedmodel"])
 def test_torchscript_save_load(test_type, models):
     tag = models(test_type)
-    assert_have_file_extension(bentoml.models.get(tag).path, ".pt")
+    bentoml_model = bentoml.models.get(tag)
+    assert_have_file_extension(bentoml_model.path, ".pt")
+    assert bentoml_model.info.context.get("model_format") == "torchscript:v1"
 
     torchscript_loaded: nn.Module = bentoml.torchscript.load(tag)
     assert predict_df(torchscript_loaded, test_df) == 5.0

@@ -1,11 +1,11 @@
 import pickle
 import typing as t
-from typing import TYPE_CHECKING
 import logging
 import functools
 import contextlib
 from abc import ABC
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from simple_di import inject
 
@@ -20,7 +20,6 @@ from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
 
 try:
-    import numpy as np
     import torch
     import torch.nn.parallel as parallel
 except ImportError:  # pragma: no cover
@@ -34,6 +33,7 @@ except ImportError:  # pragma: no cover
 
 if TYPE_CHECKING:
     import pytorch_lightning as pl
+
     from ... import external_typing as ext
 
     ModelType = t.Union[torch.nn.Module, torch.jit.ScriptModule, pl.LightningModule]
@@ -129,13 +129,9 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
         **kwargs: t.Union["ext.NpNDArray", torch.Tensor],
     ) -> torch.Tensor:
 
-        params = Params[t.Union["ext.NpNDArray", torch.Tensor]](
-            *args, **kwargs
-        )
+        params = Params[t.Union["ext.NpNDArray", torch.Tensor]](*args, **kwargs)
 
-        def _mapping(
-            item: t.Union["ext.NpNDArray", torch.Tensor]
-        ) -> torch.Tensor:
+        def _mapping(item: t.Union["ext.NpNDArray", torch.Tensor]) -> torch.Tensor:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 item = torch.Tensor(item, device=self._device_id)
             return item

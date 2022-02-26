@@ -28,7 +28,9 @@ def models():
 
 def test_pytorch_save_load(models):
     tag = models()
-    assert_have_file_extension(bentoml.models.get(tag).path, ".pt")
+    bentoml_model = bentoml.models.get(tag)
+    assert_have_file_extension(bentoml_model.path, ".pt")
+    assert bentoml_model.info.context.get("model_format") == "torch.save:v1"
 
     pytorch_loaded: nn.Module = bentoml.pytorch.load(tag)
     assert predict_df(pytorch_loaded, test_df) == 5.0

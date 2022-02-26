@@ -68,7 +68,16 @@ def load(
             f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
+    model_format = bentoml_model.info.context.get("model_format")
+    # backward compatibility
+    if not model_format:
+        model_format = "pytorch_lightning:v1"
+
+    if model_format == "pytorch_lightning:v1":
+        model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
+    else:
+        raise BentoMLException(f"Unknown model format {model_format}")
+
     return model
 
 
@@ -158,6 +167,7 @@ def save(
     )
 
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+    _model.info.context["model_format"] = "pytorch_lightning:v1"
     torch.jit.save(model.to_torchscript(), weight_file)  # type: ignore[reportUnknownMemberType]
 
     _model.save(model_store)

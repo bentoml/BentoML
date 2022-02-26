@@ -19,24 +19,24 @@ from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
 
-if TYPE_CHECKING:
-    import pytorch_lightning as pl
-    from ... import external_typing as ext
-
 try:
     import numpy as np
     import torch
     import torch.nn.parallel as parallel
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """
-        torch is required in order to use module `bentoml.pytorch`.
-         Instruction: Refers to https://pytorch.org/get-started/locally/
-         to setup PyTorch correctly.
-        """  # noqa
+        """\
+        torch is required in order to use module `bentoml.pytorch`,
+        `bentoml.torchscript` and `bentoml.pytorch_lightning`.
+        Instruction: Refers to https://pytorch.org/get-started/locally/
+        to setup PyTorch correctly.  """  # noqa
     )
 
-_ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule", "pl.LightningModule"]  # type: ignore[reportPrivateUsage]
+if TYPE_CHECKING:
+    import pytorch_lightning as pl
+    from ... import external_typing as ext
+
+    ModelType = t.Union[torch.nn.Module, torch.jit.ScriptModule, pl.LightningModule]
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
 
         self._predict_fn: t.Callable[..., torch.Tensor]
         self._no_grad_context: t.Optional[contextlib.ExitStack] = None
-        self._model: t.Optional[ModelType] = None
+        self._model: t.Optional["ModelType"] = None
 
     @property
     def _device_id(self):
@@ -136,7 +136,7 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
         def _mapping(
             item: t.Union["ext.NpNDArray", torch.Tensor]
         ) -> torch.Tensor:
-            if LazyType["ext.NpNDArray"]("np.ndarray").isinstance(item):
+            if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 item = torch.Tensor(item, device=self._device_id)
             return item
 

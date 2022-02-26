@@ -19,8 +19,9 @@ from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
 
-if t.TYPE_CHECKING:
-    import pytorch_lightning as pl  # disable=unused-import
+if TYPE_CHECKING:
+    import pytorch_lightning as pl
+    from ... import external_typing as ext
 
 try:
     import numpy as np

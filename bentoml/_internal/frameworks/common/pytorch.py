@@ -56,7 +56,7 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
 
         self._predict_fn: t.Callable[..., torch.Tensor]
         self._no_grad_context: t.Optional[contextlib.ExitStack] = None
-        self._model: t.Optional[_ModelType] = None
+        self._model: t.Optional[ModelType] = None
 
     @property
     def _device_id(self):

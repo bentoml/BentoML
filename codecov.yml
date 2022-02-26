@@ -60,6 +60,7 @@ coverage:
           - statsmodels
           - tensorflow
           - tensorflow_v1
+          - torchscript
           - transformers
           - xgboost
           - unit-tests
@@ -189,6 +190,11 @@ coverage:
         threshold: 10%
         flags:
           - tensorflow_v1
+      torchscript:
+        target: auto
+        threshold: 10%
+        flags:
+          - torchscript
       transformers:
         target: auto
         threshold: 10%

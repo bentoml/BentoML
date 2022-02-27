@@ -4,6 +4,7 @@ import uuid
 import typing as t
 import hashlib
 import logging
+import platform
 import multiprocessing
 from typing import TYPE_CHECKING
 from datetime import datetime
@@ -23,6 +24,7 @@ from simple_di import providers
 
 from . import expand_env_var
 from ..utils import validate_or_create_dir
+from ...exceptions import BentoMLException
 from ...exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
@@ -51,9 +53,22 @@ def gen_client_id() -> t.Dict[str, str]:
     # returns an unique client_id and timestamp in ISO format
     uniq = uuid.uuid1(clock_seq=CLOCK_SEQ).bytes
     client_id = hmac.new(uniq, digestmod=hashlib.blake2s).hexdigest()
-    created_time = datetime.fromtimestamp(
-        os.stat(BENTOML_HOME).st_birthtime
-    ).isoformat()
+
+    if platform.system() == "Windows":
+        btime = os.path.getctime(BENTOML_HOME)
+    else:
+        try:
+            btime = os.stat(BENTOML_HOME).st_birthtime
+        except AttributeError:
+            # probably on Linux, uses _internal.utils.statx
+            from bentoml._internal.utils.statx import statx
+
+            btime = statx(BENTOML_HOME).btime
+            assert btime is not None
+        except AssertionError:
+            raise BentoMLException("error while getting birth_time")
+    created_time = datetime.fromtimestamp(btime).isoformat()
+
     return {"client_id": client_id, "client_creation_timestamp": created_time}
 
 

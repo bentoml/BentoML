@@ -1,6 +1,6 @@
 import click
 
-from bentoml import __version__
+from bentoml import __version__ as BENTOML_VERSION
 
 from .yatai import add_login_command
 from .click_utils import BentoMLCommandGroup
@@ -9,10 +9,26 @@ from .containerize import add_containerize_command
 from .bento_management import add_bento_management_commands
 from .model_management import add_model_management_commands
 
+from ..configuration import is_pypi_installed_bentoml
+
+import functools
+
+@functools.lru_cache(maxsize=1)
+def _rich_callback():
+    import sys
+    if sys.stdout.isatty() and not is_pypi_installed_bentoml():
+        # add traceback when in interactive shell for development
+        from rich.traceback import install
+
+        install(suppress=[click])
+
 
 def create_bentoml_cli():
-    @click.group(cls=BentoMLCommandGroup)
-    @click.version_option(version=__version__)
+    _rich_callback()
+    CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
+
+    @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
+    @click.version_option(BENTOML_VERSION, "-v", "--version")  # type: ignore
     def cli():
         """BentoML CLI"""
 

@@ -55,21 +55,10 @@ There are many ways to contribute to the project:
 
 ### Usage Reporting ###
 
-BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com/). 
-It only collects BentoML library's own actions and parameters, no user or model data will be collected. 
-Here is the [code](https://github.com/bentoml/BentoML/blob/main/bentoml/_internal/utils/usage_stats.py) that does it.
-
-This helps the BentoML team to understand how the community is using this tool and what to build next. 
-You can easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.
-
-    > bentoml [command] --do-not-track
-
-You can also opt-out via setting environment variable `BENTOML_DO_NOT_TRACK=True`
-
-    > export BENTOML_DO_NOT_TRACK=True
+Refers to [here](./bentoml/_internal/utils/analytics/README.md).
 
 ### License ###
 
-[Apache License 2.0](https://github.com/bentoml/BentoML/blob/main/LICENSE)
+[Apache License 2.0](./LICENSE)
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

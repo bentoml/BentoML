@@ -1,10 +1,13 @@
-# type: ignore[stub]
-import uuid
 import os
+import hmac
+import uuid
 import typing as t
+import hashlib
 import logging
 import multiprocessing
 from typing import TYPE_CHECKING
+from datetime import datetime
+from functools import lru_cache
 from dataclasses import dataclass
 
 import yaml
@@ -38,12 +41,31 @@ BENTOML_HOME = expand_env_var(
 )
 DEFAULT_BENTOS_PATH = os.path.join(BENTOML_HOME, "bentos")
 DEFAULT_MODELS_PATH = os.path.join(BENTOML_HOME, "models")
+CLIENT_ID_PATH = os.path.join(BENTOML_HOME, "client_id")
 
-validate_or_create_dir(BENTOML_HOME)
-validate_or_create_dir(DEFAULT_BENTOS_PATH)
-validate_or_create_dir(DEFAULT_MODELS_PATH)
+CLOCK_SEQ = 32
 
-_is_upper: t.Callable[[str], bool] = lambda string: string.isupper()
+
+@lru_cache(maxsize=1)
+def gen_client_id() -> t.Dict[str, str]:
+    # returns an unique client_id and timestamp in ISO format
+    uniq = uuid.uuid1(clock_seq=CLOCK_SEQ).bytes
+    client_id = hmac.new(uniq, digestmod=hashlib.blake2s).hexdigest()
+    created_time = datetime.fromtimestamp(
+        os.stat(BENTOML_HOME).st_birthtime
+    ).isoformat()
+    return {"client_id": client_id, "client_created_timestamp": created_time}
+
+
+def create_client_id() -> None:
+    if not os.path.exists(CLIENT_ID_PATH):
+        with open(CLIENT_ID_PATH, "w", encoding="utf-8") as f:
+            yaml.dump(gen_client_id(), stream=f)
+
+
+validate_or_create_dir(BENTOML_HOME, DEFAULT_BENTOS_PATH, DEFAULT_MODELS_PATH)
+create_client_id()
+
 _check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
 _larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
     lambda target: lambda val: val > target
@@ -231,8 +253,8 @@ class BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def session_id():
-        return uuid.uuid1(clock_seq=32)
+    def session_id() -> str:
+        return uuid.uuid1(clock_seq=CLOCK_SEQ).hex
 
 
 BentoMLContainer = BentoMLContainerClass()
@@ -356,7 +378,7 @@ class DeploymentContainerClass:
             return provider
 
     # Mapping from runner name to RunnerApp file descriptor
-    remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())
+    remote_runner_mapping = providers.Static[t.Dict[str, str]]({})
     plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
 
 

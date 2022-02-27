@@ -23,6 +23,12 @@ Our collection policy:
 - Easy to opt out
 - We will <b>NOT</b> collect any personal or proprietary data.
 
+User 
 ## Specification
 
+All usage collection can be found [here](./usage_stats.py). Currently we are
+sending telemetry to [Jitsu](https://jitsu.com) to receive tracking data. The
+Jitsu server is currently configured to send all data to a BigQuery table. There
+we will introduce in-house data pipeline to process for better understanding
+about BentoML usage.
 

@@ -14,6 +14,7 @@ from rich.console import Console
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
 from .click_utils import is_valid_bento_tag
+from .click_utils import BentoMLCommandGroup
 from .click_utils import is_valid_bento_name
 from ..yatai_client import yatai_client
 from ..configuration.containers import BentoMLContainer
@@ -49,9 +50,9 @@ def add_model_management_commands(
     cli: "click.Group",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> None:
-    @cli.group(name="models")
+    @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():
-        """Model Management"""
+        """Model Management Subgroup"""
 
     @model_cli.command(help="Get Model information")
     @click.argument("model_tag", type=click.STRING)

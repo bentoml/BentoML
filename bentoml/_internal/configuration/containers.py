@@ -54,7 +54,7 @@ def gen_client_id() -> t.Dict[str, str]:
     created_time = datetime.fromtimestamp(
         os.stat(BENTOML_HOME).st_birthtime
     ).isoformat()
-    return {"client_id": client_id, "client_created_timestamp": created_time}
+    return {"client_id": client_id, "client_creation_timestamp": created_time}
 
 
 def create_client_id() -> None:

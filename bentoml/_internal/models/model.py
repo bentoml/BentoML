@@ -1,3 +1,4 @@
+import os
 import typing as t
 import logging
 from sys import version_info as pyver
@@ -18,9 +19,13 @@ from simple_di import Provide
 from ..store import Store
 from ..store import StoreItem
 from ..types import Tag
+from ..utils import calc_dir_size
+from ..utils import human_readable_size
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
+from ..utils.analytics import track
+from ..utils.analytics import MODEL_SAVE_TRACK_EVENT_TYPE
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -131,6 +136,7 @@ class Model(StoreItem):
         logger.info(f"Successfully saved {self}")
         return self
 
+    @inject
     def _save(
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "Model":
@@ -146,6 +152,13 @@ class Model(StoreItem):
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self._fs = out_fs
+            event_properties = {
+                "module": self.info.module,
+                "model_creation_timestamp": self.info.creation_time.isoformat(),
+                "model_size": human_readable_size(calc_dir_size(model_path)),
+            }
+
+        track(MODEL_SAVE_TRACK_EVENT_TYPE, os.getpid(), event_properties)
 
         return self
 

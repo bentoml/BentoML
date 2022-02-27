@@ -59,8 +59,10 @@ def calc_dir_size(path: PathType) -> int:
 
 
 def human_readable_size(size: int, decimal_places: int = 2) -> str:
-    for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
-        if size < 1024.0 or unit == "PiB":
+    unit: str = "B"
+    for _ in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
+        if size < 1024.0 or _ == "PiB":
+            unit = _
             break
         size /= 1024.0
     return f"{size:.{decimal_places}f} {unit}"

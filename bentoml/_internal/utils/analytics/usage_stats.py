@@ -62,9 +62,11 @@ def get_python_version() -> str:
 
 @lru_cache(maxsize=1)
 def get_client_id() -> t.Dict[str, str]:
-    with open(CLIENT_ID_PATH, "r", encoding="utf-8") as f:
-        client_id = yaml.safe_load(f)
-    return client_id
+    if os.path.exists(CLIENT_ID_PATH):
+        with open(CLIENT_ID_PATH, "r", encoding="utf-8") as f:
+            client_id = yaml.safe_load(f)
+        return client_id
+    return {}
 
 
 def get_serve_id():
@@ -109,6 +111,7 @@ def get_payload(
         "session_id": session_id,
         **get_client_id(),
     }
+
     return {
         "event_type": event_type,
         **event_properties,
@@ -125,13 +128,10 @@ def track(
 ) -> None:
     if do_not_track():
         return
-    send_usage_event(
-        get_payload(
-            event_type=event_type,
-            event_pid=event_pid,
-            event_properties=event_properties,
-        )
+    payload = get_payload(
+        event_type=event_type, event_pid=event_pid, event_properties=event_properties
     )
+    send_usage_event(payload)
 
 
 @slient

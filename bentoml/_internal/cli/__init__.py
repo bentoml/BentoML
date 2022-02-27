@@ -1,3 +1,5 @@
+import functools
+
 import click
 
 from bentoml import __version__ as BENTOML_VERSION
@@ -6,16 +8,15 @@ from .yatai import add_login_command
 from .click_utils import BentoMLCommandGroup
 from .bento_server import add_serve_command
 from .containerize import add_containerize_command
+from ..configuration import is_pypi_installed_bentoml
 from .bento_management import add_bento_management_commands
 from .model_management import add_model_management_commands
 
-from ..configuration import is_pypi_installed_bentoml
-
-import functools
 
 @functools.lru_cache(maxsize=1)
 def _rich_callback():
     import sys
+
     if sys.stdout.isatty() and not is_pypi_installed_bentoml():
         # add traceback when in interactive shell for development
         from rich.traceback import install

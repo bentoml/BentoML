@@ -134,6 +134,14 @@ class Model(StoreItem):
     ) -> "Model":
         self._save(model_store)
         logger.info(f"Successfully saved {self}")
+
+        event_properties = {
+            "module": self.info.module,
+            "model_creation_timestamp": self.info.creation_time.isoformat(),
+            "model_size": human_readable_size(calc_dir_size(self._model_path)),
+        }
+
+        track(MODEL_SAVE_TRACK_EVENT_TYPE, os.getpid(), event_properties)
         return self
 
     @inject
@@ -152,13 +160,7 @@ class Model(StoreItem):
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self._fs = out_fs
-            event_properties = {
-                "module": self.info.module,
-                "model_creation_timestamp": self.info.creation_time.isoformat(),
-                "model_size": human_readable_size(calc_dir_size(model_path)),
-            }
-
-        track(MODEL_SAVE_TRACK_EVENT_TYPE, os.getpid(), event_properties)
+            self._model_path = model_path  # used for telemetry
 
         return self
 

@@ -21,12 +21,16 @@ from ..store import Store
 from ..store import StoreItem
 from ..types import Tag
 from ..types import PathType
+from ..utils import calc_dir_size
+from ..utils import human_readable_size
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
+from ..utils.analytics import track
+from ..utils.analytics import BENTO_BUILD_TRACK_EVENT_TYPE
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -288,7 +292,9 @@ class Bento(StoreItem):
 
     @inject
     def save(
-        self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
+        self,
+        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
@@ -299,6 +305,17 @@ class Bento(StoreItem):
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self._fs = out_fs
+            event_properties = {
+                "bento_tag": str(self.info.tag),
+                "bento_creation_timestamp": self.info.creation_time.isoformat(),
+                "bento_size": human_readable_size(calc_dir_size(bento_path)),
+                "models_tags": [str(i) for i in self.info.models],
+                "models_type": [
+                    model_store.get(i).info.module for i in self.info.models
+                ],
+            }
+
+        track(BENTO_BUILD_TRACK_EVENT_TYPE, os.getpid(), event_properties)
 
         return self
 

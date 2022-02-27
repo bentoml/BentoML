@@ -23,6 +23,8 @@ from .lazy_loader import LazyLoader
 if TYPE_CHECKING:
     from fs import FS
 
+    P = t.ParamSpec("P")
+
 
 C = t.TypeVar("C")
 T = t.TypeVar("T")
@@ -83,12 +85,11 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._fallback = fallback
         self._raises = raises
 
-    # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
-    def __call__(  # noqa: F811
-        self, func: t.Callable[..., _T_co]
-    ) -> t.Callable[..., t.Optional[_T_co]]:
+    def __call__(
+        self, func: "t.Callable[P, _T_co]"
+    ) -> "t.Callable[P, t.Optional[_T_co]]":
         @functools.wraps(func)
-        def _(*args: t.Any, **kwargs: t.Any) -> t.Optional[_T_co]:
+        def _(*args: "P.args", **kwargs: "P.kwargs") -> t.Optional[_T_co]:
             try:
                 return func(*args, **kwargs)
             except self._catch_exc:
@@ -189,15 +190,14 @@ class cached_contextmanager:
         self._cache: t.Dict[t.Any, t.Any] = {}
 
     def __call__(
-        self,
-        func: t.Callable[..., t.Generator[VT, None, None]],
-    ) -> t.Callable[..., t.ContextManager[VT]]:
+        self, func: "t.Callable[P, t.Generator[VT, None, None]]"
+    ) -> "t.Callable[P, t.ContextManager[VT]]":
 
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager
         @functools.wraps(func)
-        def _func(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        def _func(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
             import inspect
 
             bound_args = inspect.signature(func).bind(*args, **kwargs)

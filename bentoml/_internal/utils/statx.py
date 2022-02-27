@@ -14,7 +14,6 @@ from functools import lru_cache
 from bentoml.exceptions import BentoMLException
 
 if TYPE_CHECKING:
-    P = t.ParamSpec("P")
     from ..types import PathType
 
 __all__ = ["statx"]
@@ -42,7 +41,7 @@ def get_syscall_number() -> t.Optional[int]:
 
 
 @lru_cache(maxsize=1)
-def get_syscall_func() -> t.Callable["P", t.Any]:
+def get_syscall_func() -> "t.Callable[..., t.Any]":
     syscall_nr = get_syscall_number()
     if syscall_nr is None:
         raise BentoMLException(
@@ -104,7 +103,7 @@ class StatxStruct(ctypes.Structure):
     ]
 
 
-def _stx_timestamp(struct_statx_timestamp: StatxStructTimestamp) -> float:
+def _stx_timestamp(struct_statx_timestamp: "StatxStructTimestamp") -> float:
     # Return statx timestamp.
     return struct_statx_timestamp.tv_sec + struct_statx_timestamp.tv_nsec * 1e-9
 

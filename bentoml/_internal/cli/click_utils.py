@@ -46,7 +46,7 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_common_params(
-        func: t.Callable["P", t.Any]
+        func: "t.Callable[P, t.Any]",
     ) -> "WrappedCLI[bool, bool, t.Optional[str]]":
         """Must update NUMBER_OF_COMMON_PARAMS above when adding or removing common CLI
         parameters here.
@@ -107,7 +107,7 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_track_usage(
-        func: t.Union[t.Callable["P", t.Any], "ClickFunctionWrapper[t.Any]"],
+        func: t.Union["t.Callable[P, t.Any]", "ClickFunctionWrapper[t.Any]"],
         cmd_group: click.Group,
         **kwargs: t.Any,
     ) -> "WrappedCLI[bool]":
@@ -155,7 +155,7 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def raise_click_exception(
-        func: t.Union[t.Callable["P", t.Any], "ClickFunctionWrapper[t.Any]"],
+        func: t.Union["t.Callable[P, t.Any]", "ClickFunctionWrapper[t.Any]"],
         cmd_group: click.Group,
         **kwargs: t.Any,
     ) -> "ClickFunctionWrapper[t.Any]":
@@ -173,12 +173,12 @@ class BentoMLCommandGroup(click.Group):
 
     def command(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> t.Callable[[t.Callable[..., t.Any]], click.Command]:
+    ) -> "t.Callable[[t.Callable[P, t.Any]], click.Command]":
         if "context_settings" not in kwargs:
             kwargs["context_settings"] = {}
         kwargs["context_settings"]["max_content_width"] = 120
 
-        def wrapper(func: t.Callable[..., t.Any]) -> click.Command:
+        def wrapper(func: "t.Callable[P, t.Any]") -> click.Command:
             # add common parameters to command.
             func = BentoMLCommandGroup.bentoml_common_params(func)
             # Send tracking events before command finish.

@@ -1,3 +1,4 @@
+# type: ignore[reportUnusedFunction]
 import logging
 
 import click
@@ -11,7 +12,7 @@ from ..yatai_rest_api_client.config import default_context_name
 logger = logging.getLogger(__name__)
 
 
-def add_login_command(cli):
+def add_login_command(cli: click.Group) -> None:
     @cli.group(name="yatai")
     def yatai_cli():
         """yatai sub commands"""

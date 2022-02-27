@@ -1,4 +1,5 @@
 # type: ignore[stub]
+import uuid
 import os
 import typing as t
 import logging
@@ -210,7 +211,7 @@ class BentoMLContainerClass:
 
     config = providers.Configuration()
 
-    bentoml_home = BENTOML_HOME
+    bentoml_home: str = BENTOML_HOME
     default_bento_store_base_dir: str = DEFAULT_BENTOS_PATH
     default_model_store_base_dir: str = DEFAULT_MODELS_PATH
 
@@ -227,6 +228,11 @@ class BentoMLContainerClass:
         from ..models import ModelStore
 
         return ModelStore(base_dir)
+
+    @providers.SingletonFactory
+    @staticmethod
+    def session_id():
+        return uuid.uuid1(clock_seq=32)
 
 
 BentoMLContainer = BentoMLContainerClass()

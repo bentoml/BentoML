@@ -1,5 +1,7 @@
+# type: ignore[reportUnusedFunction]
 import sys
 import json
+import typing as t
 from typing import TYPE_CHECKING
 
 import yaml
@@ -13,25 +15,27 @@ from bentoml.bentos import build_bentofile
 
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
-from .click_utils import _is_valid_bento_tag
-from .click_utils import _is_valid_bento_name
+from .click_utils import is_valid_bento_tag
+from .click_utils import is_valid_bento_name
 from ..yatai_client import yatai_client
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from io import BytesIO
+
     from ..bento import BentoStore
 
 
 def parse_delete_targets_argument_callback(
-    ctx, params, value
-):  # pylint: disable=unused-argument
+    ctx: "click.Context", params: "click.Parameter", value: t.Any
+) -> t.Any:  # pylint: disable=unused-argument
     if value is None:
         return value
     delete_targets = value.split(",")
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
         if not (
-            _is_valid_bento_tag(delete_target) or _is_valid_bento_name(delete_target)
+            is_valid_bento_tag(delete_target) or is_valid_bento_name(delete_target)
         ):
             raise click.BadParameter(
                 "Bad formatting. Please present a valid bento bundle name or "
@@ -44,9 +48,9 @@ def parse_delete_targets_argument_callback(
 
 @inject
 def add_bento_management_commands(
-    cli,
+    cli: "click.Group",
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-):
+) -> None:
     @cli.command(help="Get Bento information")
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
@@ -55,7 +59,7 @@ def add_bento_management_commands(
         type=click.Choice(["json", "yaml", "path"]),
         default="yaml",
     )
-    def get(bento_tag, output):
+    def get(bento_tag: str, output: str) -> None:
         """Print Bento details by providing the bento_tag
 
         bentoml get FraudDetector:latest
@@ -86,7 +90,7 @@ def add_bento_management_commands(
         is_flag=False,
         help="Don't truncate the output",
     )
-    def list_bentos(bento_name, output, no_trunc):
+    def list_bentos(bento_name: str, output: str, no_trunc: bool) -> None:
         """Print list of bentos in local store
 
         # show all bentos saved
@@ -147,9 +151,9 @@ def add_bento_management_commands(
         help="Skip confirmation when deleting a specific bento bundle",
     )
     def delete(
-        delete_targets,
-        yes,
-    ):
+        delete_targets: str,
+        yes: bool,
+    ) -> None:
         """Delete Bento in local bento store.
 
         Specify target Bentos to remove:
@@ -159,7 +163,7 @@ def add_bento_management_commands(
         * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
 
-        def delete_target(target):
+        def delete_target(target: str) -> None:
             to_delete_bentos = bento_store.list(target)
 
             for bento in to_delete_bentos:
@@ -180,7 +184,7 @@ def add_bento_management_commands(
     @click.argument(
         "out_file", type=click.File("wb"), default=sys.stdout, required=False
     )
-    def export(bento_tag, out_file):
+    def export(bento_tag: str, out_file: "BytesIO") -> None:
         """Export Bento files to a tar file
 
         bentoml export FraudDetector:latest > my_bento.tar
@@ -192,7 +196,7 @@ def add_bento_management_commands(
     @click.argument(
         "bento_path", type=click.File("rb"), default=sys.stdin, required=False
     )
-    def import_bento(bento_path):
+    def import_bento(bento_path: "BytesIO") -> None:
         """Export Bento files to a tar file
 
         bentoml import < ./my_bento.tar
@@ -211,7 +215,7 @@ def add_bento_management_commands(
         default=False,
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    def pull(bento_tag: str, force: bool):
+    def pull(bento_tag: str, force: bool) -> None:
         yatai_client.pull_bento(bento_tag, force=force)
 
     @cli.command(help="Push Bento to a yatai server")
@@ -223,7 +227,7 @@ def add_bento_management_commands(
         default=False,
         help="Forced push to yatai even if it exists in yatai",
     )
-    def push(bento_tag: str, force: bool):
+    def push(bento_tag: str, force: bool) -> None:
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
@@ -233,7 +237,7 @@ def add_bento_management_commands(
     @click.argument("build_ctx", type=click.Path(), default=".")
     @click.option("-f", "--bentofile", type=click.STRING, default="bentofile.yaml")
     @click.option("--version", type=click.STRING, default=None)
-    def build(build_ctx, bentofile, version):
+    def build(build_ctx: str, bentofile: str, version: str) -> None:
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 

@@ -84,18 +84,13 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ]
 
 
-class NdarrayContainer(
-    DataContainer[
-        "ext.NpNDArray[t.Any]",
-        "ext.NpNDArray[t.Any]",
-    ]
-):
+class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
     @classmethod
     def singles_to_batch(
         cls,
-        singles: t.Sequence["ext.NpNDArray[t.Any]"],
+        singles: t.Sequence["ext.NpNDArray"],
         batch_axis: int = 0,
-    ) -> "ext.NpNDArray[t.Any]":
+    ) -> "ext.NpNDArray":
         import numpy as np
 
         return np.stack(  # type: ignore[reportGeneralTypeIssues]
@@ -106,9 +101,9 @@ class NdarrayContainer(
     @classmethod
     def batch_to_singles(
         cls,
-        batch: "ext.NpNDArray[t.Any]",
+        batch: "ext.NpNDArray",
         batch_axis: int = 0,
-    ) -> t.List["ext.NpNDArray[t.Any]"]:
+    ) -> t.List["ext.NpNDArray"]:
         import numpy as np
 
         return [
@@ -124,7 +119,7 @@ class NdarrayContainer(
     @inject
     def single_to_payload(  # pylint: disable=arguments-differ
         cls,
-        single: "ext.NpNDArray[t.Any]",
+        single: "ext.NpNDArray",
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
@@ -144,7 +139,7 @@ class NdarrayContainer(
         cls,
         payload: Payload,
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
-    ) -> "ext.NpNDArray[t.Any]":
+    ) -> "ext.NpNDArray":
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
 

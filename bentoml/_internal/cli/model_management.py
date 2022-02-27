@@ -1,6 +1,8 @@
+# type: ignore[reportUnusedFunction]
 import sys
 import json
 import typing as t
+from typing import TYPE_CHECKING
 
 import yaml
 import click
@@ -11,25 +13,27 @@ from rich.console import Console
 
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
-from .click_utils import _is_valid_bento_tag
-from .click_utils import _is_valid_bento_name
+from .click_utils import is_valid_bento_tag
+from .click_utils import is_valid_bento_name
 from ..yatai_client import yatai_client
 from ..configuration.containers import BentoMLContainer
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from io import BytesIO
+
     from ..models import ModelStore
 
 
 def parse_delete_targets_argument_callback(
-    ctx, params, value
-):  # pylint: disable=unused-argument
+    ctx: "click.Context", params: "click.Parameter", value: t.Any
+) -> t.Any:  # pylint: disable=unused-argument
     if value is None:
         return value
     delete_targets = value.split(",")
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
         if not (
-            _is_valid_bento_tag(delete_target) or _is_valid_bento_name(delete_target)
+            is_valid_bento_tag(delete_target) or is_valid_bento_name(delete_target)
         ):
             raise click.BadParameter(
                 "Bad formatting. Please present a valid bento bundle name or "
@@ -42,9 +46,9 @@ def parse_delete_targets_argument_callback(
 
 @inject
 def add_model_management_commands(
-    cli,
+    cli: "click.Group",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> None:
     @cli.group(name="models")
     def model_cli():
         """Model Management"""
@@ -57,7 +61,7 @@ def add_model_management_commands(
         type=click.Choice(["json", "yaml", "path"]),
         default="yaml",
     )
-    def get(model_tag, output):
+    def get(model_tag: str, output: str) -> None:
         """Print Model details by providing the model_tag
 
         bentoml models get FraudDetector:latest
@@ -88,7 +92,7 @@ def add_model_management_commands(
         is_flag=False,
         help="Don't truncate the output",
     )
-    def list_models(model_name, output, no_trunc):
+    def list_models(model_name: str, output: str, no_trunc: bool) -> None:
         """Print list of models in local store
 
         # show all models saved
@@ -149,9 +153,9 @@ def add_model_management_commands(
         help="Skip confirmation when deleting a specific model",
     )
     def delete(
-        delete_targets,
-        yes,
-    ):
+        delete_targets: str,
+        yes: bool,
+    ) -> None:
         """Delete Model in local model store.
 
         Specify target Models to remove:
@@ -161,7 +165,7 @@ def add_model_management_commands(
         * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
 
-        def delete_target(target):
+        def delete_target(target: str) -> None:
             to_delete_models = model_store.list(target)
 
             for model in to_delete_models:
@@ -182,7 +186,7 @@ def add_model_management_commands(
     @click.argument(
         "out_file", type=click.File("wb"), default=sys.stdout, required=False
     )
-    def export(model_tag, out_file):
+    def export(model_tag: str, out_file: "BytesIO") -> None:
         """Export Model files to a tar file
 
         bentoml models export FraudDetector:latest > my_model.tar
@@ -196,7 +200,7 @@ def add_model_management_commands(
     @click.argument(
         "model_path", type=click.File("rb"), default=sys.stdin, required=False
     )
-    def import_model(model_path):
+    def import_model(model_path: "BytesIO") -> None:
         """Export Model files to a tar file
 
         bentoml models import < ./my_model.tar

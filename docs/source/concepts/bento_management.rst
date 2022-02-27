@@ -172,11 +172,11 @@ module or the `models push` CLI command.
 
         import bentoml.models
 
-        bentoml.models.delete("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", skip_confirm=True)
+        bentoml.models.push("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", skip_confirm=True)
     
     .. code-tab:: bash
 
-        > bentoml models delete iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
+        > bentoml models push iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
 
 Pulling Models
 ^^^^^^^^^^^^^^

@@ -45,8 +45,9 @@ def predict_df(model: pl.LightningModule, df: pd.DataFrame):
 def test_pl_save_load():
     model: "pl.LightningModule" = AdditionModel()
     tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
-    info = bentoml.models.get(tag)
-    assert_have_file_extension(info.path, ".pt")
+    bentoml_model = bentoml.models.get(tag)
+    assert_have_file_extension(bentoml_model.path, ".pt")
+    assert bentoml_model.info.context.get("model_format") == "pytorch_lightning:v1"
 
     pl_loaded: "pl.LightningModule" = bentoml.pytorch_lightning.load(tag)
 

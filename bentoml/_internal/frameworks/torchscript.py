@@ -1,9 +1,7 @@
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from pathlib import Path
 
-import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
@@ -17,13 +15,12 @@ from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from .common.pytorch import torch
 from .common.pytorch import BasePyTorchRunner
-from .common.pytorch import PyTorchTensorContainer  # pylint: disable=unused-import
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import ModelStore
 
-MODULE_NAME = "bentoml.pytorch"
+MODULE_NAME = "bentoml.torchscript"
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +30,7 @@ def load(
     tag: t.Union[Tag, str],
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "torch.nn.Module":
+) -> "torch.jit.ScriptModule":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -46,14 +43,14 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`torch.nn.Module`: an instance of :code:`torch.nn.Module` from BentoML modelstore.
+        :obj:`torch.jit.ScriptModule`: an instance of :code:`torch.jit.ScriptModule` from BentoML modelstore.
 
     Examples:
 
     .. code-block:: python
 
         import bentoml
-        model = bentoml.pytorch.load('lit_classifier:latest', device_id="cuda:0")
+        model = bentoml.torchscript.load('lit_classifier:latest', device_id="cuda:0")
     """  # noqa
     bentoml_model = model_store.get(tag)
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
@@ -64,14 +61,10 @@ def load(
     model_format = bentoml_model.info.context.get("model_format")
     # backward compatibility
     if not model_format:
-        model_format = "cloudpickle:v1"
+        model_format = "torchscript:v1"
 
-    if model_format == "cloudpickle:v1":
-        with Path(weight_file).open("rb") as file:
-            model: "torch.nn.Module" = cloudpickle.load(file).to(device_id)
-    elif model_format == "torch.save:v1":
-        with Path(weight_file).open("rb") as file:
-            model: "torch.nn.Module" = torch.load(file, map_location=device_id)
+    if model_format == "torchscript:v1":
+        model: "torch.jit.ScriptModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
     else:
         raise BentoMLException(f"Unknown model format {model_format}")
 
@@ -81,7 +74,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: "torch.nn.Module",
+    model: "torch.jit.ScriptModule",
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -92,7 +85,7 @@ def save(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`torch.nn.Module`):
+        model (:code:`torch.jit.ScriptModule`):
             Instance of model to be saved
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
@@ -124,7 +117,9 @@ def save(
                 log_probs = F.log_softmax(out, dim=1)
                 return log_probs
 
-        tag = bentoml.pytorch.save("ngrams", NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE))
+        _model = NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+        model = torch.jit.script(_model)
+        tag = bentoml.torchscript.save("ngrams", model)
         # example tag: ngrams:20201012_DE43A2
 
     Integration with Torch Hub and BentoML:
@@ -138,7 +133,7 @@ def save(
         ...
         # trained a custom resnet50
 
-        tag = bentoml.pytorch.save("resnet50", resnet50)
+        tag = bentoml.torchscript.save("resnet50", resnet50)
     """  # noqa
     context: t.Dict[str, t.Any] = {
         "framework_name": "torch",
@@ -152,15 +147,14 @@ def save(
         metadata=metadata,
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    _model.info.context["model_format"] = "torch.save:v1"
-    with open(weight_file, "wb") as file:
-        torch.save(model, file, pickle_module=cloudpickle)
+    _model.info.context["model_format"] = "torchscript:v1"
+    torch.jit.save(model, weight_file)  # type: ignore[reportUnknownMemberType]
 
     _model.save(model_store)
     return _model.tag
 
 
-class _PyTorchRunner(BasePyTorchRunner):
+class _TorchScriptRunner(BasePyTorchRunner):
     def _load_model(self):
         return load(self._tag, device_id=self._device_id)
 
@@ -171,10 +165,10 @@ def load_runner(
     predict_fn_name: str = "__call__",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
-) -> "_PyTorchRunner":
+) -> "_TorchScriptRunner":
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
-        maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
+        maximize throughput. `bentoml.torchscript.load_runner` implements a Runner class that
         wrap around a pytorch instance, which optimize it for the BentoML runtime.
 
     Args:
@@ -186,7 +180,7 @@ def load_runner(
             Common kwargs passed to model for this runner
 
     Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pytorch` model
+        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.torchscript` model
 
     Examples:
 
@@ -195,10 +189,10 @@ def load_runner(
         import bentoml
         import pandas as pd
 
-        runner = bentoml.pytorch.load_runner("ngrams:latest")
+        runner = bentoml.torchscript.load_runner("ngrams:latest")
         runner.run(pd.DataFrame("/path/to/csv"))
     """
-    return _PyTorchRunner(
+    return _TorchScriptRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         partial_kwargs=partial_kwargs,

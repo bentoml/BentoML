@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from bentoml import detectron
     from bentoml import tensorflow
     from bentoml import statsmodels
+    from bentoml import torchscript
     from bentoml import transformers
     from bentoml import tensorflow_v1
     from bentoml import picklable_model
@@ -82,6 +83,7 @@ else:
     tensorflow_v1 = _LazyLoader(
         "bentoml.tensorflow_v1", globals(), "bentoml.tensorflow_v1"
     )
+    torchscript = _LazyLoader("bentoml.torchscript", globals(), "bentoml.torchscript")
     transformers = _LazyLoader(
         "bentoml.transformers", globals(), "bentoml.transformers"
     )
@@ -128,6 +130,7 @@ __all__ = [
     "statsmodels",
     "tensorflow",
     "tensorflow_v1",
+    "torchscript",
     "transformers",
     "xgboost",
 ]

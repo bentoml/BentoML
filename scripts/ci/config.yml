@@ -209,6 +209,14 @@ tf2:
     - "tensorflow_hub"
     - "tensorflow"
 
+torchscript:
+  <<: *tmpl
+  dependencies:
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
+    - "psutil"
+
 transformers:
   <<: *tmpl
   dependencies:

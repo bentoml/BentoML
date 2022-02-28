@@ -1,6 +1,7 @@
 import typing as t
 from typing import TYPE_CHECKING
 
+import torch
 from simple_di import inject
 from simple_di import Provide
 
@@ -11,9 +12,9 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
-from .pytorch import _PyTorchRunner as _PyTorchLightningRunner  # type: ignore[reportPrivateUsage] # noqa: LN001
 from ..utils.pkg import get_pkg_version
-from .common.model_runner import BaseModelRunner
+from .common.pytorch import torch
+from .common.pytorch import BasePyTorchRunner
 from ..configuration.containers import BentoMLContainer
 
 _PL_IMPORT_ERROR = f"""\
@@ -28,7 +29,6 @@ if TYPE_CHECKING:
     from ..models import ModelStore
 
 try:
-    import torch
     import pytorch_lightning as pl  # noqa: F811
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
@@ -69,7 +69,16 @@ def load(
             f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
+    model_format = bentoml_model.info.context.get("model_format")
+    # backward compatibility
+    if not model_format:
+        model_format = "pytorch_lightning:v1"
+
+    if model_format == "pytorch_lightning:v1":
+        model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
+    else:
+        raise BentoMLException(f"Unknown model format {model_format}")
+
     return model
 
 
@@ -159,10 +168,16 @@ def save(
     )
 
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+    _model.info.context["model_format"] = "pytorch_lightning:v1"
     torch.jit.save(model.to_torchscript(), weight_file)  # type: ignore[reportUnknownMemberType]
 
     _model.save(model_store)
     return _model.tag
+
+
+class _PyTorchLightningRunner(BasePyTorchRunner):
+    def _load_model(self):
+        return load(self._tag, device_id=self._device_id)
 
 
 @inject
@@ -170,7 +185,6 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "__call__",
-    device_id: str = "cpu:0",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     name: t.Optional[str] = None,
 ) -> "_PyTorchLightningRunner":
@@ -184,9 +198,6 @@ def load_runner(
             Tag of a saved model in BentoML local modelstore.
         predict_fn_name (:code:`str`, default to :code:`__call__`):
             inference function to be used.
-        device_id (:code:`Union[str, int, List[Union[str, int]]]`, `optional`, default to :code:`cpu`):
-            Optional devices to put the given model on. Refers to `Tensor Attributes Docs <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_
-            for more information.
         partial_kwargs (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Common kwargs passed to model for this runner
 
@@ -205,6 +216,5 @@ def load_runner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         name=name,
-        device_id=device_id,
         partial_kwargs=partial_kwargs,
     )

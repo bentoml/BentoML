@@ -18,6 +18,7 @@ from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
 from ..utils.analytics import track
 from ..utils.analytics import async_track
+from ..utils.analytics import get_serve_id
 from ..utils.analytics import async_loop_forever
 from ..utils.analytics import BENTO_SERVE_TRACK_EVENT_TYPE
 from ..configuration.containers import DeploymentContainer

@@ -64,7 +64,7 @@ def test_transformers_save_load(
     model = loader.from_pretrained(model_name, **kwargs)
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, **kwargs)
     tag = bentoml.transformers.save(model_name, model, tokenizer=tokenizer)
-    lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
+    _, lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
     res = generate_from_text(
         lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
     )
@@ -74,15 +74,12 @@ def test_transformers_save_load(
 def test_transformers_save_load_pipeline():
     from PIL import Image
 
-    pipeline = transformers.pipeline("image-classification")
-    tag = bentoml.transformers.save("vit-image-classification", pipeline)
+    pipe = transformers.pipeline("image-classification")
+    tag = bentoml.transformers.save("vit-image-classification", pipe)
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
-    model, fe = bentoml.transformers.load(tag)
-    loaded = transformers.pipeline(
-        "image-classification", model=model, feature_extractor=fe
-    )
-    res = loaded(image)
+    pipeline = bentoml.transformers.load(tag)
+    res = pipeline(image)
     assert res[0]["label"] == "Egyptian cat"
 
 

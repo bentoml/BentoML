@@ -13,22 +13,12 @@ from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
+from .common.pytorch import torch
 from .common.pytorch import BasePyTorchRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import ModelStore
-
-try:
-    import torch
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        """
-        torch is required in order to use module `bentoml.torchscript`.
-         Instruction: Refers to https://pytorch.org/get-started/locally/
-         to setup PyTorch correctly.
-        """  # noqa
-    )
 
 MODULE_NAME = "bentoml.torchscript"
 

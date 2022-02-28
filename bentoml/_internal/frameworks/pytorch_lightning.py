@@ -1,6 +1,7 @@
 import typing as t
 from typing import TYPE_CHECKING
 
+import torch
 from simple_di import inject
 from simple_di import Provide
 
@@ -12,6 +13,7 @@ from bentoml.exceptions import MissingDependencyException
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from .common.pytorch import torch
 from .common.pytorch import BasePyTorchRunner
 from ..configuration.containers import BentoMLContainer
 
@@ -27,7 +29,6 @@ if TYPE_CHECKING:
     from ..models import ModelStore
 
 try:
-    import torch
     import pytorch_lightning as pl  # noqa: F811
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)

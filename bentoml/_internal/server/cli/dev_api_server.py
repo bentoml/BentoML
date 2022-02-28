@@ -52,7 +52,11 @@ def main(
             # TODO: use svc.build_args.include/exclude as default files to watch
             # TODO: watch changes in model store when "latest" model tag is used
             config = uvicorn.Config(asgi_app_import_str, **uvicorn_options)
-            uvicorn.Server(config).run(sockets=[sock])
+            server = uvicorn.Server(config)
+
+            from uvicorn.supervisors import ChangeReload  # type: ignore
+
+            ChangeReload(config, target=server.run, sockets=[sock]).run()
         else:
             config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
             uvicorn.Server(config).run(sockets=[sock])

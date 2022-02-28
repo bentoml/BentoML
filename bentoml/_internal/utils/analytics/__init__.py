@@ -1,7 +1,6 @@
 from .usage_stats import track
 from .usage_stats import get_serve_info
 from .usage_stats import scheduled_track
-from .usage_stats import async_loop_forever
 from .usage_stats import BENTOML_DO_NOT_TRACK
 
 CLI_TRACK_EVENT_TYPE = "bentoml_cli"
@@ -13,6 +12,5 @@ __all__ = [
     "track",
     "scheduled_track",
     "get_serve_info",
-    "async_loop_forever",
     "BENTOML_DO_NOT_TRACK",
 ]

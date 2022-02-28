@@ -1,13 +1,15 @@
-import os
 import typing as t
+from typing import TYPE_CHECKING
 
-import pytest
 import requests
 from schema import Or
 from schema import And
 from schema import Schema
 
 import bentoml._internal.utils.analytics.usage_stats as analytics_lib
+
+if TYPE_CHECKING:
+    from _pytest.monkeypatch import MonkeyPatch
 
 _is_lower: t.Callable[[str], bool] = lambda s: s.islower()
 EVENT_TYPE = "bentoml_test_event"
@@ -37,7 +39,7 @@ def patch_get_client_id():
     }
 
 
-def patch_get_hardware_usage(pid):
+def patch_get_hardware_usage(pid: int):
     return {
         "memory_usage_percent": 0.22068023681640625,
         "total_memory(MB)": 32768,
@@ -45,7 +47,7 @@ def patch_get_hardware_usage(pid):
     }
 
 
-def test_get_payload(monkeypatch):
+def test_get_payload(monkeypatch: "MonkeyPatch"):
     with monkeypatch.context() as m:
         m.setattr(analytics_lib, "get_client_id", patch_get_client_id)
         m.setattr(analytics_lib, "get_hardware_usage", patch_get_hardware_usage)
@@ -55,14 +57,14 @@ def test_get_payload(monkeypatch):
         assert SCHEMA.validate(payload)
 
 
-def test_do_not_track(monkeypatch):
+def test_do_not_track(monkeypatch: "MonkeyPatch"):
     with monkeypatch.context() as m:
         m.setenv("BENTOML_DO_NOT_TRACK", "True")
         assert analytics_lib.do_not_track() is True
 
 
-def test_send_usage_event(monkeypatch):
-    def patch_post(*args, **kwargs):
+def test_send_usage_event(monkeypatch: "MonkeyPatch"):
+    def patch_post(*args: t.Any, **kwargs: t.Any) -> t.Dict[str, str]:
         return {"Hello": "World"}
 
     with monkeypatch.context() as m:

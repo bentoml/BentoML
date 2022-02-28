@@ -18,7 +18,6 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import __version__ as BENTOML_VERSION
-from bentoml.exceptions import BentoMLException
 
 from ...configuration.containers import CLIENT_ID_PATH
 from ...configuration.containers import BentoMLContainer
@@ -34,17 +33,6 @@ BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
 BENTOML_TRACKING_URL = "https://t.bentoml.com"
 BENTOML_USAGE_REPORT_INTERVAL_SECONDS = "__BENTOML_USAGE_REPORT_INTERVAL_SECONDS"
 BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE = "bentoml_bento_serve_scheduled"
-
-
-def experimental(func: "t.Callable[P, T]") -> "t.Callable[P, T]":
-    experimental_doc = (
-        "    .. note:: This function is experimental. "
-        + "Use with care, as API might change in the future\n\n"
-    )
-    func.__doc__ = "" if func.__doc__ is None else func.__doc__
-    func.__doc__ = experimental_doc + func.__doc__
-    logger.debug(f"{func.__qualname__} is an experimental API. Use with care!")
-    return func
 
 
 def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
@@ -163,36 +151,6 @@ def track(
     send_usage_event(payload, timeout=timeout, uri=uri)
 
 
-@experimental
-def async_loop_forever(
-    interval: int = get_usage_stats_interval_seconds(), cancellable: bool = False
-) -> "t.Callable[[AsyncFunc[P]], AsyncFunc[P]]":  # pragma: no cover
-    def wrapper(coro: "AsyncFunc[P]") -> "AsyncFunc[P]":
-        @wraps(coro)
-        async def _(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
-            while True:
-                await asyncio.sleep(interval)
-                try:
-                    await coro(*args, **kwargs)
-                except asyncio.CancelledError as err:
-                    if cancellable:
-                        logger.info(
-                            f"An `async_loop_forever` coroutine is cancelled: {coro}."
-                        )
-                    else:
-                        raise BentoMLException(
-                            f"`async_loop_forever` {coro} cannot be cancelled since `cancellable={cancellable}`."
-                        ) from err
-                except Exception:  # pylint: disable=broad-except
-                    logger.exception(f"Error looping coroutine {coro}.")
-                await asyncio.sleep(interval)
-
-        return _
-
-    return wrapper
-
-
-@experimental
 async def track_async(
     event_type: str,
     event_pid: int,
@@ -215,12 +173,22 @@ async def track_async(
 
 
 @slient
-@async_loop_forever(get_usage_stats_interval_seconds())
 async def scheduled_track(
-    current_pid: int, event_properties: t.Dict[str, t.Any]
+    current_pid: int,
+    event_properties: t.Dict[str, t.Any],
+    interval: int = get_usage_stats_interval_seconds(),
 ):  # pragma: no cover
-    await track_async(
-        BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE,
-        current_pid,
-        event_properties=event_properties,
-    )
+    await asyncio.sleep(interval)
+    while True:
+        try:
+            await track_async(
+                BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE,
+                current_pid,
+                event_properties=event_properties,
+            )
+        except asyncio.CancelledError:
+            logger.debug("coroutine is cancelled.")
+            break
+        except Exception:  # pylint: disable=broad-except
+            logger.debug("Error looping coroutine.")
+        await asyncio.sleep(interval)

@@ -3,9 +3,12 @@ import sys
 import json
 import shutil
 import typing as t
+import asyncio
 import logging
 import tempfile
+import threading
 import contextlib
+from datetime import datetime
 
 import psutil
 from simple_di import inject
@@ -17,11 +20,11 @@ from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
 from ..utils.analytics import track
-from ..utils.analytics import async_track
-from ..utils.analytics import get_serve_id
-from ..utils.analytics import async_loop_forever
+from ..utils.analytics import get_serve_info
+from ..utils.analytics import scheduled_track
 from ..utils.analytics import BENTO_SERVE_TRACK_EVENT_TYPE
 from ..configuration.containers import DeploymentContainer
+from ..utils.analytics.usage_stats import get_usage_stats_interval_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +49,24 @@ def _ensure_prometheus_dir(
     os.makedirs(prometheus_multiproc_dir, exist_ok=True)
 
 
+def get_scheduled_event_properties(
+    production: bool,
+    bento_identifier: str,
+    serve_info: t.Dict[str, str],
+    bento_creation_timestamp: t.Optional[str] = None,
+) -> t.Dict[str, t.Any]:
+    ep = {
+        "production": production,
+        "bento_identifier": bento_identifier,
+        "invoked_time": datetime.utcnow().isoformat(),
+        "intervals": get_usage_stats_interval_seconds(),
+        **serve_info,
+    }
+    if bento_creation_timestamp is not None:
+        ep["bento_creation_timestamp"] = bento_creation_timestamp
+    return ep
+
+
 @inject
 def serve_development(
     bento_identifier: str,
@@ -58,6 +79,19 @@ def serve_development(
     reload_delay: float = 0.25,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
+    serve_info = get_serve_info()
+    current_pid = os.getpid()
+
+    # Track first time
+    track(
+        BENTO_SERVE_TRACK_EVENT_TYPE,
+        event_pid=current_pid,
+        event_properties={
+            "production": False,
+            "bento_identifier": bento_identifier,
+            **serve_info,
+        },
+    )
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -114,6 +148,22 @@ def serve_development(
     )
     _ensure_prometheus_dir()
 
+    tracking_threads = threading.Thread(
+        target=asyncio.run,
+        args=(
+            scheduled_track(
+                current_pid=current_pid,
+                event_properties=get_scheduled_event_properties(
+                    production=False,
+                    bento_identifier=bento_identifier,
+                    serve_info=serve_info,
+                ),
+            ),
+        ),
+        daemon=True,
+    )
+    tracking_threads.start()
+
     arbiter.start(
         cb=lambda _: logger.info(  # type: ignore
             f'Starting development BentoServer from "{bento_identifier}" '
@@ -136,6 +186,33 @@ def serve_production(
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
+    serve_info = get_serve_info()
+    current_pid = os.getpid()
+    bento_creation_timestamp = None
+
+    # Track first time
+    if svc.bento is not None:
+        bento = svc.bento
+        bento_creation_timestamp = bento.info.creation_time.isoformat()
+        event_properties = {
+            "production": True,
+            "bento_identifier": bento_identifier,
+            "bento_creation_timestamp": bento_creation_timestamp,
+            **serve_info,
+        }
+    else:
+        # In this case serving from a file/directory with --production
+        event_properties = {
+            "production": True,
+            "bento_tag": bento_identifier,
+            **serve_info,
+        }
+
+    track(
+        BENTO_SERVE_TRACK_EVENT_TYPE,
+        event_pid=current_pid,
+        event_properties=event_properties,
+    )
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -260,6 +337,23 @@ def serve_production(
 
     _ensure_prometheus_dir()
     try:
+        tracking_threads = threading.Thread(
+            target=asyncio.run,
+            args=(
+                scheduled_track(
+                    current_pid=current_pid,
+                    event_properties=get_scheduled_event_properties(
+                        production=True,
+                        bento_identifier=bento_identifier,
+                        bento_creation_timestamp=bento_creation_timestamp,
+                        serve_info=serve_info,
+                    ),
+                ),
+            ),
+            daemon=True,
+        )
+        tracking_threads.start()
+
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 f'Starting production BentoServer from "bento_identifier" '

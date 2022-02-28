@@ -140,8 +140,12 @@ class Model(StoreItem):
             "model_creation_timestamp": self.info.creation_time.isoformat(),
             "model_size": human_readable_size(calc_dir_size(self._model_path)),
         }
+        track(
+            MODEL_SAVE_TRACK_EVENT_TYPE,
+            event_pid=os.getpid(),
+            event_properties=event_properties,
+        )
 
-        track(MODEL_SAVE_TRACK_EVENT_TYPE, os.getpid(), event_properties)
         return self
 
     @inject

@@ -25,6 +25,4 @@ Our collection policy:
 
 ## Specification
 
-All usage collection can be found [here](./usage_stats.py). 
-
-Currently we are sending telemetry to [Jitsu](https://jitsu.com). The Jitsu server is configured to then send all data to a BigQuery table.
+All usage collection code can be found [here](./usage_stats.py). 

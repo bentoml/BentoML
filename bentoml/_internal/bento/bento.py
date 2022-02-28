@@ -315,7 +315,11 @@ class Bento(StoreItem):
                 ],
             }
 
-        track(BENTO_BUILD_TRACK_EVENT_TYPE, os.getpid(), event_properties)
+        track(
+            BENTO_BUILD_TRACK_EVENT_TYPE,
+            event_pid=os.getpid(),
+            event_properties=event_properties,
+        )
 
         return self
 

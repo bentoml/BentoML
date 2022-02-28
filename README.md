@@ -1,6 +1,8 @@
 [<img src="https://raw.githubusercontent.com/bentoml/BentoML/main/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
 
-# Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
+<br>
+
+# 🍱 BentoML: Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
@@ -55,7 +57,23 @@ There are many ways to contribute to the project:
 
 ### Usage Reporting ###
 
-Refers to [here](./bentoml/_internal/utils/analytics/README.md).
+By default, BentoML anonymously collect usage data, and here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for it. We rely heavily of
+community feedback on features and bugs to focus our engineering work on.
+As the community grows, we want to ensure we understand how BentoML users
+implement and use the library, so that the team can focus on building and
+improving BentoML.
+
+Now, we recognize that not everyone is willing to provide and send their usage
+data. To opt out, provide `--do-not-track` to any of BentoML CLI commands:
+```bash
+bentoml serve iris_clf:latest --production --do-not-track
+```
+
+Or add the following to your shell `.rc` to opt out tracking entirely:
+```bash
+# .bashrc.example
+export BENTOML_DO_NOT_TRACK=True
+```
 
 ### License ###
 

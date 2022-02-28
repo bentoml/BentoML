@@ -1,5 +1,3 @@
-import functools
-
 import click
 
 from bentoml import __version__ as BENTOML_VERSION
@@ -13,7 +11,6 @@ from .bento_management import add_bento_management_commands
 from .model_management import add_model_management_commands
 
 
-@functools.lru_cache(maxsize=1)
 def _rich_callback():
     import sys
 

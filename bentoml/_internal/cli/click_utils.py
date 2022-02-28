@@ -16,6 +16,7 @@ from ..configuration import CONFIG_ENV_VAR
 from ..configuration import set_debug_mode
 from ..configuration import load_global_config
 from ..utils.analytics import track
+from ..utils.analytics import BENTOML_DO_NOT_TRACK
 from ..utils.analytics import CLI_TRACK_EVENT_TYPE
 
 if TYPE_CHECKING:
@@ -48,9 +49,7 @@ class BentoMLCommandGroup(click.Group):
     def bentoml_common_params(
         func: "t.Callable[P, t.Any]",
     ) -> "WrappedCLI[bool, bool, t.Optional[str]]":
-        """Must update NUMBER_OF_COMMON_PARAMS above when adding or removing common CLI
-        parameters here.
-        """
+        # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
 
         @click.option(
             "-q",
@@ -70,7 +69,7 @@ class BentoMLCommandGroup(click.Group):
             "--do-not-track",
             is_flag=True,
             default=False,
-            envvar="BENTOML_DO_NOT_TRACK",
+            envvar=BENTOML_DO_NOT_TRACK,
             help="Do not send usage info",
         )
         @click.option(
@@ -116,7 +115,7 @@ class BentoMLCommandGroup(click.Group):
         @functools.wraps(func)
         def wrapper(do_not_track: bool, *args: "P.args", **kwargs: "P.kwargs") -> t.Any:
             if do_not_track:
-                os.environ["BENTOML_DO_NOT_TRACK"] = str(True)
+                os.environ[BENTOML_DO_NOT_TRACK] = str(True)
                 logger.debug(
                     "Executing '%s' command without usage tracking.", command_name
                 )

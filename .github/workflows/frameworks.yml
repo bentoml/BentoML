@@ -40,6 +40,7 @@ jobs:
       statsmodels: ${{ steps.filter.outputs.statsmodels}}
       tf1: ${{ steps.filter.outputs.tf1 }}
       tf2: ${{ steps.filter.outputs.tf2 }}
+      torchscript: ${{ steps.filter.outputs.torchscript }}
       transformers: ${{ steps.filter.outputs.transformers }}
       xgboost: ${{ steps.filter.outputs.xgboost }}
     steps:

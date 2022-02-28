@@ -134,6 +134,8 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
         def _mapping(item: t.Union["ext.NpNDArray", torch.Tensor]) -> torch.Tensor:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 item = torch.Tensor(item, device=self._device_id)
+            else:
+                item = item.to(self._device_id)
             return item
 
         params = params.map(_mapping)

@@ -30,8 +30,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-TRACKING_URI = "https://t.bentoml.com"
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
+BENTOML_TRACKING_URL = "https://t.bentoml.com"
+BENTOML_USAGE_REPORT_INTERVAL_SECONDS = "__BENTOML_USAGE_REPORT_INTERVAL_SECONDS"
 BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE = "bentoml_bento_serve_scheduled"
 
 
@@ -46,7 +47,7 @@ def experimental(func: "t.Callable[P, T]") -> "t.Callable[P, T]":
     return func
 
 
-def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":
+def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
     # Slient errors when tracking
     @wraps(func)
     def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
@@ -69,10 +70,10 @@ def do_not_track() -> bool:
 def get_usage_stats_interval_seconds() -> int:
     # The interval for getting usage stats for a serve is 4 hours.
     # cached for better performance.
-    return int(os.environ.get("__BENTOML_USAGE_REPORT_INTERVAL_SECONDS", 4 * 60 * 60))
+    return int(os.environ.get(BENTOML_USAGE_REPORT_INTERVAL_SECONDS, 4 * 60 * 60))
 
 
-def get_serve_info() -> t.Dict[str, str]:
+def get_serve_info() -> t.Dict[str, str]:  # pragma: no cover
     # Returns a safe token for serve as well as timestamp of creating this token
     return {
         "serve_id": secrets.token_urlsafe(32),
@@ -91,7 +92,7 @@ def get_python_version() -> str:
 
 
 @lru_cache(maxsize=1)
-def get_client_id() -> t.Dict[str, str]:
+def get_client_id() -> t.Dict[str, str]:  # pragma: no cover
     if os.path.exists(CLIENT_ID_PATH):
         with open(CLIENT_ID_PATH, "r", encoding="utf-8") as f:
             client_id = yaml.safe_load(f)
@@ -99,7 +100,7 @@ def get_client_id() -> t.Dict[str, str]:
     return {}
 
 
-def get_hardware_usage(pid: int) -> t.Dict[str, t.Any]:
+def get_hardware_usage(pid: int) -> t.Dict[str, t.Any]:  # pragma: no cover
     proc = psutil.Process(pid)
     with proc.oneshot():
         return {
@@ -152,7 +153,7 @@ def track(
     event_pid: int,
     event_properties: t.Optional[t.Dict[str, t.Any]] = None,
     timeout: int = 2,
-    uri: str = TRACKING_URI,
+    uri: str = BENTOML_TRACKING_URL,
 ) -> None:
     if do_not_track():
         return
@@ -165,7 +166,7 @@ def track(
 @experimental
 def async_loop_forever(
     interval: int = get_usage_stats_interval_seconds(), cancellable: bool = False
-) -> "t.Callable[[AsyncFunc[P]], AsyncFunc[P]]":
+) -> "t.Callable[[AsyncFunc[P]], AsyncFunc[P]]":  # pragma: no cover
     def wrapper(coro: "AsyncFunc[P]") -> "AsyncFunc[P]":
         @wraps(coro)
         async def _(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
@@ -184,19 +185,21 @@ def async_loop_forever(
                         ) from err
                 except Exception:  # pylint: disable=broad-except
                     logger.exception(f"Error looping coroutine {coro}.")
+                await asyncio.sleep(interval)
 
         return _
 
     return wrapper
 
 
+@experimental
 async def track_async(
     event_type: str,
     event_pid: int,
     event_properties: t.Optional[t.Dict[str, t.Any]] = None,
     timeout: int = 2,
-    uri: str = TRACKING_URI,
-) -> None:
+    uri: str = BENTOML_TRACKING_URL,
+) -> None:  # pragma: no cover
     """Async send the data. Using ThreadPool to implement async send."""
     # https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor
     if do_not_track():
@@ -212,9 +215,10 @@ async def track_async(
 
 
 @slient
-@experimental
 @async_loop_forever(get_usage_stats_interval_seconds())
-async def scheduled_track(current_pid: int, event_properties: t.Dict[str, t.Any]):
+async def scheduled_track(
+    current_pid: int, event_properties: t.Dict[str, t.Any]
+):  # pragma: no cover
     await track_async(
         BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE,
         current_pid,

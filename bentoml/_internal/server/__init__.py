@@ -3,12 +3,10 @@ import sys
 import json
 import shutil
 import typing as t
-import asyncio
 import logging
 import tempfile
 import threading
 import contextlib
-from datetime import datetime
 
 import psutil
 from simple_di import inject
@@ -24,7 +22,16 @@ from ..utils.analytics import get_serve_info
 from ..utils.analytics import scheduled_track
 from ..utils.analytics import BENTO_SERVE_TRACK_EVENT_TYPE
 from ..configuration.containers import DeploymentContainer
-from ..utils.analytics.usage_stats import get_usage_stats_interval_seconds
+
+if sys.version_info[:2] >= (3, 7):
+    import asyncio
+
+    asyncio_run_func = asyncio.run
+else:
+    from ..utils import asyncio_run
+
+    asyncio_run_func = asyncio_run
+
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +65,7 @@ def get_scheduled_event_properties(
     ep = {
         "production": production,
         "bento_identifier": bento_identifier,
-        "invoked_time": datetime.utcnow().isoformat(),
-        "intervals": get_usage_stats_interval_seconds(),
+        # TODO: models info + metrics
         **serve_info,
     }
     if bento_creation_timestamp is not None:
@@ -149,7 +155,7 @@ def serve_development(
     _ensure_prometheus_dir()
 
     tracking_threads = threading.Thread(
-        target=asyncio.run,
+        target=asyncio_run_func,
         args=(
             scheduled_track(
                 current_pid=current_pid,
@@ -336,9 +342,10 @@ def serve_production(
     )
 
     _ensure_prometheus_dir()
+
     try:
         tracking_threads = threading.Thread(
-            target=asyncio.run,
+            target=asyncio_run_func,
             args=(
                 scheduled_track(
                     current_pid=current_pid,

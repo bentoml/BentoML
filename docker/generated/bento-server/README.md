@@ -1,30 +1,33 @@
-## Model Serving Made Easy  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20Machine%20Learning%20Model%20Serving%20Made%20Easy%20&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
+# Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
+
+BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
+
+👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
 [![actions_status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
-[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
-
-BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
-
-👉 Join our [slack community](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
+[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
 
-## Why BentoML
+## Why BentoML ##
 
-- The easiest way to get your ML models into production.
+- The easiest way to turn your ML models into production-ready API endpoints.
 - High performance model serving, all in Python.
-- Package your model once and deploy it anywhere.
-- Support all major ML model training [frameworks](https://docs.bentoml.org/en/latest/frameworks.html).
+- Standardized model packaging and ML service definition to streamline deployment.
+- Support all major machine-learning training [frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html).
+- Deploy and operate ML serving workload at scale on Kubernetes via [Yatai](https://github.com/bentoml/yatai).
 
-## Getting Started
+## Getting Started ##
 
 - [Quickstart guide](https://docs.bentoml.org/en/latest/quickstart.html) will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
-- [Main concepts](https://docs.bentoml.org/en/latest/concepts.html) will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
-- Playground notebook gets your hands dirty in a notebook environment, for you to try out all the core features in BentoML.
-- [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks.html) lays out best practices and example usages by the ML framework used for training models.
-- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) show cases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+- [Main concepts](https://docs.bentoml.org/en/latest/concepts/index.html) will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
+- [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html) lays out best practices and example usages by the ML framework used for training models.
+- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) showcases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+- Check out other projects from the [BentoML team](https://github.com/bentoml):
+  - [🦄️ Yatai](https://github.com/bentoml/yatai): Run BentoML workflow at scale on Kubernetes
+  - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment with BentoML on cloud platforms
 
 
 ## BentoServer base images
@@ -56,61 +59,29 @@ Example image tags:
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
 
-## Latest tags for `bento-server 1.0.0`
+## Latest tags for `bento-server 1.0.0a5`
 
 
 ### Debian
 
-- [`1.0.0-python3.7-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0-python3.7-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`1.0.0-python3.8-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0-python3.8-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`1.0.0-python3.9-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0-python3.9-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a5-python3.7-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`1.0.0a5-python3.7-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a5-python3.8-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`1.0.0a5-python3.8-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a5-python3.9-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`1.0.0a5-python3.9-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
 - [`devel-python3.7-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
 - [`devel-python3.8-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
 - [`devel-python3.9-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
 
-### Centos8
-
-*WARNING*: POSSIBLE MISSING IMAGE TAGS
-
-Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
-
-- [`1.0.0-python3.7-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/cudnn/Dockerfile)
-- [`1.0.0-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/runtime/Dockerfile)
-- [`1.0.0-python3.8-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/cudnn/Dockerfile)
-- [`1.0.0-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/runtime/Dockerfile)
-- [`1.0.0-python3.9-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/cudnn/Dockerfile)
-- [`1.0.0-python3.9-centos8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/runtime/Dockerfile)
-- [`devel-python3.7-centos8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/devel/Dockerfile)
-- [`devel-python3.8-centos8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/devel/Dockerfile)
-- [`devel-python3.9-centos8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos8/devel/Dockerfile)
-
-### Centos7
-
-*WARNING*: POSSIBLE MISSING IMAGE TAGS
-
-Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
-
-- [`1.0.0-python3.7-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/cudnn/Dockerfile)
-- [`1.0.0-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/runtime/Dockerfile)
-- [`1.0.0-python3.8-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/cudnn/Dockerfile)
-- [`1.0.0-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/runtime/Dockerfile)
-- [`1.0.0-python3.9-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/cudnn/Dockerfile)
-- [`1.0.0-python3.9-centos7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/runtime/Dockerfile)
-- [`devel-python3.7-centos7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/devel/Dockerfile)
-- [`devel-python3.8-centos7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/devel/Dockerfile)
-- [`devel-python3.9-centos7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/centos7/devel/Dockerfile)
-
 ### Amazonlinux2
 
-- [`1.0.0-python3.7-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
-- [`1.0.0-python3.8-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
-- [`1.0.0-python3.9-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`1.0.0a5-python3.7-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`1.0.0a5-python3.8-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`1.0.0a5-python3.9-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 
 ### Alpine3.14
 
-- [`1.0.0-python3.7-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
-- [`1.0.0-python3.8-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
-- [`1.0.0-python3.9-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`1.0.0a5-python3.7-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`1.0.0a5-python3.8-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`1.0.0a5-python3.9-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)

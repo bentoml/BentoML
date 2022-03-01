@@ -42,6 +42,6 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tes
 
 FROM build_image as release_image
 
-ENV BENTOML_VERSION=1.0.0
+ENV BENTOML_VERSION=1.0.0a5
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

@@ -98,13 +98,16 @@ def _infer_serialization_format_from_request(
     elif content_type == "text/csv":
         return SerializationFormat.CSV
     elif content_type:
-        logger.warning(
-            f"Unknown content-type ({content_type}), falling back to {default_format} serialization format."
+        logger.debug(
+            "Unknown content-type (%s), falling back to %s serialization format.",
+            content_type,
+            default_format,
         )
         return default_format
     else:
-        logger.warning(
-            f"Content-type not specified, falling back to {default_format} serialization format."
+        logger.debug(
+            "Content-type not specified, falling back to %s serialization format.",
+            default_format,
         )
         return default_format
 

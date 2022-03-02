@@ -113,15 +113,14 @@ async def test_pandas(host):
         assert_data=b'[{"col1":202}]',
     )
 
-    if PandasDataFrame.parquet_engine:
-        await async_request(
-            "POST",
-            f"http://{host}/predict_dataframe2",
-            headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
-            data=df.to_parquet(engine=PandasDataFrame.parquet_engine),
-            assert_status=200,
-            assert_data=b'[{"col1":202}]',
-        )
+    await async_request(
+        "POST",
+        f"http://{host}/predict_dataframe2",
+        headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
+        data=df.to_parquet(),
+        assert_status=200,
+        assert_data=b'[{"col1":202}]',
+    )
 
     await async_request(
         "POST",

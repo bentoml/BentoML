@@ -26,6 +26,8 @@ class YataiClientContext:
     name: str
     endpoint: str
     api_token: str
+    email: str
+    yatai_version: str
 
     def get_yatai_rest_api_client(self) -> YataiRESTApiClient:
         return YataiRESTApiClient(self.endpoint, self.api_token)
@@ -78,6 +80,14 @@ def add_context(context: YataiClientContext) -> None:
     else:
         config.contexts.append(context)
     store_config(config)
+
+
+def update_context(context_name: str, context: YataiClientContext) -> None:
+    config = get_config()
+    for _, ctx in enumerate(config.contexts):
+        if ctx.name == context_name:
+            return add_context(context)
+    raise YataiRESTApiClientError(f"Not found {context_name} yatai context")
 
 
 def get_current_context() -> YataiClientContext:

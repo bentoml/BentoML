@@ -102,6 +102,13 @@ class OrganizationSchema(ResourceSchema):
 
 
 @attr.define
+class YataiVersionSchema:
+    version: str
+    git_commit: str
+    build_date: str
+
+
+@attr.define
 class OrganizationListSchema(BaseListSchema):
     items: List[OrganizationSchema]
 

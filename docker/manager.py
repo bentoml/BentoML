@@ -3,6 +3,7 @@ import os
 import re
 import json
 import shutil
+from typing import TYPE_CHECKING
 import typing as t
 import operator
 from copy import deepcopy
@@ -23,7 +24,6 @@ from utils import maxkeys
 from utils import get_data
 from utils import set_data
 from utils import get_nested
-from utils import cached_property
 from utils import ColoredFormatter
 from utils import load_manifest_yaml
 from dotenv import load_dotenv
@@ -35,7 +35,9 @@ from docker.errors import APIError
 from docker.errors import BuildError
 from docker.errors import ImageNotFound
 
-if t.TYPE_CHECKING:
+from utils import cached_property
+
+if TYPE_CHECKING:
     from docker.models.images import Image  # pylint: disable=unused-import
 
 
@@ -299,7 +301,7 @@ class GenerateMixin(object):
         Generate template context for each distro releases.
         Args:
             pkg: release bentoml packages: bento-server
-            distro: linux distro. eg: centos
+            distro: linux distro. eg: ubi
             pyv: python version
         Returns:
             build context that can be used with self.render

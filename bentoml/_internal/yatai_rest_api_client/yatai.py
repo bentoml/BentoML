@@ -12,13 +12,13 @@ from .schemas import schema_from_json
 from .schemas import CreateBentoSchema
 from .schemas import CreateModelSchema
 from .schemas import OrganizationSchema
+from .schemas import YataiVersionSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
 from .schemas import FinishUploadBentoSchema
 from .schemas import FinishUploadModelSchema
 from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
-from .schemas import YataiVersionSchema
 from ...exceptions import YataiRESTApiClientError
 
 logger = logging.getLogger(__name__)

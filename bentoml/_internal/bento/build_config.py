@@ -20,9 +20,6 @@ from .docker import ImageProvider
 from ...exceptions import InvalidArgument
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
-if TYPE_CHECKING:
-    DistroString = t.Literal["debian", "amazonlinux2", "alpine", "centos7", "centos8"]
-
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
@@ -62,7 +59,7 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
 @attr.frozen
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
-    distro: "t.Optional[DistroString]" = attr.field(
+    distro: str = attr.field(
         validator=attr.validators.optional(
             attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
         ),
@@ -348,7 +345,9 @@ class PythonOptions:
                 pip_compile_cli.invoke(click_ctx)
             except Exception as e:
                 logger.error(f"Failed locking PyPI packages: {e}")
-                logger.error("Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`")
+                logger.error(
+                    "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
+                )
 
     def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values

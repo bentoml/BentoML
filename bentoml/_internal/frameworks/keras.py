@@ -63,7 +63,7 @@ _sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
 _CUSTOM_OBJ_FNAME = f"{SAVE_NAMESPACE}_custom_objects{PKL_EXT}"
 _SAVED_MODEL_FNAME_MAPPING = {
     "h5": f"{SAVE_NAMESPACE}{H5_EXT}",
-    "tf": f"/",
+    "tf": "/",
 }
 _MODEL_WEIGHT_FNAME_MAPPING = {
     "h5": f"{SAVE_NAMESPACE}_weights{HDF5_EXT}",

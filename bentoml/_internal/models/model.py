@@ -177,13 +177,15 @@ class Model(StoreItem):
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
         except fs.errors.ResourceNotFound:
-            logger.warning(f"Failed to import Model from {item_fs}.")
-            raise BentoMLException("Failed to create Model because it was invalid")
+            raise BentoMLException(
+                f"Failed to load bento model because it does not contain a '{MODEL_YAML_FILENAME}'"
+            )
 
         res = cls(info.tag, item_fs, info)
         if not res.validate():
-            logger.warning(f"Failed to import Model from {item_fs}.")
-            raise BentoMLException("Failed to create Model because it was invalid")
+            raise BentoMLException(
+                f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"
+            )
 
         res._info_flushed = True
         res._custom_objects_flushed = True

@@ -277,13 +277,15 @@ class Bento(StoreItem):
             with item_fs.open(BENTO_YAML_FILENAME, "r", encoding="utf-8") as bento_yaml:
                 info = BentoInfo.from_yaml_file(bento_yaml)
         except fs.errors.ResourceNotFound:
-            logger.warning(f"Failed to import Bento from {item_fs}.")
-            raise BentoMLException("Failed to create Bento because it was invalid")
+            raise BentoMLException(
+                f"Failed to load bento because it does not contain a '{BENTO_YAML_FILENAME}'"
+            )
 
         res = cls(info.tag, item_fs, info)
         if not res.validate():
-            logger.warning(f"Failed to import Bento from {item_fs}.")
-            raise BentoMLException("Failed to create Bento because it was invalid")
+            raise BentoMLException(
+                f"Failed to create bento because it contains an invalid '{BENTO_YAML_FILENAME}'"
+            )
 
         res._flushed = True
         return res

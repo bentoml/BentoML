@@ -3,6 +3,7 @@ import re
 import typing as t
 import logging
 from sys import version_info as pyver
+from typing import TYPE_CHECKING
 
 import fs
 import attr
@@ -19,7 +20,8 @@ from .docker import ImageProvider
 from ...exceptions import InvalidArgument
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
-DistroString = t.Literal["debian", "amazonlinux2", "alpine", "centos7", "centos8"]
+if TYPE_CHECKING:
+    DistroString = t.Literal["debian", "amazonlinux2", "alpine", "centos7", "centos8"]
 
 logger = logging.getLogger(__name__)
 

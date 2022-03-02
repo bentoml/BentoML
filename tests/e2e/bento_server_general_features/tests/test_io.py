@@ -115,7 +115,7 @@ async def test_pandas(host):
     )
 
     # pyarrow only support python 3.7+
-    if sys.version_info > (3, 6):
+    if sys.version_info >= (3, 7):
         await async_request(
             "POST",
             f"http://{host}/predict_dataframe2",

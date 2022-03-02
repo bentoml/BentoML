@@ -1,12 +1,13 @@
 import os
 import sys
 import json
+import atexit
 import shutil
 import typing as t
 import logging
 import tempfile
-import threading
 import contextlib
+from datetime import datetime
 
 import psutil
 from simple_di import inject
@@ -14,7 +15,6 @@ from simple_di import Provide
 
 from bentoml import load
 
-from ..utils import asyncio_run_safe
 from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
@@ -22,6 +22,7 @@ from ..utils.analytics import track
 from ..utils.analytics import get_serve_info
 from ..utils.analytics import scheduled_track
 from ..utils.analytics import BENTO_SERVE_TRACK_EVENT_TYPE
+from ..utils.analytics import BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE
 from ..configuration.containers import DeploymentContainer
 
 logger = logging.getLogger(__name__)
@@ -50,15 +51,17 @@ def _ensure_prometheus_dir(
 def get_scheduled_event_properties(
     production: bool,
     bento_identifier: str,
-    serve_info: t.Dict[str, str],
+    serve_info: t.Optional[t.Dict[str, str]] = None,
     bento_creation_timestamp: t.Optional[str] = None,
 ) -> t.Dict[str, t.Any]:
     ep = {
         "production": production,
         "bento_identifier": bento_identifier,
         # TODO: models info + metrics
-        **serve_info,
+        "triggered_at": datetime.utcnow().isoformat(),
     }
+    if serve_info is not None:
+        ep.update(serve_info)
     if bento_creation_timestamp is not None:
         ep["bento_creation_timestamp"] = bento_creation_timestamp
     return ep
@@ -163,6 +166,17 @@ def serve_development(
         )
     finally:
         stop_thread_event.set()
+
+    atexit.register(
+        track,
+        event_type=BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE,
+        event_pid=current_pid,
+        event_properties=get_scheduled_event_properties(
+            production=False,
+            bento_identifier=bento_identifier,
+            serve_info=serve_info,
+        ),
+    )
 
 
 MAX_AF_UNIX_PATH_LENGTH = 103
@@ -349,3 +363,14 @@ def serve_production(
         if uds_path is not None:
             shutil.rmtree(uds_path)
         stop_thread_event.set()
+
+    atexit.register(
+        track,
+        event_type=BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE,
+        event_pid=current_pid,
+        event_properties=get_scheduled_event_properties(
+            production=True,
+            bento_identifier=bento_identifier,
+            serve_info=serve_info,
+        ),
+    )

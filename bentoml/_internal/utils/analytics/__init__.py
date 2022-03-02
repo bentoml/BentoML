@@ -7,6 +7,7 @@ CLI_TRACK_EVENT_TYPE = "bentoml_cli"
 MODEL_SAVE_TRACK_EVENT_TYPE = "bentoml_model_save"
 BENTO_BUILD_TRACK_EVENT_TYPE = "bentoml_bento_build"
 BENTO_SERVE_TRACK_EVENT_TYPE = "bentoml_bento_serve_init"
+BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE = "bentoml_bento_serve_shutdown"
 
 __all__ = [
     "track",

@@ -57,9 +57,9 @@ def do_not_track() -> bool:
 
 @lru_cache(maxsize=1)
 def get_usage_stats_interval_seconds() -> int:
-    # The interval for getting usage stats for a serve is 4 hours.
+    # The interval for getting usage stats for a serve is 12 hours.
     # cached for better performance.
-    return int(os.environ.get(BENTOML_USAGE_REPORT_INTERVAL_SECONDS, 4 * 60 * 60))
+    return int(os.environ.get(BENTOML_USAGE_REPORT_INTERVAL_SECONDS, 12 * 60 * 60))
 
 
 def get_serve_info() -> t.Dict[str, str]:  # pragma: no cover

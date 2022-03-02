@@ -69,6 +69,7 @@ def import_bento(
     Examples:
 
     .. code-block:: python
+
         # imports 'my_bento' from '/path/to/folder/my_bento.bento'
         bentoml.import_bento('/path/to/folder/my_bento.bento')
 
@@ -142,6 +143,7 @@ def export_bento(
     Examples:
 
     .. code-block:: python
+
         # exports 'my_bento' to '/path/to/folder/my_bento-version.bento' in BentoML's default format
         bentoml.export_bento('my_bento:latest', '/path/to/folder')
         # note that folders can only be passed if exporting to the local filesystem; otherwise the

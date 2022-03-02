@@ -61,6 +61,7 @@ def import_model(
     Examples:
 
     .. code-block:: python
+
         # imports 'my_model' from '/path/to/folder/my_model.bentomodel'
         bentoml.models.import_model('/path/to/folder/my_model.bentomodel')
 
@@ -134,6 +135,7 @@ def export_model(
     Examples:
 
     .. code-block:: python
+
         # exports 'my_model' to '/path/to/folder/my_model-version.bentomodel' in BentoML's default format
         bentoml.models.export_model('my_model:latest', '/path/to/folder')
         # note that folders can only be passed if exporting to the local filesystem; otherwise the

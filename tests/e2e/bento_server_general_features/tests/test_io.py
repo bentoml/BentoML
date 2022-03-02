@@ -2,6 +2,7 @@
 # type: ignore[no-untyped-def]
 
 import io
+import sys
 
 import numpy as np
 import pytest
@@ -113,14 +114,16 @@ async def test_pandas(host):
         assert_data=b'[{"col1":202}]',
     )
 
-    await async_request(
-        "POST",
-        f"http://{host}/predict_dataframe2",
-        headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
-        data=df.to_parquet(),
-        assert_status=200,
-        assert_data=b'[{"col1":202}]',
-    )
+    # pyarrow only support python 3.7+
+    if sys.version_info > (3, 6):
+        await async_request(
+            "POST",
+            f"http://{host}/predict_dataframe2",
+            headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
+            data=df.to_parquet(),
+            assert_status=200,
+            assert_data=b'[{"col1":202}]',
+        )
 
     await async_request(
         "POST",

@@ -1,6 +1,7 @@
 import io
 import typing as t
 import logging
+import functools
 import importlib.util
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -31,16 +32,19 @@ else:
 
 logger = logging.getLogger(__name__)
 
+
 # Check for parquet support
-if importlib.util.find_spec("pyarrow") is not None:
-    _parquet_engine = "pyarrow"
-elif importlib.util.find_spec("fastparquet") is not None:
-    _parquet_engine = "fastparquet"
-else:
-    logger.warning(
-        "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
-    )
-    _parquet_engine = None
+@functools.lru_cache(maxsize=1)
+def get_parquet_engine():
+    if importlib.util.find_spec("pyarrow") is not None:
+        return "pyarrow"
+    elif importlib.util.find_spec("fastparquet") is not None:
+        return "fastparquet"
+    else:
+        logger.warning(
+            "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
+        )
+        return None
 
 
 def _infer_type(item: str) -> str:  # pragma: no cover
@@ -94,19 +98,25 @@ def _infer_serialization_format_from_request(
     elif content_type == "text/csv":
         return SerializationFormat.CSV
     elif content_type:
-        logger.warning(
-            f"Unknown content-type ({content_type}), falling back to {default_format} serialization format."
+        logger.debug(
+            "Unknown content-type (%s), falling back to %s serialization format.",
+            content_type,
+            default_format,
         )
         return default_format
     else:
-        logger.warning(
-            f"Content-type not specified, falling back to {default_format} serialization format."
+        logger.debug(
+            "Content-type not specified, falling back to %s serialization format.",
+            default_format,
         )
         return default_format
 
 
 def _validate_serialization_format(serialization_format: SerializationFormat):
-    if serialization_format is SerializationFormat.PARQUET and _parquet_engine is None:
+    if (
+        serialization_format is SerializationFormat.PARQUET
+        and get_parquet_engine() is None
+    ):
         raise MissingDependencyException(
             "Parquet serialization is not available. Try installing pyarrow or fastparquet first."
         )
@@ -226,8 +236,6 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that `pd.DataFrame`.
     """
 
-    parquet_engine = _parquet_engine
-
     def __init__(
         self,
         orient: "ext.DataFrameOrient" = "records",
@@ -247,6 +255,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         self._shape = shape
         self._enforce_shape = enforce_shape
         self._default_format = SerializationFormat[default_format.upper()]
+        _validate_serialization_format(self._default_format)
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._dtype)
@@ -297,7 +306,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         elif serialization_format is SerializationFormat.PARQUET:
             res = pd.read_parquet(  # type: ignore[arg-type]
                 io.BytesIO(obj),
-                engine=self.parquet_engine,
+                engine=get_parquet_engine(),
             )
         elif serialization_format is SerializationFormat.CSV:
             res = pd.read_csv(  # type: ignore[arg-type]
@@ -359,7 +368,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         if serialization_format is SerializationFormat.JSON:
             resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
         elif serialization_format is SerializationFormat.PARQUET:
-            resp = obj.to_parquet(engine=self.parquet_engine)
+            resp = obj.to_parquet(engine=get_parquet_engine())
         elif serialization_format is SerializationFormat.CSV:
             resp = obj.to_csv()
         else:

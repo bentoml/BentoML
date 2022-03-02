@@ -342,7 +342,11 @@ class PythonOptions:
             )
             logger.info("Locking PyPI package versions..")
             click_ctx = pip_compile_cli.make_context("pip-compile", pip_compile_args)
-            pip_compile_cli.invoke(click_ctx)
+            try:
+                pip_compile_cli.invoke(click_ctx)
+            except Exception as e:
+                logger.error(f"Failed locking PyPI packages: {e}")
+                logger.error("Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`")
 
     def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values

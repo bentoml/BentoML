@@ -249,8 +249,12 @@ def containerize(
     env = os.environ.copy()
     env["DOCKER_SCAN_SUGGEST"] = "false"
     logger.info(f"Building docker image for {bento}...")
-    subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
-    logger.info(f'Successfully built docker image "{docker_image_tag}"')
+    try:
+        subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed building docker image: {e}")
+    else:
+        logger.info(f'Successfully built docker image "{docker_image_tag}"')
 
 
 __all__ = [

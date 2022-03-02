@@ -33,12 +33,15 @@ def predict_assert_equal(model: "keras.Model") -> None:
 @pytest.mark.parametrize(
     "model, kwargs",
     [
-        (KerasSequentialModel(), {"store_as_json": True, "custom_objects": None}),
-        (KerasSequentialModel(), {"store_as_json": False, "custom_objects": None}),
+        (KerasSequentialModel(), {"store_as_json": True, "save_format": "tf"}),
+        (KerasSequentialModel(), {"store_as_json": False, "save_format": "tf"}),
+        (KerasSequentialModel(), {"store_as_json": True, "save_format": "h5"}),
+        (KerasSequentialModel(), {"store_as_json": False, "save_format": "h5"}),
         (
             KerasSequentialModel(),
             {
                 "store_as_json": False,
+                "save_format": "tf",
                 "custom_objects": {
                     "CustomLayer": CustomLayer,
                     "custom_activation": custom_activation,
@@ -53,13 +56,15 @@ def test_keras_save_load(
 ) -> None:
     tag = bentoml.keras.save(MODEL_NAME, model, **kwargs)
     model_info = bentoml.models.get(tag)
-    if kwargs["custom_objects"] is not None:
+    if kwargs.get("custom_objects") is not None:
         assert_have_file_extension(model_info.path, ".pkl")
     if kwargs["store_as_json"]:
         assert_have_file_extension(model_info.path, ".json")
-        assert_have_file_extension(model_info.path, ".hdf5")
+        if kwargs["save_format"] == "h5":
+            assert_have_file_extension(model_info.path, ".hdf5")
     else:
-        assert_have_file_extension(model_info.path, ".h5")
+        if kwargs["save_format"] == "h5":
+            assert_have_file_extension(model_info.path, ".h5")
     if not TF2:
         session = bentoml.keras.get_session()
         # Initialize variables in the graph/model

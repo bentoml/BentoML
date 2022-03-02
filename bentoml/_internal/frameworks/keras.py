@@ -61,8 +61,14 @@ _sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
 
 
 _CUSTOM_OBJ_FNAME = f"{SAVE_NAMESPACE}_custom_objects{PKL_EXT}"
-_SAVED_MODEL_FNAME = f"{SAVE_NAMESPACE}{H5_EXT}"
-_MODEL_WEIGHT_FNAME = f"{SAVE_NAMESPACE}_weights{HDF5_EXT}"
+_SAVED_MODEL_FNAME_MAPPING = {
+    "h5": f"{SAVE_NAMESPACE}{H5_EXT}",
+    "tf": f"/",
+}
+_MODEL_WEIGHT_FNAME_MAPPING = {
+    "h5": f"{SAVE_NAMESPACE}_weights{HDF5_EXT}",
+    "tf": f"{SAVE_NAMESPACE}_weights",
+}
 _MODEL_JSON_FNAME = f"{SAVE_NAMESPACE}_json{JSON_EXT}"
 
 
@@ -132,29 +138,41 @@ def load(
 
     """  # noqa
 
-    model = model_store.get(tag)
-    if model.info.module not in (MODULE_NAME, __name__):
+    bentoml_model: Model = model_store.get(tag)
+    if bentoml_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
     default_custom_objects = None
-    if model.info.options["custom_objects"]:
-        assert Path(model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
-        with Path(model.path_of(_CUSTOM_OBJ_FNAME)).open("rb") as dcof:
+    if bentoml_model.info.options["custom_objects"]:
+        assert Path(bentoml_model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
+        with Path(bentoml_model.path_of(_CUSTOM_OBJ_FNAME)).open("rb") as dcof:
             default_custom_objects = cloudpickle.load(dcof)
 
+    model_format = bentoml_model.info.context.get("model_format")
+    if model_format:
+        # ignore version=v1 now because all version should be v1
+        save_format, store_as_json, _ = model_format.split(":")
+    # backward compatibility
+    else:
+        save_format = "h5"
+        store_as_json = bentoml_model.info.options["store_as_json"]
+
     with get_session().as_default():
-        if model.info.options["store_as_json"]:
-            assert Path(model.path_of(_MODEL_JSON_FNAME)).is_file()
-            with Path(model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
+        if store_as_json:
+            assert Path(bentoml_model.path_of(_MODEL_JSON_FNAME)).is_file()
+            with Path(bentoml_model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
                 model_json = jsonf.read()
             model = keras.models.model_from_json(
                 model_json, custom_objects=default_custom_objects
             )
+            weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
+            model.load_weights(bentoml_model.path_of(weight_fname))
         else:
+            model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
             model = keras.models.load_model(
-                model.path_of(_SAVED_MODEL_FNAME),
+                bentoml_model.path_of(model_fname),
                 custom_objects=default_custom_objects,
             )
         try:
@@ -170,6 +188,7 @@ def save(
     model: "keras.Model",
     *,
     store_as_json: t.Optional[bool] = False,
+    save_format: t.Optional[str] = "tf",
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -184,6 +203,8 @@ def save(
             Instance of the Keras model to be saved to BentoML modelstore.
         store_as_json (`bool`, `optional`, default to :code:`False`):
             Whether to store Keras model as JSON and weights.
+        save_format (`str`, `optional`, default to :code:`tf`):
+            Whether to store Keras model or weight in tf format or old h5 format.
         custom_objects (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary of Keras custom objects, if specified.
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
@@ -311,13 +332,18 @@ def save(
             custom_tag = bentoml.keras.save("custom_obj_keras", custom_objects=custom_objects)
 
     """  # noqa
+    assert save_format in ("h5", "tf")
+
     tf.compat.v1.keras.backend.get_session()
+
+    json_field = "json" if store_as_json else ""
+    model_format = ":".join([save_format, json_field, "v1"])
     context: t.Dict[str, t.Any] = {
         "framework_name": "keras",
         "pip_dependencies": [f"tensorflow=={_tf_version}"],
+        "model_format": model_format,
     }
     options = {
-        "store_as_json": store_as_json,
         "custom_objects": True if custom_objects is not None else False,
     }
     _model = Model.create(
@@ -334,9 +360,11 @@ def save(
     if store_as_json:
         with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
             jf.write(model.to_json())
-        model.save_weights(_model.path_of(_MODEL_WEIGHT_FNAME))
+        weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
+        model.save_weights(_model.path_of(weight_fname), save_format=save_format)
     else:
-        model.save(_model.path_of(_SAVED_MODEL_FNAME))
+        model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
+        model.save(_model.path_of(model_fname), save_format=save_format)
 
     _model.save(model_store)
 

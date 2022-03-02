@@ -9,7 +9,7 @@ specs:
       bento-server: docker.io/bentoml/bento-server
 
   dependencies:
-    cuda: &cuda_spec
+    cuda_lib: &cuda_lib
       cudart:
       cudnn8:
       libcublas:
@@ -17,36 +17,58 @@ specs:
       libcusparse:
       libcufft:
       libcusolver:
+    cuda: &cuda_multi_arch_spec
+      amd64: &blank_amd64
+        <<: *cuda_lib
+      arm64: &blank_arm64
+        <<: *cuda_lib
+      ppc64le: &blank_ppc64le
+        <<: *cuda_lib
 
   # Each of our distros releases will follow the following:
   releases: &base_spec
-    templates_dir: _
-    base_image: _
-    add_to_tags: _
-    multistage_image: True
-    header: |
-      # syntax = docker/dockerfile:1.2
-      #
-      # ===========================================
-      #
-      # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
-      #
-      # ===========================================
-    envars:
-      - LANG=C.UTF-8
-      - LC_ALL=C.UTF-8
-      - PYTHONDONTWRITEBYTECODE=1
-    cuda:
-      <<: *cuda_spec
-    cuda_prefix_url: _
-    cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
+    structure: &default_spec
+      templates_dir: _
+      base_image: _
+      add_to_tags: _
+      multistage_image: True
+      header: |
+        # syntax = docker/dockerfile:1.2
+        #
+        # ===========================================
+        #
+        # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+        #
+        # ===========================================
+      envars:
+        - LANG=C.UTF-8
+        - LC_ALL=C.UTF-8
+        - PYTHONDONTWRITEBYTECODE=1
+      cuda:
+        <<: *cuda_lib
+      cuda_prefix_url: _
+      cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
 
-  # Docker tag validation can be defined with the following:
-  tag:
-    fmt: "{release_type}-python{python_version}-{suffixes}"
-    release_type:
-    python_version:
-    suffixes:
+    # Docker tag validation can be defined with the following:
+    tag:
+      fmt: "{release_type}-python{python_version}-{suffixes}"
+      release_type:
+      python_version:
+      suffixes:
+
+    amd64: &base_spec_amd64
+      <<: *default_spec
+      cuda:
+        <<: *blank_amd64
+    arm64: &base_spec_arm64
+      <<: *default_spec
+      cuda:
+        <<: *blank_arm64
+    ppc64le: &base_spec_ppc64le
+      <<: *default_spec
+      cuda:
+        <<: *blank_ppc64le
+
 
 # allows users to define custom registries
 # this can also include GCR, ECR, Heroku, Quay.io etc.
@@ -55,8 +77,35 @@ repository:
     <<: *repository_spec
 
 cuda:
+  11.6.0: &cuda11_6_1
+    <<: *cuda_multi_arch_spec
+    amd64: &cuda11_6_1_amd64
+      cudart: 11.3.109-1
+      cudnn8: 8.2.0.53-1
+      libcublas: 11.5.1.109-1
+      libcurand: 10.2.4.109-1
+      libcusparse: 11.6.0.109-1
+      libcufft: 10.4.2.109-1
+      libcusolver: 11.1.2.109-1
+    arm64: &cuda11_6_1_arm64
+      cudart: 11.3.109-1
+      cudnn8: 8.2.0.53-1
+      libcublas: 11.5.1.109-1
+      libcurand: 10.2.4.109-1
+      libcusparse: 11.6.0.109-1
+      libcufft: 10.4.2.109-1
+      libcusolver: 11.1.2.109-1
+    ppc64le: &cuda11_6_1_ppc64le
+      cudart: 11.3.109-1
+      cudnn8: 8.2.0.53-1
+      libcublas: 11.5.1.109-1
+      libcurand: 10.2.4.109-1
+      libcusparse: 11.6.0.109-1
+      libcufft: 10.4.2.109-1
+      libcusolver: 11.1.2.109-1
+
   11.3.1: &cuda11_3_1
-    <<: *cuda_spec
+    <<: *cuda_lib
     cudart: 11.3.109-1
     cudnn8: 8.2.0.53-1
     libcublas: 11.5.1.109-1

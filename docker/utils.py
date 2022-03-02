@@ -1,26 +1,37 @@
+import io
+import re
 import sys
 import json
-import string
 import typing as t
 import logging
 import pathlib
 import operator
-from types import FunctionType
+import subprocess
+from typing import TYPE_CHECKING
+from functools import wraps
 from functools import reduce
+
+import attrs
+from absl import flags
+from glom import glom
+from glom import Path as glom_path
+from glom import Assign
+from glom import PathAccessError
+from glom import PathAssignError
+from ruamel import yaml
+from plumbum import local
+from validator import SPEC_SCHEMA
+from validator import MetadataSpecValidator
+from exceptions import InvalidShellCommand
 
 if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
     from functools import cached_property
 else:
     from backports.cached_property import cached_property
 
-from absl import flags
-from glom import glom
-from glom import Path
-from glom import Assign
-from glom import PathAccessError
-from glom import PathAssignError
-from ruamel import yaml
-from cerberus import Validator
+if TYPE_CHECKING:
+    P = t.ParamSpec("P")
+    T = t.TypeVar("T")
 
 __all__ = (
     "FLAGS",
@@ -37,16 +48,45 @@ __all__ = (
     "get_data",
     "set_data",
     "get_nested",
+    "shellcmd",
+    "graceful_exit",
 )
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-SUPPORTED_OS = ["debian10", "ubi8", "ubi7", "alpine3.14", "amazonlinux2"]
+# CONSTANT #
+
 SUPPORTED_GENERATE_TYPE = ["dockerfiles", "images"]
 
-ValidateType = t.Union[str, t.List[str]]
+SUPPORTED_ARCHITECTURE_TYPE = [
+    "amd64",
+    "arm32v5",
+    "arm32v6",
+    "arm32v7",
+    "arm64v8",
+    "i386",
+    "ppc64le",
+    "s390x",
+]
 
-# defined global vars.
+README_TEMPLATE = pathlib.Path("./templates/docs/README.md.j2")
+
+DOCKERFILE_NAME = "Dockerfile"
+DOCKERFILE_TEMPLATE_SUFFIX = ".Dockerfile.j2"
+DOCKERFILE_BUILD_HIERARCHY = ["base", "runtime", "cudnn", "devel"]
+DOCKERFILE_NVIDIA_REGEX = re.compile(r"(?:nvidia|cuda|cudnn)+")
+
+# TODO: look into Python 3.10 installation issue with conda
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
+
+NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
+NVIDIA_ML_REPO_URL = (
+    "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
+)
+
+HTTP_RETRY_ATTEMPTS = 2
+HTTP_RETRY_WAIT_SECS = 20
+
 FLAGS = flags.FLAGS
 
 flags.DEFINE_integer("timeout", 3600, "Timeout for docker build", short_name="t")
@@ -90,6 +130,12 @@ flags.DEFINE_multi_string(
     f"Generation type. Options: {SUPPORTED_GENERATE_TYPE}",
     short_name="g",
 )
+flags.DEFINE_multi_string(
+    "arch",
+    [],
+    f"Supported architecture. Options: {SUPPORTED_ARCHITECTURE_TYPE}",
+    short_name="a",
+)
 flags.DEFINE_boolean(
     "push",
     False,
@@ -108,291 +154,6 @@ flags.DEFINE_string(
     "Set of releases to build and tags, defaults to every release type.",
     short_name="r",
 )
-
-SPEC_SCHEMA = r"""
----
-specs:
-  required: true
-  type: dict
-  schema:
-    releases:
-      required: true
-      type: dict
-      schema:
-        templates_dir:
-          type: string
-          nullable: False
-        base_image:
-          type: string
-          nullable: False
-        add_to_tags:
-          type: string
-          nullable: False
-          required: true
-        multistage_image:
-          type: boolean
-        header:
-          type: string
-        envars:
-          type: list
-          forbidden: ['HOME']
-          default: []
-          schema:
-            check_with: args_format
-            type: string
-        cuda_prefix_url:
-          type: string
-          dependencies: cuda
-        cuda_requires:
-          type: string
-          dependencies: cuda
-        cuda:
-          type: dict
-          matched: 'specs.dependencies.cuda'
-    tag:
-      required: True
-      type: dict
-      schema:
-        fmt:
-          type: string
-          check_with: keys_format
-          regex: '({(.*?)})'
-        release_type:
-          type: string
-          nullable: True
-        python_version:
-          type: string
-          nullable: True
-        suffixes:
-          type: string
-          nullable: True
-    dependencies:
-      type: dict
-      keysrules:
-        type: string
-      valuesrules:
-        type: dict
-        keysrules:
-          type: string
-        valuesrules:
-          type: string
-          nullable: true
-    repository:
-      type: dict
-      schema:
-        pwd:
-          env_vars: true
-          type: string
-        user:
-          dependencies: pwd
-          env_vars: true
-          type: string
-        urls:
-          keysrules:
-            type: string
-          valuesrules:
-            type: string
-            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)'
-        registry:
-          keysrules:
-            type: string
-          type: dict
-          valuesrules:
-            type: string
-
-repository:
-  type: dict
-  keysrules:
-    type: string
-    regex: '(\w+)\.{1}(\w+)'
-  valuesrules:
-    type: dict
-    matched: 'specs.repository'
-
-cuda:
-  type: dict
-  nullable: false
-  keysrules:
-    type: string
-    required: true
-    regex: '(\d{1,2}\.\d{1}\.\d)?$'
-  valuesrules:
-    type: dict
-    keysrules:
-      type: string
-      check_with: cudnn_threshold
-    valuesrules:
-      type: string
-
-packages:
-  type: dict
-  keysrules:
-    type: string
-  valuesrules:
-    type: dict
-    allowed: [devel, cudnn, runtime]
-    schema:
-      devel:
-        type: list
-        dependencies: runtime
-        check_with: available_dists
-        schema:
-          type: string
-      runtime:
-        required: true
-        type: [string, list]
-        check_with: available_dists
-      cudnn:
-        type: [string, list]
-        check_with: available_dists
-        dependencies: runtime
-
-releases:
-  type: dict
-  keysrules:
-    supported_dists: true
-    type: string
-  valuesrules:
-    type: dict
-    required: True
-    matched: 'specs.releases'
-"""  # noqa: W605, E501 # pylint: disable=W1401
-
-
-class MetadataSpecValidator(Validator):
-    """
-    Custom cerberus validator for BentoML metadata spec.
-
-    Refers to https://docs.python-cerberus.org/en/stable/customize.html#custom-rules.
-    This will add two rules:
-    - args should have the correct format: ARG=foobar as well as correct ENV format.
-    - releases should be defined under SUPPORTED_OS
-
-    Args:
-        packages: bentoml release packages, bento-server
-    """
-
-    CUDNN_THRESHOLD: int = 1
-    CUDNN_COUNTER: int = 0
-
-    def __init__(self, *args: str, **kwargs: str) -> None:
-        if "packages" in kwargs:
-            self.packages = kwargs["packages"]
-        if "releases" in kwargs:
-            self.releases = kwargs["releases"]
-        super(MetadataSpecValidator, self).__init__(*args, **kwargs)
-
-    def _check_with_packages(self, field: str, value: str) -> None:
-        """
-        Check if registry is defined in packages.
-        """
-        if value not in self.packages:
-            self._error(field, f"{field} is not defined under packages")
-
-    def _check_with_args_format(self, field: str, value: ValidateType) -> None:
-        """
-        Check if value has correct envars format: ARG=foobar
-        This will be parsed at runtime when building docker images.
-        """
-        if isinstance(value, str):
-            if "=" not in value:
-                self._error(
-                    field,
-                    f"{value} should have format ARG=foobar",
-                )
-            else:
-                envars, _, _ = value.partition("=")
-                self._validate_env_vars(True, field, envars)
-        if isinstance(value, list):
-            for v in value:
-                self._check_with_args_format(field, v)
-
-    def _check_with_keys_format(self, field: str, value: str) -> None:
-        fmt_field = [t[1] for t in string.Formatter().parse(value) if t[1] is not None]
-        for _keys in self.document.keys():
-            if _keys == field:
-                continue
-            if _keys not in fmt_field:
-                self._error(
-                    field, f"{value} doesn't contain {_keys} in defined document scope"
-                )
-
-    def _check_with_cudnn_threshold(self, field: str, value: str) -> None:
-        if "cudnn" in value:
-            self.CUDNN_COUNTER += 1
-        if self.CUDNN_COUNTER > self.CUDNN_THRESHOLD:
-            self._error(field, "Only allowed one CUDNN version per CUDA mapping")
-
-    def _check_with_available_dists(self, field: str, value: ValidateType) -> None:
-        if isinstance(value, list):
-            for v in value:
-                self._check_with_available_dists(field, v)
-        else:
-            if value not in self.releases:
-                self._error(field, f"{field} is not defined under releases")
-
-    def _validate_supported_dists(
-        self, supported_dists: bool, field: str, value: ValidateType
-    ) -> None:
-        """
-        Validate if given is a supported OS.
-
-        The rule's arguments are validated against this schema:
-            {'type': 'boolean'}
-        """
-        if isinstance(value, str):
-            if supported_dists and value not in SUPPORTED_OS:
-                self._error(
-                    field,
-                    f"{value} is not defined in SUPPORTED_OS."
-                    "If you are adding a new distros make sure "
-                    "to add it to SUPPORTED_OS",
-                )
-        if isinstance(value, list):
-            for v in value:
-                self._validate_supported_dists(supported_dists, field, v)
-
-    def _validate_env_vars(self, env_vars: bool, field: str, value: str) -> None:
-        """
-        Validate if given is a environment variable.
-
-        The rule's arguments are validated against this schema:
-            {'type': 'boolean'}
-        """
-        if isinstance(value, str):
-            if env_vars and not value.isupper():
-                self._error(field, f"{value} cannot be parsed to envars.")
-        else:
-            self._error(field, f"{value} cannot be parsed as string.")
-
-    def _validate_matched(
-        self,
-        others: t.Union[ValidateType, t.Dict[str, t.Any]],
-        field: str,
-        value: t.Union[ValidateType, t.Dict[str, t.Any]],
-    ) -> None:
-        """
-        Validate if a field is defined as a reference to match all given fields if
-        we updated the default reference.
-        The rule's arguments are validated against this schema:
-            {'type': 'string'}
-        """
-        if isinstance(others, dict):
-            if len(others) != len(value):
-                self._error(
-                    field,
-                    f"type {type(others)} with ref "
-                    f"{field} from {others} does not match",
-                )
-        elif isinstance(others, str):
-            ref = get_nested(self.root_document, others.split("."))
-            if len(value) != len(ref):
-                self._error(field, f"Reference {field} from {others} does not match")
-        elif isinstance(others, list):
-            for v in others:
-                self._validate_matched(v, field, value)
-        else:
-            self._error(field, f"Unable to parse field type {type(others)}")
 
 
 class ColoredFormatter(logging.Formatter):
@@ -419,7 +180,7 @@ class ColoredFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def flatten(arr: t.Iterable) -> t.Generator:  # TODO: better type hint
+def flatten(arr: t.Iterable[t.Any]) -> t.Generator[t.Any, None, None]:
     for it in arr:
         if isinstance(it, t.Iterable) and not isinstance(it, str):
             yield from flatten(it)
@@ -427,7 +188,9 @@ def flatten(arr: t.Iterable) -> t.Generator:  # TODO: better type hint
             yield it
 
 
-def mapfunc(func: t.Callable, obj: t.Union[t.MutableMapping, list]) -> t.Any:
+def mapfunc(
+    func: "t.Callable[..., T]", obj: "t.Union[t.MutableMapping[str, T], t.List[T]]"
+) -> t.Any:
     if isinstance(obj, list):
         return func(obj)
     if any(isinstance(v, dict) for v in obj):
@@ -442,14 +205,14 @@ def mapfunc(func: t.Callable, obj: t.Union[t.MutableMapping, list]) -> t.Any:
             continue
 
 
-def maxkeys(di: dict) -> t.Any:
+def maxkeys(di: t.Dict[str, t.Any]) -> t.Any:
     if any(isinstance(v, dict) for v in di.values()):
         for v in di.values():
             return maxkeys(v)
     return max(di.items(), key=lambda x: len(set(x[0])))[1]
 
 
-def walk(path: pathlib.Path) -> t.Generator:
+def walk(path: pathlib.Path) -> t.Generator[pathlib.Path, None, None]:
     for p in path.iterdir():
         if p.is_dir():
             yield from walk(p)
@@ -468,7 +231,9 @@ def jprint(*args: str, **kwargs: str) -> None:
 
 def pprint(*args: str) -> None:
     # custom pretty logs
-    log.warning(f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}")
+    logger.warning(
+        f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}"
+    )
 
 
 def get_data(obj: t.Union[dict, t.MutableMapping], *path: str) -> t.Any:
@@ -477,9 +242,9 @@ def get_data(obj: t.Union[dict, t.MutableMapping], *path: str) -> t.Any:
     e.g: dependencies.cuda."11.3.1"
     """
     try:
-        data = glom(obj, Path(*path))
+        data = glom(obj, glom_path(*path))
     except PathAccessError:
-        log.exception(
+        logger.exception(
             "Exception occurred in "
             "get_data, unable to retrieve "
             f"{'.'.join([*path])} from {repr(obj)}"
@@ -495,12 +260,12 @@ def set_data(obj: dict, value: t.Union[dict, list, str], *path: str) -> None:
     e.g: dependencies.cuda."11.3.1"
     """
     try:
-        _ = glom(obj, Assign(Path(*path), value))
+        _ = glom(obj, Assign(glom_path(*path), value))
     except PathAssignError:
-        log.exception(
+        logger.exception(
             "Exception occurred in "
             "update_data, unable to update "
-            f"{Path(*path)} with {value}"
+            f"{glom_path(*path)} with {value}"
         )
         exit(1)
 
@@ -510,11 +275,11 @@ def get_nested(obj: t.Dict, keys: t.List[str]) -> t.Any:
     return reduce(operator.getitem, keys, obj)
 
 
-def load_manifest_yaml(file: str) -> dict:
+def load_manifest_yaml(file: str) -> t.Dict[str, t.Any]:
     with open(file, "r", encoding="utf-8") as input_file:
-        manifest: t.Dict = yaml.safe_load(input_file)
+        manifest: t.Dict[str, t.Any] = yaml.safe_load(input_file)
 
-    v: MetadataSpecValidator = MetadataSpecValidator(
+    v = MetadataSpecValidator(
         yaml.safe_load(SPEC_SCHEMA),
         packages=manifest["packages"],
         releases=manifest["releases"],
@@ -522,11 +287,56 @@ def load_manifest_yaml(file: str) -> dict:
 
     if not v.validate(manifest):
         v.clear_caches()
-        log.error(f"{file} is invalid. Errors as follow:")
+        logger.error(f"{file} is invalid. Errors as follow:")
         sprint(yaml.dump(v.errors, indent=2))
         exit(1)
     else:
-        log.info(f"Valid {file}.")
+        logger.info(f"Valid {file}.")
 
-    normalized: dict = v.normalized(manifest)
-    return normalized
+    return v.normalized(manifest)
+
+
+@attrs.define
+class Output:
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+def shellcmd(bin: str, *args: str) -> Output:
+    stdout, stderr = "", ""
+    if "docker" in bin:
+        if pathlib.Path("/usr/local/bin/docker").exists():
+            bin_name = local["/usr/local/bin/docker"]
+        elif pathlib.Path("/usr/bin/docker").exists():
+            bin_name = local["/usr/bin/docker"]
+        else:
+            raise InvalidShellCommand("Can't find docker client executable!")
+    else:
+        bin_name = local[bin]
+    p = bin_name.popen(
+        args=args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    for l in io.TextIOWrapper(p.stdout, encoding="utf-8"):
+        logger.info(l)
+        stdout += l
+    for l in io.TextIOWrapper(p.sterr, encoding="utf-8"):
+        logger.error(l)
+        stderr += l
+    return Output(
+        returncode=p.returncode,
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
+def graceful_exit(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
+    @wraps(func)
+    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
+        try:
+            return func(*args, **kwargs)
+        except KeyboardInterrupt:
+            logger.info("\nStopping now...")
+            sys.exit(1)
+
+    return wrapper

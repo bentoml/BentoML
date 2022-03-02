@@ -15,10 +15,12 @@ glom = "^20.11.0"
 python-dotenv = "^0.18.0"
 GitPython = "^3.1.18"
 "backports.cached-property" = "^1.0.1"
+plumbum = "^1.7.2"
+attrs = "^21.4.0"
 
 
 [tool.poetry.dev-dependencies]
-black = "^21.6b0"
+black = "22.1.0"
 isort = "^5.9.1"
 pylint = "^2.8.3"
 [build-system]

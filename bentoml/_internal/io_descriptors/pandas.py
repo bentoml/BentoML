@@ -306,7 +306,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         elif serialization_format is SerializationFormat.PARQUET:
             res = pd.read_parquet(  # type: ignore[arg-type]
                 io.BytesIO(obj),
-                engine=self.get_parquet_engine(),
+                engine=get_parquet_engine(),
             )
         elif serialization_format is SerializationFormat.CSV:
             res = pd.read_csv(  # type: ignore[arg-type]
@@ -368,7 +368,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         if serialization_format is SerializationFormat.JSON:
             resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
         elif serialization_format is SerializationFormat.PARQUET:
-            resp = obj.to_parquet(engine=self.get_parquet_engine())
+            resp = obj.to_parquet(engine=get_parquet_engine())
         elif serialization_format is SerializationFormat.CSV:
             resp = obj.to_csv()
         else:

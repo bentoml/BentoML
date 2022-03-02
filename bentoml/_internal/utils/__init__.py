@@ -4,7 +4,6 @@ import uuid
 import random
 import socket
 import typing as t
-import asyncio
 import functools
 import contextlib
 from typing import TYPE_CHECKING
@@ -40,32 +39,6 @@ __all__ = [
     "LazyLoader",
     "validate_or_create_dir",
 ]
-
-
-# implements asyncio.run for python<3.7
-def _to_cancel_all_tasks(loop: asyncio.AbstractEventLoop) -> None:
-    to_cancel = asyncio.tasks.all_tasks(loop)
-    if not to_cancel:
-        return
-    for task in to_cancel:
-        task.cancel()
-    loop.run_until_complete(
-        asyncio.tasks.gather(*to_cancel, loop=loop, return_exceptions=True)
-    )
-
-
-def asyncio_run(coro: t.Coroutine[t.Any, t.Any, t.Any]) -> None:
-    loop = asyncio.new_event_loop()
-    try:
-        asyncio.set_event_loop(loop)
-        return loop.run_until_complete(coro)
-    finally:
-        try:
-            _to_cancel_all_tasks(loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-        finally:
-            asyncio.set_event_loop(None)
-            loop.close()
 
 
 def randomize_runner_name(module_name: str):

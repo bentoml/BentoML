@@ -14,6 +14,7 @@ from simple_di import Provide
 
 from bentoml import load
 
+from ..utils import asyncio_run_safe
 from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
@@ -22,16 +23,6 @@ from ..utils.analytics import get_serve_info
 from ..utils.analytics import scheduled_track
 from ..utils.analytics import BENTO_SERVE_TRACK_EVENT_TYPE
 from ..configuration.containers import DeploymentContainer
-
-if sys.version_info[:2] >= (3, 7):
-    import asyncio
-
-    asyncio_run_func = asyncio.run
-else:
-    from ..utils import asyncio_run
-
-    asyncio_run_func = asyncio_run
-
 
 logger = logging.getLogger(__name__)
 
@@ -152,30 +143,26 @@ def serve_development(
         watchers,
         sockets=list(circus_socket_map.values()),
     )
+    tracking_thread, stop_thread_event = scheduled_track(
+        current_pid,
+        event_properties=get_scheduled_event_properties(
+            production=False,
+            bento_identifier=bento_identifier,
+            serve_info=serve_info,
+        ),
+    )
     _ensure_prometheus_dir()
 
-    tracking_threads = threading.Thread(
-        target=asyncio_run_func,
-        args=(
-            scheduled_track(
-                current_pid=current_pid,
-                event_properties=get_scheduled_event_properties(
-                    production=False,
-                    bento_identifier=bento_identifier,
-                    serve_info=serve_info,
-                ),
+    try:
+        tracking_thread.start()
+        arbiter.start(
+            cb=lambda _: logger.info(  # type: ignore
+                f'Starting development BentoServer from "{bento_identifier}" '
+                f"running on http://{host}:{port} (Press CTRL+C to quit)"
             ),
-        ),
-        daemon=True,
-    )
-    tracking_threads.start()
-
-    arbiter.start(
-        cb=lambda _: logger.info(  # type: ignore
-            f'Starting development BentoServer from "{bento_identifier}" '
-            f"running on http://{host}:{port} (Press CTRL+C to quit)"
-        ),
-    )
+        )
+    finally:
+        stop_thread_event.set()
 
 
 MAX_AF_UNIX_PATH_LENGTH = 103
@@ -340,27 +327,18 @@ def serve_production(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
     )
-
+    tracking_thread, stop_thread_event = scheduled_track(
+        current_pid,
+        event_properties=get_scheduled_event_properties(
+            production=False,
+            bento_identifier=bento_identifier,
+            serve_info=serve_info,
+        ),
+    )
     _ensure_prometheus_dir()
 
     try:
-        tracking_threads = threading.Thread(
-            target=asyncio_run_func,
-            args=(
-                scheduled_track(
-                    current_pid=current_pid,
-                    event_properties=get_scheduled_event_properties(
-                        production=True,
-                        bento_identifier=bento_identifier,
-                        bento_creation_timestamp=bento_creation_timestamp,
-                        serve_info=serve_info,
-                    ),
-                ),
-            ),
-            daemon=True,
-        )
-        tracking_threads.start()
-
+        tracking_thread.start()
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 f'Starting production BentoServer from "bento_identifier" '
@@ -370,3 +348,4 @@ def serve_production(
     finally:
         if uds_path is not None:
             shutil.rmtree(uds_path)
+        stop_thread_event.set()

@@ -4,6 +4,7 @@ import asyncio
 import logging
 import secrets
 import platform
+import threading
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
@@ -151,6 +152,26 @@ def track(
     send_usage_event(payload, timeout=timeout, uri=uri)
 
 
+@slient
+def scheduled_track(
+    event_pid: int,
+    event_properties: t.Optional[t.Dict[str, t.Any]] = None,
+    interval: int = get_usage_stats_interval_seconds(),
+) -> t.Tuple[threading.Thread, threading.Event]:
+    stop_event = threading.Event()
+
+    def loop() -> None:
+        while not stop_event.wait(interval):
+            track(
+                BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE,
+                event_pid,
+                event_properties=event_properties,
+            )
+
+    t = threading.Thread(target=loop, daemon=True)
+    return t, stop_event
+
+
 async def track_async(
     event_type: str,
     event_pid: int,
@@ -167,17 +188,18 @@ async def track_async(
         event_type=event_type, event_pid=event_pid, event_properties=event_properties
     )
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     with ThreadPoolExecutor(max_workers=1) as executor:
         await loop.run_in_executor(executor, send_usage_event, payload, timeout, uri)
 
 
 @slient
-async def scheduled_track(
+async def scheduled_track_async(
     current_pid: int,
     event_properties: t.Dict[str, t.Any],
     interval: int = get_usage_stats_interval_seconds(),
-):  # pragma: no cover
+) -> None:  # pragma: no cover
+    # experimental, DO NOT USE
     await asyncio.sleep(interval)
     while True:
         try:
@@ -187,8 +209,8 @@ async def scheduled_track(
                 event_properties=event_properties,
             )
         except asyncio.CancelledError:
-            logger.debug("coroutine is cancelled.")
+            logger.error("coroutine is cancelled.")
             break
         except Exception:  # pylint: disable=broad-except
-            logger.debug("Error looping coroutine.")
+            logger.error("Error looping coroutine.")
         await asyncio.sleep(interval)

@@ -10,7 +10,7 @@
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 
-👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
+👉 [Pop into our Slack community!](https://l.linklyhq.com/l/ktOh) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
 __The BentoML version 1.0 is around the corner.__ For stable release version 0.13, see
 the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS). Version 1.0 is 

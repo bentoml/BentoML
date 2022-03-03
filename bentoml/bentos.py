@@ -7,7 +7,6 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING
 
-import fs
 from simple_di import inject
 from simple_di import Provide
 
@@ -55,21 +54,155 @@ def delete(
 @inject
 def import_bento(
     path: str,
+    input_format: t.Optional[str] = None,
     *,
+    protocol: t.Optional[str] = None,
+    user: t.Optional[str] = None,
+    passwd: t.Optional[str] = None,
+    params: t.Optional[t.Dict[str, str]] = None,
+    subpath: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
-    return Bento.from_fs(fs.open_fs(path))
+    """
+    Import a bento.
+
+    Examples:
+
+    .. code-block:: python
+
+        # imports 'my_bento' from '/path/to/folder/my_bento.bento'
+        bentoml.import_bento('/path/to/folder/my_bento.bento')
+
+        # imports 'my_bento' from '/path/to/folder/my_bento.tar.gz'
+        # currently supported formats are tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+        bentoml.import_bento('/path/to/folder/my_bento.tar.gz')
+        # treats 'my_bento.ext' as a gzipped tarfile
+        bentoml.import_bento('/path/to/folder/my_bento.ext', 'gz')
+
+        # imports 'my_bento', which is stored as an uncompressed folder, from '/path/to/folder/my_bento/'
+        bentoml.import_bento('/path/to/folder/my_bento', 'folder')
+
+        # imports 'my_bento' from the S3 bucket 'my_bucket', path 'folder/my_bento.bento'
+        # requires `fs-s3fs <https://pypi.org/project/fs-s3fs/>`_ ('pip install fs-s3fs')
+        bentoml.import_bento('s3://my_bucket/folder/my_bento.bento')
+        bentoml.import_bento('my_bucket/folder/my_bento.bento', protocol='s3')
+        bentoml.import_bento('my_bucket', protocol='s3', subpath='folder/my_bento.bento')
+        bentoml.import_bento('my_bucket', protocol='s3', subpath='folder/my_bento.bento',
+                             user='<AWS access key>', passwd='<AWS secret key>',
+                             params={'acl': 'public-read', 'cache-control': 'max-age=2592000,public'})
+
+    For a more comprehensive description of what each of the keyword arguments (:code:`protocol`,
+    :code:`user`, :code:`passwd`, :code:`params`, and :code:`subpath`) mean, see the
+    `FS URL documentation <https://docs.pyfilesystem.org/en/latest/openers.html>`_.
+
+    Args:
+        tag: the tag of the bento to export
+        path: can be one of two things:
+            * a folder on the local filesystem
+            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_, for example
+                :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
+            :code:`'s3'`, and :code:`'userdata'`
+        user: (expert) the username used for authentication if required, e.g. for FTP
+        passwd: (expert) the username used for authentication if required, e.g. for FTP
+        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
+            for setting a proxy for FTP
+        subpath: (expert) the path inside the FS that the bento should be exported to
+        _bento_store: the bento store to save the bento to
+
+    Returns:
+        Bento: the imported bento
+    """
+    return Bento.import_from(
+        path,
+        input_format,
+        protocol=protocol,
+        user=user,
+        passwd=passwd,
+        params=params,
+        subpath=subpath,
+    ).save(_bento_store)
 
 
 @inject
 def export_bento(
     tag: t.Union[Tag, str],
     path: str,
+    output_format: t.Optional[str] = None,
     *,
+    protocol: t.Optional[str] = None,
+    user: t.Optional[str] = None,
+    passwd: t.Optional[str] = None,
+    params: t.Optional[t.Dict[str, str]] = None,
+    subpath: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-):
+) -> str:
+    """
+    Export a bento.
+
+    Examples:
+
+    .. code-block:: python
+
+        # exports 'my_bento' to '/path/to/folder/my_bento-version.bento' in BentoML's default format
+        bentoml.export_bento('my_bento:latest', '/path/to/folder')
+        # note that folders can only be passed if exporting to the local filesystem; otherwise the
+        # full path, including the desired filename, must be passed
+
+        # exports 'my_bento' to '/path/to/folder/my_bento.bento' in BentoML's default format
+        bentoml.export_bento('my_bento:latest', '/path/to/folder/my_bento')
+        bentoml.export_bento('my_bento:latest', '/path/to/folder/my_bento.bento')
+
+        # exports 'my_bento' to '/path/to/folder/my_bento.tar.gz' in gzip format
+        # currently supported formats are tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+        bentoml.export_bento('my_bento:latest', '/path/to/folder/my_bento.tar.gz')
+        # outputs a gzipped tarfile as 'my_bento.ext'
+        bentoml.export_bento('my_bento:latest', '/path/to/folder/my_bento.ext', 'gz')
+
+        # exports 'my_bento' to '/path/to/folder/my_bento/' as a folder
+        bentoml.export_bento('my_bento:latest', '/path/to/folder/my_bento', 'folder')
+
+        # exports 'my_bento' to the S3 bucket 'my_bucket' as 'folder/my_bento-version.bento'
+        bentoml.export_bento('my_bento:latest', 's3://my_bucket/folder')
+        bentoml.export_bento('my_bento:latest', 'my_bucket/folder', protocol='s3')
+        bentoml.export_bento('my_bento:latest', 'my_bucket', protocol='s3', subpath='folder')
+        bentoml.export_bento('my_bento:latest', 'my_bucket', protocol='s3', subpath='folder',
+                             user='<AWS access key>', passwd='<AWS secret key>',
+                             params={'acl': 'public-read', 'cache-control': 'max-age=2592000,public'})
+
+    For a more comprehensive description of what each of the keyword arguments (:code:`protocol`,
+    :code:`user`, :code:`passwd`, :code:`params`, and :code:`subpath`) mean, see the
+    `FS URL documentation <https://docs.pyfilesystem.org/en/latest/openers.html>`_.
+
+    Args:
+        tag: the tag of the Bento to export
+        path: can be one of two things:
+            * a folder on the local filesystem
+            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_
+                * for example, :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
+            :code:`'s3'`, and :code:`'userdata'`
+        user: (expert) the username used for authentication if required, e.g. for FTP
+        passwd: (expert) the username used for authentication if required, e.g. for FTP
+        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
+            for setting a proxy for FTP
+        subpath: (expert) the path inside the FS that the bento should be exported to
+        _bento_store: save Bento created to this BentoStore
+
+    Returns:
+        str: A representation of the path that the Bento was exported to. If it was exported to the local filesystem,
+            this will be the OS path to the exported Bento. Otherwise, it will be an FS URL.
+    """
     bento = get(tag, _bento_store=_bento_store)
-    bento.export(path)
+    return bento.export(
+        path,
+        output_format,
+        protocol=protocol,
+        user=user,
+        passwd=passwd,
+        params=params,
+        subpath=subpath,
+    )
 
 
 @inject
@@ -108,11 +241,11 @@ def build(
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "Bento":
     """
-    User-facing API for building a Bento, the available build options are symmetrical to
-    the content of a valid bentofile.yaml file, for building Bento from CLI.
+    User-facing API for building a Bento. The available build options are identical to the keys of a
+    valid 'bentofile.yaml' file.
 
-    This API will not respect bentofile.yaml file in current environment, build options
-    can only be provided via function call parameters.
+    This API will not respect any 'bentofile.yaml' files. Build options should instead be provided
+    via function call parameters.
 
     Args:
         service: import str for finding the bentoml.Service instance build target

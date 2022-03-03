@@ -82,21 +82,32 @@ python:
 @attr.define(repr=False, auto_attribs=False)
 class Bento(StoreItem):
     _tag: Tag = attr.field()
-    _fs: "FS" = attr.field()
+    __fs: "FS" = attr.field()
 
-    info: "BentoInfo"
+    _info: "BentoInfo"
 
     _model_store: ModelStore
     _doc: t.Optional[str] = None
 
-    @_fs.validator
+    _flushed: bool = False
+
+    @staticmethod
+    def _export_ext() -> str:
+        return "bento"
+
+    @__fs.validator
     def check_fs(self, _attr: t.Any, new_fs: "FS"):
-        new_fs.makedir("models", recreate=True)
+        try:
+            new_fs.makedir("models", recreate=True)
+        except fs.errors.ResourceReadOnly:
+            # when we import a tarfile, it will be read-only, so just skip the step where we create
+            # the models folder.
+            pass
         self._model_store = ModelStore(new_fs.opendir("models"))
 
     def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
         self._tag = tag
-        self._fs = bento_fs
+        self.__fs = bento_fs
         self.check_fs(None, bento_fs)
         self.info = info
         self.validate()
@@ -104,6 +115,20 @@ class Bento(StoreItem):
     @property
     def tag(self) -> Tag:
         return self._tag
+
+    @property
+    def _fs(self) -> "FS":
+        return self.__fs
+
+    @property
+    def info(self) -> "BentoInfo":
+        self._flushed = False
+        return self._info
+
+    @info.setter
+    def info(self, new_info: "BentoInfo"):
+        self._flushed = False
+        self._info = new_info
 
     @classmethod
     @inject
@@ -252,14 +277,17 @@ class Bento(StoreItem):
             with item_fs.open(BENTO_YAML_FILENAME, "r", encoding="utf-8") as bento_yaml:
                 info = BentoInfo.from_yaml_file(bento_yaml)
         except fs.errors.ResourceNotFound:
-            logger.warning(f"Failed to import Bento from {item_fs}.")
-            raise BentoMLException("Failed to create Bento because it was invalid")
+            raise BentoMLException(
+                f"Failed to load bento because it does not contain a '{BENTO_YAML_FILENAME}'"
+            )
 
         res = cls(info.tag, item_fs, info)
         if not res.validate():
-            logger.warning(f"Failed to import Bento from {item_fs}.")
-            raise BentoMLException("Failed to create Bento because it was invalid")
+            raise BentoMLException(
+                f"Failed to create bento because it contains an invalid '{BENTO_YAML_FILENAME}'"
+            )
 
+        res._flushed = True
         return res
 
     @property
@@ -270,8 +298,13 @@ class Bento(StoreItem):
         return self._fs.getsyspath(item)
 
     def flush_info(self):
+        if self._flushed:
+            return
+
         with self._fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             self.info.dump(bento_yaml)
+
+        self._flushed = True
 
     @property
     def doc(self) -> str:
@@ -290,6 +323,8 @@ class Bento(StoreItem):
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
     ) -> "Bento":
+        self.flush_info()
+
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
@@ -298,13 +333,31 @@ class Bento(StoreItem):
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
-            self._fs = out_fs
+            self.__fs = out_fs
 
         return self
 
-    def export(self, path: str):
-        out_fs = fs.open_fs(path, create=True, writeable=True)
-        fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
+    def export(
+        self,
+        path: str,
+        output_format: t.Optional[str] = None,
+        *,
+        protocol: t.Optional[str] = None,
+        user: t.Optional[str] = None,
+        passwd: t.Optional[str] = None,
+        params: t.Optional[t.Dict[str, str]] = None,
+        subpath: t.Optional[str] = None,
+    ) -> str:
+        self.flush_info()
+        return super().export(
+            path,
+            output_format,
+            protocol=protocol,
+            user=user,
+            passwd=passwd,
+            params=params,
+            subpath=subpath,
+        )
 
     def validate(self):
         return self._fs.isfile(BENTO_YAML_FILENAME)
@@ -328,6 +381,8 @@ class BentoInfo:
     models: t.List[Tag]  # TODO: populate with model & framework info
     bentoml_version: str = BENTOML_VERSION
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+
+    _flushed: bool = False
 
     def __attrs_post_init__(self):
         self.validate()

@@ -34,6 +34,10 @@ class DummyItem(StoreItem):
     _creation_time: datetime
     store: "DummyStore" = attr.field(init=False)
 
+    @staticmethod
+    def _export_ext() -> str:
+        return "bentodummy"
+
     @property
     def tag(self) -> Tag:
         return self._tag
@@ -67,7 +71,7 @@ class DummyStore(Store[DummyItem]):
 def test_store(tmpdir: "Path"):
     store = DummyStore(tmpdir)
 
-    open(os.path.join(tmpdir, ".DS_store"), "a")
+    open(os.path.join(tmpdir, ".DS_store"), "a", encoding="utf-8")
 
     DummyItem.store = store
     oldtime = datetime.now()

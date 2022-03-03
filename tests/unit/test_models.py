@@ -75,7 +75,7 @@ def test_models(tmpdir: "Path"):
     with pytest.raises(NotImplementedError):
         bentoml.models.load_runner(testmodel2tag, _model_store=store)
 
-    export_path = os.path.join(tmpdir, "testmodel2")
+    export_path = os.path.join(tmpdir, "testmodel2.bentomodel")
     bentoml.models.export_model(testmodel2tag, export_path, _model_store=store)
     bentoml.models.delete(testmodel2tag, _model_store=store)
 
@@ -99,6 +99,6 @@ def test_models(tmpdir: "Path"):
     export_path_2 = os.path.join(tmpdir, "testmodel1")
     bentoml.models.export_model(testmodel1tag, export_path_2, _model_store=store)
     bentoml.models.delete(testmodel1tag, _model_store=store)
-    bentoml.models.import_model(export_path_2, _model_store=store)
+    bentoml.models.import_model(export_path_2 + ".bentomodel", _model_store=store)
 
     assert bentoml.models.get("testmodel", _model_store=store).tag == testmodel2tag

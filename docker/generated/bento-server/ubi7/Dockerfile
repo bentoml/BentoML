@@ -7,7 +7,7 @@
 # ===========================================
 
 
-FROM registry.access.redhat.com/ubi7/ubi:latest
+FROM registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
 
 # setup ENV and ARG
 ENV PYTHONDONTWRITEBYTECODE=1

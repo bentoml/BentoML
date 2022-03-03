@@ -3,7 +3,6 @@ import re
 import typing as t
 import logging
 from sys import version_info as pyver
-from typing import TYPE_CHECKING
 
 import fs
 import attr
@@ -29,8 +28,8 @@ DOCKER_SUPPORTED_DISTROS: t.List[str] = [
     "debian",
     "amazonlinux2",
     "alpine",
-    "centos7",
-    "centos8",
+    "ubi8",
+    "ubi7",
 ]
 DOCKER_DEFAULT_DISTRO = "debian"
 

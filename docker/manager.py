@@ -3,10 +3,10 @@ import os
 import re
 import json
 import shutil
-from typing import TYPE_CHECKING
 import typing as t
 import operator
 from copy import deepcopy
+from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import lru_cache
 from collections import defaultdict
@@ -24,6 +24,7 @@ from utils import maxkeys
 from utils import get_data
 from utils import set_data
 from utils import get_nested
+from utils import cached_property
 from utils import ColoredFormatter
 from utils import load_manifest_yaml
 from dotenv import load_dotenv
@@ -34,8 +35,6 @@ from docker import DockerClient
 from docker.errors import APIError
 from docker.errors import BuildError
 from docker.errors import ImageNotFound
-
-from utils import cached_property
 
 if TYPE_CHECKING:
     from docker.models.images import Image  # pylint: disable=unused-import

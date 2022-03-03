@@ -7,7 +7,7 @@
 # ===========================================
 
 
-FROM registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
+FROM redhat/ubi8
 
 # setup ENV and ARG
 ENV PYTHONDONTWRITEBYTECODE=1

@@ -1,12 +1,9 @@
-# NOTE(aarnphm): some of the comments here are for my own sanity. :)
+# NOTE: some of the comments here are for my own sanity. :)
 specs:
   # repository definition.
   repository: &repository_spec
     user: HUB_USERNAME
     pwd: HUB_PASSWORD
-    urls:
-      api: https://hub.docker.com/v2/users/login/
-      repos: https://hub.docker.com/v2/repositories
     registry:
       bento-server: docker.io/bentoml/bento-server
 

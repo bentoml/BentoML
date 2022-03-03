@@ -2,11 +2,13 @@
 import os
 import json
 import typing as t
+import operator
 import itertools
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import partial
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 from log import logger
@@ -25,6 +27,7 @@ from utils import load_manifest_yaml
 from utils import DOCKERFILE_NVIDIA_REGEX
 from utils import DOCKERFILE_TEMPLATE_SUFFIX
 from utils import get_docker_platform_mapping
+from utils import SUPPORTED_ARCHITECTURE_TYPE
 from dotenv import load_dotenv
 from jinja2 import Environment
 
@@ -43,23 +46,33 @@ logger.warning(
 )
 
 LEGACY_FOLDER = "legacy"
-PACKAGE = "bento-server"
 
 
-def generate_dockerfiles():
-    ...
+def auth_registries() -> "DictStrStr":
+    credentials = {}
+    repository = get_data(release_spec, "repository")
+    for repo, info in repository.items():
+        _user = os.getenv(info["user"])
+        _pwd = os.getenv(info["pwd"])
+        if not _user:
+            logger.warning(
+                f"If you are intending to use {repo}, make sure to set both "
+                f"{info['pwd']} and {info['user']} under {os.getcwd()}/.env. Skipping..."
+            )
+            _user = info["user"]
+        if not _pwd:
+            _pwd = info["pwd"]
+        credentials[get_data(info, "registry", "bento-server")] = {
+            "user": _user,
+            "pwd": _pwd,
+        }
+    return credentials
 
 
-def build_images():
-    ...
-
-
-def authenticate_registries():
-    ...
-
-
-def push_images():
-    ...
+# ┌──────────────────────────────────────────────────────────────────┐
+# │ Context Generation                                               │
+# │ tasks: handle processing manifest.yml and generate Jinja context │
+# └──────────────────────────────────────────────────────────────────┘
 
 
 def aggregate_dist_releases(package: str) -> t.List[t.Tuple[str, str]]:
@@ -237,7 +250,7 @@ def gen_ctx(*args: t.Any, **kwargs: t.Any) -> "t.Tuple[DictStrAny, DictStrAny]":
                 python_version=python_version,
                 distro=distro,
                 release_type=release_type,
-                package=PACKAGE,
+                package=package,
             )
             build_ctx, path_ctx = generation_metadata(ctx)
             build_metadata.update(build_ctx)
@@ -247,6 +260,98 @@ def gen_ctx(*args: t.Any, **kwargs: t.Any) -> "t.Tuple[DictStrAny, DictStrAny]":
         with open("./metadata.json", "w", encoding="utf-8") as ouf:
             ouf.write(json.dumps(build_metadata, indent=2))
     return build_metadata, path_metadata
+
+
+# ┌─────────────────────────────────────────────────┐
+# │ Dockerfile Generation                           │
+# │ tasks: generate Dockerfile from Jinja templates │
+# └─────────────────────────────────────────────────┘
+
+
+def render(
+    input_path: Path,
+    output_path: Path,
+    metadata: "DictStrAny",
+    build_tag: t.Optional[str] = None,
+):
+    """
+    Render .j2 templates to output path
+    Args:
+        input_path (:obj:`pathlib.Path`):
+            t.List of input path
+        output_path (:obj:`pathlib.Path`):
+            Output path
+        metadata (:obj:`t.Dict[str, Union[str, t.List[str], t.Dict[str, ...]]]`):
+            templates context
+        build_tag (:obj:`t.Optional[str]`):
+            strictly use for FROM args for base image.
+    """
+    template_env = Environment(
+        extensions=["jinja2.ext.do"], trim_blocks=True, lstrip_blocks=True
+    )
+    if DOCKERFILE_TEMPLATE_SUFFIX not in input_path.name:
+        output_name = input_path.stem
+    else:
+        output_name = DOCKERFILE_NAME
+    if not output_path.exists():
+        output_path.mkdir(parents=True, exist_ok=True)
+
+    with input_path.open("r") as inf:
+        template = template_env.from_string(inf.read())
+
+    with output_path.joinpath(output_name).open("w") as ouf:
+        ouf.write(template.render(metadata=metadata, build_tag=build_tag))
+
+
+def generate_readmes(
+    output_dir: str, paths: "DictStrStr", build_ctx: "DictStrAny", package: str
+) -> None:
+    distros = get_packages_spec("bento-server", "base")
+    release_context = {}
+    for distro_version in distros:
+        release_context[distro_version] = sorted(
+            [
+                (release_tags, gen_path)
+                for release_tags, gen_path in paths.items()
+                if distro_version in release_tags and "base" not in release_tags
+            ],
+            key=operator.itemgetter(0),
+        )
+    readme_context = {
+        "ephemeral": False,
+        "bentoml_package": package,
+        "bentoml_release_version": FLAGS.bentoml_version,
+        "release_info": release_context,
+        "supported_architecture": SUPPORTED_ARCHITECTURE_TYPE,
+    }
+    # jprint(readme_context)
+    output_readme = Path(output_dir, package, FLAGS.bentoml_version)
+    render(
+        input_path=README_TEMPLATE, output_path=output_readme, metadata=readme_context
+    )
+
+    readme_context["ephemeral"] = True
+    render(
+        input_path=README_TEMPLATE,
+        output_path=Path(output_dir),
+        metadata=readme_context,
+    )
+
+
+def generate_dockerfiles():
+    ...
+
+
+def build_images():
+    ...
+
+
+def authenticate_registries():
+    ...
+
+
+def push_images():
+    ...
 
 
 @graceful_exit
@@ -260,9 +365,15 @@ def main(*args: t.Any, **kwargs: t.Any) -> None:
     )
     get_packages_spec = partial(get_data, release_spec, "packages")
 
+    # auth cred to pass to skopeo
+    credentials = auth_registries()
+
     # generate context
     build_meta, path_meta = gen_ctx(*args, **kwargs)
+
     # generate jinja templates
+    for package in get_packages_spec():
+        generate_readmes(FLAGS.dockerfile_dir, path_meta, build_meta, package)
 
 
 if __name__ == "__main__":

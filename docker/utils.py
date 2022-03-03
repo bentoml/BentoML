@@ -7,11 +7,9 @@ import typing as t
 import pathlib
 import operator
 import subprocess
-from copy import deepcopy
 from typing import TYPE_CHECKING
 from functools import wraps
 from functools import reduce
-from functools import partial
 
 import attrs
 from log import logger

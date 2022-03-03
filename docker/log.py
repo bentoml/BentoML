@@ -31,20 +31,15 @@ class ColoredFormatter(logging.Formatter):
 # setup some default
 handler = t.cast(logging.Handler, absl_logging.get_absl_handler())
 handler.setFormatter(ColoredFormatter())
-logger = logging.getLogger(__name__)
+logger = t.cast(logging.Logger, absl_logging.get_absl_logger())
 
 # create file handler which logs even debug messages
 fh = logging.FileHandler("debug.log")
 fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
 # create formatter and add it to the handlers
 fh.setFormatter(ColoredFormatter())
-ch.setFormatter(ColoredFormatter())
 # add the handlers to the logger
 logger.addHandler(fh)
-logger.addHandler(ch)
 logger.addHandler(handler)
 
 __all__ = ["logger"]

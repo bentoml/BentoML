@@ -32,8 +32,8 @@ reporting issues, contribute to the documentation and create sample gallery proj
 - [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html) lays out best practices and example usages by the ML framework used for training models.
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) showcases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
 - Check out other projects from the [BentoML team](https://github.com/bentoml):
-  - [🦄️ Yatai](https://github.com/bentoml/yatai): Run BentoML workflow at scale on Kubernetes
-  - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment with BentoML on cloud platforms
+  - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
+  - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
 
 ## Community ##
 

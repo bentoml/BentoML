@@ -4,13 +4,14 @@ import re
 import sys
 import json
 import typing as t
-import logging
 import pathlib
 import operator
 import subprocess
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from functools import wraps
 from functools import reduce
+from functools import partial
 
 import attrs
 from log import logger
@@ -26,41 +27,30 @@ from validator import SPEC_SCHEMA
 from validator import MetadataSpecValidator
 from exceptions import InvalidShellCommand
 
-if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
-    from functools import cached_property
-else:
-    from backports.cached_property import cached_property
-
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
     T = t.TypeVar("T")
     DictStrAny = t.Dict[str, t.Any]
+    DictStrStr = t.Dict[str, str]
     GenericFunc = t.Callable[P, t.Any]
 
 __all__ = (
     "FLAGS",
-    "cached_property",
-    "flatten",
-    "mapfunc",
-    "maxkeys",
-    "walk",
     "load_manifest_yaml",
     "sprint",
     "jprint",
-    "pprint",
     "get_data",
+    "walk",
     "set_data",
     "get_nested",
     "shellcmd",
     "graceful_exit",
 )
 
-logger = logging.getLogger(__name__)
 
-# CONSTANT #
-
+# TODO: look into Python 3.10 installation issue with conda
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
 SUPPORTED_GENERATE_TYPE = ["dockerfiles", "images"]
-
 SUPPORTED_ARCHITECTURE_TYPE = [
     "amd64",
     "arm32v5",
@@ -70,22 +60,16 @@ SUPPORTED_ARCHITECTURE_TYPE = [
     "i386",
     "ppc64le",
     "s390x",
+    "riscv64",
 ]
 
 README_TEMPLATE = pathlib.Path(os.getcwd(), "templates", "docs", "README.md.j2")
 
 DOCKERFILE_NAME = "Dockerfile"
-DOCKERFILE_TEMPLATE_SUFFIX = ".Dockerfile.j2"
+DOCKERFILE_TEMPLATE_SUFFIX = "-dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY = ["base", "runtime", "cudnn", "devel"]
-DOCKERFILE_NVIDIA_REGEX = re.compile(r"(?:nvidia|cuda|cudnn)+")
+DOCKERFILE_NVIDIA_REGEX = re.compile(r"(?:base-nvidia|base-cuda|cudnn)+")
 
-# TODO: look into Python 3.10 installation issue with conda
-SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9"]
-
-NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
-NVIDIA_ML_REPO_URL = (
-    "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
-)
 
 FLAGS = flags.FLAGS
 
@@ -119,7 +103,7 @@ flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file", short_na
 flags.DEFINE_string(
     "bentoml_version", None, "BentoML release version", required=True, short_name="bv"
 )
-flags.DEFINE_string("cuda_version", "11.6.0", "Define CUDA version", short_name="cv")
+flags.DEFINE_string("cuda_version", "11.5.1", "Define CUDA version", short_name="cv")
 flags.DEFINE_multi_string(
     "python_version",
     [],
@@ -158,43 +142,16 @@ flags.DEFINE_string(
 )
 
 
-def flatten(arr: t.Iterable[t.Any]) -> t.Generator[t.Any, None, None]:
-    for it in arr:
-        if isinstance(it, t.Iterable) and not isinstance(it, str):
-            yield from flatten(it)
-        else:
-            yield it
-
-
-def mapfunc(
-    func: "t.Callable[..., T]", obj: "t.Union[t.MutableMapping[str, T], t.List[T]]"
-) -> t.Any:
-    if isinstance(obj, list):
-        return func(obj)
-    if any(isinstance(v, dict) for v in obj):
-        for v in obj:
-            mapfunc(func, v)
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if isinstance(v, t.MutableMapping):
-                mapfunc(func, v)
-            elif not isinstance(v, str):
-                obj[k] = func(v)
-            continue
-
-
-def maxkeys(di: "DictStrAny") -> t.Any:
-    if any(isinstance(v, dict) for v in di.values()):
-        for v in di.values():
-            return maxkeys(v)
-    return max(di.items(), key=lambda x: len(set(x[0])))[1]
-
-
-def walk(path: pathlib.Path) -> t.Generator[pathlib.Path, None, None]:
+def walk(
+    path: pathlib.Path, exclude: t.Optional[t.Tuple[str]] = None
+) -> t.Generator[pathlib.Path, None, None]:
     for p in path.iterdir():
         if p.is_dir():
-            yield from walk(p)
-            continue
+            if exclude is not None and p.name in exclude:
+                continue
+            else:
+                yield from walk(p)
+                continue
         yield p.resolve()
 
 
@@ -205,11 +162,6 @@ def sprint(*args: t.Any, **kwargs: t.Any) -> None:
 
 def jprint(*args: t.Any, indent: int = 2, **kwargs: t.Any) -> None:
     sprint(json.dumps(args[0], indent=indent), *args[1:], **kwargs)
-
-
-def pprint(*args: t.Any) -> None:
-    # custom pretty logs
-    logger.info(f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}")
 
 
 def get_data(
@@ -232,6 +184,24 @@ def get_data(
         return data
 
 
+def get_docker_platform_mapping() -> t.Dict[str, str]:
+    # hard code these platform, seems easy to manage
+    formatted = "linux/{fmt}"
+
+    def process(arch: str) -> str:
+        if "arm64" in arch:
+            fmt = "arm64/v8"
+        elif "arm32" in arch:
+            fmt = "/".join(arch.split("32"))
+        elif "i386" in arch:
+            fmt = arch[1:]
+        else:
+            fmt = arch
+        return formatted.format(fmt=fmt)
+
+    return {k: process(k) for k in SUPPORTED_ARCHITECTURE_TYPE}
+
+
 def set_data(
     obj: "DictStrAny", value: "t.Union[DictStrAny, t.List[t.Any], str]", *path: str
 ) -> None:
@@ -250,9 +220,9 @@ def set_data(
         exit(1)
 
 
-def get_nested(obj: "DictStrAny", keys: t.List[str]) -> t.Any:
+def get_nested(obj: "DictStrAny", *keys: str) -> t.Any:
     """Iterate through a nested dict from a list of keys"""
-    return reduce(operator.getitem, keys, obj)
+    return reduce(operator.getitem, [keys], obj)
 
 
 def load_manifest_yaml(file: str, validate: bool = False) -> "DictStrAny":
@@ -265,7 +235,6 @@ def load_manifest_yaml(file: str, validate: bool = False) -> "DictStrAny":
         # TODO: validate manifest.yml
         # Necessary for CI pipelines
         # Parse specs from manifest.yml and validate it.
-        pprint(f"Validating {FLAGS.manifest_file}")
         v = MetadataSpecValidator(
             yaml.safe_load(SPEC_SCHEMA),
             packages=manifest["packages"],
@@ -285,8 +254,8 @@ def load_manifest_yaml(file: str, validate: bool = False) -> "DictStrAny":
 @attrs.define
 class Output:
     returncode: int
-    stdout: str
     stderr: str
+    stdout: str
 
 
 def shellcmd(bin: str, *args: str) -> Output:
@@ -340,6 +309,15 @@ def argv_validator(length: int = 1) -> "t.Callable[[GenericFunc], GenericFunc]":
                 logger.critical(
                     f"Invalid --releases arguments. Allowed: {DOCKERFILE_BUILD_HIERARCHY}"
                 )
+            if len(FLAGS.arch) > 0:
+                logger.debug("--arch defined, ignoring SUPPORTED_ARCHITECTURE_TYPE")
+                supported_arch_type = FLAGS.arch
+                if supported_arch_type not in SUPPORTED_ARCHITECTURE_TYPE:
+                    logger.critical(
+                        f"Invalid --arch arguments. Allowed: {SUPPORTED_ARCHITECTURE_TYPE}"
+                    )
+            else:
+                supported_arch_type = SUPPORTED_ARCHITECTURE_TYPE
 
             # injected supported_python_version
             if len(FLAGS.python_version) > 0:
@@ -355,7 +333,12 @@ def argv_validator(length: int = 1) -> "t.Callable[[GenericFunc], GenericFunc]":
                 supported_python_version = SUPPORTED_PYTHON_VERSION
 
             # Refers to manifest.yml under field packages and releases
-            kwargs.update({"supported_python_version": supported_python_version})
+            kwargs.update(
+                {
+                    "supported_python_version": supported_python_version,
+                    "supported_arch_type": supported_arch_type,
+                }
+            )
             return func(*args, **kwargs)
 
         return wrapper

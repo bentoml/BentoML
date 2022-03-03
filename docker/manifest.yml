@@ -21,27 +21,22 @@ specs:
   cuda: &cuda_lib
     components:
       cudart:
-        version:
       cudnn8:
-        version:
       libcublas:
-        version:
       libcurand:
-        version:
       libcusparse:
-        version:
       libcufft:
-        version:
       libcusolver:
-        version:
     requires: _
     repo_url: _
+    ml_repo_url: _
+
   
   # dependencies to manage different architectures.
   dependencies: &arch_depedencies
     amd64:
       <<: *cuda_lib
-    arm64:
+    arm64v8:
       <<: *cuda_lib
     ppc64le:
       <<: *cuda_lib
@@ -51,7 +46,7 @@ specs:
     common: &shared
       templates_dir: _
       base_image: _
-      add_to_tags: _
+      suffixes: _
       multistage_image: True
       header: |
         # syntax = docker/dockerfile:1.2
@@ -65,6 +60,16 @@ specs:
         - LANG=C.UTF-8
         - LC_ALL=C.UTF-8
         - PYTHONDONTWRITEBYTECODE=1
+      architectures:
+        - "amd64"
+        - "arm32v5"
+        - "arm32v6"
+        - "arm32v7"
+        - "arm64v8"
+        - "i386"
+        - "ppc64le"
+        - "s390x"
+        - "riscv64"
 
     deprecated: &deprecated  # NOTE: for history purposes, this is the structured used before multi-arch support.
       <<: *shared
@@ -92,46 +97,33 @@ repository:
 # * drivers requirements with `nvidia-docker`. Refers to CUDA repos to check
 # * these drivers requirements
 cuda:
-  requires_11_6_0: &requires_11_6_0
+  requires_11_5_1: &requires_11_5_1
     requires: "cuda>=11.6 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
-  11.6.0: &cuda11_6_0
+  11.5.1: &cuda11_5_1
     <<: *arch_depedencies
-    amd64: &cuda11_6_0_amd64  # for nvidia this is x86_64
-      <<: *requires_11_6_0
+    amd64: &cuda11_5_1_amd64  # for nvidia this is x86_64
+      <<: *requires_11_5_1
       components:
-        cudart:
-          version: 11.6.55-1
-        libcublas:
-          version: 11.8.1.74-1
-        libnpp:
-          version: 11.6.0.55-1
-        nvtx:
-          version: 11.6.55-1
-        libnccl2:
-          version: 2.11.4-1
-    arm64: &cuda11_6_0_arm64  # for nvidia this is sbsa
+        cudart: 11.6.55-1
+        libcublas: 11.8.1.74-1
+        libnpp: 11.6.0.55-1
+        libnccl2: 2.11.4-1
+        cudnn8: 8.3.1.22-1
+    arm64v8: &cuda11_5_1_arm64v8  # for nvidia this is sbsa
       components:
-        cudart:
-          version: 11.6.55-1
-        libcublas:
-          version: 11.8.1.74-1
-        libnpp:
-          version: 11.6.0.55-1
-        nvtx:
-          version: 11.6.55-1
-        libnccl2:
-          version: 2.11.4-1
+        cudart: 11.6.55-1
+        libcublas: 11.8.1.74-1
+        libnpp: 11.6.0.55-1
+        libnccl2: 2.11.4-1
+        cudnn8: 8.3.1.22-1
       requires: 'cuda>=11.6'
-    ppc64le: &cuda11_6_0_ppc64le
+    ppc64le: &cuda11_5_1_ppc64le
       components:
-        cudart:
-          version: 11.6.55-1
-        libcublas:
-          version: 11.8.1.74-1
-        libnpp:
-          version: 11.6.0.55-1
-        libnccl2:
-          version: 2.11.4-1
+        cudart: 11.6.55-1
+        libcublas: 11.8.1.74-1
+        libnpp: 11.6.0.55-1
+        libnccl2: 2.11.4-1
+        cudnn8: 8.3.1.22-1
       requires: 'cuda>=11.6'
 
   # NOTE: THIS MAINLY SERVES FOR HISTORY PURPOSES
@@ -149,84 +141,92 @@ cuda:
 # manager.py should only care about this #
 ##########################################
 releases:
-  w_cuda_v11.6.0:
+  w_cuda_v11.5.1:
     debian11:
       <<: *multiarch
       templates_dir: templates/debian
       base_image: debian:11-slim
-      add_to_tags: "debian11"
+      suffixes: "debian11"
       dependencies:
         amd64:
-          <<: *cuda11_6_0_amd64
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64"
-        arm64:
-          <<: *cuda11_6_0_arm64
+          <<: *cuda11_5_1_amd64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
+        arm64v8:
+          <<: *cuda11_5_1_arm64v8
           repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
-        ppc64le:
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
 
     debian10:
       <<: *multiarch
       templates_dir: templates/debian
       base_image: debian:10-slim
-      add_to_tags: "debian10"
+      suffixes: "debian10"
       dependencies:
         amd64:
-          <<: *cuda11_6_0_amd64
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64"
-        arm64:
-          <<: *cuda11_6_0_arm64
+          <<: *cuda11_5_1_amd64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
+        arm64v8:
+          <<: *cuda11_5_1_arm64v8
           repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
-        ppc64le:
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
 
     ubi8:
       <<: *multiarch
       templates_dir: templates/rhel
       base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
-      add_to_tags: "ubi8"
+      suffixes: "ubi8"
       dependencies:
-        <<: *cuda11_6_0
+        <<: *cuda11_5_1
         amd64:
-          <<: *cuda11_6_0_amd64
+          <<: *cuda11_5_1_amd64
           repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64"
-        arm64:
-          <<: *cuda11_6_0_arm64
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/x86_64"
+        arm64v8:
+          <<: *cuda11_5_1_arm64v8
           repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/sbsa"
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/sbsa"
         ppc64le:
-          <<: *cuda11_6_0_ppc64le
+          <<: *cuda11_5_1_ppc64le
           repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/ppc64le"
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/ppc64le"
 
     ubi7:
       <<: *multiarch
       templates_dir: templates/rhel
       base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
-      add_to_tags: "ubi7"
+      suffixes: "ubi7"
       dependencies:
-        <<: *cuda11_6_0
+        <<: *cuda11_5_1
         amd64:
-          <<: *cuda11_6_0_amd64
+          <<: *cuda11_5_1_amd64
           repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64"
-        arm64:
-          <<: *cuda11_6_0_arm64
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/x86_64"
+        arm64v8:
+          <<: *cuda11_5_1_arm64v8
           repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/sbsa"
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/sbsa"
         ppc64le:
-          <<: *cuda11_6_0_ppc64le
+          <<: *cuda11_5_1_ppc64le
           repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/ppc64le"
+          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/ppc64le"
 
 
-    # TODO: support GPU on ami2
+    # TODO: support GPU on ami2 with rhel
     amazonlinux2:
       <<: *multiarch
       templates_dir: templates/rhel
       base_image: amazonlinux:2
-      add_to_tags: "amazonlinux2"
-      dependencies:
+      suffixes: "amazonlinux2"
+      dependencies: {}
 
     alpine3.14:
       <<: *multiarch
       templates_dir: templates/alpine
       base_image: alpine:3.14
-      add_to_tags: "alpine3.14"
-      dependencies:
+      suffixes: "alpine3.14"
+      dependencies: {}
 
 
   w_cuda_v11.3.1:
@@ -234,7 +234,7 @@ releases:
       <<: *deprecated
       templates_dir: templates/debian
       base_image: debian:buster-slim
-      add_to_tags: "debian"
+      suffixes: "debian"
       cuda:
         <<: *cuda11_3_1
         prefix_url: "ubuntu2004"
@@ -243,7 +243,7 @@ releases:
       <<: *deprecated
       templates_dir: templates/rhel
       base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
-      add_to_tags: "ubi8"
+      suffixes: "ubi8"
       cuda:
         <<: *cuda11_3_1
         prefix_url: "rhel8"
@@ -252,7 +252,7 @@ releases:
       <<: *deprecated
       templates_dir: templates/rhel
       base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
-      add_to_tags: "ubi7"
+      suffixes: "ubi7"
       cuda:
         <<: *cuda11_3_1
         prefix_url: "rhel7"
@@ -261,13 +261,13 @@ releases:
       <<: *deprecated
       templates_dir: templates/rhel
       base_image: amazonlinux:2
-      add_to_tags: "amazonlinux2"
+      suffixes: "amazonlinux2"
 
     alpine3.14:
       <<: *deprecated
       templates_dir: templates/alpine
       base_image: alpine:3.14
-      add_to_tags: "alpine3.14"
+      suffixes: "alpine3.14"
 
 
 
@@ -281,7 +281,8 @@ packages:
       - debian10
       - ubi8
       - ubi7
-    runtime:
+      - alpine3.14
+    base:
       - debian11
       - debian10
       - ubi8
@@ -293,3 +294,10 @@ packages:
       - debian10
       - ubi8
       - ubi7
+    runtime:
+      - debian11
+      - debian10
+      - ubi8
+      - ubi7
+      - amazonlinux2
+      - alpine3.14

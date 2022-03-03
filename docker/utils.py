@@ -1,4 +1,5 @@
 import io
+import os
 import re
 import sys
 import json
@@ -12,6 +13,7 @@ from functools import wraps
 from functools import reduce
 
 import attrs
+from log import logger
 from absl import flags
 from glom import glom
 from glom import Path as glom_path
@@ -32,11 +34,12 @@ else:
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
     T = t.TypeVar("T")
+    DictStrAny = t.Dict[str, t.Any]
+    GenericFunc = t.Callable[P, t.Any]
 
 __all__ = (
     "FLAGS",
     "cached_property",
-    "ColoredFormatter",
     "flatten",
     "mapfunc",
     "maxkeys",
@@ -69,7 +72,7 @@ SUPPORTED_ARCHITECTURE_TYPE = [
     "s390x",
 ]
 
-README_TEMPLATE = pathlib.Path("./templates/docs/README.md.j2")
+README_TEMPLATE = pathlib.Path(os.getcwd(), "templates", "docs", "README.md.j2")
 
 DOCKERFILE_NAME = "Dockerfile"
 DOCKERFILE_TEMPLATE_SUFFIX = ".Dockerfile.j2"
@@ -83,9 +86,6 @@ NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x
 NVIDIA_ML_REPO_URL = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 )
-
-HTTP_RETRY_ATTEMPTS = 2
-HTTP_RETRY_WAIT_SECS = 20
 
 FLAGS = flags.FLAGS
 
@@ -105,6 +105,7 @@ flags.DEFINE_boolean(
 )
 flags.DEFINE_boolean("overwrite", False, "Overwrite built images.", short_name="o")
 flags.DEFINE_boolean("validate", False, "Stop at manifest validation", short_name="vl")
+
 # directory and files
 flags.DEFINE_string(
     "dockerfile_dir",
@@ -114,10 +115,11 @@ flags.DEFINE_string(
 )
 flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file", short_name="mf")
 
+# versions
 flags.DEFINE_string(
     "bentoml_version", None, "BentoML release version", required=True, short_name="bv"
 )
-flags.DEFINE_string("cuda_version", "11.3.1", "Define CUDA version", short_name="cv")
+flags.DEFINE_string("cuda_version", "11.6.0", "Define CUDA version", short_name="cv")
 flags.DEFINE_multi_string(
     "python_version",
     [],
@@ -156,30 +158,6 @@ flags.DEFINE_string(
 )
 
 
-class ColoredFormatter(logging.Formatter):
-    """Logging Formatter to add colors and count warning / errors"""
-
-    blue: str = "\x1b[34m"
-    lightblue: str = "\x1b[36m"
-    yellow: str = "\x1b[33m"
-    red: str = "\x1b[31m"
-    reset: str = "\x1b[0m"
-    _format: str = "[%(levelname)s::L%(lineno)d] %(message)s"
-
-    FORMATS = {
-        logging.INFO: blue + _format + reset,
-        logging.DEBUG: lightblue + _format + reset,
-        logging.WARNING: yellow + _format + reset,
-        logging.ERROR: red + _format + reset,
-        logging.CRITICAL: red + _format + reset,
-    }
-
-    def format(self, record: logging.LogRecord) -> str:
-        log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
-        return formatter.format(record)
-
-
 def flatten(arr: t.Iterable[t.Any]) -> t.Generator[t.Any, None, None]:
     for it in arr:
         if isinstance(it, t.Iterable) and not isinstance(it, str):
@@ -205,7 +183,7 @@ def mapfunc(
             continue
 
 
-def maxkeys(di: t.Dict[str, t.Any]) -> t.Any:
+def maxkeys(di: "DictStrAny") -> t.Any:
     if any(isinstance(v, dict) for v in di.values()):
         for v in di.values():
             return maxkeys(v)
@@ -220,23 +198,23 @@ def walk(path: pathlib.Path) -> t.Generator[pathlib.Path, None, None]:
         yield p.resolve()
 
 
-def sprint(*args: t.Any, **kwargs: str) -> None:
+def sprint(*args: t.Any, **kwargs: t.Any) -> None:
     # stream logs inside docker container to sys.stderr
     print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
-def jprint(*args: str, **kwargs: str) -> None:
-    sprint(json.dumps(args[0], indent=2), *args[1:], **kwargs)
+def jprint(*args: t.Any, indent: int = 2, **kwargs: t.Any) -> None:
+    sprint(json.dumps(args[0], indent=indent), *args[1:], **kwargs)
 
 
-def pprint(*args: str) -> None:
+def pprint(*args: t.Any) -> None:
     # custom pretty logs
-    logger.warning(
-        f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}"
-    )
+    logger.info(f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}")
 
 
-def get_data(obj: t.Union[dict, t.MutableMapping], *path: str) -> t.Any:
+def get_data(
+    obj: "t.Union[DictStrAny, t.MutableMapping[str, t.Any]]", *path: str
+) -> "DictStrAny":
     """
     Get data from the object by dotted path.
     e.g: dependencies.cuda."11.3.1"
@@ -254,7 +232,9 @@ def get_data(obj: t.Union[dict, t.MutableMapping], *path: str) -> t.Any:
         return data
 
 
-def set_data(obj: dict, value: t.Union[dict, list, str], *path: str) -> None:
+def set_data(
+    obj: "DictStrAny", value: "t.Union[DictStrAny, t.List[t.Any], str]", *path: str
+) -> None:
     """
     Update data from the object with given value.
     e.g: dependencies.cuda."11.3.1"
@@ -270,30 +250,36 @@ def set_data(obj: dict, value: t.Union[dict, list, str], *path: str) -> None:
         exit(1)
 
 
-def get_nested(obj: t.Dict, keys: t.List[str]) -> t.Any:
+def get_nested(obj: "DictStrAny", keys: t.List[str]) -> t.Any:
     """Iterate through a nested dict from a list of keys"""
     return reduce(operator.getitem, keys, obj)
 
 
-def load_manifest_yaml(file: str) -> t.Dict[str, t.Any]:
+def load_manifest_yaml(file: str, validate: bool = False) -> "DictStrAny":
     with open(file, "r", encoding="utf-8") as input_file:
-        manifest: t.Dict[str, t.Any] = yaml.safe_load(input_file)
+        manifest = yaml.safe_load(input_file)
 
-    v = MetadataSpecValidator(
-        yaml.safe_load(SPEC_SCHEMA),
-        packages=manifest["packages"],
-        releases=manifest["releases"],
-    )
-
-    if not v.validate(manifest):
-        v.clear_caches()
-        logger.error(f"{file} is invalid. Errors as follow:")
-        sprint(yaml.dump(v.errors, indent=2))
-        exit(1)
+    if not validate:
+        return manifest
     else:
-        logger.info(f"Valid {file}.")
+        # TODO: validate manifest.yml
+        # Necessary for CI pipelines
+        # Parse specs from manifest.yml and validate it.
+        pprint(f"Validating {FLAGS.manifest_file}")
+        v = MetadataSpecValidator(
+            yaml.safe_load(SPEC_SCHEMA),
+            packages=manifest["packages"],
+            releases=manifest["releases"],
+        )
+        if not v.validate(manifest):
+            v.clear_caches()
+            logger.error(f"{file} is invalid. Errors as follow:")
+            sprint(yaml.dump(v.errors, indent=2))
+            exit(1)
+        else:
+            logger.info(f"Valid {file}.")
 
-    return v.normalized(manifest)
+        return v.normalized(manifest)
 
 
 @attrs.define
@@ -340,3 +326,38 @@ def graceful_exit(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
             sys.exit(1)
 
     return wrapper
+
+
+def argv_validator(length: int = 1) -> "t.Callable[[GenericFunc], GenericFunc]":
+    def sanity_check(func: "GenericFunc") -> "GenericFunc":
+        @wraps(func)
+        def wrapper(argv: str, *args: "P.args", **kwargs: "P.kwargs") -> t.Any:
+            if len(argv) > length:
+                raise RuntimeError("Too much arguments")
+
+            # validate releases args.
+            if FLAGS.releases and FLAGS.releases not in DOCKERFILE_BUILD_HIERARCHY:
+                logger.critical(
+                    f"Invalid --releases arguments. Allowed: {DOCKERFILE_BUILD_HIERARCHY}"
+                )
+
+            # injected supported_python_version
+            if len(FLAGS.python_version) > 0:
+                logger.debug(
+                    "--python_version defined, ignoring SUPPORTED_PYTHON_VERSION"
+                )
+                supported_python_version = FLAGS.python_version
+                if supported_python_version not in SUPPORTED_PYTHON_VERSION:
+                    logger.critical(
+                        f"{supported_python_version} is not supported. Allowed: {SUPPORTED_PYTHON_VERSION}"
+                    )
+            else:
+                supported_python_version = SUPPORTED_PYTHON_VERSION
+
+            # Refers to manifest.yml under field packages and releases
+            kwargs.update({"supported_python_version": supported_python_version})
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return sanity_check

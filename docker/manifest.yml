@@ -1,4 +1,6 @@
+# NOTE(aarnphm): some of the comments here are for my own sanity. :)
 specs:
+  # repository definition.
   repository: &repository_spec
     user: HUB_USERNAME
     pwd: HUB_PASSWORD
@@ -8,26 +10,45 @@ specs:
     registry:
       bento-server: docker.io/bentoml/bento-server
 
-  dependencies:
-    cuda_lib: &cuda_lib
-      cudart:
-      cudnn8:
-      libcublas:
-      libcurand:
-      libcusparse:
-      libcufft:
-      libcusolver:
-    cuda: &cuda_multi_arch_spec
-      amd64: &blank_amd64
-        <<: *cuda_lib
-      arm64: &blank_arm64
-        <<: *cuda_lib
-      ppc64le: &blank_ppc64le
-        <<: *cuda_lib
+  # Docker tag validation can be defined with the following:
+  tag:
+    fmt: "{release_type}-python{python_version}-{suffixes}"
+    release_type:
+    python_version:
+    suffixes:
 
-  # Each of our distros releases will follow the following:
-  releases: &base_spec
-    structure: &default_spec
+  # CUDA related dependencies
+  cuda: &cuda_lib
+    components:
+      cudart:
+        version:
+      cudnn8:
+        version:
+      libcublas:
+        version:
+      libcurand:
+        version:
+      libcusparse:
+        version:
+      libcufft:
+        version:
+      libcusolver:
+        version:
+    requires: _
+    repo_url: _
+  
+  # dependencies to manage different architectures.
+  dependencies: &arch_depedencies
+    amd64:
+      <<: *cuda_lib
+    arm64:
+      <<: *cuda_lib
+    ppc64le:
+      <<: *cuda_lib
+
+  # NOTE: The spec defines components of each distros fields and specification
+  releases_spec:
+    common: &shared
       templates_dir: _
       base_image: _
       add_to_tags: _
@@ -44,66 +65,76 @@ specs:
         - LANG=C.UTF-8
         - LC_ALL=C.UTF-8
         - PYTHONDONTWRITEBYTECODE=1
+
+    deprecated: &deprecated  # NOTE: for history purposes, this is the structured used before multi-arch support.
+      <<: *shared
       cuda:
         <<: *cuda_lib
-      cuda_prefix_url: _
-      cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
+        prefix_url: _
+        requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
 
-    # Docker tag validation can be defined with the following:
-    tag:
-      fmt: "{release_type}-python{python_version}-{suffixes}"
-      release_type:
-      python_version:
-      suffixes:
+    multiarch: &multiarch  # NOTE: should be the default from now on
+      << : *shared
+      dependencies:
+        <<: *arch_depedencies
 
-    amd64: &base_spec_amd64
-      <<: *default_spec
-      cuda:
-        <<: *blank_amd64
-    arm64: &base_spec_arm64
-      <<: *default_spec
-      cuda:
-        <<: *blank_arm64
-    ppc64le: &base_spec_ppc64le
-      <<: *default_spec
-      cuda:
-        <<: *blank_ppc64le
+##########################
+# DEFINITION STARTS HERE #
+##########################
 
-
-# allows users to define custom registries
-# this can also include GCR, ECR, Heroku, Quay.io etc.
+# NOTE: allows users to define custom registries => GCR, ECR, Heroku, Quay.io, Docker.io
 repository:
-  docker.io:
+  docker:
     <<: *repository_spec
 
+# NOTE: all CUDA related dependencies specify below
+# * There should be a anchor called `requires_<cuda_version>` to specify all
+# * drivers requirements with `nvidia-docker`. Refers to CUDA repos to check
+# * these drivers requirements
 cuda:
-  11.6.0: &cuda11_6_1
-    <<: *cuda_multi_arch_spec
-    amd64: &cuda11_6_1_amd64
-      cudart: 11.3.109-1
-      cudnn8: 8.2.0.53-1
-      libcublas: 11.5.1.109-1
-      libcurand: 10.2.4.109-1
-      libcusparse: 11.6.0.109-1
-      libcufft: 10.4.2.109-1
-      libcusolver: 11.1.2.109-1
-    arm64: &cuda11_6_1_arm64
-      cudart: 11.3.109-1
-      cudnn8: 8.2.0.53-1
-      libcublas: 11.5.1.109-1
-      libcurand: 10.2.4.109-1
-      libcusparse: 11.6.0.109-1
-      libcufft: 10.4.2.109-1
-      libcusolver: 11.1.2.109-1
-    ppc64le: &cuda11_6_1_ppc64le
-      cudart: 11.3.109-1
-      cudnn8: 8.2.0.53-1
-      libcublas: 11.5.1.109-1
-      libcurand: 10.2.4.109-1
-      libcusparse: 11.6.0.109-1
-      libcufft: 10.4.2.109-1
-      libcusolver: 11.1.2.109-1
+  requires_11_6_0: &requires_11_6_0
+    requires: "cuda>=11.6 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
+  11.6.0: &cuda11_6_0
+    <<: *arch_depedencies
+    amd64: &cuda11_6_0_amd64  # for nvidia this is x86_64
+      <<: *requires_11_6_0
+      components:
+        cudart:
+          version: 11.6.55-1
+        libcublas:
+          version: 11.8.1.74-1
+        libnpp:
+          version: 11.6.0.55-1
+        nvtx:
+          version: 11.6.55-1
+        libnccl2:
+          version: 2.11.4-1
+    arm64: &cuda11_6_0_arm64  # for nvidia this is sbsa
+      components:
+        cudart:
+          version: 11.6.55-1
+        libcublas:
+          version: 11.8.1.74-1
+        libnpp:
+          version: 11.6.0.55-1
+        nvtx:
+          version: 11.6.55-1
+        libnccl2:
+          version: 2.11.4-1
+      requires: 'cuda>=11.6'
+    ppc64le: &cuda11_6_0_ppc64le
+      components:
+        cudart:
+          version: 11.6.55-1
+        libcublas:
+          version: 11.8.1.74-1
+        libnpp:
+          version: 11.6.0.55-1
+        libnccl2:
+          version: 2.11.4-1
+      requires: 'cuda>=11.6'
 
+  # NOTE: THIS MAINLY SERVES FOR HISTORY PURPOSES
   11.3.1: &cuda11_3_1
     <<: *cuda_lib
     cudart: 11.3.109-1
@@ -114,64 +145,151 @@ cuda:
     libcufft: 10.4.2.109-1
     libcusolver: 11.1.2.109-1
 
+##########################################
+# manager.py should only care about this #
+##########################################
 releases:
-  debian10:
-    <<: *base_spec
-    templates_dir: templates/debian
-    base_image: debian:buster-slim
-    add_to_tags: "debian"
-    cuda:
-      <<: *cuda11_3_1
-    cuda_prefix_url: "ubuntu2004"
+  w_cuda_v11.6.0:
+    debian11:
+      <<: *multiarch
+      templates_dir: templates/debian
+      base_image: debian:11-slim
+      add_to_tags: "debian11"
+      dependencies:
+        amd64:
+          <<: *cuda11_6_0_amd64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64"
+        arm64:
+          <<: *cuda11_6_0_arm64
+          repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
+        ppc64le:
 
-  ubi8:
-    <<: *base_spec
-    templates_dir: templates/rhel
-    base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
-    add_to_tags: "ubi8"
-    cuda:
-      <<: *cuda11_3_1
-    cuda_prefix_url: "rhel8"
+    debian10:
+      <<: *multiarch
+      templates_dir: templates/debian
+      base_image: debian:10-slim
+      add_to_tags: "debian10"
+      dependencies:
+        amd64:
+          <<: *cuda11_6_0_amd64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64"
+        arm64:
+          <<: *cuda11_6_0_arm64
+          repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
+        ppc64le:
 
-  ubi7:
-    <<: *base_spec
-    templates_dir: templates/rhel
-    base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
-    add_to_tags: "ubi7"
-    cuda:
-      <<: *cuda11_3_1
-    cuda_prefix_url: "rhel7"
+    ubi8:
+      <<: *multiarch
+      templates_dir: templates/rhel
+      base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
+      add_to_tags: "ubi8"
+      dependencies:
+        <<: *cuda11_6_0
+        amd64:
+          <<: *cuda11_6_0_amd64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64"
+        arm64:
+          <<: *cuda11_6_0_arm64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/sbsa"
+        ppc64le:
+          <<: *cuda11_6_0_ppc64le
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/ppc64le"
 
-  amazonlinux2:
-    <<: *base_spec
-    templates_dir: templates/rhel
-    base_image: amazonlinux:2
-    add_to_tags: "amazonlinux2"
+    ubi7:
+      <<: *multiarch
+      templates_dir: templates/rhel
+      base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
+      add_to_tags: "ubi7"
+      dependencies:
+        <<: *cuda11_6_0
+        amd64:
+          <<: *cuda11_6_0_amd64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64"
+        arm64:
+          <<: *cuda11_6_0_arm64
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/sbsa"
+        ppc64le:
+          <<: *cuda11_6_0_ppc64le
+          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/ppc64le"
 
-  alpine3.14:
-    <<: *base_spec
-    templates_dir: templates/alpine
-    base_image: alpine:3.14
-    add_to_tags: "alpine3.14"
+
+    # TODO: support GPU on ami2
+    amazonlinux2:
+      <<: *multiarch
+      templates_dir: templates/rhel
+      base_image: amazonlinux:2
+      add_to_tags: "amazonlinux2"
+      dependencies:
+
+    alpine3.14:
+      <<: *multiarch
+      templates_dir: templates/alpine
+      base_image: alpine:3.14
+      add_to_tags: "alpine3.14"
+      dependencies:
+
+
+  w_cuda_v11.3.1:
+    debian10:
+      <<: *deprecated
+      templates_dir: templates/debian
+      base_image: debian:buster-slim
+      add_to_tags: "debian"
+      cuda:
+        <<: *cuda11_3_1
+        prefix_url: "ubuntu2004"
+
+    ubi8:
+      <<: *deprecated
+      templates_dir: templates/rhel
+      base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
+      add_to_tags: "ubi8"
+      cuda:
+        <<: *cuda11_3_1
+        prefix_url: "rhel8"
+
+    ubi7:
+      <<: *deprecated
+      templates_dir: templates/rhel
+      base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
+      add_to_tags: "ubi7"
+      cuda:
+        <<: *cuda11_3_1
+        prefix_url: "rhel7"
+
+    amazonlinux2:
+      <<: *deprecated
+      templates_dir: templates/rhel
+      base_image: amazonlinux:2
+      add_to_tags: "amazonlinux2"
+
+    alpine3.14:
+      <<: *deprecated
+      templates_dir: templates/alpine
+      base_image: alpine:3.14
+      add_to_tags: "alpine3.14"
 
 
 
-# Linux distros for each package are defined below:
+# NOTE: Linux distros for each package are defined below:
 # * currently there's only one package `bento-server`
 # * distros are defined as <distro_releases><distro_version>
 packages:
   bento-server:
     devel:
+      - debian11
       - debian10
       - ubi8
       - ubi7
     runtime:
+      - debian11
       - debian10
       - ubi8
       - ubi7
       - amazonlinux2
       - alpine3.14
     cudnn:
+      - debian11
       - debian10
       - ubi8
       - ubi7

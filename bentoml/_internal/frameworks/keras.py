@@ -153,14 +153,14 @@ def load(
     model_format = bentoml_model.info.context.get("model_format")
     if model_format:
         # ignore version=v1 now because all version should be v1
-        save_format, store_as_json, _ = model_format.split(":")
+        save_format, store_as_json_and_weights, _ = model_format.split(":")
     # backward compatibility
     else:
         save_format = "h5"
-        store_as_json = bentoml_model.info.options["store_as_json"]
+        store_as_json_and_weights = bentoml_model.info.options["store_as_json"]
 
     with get_session().as_default():
-        if store_as_json:
+        if store_as_json_and_weights:
             assert Path(bentoml_model.path_of(_MODEL_JSON_FNAME)).is_file()
             with Path(bentoml_model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
                 model_json = jsonf.read()
@@ -187,9 +187,9 @@ def save(
     name: str,
     model: "keras.Model",
     *,
-    store_as_json: t.Optional[bool] = False,
     save_format: t.Optional[str] = "tf",
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+    store_as_json_and_weights: t.Optional[bool] = False,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -201,12 +201,12 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`tensorflow.keras.Model`):
             Instance of the Keras model to be saved to BentoML modelstore.
-        store_as_json (`bool`, `optional`, default to :code:`False`):
-            Whether to store Keras model as JSON and weights.
         save_format (`str`, `optional`, default to :code:`tf`):
             Whether to store Keras model or weight in tf format or old h5 format.
         custom_objects (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary of Keras custom objects, if specified.
+        store_as_json_and_weights (`bool`, `optional`, default to :code:`False`):
+            Whether to store Keras model as JSON and weights.
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -266,7 +266,7 @@ def save(
             model = KerasSequentialModel()
 
             # `save` a given model and retrieve coresponding tag:
-            tag = bentoml.keras.save("keras_model", model, store_as_json=True)
+            tag = bentoml.keras.save("keras_model", model)
 
             # `save` a given model with custom objects definition:
             custom_objects = {
@@ -322,7 +322,7 @@ def save(
             model = KerasSequentialModel()
 
             # `save` a given model and retrieve coresponding tag:
-            tag = bentoml.keras.save("keras_model", model, store_as_json=True)
+            tag = bentoml.keras.save("keras_model", model)
 
             # `save` a given model with custom objects definition:
             custom_objects = {
@@ -336,7 +336,7 @@ def save(
 
     tf.compat.v1.keras.backend.get_session()
 
-    json_field = "json" if store_as_json else ""
+    json_field = "json" if store_as_json_and_weights else ""
     model_format = ":".join([save_format, json_field, "v1"])
     context: t.Dict[str, t.Any] = {
         "framework_name": "keras",
@@ -357,7 +357,7 @@ def save(
     if custom_objects is not None:
         with Path(_model.path_of(_CUSTOM_OBJ_FNAME)).open("wb") as cof:
             cloudpickle.dump(custom_objects, cof)
-    if store_as_json:
+    if store_as_json_and_weights:
         with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
             jf.write(model.to_json())
         weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]

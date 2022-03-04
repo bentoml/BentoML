@@ -35,14 +35,26 @@ def predict_assert_equal(model: "keras.Model") -> None:
 @pytest.mark.parametrize(
     "model, kwargs",
     [
-        (KerasSequentialModel(), {"store_as_json": True, "save_format": "tf"}),
-        (KerasSequentialModel(), {"store_as_json": False, "save_format": "tf"}),
-        (KerasSequentialModel(), {"store_as_json": True, "save_format": "h5"}),
-        (KerasSequentialModel(), {"store_as_json": False, "save_format": "h5"}),
+        (
+            KerasSequentialModel(),
+            {"store_as_json_and_weights": True, "save_format": "tf"},
+        ),
+        (
+            KerasSequentialModel(),
+            {"store_as_json_and_weights": False, "save_format": "tf"},
+        ),
+        (
+            KerasSequentialModel(),
+            {"store_as_json_and_weights": True, "save_format": "h5"},
+        ),
+        (
+            KerasSequentialModel(),
+            {"store_as_json_and_weights": False, "save_format": "h5"},
+        ),
         (
             KerasSequentialModel(),
             {
-                "store_as_json": False,
+                "store_as_json_and_weights": False,
                 "save_format": "tf",
                 "custom_objects": {
                     "CustomLayer": CustomLayer,
@@ -60,7 +72,7 @@ def test_keras_save_load(
     model_info = bentoml.models.get(tag)
     if kwargs.get("custom_objects") is not None:
         assert_have_file_extension(model_info.path, ".pkl")
-    if kwargs["store_as_json"]:
+    if kwargs["store_as_json_and_weights"]:
         assert_have_file_extension(model_info.path, ".json")
         if kwargs["save_format"] == "h5":
             assert_have_file_extension(model_info.path, ".hdf5")
@@ -80,17 +92,23 @@ def test_keras_save_load(
 
 
 @pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")
-@pytest.mark.parametrize("store_as_json", [True, False])
-def test_keras_save_load_complex(store_as_json) -> None:
+@pytest.mark.parametrize("store_as_json_and_weights", [True, False])
+def test_keras_save_load_complex(store_as_json_and_weights) -> None:
     model: keras.Model = KerasNLPModel()
     with pytest.raises(NotImplementedError):
         bentoml.keras.save(
-            MODEL_NAME, model, save_format="h5", store_as_json=store_as_json
+            MODEL_NAME,
+            model,
+            save_format="h5",
+            store_as_json_and_weights=store_as_json_and_weights,
         )
 
     try:
         bentoml.keras.save(
-            MODEL_NAME, model, save_format="tf", store_as_json=store_as_json
+            MODEL_NAME,
+            model,
+            save_format="tf",
+            store_as_json_and_weights=store_as_json_and_weights,
         )
     except NotImplementedError as exc:
         assert False, f"Save KerasNLPModel in 'tf' format raised an exception {exc}"

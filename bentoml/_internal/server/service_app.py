@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
-from opentelemetry import trace  # type: ignore[import]
 
 from ..trace import ServiceContext
 from ...exceptions import RemoteException
@@ -109,7 +108,7 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
 class ServiceAppFactory(BaseAppFactory):
     """
     ServiceApp creates a REST API server based on APIs defined with a BentoService
-    via BentoService#get_service_apis call. Each InferenceAPI will become one
+    via BentoService#apis. Each InferenceAPI will become one
     endpoint exposed on the REST server, and the RequestHandler defined on each
     InferenceAPI object will be used to handle Request object before feeding the
     request data into a Service API function
@@ -315,10 +314,8 @@ class ServiceAppFactory(BaseAppFactory):
 
     def __call__(self) -> "Starlette":
         app = super().__call__()
-
         for mount_app, path, name in self.bento_service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)
-
         return app
 
     @staticmethod

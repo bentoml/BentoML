@@ -11,8 +11,7 @@ if TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
     from starlette.middleware import Middleware
-
-    from .. import ext_typing as ext
+    from starlette.applications import Starlette
 
 
 logger = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ class BaseAppFactory(abc.ABC):
             return PlainTextResponse("\n", status_code=200)
         raise HTTPException(500)
 
-    def __call__(self) -> "ext.ASGIApp":
+    def __call__(self) -> "Starlette":
         from starlette.applications import Starlette
 
         from bentoml._internal.configuration import get_debug_mode

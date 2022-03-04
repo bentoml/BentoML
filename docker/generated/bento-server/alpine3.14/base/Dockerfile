@@ -1,6 +1,12 @@
-{{ metadata.header }}
+# syntax = docker/dockerfile:1.2
+#
+# ╔═════════════════════════════════════════════╗
+# ║ THIS IS A GENERATED DOCKERFILE. DO NOT EDIT ║
+# ╚═════════════════════════════════════════════╝
+#
 
-FROM {{ metadata.base_image }} as alpine-glibc
+
+FROM alpine:3.14 as alpine-glibc
 
 ENV PATH /opt/conda/bin:/usr/local/bin:$PATH
 
@@ -52,13 +58,10 @@ ARG TARGETARCH
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
 # setup ENV and ARG
-{% for key, value in metadata.envars.items() if key != "BENTOML_VERSION"%}
-{% if key in ["PYTHON_VERSION"] %}
-ARG {{ key }}
-{% else %}
-ENV {{ key }}={{ value }}
-{% endif %}
-{% endfor %}
+ARG PYTHON_VERSION
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
 
 ENV ENV /root/.shinit
 

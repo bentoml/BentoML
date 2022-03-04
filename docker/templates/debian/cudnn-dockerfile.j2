@@ -1,4 +1,3 @@
-# refers to https://gitlab.com/nvidia/container-images/cuda
 {{ metadata.header }}
 
 {% set cuda = metadata.cuda %}
@@ -8,8 +7,8 @@ FROM {{ metadata.package }}:{{ build_tag }} as baseline
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg2 curl ca-certificates && \
-    curl -fsSL {{ cuda.repo_url }}/7fa2af80.pub | apt-key add - && \
-    echo "deb {{ cuda.repo_url }} /" > /etc/apt/sources.list.d/cuda.list && \
+    curl -fsSL {{ cuda.repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - && \
+    echo "deb {{ cuda.repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list && \
     if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi && \
     apt-get purge --autoremove -y curl \
     && rm -rf /var/lib/apt/lists/*
@@ -136,9 +135,11 @@ ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKA
 
 {% endif -%}
 
-FROM base-${TARGETARCH} as nvidia_cudnn_images
+FROM base-${TARGETARCH}
 
 ARG TARGETARCH
+
+LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cuda-libraries-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_LIB_VERSION} \
@@ -156,9 +157,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Keep apt from auto upgrading the cublas and nccl packages. See https://gitlab.com/nvidia/container-images/cuda/-/issues/88
 RUN apt-mark hold ${NVIDIA_CUDNN_PACKAGE_NAME} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}{% if has_libnccl_package %} ${NVIDIA_LIBNCCL_PACKAGE_NAME}{% endif %}
-
-
-FROM nvidia_cudnn_images as release_image
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 

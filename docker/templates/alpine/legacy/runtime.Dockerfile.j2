@@ -2,7 +2,9 @@
 
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ build_tag }} as build_image
+FROM {{ metadata.package }}:{{ build_tag }} as base
+
+
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 

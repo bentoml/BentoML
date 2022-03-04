@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM bento-server:base-python$PYTHON_VERSION-ubi7 as base
+FROM bento-server:base-python$PYTHON_VERSION-alpine3.14 as base
 
 FROM base-${TARGETARCH}
 
@@ -16,6 +16,11 @@ ARG TARGETARCH
 
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
-WORKDIR /
+ENV BENTOML_VERSION=1.0.0a5
 
-RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
+# bash is needed to run bentoml.
+RUN conda install -y python=$PYTHON_VERSION pip \
+    && conda clean -afy \
+    && apk add --no-cache bash git build-base
+
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

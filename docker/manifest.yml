@@ -58,11 +58,10 @@ specs:
       header: |
         # syntax = docker/dockerfile:1.2
         #
-        # ===========================================
+        # ╔═════════════════════════════════════════════╗
+        # ║ THIS IS A GENERATED DOCKERFILE. DO NOT EDIT ║
+        # ╚═════════════════════════════════════════════╝
         #
-        # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
-        #
-        # ===========================================
       envars:
         - LANG=C.UTF-8
         - LC_ALL=C.UTF-8
@@ -222,13 +221,13 @@ releases:
         amd64:
           cuda:
             <<: *cuda11_5_1_amd64
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004"
         arm64v8:
           cuda:
             <<: *cuda11_5_1_arm64v8
-            repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
+            repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004"
 
     debian10:
       <<: *multiarch
@@ -239,13 +238,13 @@ releases:
         amd64:
           cuda:
             <<: *cuda11_5_1_amd64
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004"
         arm64v8:
           cuda:
             <<: *cuda11_5_1_arm64v8
-            repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
+            repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004"
 
     ubi8:
       <<: *multiarch
@@ -257,18 +256,18 @@ releases:
         amd64:
           cuda:
             <<: *cuda11_5_1_amd64
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/x86_64"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8"
         arm64v8:
           cuda:
             <<: *cuda11_5_1_arm64v8
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/sbsa"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/sbsa"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8"
         ppc64le:
           cuda:
             <<: *cuda11_5_1_ppc64le
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/ppc64le"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/ppc64le"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8"
 
     ubi7:
       <<: *multiarch
@@ -280,18 +279,18 @@ releases:
         amd64:
           cuda:
             <<: *cuda11_5_1_amd64
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/x86_64"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7"
         arm64v8:
           cuda:
             <<: *cuda11_5_1_arm64v8
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/sbsa"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/sbsa"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7"
         ppc64le:
           cuda:
             <<: *cuda11_5_1_ppc64le
-            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/ppc64le"
-            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/ppc64le"
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7"
 
 
     amazonlinux2:

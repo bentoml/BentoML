@@ -2,7 +2,13 @@
 
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ build_tag }} as build_image
+FROM {{ metadata.package }}:{{ build_tag }} as base
+
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
+
+LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
 WORKDIR /
 

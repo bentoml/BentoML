@@ -5,6 +5,7 @@ FROM {{ metadata.base_image }} as base
 
 {% if "amd64" in cuda %}
 FROM base as base-amd64
+ENV NVARCH x86_64
 
     {% if "requires" in cuda.amd64 %}
 ENV NVIDIA_REQUIRE_CUDA "{{ cuda.amd64.requires }}"
@@ -14,11 +15,12 @@ ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
 ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.amd64.ml_repo_url }}
+ENV NVIDIA_ML_REPO_URL {{ cuda.amd64.ml_repo_url }}/${NVARCH}
 {% endif %}
 
 {% if "arm64v8" in cuda %}
 FROM base as base-arm64
+ENV NVARCH sbsa
 
     {% if "requires" in cuda.arm64v8 %}
 ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
@@ -27,11 +29,12 @@ ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
 ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.arm64v8.ml_repo_url }}
+ENV NVIDIA_ML_REPO_URL {{ cuda.arm64v8.ml_repo_url }}/${NVARCH}
 {% endif -%}
 
 {% if "ppc64le" in cuda %}
 FROM base as base-ppc64le
+ENV NVARCH ppc64le
 
     {% if "requires" in cuda.ppc64le %}
 ENV NVIDIA_REQUIRE_CUDA "{{ cuda.ppc64le.requires }}"
@@ -41,7 +44,7 @@ ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.ppc64le.components.cudart.version }}
 ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.ppc64le.ml_repo_url }}
+ENV NVIDIA_ML_REPO_URL {{ cuda.ppc64le.ml_repo_url }}/${NVARCH}
 {% endif -%}
 
 {% for key in metadata.arch_ctx if key not in ['amd64', 'arm64v8', 'ppc64le', 'arm32v5', 'arm32v6'] %}
@@ -55,12 +58,13 @@ FROM base as base-386
 
 FROM base as base-{{ key }}
     {% endif %}
-{% endfor -%}
-
+{% endfor %}
 
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
+
+LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
 # setup ENV and ARG
 {% for key, value in metadata.envars.items() if key != "BENTOML_VERSION" %}

@@ -1,42 +1,151 @@
 {{ metadata.header }}
 
-FROM {{ metadata.base_image }}
+{% set cuda = metadata.cuda %}
+ARG PYTHON_VERSION
 
-# setup ENV and ARG
-{% for key, value in metadata.envars.items() if key not in ["BENTOML_VERSION","LC_ALL","LANG"] %}
-{% if key in ["PYTHON_VERSION"] %}
-ARG {{ key }}
-{% else %}
-ENV {{ key }}={{ value }}
-{% endif %}
-{% endfor %}
+FROM {{ metadata.package }}:{{ build_tag }} as baseline
 
-ENV PATH /opt/conda/bin:$PATH
+RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+    curl -fsSL {{ cuda.repo_url }}/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
+    echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
 
-# needed for string substitution
-SHELL ["/bin/bash","-exo", "pipefail", "-c"]
+ENV CUDA_VERSION {{ cuda.version.full }}
 
-RUN yum upgrade -y \
-    && yum install -y wget git ca-certificates curl gcc gcc-c++ make \
+# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
+RUN yum upgrade -y && yum install -y \
+    cuda-cudart-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_CUDA_CUDART_VERSION} \
+    cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }} \
+    && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda \
     && yum clean all \
-    && rm -rf /var/cache/yum
+    && rm -rf /var/cache/yum/*
 
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    chmod +x ~/miniconda.sh && \
-    ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh && \
-    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.bashrc && \
-    find /opt/conda/ -follow -type f -name '*.a' -delete && \
-    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
-    /opt/conda/bin/conda clean -afy && \
-    yum clean all && \
-    yum autoremove -y wget && \
-    rm -rf /var/cache/yum
+# nvidia-docker 1.0
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
 
-RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
-    /opt/conda/bin/conda clean -afy
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
-COPY tools/bashrc /etc/bash.bashrc
-RUN chmod a+r /etc/bash.bashrc
+COPY NGC-DL-CONTAINER-LICENSE /
+
+# nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+from baseline as base
+
+ENV NVIDIA_CUDA_LIB_VERSION {{ cuda.version.full + "-1" }}
+
+{% if "amd64" in cuda %}
+FROM base as base-amd64
+
+ENV NVIDIA_NVTX_VERSION {{ cuda.amd64.components.nvtx.version }}
+
+    {% if "libnpp" in cuda.amd64.components %}
+        {% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda.amd64.components.libnpp.version }}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_LIBNPP_VERSION}
+    {% endif %}
+
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda.amd64.components.libcublas.version }}
+
+    {% if "libnccl2" in cuda.amd64.components %}
+        {% set has_libnccl_package = true %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda.amd64.components.libnccl2.version }}
+ENV NVIDIA_LIBNCCL_VERSION {{ cuda.amd64.components.libnccl2.version[:-2] }}
+ENV NCCL_VERSION {{ cuda.amd64.components.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}-${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda.version.major }}.{{ cuda.version.minor }}
+    {% endif -%}
+
+
+ENV NVIDIA_CUDNN_VERSION {{ cuda.amd64.cudnn.version }}
+ENV NVIDIA_CUDNN_PACKAGE libcudnn{{ cuda.amd64.cudnn.version[0] }}-${NVIDIA_CUDNN_VERSION}.cuda{{ cuda.version.major }}.{{ cuda.version.minor }}
+
+COPY cuda.repo-x86_64 /etc/yum.repos.d/cuda.repo
+COPY nvidia-ml.repo-x86_64 /etc/yum.repos.d/nvidia-ml.repo
+
+{% endif %}
+
+{% if "arm64v8" in cuda %}
+FROM base as base-arm64
+
+ENV NVIDIA_NVTX_VERSION {{ cuda.arm64v8.components.nvtx.version }}
+
+    {% if "libnpp" in cuda.arm64v8.components %}
+        {% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda.arm64v8.components.libnpp.version }}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_LIBNPP_VERSION}
+    {% endif %}
+
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda.arm64v8.components.libcublas.version }}
+
+    {% if "libnccl2" in cuda.arm64v8.components %}
+        {% set has_libnccl_package = true %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda.arm64v8.components.libnccl2.version }}
+ENV NVIDIA_LIBNCCL_VERSION {{ cuda.arm64v8.components.libnccl2.version[:-2] }}
+ENV NCCL_VERSION {{ cuda.arm64v8.components.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}-${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda.version.major }}.{{ cuda.version.minor }}
+    {% endif -%}
+
+ENV NVIDIA_CUDNN_VERSION {{ cuda.arm64v8.cudnn.version }}
+ENV NVIDIA_CUDNN_PACKAGE libcudnn{{ cuda.arm64v8.cudnn.version[0] }}-${NVIDIA_CUDNN_VERSION}.cuda{{ cuda.version.major }}.{{ cuda.version.minor }}
+
+COPY cuda.repo-arm64 /etc/yum.repos.d/cuda.repo
+COPY nvidia-ml.repo-arm64 /etc/yum.repos.d/nvidia-ml.repo
+
+{% endif %}
+{% if "ppc64le" in cuda %}
+FROM base as base-ppc64le
+
+ENV NVIDIA_NVTX_VERSION {{ cuda.ppc64le.components.nvtx.version }}
+
+    {% if "libnpp" in cuda.ppc64le.components %}
+        {% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda.ppc64le.components.libnpp.version }}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_LIBNPP_VERSION}
+    {% endif %}
+
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda.ppc64le.components.libcublas.version }}
+
+    {% if "libnccl2" in cuda.ppc64le.components %}
+        {% set has_libnccl_package = true %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda.ppc64le.components.libnccl2.version }}
+ENV NVIDIA_LIBNCCL_VERSION {{ cuda.ppc64le.components.libnccl2.version[:-2] }}
+ENV NCCL_VERSION {{ cuda.ppc64le.components.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}-${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda.version.major }}.{{ cuda.version.minor }}
+    {% endif %}
+
+ENV NVIDIA_CUDNN_VERSION {{ cuda.ppc64le.cudnn.version }}
+ENV NVIDIA_CUDNN_PACKAGE libcudnn{{ cuda.ppc64le.cudnn.version[0] }}-${NVIDIA_CUDNN_VERSION}.cuda{{ cuda.version.major }}.{{ cuda.version.minor }}
+
+COPY cuda.repo-ppc64le /etc/yum.repos.d/cuda.repo
+COPY nvidia-ml.repo-ppc64le /etc/yum.repos.d/nvidia-ml.repo
+
+{% endif -%}
+
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
+
+LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+
+RUN yum install -y \
+    cuda-libraries-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_CUDA_LIB_VERSION} \
+    cuda-nvtx-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_NVTX_VERSION} \
+    {% if has_libnpp_package %}
+    ${NVIDIA_LIBNPP_PACKAGE} \
+    {% endif %}
+    libcublas-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_LIBCUBLAS_VERSION} \
+    {% if has_libnccl_package %}
+    ${NVIDIA_LIBNCCL_PACKAGE} \
+    {% endif %}
+    ${NVIDIA_CUDNN_PACKAGE} \
+    && yum clean all \
+    && rm -rf /var/cache/yum/*
+
+ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

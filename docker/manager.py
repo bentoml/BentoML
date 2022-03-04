@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import re
 import os
+import re
 import json
 import typing as t
 import operator
@@ -37,11 +37,11 @@ if TYPE_CHECKING:
 
 
 # CONSTANTS
-PACKAGE = 'bento-server'
+PACKAGE = "bento-server"
 README_TEMPLATE = Path(os.getcwd(), "templates", "docs", "README.md.j2")
 
-EXTENSION='.j2'
-BASE_PREFIX='base-'
+EXTENSION = ".j2"
+BASE_PREFIX = "base-"
 DOCKERFILE = "Dockerfile"
 DOCKERFILE_TEMPLATE_SUFFIX = f"-{DOCKERFILE.lower()}{EXTENSION}"
 DOCKERFILE_NVIDIA_REGEX = re.compile(r"(?:base-nvidia|base-cuda|cudnn)+")
@@ -150,7 +150,7 @@ def process_cuda_context(deps: "DictStrAny") -> "t.Tuple[DictStrAny, DictStrAny]
     }
     other_deps_mapping = {}
     for arch, requirements in deps.items():
-        cuda_req = requirements.pop('cuda')
+        cuda_req = requirements.pop("cuda")
         components: "DictStrAnyDict" = cuda_req["components"]
 
         def cudnn_version():
@@ -170,7 +170,12 @@ def process_cuda_context(deps: "DictStrAny") -> "t.Tuple[DictStrAny, DictStrAny]
 
 
 def setup_base_context(
-        python_version: str, distro: str, release_type: str, *, package: str, supported_arch_type: t.List[str]
+    python_version: str,
+    distro: str,
+    release_type: str,
+    *,
+    package: str,
+    supported_arch_type: t.List[str],
 ) -> "DictStrAny":
     ctx = get_architecture_spec(distro)
 
@@ -193,7 +198,9 @@ def setup_base_context(
     return deepcopy(ctx)
 
 
-def generation_metadata(ctx: "DictStrAny") -> "t.Tuple[DictStrAny, t.Tuple[str, DictStrAny]]":
+def generation_metadata(
+    ctx: "DictStrAny",
+) -> "t.Tuple[DictStrAny, t.Tuple[str, DictStrAny]]":
     """
     Returns a tuple of two dictionaries:
         - contains image tags + build metadata
@@ -212,9 +219,7 @@ def generation_metadata(ctx: "DictStrAny") -> "t.Tuple[DictStrAny, t.Tuple[str, 
     dependencies: "DictStrAny" = ctx.pop("dependencies")
 
     # process input_paths and output_path
-    base_output_path = Path(
-        FLAGS.dockerfile_dir, package, distro
-    )
+    base_output_path = Path(FLAGS.dockerfile_dir, package, distro)
     output_path = Path(base_output_path, release_type)
 
     # input paths
@@ -242,23 +247,33 @@ def generation_metadata(ctx: "DictStrAny") -> "t.Tuple[DictStrAny, t.Tuple[str, 
         ctx["trt_output_path"] = as_posix(base_output_path, "Dockerfile-trt")
 
     # Setup CUDA deps and additional requirements.
-    ctx["cuda"], ctx['additional_requirements'] = process_cuda_context(dependencies)
+    ctx["cuda"], ctx["additional_requirements"] = process_cuda_context(dependencies)
 
     # context for each platform build
     platform_mapping = get_docker_platform_mapping()
     ctx["arch_ctx"] = {
         arch: {
             "platform_args": f"{platform_mapping[arch]}",
-            "cuda_supported": arch in ctx['cuda'],
+            "cuda_supported": arch in ctx["cuda"],
             "bentoml_supported": arch in supported_arch_type,
         }
         for arch in architectures
     }
-    path_ctx = (image_tag, {"target_path": as_posix(output_path, DOCKERFILE), "supported_arch": [arch for arch in architectures if arch in supported_arch_type]})
-    return {image_tag: ctx}, path_ctx 
+    path_ctx = (
+        image_tag,
+        {
+            "target_path": as_posix(output_path, DOCKERFILE),
+            "supported_arch": [
+                arch for arch in architectures if arch in supported_arch_type
+            ],
+        },
+    )
+    return {image_tag: ctx}, path_ctx
 
 
-def gen_ctx(*args: t.Any, **kwargs: t.Any) -> "t.Tuple[DictStrAny, t.List[t.Tuple[str ,DictStrAny]]]":
+def gen_ctx(
+    *args: t.Any, **kwargs: t.Any
+) -> "t.Tuple[DictStrAny, t.List[t.Tuple[str ,DictStrAny]]]":
 
     supported_python_version: t.List[str] = kwargs.pop("supported_python_version")
     supported_arch_type: t.List[str] = kwargs.pop("supported_arch_type")
@@ -274,7 +289,7 @@ def gen_ctx(*args: t.Any, **kwargs: t.Any) -> "t.Tuple[DictStrAny, t.List[t.Tupl
                 distro=distro,
                 release_type=release_type,
                 package=package,
-                supported_arch_type=supported_arch_type
+                supported_arch_type=supported_arch_type,
             )
             build_ctx, path_ctx = generation_metadata(ctx)
             build_ctxdata.update(build_ctx)
@@ -296,7 +311,7 @@ def render(
     input_path: Path,
     output_path: Path,
     metadata: "DictStrAny",
-    arch:t.Optional[str]=None,
+    arch: t.Optional[str] = None,
     build_tag: t.Optional[str] = None,
 ):
     """
@@ -311,20 +326,27 @@ def render(
         build_tag (:obj:`t.Optional[str]`):
             strictly use for FROM args for base image.
     """
+    cuda_target_arch = {"amd64": "x86_64", "arm64v8": "sbsa", "ppc64le": "ppc64le"}
     template_env = Environment(
-        extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"], trim_blocks=True, lstrip_blocks=True
+        extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
     input_name = input_path.name
     if "readme".upper() in input_name:
         output_name = input_path.stem
-    elif 'dockerfile' in input_name:
+    elif "dockerfile" in input_name:
         output_name = DOCKERFILE
     else:
         # specific cases for rhel
-        output_name = input_name[len(BASE_PREFIX):-len(EXTENSION)] if input_name.startswith(BASE_PREFIX) and input_name.endswith(EXTENSION) else input_name
+        output_name = (
+            input_name[len(BASE_PREFIX) : -len(EXTENSION)]
+            if input_name.startswith(BASE_PREFIX) and input_name.endswith(EXTENSION)
+            else input_name
+        )
         if arch:
             output_name += f"-{arch}"
-    if not output_path.exists() and 'Dockerfile-trt' not in output_path.name:
+    if not output_path.exists() and "Dockerfile-trt" not in output_path.name:
         logger.debug(f"Creating {as_posix(output_path)}...")
         output_path.mkdir(parents=True, exist_ok=True)
 
@@ -337,25 +359,45 @@ def render(
         rendered_path = output_path.joinpath(output_name)
 
     with rendered_path.open("w") as ouf:
-        ouf.write(template.render(metadata=metadata, build_tag=build_tag))
+        ouf.write(
+            template.render(
+                metadata=metadata,
+                build_tag=build_tag,
+                arch=arch,
+                cuda_target_arch=cuda_target_arch,
+            )
+        )
 
 
 def generate_readmes(
-        output_dir: str, package: str, path_ctx: "t.List[t.Tuple[str, DictStrAny]]"
+    output_dir: str, package: str, path_ctx: "t.List[t.Tuple[str, DictStrAny]]"
 ) -> None:
     distros = get_packages_spec("bento-server", "base")
     release_context = {}
     for distro_version in distros:
         release_context[distro_version] = {
-                "image_tag": sorted(
-            [
-                (image_tag, tag_info['target_path'])
-                for (image_tag, tag_info) in [tpl for tpl in path_ctx if distro_version in tpl[0]]
-                if "base" not in image_tag 
-            ],
-            key=operator.itemgetter(0),
-            ), "supported_arch": list(set([i for tag_info in [tpl[1] for tpl in path_ctx if distro_version in tpl[0]] for i in tag_info['supported_arch']]))
-                }
+            "image_tag": sorted(
+                [
+                    (image_tag, tag_info["target_path"])
+                    for (image_tag, tag_info) in [
+                        tpl for tpl in path_ctx if distro_version in tpl[0]
+                    ]
+                    if "base" not in image_tag
+                ],
+                key=operator.itemgetter(0),
+            ),
+            "supported_arch": list(
+                set(
+                    [
+                        i
+                        for tag_info in [
+                            tpl[1] for tpl in path_ctx if distro_version in tpl[0]
+                        ]
+                        for i in tag_info["supported_arch"]
+                    ]
+                )
+            ),
+        }
     readme_context = {
         "ephemeral": False,
         "bentoml_package": package,
@@ -376,31 +418,38 @@ def generate_readmes(
 
 
 def generate_dockerfiles(build_ctx: "DictStrAny"):
-    jprint(build_ctx['bento-server:1.0.0a5-python3.7-debian10-runtime'])
-    # jprint(build_ctx['bento-server:1.0.0a5-python3.7-alpine3.14-runtime'])
-    # jprint(build_ctx['bento-server:1.0.0a5-python3.7-ubi8-cudnn'])
     for tags_ctx in build_ctx.values():
-        for inputs in tags_ctx['input_paths']:
+        for inputs in tags_ctx["input_paths"]:
             output_path = Path(tags_ctx["output_path"])
-            print(f"Processing {inputs} to {output_path.as_posix()}")
-            build_tag = tags_ctx['build_tag'] if 'build_tag' in tags_ctx.keys() else None
-            to_render = partial(render, input_path=Path(inputs), output_path=output_path, metadata=tags_ctx, build_tag=build_tag)
-            if 'rhel' in tags_ctx['templates_dir']:
-                arch_ctx = tags_ctx['arch_ctx']
-                cuda_supported_arch = [k for k in arch_ctx if arch_ctx[k]['cuda_supported']]
+            build_tag = (
+                tags_ctx["build_tag"] if "build_tag" in tags_ctx.keys() else None
+            )
+            if output_path.exists():
+                continue
+            to_render = partial(
+                render,
+                input_path=Path(inputs),
+                output_path=output_path,
+                metadata=tags_ctx,
+                build_tag=build_tag,
+            )
+            if "rhel" in tags_ctx["templates_dir"]:
+                arch_ctx = tags_ctx["arch_ctx"]
+                cuda_supported_arch = [
+                    k for k in arch_ctx if arch_ctx[k]["cuda_supported"]
+                ]
                 for sa in cuda_supported_arch:
                     to_render(arch=sa)
             else:
                 to_render()
-            if 'trt_input_path' in tags_ctx:
+            if "trt_input_path" in tags_ctx:
                 # TensorRT (EXPERIMENTAL)
                 render(
-                        input_path=Path(tags_ctx['trt_input_path']),
-                        output_path=Path(tags_ctx["trt_output_path"]),
-                        metadata=tags_ctx,
-                        build_tag=build_tag,
-                    )
-
+                    input_path=Path(tags_ctx["trt_input_path"]),
+                    output_path=Path(tags_ctx["trt_output_path"]),
+                    metadata=tags_ctx,
+                    build_tag=build_tag,
+                )
 
 
 def build_images():
@@ -434,7 +483,9 @@ def main(*args: t.Any, **kwargs: t.Any) -> None:
 
     # generate jinja templates
     for package in get_packages_spec():
-        generate_readmes(output_dir=FLAGS.dockerfile_dir, package=package, path_ctx=path_ctx)
+        generate_readmes(
+            output_dir=FLAGS.dockerfile_dir, package=package, path_ctx=path_ctx
+        )
         generate_dockerfiles(build_ctx=build_ctx)
 
 

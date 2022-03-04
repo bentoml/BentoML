@@ -6,4 +6,14 @@
 #
 
 
-# TODO:
+ARG PYTHON_VERSION
+
+FROM bento-server:base-python$PYTHON_VERSION-ubi7 as base
+
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
+
+ENV BENTOML_VERSION=1.0.0a5
+
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

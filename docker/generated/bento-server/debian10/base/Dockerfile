@@ -1,32 +1,33 @@
 # syntax = docker/dockerfile:1.2
 #
-# ===========================================
+# ╔═════════════════════════════════════════════╗
+# ║ THIS IS A GENERATED DOCKERFILE. DO NOT EDIT ║
+# ╚═════════════════════════════════════════════╝
 #
-# THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
-#
-# ===========================================
 
 
 FROM debian:10-slim as base
 
 FROM base as base-amd64
+ENV NVARCH x86_64
 
-ENV NVIDIA_REQUIRE_CUDA ""
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
 
 ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
 ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-11-5
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
 FROM base as base-arm64
+ENV NVARCH sbsa
 
 ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
 
 ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
 FROM base as base-arm
 
@@ -35,9 +36,12 @@ FROM base as base-386
 FROM base as base-s390x
 
 FROM base as base-riscv64
+
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
+
+LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
 # setup ENV and ARG
 ARG PYTHON_VERSION

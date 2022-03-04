@@ -2,7 +2,7 @@
 name = "bentoml-docker"
 version = "0.1.0"
 description = "BentoML's Docker Images Management"
-authors = ["BentoML Contributors <contact@bentoml.ai>"]
+authors = ["BentoML Team <contact@bentoml.ai>"]
 
 [tool.poetry.dependencies]
 python = ">=3.7.2,<4.0"

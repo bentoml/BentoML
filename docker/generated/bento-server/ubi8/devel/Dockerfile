@@ -1,44 +1,21 @@
 # syntax = docker/dockerfile:1.2
 #
-# ===========================================
+# ╔═════════════════════════════════════════════╗
+# ║ THIS IS A GENERATED DOCKERFILE. DO NOT EDIT ║
+# ╚═════════════════════════════════════════════╝
 #
-# THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
-#
-# ===========================================
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest
-
-# setup ENV and ARG
 ARG PYTHON_VERSION
-ENV PYTHONDONTWRITEBYTECODE=1
 
-ENV PATH /opt/conda/bin:$PATH
+FROM bento-server:base-python$PYTHON_VERSION-ubi8 as base
 
-# needed for string substitution
-SHELL ["/bin/bash","-exo", "pipefail", "-c"]
+FROM base-${TARGETARCH}
 
-RUN yum upgrade -y \
-    && yum install -y wget git ca-certificates curl gcc gcc-c++ make \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+ARG TARGETARCH
 
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    chmod +x ~/miniconda.sh && \
-    ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh && \
-    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.bashrc && \
-    find /opt/conda/ -follow -type f -name '*.a' -delete && \
-    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
-    /opt/conda/bin/conda clean -afy && \
-    yum clean all && \
-    yum autoremove -y wget && \
-    rm -rf /var/cache/yum
+LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
-RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
-    /opt/conda/bin/conda clean -afy
+WORKDIR /
 
-COPY tools/bashrc /etc/bash.bashrc
-RUN chmod a+r /etc/bash.bashrc
+RUN pip install -U git+https://github.com/bentoml/bentoml.git@main

@@ -1,6 +1,5 @@
 import io
-import os
-import re
+import shutil
 import sys
 import json
 import typing as t
@@ -336,6 +335,11 @@ def argv_validator(length: int = 1) -> "t.Callable[[GenericFunc], GenericFunc]":
                     "supported_arch_type": supported_arch_type,
                 }
             )
+            if FLAGS.overwrite:
+                # Consider generated directory ephemeral
+                logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
+                shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
+                pathlib.Path(FLAGS.dockerfile_dir).mkdir(exist_ok=True)
             return func(*args, **kwargs)
 
         return wrapper

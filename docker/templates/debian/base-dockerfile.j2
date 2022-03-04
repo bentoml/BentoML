@@ -1,9 +1,69 @@
 {{ metadata.header }}
+{% set cuda = metadata.cuda %}
 
-FROM {{ metadata.base_image }}
+FROM {{ metadata.base_image }} as base
+
+{% if "amd64" in cuda %}
+FROM base as base-amd64
+
+    {% if "requires" in cuda.amd64 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.amd64.requires }}"
+    {% endif %}
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL {{ cuda.amd64.ml_repo_url }}
+{% endif %}
+
+{% if "arm64v8" in cuda %}
+FROM base as base-arm64
+
+    {% if "requires" in cuda.arm64v8 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
+    {% endif %}
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL {{ cuda.arm64v8.ml_repo_url }}
+{% endif -%}
+
+{% if "ppc64le" in cuda %}
+FROM base as base-ppc64le
+
+    {% if "requires" in cuda.ppc64le %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.ppc64le.requires }}"
+    {% endif %}
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.ppc64le.components.cudart.version }}
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL {{ cuda.ppc64le.ml_repo_url }}
+{% endif -%}
+
+{% for key in metadata.arch_ctx if key not in ['amd64', 'arm64v8', 'ppc64le', 'arm32v5', 'arm32v6'] %}
+    {% if 'arm' in key %}
+
+FROM base as base-arm
+    {% elif 'i386' in key %}
+
+FROM base as base-386
+    {% else %}
+
+FROM base as base-{{ key }}
+    {% endif %}
+{% endfor -%}
+
+
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
 
 # setup ENV and ARG
-{% for key, value in metadata.envars.items() if key not in ["BENTOML_VERSION","LC_ALL","LANG"] %}
+{% for key, value in metadata.envars.items() if key != "BENTOML_VERSION" %}
 {% if key in ["PYTHON_VERSION"] %}
 ARG {{ key }}
 {% else %}
@@ -13,14 +73,18 @@ ENV {{ key }}={{ value }}
 
 ENV PATH /opt/conda/bin:$PATH
 
+ENV DEBIAN_FRONTEND noninteractive
+
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-RUN yum upgrade -y \
-    && yum install -y wget git ca-certificates curl gcc gcc-c++ make \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+RUN apt-get update && \
+    apt-get install -q -y --no-install-recommends \
+    ca-certificates bash curl wget git gnupg build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
+# Install miniconda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
@@ -31,10 +95,10 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     find /opt/conda/ -follow -type f -name '*.a' -delete && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda clean -afy && \
-    yum clean all && \
-    yum autoremove -y wget && \
-    rm -rf /var/cache/yum
+    apt-get clean && apt-get autoremove -y && \
+    apt-get purge -y wget
 
+# Install python via conda
 RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
     /opt/conda/bin/conda clean -afy
 

@@ -7,13 +7,43 @@
 # ===========================================
 
 
-FROM debian:buster-slim
+FROM debian:10-slim as base
+
+FROM base as base-amd64
+
+ENV NVIDIA_REQUIRE_CUDA ""
+
+ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-11-5
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64
+
+FROM base as base-arm64
+
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
+
+ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa
+
+FROM base as base-arm
+
+FROM base as base-386
+
+FROM base as base-s390x
+
+FROM base as base-riscv64
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
 
 # setup ENV and ARG
+ARG PYTHON_VERSION
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1
-ARG PYTHON_VERSION
 
 ENV PATH /opt/conda/bin:$PATH
 
@@ -24,7 +54,7 @@ SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
 RUN apt-get update && \
     apt-get install -q -y --no-install-recommends \
-    ca-certificates curl wget git gnupg build-essential && \
+    ca-certificates bash curl wget git gnupg build-essential && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

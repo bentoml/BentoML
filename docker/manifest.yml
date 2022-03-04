@@ -118,14 +118,16 @@ cuda:
           version: 11.7.4.6-1
         libcublas_dev:
           version: 11.7.4.6-1
+        libcusparse:
+          version: 11.7.0.107-1
+        libcusparse_dev:
+          version: 11.7.0.107-1
         libnpp:
           version: 11.5.1.107-1
         libnpp_dev:
           version: 11.5.1.107-1
         nvml_dev:
           version: 11.5.50-1
-        nvprof:
-          version: 11.5.114-1
         nvtx:
           version: 11.5.114-1
         libnccl2:
@@ -134,6 +136,8 @@ cuda:
           version: 2.11.4-1
         cudnn8:
           version: 8.3.1.22-1
+        nvprof:
+          version: 11.5.114-1
     arm64v8: &cuda11_5_1_arm64v8  # for nvidia this is sbsa
       components:
         cudart:
@@ -144,14 +148,16 @@ cuda:
           version: 11.7.4.6-1
         libcublas_dev:
           version: 11.7.4.6-1
+        libcusparse:
+          version: 11.7.0.107-1
+        libcusparse_dev:
+          version: 11.7.0.107-1
         libnpp:
           version: 11.5.1.107-1
         libnpp_dev:
           version: 11.5.1.107-1
         nvml_dev:
           version: 11.5.50-1
-        nvprof:
-          version: 11.5.114-1
         nvtx:
           version: 11.5.114-1
         libnccl2:
@@ -160,6 +166,8 @@ cuda:
           version: 2.11.4-1
         cudnn8:
           version: 8.3.1.22-1
+        nvprof:
+          version: 11.5.114-1
       requires: 'cuda>=11.5'
     ppc64le: &cuda11_5_1_ppc64le
       components:
@@ -242,7 +250,7 @@ releases:
     ubi8:
       <<: *multiarch
       templates_dir: templates/rhel
-      base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
+      base_image: registry.access.redhat.com/ubi8/ubi:latest
       suffixes: "ubi8"
       dependencies:
         <<: *cuda11_5_1
@@ -265,7 +273,7 @@ releases:
     ubi7:
       <<: *multiarch
       templates_dir: templates/rhel
-      base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
+      base_image: registry.access.redhat.com/ubi7/ubi:latest
       suffixes: "ubi7"
       dependencies:
         <<: *cuda11_5_1
@@ -314,7 +322,7 @@ releases:
     ubi8:
       <<: *deprecated
       templates_dir: templates/rhel/legacy
-      base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
+      base_image: registry.access.redhat.com/ubi8/ubi:latest
       suffixes: "ubi8"
       cuda:
         <<: *cuda11_3_1
@@ -323,7 +331,7 @@ releases:
     ubi7:
       <<: *deprecated
       templates_dir: templates/rhel/legacy
-      base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
+      base_image: registry.access.redhat.com/ubi7/ubi:latest
       suffixes: "ubi7"
       cuda:
         <<: *cuda11_3_1

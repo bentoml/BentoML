@@ -7,22 +7,58 @@
 # ===========================================
 
 
-FROM registry.access.redhat.com/ubi7/ubi:latest
+FROM debian:11-slim as base
+
+FROM base as base-amd64
+
+ENV NVIDIA_REQUIRE_CUDA ""
+
+ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-11-5
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64
+
+FROM base as base-arm64
+
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
+
+ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa
+
+FROM base as base-arm
+
+FROM base as base-386
+
+FROM base as base-s390x
+
+FROM base as base-riscv64
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
 
 # setup ENV and ARG
 ARG PYTHON_VERSION
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1
 
 ENV PATH /opt/conda/bin:$PATH
 
+ENV DEBIAN_FRONTEND noninteractive
+
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-RUN yum upgrade -y \
-    && yum install -y wget git ca-certificates curl gcc gcc-c++ make \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+RUN apt-get update && \
+    apt-get install -q -y --no-install-recommends \
+    ca-certificates bash curl wget git gnupg build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
+# Install miniconda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
@@ -33,10 +69,10 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     find /opt/conda/ -follow -type f -name '*.a' -delete && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda clean -afy && \
-    yum clean all && \
-    yum autoremove -y wget && \
-    rm -rf /var/cache/yum
+    apt-get clean && apt-get autoremove -y && \
+    apt-get purge -y wget
 
+# Install python via conda
 RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
     /opt/conda/bin/conda clean -afy
 

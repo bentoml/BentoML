@@ -11,17 +11,31 @@ from fs.base import FS
 
 from .types import Tag
 from .types import PathType
+from .exportable import Exportable
 from ..exceptions import NotFound
 from ..exceptions import BentoMLException
 
 T = t.TypeVar("T")
 
 
-class StoreItem(ABC):
+class StoreItem(Exportable):
     @property
     @abstractmethod
     def tag(self) -> Tag:
         raise NotImplementedError
+
+    @property
+    def _fs(self) -> FS:
+        raise NotImplementedError
+
+    @classmethod
+    @property
+    def typename(cls) -> str:
+        return cls.__name__
+
+    @property
+    def _export_name(self) -> str:
+        return f"{self.tag.name}-{self.tag.version}"
 
     @classmethod
     @abstractmethod
@@ -34,7 +48,7 @@ class StoreItem(ABC):
         raise NotImplementedError
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(tag="{self.tag}")'
+        return f'{self.typename}(tag="{self.tag}")'
 
 
 Item = t.TypeVar("Item", bound=StoreItem)
@@ -71,7 +85,7 @@ class Store(ABC, t.Generic[Item]):
         if _tag.version is None:
             if not self._fs.isdir(_tag.name):
                 raise NotFound(
-                    f"no {self._item_type.__name__}s with name '{_tag.name}' found"
+                    f"no {self._item_type.typename}s with name '{_tag.name}' found"
                 )
 
             tags = sorted(
@@ -103,7 +117,7 @@ class Store(ABC, t.Generic[Item]):
                 _tag.version = self._fs.readtext(_tag.latest_path())
             except fs.errors.ResourceNotFound:
                 raise NotFound(
-                    f"no {self._item_type.__name__}s with name '{_tag.name}' exist in BentoML store {self._fs}"
+                    f"no {self._item_type.typename}s with name '{_tag.name}' exist in BentoML store {self._fs}"
                 )
 
         path = _tag.path()
@@ -114,7 +128,7 @@ class Store(ABC, t.Generic[Item]):
         counts = matches.count().directories
         if counts == 0:
             raise NotFound(
-                f"{self._item_type.__name__} '{tag}' is not found in BentoML store {self._fs}"
+                f"{self._item_type.typename} '{tag}' is not found in BentoML store {self._fs}"
             )
         elif counts == 1:
             match = next(iter(matches))
@@ -152,7 +166,7 @@ class Store(ABC, t.Generic[Item]):
         _tag = Tag.from_taglike(tag)
 
         if not self._fs.exists(_tag.path()):
-            raise NotFound(f"{self._item_type.__name__} '{tag}' not found")
+            raise NotFound(f"{self._item_type.typename} '{tag}' not found")
 
         self._fs.removetree(_tag.path())
         if self._fs.isdir(_tag.name):

@@ -75,20 +75,20 @@ releases:
       <<: *cuda11_3_1
     cuda_prefix_url: "ubuntu2004"
 
-  centos8:
+  ubi8:
     <<: *base_spec
     templates_dir: templates/rhel
-    base_image: centos:8
-    add_to_tags: "centos8"
+    base_image: registry.access.redhat.com/ubi8/ubi:latest
+    add_to_tags: "ubi8"
     cuda:
       <<: *cuda11_3_1
     cuda_prefix_url: "rhel8"
 
-  centos7:
+  ubi7:
     <<: *base_spec
     templates_dir: templates/rhel
-    base_image: centos:7
-    add_to_tags: "centos7"
+    base_image: registry.access.redhat.com/ubi7/ubi:latest
+    add_to_tags: "ubi7"
     cuda:
       <<: *cuda11_3_1
     cuda_prefix_url: "rhel7"
@@ -106,6 +106,7 @@ releases:
     add_to_tags: "alpine3.14"
 
 
+
 # Linux distros for each package are defined below:
 # * currently there's only one package `bento-server`
 # * distros are defined as <distro_releases><distro_version>
@@ -113,15 +114,15 @@ packages:
   bento-server:
     devel:
       - debian10
-      - centos8
-      - centos7
+      - ubi8
+      - ubi7
     runtime:
       - debian10
-      - centos8
-      - centos7
+      - ubi8
+      - ubi7
       - amazonlinux2
       - alpine3.14
     cudnn:
       - debian10
-      - centos8
-      - centos7
+      - ubi8
+      - ubi7

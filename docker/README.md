@@ -2,7 +2,7 @@
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 
-👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
+👉 [Pop into our Slack community!](https://l.linklyhq.com/l/ktOr) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
 ## Table of Content
 - [Overview](#overview)
@@ -15,9 +15,9 @@ There are three type of BentoServer base image:
 
 | Image Type | Description                                | Supported OS                                          | Usage                             |
 |------------|--------------------------------------------|-------------------------------------------------------|-----------------------------------|
-| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `centos{7,8}`, `amazonlinux2`, `alpine3.14` | production ready                  |
-| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `centos{7,8}`                               | production ready with GPU support |
-| `devel`    | nightly build from development branch      | `debian`, `centos{7,8}`                               | for development use only          |
+| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `ubi{7,8}`, `amazonlinux2`, `alpine3.14` | production ready                  |
+| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `ubi{7,8}`                               | production ready with GPU support |
+| `devel`    | nightly build from development branch      | `debian`, `ubi{7,8}`                               | for development use only          |
 
 * Note: currently there's no nightly devel image with GPU support.
 
@@ -27,14 +27,14 @@ The final docker image tags will have the following format:
 <release_type>-<python_version>-<distros>-<suffix>
    │             │                │        │
    │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
-   │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, centos7
+   │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, ubi7
    │             └─> Supported Python version: python3.7 | python3.8 | python3.9
    └─>  Release type: devel or official BentoML release (e.g: 1.0.0)                                           
 ```
 
 Example image tags:
 - `bento-server:devel-python3.7-debian`
-- `bento-server:1.0.0-python3.8-centos8-cudnn`
+- `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
 See all available tags [here](https://hub.docker.com/repository/docker/bentoml/bento-server/tags).
@@ -70,9 +70,9 @@ docker run --user $(id -u):$(id -g) -it -v $(pwd):/bentoml bentoml-docker bash
 #
 # To run verbosely you can choose logs level via -v <loglevel> (eg: -v 5)
 
-alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py "
+alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 ./manager.py "
 
-alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
+alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 ./manager.py "
 
 # Check manager flags
 manager_dockerfiles --helpfull
@@ -215,7 +215,7 @@ Each of our distros releases will contain the following configs:
 | Keys | Type | defintions |
 |------|------|------------|
 |`templates_dir`| `<str>`|input templates for our distros, can be found [templates/*](../templates)| 
-|`base_image`| `<str>`| base distro image: centos:7, debian:buster-debian, etc.| 
+|`base_image`| `<str>`| base distro image: ubi:7, debian:buster-debian, etc.| 
 |`add_to_tags`| `<str>`|tags suffix to recognize given distro: debian, alpine, ami (amazonlinux)| 
 |`multistage_image`| `<bool>`|Enable multistage build (DEFAULT: True)| 
 |`header`| `<str>`|headers to be included in our Dockerfile| 

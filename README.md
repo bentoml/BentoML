@@ -11,7 +11,7 @@
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 
-👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
+👉 [Pop into our Slack community!](https://l.linklyhq.com/l/ktOh) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
 __The BentoML version 1.0 is around the corner.__ For stable release version 0.13, see
 the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS). Version 1.0 is 
@@ -33,8 +33,8 @@ reporting issues, contribute to the documentation and create sample gallery proj
 - [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks/index.html) lays out best practices and example usages by the ML framework used for training models.
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) showcases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
 - Check out other projects from the [BentoML team](https://github.com/bentoml):
-  - [🦄️ Yatai](https://github.com/bentoml/yatai): Run BentoML workflow at scale on Kubernetes
-  - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment with BentoML on cloud platforms
+  - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
+  - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
 
 ## Community ##
 

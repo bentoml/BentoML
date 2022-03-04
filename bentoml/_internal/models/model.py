@@ -42,17 +42,40 @@ CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 @attr.define(repr=False)
 class Model(StoreItem):
     _tag: Tag
-    _fs: FS
+    __fs: FS
 
-    info: "ModelInfo"
+    _info: "ModelInfo"
     _custom_objects: t.Optional[t.Dict[str, t.Any]] = None
+
+    _info_flushed = False
+    _custom_objects_flushed = False
+
+    @staticmethod
+    def _export_ext() -> str:
+        return "bentomodel"
 
     @property
     def tag(self) -> Tag:
         return self._tag
 
     @property
+    def _fs(self) -> "FS":
+        return self.__fs
+
+    @property
+    def info(self) -> "ModelInfo":
+        self._info_flushed = False
+        return self._info
+
+    @info.setter
+    def info(self, new_info: "ModelInfo"):
+        self._info_flushed = False
+        self._info = new_info
+
+    @property
     def custom_objects(self) -> t.Dict[str, t.Any]:
+        self._custom_objects_flushed = False
+
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
@@ -133,7 +156,6 @@ class Model(StoreItem):
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "Model":
         self._save(model_store)
-        logger.info(f"Successfully saved {self}")
 
         event_properties = {
             "module": self.info.module,
@@ -148,10 +170,7 @@ class Model(StoreItem):
 
         return self
 
-    @inject
-    def _save(
-        self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
-    ) -> "Model":
+    def _save(self, model_store: "ModelStore") -> "Model":
         self.flush_info()
         self.flush_custom_objects()
 
@@ -163,9 +182,10 @@ class Model(StoreItem):
             out_fs = fs.open_fs(model_path, create=True, writeable=True)
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
-            self._fs = out_fs
+            self.__fs = out_fs
             self._model_path = model_path  # used for telemetry
 
+        logger.info(f"Successfully saved {self}")
         return self
 
     @classmethod
@@ -174,14 +194,18 @@ class Model(StoreItem):
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
         except fs.errors.ResourceNotFound:
-            logger.warning(f"Failed to import Model from {item_fs}.")
-            raise BentoMLException("Failed to create Model because it was invalid")
+            raise BentoMLException(
+                f"Failed to load bento model because it does not contain a '{MODEL_YAML_FILENAME}'"
+            )
 
         res = cls(info.tag, item_fs, info)
         if not res.validate():
-            logger.warning(f"Failed to import Model from {item_fs}.")
-            raise BentoMLException("Failed to create Model because it was invalid")
+            raise BentoMLException(
+                f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"
+            )
 
+        res._info_flushed = True
+        res._custom_objects_flushed = True
         return res
 
     @property
@@ -192,25 +216,51 @@ class Model(StoreItem):
         return self._fs.getsyspath(item)
 
     def flush_info(self):
+        if self._info_flushed:
+            return
+
         with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
             self.info.dump(model_yaml)
 
+        self._info_flushed = True
+
     def flush_custom_objects(self):
+        if self._custom_objects_flushed:
+            return
+
         # pickle custom_objects if it is not None and not empty
         if self.custom_objects:
             with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
                 cloudpickle.dump(self.custom_objects, cofile)
 
+        self._custom_objects_flushed = True
+
     @property
     def creation_time(self) -> datetime:
         return self.info.creation_time
 
-    def export(self, path: str):
-        out_fs = fs.open_fs(path, create=True, writeable=True)
+    def export(
+        self,
+        path: str,
+        output_format: t.Optional[str] = None,
+        *,
+        protocol: t.Optional[str] = None,
+        user: t.Optional[str] = None,
+        passwd: t.Optional[str] = None,
+        params: t.Optional[t.Dict[str, str]] = None,
+        subpath: t.Optional[str] = None,
+    ) -> str:
         self.flush_info()
         self.flush_custom_objects()
-        fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
-        out_fs.close()
+        return super().export(
+            path,
+            output_format,
+            protocol=protocol,
+            user=user,
+            passwd=passwd,
+            params=params,
+            subpath=subpath,
+        )
 
     def load_runner(self) -> "Runner":
         raise NotImplementedError

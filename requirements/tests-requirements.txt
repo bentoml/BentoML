@@ -13,3 +13,4 @@ pandas
 scikit-learn
 imageio>=2.5.0
 docker
+pyarrow

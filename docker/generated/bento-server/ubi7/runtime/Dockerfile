@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM bento-server:base-python$PYTHON_VERSION-centos7 as build_image
+FROM bento-server:base-python$PYTHON_VERSION-ubi7 as build_image
 
 ENV BENTOML_VERSION=1.0.0a5
 

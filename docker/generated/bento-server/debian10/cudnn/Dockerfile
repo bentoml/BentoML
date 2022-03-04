@@ -1,12 +1,14 @@
-# syntax = docker/dockerfile:1.2
+# syntax = docker/dockerfile:1.3
 #
-# ╔═════════════════════════════════════════════╗
-# ║ THIS IS A GENERATED DOCKERFILE. DO NOT EDIT ║
-# ╚═════════════════════════════════════════════╝
+# ===========================================
 #
+# THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
+#
+# ===========================================
 
 
 ARG PYTHON_VERSION
+
 
 FROM bento-server:base-python$PYTHON_VERSION-debian10 as baseline
 
@@ -87,6 +89,15 @@ ENV NVIDIA_CUDNN_VERSION 8.3.1.22
 
 ENV NVIDIA_CUDNN_PACKAGE "libcudnn8=$NVIDIA_CUDNN_VERSION-1+cuda11.5"
 ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn8"
+
+
+FROM base as base-amd64
+
+FROM base as base-arm
+
+FROM base as base-s390x
+
+FROM base as base-ppc64le
 
 FROM base-${TARGETARCH}
 

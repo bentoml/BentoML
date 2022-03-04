@@ -1,0 +1,52 @@
+GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
+
+VERSIONTAGS = $(shell sed -n -e 's,^VERSION = .\(\([0-9].[0-9]\).[0-9]\).$$,-v :\1 -v :\2,p' manager/__version__.py)
+PLATFORMS  = linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le
+
+# Create multi-platform docker image. If you have native systems around, using
+# them will be much more efficient at build time. See e.g.
+BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
+# Just one of the many files created
+QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-m68k
+
+help: ## Show all Makefile targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
+
+format: ## Format
+	@poetry run python -m autoflake --in-place --remove-all-unused-imports manager/**.py
+	@${GIT_ROOT}/scripts/tools/formatter.sh
+
+lint: ## Lint
+	@pylint --rcfile="${GIT_ROOT}/pyproject.toml" --disable=E0401,F0010 .
+
+qemu: ${QEMUDETECT}
+${QEMUDETECT}:
+	docker run --privileged multiarch/qemu-user-static --reset -p yes
+	docker ps -a | sed -n 's, *multiarch/qemu-user-static.*,,p' \
+	  | (xargs docker rm 2>&1 || \
+	    echo "Cannot remove docker container on ZFS; retry after next reboot") \
+	  | grep -v 'dataset is busy'
+
+buildx: ${BUILDXDETECT}
+${BUILDXDETECT}:
+	@if ! `docker buildx &>/dev/null`; then \
+		echo; \
+		echo '*** `docker buildx` missing. Install binary for this machine architecture'; \
+		echo '*** from `https://github.com/docker/buildx/releases/latest`'; \
+		echo '*** to `~/.docker/cli-plugins/docker-buildx` and `chmod +x` it.'; \
+		echo; \
+		exit 1; \
+	fi
+
+emulator:  buildx ## Install all emulator
+	@docker run --privileged --rm tonistiigi/binfmt --install all
+	@echo 'Finish installed emulator from tonistiig/binfmt.'
+
+platform-check: emulator ## Test supported platform string
+	@docker buildx ls | grep platform_check_builder &>/dev/null || docker buildx create --use --driver docker-container --name platform_check_builder;
+	@docker buildx use platform_check_builder;
+	@docker buildx build -f tools/Dockerfile-platform --no-cache --progress=plain --platform=${PLATFORMS} .
+
+.PHONY: install-local
+install-local:  # Install manager locally
+	@pip install -e .

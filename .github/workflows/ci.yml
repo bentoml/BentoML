@@ -18,6 +18,7 @@ jobs:
       related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
+      docker_readme: ${{ steps.filter.outputs.docker_readme }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
@@ -29,19 +30,45 @@ jobs:
               - .github/workflows/ci.yml
               - codecov.yml
               - setup.cfg
+              - Makefile
               - pyproject.toml
+              - setup.py
               - scripts/ci/config.yml
               - scripts/ci/run_tests.sh
               - requirements/tests-requirements.txt
+              - "hooks/**"
             bentoml:
               - *related
               - "bentoml/**"
               - "tests/**"
-              - "docker/**"
             docs:
               - *related
               - requirements/docs-requirements.txt
               - "docs/**"
+            docker_readme:
+              - docker/generated/bento-server/README.md
+
+  bento_server_push_readme:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    needs:
+      - diff
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.docker_readme == 'true') || github.event_name == 'push' }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: christian-korneck/update-container-description-action@v1
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
+        with:
+          destination_container_repo: bentoml/bento-server
+          provider: dockerhub
+          short_description: '🍱 BentoML: The Unified Model Serving Framework'
+          readme_file: 'docker/generated/bento-server/README.md'
 
   codestyle_check:
     runs-on: ubuntu-latest

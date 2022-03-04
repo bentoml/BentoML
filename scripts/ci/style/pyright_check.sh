@@ -6,7 +6,7 @@ cd "$GIT_ROOT" || exit
 
 source ./scripts/ci/helpers.sh
 
-set_on_failed_callback "FAIL pyright errors"
+set_on_failed_callback "[FAIL] pyright failed."
 
 if [[ -n "$GITHUB_BASE_REF" ]]; then
   echo "Running pyright on changed files..."

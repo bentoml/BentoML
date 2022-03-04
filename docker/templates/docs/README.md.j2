@@ -1,11 +1,3 @@
-{% if metadata.ephemeral %}
-{# This will be part of ./generated #}
-## GENERATED DIRECTORY - DO NOT EDIT
-
-These files are maintained by `manager.py`, which generates Dockerfile from `templates`.
-Refers to [main README](../README.md) for more information.
-
-{% else %}
 # Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
@@ -66,12 +58,10 @@ Example image tags:
 - `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
-## Latest tags for `{{ metadata.bentoml_package }} {{ metadata.bentoml_release_version }}`
+## Latest tags for `{{ release_ctx.bentoml_package }} {{ release_ctx.bentoml_release_version }}`
 
-{% set formatted_arch = [] %}
-{% for distros, release_context in metadata.release_info.items() %}
-    {% set tags_path = release_context['image_tag'] %}
-    {% set supported_arch = release_context['supported_arch'] %}
+{% for distros, tag_list in release_ctx.tag_ref.items() %}
+    {% set supported_arch = release_ctx.support_arch[distros] %}
     {% set distro_string = distros.strip('0123456789') %}
     {% set distro_string_len = distro_string | length %}
     {% set distro_version = distros[distro_string_len:] %}
@@ -83,19 +73,21 @@ Example image tags:
         {% set distro_string = 'alpine' %}
     {% endif %}
     {# distro string {{ distro_string }} with version {{ distro_version }} #}
+    {% set formatted_arch = [] %}
     {% for arch in supported_arch %}
         {% set formatted = "_{}_".format(arch) %}
         {% if formatted not in formatted_arch %}
             {% do formatted_arch.append(formatted) %}
         {% endif %}
     {% endfor %}
+    {% set tags_path = release_ctx.tag_ref[distros] %}
     {% print"\n### " %}{% print distro_string %} {% print distro_version %} [{{ formatted_arch | join(", ") }}]{% print "\n\n" %}
-    {% for (tag, path) in tags_path %}
-        {% if metadata.bentoml_package in tag %}
-        {% set tagname = tag.split(':')[1] %}
-        {% print "- [`" %}{% print tagname %}{% print "`](https://github.com/bentoml/BentoML/tree/main/docker/" %}{% print path %}{% print ")\n" %}
-        {% endif %}
+    {% for l in tags_path %}
+        {% for (tag, path) in l.items() | sort(attribute='0') %}
+            {% if release_ctx.bentoml_package in tag %}
+            {% set tagname = tag.split(':')[1] %}
+            {% print "- [`" %}{% print tagname %}{% print "`](https://github.com/bentoml/BentoML/tree/main/docker/" %}{% print path %}{% print ")\n" %}
+            {% endif %}
+        {% endfor %}
     {% endfor %}
 {% endfor %}
-{% endif %}
-{# We might want to include previous images here as well #}

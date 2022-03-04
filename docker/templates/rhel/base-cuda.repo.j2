@@ -1,8 +1,0 @@
-{% set cuda = metadata.cuda %}
-[cuda]
-name=cuda
-baseurl={{ cuda[arch].repo_url }}/{{ cuda_target_arch[arch] }}
-enabled=1
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
-

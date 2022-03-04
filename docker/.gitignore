@@ -1,4 +1,5 @@
 # Ignore Docker metadata.json
 **/*.json
-
 .env
+_test.py
+bats-core

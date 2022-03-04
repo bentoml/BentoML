@@ -1,0 +1,7 @@
+%YAML 1.2
+---
+user: "DOCKER_USER" 
+password: "DOCKER_PASSWORD"
+provider: "dockerhub"
+url: "docker.io/{org_name}/{repo_name}"
+...

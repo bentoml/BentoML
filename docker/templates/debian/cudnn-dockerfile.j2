@@ -1,7 +1,8 @@
 {{ metadata.header }}
 
-{% set cuda = metadata.cuda %}
 ARG PYTHON_VERSION
+
+{% set cached = ['arm32v5', 'arm32v6'] %}
 
 FROM {{ metadata.package }}:{{ build_tag }} as baseline
 
@@ -134,6 +135,20 @@ ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKA
     {% endif %}
 
 {% endif -%}
+
+
+{% for key in metadata.arch_ctx if key not in cached %}
+    {% if 'arm' in key %}
+
+FROM base as base-arm
+    {% elif 'i386' in key %}
+
+FROM base as base-386
+    {% else %}
+
+FROM base as base-{{ key }}
+    {% endif %}
+{% endfor %}
 
 FROM base-${TARGETARCH}
 

@@ -1,6 +1,6 @@
 [nvidia-ml]
 name=nvidia-ml
-baseurl=https://developer.download.nvidia.com/compute/cuda/repos/rhel7/ppc64le
+baseurl=https://developer.download.nvidia.com/compute/cuda/repos/rhel8/ppc64le
 enabled=1
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA

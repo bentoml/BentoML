@@ -8,7 +8,7 @@ cd "$GIT_ROOT" || exit
 
 source ./scripts/ci/helpers.sh
 
-set_on_failed_callback "FAIL pylint errors"
+set_on_failed_callback "[FAIL] pylint failed."
 
 if [[ -n "$GITHUB_BASE_REF" ]]; then
   echo "Running pylint on changed files..."

@@ -1,28 +1,36 @@
 [tool.poetry]
-name = "bentoml-docker"
+name = "manager"
 version = "0.1.0"
-description = "BentoML's Docker Images Management"
+description = "BentoML Docker Images Management CLI"
 authors = ["BentoML Team <contact@bentoml.ai>"]
 
 [tool.poetry.dependencies]
-python = ">=3.7.2,<4.0"
-docker = "^5.0.0"
+python = ">=3.9,<4.0"
 Jinja2 = "^3.0.1"
-absl-py = "^0.13.0"
 Cerberus = "^1.3.4"
-"ruamel.yaml" = "^0.17.9"
 glom = "^20.11.0"
-python-dotenv = "^0.18.0"
+python-dotenv = "^0.19.2"
 GitPython = "^3.1.18"
-"backports.cached-property" = "^1.0.1"
 plumbum = "^1.7.2"
 attrs = "^21.4.0"
+click = "^8.0.4"
+rich = "^11.2.0"
+shellingham = "^1.4.0"
+typing-extensions = ">=3.10,<4"
+pyyaml-include = "^1.2.post2"
+simple-di = {git = "git@github.com:bentoml/simple_di.git"}
 
 
 [tool.poetry.dev-dependencies]
 black = "22.1.0"
 isort = "^5.9.1"
 pylint = "^2.8.3"
+pytest = "^7.0.1"
+autoflake = "^1.4"
+
+[tool.poetry.scripts]
+manager = "manager.cli:cli"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

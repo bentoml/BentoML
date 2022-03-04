@@ -1,0 +1,7 @@
+%YAML 1.2
+---
+user: "QUAY_USER" 
+password: "QUAY_PASSWORD"
+provider: "APIKEY__QUAY_IO"
+url: "quay.io/{org_name}/{repo_name}"
+...

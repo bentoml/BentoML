@@ -1,9 +1,10 @@
 {{ metadata.header }}
-{% set cuda = metadata.cuda %}
+{% set cached = ['arm32v5', 'arm32v6'] %}
 
 FROM {{ metadata.base_image }} as base
 
 {% if "amd64" in cuda %}
+{% do cached.append("amd64") %}
 FROM base as base-amd64
 ENV NVARCH x86_64
 
@@ -15,6 +16,7 @@ ENV NV_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
 {% endif %}
 
 {% if "arm64v8" in cuda %}
+{% do cached.append("arm64v8") %}
 FROM base as base-arm64
 ENV NVARCH sbsa
 
@@ -26,6 +28,7 @@ ENV NV_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
 {% endif %}
 
 {% if "ppc64le" in cuda %}
+{% do cached.append("ppc64le") %}
 FROM base as base-ppc64le
 ENV NVARCH ppc64le
 
@@ -36,7 +39,7 @@ ENV NV_CUDA_CUDART_VERSION {{ cuda.ppc64le.components.cudart.version }}
 
 {% endif %}
 
-{% for key in metadata.arch_ctx if key not in ['amd64', 'arm64v8', 'ppc64le', 'arm32v5', 'arm32v6'] %}
+{% for key in metadata.arch_ctx if key not in cached %}
     {% if 'arm' in key %}
 
 FROM base as base-arm
@@ -74,7 +77,7 @@ RUN yum upgrade -y \
     && yum clean all \
     && rm -rf /var/cache/yum
 
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-$(uname -s)-$(uname -m).sh -O ~/miniconda.sh && \
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \

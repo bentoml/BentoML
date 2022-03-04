@@ -43,6 +43,15 @@ See all available tags [here](https://hub.docker.com/repository/docker/bentoml/b
 
 Before starting:
 
+* We will utilize `docker buildx` underthe hood, so make sure to have that installed with `docker buildx install` (buildx should already installed for folks with Docker > 19.03)
+
+* we will also use [docker-pushrm](https://github.com/christian-korneck/docker-pushrm) to push the given readme, so make sure to have that installed as well.
+
+* In order to setup for multiple architecture [QEMU](https://github.com/multiarch/qemu-user-static) is required. Install with:
+```bash
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+```
+
 * Don't edit ephemeral directory: [`generated`](./generated) and [`docs`](./docs)
 * Dockerfiles in `./generated` directory must have their build context set to **the directory of this README.md** directory to  add `entrypoint.sh` as well as other helpers files. 
 * Every Dockerfile is managed via `manifest.yml` and maintained via `manager.py`, which will render the Dockerfile from `Jinja` templates under `./templates`.
@@ -50,52 +59,82 @@ Before starting:
 
 Follow the instructions below to re-generate dockerfiles and build new base images:
 
+
+Build the helper docker images. Refers to Makefile for more information.
 ```shell
-
-# Build the helper docker images. Refers to Makefile for more information.
 » DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .
-
-# Run the built container with correct users permission for the generated file.
-docker run --user $(id -u):$(id -g) -it -v $(pwd):/bentoml bentoml-docker bash 
-
-# Use the provided alias below depending on each tasks.
-#
-# If you are re-generate Dockerfile you might want to use manager_dockerfiles 
-# so that the generated file can have correct permission.
-#
-# If you are building and pushing Docker images you might want to use manager_images 
-# AS ROOT in order to connect to your docker socket mounted to the container
-#
-# NOTE: Sometimes you might also want to run the following to remove stopped container:
-# `docker rm $(docker ps -a -f status=exited -f status=created -q)`
-#
-# To run verbosely you can choose logs level via -v <loglevel> (eg: -v 5)
-
-alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 ./manager.py "
-
-alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 ./manager.py "
-
-# Check manager flags
-manager_dockerfiles --helpfull
-
-# To validate generation schema.
-manager_dockerfiles --bentoml_version 1.0.0 --validate
-
-# Generate all dockerfiles from templates, and dump all build metadata to metadata.json
-manager_dockerfiles --bentoml_version 1.0.0 --generate dockerfiles --dump_metadata --overwrite
-
-# Build all images
-manager_images --bentoml_version 1.0.0 --generate images
-
-# Build images for specific releases
-manager_images --bentoml_version 1.0.0 --generate images --releases runtime
-
-# Push all images to defined registries under manifest.yml.
-manager_images --bentoml_version 1.0.0 --push images --releases cudnn
-
-# Or bring generation and pushing together
-manager_images --bentoml_version 1.0.0 --generate images --push --releases cudnn
 ```
+
+Run the built container with correct users permission for the generated file.
+```shell
+» docker run --user $(id -u):$(id -g) -it -v $(pwd):/bentoml bentoml-docker bash 
+```
+
+NOTE: Sometimes you might also want to run the following to remove stopped container:
+`docker rm $(docker ps -a -f status=exited -f status=created -q)`
+
+To run verbosely you can choose logs level via -v <loglevel> (eg: -v 5)
+
+Now manager is a CLI tool :smile:. Install it with:
+```bash
+» pip install -e .
+```
+Or run directly from the newly built docker container:
+```bash
+docker run --init --rm -u $(id -u):$(id -g) -v $GIT_ROOT/docker:/bentoml bentoml-docker manager $@
+```
+
+Check manager flags
+```bash
+» manager --help
+Usage: manager [OPTIONS] COMMAND [ARGS]...
+
+        Manager: BentoML's Docker Images release management system.
+
+        Features:
+
+            📝 Multiple Python version: 3.7, 3.8, 3.9+, ...
+            📝 Multiple platform: arm64v8, amd64, ppc64le, ...
+            📝 Multiple Linux Distros that you love: Debian, Ubuntu, UBI, alpine, ...
+
+        Get started with:
+            $ manager --help
+
+
+Options:
+  -v, --version  Show the version and exit.
+  -h, --help     Show this message and exit.
+
+Commands:
+  authenticate  Authenticate with a given registry.
+  build         Build and Release Docker images.
+  generate      Generate files for a given docker image.
+```
+
+
+Generate all dockerfiles from templates, and dump all build metadata to `build.meta.json` and `releases.meta.json`
+```bash
+» manager generate bento-server --bentoml_version 1.0.0a5 --dump_metadata
+```
+
+Authenticate with a given registry:
+```bash
+manager authenticate bento-server --registry docker.io
+```
+
+Build all images with supoprts for multiple platform by default:
+```bash
+manager build bento-server --bentoml_version 1.0.0a5 --max_workers 5
+```
+
+Build images for specific releases
+```bash
+manager build bento-server --bentoml_version 1.0.0a --releases runtime
+```
+
+Since we are utilizing `docker buildx`, `--push` is enabled by default when
+running build, so sit back and relax.
+
 
 ### Run Locally Built Images
 
@@ -140,6 +179,7 @@ docker run --gpus all --device /dev/nvidia0 --device /dev/nvidiactl \
 # Development
 
 This section covers how BentoML internally manages its docker base image releases.
+NOTE: this part is currently actively WIP, since I just refactor the system.
 
 
 ## Image Manifest

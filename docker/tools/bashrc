@@ -4,6 +4,9 @@
 export PS1="\[\e[31m\]bentoml\[\e[m\] \[\e[33m\]\w\[\e[m\] » "
 export TERM=xterm-256color
 
+#ignore upper and lowercase when TAB completion
+bind "set completion-ignore-case on"
+
 # alias
 alias grep="grep --color=auto"
 alias la="ls -rthla --color=auto"

@@ -27,7 +27,6 @@ class YataiClientContext:
     endpoint: str
     api_token: str
     email: str
-    yatai_version: str
 
     def get_yatai_rest_api_client(self) -> YataiRESTApiClient:
         return YataiRESTApiClient(self.endpoint, self.api_token)

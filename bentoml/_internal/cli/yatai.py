@@ -42,18 +42,12 @@ def add_login_command(cli):
 
         if user is None:
             raise CLIException("current user is not found")
-        ctx.email = user.email
+        ctx.email = user.email if user.email else None
 
         org = yatai_rest_client.get_current_organization()
 
         if org is None:
             raise CLIException("current organization is not found")
-
-        yatai_info = yatai_rest_client.get_current_yatai_version()
-
-        if yatai_info is None:
-            raise CLIException("current yatai version is not found")
-        ctx.yatai_version = yatai_info.version
 
         update_context(ctx.name, ctx)
 

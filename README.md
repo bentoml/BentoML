@@ -56,23 +56,21 @@ There are many ways to contribute to the project:
 
 ### Usage Reporting ###
 
-By default, BentoML anonymously collect usage data, and here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for it. We rely heavily of
-community feedback on features and bugs to focus our engineering work on.
-As the community grows, we want to ensure we understand how BentoML users
-implement and use the library, so that the team can focus on building and
-improving BentoML.
-
-Now, we recognize that not everyone is willing to provide and send their usage
-data. To opt out, provide `--do-not-track` to any of BentoML CLI commands:
+ We rely heavily of
+BentoML collects anonymous usage data that helps our team to improve the product.
+Only BentoML's internal API calls and CLI commands are being reported and we striped out any potentially 
+sensitive information as much as possible, we will never collect user code, model data, model name or stacktrace. 
+Here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.
+You can opt-out of usage tracking by the `--do-not-track` CLI option:
 ```bash
-bentoml serve iris_clf:latest --production --do-not-track
+bentoml [command] --do-not-track
 ```
 
-Or add the following to your shell `.rc` to opt out tracking entirely:
+Or by setting environment variable `BENTOML_DO_NOT_TRACK=True`:
 ```bash
-# .bashrc.example
 export BENTOML_DO_NOT_TRACK=True
 ```
+
 
 ### License ###
 

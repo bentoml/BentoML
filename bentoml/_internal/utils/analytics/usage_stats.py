@@ -168,4 +168,3 @@ def scheduled_track(
 
     thread = threading.Thread(target=loop, daemon=True)
     return thread, stop_event
-

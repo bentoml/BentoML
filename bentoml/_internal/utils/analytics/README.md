@@ -9,12 +9,11 @@ improving BentoML.
 Now, we recognize that not everyone is willing to provide and send their usage
 data. To opt out, provide `--do-not-track` to any of BentoML CLI commands:
 ```bash
-bentoml serve iris_clf:latest --production --do-not-track
+bentoml <command> --do-not-track
 ```
 
-Or add the following to your shell `.rc` to opt out tracking entirely:
+Or by setting environment variable `BENTOML_DO_NOT_TRACK=True`:
 ```bash
-# .bashrc.example
 export BENTOML_DO_NOT_TRACK=True
 ```
 

@@ -41,7 +41,7 @@ __all__ = (
 
 log = logging.getLogger(__name__)
 
-SUPPORTED_OS = ["debian10", "centos8", "centos7", "alpine3.14", "amazonlinux2"]
+SUPPORTED_OS = ["debian10", "ubi8", "ubi7", "alpine3.14", "amazonlinux2"]
 SUPPORTED_GENERATE_TYPE = ["dockerfiles", "images"]
 
 ValidateType = t.Union[str, t.List[str]]
@@ -393,14 +393,6 @@ class MetadataSpecValidator(Validator):
                 self._validate_matched(v, field, value)
         else:
             self._error(field, f"Unable to parse field type {type(others)}")
-
-
-class _Missing(object):
-    def __repr__(self) -> str:
-        return "no value"
-
-    def __reduce__(self) -> str:
-        return "_missing"
 
 
 class ColoredFormatter(logging.Formatter):

@@ -10,6 +10,7 @@ import tensorflow.keras as keras
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.tensorflow_utils import CustomLayer
+from tests.utils.frameworks.tensorflow_utils import KerasNLPModel
 from tests.utils.frameworks.tensorflow_utils import custom_activation
 from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
 
@@ -19,6 +20,7 @@ except ImportError:
     import importlib_metadata
 
 TF2 = importlib_metadata.version("tensorflow").startswith("2")
+
 MODEL_NAME = __name__.split(".")[-1]
 
 test_data = [1, 2, 3, 4, 5]
@@ -75,6 +77,23 @@ def test_keras_save_load(
     else:
         loaded = bentoml.keras.load(tag)
         predict_assert_equal(loaded)
+
+
+@pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")
+@pytest.mark.parametrize("store_as_json", [True, False])
+def test_keras_save_load_complex(store_as_json) -> None:
+    model: keras.Model = KerasNLPModel()
+    with pytest.raises(NotImplementedError):
+        bentoml.keras.save(
+            MODEL_NAME, model, save_format="h5", store_as_json=store_as_json
+        )
+
+    try:
+        bentoml.keras.save(
+            MODEL_NAME, model, save_format="tf", store_as_json=store_as_json
+        )
+    except NotImplementedError as exc:
+        assert False, f"Save KerasNLPModel in 'tf' format raised an exception {exc}"
 
 
 @pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")

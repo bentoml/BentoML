@@ -58,11 +58,10 @@ Example image tags:
 - `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
-<b>NOTE</b>: Since `1.0.0a5`, BentoML docker images will support multiple architecture: [amd64, arm32v5, arm32v6, arm32v7, arm64v8, i386, ppc64le, s390x, riscv64].
-
 ## Latest tags for `bento-server 1.0.0a5`
 
-### Debian11
+
+### debian 11 [_ppc64le_, _s390x_, _i386_, _riscv64_, _arm32v5_, _arm64v8_, _arm32v7_, _amd64_, _arm32v6_]
 
 - [`1.0.0a5-python3.7-debian11-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/cudnn/Dockerfile)
 - [`1.0.0a5-python3.7-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
@@ -74,7 +73,7 @@ Example image tags:
 - [`devel-python3.8-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
 - [`devel-python3.9-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
 
-### Debian10
+### debian 10 [_ppc64le_, _s390x_, _i386_, _riscv64_, _arm32v5_, _arm64v8_, _arm32v7_, _amd64_, _arm32v6_]
 
 - [`1.0.0a5-python3.7-debian10-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
 - [`1.0.0a5-python3.7-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
@@ -86,7 +85,7 @@ Example image tags:
 - [`devel-python3.8-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
 - [`devel-python3.9-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
 
-### Ubi8
+### UBI 8 [_ppc64le_, _s390x_, _i386_, _riscv64_, _arm32v5_, _arm64v8_, _arm32v7_, _amd64_, _arm32v6_]
 
 - [`1.0.0a5-python3.7-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
 - [`1.0.0a5-python3.7-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
@@ -98,7 +97,7 @@ Example image tags:
 - [`devel-python3.8-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
 - [`devel-python3.9-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
 
-### Ubi7
+### UBI 7 [_ppc64le_, _s390x_, _i386_, _riscv64_, _arm32v5_, _arm64v8_, _arm32v7_, _amd64_, _arm32v6_]
 
 - [`1.0.0a5-python3.7-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
 - [`1.0.0a5-python3.7-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
@@ -110,13 +109,13 @@ Example image tags:
 - [`devel-python3.8-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
 - [`devel-python3.9-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
 
-### Amazonlinux2
+### amazonlinux 2 [_ppc64le_, _s390x_, _i386_, _riscv64_, _arm32v5_, _arm64v8_, _arm32v7_, _amd64_, _arm32v6_]
 
 - [`1.0.0a5-python3.7-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 - [`1.0.0a5-python3.8-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 - [`1.0.0a5-python3.9-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 
-### Alpine3.14
+### alpine 3.14 [_ppc64le_, _s390x_, _i386_, _riscv64_, _arm32v5_, _arm64v8_, _arm32v7_, _amd64_, _arm32v6_]
 
 - [`1.0.0a5-python3.7-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
 - [`1.0.0a5-python3.8-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)

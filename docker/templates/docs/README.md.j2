@@ -66,13 +66,30 @@ Example image tags:
 - `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
-{% set supported_arch = metadata.supported_architecture %}
-<b>NOTE</b>: Since `1.0.0a5`, BentoML docker images will support multiple architecture: [{{ supported_arch | join(", ") }}].
-
 ## Latest tags for `{{ metadata.bentoml_package }} {{ metadata.bentoml_release_version }}`
-{% for distros, tags_path in metadata.release_info.items() %}
-    {% set distro_string = distros[0].upper() + distros[1:] %}
-    {% print"\n### " %}{% print distro_string %}{% print "\n\n" %}
+
+{% set formatted_arch = [] %}
+{% for distros, release_context in metadata.release_info.items() %}
+    {% set tags_path = release_context['image_tag'] %}
+    {% set supported_arch = release_context['supported_arch'] %}
+    {% set distro_string = distros.strip('0123456789') %}
+    {% set distro_string_len = distro_string | length %}
+    {% set distro_version = distros[distro_string_len:] %}
+    {% if "ubi" in distro_string %}
+        {% set distro_string = distro_string.upper() %}
+    {% endif %}
+    {% if "alpine" in distros %}
+        {% set distro_version = distro_string[-2:] + distro_version %}
+        {% set distro_string = 'alpine' %}
+    {% endif %}
+    {# distro string {{ distro_string }} with version {{ distro_version }} #}
+    {% for arch in supported_arch %}
+        {% set formatted = "_{}_".format(arch) %}
+        {% if formatted not in formatted_arch %}
+            {% do formatted_arch.append(formatted) %}
+        {% endif %}
+    {% endfor %}
+    {% print"\n### " %}{% print distro_string %} {% print distro_version %} [{{ formatted_arch | join(", ") }}]{% print "\n\n" %}
     {% for (tag, path) in tags_path %}
         {% if metadata.bentoml_package in tag %}
         {% set tagname = tag.split(':')[1] %}

@@ -61,13 +61,7 @@ SUPPORTED_ARCHITECTURE_TYPE = [
     "s390x",
     "riscv64",
 ]
-
-README_TEMPLATE = pathlib.Path(os.getcwd(), "templates", "docs", "README.md.j2")
-
-DOCKERFILE_NAME = "Dockerfile"
-DOCKERFILE_TEMPLATE_SUFFIX = "-dockerfile.j2"
-DOCKERFILE_BUILD_HIERARCHY = ["base", "runtime", "cudnn", "devel"]
-DOCKERFILE_NVIDIA_REGEX = re.compile(r"(?:base-nvidia|base-cuda|cudnn)+")
+DOCKERFILE_BUILD_HIERARCHY = ("base", "runtime", "cudnn", "devel")
 
 
 FLAGS = flags.FLAGS

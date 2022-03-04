@@ -1,6 +1,5 @@
 import os
 import typing as t
-import asyncio
 import logging
 import secrets
 import platform
@@ -10,7 +9,6 @@ from datetime import datetime
 from datetime import timezone
 from functools import wraps
 from functools import lru_cache
-from concurrent.futures import ThreadPoolExecutor
 
 import yaml
 import psutil
@@ -160,7 +158,7 @@ def scheduled_track(
 ) -> t.Tuple[threading.Thread, threading.Event]:
     stop_event = threading.Event()
 
-    def loop() -> None:
+    def loop() -> t.NoReturn:  # type: ignore
         while not stop_event.wait(interval):
             track(
                 BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE,
@@ -168,49 +166,6 @@ def scheduled_track(
                 event_properties=event_properties,
             )
 
-    t = threading.Thread(target=loop, daemon=True)
-    return t, stop_event
+    thread = threading.Thread(target=loop, daemon=True)
+    return thread, stop_event
 
-
-async def track_async(
-    event_type: str,
-    event_pid: int,
-    event_properties: t.Optional[t.Dict[str, t.Any]] = None,
-    timeout: int = 2,
-    uri: str = BENTOML_TRACKING_URL,
-) -> None:  # pragma: no cover
-    """Async send the data. Using ThreadPool to implement async send."""
-    # https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor
-    if do_not_track():
-        return
-
-    payload = get_payload(
-        event_type=event_type, event_pid=event_pid, event_properties=event_properties
-    )
-
-    loop = asyncio.get_running_loop()
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        await loop.run_in_executor(executor, send_usage_event, payload, timeout, uri)
-
-
-@slient
-async def scheduled_track_async(
-    current_pid: int,
-    event_properties: t.Dict[str, t.Any],
-    interval: int = get_usage_stats_interval_seconds(),
-) -> None:  # pragma: no cover
-    # experimental, DO NOT USE
-    await asyncio.sleep(interval)
-    while True:
-        try:
-            await track_async(
-                BENTO_SERVE_SCHEDULED_TRACK_EVENT_TYPE,
-                current_pid,
-                event_properties=event_properties,
-            )
-        except asyncio.CancelledError:
-            logger.error("coroutine is cancelled.")
-            break
-        except Exception:  # pylint: disable=broad-except
-            logger.error("Error looping coroutine.")
-        await asyncio.sleep(interval)

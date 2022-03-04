@@ -1,13 +1,13 @@
 # NOTE: some of the comments here are for my own sanity. :)
 specs:
-  # repository definition.
+  # supports all custom registries and official: GCR, ECR, Heroku, Quay.io, Docker.io
   repository: &repository_spec
     user: HUB_USERNAME
     pwd: HUB_PASSWORD
     registry:
       bento-server: docker.io/bentoml/bento-server
 
-  # Docker tag validation can be defined with the following:
+  # BentoML docker tag specification
   tag:
     fmt: "{release_type}-python{python_version}-{suffixes}"
     release_type:
@@ -18,12 +18,19 @@ specs:
   cuda: &cuda_lib
     components:
       cudart:
+        version:
       cudnn8:
+        version:
       libcublas:
+        version:
       libcurand:
+        version:
       libcusparse:
+        version:
       libcufft:
+        version:
       libcusolver:
+        version:
     requires: _
     repo_url: _
     ml_repo_url: _
@@ -32,11 +39,14 @@ specs:
   # dependencies to manage different architectures.
   dependencies: &arch_depedencies
     amd64:
-      <<: *cuda_lib
+      cuda:
+        <<: *cuda_lib
     arm64v8:
-      <<: *cuda_lib
+      cuda:
+        <<: *cuda_lib
     ppc64le:
-      <<: *cuda_lib
+      cuda:
+        <<: *cuda_lib
 
   # NOTE: The spec defines components of each distros fields and specification
   releases_spec:
@@ -84,7 +94,6 @@ specs:
 # DEFINITION STARTS HERE #
 ##########################
 
-# NOTE: allows users to define custom registries => GCR, ECR, Heroku, Quay.io, Docker.io
 repository:
   docker:
     <<: *repository_spec
@@ -95,33 +104,90 @@ repository:
 # * these drivers requirements
 cuda:
   requires_11_5_1: &requires_11_5_1
-    requires: "cuda>=11.6 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
+    requires: "cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
   11.5.1: &cuda11_5_1
     <<: *arch_depedencies
     amd64: &cuda11_5_1_amd64  # for nvidia this is x86_64
       <<: *requires_11_5_1
       components:
-        cudart: 11.6.55-1
-        libcublas: 11.8.1.74-1
-        libnpp: 11.6.0.55-1
-        libnccl2: 2.11.4-1
-        cudnn8: 8.3.1.22-1
+        cudart:
+          version: 11.5.117-1
+        cudart_dev:
+          version: 11.5.117-1
+        libcublas:
+          version: 11.7.4.6-1
+        libcublas_dev:
+          version: 11.7.4.6-1
+        libnpp:
+          version: 11.5.1.107-1
+        libnpp_dev:
+          version: 11.5.1.107-1
+        nvml_dev:
+          version: 11.5.50-1
+        nvprof:
+          version: 11.5.114-1
+        nvtx:
+          version: 11.5.114-1
+        libnccl2:
+          version: 2.11.4-1
+        libnccl2_dev:
+          version: 2.11.4-1
+        cudnn8:
+          version: 8.3.1.22-1
     arm64v8: &cuda11_5_1_arm64v8  # for nvidia this is sbsa
       components:
-        cudart: 11.6.55-1
-        libcublas: 11.8.1.74-1
-        libnpp: 11.6.0.55-1
-        libnccl2: 2.11.4-1
-        cudnn8: 8.3.1.22-1
-      requires: 'cuda>=11.6'
+        cudart:
+          version: 11.5.117-1
+        cudart_dev:
+          version: 11.5.117-1
+        libcublas:
+          version: 11.7.4.6-1
+        libcublas_dev:
+          version: 11.7.4.6-1
+        libnpp:
+          version: 11.5.1.107-1
+        libnpp_dev:
+          version: 11.5.1.107-1
+        nvml_dev:
+          version: 11.5.50-1
+        nvprof:
+          version: 11.5.114-1
+        nvtx:
+          version: 11.5.114-1
+        libnccl2:
+          version: 2.11.4-1
+        libnccl2_dev:
+          version: 2.11.4-1
+        cudnn8:
+          version: 8.3.1.22-1
+      requires: 'cuda>=11.5'
     ppc64le: &cuda11_5_1_ppc64le
       components:
-        cudart: 11.6.55-1
-        libcublas: 11.8.1.74-1
-        libnpp: 11.6.0.55-1
-        libnccl2: 2.11.4-1
-        cudnn8: 8.3.1.22-1
-      requires: 'cuda>=11.6'
+        cudart:
+          version: 11.5.117-1
+        cudart_dev:
+          version: 11.5.117-1
+        libcublas:
+          version: 11.7.4.6-1
+        libcublas_dev:
+          version: 11.7.4.6-1
+        libnpp:
+          version: 11.5.1.107-1
+        libnpp_dev:
+          version: 11.5.1.107-1
+        nvml_dev:
+          version: 11.5.50-1
+        nvprof:
+          version: 11.5.114-1
+        nvtx:
+          version: 11.5.114-1
+        libnccl2:
+          version: 2.11.4-1
+        libnccl2_dev:
+          version: 2.11.4-1
+        cudnn8:
+          version: 8.3.1.22-1
+      requires: 'cuda>=11.5'
 
   # NOTE: THIS MAINLY SERVES FOR HISTORY PURPOSES
   11.3.1: &cuda11_3_1
@@ -146,13 +212,15 @@ releases:
       suffixes: "debian11"
       dependencies:
         amd64:
-          <<: *cuda11_5_1_amd64
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
+          cuda:
+            <<: *cuda11_5_1_amd64
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
         arm64v8:
-          <<: *cuda11_5_1_arm64v8
-          repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
+          cuda:
+            <<: *cuda11_5_1_arm64v8
+            repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
 
     debian10:
       <<: *multiarch
@@ -161,13 +229,15 @@ releases:
       suffixes: "debian10"
       dependencies:
         amd64:
-          <<: *cuda11_5_1_amd64
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
+          cuda:
+            <<: *cuda11_5_1_amd64
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64"
         arm64v8:
-          <<: *cuda11_5_1_arm64v8
-          repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
+          cuda:
+            <<: *cuda11_5_1_arm64v8
+            repo_url: "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/sbsa"
 
     ubi8:
       <<: *multiarch
@@ -177,17 +247,20 @@ releases:
       dependencies:
         <<: *cuda11_5_1
         amd64:
-          <<: *cuda11_5_1_amd64
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/x86_64"
+          cuda:
+            <<: *cuda11_5_1_amd64
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/x86_64"
         arm64v8:
-          <<: *cuda11_5_1_arm64v8
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/sbsa"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/sbsa"
+          cuda:
+            <<: *cuda11_5_1_arm64v8
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/sbsa"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/sbsa"
         ppc64le:
-          <<: *cuda11_5_1_ppc64le
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/ppc64le"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/ppc64le"
+          cuda:
+            <<: *cuda11_5_1_ppc64le
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel8/ppc64le"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel8/ppc64le"
 
     ubi7:
       <<: *multiarch
@@ -197,20 +270,22 @@ releases:
       dependencies:
         <<: *cuda11_5_1
         amd64:
-          <<: *cuda11_5_1_amd64
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/x86_64"
+          cuda:
+            <<: *cuda11_5_1_amd64
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/x86_64"
         arm64v8:
-          <<: *cuda11_5_1_arm64v8
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/sbsa"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/sbsa"
+          cuda:
+            <<: *cuda11_5_1_arm64v8
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/sbsa"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/sbsa"
         ppc64le:
-          <<: *cuda11_5_1_ppc64le
-          repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/ppc64le"
-          ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/ppc64le"
+          cuda:
+            <<: *cuda11_5_1_ppc64le
+            repo_url: "https://developer.download.nvidia.com/compute/cuda/repos/rhel7/ppc64le"
+            ml_repo_url: "https://developer.download.nvidia.com/compute/machine-learning/repos/rhel7/ppc64le"
 
 
-    # TODO: support GPU on ami2 with rhel
     amazonlinux2:
       <<: *multiarch
       templates_dir: templates/rhel
@@ -229,7 +304,7 @@ releases:
   w_cuda_v11.3.1:
     debian10:
       <<: *deprecated
-      templates_dir: templates/debian
+      templates_dir: templates/debian/legacy
       base_image: debian:buster-slim
       suffixes: "debian"
       cuda:
@@ -238,7 +313,7 @@ releases:
 
     ubi8:
       <<: *deprecated
-      templates_dir: templates/rhel
+      templates_dir: templates/rhel/legacy
       base_image: registry.access.redhat.com/ubi8/ubi:8.5-226.1645809065
       suffixes: "ubi8"
       cuda:
@@ -247,7 +322,7 @@ releases:
 
     ubi7:
       <<: *deprecated
-      templates_dir: templates/rhel
+      templates_dir: templates/rhel/legacy
       base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
       suffixes: "ubi7"
       cuda:
@@ -256,13 +331,13 @@ releases:
 
     amazonlinux2:
       <<: *deprecated
-      templates_dir: templates/rhel
+      templates_dir: templates/rhel/legacy
       base_image: amazonlinux:2
       suffixes: "amazonlinux2"
 
     alpine3.14:
       <<: *deprecated
-      templates_dir: templates/alpine
+      templates_dir: templates/alpine/legacy
       base_image: alpine:3.14
       suffixes: "alpine3.14"
 
@@ -273,28 +348,16 @@ releases:
 # * distros are defined as <distro_releases><distro_version>
 packages:
   bento-server:
-    devel:
-      - debian11
-      - debian10
-      - ubi8
-      - ubi7
-      - alpine3.14
-    base:
-      - debian11
-      - debian10
-      - ubi8
-      - ubi7
-      - amazonlinux2
-      - alpine3.14
+    devel: &core
+      ? debian11
+      ? debian10
+      ? ubi8
+      ? ubi7
+    base: &all
+      <<: *core
+      ? amazonlinux2
+      ? alpine3.14
     cudnn:
-      - debian11
-      - debian10
-      - ubi8
-      - ubi7
+      <<: *core
     runtime:
-      - debian11
-      - debian10
-      - ubi8
-      - ubi7
-      - amazonlinux2
-      - alpine3.14
+      <<: *all

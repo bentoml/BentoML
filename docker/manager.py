@@ -8,7 +8,6 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import partial
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 from log import logger
@@ -16,6 +15,7 @@ from absl import app
 from utils import walk
 from utils import FLAGS
 from utils import jprint
+from utils import as_posix
 from utils import get_data
 from utils import set_data
 from utils import shellcmd
@@ -36,6 +36,8 @@ if TYPE_CHECKING:
     from utils import DictStrAny
     from utils import DictStrStr
     from utils import GenericFunc
+
+    DictStrAnyDict = t.Dict[str, t.Dict[str, t.Any]]
 
 if not os.path.exists("./.env"):
     logger.warning(f"Make sure to create .env file at {os.getcwd()}")
@@ -128,21 +130,9 @@ def generate_image_tags(**kwargs: str) -> t.Tuple[str, str]:
     return tag, build_tag
 
 
-def process_cuda_context(requirements: "DictStrAny") -> "DictStrAny":
-    components: "DictStrStr" = requirements["components"]
-
-    def cudnn_version():
-        for k, v in components.items():
-            if "cudnn" in k:
-                res = {"major_version": k[-1:], "version": v}
-                components.pop(k)
-                return res
-
+def process_cuda_context(deps: "DictStrAny") -> "t.Tuple[DictStrAny, DictStrAny]":
     major, minor, patch = FLAGS.cuda_version.split(".")
-    return {
-        "components": components,
-        "cudnn": cudnn_version(),
-        **requirements,
+    cuda_mapping = {
         "version": {
             "major": major,
             "minor": minor,
@@ -150,6 +140,25 @@ def process_cuda_context(requirements: "DictStrAny") -> "DictStrAny":
             "shortened": f"{major}.{minor}",
         },
     }
+    other_deps_mapping = {}
+    for arch, requirements in deps.items():
+        cuda_req = requirements.pop('cuda')
+        components: "DictStrAnyDict" = cuda_req["components"]
+
+        def cudnn_version():
+            for k, v in components.items():
+                if "cudnn" in k:
+                    res = {"major_version": k[-1:], "version": v["version"]}
+                    components.pop(k)
+                    return res
+
+        cuda_mapping[arch] = {
+            "components": components,
+            "cudnn": cudnn_version(),
+            **cuda_req,
+        }
+        other_deps_mapping.update(requirements)
+    return cuda_mapping, other_deps_mapping
 
 
 def setup_base_context(
@@ -181,12 +190,12 @@ def generation_metadata(ctx: "DictStrAny") -> "t.Tuple[DictStrAny, DictStrAny]":
         - contains image tags + build metadata
         - contains images tags + path to docker build file
     """
-    tags_metadata = {}
     releases_tag = ctx.pop("releases_tag")
     package = ctx.pop("package")
     release_type = ctx.pop("release_type")
     distro = ctx.pop("distro")
-    docker_image_tags = f"{package}:{releases_tag}"
+
+    image_tag = f"{package}:{releases_tag}"
 
     supported_arch: t.List[str] = ctx.pop("architectures")
     # NOTE: for now its all CUDA deps
@@ -194,7 +203,7 @@ def generation_metadata(ctx: "DictStrAny") -> "t.Tuple[DictStrAny, DictStrAny]":
 
     # process input_paths and output_path
     base_output_path = Path(
-        FLAGS.dockerfile_dir, package, FLAGS.bentoml_version, distro
+        FLAGS.dockerfile_dir, package, distro
     )
     output_path = Path(base_output_path, release_type)
 
@@ -214,26 +223,27 @@ def generation_metadata(ctx: "DictStrAny") -> "t.Tuple[DictStrAny, DictStrAny]":
         ]
 
     ctx["input_paths"] = input_paths
-    ctx["docker_build_path"] = Path(output_path, DOCKERFILE_NAME).as_posix()
+    ctx["docker_build_path"] = as_posix(output_path, DOCKERFILE_NAME)
 
     # EXPERIMENTAL: TensorRT + BentoML docker images
     trt_path = [str(f) for f in walk(template_dir) if "trt" in f.name]
     if len(trt_path) > 0:
         ctx["trt_input_path"] = trt_path[0]
-        ctx["trt_output_path"] = Path(base_output_path, "trt.Dockerfile").as_posix()
+        ctx["trt_output_path"] = as_posix(base_output_path, "Dockerfile-trt")
+
+    # Setup CUDA deps and additional requirements.
+    ctx["cuda"], ctx['additional_requirements'] = process_cuda_context(dependencies)
 
     # context for each platform build
     platform_mapping = get_docker_platform_mapping()
-    for arch in supported_arch:
-        tags_metadata[arch] = {"platform_args": platform_mapping[arch]}
-        _ctx = deepcopy(ctx)
-        if arch in dependencies:
-            _ctx["cuda"] = {}
-            set_data(_ctx, process_cuda_context(dependencies[arch]), "cuda")
-        tags_metadata[arch].update(_ctx)
-    return {docker_image_tags: tags_metadata}, {
-        docker_image_tags: Path(output_path, DOCKERFILE_NAME).as_posix()
+    ctx["cuda_arch_ctx"] = {
+        arch: {
+            "platform_args": f"--platform {platform_mapping[arch]}",
+            "cuda_enabled": arch in dependencies.keys(),
+        }
+        for arch in supported_arch
     }
+    return {image_tag: ctx}, {image_tag: as_posix(output_path, DOCKERFILE_NAME)}
 
 
 def gen_ctx(*args: t.Any, **kwargs: t.Any) -> "t.Tuple[DictStrAny, DictStrAny]":
@@ -304,7 +314,7 @@ def render(
 
 
 def generate_readmes(
-    output_dir: str, paths: "DictStrStr", build_ctx: "DictStrAny", package: str
+    output_dir: str, paths: "DictStrStr", package: str
 ) -> None:
     distros = get_packages_spec("bento-server", "base")
     release_context = {}
@@ -324,8 +334,7 @@ def generate_readmes(
         "release_info": release_context,
         "supported_architecture": SUPPORTED_ARCHITECTURE_TYPE,
     }
-    # jprint(readme_context)
-    output_readme = Path(output_dir, package, FLAGS.bentoml_version)
+    output_readme = Path(output_dir, package)
     render(
         input_path=README_TEMPLATE, output_path=output_readme, metadata=readme_context
     )
@@ -373,7 +382,7 @@ def main(*args: t.Any, **kwargs: t.Any) -> None:
 
     # generate jinja templates
     for package in get_packages_spec():
-        generate_readmes(FLAGS.dockerfile_dir, path_meta, build_meta, package)
+        generate_readmes(FLAGS.dockerfile_dir, path_meta, package)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ __all__ = (
     "get_nested",
     "shellcmd",
     "graceful_exit",
+    "as_posix",
 )
 
 
@@ -138,6 +139,10 @@ flags.DEFINE_string(
     "Set of releases to build and tags, defaults to every release type.",
     short_name="r",
 )
+
+
+def as_posix(*args: t.Any) -> str:
+    return pathlib.Path(*args).as_posix()
 
 
 def walk(

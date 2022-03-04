@@ -46,6 +46,7 @@ Before starting:
 * Don't edit ephemeral directory: [`generated`](./generated) and [`docs`](./docs)
 * Dockerfiles in `./generated` directory must have their build context set to **the directory of this README.md** directory to  add `entrypoint.sh` as well as other helpers files. 
 * Every Dockerfile is managed via `manifest.yml` and maintained via `manager.py`, which will render the Dockerfile from `Jinja` templates under `./templates`.
+* Refers to [Docker's Official Images](https://github.com/docker-library/official-images) for multi-architecture support.
 
 Follow the instructions below to re-generate dockerfiles and build new base images:
 
@@ -254,8 +255,6 @@ High-level workflow when publishing new docker images:
 3) render `j2` templates
 4) build from generated directory
 5) push to given registries.
-
-Each process will be managed by [``ManagerClient``](../manager.py) with provided functions via `Mixin` class.
 
 The yaml validation process includes:
 

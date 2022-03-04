@@ -78,7 +78,7 @@ releases:
   ubi8:
     <<: *base_spec
     templates_dir: templates/rhel
-    base_image: redhat/ubi8
+    base_image: registry.access.redhat.com/ubi8/ubi:latest
     add_to_tags: "ubi8"
     cuda:
       <<: *cuda11_3_1
@@ -87,7 +87,7 @@ releases:
   ubi7:
     <<: *base_spec
     templates_dir: templates/rhel
-    base_image: registry.access.redhat.com/ubi7/ubi:7.9-641.1645812159
+    base_image: registry.access.redhat.com/ubi7/ubi:latest
     add_to_tags: "ubi7"
     cuda:
       <<: *cuda11_3_1

@@ -56,7 +56,6 @@ There are many ways to contribute to the project:
 
 ### Usage Reporting ###
 
- We rely heavily of
 BentoML collects anonymous usage data that helps our team to improve the product.
 Only BentoML's internal API calls and CLI commands are being reported and we striped out any potentially 
 sensitive information as much as possible, we will never collect user code, model data, model name or stacktrace. 

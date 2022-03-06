@@ -151,7 +151,6 @@ class Model(StoreItem):
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "Model":
         self._save(model_store)
-        logger.info(f"Successfully saved {self}")
         return self
 
     def _save(self, model_store: "ModelStore") -> "Model":

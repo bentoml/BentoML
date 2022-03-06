@@ -9,6 +9,7 @@ from simple_di import Provide
 from rich.table import Table
 from rich.console import Console
 
+from bentoml.bentos import import_bento
 from bentoml.bentos import build_bentofile
 
 from ..utils import calc_dir_size
@@ -175,30 +176,49 @@ def add_bento_management_commands(
         for target in delete_targets:
             delete_target(target)
 
-    @cli.command(help="Export Bento to a tar file")
+    @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.argument(
-        "out_file", type=click.File("wb"), default=sys.stdout, required=False
+        "out_path",
+        type=click.STRING,
+        default="",
+        required=False,
     )
-    def export(bento_tag, out_file):
-        """Export Bento files to a tar file
+    def export(bento_tag, out_path):
+        """Export Bento files to an archive file
 
-        bentoml export FraudDetector:latest > my_bento.tar
+        \b
+        arguments:
+        BENTO_TAG: bento identifier
+        OUT_PATH: output path of exported bento.
+          If this argument is not provided, bento is exported to name-version.bento in the current directory.
+          Supported formats are tar ('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+
+        \b
+        examples:
+        bentoml export FraudDetector:20210709_DE14C9
         bentoml export FraudDetector:20210709_DE14C9 ./my_bento.tar
+        bentoml export FraudDetector:latest ./my_bento.zip
+        bentoml export FraudDetector:latest s3://mybucket/bentos/my_bento.gz
         """
-        pass
+        bento = bento_store.get(bento_tag)
+        bento.export(out_path)
 
-    @cli.command(name="import", help="Import a previously exported Bento tar file")
-    @click.argument(
-        "bento_path", type=click.File("rb"), default=sys.stdin, required=False
-    )
-    def import_bento(bento_path):
-        """Export Bento files to a tar file
+    @cli.command(name="import")
+    @click.argument("bento_path", type=click.STRING)
+    def import_from(bento_path):
+        """Import a previously exported Bento archive file
 
-        bentoml import < ./my_bento.tar
+        \b
+        argument:
+        BENTO_PATH: path of Bento archive file
+
+        \b
+        examples:
         bentoml import ./my_bento.tar
+        bentoml import s3://mybucket/bentos/my_bento.zip
         """
-        pass
+        import_bento(bento_path)
 
     @cli.command(
         help="Pull Bento from a yatai server",

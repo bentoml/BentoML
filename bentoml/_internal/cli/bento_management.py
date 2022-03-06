@@ -1,5 +1,6 @@
 import sys
 import json
+import logging
 from typing import TYPE_CHECKING
 
 import yaml
@@ -21,6 +22,8 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..bento import BentoStore
+
+logger = logging.getLogger(__name__)
 
 
 def parse_delete_targets_argument_callback(
@@ -171,7 +174,7 @@ def add_bento_management_commands(
 
                 if delete_confirmed:
                     bento_store.delete(bento.tag)
-                    click.echo(f"{bento} deleted")
+                    logger.info(f"{bento} deleted")
 
         for target in delete_targets:
             delete_target(target)
@@ -203,6 +206,7 @@ def add_bento_management_commands(
         """
         bento = bento_store.get(bento_tag)
         bento.export(out_path)
+        logger.info(f"{bento} exported to {out_path}")
 
     @cli.command(name="import")
     @click.argument("bento_path", type=click.STRING)
@@ -218,7 +222,8 @@ def add_bento_management_commands(
         bentoml import ./my_bento.tar
         bentoml import s3://mybucket/bentos/my_bento.zip
         """
-        import_bento(bento_path)
+        bento = import_bento(bento_path)
+        logger.info(f"{bento} imported")
 
     @cli.command(
         help="Pull Bento from a yatai server",

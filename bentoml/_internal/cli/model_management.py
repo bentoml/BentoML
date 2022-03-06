@@ -1,5 +1,6 @@
 import json
 import typing as t
+import logging
 
 import yaml
 import click
@@ -19,6 +20,8 @@ from ..configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from ..models import ModelStore
+
+logger = logging.getLogger(__name__)
 
 
 def parse_delete_targets_argument_callback(
@@ -173,7 +176,7 @@ def add_model_management_commands(
 
                 if delete_confirmed:
                     model_store.delete(model.tag)
-                    click.echo(f"{model} deleted")
+                    logger.info(f"{model} deleted")
 
         for target in delete_targets:
             delete_target(target)
@@ -202,6 +205,7 @@ def add_model_management_commands(
         """
         bentomodel = model_store.get(model_tag)
         bentomodel.export(out_path)
+        logger.info(f"{bentomodel} exported to {out_path}")
 
     @model_cli.command(name="import")
     @click.argument("model_path", type=click.STRING)
@@ -211,7 +215,8 @@ def add_model_management_commands(
         bentoml models import ./my_model.tar
         bentoml models import s3://mybucket/models/my_model.zip
         """
-        import_model(model_path)
+        bentomodel = import_model(model_path)
+        logger.info(f"{bentomodel} imported")
 
     @model_cli.command(
         help="Pull Model from a yatai server",

@@ -495,6 +495,7 @@ class _SpacyRunner(BaseModelRunner):
             exclude=self._exclude,
             disable=self._disable,
             config=self._config,
+            model_store=self.model_store,
         )
 
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]

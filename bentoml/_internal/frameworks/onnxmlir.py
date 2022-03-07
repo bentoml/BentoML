@@ -192,7 +192,7 @@ class _ONNXMLirRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._session = load(self._tag)
+        self._session = load(self._tag, model_store=self.model_store)
 
     def _run_batch(self, input_data: "ext.NpNDArray") -> "ext.NpNDArray":  # type: ignore
         return self._session.run(input_data)  # type: ignore

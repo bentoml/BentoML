@@ -463,7 +463,7 @@ class _TensorflowRunner(BaseModelRunner):
     def _setup(self) -> None:
         # setup a global session for model runner
         self._configure(self._device_id)
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[  # type: ignore
             "serving_default"
         ]

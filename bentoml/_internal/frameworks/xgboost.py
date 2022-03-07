@@ -216,6 +216,7 @@ class _XgBoostRunner(BaseModelRunner):
         self._model = load(
             self._tag,
             booster_params=self._booster_params,
+            model_store=self.model_store,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 

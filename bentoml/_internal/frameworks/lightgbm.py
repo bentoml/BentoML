@@ -240,6 +240,7 @@ class _LightGBMRunner(BaseModelRunner):
         self._model = load(
             tag=self._tag,
             booster_params=self._booster_params,
+            model_store=self.model_store,
         )
         self._predict_fn = getattr(self._model, self._infer_api_callback)
 

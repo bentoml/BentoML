@@ -235,7 +235,9 @@ class _CatBoostRunner(BaseModelRunner):
         return int(round(self.resource_quota.cpu))
 
     def _setup(self) -> None:
-        self._model = load(self._tag, model_params=self._model_params)
+        self._model = load(
+            self._tag, model_params=self._model_params, model_store=self.model_store
+        )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]

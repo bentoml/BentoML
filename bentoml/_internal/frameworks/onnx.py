@@ -332,6 +332,7 @@ class _ONNXRunner(BaseModelRunner):
             backend=self._backend,
             providers=self._providers,
             session_options=session_options,
+            model_store=self.model_store,
         )
         self._infer_func = getattr(self._model, "run")
 

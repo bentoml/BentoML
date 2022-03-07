@@ -23,3 +23,6 @@ $ docker run -u \$(id -u):\$(id -g) args...
 WARN
 fi
 echo -e "\e[m"
+
+source $HOME/.poetry/env
+

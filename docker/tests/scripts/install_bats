@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
+cd "$GIT_ROOT"/docker/tests || exit 1
+
+echo "Remember to run scripts as sudo."
+
+if ! command -v bats > /dev/null 2>&1; then
+    git clone https://github.com/bats-core/bats-core.git && cd bats-core
+
+    ./install.sh /usr/local
+
+    cd .. && rm -rf bats-core
+fi

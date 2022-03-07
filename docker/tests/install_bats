@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-GIT_ROOT=$(git rev-parse --show-toplevel)
-
-cd "$GIT_ROOT"/docker/tests || exit 1
-
-git clone https://github.com/bats-core/bats-core.git && cd bats-core
-
-./install.sh $HOME/.local

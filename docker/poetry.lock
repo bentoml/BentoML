@@ -428,22 +428,15 @@ optional = false
 python-versions = "!=3.0,!=3.1,!=3.2,!=3.3,>=2.6"
 
 [[package]]
-name = "simple_di"
+name = "simple-di"
 version = "0.1.5"
-description = ""
+description = "simple dependency injection library"
 category = "main"
 optional = false
 python-versions = ">=3.6.1"
-develop = false
 
 [package.extras]
 test = ["pytest", "mypy"]
-
-[package.source]
-type = "git"
-url = "git@github.com:bentoml/simple_di.git"
-reference = "master"
-resolved_reference = "aa982934b0c4144f30efb1d87302bac0522d3715"
 
 [[package]]
 name = "smmap"
@@ -488,7 +481,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "d22df233b9721089489e7b2eb97d436cf196d94d2958b8f71944e15d81b9122f"
+content-hash = "54e144a1ad9feaeea6b19ae8a2d01eeeec648f72a822e18e033be45144237456"
 
 [metadata.files]
 astroid = [
@@ -772,7 +765,10 @@ shellingham = [
     {file = "shellingham-1.4.0-py2.py3-none-any.whl", hash = "sha256:536b67a0697f2e4af32ab176c00a50ac2899c5a05e0d8e2dadac8e58888283f9"},
     {file = "shellingham-1.4.0.tar.gz", hash = "sha256:4855c2458d6904829bd34c299f11fdeed7cfefbf8a2c522e4caea6cd76b3171e"},
 ]
-simple_di = []
+simple-di = [
+    {file = "simple_di-0.1.5-py3-none-any.whl", hash = "sha256:e3fb6242f18f389a3c2d571dd51ade47c74cdbc4550590894664ad59bfb2a345"},
+    {file = "simple_di-0.1.5.tar.gz", hash = "sha256:192b999dee4cd4fb11a5d861165caad02d8f0617c0f806fc5b09f905f1a03ca0"},
+]
 smmap = [
     {file = "smmap-5.0.0-py3-none-any.whl", hash = "sha256:2aba19d6a040e78d8b09de5c57e96207b09ed71d8e55ce0959eeee6c8e190d94"},
     {file = "smmap-5.0.0.tar.gz", hash = "sha256:c840e62059cd3be204b0c9c9f74be2c09d5648eddd4580d9314c3ecde0b30936"},

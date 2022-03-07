@@ -18,7 +18,7 @@ rich = "^11.2.0"
 shellingham = "^1.4.0"
 typing-extensions = ">=3.10,<4"
 pyyaml-include = "^1.2.post2"
-simple-di = {git = "git@github.com:bentoml/simple_di.git"}
+simple-di = "^0.1.5"
 
 
 [tool.poetry.dev-dependencies]

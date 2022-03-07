@@ -1,8 +1,10 @@
-# syntax = docker/dockerfile:1.2
+# Docker builder images
 
-FROM python:3.10-slim
+FROM --platform=$BUILDPLATFORM docker:latest
 
-LABEL maintainer="BentoML Team <contact@bentoml.ai>"
+ENV DOCKER_TLS_CERTDIR "/certs"
+
+ENV DOCKER_CLI_EXPERIMENTAL enabled
 
 ENV DOCKER_BUILDKIT=1 \
     POETRY_NO_INTERACTION=1 \
@@ -10,18 +12,53 @@ ENV DOCKER_BUILDKIT=1 \
     POETRY_CACHE_DIR="/var/cache/pypoetry" \
     PATH="$PATH:/root/.local/bin"
 
-RUN apt-get update && \
-    apt-get install -y bash curl build-essential \
-    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache wget git bash findutils python3 python3-dev curl g++ libmagic skopeo jq
 
+ENV PUSHRM_URL https://github.com/christian-korneck/docker-pushrm/releases/download/v1.8.0/docker-pushrm_linux_
+
+ENV BUILDX_URL https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-
+
+RUN mkdir -p $HOME/.docker/cli-plugins/
+
+RUN set -x && \
+    UNAME_M="$(uname -m)" && \
+    if [ "${UNAME_M}" == "x86_64" ]; then \
+        PUSHRM_ARCH='amd64'; \
+        BUILDX_ARCH='amd64'; \
+    elif [ "${UNAME_M}" == "aarch64" ]; then \
+        PUSHRM_ARCH='arm64'; \
+        BUILDX_ARCH='arm64'; \
+    elif [ "${UNAME_M}" == "armv7l" ]; then \
+        PUSHRM_ARCH='arm'; \
+        BUILDX_ARCH='arm-v7'; \
+    elif [ "${UNAME_M}" == "armv6l" ]; then \
+        PUSHRM_ARCH='arm'; \
+        BUILDX_ARCH='arm-v6'; \
+    else \
+        echo "couldn't find a version for ${UNAME_M} that supports both docker-pushrm and buildx"; \
+        exit 1; \
+    fi && \
+    wget -O $HOME/.docker/cli-plugins/docker-pushrm $PUSHRM_URL${PUSHRM_ARCH} && \
+    wget -O $HOME/.docker/cli-plugins/docker-buildx $BUILDX_URL${BUILDX_ARCH}
+
+RUN chmod a+x $HOME/.docker/cli-plugins/docker-pushrm && \
+    chmod a+x $HOME/.docker/cli-plugins/docker-buildx
+
+RUN python3 -m ensurepip
+
+RUN rm -r /usr/lib/python*/ensurepip
+
+RUN pip3 install --upgrade pip setuptools
+
+RUN if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi
+
+RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; fi
+
+LABEL maintainer="BentoML Team <contact@bentoml.ai>"
 
 SHELL ["/bin/bash", "-exo", "pipefail", "-c"]
 
-# https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/
-RUN curl -sSL https://get.docker.com/ | sh
-
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
 
 WORKDIR /bentoml
 
@@ -31,20 +68,12 @@ COPY pyproject.toml .
 
 COPY tools/bashrc /etc/bash.bashrc
 
-COPY --from=docker/buildx-bin:latest /buildx /usr/libexec/docker/cli-plugins/docker-buildx
-
 RUN chmod a+rwx /etc/bash.bashrc
 
-RUN if [ ! -e /usr/bin/pip ]; then \
-        ln -s /usr/bin/pip3 /usr/bin/pip; \
-    fi
+RUN . $HOME/.poetry/env && poetry install
 
-RUN if [ ! -e /usr/bin/python ]; then \
-        ln -sf /usr/bin/python3 /usr/bin/python; \
-    fi
+RUN echo "source /etc/bash.bashrc" >> $HOME/.bashrc
 
-RUN python -m pip install --upgrade pip setuptools
+RUN echo "source $HOME/.poetry/env" >> $HOME/.bashrc
 
-RUN poetry install
-
-CMD [ "bash", "-c" ]
+CMD [ "bash" ]

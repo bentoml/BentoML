@@ -137,6 +137,7 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
+        tag: t.Optional[t.Union[str, Tag]] = None,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         from ..service.loader import import_service
@@ -154,12 +155,19 @@ class Bento(StoreItem):
         # Apply default build options
         build_config = build_config.with_defaults()
 
-        tag = Tag(svc.name, version)
-        if version is None:
-            tag = tag.make_new_version()
+        if tag is not None:
+            _tag = Tag.from_taglike(tag)
+
+            if version is not None:
+                _tag.version = version
+        else:
+            _tag = Tag(svc.name, version)
+
+            if version is None:
+                _tag = _tag.make_new_version()
 
         logger.info(
-            f'Building BentoML service "{tag}" from build context "{build_ctx}"'
+            f'Building BentoML service "{_tag}" from build context "{build_ctx}"'
         )
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
@@ -257,10 +265,10 @@ class Bento(StoreItem):
             yaml.dump(svc.openapi_doc(), f)
 
         res = Bento(
-            tag,
+            _tag,
             bento_fs,
             BentoInfo(
-                tag,
+                _tag,
                 svc,  # type: ignore # attrs converters do not typecheck
                 build_config.labels,
                 list(seen_model_tags),

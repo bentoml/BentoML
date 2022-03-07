@@ -301,6 +301,7 @@ def build_bentofile(
     *,
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
+    tag: t.Optional[t.Union[str, Tag]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "Bento":
@@ -329,6 +330,7 @@ def build_bentofile(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
+        tag=tag,
         model_store=_model_store,
     ).save(_bento_store)
     logger.info(

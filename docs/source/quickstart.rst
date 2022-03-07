@@ -130,7 +130,7 @@ without restarting:
 
     > bentoml serve ./service.py:svc --reload
 
-    02/24/2022 02:43:40 INFO     [cli] Starting development BentoServer from "./service.py:svc" running on http://127.0.0.1:5000 (Press CTRL+C to quit)                                                                                                                                                                   
+    02/24/2022 02:43:40 INFO     [cli] Starting development BentoServer from "./service.py:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)                                                                                                                                                                   
     02/24/2022 02:43:41 INFO     [dev_api_server] Service imported from source: bentoml.Service(name="iris_classifier", import_str="service:svc", working_dir="/home/user/gallery/quickstart")                                                                                                                  
     02/24/2022 02:43:41 INFO     [dev_api_server] Will watch for changes in these directories: ['/home/user/gallery/quickstart']                                                                                                                                                                                
     02/24/2022 02:43:41 INFO     [dev_api_server] Started server process [25915]                                                                                                                                                                                                                                          
@@ -145,7 +145,7 @@ We can then send requests to the newly started service with any HTTP client:
 
         import requests
         requests.post(
-            "http://127.0.0.1:5000/classify",
+            "http://127.0.0.1:3000/classify",
             headers={"content-type": "application/json"},
             data="[5,4,3,2]").text
 
@@ -155,7 +155,7 @@ We can then send requests to the newly started service with any HTTP client:
           -X POST \
           -H "content-type: application/json" \
           --data "[5,4,3,2]" \
-          http://127.0.0.1:5000/classify
+          http://127.0.0.1:3000/classify
 
 .. _build-and-deploy-bentos:
 
@@ -225,7 +225,7 @@ command. Using the :code:`--production` option will serve the bento in productio
     > bentoml serve iris_classifier:latest --production
 
     02/24/2022 03:01:19 INFO     [cli] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="/Users/ssheng/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")                                                                                                                                                                
-    02/24/2022 03:01:19 INFO     [cli] Starting production BentoServer from "bento_identifier" running on http://0.0.0.0:5000 (Press CTRL+C to quit)                                                                                                                                                                                                                 
+    02/24/2022 03:01:19 INFO     [cli] Starting production BentoServer from "bento_identifier" running on http://0.0.0.0:3000 (Press CTRL+C to quit)                                                                                                                                                                                                                 
     02/24/2022 03:01:20 INFO     [iris_clf] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="/Users/ssheng/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")                                                                                                                                                           
     02/24/2022 03:01:20 INFO     [api_server] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="/Users/ssheng/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")                                                                                                                                                         
     02/24/2022 03:01:20 INFO     [iris_clf] Started server process [28761]                                                                                                                                                                                                                                                                                           

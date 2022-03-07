@@ -27,6 +27,6 @@ ARG TARGETARCH
 
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
-ENV BENTOML_VERSION=1.0.0-a5
+ENV BENTOML_VERSION=1.0.0a6
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

@@ -138,7 +138,7 @@ def set_data(
             "update_data, unable to update "
             f"{glom_path(*path)} with {value}"
         )
-        raise ManagerException(f"Error while setting data to object.") from err
+        raise ManagerException("Error while setting data to object.") from err
 
 
 @attrs.define
@@ -164,14 +164,14 @@ def shellcmd(
     p = bin_name.popen(
         args=args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    for l in io.TextIOWrapper(p.stdout, encoding="utf-8"):
+    for _ in io.TextIOWrapper(p.stdout, encoding="utf-8"):
         if log_output:
-            logger.info(l)
-        stdout += l
-    for l in io.TextIOWrapper(p.stderr, encoding="utf-8"):
+            logger.info(_)
+        stdout += _
+    for _ in io.TextIOWrapper(p.stderr, encoding="utf-8"):
         if log_output:
-            logger.error(l)
-        stderr += l
+            logger.error(_)
+        stderr += _
     p.communicate()
     return Output(
         returncode=p.returncode,

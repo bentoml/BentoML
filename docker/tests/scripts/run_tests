@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 SCRIPTS_DIR="$(cd "$( dirname "$(readlink -f $0)")" && pwd)"
 TEST_PATH=$(realpath "${SCRIPTS_DIR}/../")
-
-echo "$TEST_PATH"
 
 for test in $(find "$TEST_PATH" -iname "[0-9]*-*.bats" | sort ); do
     echo "Running tests for ${test}..."

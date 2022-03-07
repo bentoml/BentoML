@@ -6,11 +6,18 @@ ENV DOCKER_TLS_CERTDIR "/certs"
 
 ENV DOCKER_CLI_EXPERIMENTAL enabled
 
+
+ARG USER=manager-docker
+ARG UID=1034
+ARG GID=1034
+RUN addgroup --gid $GID $USER && adduser --disabled-password --uid $UID --ingroup $USER $USER
+
 ENV DOCKER_BUILDKIT=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_CACHE_DIR="/var/cache/pypoetry" \
-    PATH="$PATH:/root/.local/bin"
+    POETRY_CACHE_DIR="/home/$USER/pypoetry" \
+    POETRY_HOME="/home/$USER/.local" \
+    PATH="$PATH:/root/.local/bin:/home/manager-docker/.local/bin"
 
 RUN apk add --no-cache wget git bash findutils python3 python3-dev curl g++ libmagic skopeo jq
 
@@ -58,6 +65,10 @@ LABEL maintainer="BentoML Team <contact@bentoml.ai>"
 
 SHELL ["/bin/bash", "-exo", "pipefail", "-c"]
 
+USER manager-docker
+
+RUN echo "$HOME"
+
 RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
 
 WORKDIR /bentoml
@@ -66,11 +77,11 @@ VOLUME ["/bentoml"]
 
 COPY pyproject.toml .
 
-COPY tools/bashrc /etc/bash.bashrc
+COPY --chown=manager-docker:manager-docker tools/bashrc /etc/bash.bashrc
 
 RUN chmod a+rwx /etc/bash.bashrc
 
-RUN . $HOME/.poetry/env && poetry install
+RUN poetry install
 
 RUN echo "source /etc/bash.bashrc" >> $HOME/.bashrc
 

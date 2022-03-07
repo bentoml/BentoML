@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from manager._types import GenericDict
     from manager._types import ValidateType
-    from manager._types import CerberusValidator
+    from manager._types import CerberusValidator  # pylint: disable
 
 
 logger = logging.getLogger(__name__)
@@ -313,12 +313,12 @@ def validate_manifest_yaml(manifest: "GenericDict") -> bool:
     if not v.validate(manifest):
         v.clear_caches()
         logger.error(
-            f"[bold red]manifest is invalid. Errors as follow:[/bold red]",
+            "[bold red]manifest is invalid. Errors as follow:[/bold red]",
             extra={"markup": True},
         )
         logger.exception(yaml.dump(v.errors, indent=2))
     else:
-        logger.info(f"[bold green]Valid manifest.[/bold green]", extra={"markup": True})
+        logger.info(":white_check_marks: [bold green]Valid manifest.[/bold green]", extra={"markup": True})
         validated = True
 
     return validated

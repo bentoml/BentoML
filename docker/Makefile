@@ -1,6 +1,5 @@
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 
-VERSIONTAGS = $(shell sed -n -e 's,^VERSION = .\(\([0-9].[0-9]\).[0-9]\).$$,-v :\1 -v :\2,p' manager/__version__.py)
 PLATFORM_CHECK  = linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/386,linux/riscv64,linux/mips64le
 BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/v\(\)/\1/; s/-//g')
 
@@ -8,11 +7,11 @@ BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=
 # them will be much more efficient at build time. See e.g.
 BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
 # Just one of the many files created
-QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-m68k
+QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-aarch64
 
 DOCKER_IMG := bentoml-docker:1.0
 
-DOCKER_ARGS := -u $(shell id -u):$(shell id -g) \
+DOCKER_ARGS := -u 1034:1034 \
 	--privileged --rm --init --net=host \
 	-v $(realpath /etc/localtime):/etc/localtime:ro \
 	-v ${PWD}:/bentoml \
@@ -67,13 +66,19 @@ install-local: ## Install manager locally
 	@pip install -e .
 
 GENERATE_ARGS := --dump-metadata --bentoml-version $(BENTOML_VERSION)
-BUILD_ARGS := --max-workers 5 --bentoml-version $(BENTOML_VERSION)
+BUILD_TESTS_ARGS := --max-workers 5 --bentoml-version $(BENTOML_VERSION)
 
 run-generate: ## Generate all required files
 	manager generate $(GENERATE_ARGS)
 
 run-build: ## Build all releases images
-	manager build $(BUILD_ARGS)
+	manager build $(BUILD_TESTS_ARGS)
+
+IMAGE_NAME := bento-server
+run-test: ${IMAGE_NAME} ## Run tests
+${IMAGE_NAME}:
+	@echo "Running sanity check for ${IMAGE_NAME} on all releases."
+	manager run-tests ${BUILD_TESTS_ARGS}
 
 docker-build:
 	@echo "Building ${DOCKER_IMG} for $(DOCKER_BUILD_PLATFORM)..."
@@ -86,4 +91,4 @@ docker-run-generate: ## Run generate from a docker container (useful for CI)
 	$(DOCKER_RUN_MANAGER) generate $(GENERATE_ARGS)
 
 docker-run-build: ## Run build from a docker container (useful for CI)
-	$(DOCKER_RUN_MANAGER) build $(BUILD_ARGS)
+	$(DOCKER_RUN_MANAGER) build $(BUILD_TESTS_ARGS)

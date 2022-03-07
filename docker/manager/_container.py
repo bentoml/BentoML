@@ -121,8 +121,9 @@ class ManagerContainerClass:
     manager_dir = MANAGER_DIRECTORY
     manifest_dir = MANIFEST_DIRECTORY
 
-    template_dir = Path(DOCKER_DIRECTORY, "templates")
-    generated_dir = Path(DOCKER_DIRECTORY, "generated")
+    template_dir = DOCKER_DIRECTORY.joinpath("templates")
+    generated_dir = DOCKER_DIRECTORY.joinpath("generated")
+    tests_dir = DOCKER_DIRECTORY.joinpath("tests")
 
     bento_server_name = "bento-server"
 

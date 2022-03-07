@@ -106,13 +106,7 @@ COPY cuda.repo-ppc64le /etc/yum.repos.d/cuda.repo
 COPY nvidia-ml.repo-ppc64le /etc/yum.repos.d/nvidia-ml.repo
 
 
-FROM base as base-amd64
-
-FROM base as base-arm
-
 FROM base as base-s390x
-
-FROM base as base-ppc64le
 
 FROM base-${TARGETARCH}
 
@@ -130,6 +124,6 @@ RUN yum install -y \
     && yum clean all \
     && rm -rf /var/cache/yum/*
 
-ENV BENTOML_VERSION=1.0.0-a5
+ENV BENTOML_VERSION=1.0.0a6
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

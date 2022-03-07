@@ -41,6 +41,7 @@ FROM baseline as base
 ENV NVIDIA_CUDA_LIB_VERSION {{ cuda.version.full + "-1" }}
 
 {% if "amd64" in cuda %}
+{% do cached.append("amd64") %}
 FROM base as base-amd64
 
 ENV NVIDIA_NVTX_VERSION {{ cuda.amd64.components.nvtx.version }}
@@ -76,6 +77,7 @@ ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda.amd64.cudnn.major_version }}"
 {% endif %}
 
 {% if "arm64v8" in cuda %}
+{% do cached.append("arm64v8") %}
 FROM base as base-arm64
 
 ENV NVIDIA_NVTX_VERSION {{ cuda.arm64v8.components.nvtx.version }}
@@ -112,6 +114,7 @@ ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda.arm64v8.cudnn.major_version }}"
 {% endif -%}
 
 {% if "ppc64le" in cuda %}
+{% do cached.append("ppc64le") %}
 FROM base as base-ppc64le
 
 ENV NVIDIA_NVTX_VERSION {{ cuda.ppc64le.components.nvtx.version }}

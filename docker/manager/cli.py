@@ -10,6 +10,7 @@ from click import ClickException
 from manager import __version__ as MANAGER_VERSION
 from rich.console import Console
 from manager.build import add_build_command
+from manager.tests import add_tests_command
 from manager._utils import graceful_exit
 from manager.generate import add_generation_command
 from manager.exceptions import ManagerException
@@ -153,6 +154,7 @@ Get started with:
     add_authenticate_command(cli)
     add_generation_command(cli)
     add_build_command(cli)
+    add_tests_command(cli)
 
     return cli
 

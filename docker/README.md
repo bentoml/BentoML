@@ -138,26 +138,34 @@ running build, so sit back and relax.
 
 ### Run Locally Built Images
 
-To build each distros releases locally you also need to build a `base` images. This contains all dependencies required by
-BentoML before building specific distros images:
+To build out an image from generated Dockerfile, do:
 
 ```shell
-export PYTHON_VERSION=3.8
+PYTHON_VERSION=3.8
+BENTOML_VERSION=1.0.0a6
+IMAGE_NAME="bentoml/bento-server"
+CUDA_VERSION="11.4.1"
+OS="ubi8"
+ARCHES="x86_64, arm64v8, ppc64le, s390x"
+PLATFORM_ARGS=`printf '%s ' '--platform'; for var in $(echo $ARCHES | sed "s/,/ /g"); do printf 'linux/%s,' "$var"; done | sed 's/,*$//g'`
 
-# with tags for base images, replace the python version to your corresponding python version.
-docker build -f ./generated/bento-server/amazonlinux2/Dockerfile \
-          --build-arg PYTHON_VERSION=${PYTHON_VERSION} -t bento-server:base-python3.8-ami2 .
+docker buildx build --load ${PLATFORM_ARGS} \
+    -t ${IMAGE_NAME}:base-python${PYTHON_VERSION}-${OS} \
+    -f ./generated/bento-server/${OS}/base/Dockerfile \
+    --build-arg PYTHON_VERSION=${PYTHON_VERSION} .
+
+docker buildx build --load ${PLATFORM_ARGS} \
+    -t ${IMAGE_NAME}:${BENTOML_VERSION}-python${PYTHON_VERSION}-${OS}-runtime \
+    --build-arg PYTHON_VERSION=${PYTHON_VERSION} ./generated/bento-server/${OS}/runtime
+
+docker buildx build --load ${PLATFORM_ARGS} \
+    -t ${IMAGE_NAME}:${BENTOML_VERSION}-python${PYTHON_VERSION}-${OS}-cudnn \
+    --build-arg PYTHON_VERSION=${PYTHON_VERSION} ./generated/bento-server/${OS}/cudnn
+
+docker buildx build --load ${PLATFORM_ARGS} \
+    -t ${IMAGE_NAME}:devel-python${PYTHON_VERSION}-${OS} \
+    --build-arg PYTHON_VERSION=${PYTHON_VERSION} ./generated/bento-server/${OS}/devel
 ```
-
-An example to generate BentoML's AMI base image with `python3.8` that can be used to install `BentoService` and run on AWS Sagemaker:
-
-```shell
-# DOCKER_BUILDKIT=1 is optional
-DOCKER_BUILDKIT=1 docker build -f ./generated/bento-server/amazonlinux2/runtime/Dockerfile \
-                          --build-arg PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-ami2 . 
-```
-
-After building the image with tag `bentoml-ami2` (for example), use `docker run` to run the images.
 
 FYI: `-v` (Volume mount) and `-u` (User permission) shares directories and files permission between your local machine and Docker container.
 Without `-v` your work will be wiped once container exists, where `-u` will have wrong file permission on your host machine.
@@ -166,13 +174,14 @@ Without `-v` your work will be wiped once container exists, where `-u` will have
 # -v and -u are recommended to use.
 
 # CPU-based images
-docker run -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
+docker run -it -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml/bento-server:1.0.0a6-python3.8-ubi8-runtime
 
 # GPU-based images
 # See https://docs.bentoml.org/en/latest/guides/gpu_serving.html#general-workaround-recommended
 docker run --gpus all --device /dev/nvidia0 --device /dev/nvidiactl \
              --device /dev/nvidia-modeset --device /dev/nvidia-uvm \
-             --device /dev/nvidia-uvm-tools -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
+             --device /dev/nvidia-uvm-tools -i -t -u $(id -u):$(id -g) \
+             -v $(pwd):/bentoml bentoml/bento-server:1.0.0a6-python3.8-ubi8-runtime
 ```
 
 

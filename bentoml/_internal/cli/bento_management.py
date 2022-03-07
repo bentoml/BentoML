@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import logging
@@ -259,11 +260,23 @@ def add_bento_management_commands(
         yatai_client.push_bento(bento_obj, force=force)
 
     @cli.command(help="Build a new Bento from current directory")
-    @click.argument("build_ctx", type=click.Path(), default=".")
-    @click.option("-f", "--bentofile", type=click.STRING, default="bentofile.yaml")
+    @click.argument("build_ctx", type=click.Path(), required=False, default=None)
+    @click.option("-f", "--bentofile", type=click.STRING, default=None)
+    @click.option("-t", "--tag", type=click.STRING, default=None)
     @click.option("--version", type=click.STRING, default=None)
-    def build(build_ctx, bentofile, version):
+    def build(build_ctx, bentofile, tag, version):
+        if bentofile is None:
+            bentofile = "bentofile.yaml"
+
+        if build_ctx is None:
+            if bentofile is not None:
+                build_ctx = os.path.dirname(bentofile)
+                if build_ctx == "":
+                    build_ctx = "."
+            else:
+                build_ctx = "."
+
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
-        build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        build_bentofile(bentofile, build_ctx=build_ctx, version=version, tag=tag)

@@ -530,7 +530,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
 
     def _setup(self) -> None:
         self._setup_runner_config()
-        self._model = load(self._tag, config=self._config)
+        self._model = load(self._tag, config=self._config, model_store=self.model_store)
         self._infer_func = getattr(self._model, self._infer_api_callback)
 
     def _run_batch(

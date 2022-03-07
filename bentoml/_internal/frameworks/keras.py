@@ -376,7 +376,7 @@ class _KerasRunner(_TensorflowRunner):
         self._configure(self._device_id)
         self._session = get_session()
         self._session.config = self._config_proto
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 

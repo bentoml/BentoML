@@ -280,7 +280,7 @@ class _PyFuncRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, self.model_store)
 
     def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._model.predict(*args, **kwargs)  # type: ignore

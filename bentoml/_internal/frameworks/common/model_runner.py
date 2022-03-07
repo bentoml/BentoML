@@ -15,21 +15,24 @@ if TYPE_CHECKING:
 
 
 class BaseModelRunner(Runner):
+    @inject
     def __init__(
         self,
         tag: t.Union[str, Tag],
         name: t.Optional[str] = None,
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(name)
         self._tag = Tag.from_taglike(tag)
+        self._model_store = model_store
 
     @property
-    @inject
-    def _model_info(
-        self,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        return model_store.get(self._tag)
+    def _model_info(self):
+        return self.model_store.get(self._tag)
+
+    @property
+    def model_store(self):
+        return self._model_store
 
     @property
     def default_name(self) -> str:
@@ -41,21 +44,27 @@ class BaseModelRunner(Runner):
 
 
 class BaseModelSimpleRunner(SimpleRunner):
+    @inject
     def __init__(
         self,
         tag: t.Union[str, Tag],
         name: t.Optional[str] = None,
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(name)
         self._tag = Tag.from_taglike(tag)
+        self._model_store = model_store
 
     @property
-    @inject
     def _model_info(
         self,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         return model_store.get(self._tag)
+
+    @property
+    def model_store(self):
+        return self._model_store
 
     @property
     def default_name(self) -> str:

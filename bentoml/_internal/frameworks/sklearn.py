@@ -159,7 +159,7 @@ class _SklearnRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         self._infer_func = getattr(self._model, self._function_name)
 
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]

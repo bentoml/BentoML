@@ -162,7 +162,7 @@ def save(
 
 class _PyTorchRunner(BasePyTorchRunner):
     def _load_model(self):
-        return load(self._tag, device_id=self._device_i, model_store=self.model_store)
+        return load(self._tag, device_id=self._device_id, model_store=self.model_store)
 
 
 def load_runner(

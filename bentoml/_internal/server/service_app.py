@@ -106,7 +106,7 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
 class ServiceAppFactory(BaseAppFactory):
     """
     ServiceApp creates a REST API server based on APIs defined with a BentoService
-    via BentoService#get_service_apis call. Each InferenceAPI will become one
+    via BentoService#apis. Each InferenceAPI will become one
     endpoint exposed on the REST server, and the RequestHandler defined on each
     InferenceAPI object will be used to handle Request object before feeding the
     request data into a Service API function

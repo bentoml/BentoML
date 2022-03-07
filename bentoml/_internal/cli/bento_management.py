@@ -2,6 +2,7 @@
 import sys
 import json
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import yaml
@@ -11,6 +12,7 @@ from simple_di import Provide
 from rich.table import Table
 from rich.console import Console
 
+from bentoml.bentos import import_bento
 from bentoml.bentos import build_bentofile
 
 from ..utils import calc_dir_size
@@ -24,6 +26,8 @@ if TYPE_CHECKING:
     from io import BytesIO
 
     from ..bento import BentoStore
+
+logger = logging.getLogger(__name__)
 
 
 def parse_delete_targets_argument_callback(
@@ -50,8 +54,8 @@ def parse_delete_targets_argument_callback(
 def add_bento_management_commands(
     cli: "click.Group",
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> None:
-    @cli.command(help="Get Bento information")
+):
+    @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-o",
@@ -62,6 +66,7 @@ def add_bento_management_commands(
     def get(bento_tag: str, output: str) -> None:
         """Print Bento details by providing the bento_tag
 
+        \b
         bentoml get FraudDetector:latest
         bentoml get --output=json FraudDetector:20210709_DE14C9
         """
@@ -77,7 +82,7 @@ def add_bento_management_commands(
             info = yaml.dump(bento.info, indent=2)
             console.print(info)
 
-    @cli.command(name="list", help="List Bentos in local bento store")
+    @cli.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
     @click.option(
         "-o",
@@ -91,11 +96,13 @@ def add_bento_management_commands(
         help="Don't truncate the output",
     )
     def list_bentos(bento_name: str, output: str, no_trunc: bool) -> None:
-        """Print list of bentos in local store
+        """List Bentos in local store
 
+        \b
         # show all bentos saved
         > bentoml list
 
+        \b
         # show all verions of bento with the name FraudDetector
         > bentoml list FraudDetector
         """
@@ -158,6 +165,7 @@ def add_bento_management_commands(
 
         Specify target Bentos to remove:
 
+        \b
         * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
         * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
         * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
@@ -174,35 +182,56 @@ def add_bento_management_commands(
 
                 if delete_confirmed:
                     bento_store.delete(bento.tag)
-                    click.echo(f"{bento} deleted")
+                    logger.info(f"{bento} deleted")
 
         for target in delete_targets:
             delete_target(target)
 
-    @cli.command(help="Export Bento to a tar file")
+    @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.argument(
-        "out_file", type=click.File("wb"), default=sys.stdout, required=False
+        "out_path",
+        type=click.STRING,
+        default="",
+        required=False,
     )
     def export(bento_tag: str, out_file: "BytesIO") -> None:
-        """Export Bento files to a tar file
+        """Export Bento files to an archive file
 
-        bentoml export FraudDetector:latest > my_bento.tar
-        bentoml export FraudDetector:20210709_DE14C9 ./my_bento.tar
+        \b
+        arguments:
+        BENTO_TAG: bento identifier
+        OUT_PATH: output path of exported bento.
+          If this argument is not provided, bento is exported to name-version.bento in the current directory.
+          Besides native .bento format, we also supported formats like tar ('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip.
+
+        \b
+        examples:
+        bentoml export FraudDetector:20210709_DE14C9
+        bentoml export FraudDetector:20210709_DE14C9 ./my_bento.bento
+        bentoml export FraudDetector:latest ./my_bento.bento
+        bentoml export FraudDetector:latest s3://mybucket/bentos/my_bento.bento
         """
-        pass
+        bento = bento_store.get(bento_tag)
+        bento.export(out_path)
+        logger.info(f"{bento} exported to {out_path}")
 
-    @cli.command(name="import", help="Import a previously exported Bento tar file")
-    @click.argument(
-        "bento_path", type=click.File("rb"), default=sys.stdin, required=False
-    )
-    def import_bento(bento_path: "BytesIO") -> None:
-        """Export Bento files to a tar file
+    @cli.command(name="import")
+    @click.argument("bento_path", type=click.STRING)
+    def import_bento(bento_path: str) -> None:
+        """Import a previously exported Bento archive file
 
-        bentoml import < ./my_bento.tar
-        bentoml import ./my_bento.tar
+        \b
+        argument:
+        BENTO_PATH: path of Bento archive file
+
+        \b
+        examples:
+        bentoml import ./my_bento.bento
+        bentoml import s3://mybucket/bentos/my_bento.bento
         """
-        pass
+        bento = import_bento(bento_path)
+        logger.info(f"{bento} imported")
 
     @cli.command(
         help="Pull Bento from a yatai server",

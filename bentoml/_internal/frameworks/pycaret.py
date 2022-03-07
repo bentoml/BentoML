@@ -169,7 +169,7 @@ class _PycaretRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
 
     def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":  # type: ignore
         output: "pd.DataFrame" = predict_model(self._model, input_data)

@@ -429,7 +429,7 @@ class _TensorflowRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         raw_predict_fn = getattr(self._model, self._predict_fn_name)  # type: ignore
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 

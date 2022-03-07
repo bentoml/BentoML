@@ -166,7 +166,7 @@ class _GluonRunner(BaseModelRunner):
         else:
             ctx = mxnet.cpu()
         self._ctx = ctx
-        self._model = load(self._tag, ctx)
+        self._model = load(self._tag, ctx, model_store=self.model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(

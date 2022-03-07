@@ -438,6 +438,7 @@ class _TransformersRunner(BaseModelRunner):
             revision=self._revision,
             use_fast=self._use_fast,
             use_auth_token=self._use_auth_token,
+            model_store=self.model_store,
             **self._kwargs,
         )
 

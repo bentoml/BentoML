@@ -3,8 +3,6 @@ from timeit import default_timer
 from typing import TYPE_CHECKING
 from contextvars import ContextVar
 
-from starlette.middleware import Middleware
-
 if TYPE_CHECKING:
     from .. import external_typing as ext
 
@@ -18,20 +16,24 @@ CONTENT_TYPE = b"content-type"
 
 status: ContextVar[int] = ContextVar("ACCESS_LOG_STATUS_CODE")
 request_content_length: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_REQ_CONTENT_LENGTH", default=b""
+    "ACCESS_LOG_REQ_CONTENT_LENGTH",
+    default=b"",
 )
 request_content_type: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_REQ_CONTENT_TYPE", default=b""
+    "ACCESS_LOG_REQ_CONTENT_TYPE",
+    default=b"",
 )
 response_content_length: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_RESP_CONTENT_LENGTH", default=b""
+    "ACCESS_LOG_RESP_CONTENT_LENGTH",
+    default=b"",
 )
 response_content_type: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_RESP_CONTENT_TYPE", default=b""
+    "ACCESS_LOG_RESP_CONTENT_TYPE",
+    default=b"",
 )
 
 
-class AccessLogMiddleware(Middleware):
+class AccessLogMiddleware:
     """
     ASGI Middleware implementation that intercepts and decorates the send
     and receive callables to generate the BentoML access log.

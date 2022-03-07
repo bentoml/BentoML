@@ -177,7 +177,7 @@ def save(
 
 class _PyTorchLightningRunner(BasePyTorchRunner):
     def _load_model(self):
-        return load(self._tag, device_id=self._device_id)
+        return load(self._tag, device_id=self._device_id, model_store=self.model_store)
 
 
 @inject

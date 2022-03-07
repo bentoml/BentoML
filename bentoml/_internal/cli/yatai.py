@@ -7,6 +7,7 @@ from bentoml.exceptions import CLIException
 
 from ..cli.click_utils import BentoMLCommandGroup
 from ..yatai_rest_api_client.config import add_context
+from ..yatai_rest_api_client.config import update_context
 from ..yatai_rest_api_client.config import YataiClientContext
 from ..yatai_rest_api_client.config import default_context_name
 
@@ -43,11 +44,14 @@ def add_login_command(cli: click.Group) -> None:
 
         if user is None:
             raise CLIException("current user is not found")
+        ctx.email = user.email
 
         org = yatai_rest_client.get_current_organization()
 
         if org is None:
             raise CLIException("current organization is not found")
+
+        update_context(ctx.name, ctx)
 
         logger.info(
             f"login successfully! user: {user.name}, organization: {org.name}",

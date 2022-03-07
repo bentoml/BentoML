@@ -204,7 +204,7 @@ class _EasyOCRRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(self, input_data: "ext.NpNDArray") -> "ext.NpNDArray":  # type: ignore

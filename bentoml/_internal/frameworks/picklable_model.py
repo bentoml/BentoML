@@ -126,7 +126,7 @@ class _PicklableModelRunner(BaseModelRunner):
         return max(int(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         if self._method_name == "__call__":
             self._infer_func = self._model
         else:
@@ -149,7 +149,7 @@ class _PicklableModelSimpleRunner(BaseModelSimpleRunner):
         return max(int(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
 
         if self._method_name == "__call__":
             self._infer_func = self._model

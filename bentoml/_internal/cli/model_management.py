@@ -1,6 +1,6 @@
-import sys
 import json
 import typing as t
+import logging
 
 import yaml
 import click
@@ -8,6 +8,8 @@ from simple_di import inject
 from simple_di import Provide
 from rich.table import Table
 from rich.console import Console
+
+from bentoml.models import import_model
 
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
@@ -18,6 +20,8 @@ from ..configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from ..models import ModelStore
+
+logger = logging.getLogger(__name__)
 
 
 def parse_delete_targets_argument_callback(
@@ -172,37 +176,47 @@ def add_model_management_commands(
 
                 if delete_confirmed:
                     model_store.delete(model.tag)
-                    click.echo(f"{model} deleted")
+                    logger.info(f"{model} deleted")
 
         for target in delete_targets:
             delete_target(target)
 
-    @model_cli.command(help="Export Model to a tar file")
+    @model_cli.command()
     @click.argument("model_tag", type=click.STRING)
-    @click.argument(
-        "out_file", type=click.File("wb"), default=sys.stdout, required=False
-    )
-    def export(model_tag, out_file):
-        """Export Model files to a tar file
+    @click.argument("out_path", type=click.STRING, default="", required=False)
+    def export(model_tag, out_path):
+        """Export Model files to an archive file
 
+        arguments:
+
+        \b
+        MODEL_TAG: model identifier
+        OUT_PATH: output path of exported model.
+          If this argument is not provided, model is exported to name-version.bentomodel in the current directory.
+          Supported formats are tar('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+
+        examples:
+
+        \b
+        bentoml models export FraudDetector:latest > my_model.tar
         bentoml models export FraudDetector:latest > my_model.tar
         bentoml models export FraudDetector:20210709_DE14C9 ./my_model.tar
+        bentoml models export FraudDetector:20210709_DE14C9 s3://mybucket/models/my_model.gz
         """
-        pass
+        bentomodel = model_store.get(model_tag)
+        bentomodel.export(out_path)
+        logger.info(f"{bentomodel} exported to {out_path}")
 
-    @model_cli.command(
-        name="import", help="Import a previously exported Model tar file"
-    )
-    @click.argument(
-        "model_path", type=click.File("rb"), default=sys.stdin, required=False
-    )
-    def import_model(model_path):
-        """Export Model files to a tar file
+    @model_cli.command(name="import")
+    @click.argument("model_path", type=click.STRING)
+    def import_from(model_path):
+        """Import a previously exported Model archive file
 
-        bentoml models import < ./my_model.tar
         bentoml models import ./my_model.tar
+        bentoml models import s3://mybucket/models/my_model.zip
         """
-        pass
+        bentomodel = import_model(model_path)
+        logger.info(f"{bentomodel} imported")
 
     @model_cli.command(
         help="Pull Model from a yatai server",

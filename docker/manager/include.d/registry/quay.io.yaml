@@ -2,6 +2,8 @@
 ---
 user: "QUAY_USER" 
 password: "QUAY_PASSWORD"
+password_type: envars
 provider: "APIKEY__QUAY_IO"
-url: "quay.io/{org_name}/{repo_name}"
+entrypoint: "quay"
+url: "QUAY_URL"
 ...

@@ -8,3 +8,7 @@ class ManagerInvalidShellCmd(ManagerException):
 
 class ManagerLoginFailed(ManagerException):
     """Raised when failed to login to a registry"""
+
+
+class ManagerBuildFailed(ManagerException):
+    """Raised when failed to build releases"""

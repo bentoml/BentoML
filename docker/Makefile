@@ -1,7 +1,14 @@
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
+UNAME_M ?= $(shell uname -m)
 
-PLATFORM_CHECK  = linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/386,linux/riscv64,linux/mips64le
 BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/v\(\)/\1/; s/-//g')
+
+GENERATE_ARGS := --bentoml-version $(BENTOML_VERSION) --overwrite
+BUILD_TESTS_ARGS := --max-workers 5 --bentoml-version $(BENTOML_VERSION)
+IMAGE_NAME := bento-server
+
+# Some Dockerfiles use features that are only supported with BuildKit enabled
+export DOCKER_BUILDKIT=1
 
 # Create multi-platform docker image. If you have native systems around, using
 # them will be much more efficient at build time. See e.g.
@@ -9,29 +16,43 @@ BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
 # Just one of the many files created
 QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-aarch64
 
-DOCKER_IMG := bentoml-docker:1.0
+MANAGER_IMAGE := bentoml-docker:1.0
+RUN_IMAGE := ${MANAGER_IMAGE}-$(shell uname -m)
 
 DOCKER_ARGS := -u 1034:1034 \
 	--privileged --rm --init --net=host \
 	-v $(realpath /etc/localtime):/etc/localtime:ro \
 	-v ${PWD}:/bentoml \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	-w /bentoml ${DOCKER_IMG}-$(shell uname -m)
+	-w /bentoml ${RUN_IMAGE}
 
-DOCKER_BUILD_PLATFORM := linux/amd64 linux/arm64/v8 
-DOCKER_BUILD_ARGS := --load -f ${PWD}/Dockerfile
-
-DOCKER_RUN_MANAGER := docker run ${DOCKER_ARGS} poetry run manager
+DOCKER_RUN := docker run ${DOCKER_ARGS}
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
 format: ## Format
-	@poetry run python -m autoflake --in-place --remove-all-unused-imports manager/**.py
+	@poetry run python -m autoflake --in-place --remove-all-unused-imports manager/*.py
 	@${GIT_ROOT}/scripts/tools/formatter.sh
 
 lint: ## Lint
 	@pylint --rcfile="${GIT_ROOT}/pyproject.toml" --disable=E0401,F0010 .
+
+.PHONY: install-local
+install-local: ## Install manager locally
+	@pip install -e .
+
+run-generate: ## Generate all required files
+	manager generate $(GENERATE_ARGS)
+
+run-build: ## Build all releases images
+	manager build $(BUILD_TESTS_ARGS)
+
+run-test: ${IMAGE_NAME} ## Run tests
+${IMAGE_NAME}:
+	@echo "Running sanity check for ${IMAGE_NAME} on all releases."
+	manager run-tests ${BUILD_TESTS_ARGS}
+
 
 qemu: ${QEMUDETECT}
 ${QEMUDETECT}:
@@ -57,38 +78,18 @@ emulator:  buildx ## Install all emulator
 	@echo 'Finish installed emulator from tonistiig/binfmt.'
 
 platform-check: emulator ## Test supported platform string
-	@docker buildx ls | grep platform_check_builder &>/dev/null || docker buildx create --use --driver docker-container --name platform_check_builder;
-	@docker buildx use platform_check_builder;
-	@docker buildx build -f tools/Dockerfile-platform --no-cache --progress=plain --platform=${PLATFORM_CHECK} .
+	@docker buildx ls | grep platform_check_builder &>/dev/null | docker buildx use platform_check_builder || docker buildx create --use --driver docker-container --name platform_check_builder;
+	@docker buildx bake test-platforms
 
-.PHONY: install-local
-install-local: ## Install manager locally
-	@pip install -e .
+docker-build: ${UNAME_M}
 
-GENERATE_ARGS := --dump-metadata --bentoml-version $(BENTOML_VERSION)
-BUILD_TESTS_ARGS := --max-workers 5 --bentoml-version $(BENTOML_VERSION)
-
-run-generate: ## Generate all required files
-	manager generate $(GENERATE_ARGS)
-
-run-build: ## Build all releases images
-	manager build $(BUILD_TESTS_ARGS)
-
-IMAGE_NAME := bento-server
-run-test: ${IMAGE_NAME} ## Run tests
-${IMAGE_NAME}:
-	@echo "Running sanity check for ${IMAGE_NAME} on all releases."
-	manager run-tests ${BUILD_TESTS_ARGS}
-
-docker-build:
-	@echo "Building ${DOCKER_IMG} for $(DOCKER_BUILD_PLATFORM)..."
-	@$(foreach platform, $(DOCKER_BUILD_PLATFORM), \
-		DOCKER_BUILDKIT=1 docker buildx build $(DOCKER_BUILD_ARGS) \
-			--platform $(platform) -t ${DOCKER_IMG}-$(word 2,$(subst /, ,$(platform))) ${PWD}; \
-	)
+.PHONY: ${UNAME_M}
+${UNAME_M}:
+	$(eval bake_target := build-$@)
+	 docker buildx bake $(bake_target)
 
 docker-run-generate: ## Run generate from a docker container (useful for CI)
-	$(DOCKER_RUN_MANAGER) generate $(GENERATE_ARGS)
+	$(DOCKER_RUN) poetry run manager generate $(GENERATE_ARGS)
 
 docker-run-build: ## Run build from a docker container (useful for CI)
-	$(DOCKER_RUN_MANAGER) build $(BUILD_TESTS_ARGS)
+	$(DOCKER_RUN) poetry run manager build $(BUILD_TESTS_ARGS)

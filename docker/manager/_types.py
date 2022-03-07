@@ -11,7 +11,6 @@ from typing import Callable
 from typing import Optional
 from typing import TYPE_CHECKING
 
-import attrs
 import click
 import cerberus.errors
 
@@ -36,11 +35,13 @@ if TYPE_CHECKING:
     GenericNestedDict = Dict[str, Dict[str, Any]]
     DoubleNestedDict = Dict[str, Dict[str, T]]
 
-    ReleaseTagInfo = Dict[str, Dict[str, Union[List[str], str]]]
+    ReleaseTagInfo = Tuple[str, Dict[str, StrDict]]
 
     class ClickFunctionWrapper(Generic[P, T]):
         __name__: str
         __click_params__: List[click.Option]
+
+        params: List[click.Parameter]
 
         def __call__(*args: P.args, **kwargs: P.kwargs) -> Callable[P, T]:
             ...
@@ -77,8 +78,3 @@ if TYPE_CHECKING:
             always_return_document: bool = False,
         ) -> Dict[str, Any]:
             ...
-
-    class AttrsCls:
-        __attrs_attrs__: attrs.Attribute
-
-    DictStrAttrs = Dict[str, AttrsCls]

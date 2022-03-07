@@ -1,23 +1,33 @@
 {{ metadata.header }}
 
+ARG XX_VERSION={{ xx_version }}
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 ARG PYTHON_VERSION
 
 {% set cached = ['arm32v5', 'arm32v6'] %}
 
 FROM {{ metadata.package }}:{{ build_tag }} as baseline
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH
+
+RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     gnupg2 curl ca-certificates && \
-    curl -fsSL {{ cuda.repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - && \
-    echo "deb {{ cuda.repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list && \
+    curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - && \
+    echo "deb {{ cuda.cuda_repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list && \
     if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi && \
-    apt-get purge --autoremove -y curl \
+    xx-apt-get purge --autoremove -y curl \
     && rm -rf /var/lib/apt/lists/*
 
 ENV CUDA_VERSION {{ cuda.version.full }}
 
 # For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     cuda-cudart-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_CUDART_VERSION} \
     ${NVIDIA_CUDA_COMPAT_PACKAGE} \
     && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda && \
@@ -155,11 +165,15 @@ FROM base as base-{{ key }}
 
 FROM base-${TARGETARCH}
 
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
+
 ARG TARGETARCH
 
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     cuda-libraries-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_LIB_VERSION} \
     {% if has_libnpp_package %}
     ${NVIDIA_LIBNPP_PACKAGE} \

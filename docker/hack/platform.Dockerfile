@@ -1,4 +1,4 @@
-# test platform: docker buildx build -f tools/Dockerfile-platform --no-cache --progress=plain --platform=<platform_to_test> .
+# test platform: docker buildx build -f hack/platform.Dockerfile --no-cache --progress=plain --platform=<platform_to_test> .
 FROM busybox
 ARG TARGETPLATFORM
 ARG TARGETARCH

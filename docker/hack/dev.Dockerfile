@@ -1,11 +1,22 @@
 # Docker builder images
 
+ARG XX_VERSION=1.1.0
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 FROM --platform=$BUILDPLATFORM docker:latest
+
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH
 
 ENV DOCKER_TLS_CERTDIR "/certs"
 
 ENV DOCKER_CLI_EXPERIMENTAL enabled
 
+ENV DOCKER_BUILDKIT=1 
 
 ARG USER=manager-docker
 ARG UID=1034
@@ -19,7 +30,7 @@ ENV DOCKER_BUILDKIT=1 \
     POETRY_HOME="/home/$USER/.local" \
     PATH="$PATH:/root/.local/bin:/home/manager-docker/.local/bin"
 
-RUN apk add --no-cache wget git bash findutils python3 python3-dev curl g++ libmagic skopeo jq
+RUN xx-apk add --no-cache wget git bash findutils python3 python3-dev curl g++ libmagic skopeo jq
 
 ENV PUSHRM_URL https://github.com/christian-korneck/docker-pushrm/releases/download/v1.8.0/docker-pushrm_linux_
 
@@ -77,7 +88,7 @@ VOLUME ["/bentoml"]
 
 COPY pyproject.toml .
 
-COPY --chown=manager-docker:manager-docker tools/bashrc /etc/bash.bashrc
+COPY --chown=manager-docker:manager-docker hack/bashrc /etc/bash.bashrc
 
 RUN chmod a+rwx /etc/bash.bashrc
 

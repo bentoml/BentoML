@@ -2,6 +2,10 @@
 
 {% set cached = ['arm32v5', 'arm32v6'] %}
 
+ARG XX_VERSION={{ xx_version }}
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 FROM {{ metadata.base_image }} as base
 
 {% if "amd64" in cuda %}
@@ -17,7 +21,7 @@ ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
 ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.amd64.ml_repo_url }}/${NVARCH}
+ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
 {% endif %}
 
 {% if "arm64v8" in cuda %}
@@ -32,7 +36,7 @@ ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
 ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.arm64v8.ml_repo_url }}/${NVARCH}
+ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
 {% endif -%}
 
 {% for key in metadata.arch_ctx if key not in cached %}
@@ -49,6 +53,10 @@ FROM base as base-{{ key }}
 {% endfor %}
 
 FROM base-${TARGETARCH}
+
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
@@ -70,10 +78,10 @@ ENV DEBIAN_FRONTEND noninteractive
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-RUN apt-get update && \
-    apt-get install -q -y --no-install-recommends \
+RUN xx-apt-get update && \
+    xx-apt-get install -q -y --no-install-recommends \
     ca-certificates bash curl wget git gnupg build-essential && \
-    apt-get clean && \
+    xx-apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Leave these args here to better use the Docker build cache
@@ -111,5 +119,5 @@ RUN set -x && \
 RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
     /opt/conda/bin/conda clean -afy
 
-COPY tools/bashrc /etc/bash.bashrc
+COPY hack/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

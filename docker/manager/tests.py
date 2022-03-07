@@ -4,16 +4,14 @@ import traceback
 from itertools import product
 from concurrent.futures import ThreadPoolExecutor
 
+import fs
 import click
-from manager import SUPPORTED_OS_RELEASES
-from manager import SUPPORTED_PYTHON_VERSION
-from manager import DOCKERFILE_BUILD_HIERARCHY
 from manager._utils import run
-from manager._utils import as_posix
-from manager._utils import raise_exception
+from manager._utils import DOCKERFILE_BUILD_HIERARCHY
 from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
-from manager._container import ManagerContainer
-from manager.exceptions import ManagerException
+from manager._exceptions import ManagerException
+from manager._click_utils import Environment
+from manager._click_utils import pass_environment
 
 logger = logging.getLogger(__name__)
 
@@ -21,18 +19,11 @@ logger = logging.getLogger(__name__)
 def add_tests_command(cli: click.Group) -> None:
     @cli.command(name="run-tests")
     @click.option(
-        "--bentoml-version",
-        required=True,
-        type=click.STRING,
-        metavar="<x.y.z{a}>",
-        help="targeted bentoml version",
-    )
-    @click.option(
         "--releases",
         required=False,
         type=click.Choice(DOCKERFILE_BUILD_HIERARCHY),
         multiple=True,
-        help=f"Targeted releases for an image, default is to build all following the order: {DOCKERFILE_BUILD_HIERARCHY}",
+        help=f"Targets releases for an image, default is to build all following the order: {DOCKERFILE_BUILD_HIERARCHY}",
         default=DOCKERFILE_BUILD_HIERARCHY,
     )
     @click.option(
@@ -40,24 +31,8 @@ def add_tests_command(cli: click.Group) -> None:
         required=False,
         type=click.Choice(SUPPORTED_ARCHITECTURE_TYPE),
         multiple=True,
-        help="Targeted a given platforms to build image on: linux/amd64,linux/arm64",
+        help="Targets a given platforms to build image on: linux/amd64,linux/arm64",
         default=SUPPORTED_ARCHITECTURE_TYPE,
-    )
-    @click.option(
-        "--distros",
-        required=False,
-        type=click.Choice(SUPPORTED_OS_RELEASES),
-        multiple=True,
-        help="Targeted a distros releases",
-        default=SUPPORTED_OS_RELEASES,
-    )
-    @click.option(
-        "--python-version",
-        required=False,
-        type=click.Choice(SUPPORTED_PYTHON_VERSION),
-        multiple=True,
-        help=f"Targets a python version, default to {SUPPORTED_PYTHON_VERSION}",
-        default=SUPPORTED_PYTHON_VERSION,
     )
     @click.option(
         "--max-workers",
@@ -66,16 +41,12 @@ def add_tests_command(cli: click.Group) -> None:
         default=5,
         help="Defauls with # of workers used for ThreadPoolExecutor",
     )
-    @raise_exception
+    @pass_environment
     def run_tests(
-        docker_package: str,
-        bentoml_version: str,
+        ctx: Environment,
         releases: t.Tuple[str],
         platforms: t.Tuple[str],
-        distros: t.Tuple[str],
-        python_version: t.Tuple[str],
         max_workers: int,
-        generated_dir: str = ManagerContainer.generated_dir.as_posix(),
     ) -> None:
         """
         Run tests per releases.
@@ -86,18 +57,16 @@ def add_tests_command(cli: click.Group) -> None:
         """
         # sanity check
         logger.warning("This command will run with sudo. Use with care!")
-        test_shell_scripts = as_posix(
-            ManagerContainer.tests_dir.joinpath("sanity_check.sh")
-        )
+        test_shell_scripts = fs.path.combine("tests", "sanity_check.sh")
 
         def run_sanity_check_tests(args: t.Tuple[str, str, str, str, str]):
             bentoml_version, releases, platform, distro, python_version = args
             run(
                 "sudo",
                 "bash",
-                f"{test_shell_scripts}",
+                f"{ctx._fs.getsyspath(test_shell_scripts)}",
                 "--image_name",
-                docker_package,
+                ctx.docker_package,
                 "--bentoml_version",
                 bentoml_version,
                 "--python_version",
@@ -111,11 +80,11 @@ def add_tests_command(cli: click.Group) -> None:
             )
 
         mapping = product(
-            [bentoml_version],
+            [ctx.bentoml_version],
             [r for r in releases if r not in ["base", "devel"]],
             platforms,
-            distros,
-            python_version,
+            ctx.distros,
+            ctx.python_version,
         )
 
         try:

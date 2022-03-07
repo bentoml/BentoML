@@ -2,11 +2,12 @@
 
 load helpers
 
+GPU_SUPPORTED_OS=( debian11 debian10 ubi8 ubi7 )
+
 image="bentoml/${__TEST_IMAGE_NAME}:${__TEST_BENTOML_VERSION}-python${__TEST_PYTHON_VERSION}-${__TEST_OS}-cudnn"
 
 function setup() {
     # docker pull --platform linux/${__TEST_ARCH} ${image}
-    GPU_SUPPORTED_OS=( debian11 debian10 ubi8 ubi7 )
     if [[ "${GPU_SUPPORTED_OS[*]}" =~ "${__TEST_OS}" ]]; then
         docker pull ${image}
         check_gpu

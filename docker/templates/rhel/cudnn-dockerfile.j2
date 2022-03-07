@@ -7,7 +7,7 @@ ARG PYTHON_VERSION
 FROM {{ metadata.package }}:{{ build_tag }} as baseline
 
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
-    curl -fsSL {{ cuda.repo_url }}/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
+    curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
     echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
 
 ENV CUDA_VERSION {{ cuda.version.full }}

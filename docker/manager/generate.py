@@ -2,70 +2,108 @@ import os
 import json
 import typing as t
 import logging
-from typing import TYPE_CHECKING
-from pathlib import Path
+import traceback
 from functools import partial
 from collections import defaultdict
 
+import fs
+import yaml
+import cattr
 import click
-from jinja2 import Environment
-from manager import SUPPORTED_PYTHON_VERSION
-from manager._utils import as_posix
-from manager._utils import serialize_to_json
-from manager._context import BuildCtx
-from manager._context import EXTENSION
-from manager._context import ReleaseCtx
-from manager._context import load_context
-from manager._context import RELEASE_PREFIX
-from manager._context import DOCKERFILE_NAME
-from manager._container import ManagerContainer
-from manager.exceptions import ManagerException
-
-if TYPE_CHECKING:
-    from manager._types import GenericDict
+from simple_di import inject
+from simple_di import Provide
+from manager._make import CUDA
+from manager._utils import unstructure
+from manager._utils import render_template
+from manager._utils import TEMPLATES_DIR_MAPPING
+from manager._utils import DOCKERFILE_BUILD_HIERARCHY
+from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
+from manager._utils import SUPPORTED_ARCHITECTURE_TYPE_PER_DISTRO
+from manager._exceptions import ManagerException
+from manager._click_utils import Environment
+from manager._click_utils import pass_environment
+from manager._configuration import MANIFEST_FILENAME
+from manager._configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
 
 
-README_TEMPLATE = ManagerContainer.template_dir.joinpath("docs", "README.md.j2")
-
-
 def add_generation_command(cli: click.Group) -> None:
+    @cli.command(name="create-manifest")
+    @pass_environment
+    @inject
+    def create_manifest(
+        ctx: Environment, yaml_loader=Provide[DockerManagerContainer.yaml_loader]
+    ):
+        """
+        Generate a manifest files to edit.
+        Note that we still need to customize this manifest files to fit with our usecase.
+        """
+
+        registry_str = "\n".join(
+            [f"{k}: !include include.d/registry/{k}.yaml" for k in ctx.registries]
+        ).encode("utf-8")
+
+        mem_fs = fs.open_fs("mem://")
+
+        with mem_fs.open("registry.yml", "w", encoding="utf-8") as f:
+            yaml.dump(yaml.load(registry_str, Loader=yaml_loader), f)
+        with mem_fs.open("registry.yml", "r", encoding="utf-8") as f:
+            content = f.readlines()
+
+        name = MANIFEST_FILENAME.format(ctx.docker_package, ctx.cuda_version)
+        include_path = fs.path.join("manager", "include.d")
+        include_fs = ctx._fs.makedirs(include_path, recreate=True)
+
+        if not ctx._manifest_dir.exists(name) or ctx.overwrite:
+            cuda_req = {}
+            for p in include_fs.walk():
+                if ctx.cuda_version in p.path:
+                    arch = p.path.rsplit(".", maxsplit=2)[1]
+                    cuda_req[f"{arch}"] = f"!include {p.path}"
+
+            spec_tmpl = {
+                "cuda_version": ctx.cuda_version,
+                "architectures": SUPPORTED_ARCHITECTURE_TYPE,
+                "release_types": DOCKERFILE_BUILD_HIERARCHY,
+                "cuda_architecture_mapping": cuda_req,
+                "registries": "".join(content),
+                "supported_distros": {
+                    k: f"&{k.strip('0123456789.-')}" for k in ctx.distros
+                },
+                "architecture_per_distros": SUPPORTED_ARCHITECTURE_TYPE_PER_DISTRO,
+                "templates_entries": TEMPLATES_DIR_MAPPING,
+            }
+
+            render_template(
+                "spec.yaml.j2",
+                include_fs,
+                "/",
+                ctx._manifest_dir,
+                output_name=name,
+                overwrite_output_path=ctx.overwrite,
+                preserve_output_path_name=True,
+                create_as_dir=False,
+                **spec_tmpl,
+            )
+        else:
+            if not ctx.overwrite:
+                logger.info(
+                    f"{ctx._manifest_dir.getsyspath(name)} won't be overwritten."
+                    " To overwrite pass `--overwrite`",
+                    extra={"markup": True},
+                )
+                return
+
     @cli.command()
-    @click.option(
-        "--bentoml-version",
-        required=True,
-        type=click.STRING,
-        help="targeted bentoml version",
-    )
     @click.option(
         "--dump-metadata",
         is_flag=True,
         default=False,
-        help="dump metadata to files. Useful for debugging",
+        help="Dump metadata to files. Useful for debugging",
     )
-    @click.option(
-        "--python-version",
-        required=False,
-        type=click.Choice(SUPPORTED_PYTHON_VERSION),
-        multiple=True,
-        help=f"Targets a python version, default to {SUPPORTED_PYTHON_VERSION}",
-        default=SUPPORTED_PYTHON_VERSION,
-    )
-    @click.option(
-        "--generated-dir",
-        type=click.STRING,
-        metavar="generated",
-        help=f"Output directory for generated Dockerfile, default to {ManagerContainer.generated_dir.as_posix()}",
-        default=as_posix(ManagerContainer.generated_dir),
-    )
-    def generate(
-        docker_package: str,
-        bentoml_version: str,
-        generated_dir: str,
-        dump_metadata: bool,
-        python_version: t.Tuple[str],
-    ) -> None:
+    @pass_environment
+    def generate(ctx: Environment, dump_metadata: bool) -> None:
         """
         Generate Dockerfile and README for a given docker package.
 
@@ -83,188 +121,158 @@ def add_generation_command(cli: click.Group) -> None:
                 "`generate` shouldn't be running as root, as "
                 "wrong file permission would break the workflow."
             )
-        build_ctx, release_ctx, os_list = load_context(
-            docker_package=docker_package,
-            bentoml_version=bentoml_version,
-            python_version=python_version,
-            generated_dir=generated_dir,
-        )
 
         if dump_metadata:
-            with ManagerContainer.generated_dir.joinpath("build.meta.json").open(
-                "w"
-            ) as ouf1, ManagerContainer.generated_dir.joinpath(
-                "releases.meta.json"
-            ).open(
-                "w"
-            ) as ouf2:
-                ouf1.write(json.dumps(serialize_to_json(build_ctx), indent=2))
-                ouf2.write(json.dumps(serialize_to_json(release_ctx), indent=2))
-
-        # generate readmes and dockerfiles
-        _generate_readmes(
-            docker_package,
-            bentoml_version,
-            release_ctx=release_ctx,
-            os_list=os_list,
-        )
-        _generate_dockerfiles(release_ctx=release_ctx, build_ctx=build_ctx)
-
-
-def _generate_readmes(
-    package: str,
-    bentoml_version: str,
-    release_ctx: "t.Dict[str, ReleaseCtx]",
-    os_list: t.Dict[str, t.List[str]],
-) -> None:
-    supported_architecture = {}
-    sub_v = []
-    tag_ref = defaultdict(list)
-    for version in os_list:
-        sv = version[len(RELEASE_PREFIX) :]
-        if sv not in sub_v:
-            sub_v.append(sv)
-    for rltx in release_ctx.values():
-        if supported_architecture.get(rltx.shared_ctx.distro_name) is None:
-            supported_architecture[
-                rltx.shared_ctx.distro_name
-            ] = rltx.shared_ctx.architectures
-        tag_ref[rltx.shared_ctx.distro_name].append(
-            {
-                k: v["git_tree_path"]
-                for k, v in rltx.release_tags.items()
-                if "base" not in k
-            }
-        )
-    readme_context = {
-        "bentoml_package": package,
-        "bentoml_release_version": bentoml_version,
-        "support_arch": supported_architecture,
-        "tag_ref": tag_ref,
-        "sub_versions": sub_v,
-    }
-    _render_template(
-        input_path=README_TEMPLATE,
-        output_path=ManagerContainer.generated_dir.joinpath(package),
-        release_ctx=readme_context,
-    )
-
-
-def _generate_dockerfiles(build_ctx: t.Dict[str, BuildCtx], release_ctx):
-    for tags_ctx, rls_ctx in zip(build_ctx.values(), release_ctx.values()):
-        if tags_ctx.cuda_ctx.supported_architecture is not None:
-            cuda = {
-                "version": tags_ctx.cuda_ctx.version,
-                "amd64": tags_ctx.cuda_ctx.supported_architecture["amd64"],
-                "arm64v8": tags_ctx.cuda_ctx.supported_architecture["arm64v8"],
-            }
-
-            ppc64le = tags_ctx.cuda_ctx.supported_architecture.get("ppc64le", None)
-            if ppc64le is not None:
-                cuda["ppc64le"] = ppc64le
-            cuda = serialize_to_json(cuda)
-        else:
-            cuda = None
-        generated = []
-        metadata = {
-            "header": tags_ctx.header,
-            "base_image": tags_ctx.base_image,
-            "envars": tags_ctx.envars,
-            "package": tags_ctx.shared_ctx.docker_package,
-            "arch_ctx": tags_ctx.shared_ctx.architectures,
-        }
-
-        for img_tag, paths in rls_ctx.release_tags.items():
-            for tpl_file in paths["input_paths"]:
+            if ctx.verbose:
                 logger.info(
-                    f":brick: [yellow]Generating[/] [magenta]{tpl_file.split('/')[-1]}[/] for [blue]{img_tag}[/blue] ...",
+                    "[bold yellow] --dump-metadata is passed, "
+                    "stopped at generating build and release "
+                    "context to [bold]generated[/]... [/]",
                     extra={"markup": True},
                 )
-                if tpl_file in generated:
+
+            with ctx._generated_dir.open(
+                "generate.meta.json", "w"
+            ) as ouf1, ctx._generated_dir.open("tags.meta.json", "w") as ouf2:
+                ouf1.write(json.dumps(unstructure(ctx.build_ctx), indent=2))
+                ouf2.write(json.dumps(unstructure(ctx.release_ctx), indent=2))
+            return
+
+        if ctx.overwrite:
+            ctx._generated_dir.removetree(".")
+
+        # generate readmes and dockerfiles
+        generate_dockerfiles(ctx)
+        generate_readmes(ctx)
+        if ctx.verbose:
+            logger.info(
+                f"[green] Finished generating {ctx.docker_package}...[/]",
+                extra={"markup": True},
+            )
+
+
+def get_python_version_from_tag(tag: str) -> t.List[int]:
+    return [int(u) for u in tag.split(":")[-1].split("-")[1].strip("python").split(".")]
+
+
+def generate_readmes(ctx: Environment) -> None:
+    tag_ref = defaultdict(list)
+    arch = {}
+
+    for distro, distro_info in ctx.release_ctx.items():
+        results = [
+            (k, v["git_tree_path"])
+            for rltx in distro_info
+            for k, v in rltx.release_tags.items()
+            if "base" not in k
+        ]
+
+        (k_sort := [t[0] for t in results]).sort(
+            key=lambda tag: get_python_version_from_tag(tag)
+        )
+        order = {k: v for v, k in enumerate(k_sort)}
+
+        tag_ref[distro] = sorted(results, key=lambda k: order[k[0]])
+        arch[distro] = distro_info[0].shared_ctx.architectures
+
+    readme_context = {
+        "bentoml_package": ctx.docker_package,
+        "bentoml_release_version": ctx.bentoml_version,
+        "supported": arch,
+        "tag_ref": tag_ref,
+        "emphemeral": False,
+    }
+
+    readme_file = fs.path.combine("docs", "README.md.j2")
+
+    render_template(
+        readme_file,
+        ctx._templates_dir,
+        ctx.docker_package,
+        ctx._generated_dir,
+        **readme_context,
+    )
+
+    readme_context["emphemeral"] = True
+
+    render_template(
+        readme_file,
+        ctx._templates_dir,
+        "/",
+        ctx._generated_dir,
+        **readme_context,
+    )
+
+
+def generate_dockerfiles(ctx: Environment):
+
+    generated_files = []
+    for build_info, tag_info in zip(ctx.build_ctx.values(), ctx.release_ctx.values()):
+
+        for i in range(len(build_info)):
+            bi, ti = build_info[i], tag_info[i]
+
+            shared_ctx = bi.shared_ctx
+
+            cuda_context = bi.cuda_ctx
+            if isinstance(cuda_context, CUDA):
+                cuda = {
+                    "version": cuda_context.version,
+                    "amd64": cuda_context.amd64,
+                    "arm64v8": cuda_context.arm64v8,
+                    "cuda_repo_url": cuda_context.cuda_repo_url,
+                    "ml_repo_url": cuda_context.ml_repo_url,
+                }
+                if cuda_context.ppc64le is not None:
+                    cuda["ppc64le"] = cuda_context.ppc64le
+            else:
+                cuda = None
+            serialize_cuda = cattr.unstructure(cuda)
+
+            metadata = {
+                "header": bi.header,
+                "base_image": bi.base_image,
+                "envars": bi.envars,
+                "package": shared_ctx.docker_package,
+                "arch_ctx": shared_ctx.architectures,
+            }
+            xx_version = "1.1.0"  # NOTE: we will use this for cross-platform helper.
+
+            cuda_target_arch = {
+                "amd64": "x86_64",
+                "arm64v8": "sbsa",
+                "ppc64le": "ppc64le",
+            }
+
+            for paths in ti.release_tags.values():
+                generated_output = ctx._generated_dir.getsyspath(paths["output_path"])
+                if generated_output in generated_files:
                     continue
                 else:
-                    output_path = Path(paths["output_path"])
-                    to_render = partial(
-                        _render_template,
-                        input_path=Path(tpl_file),
-                        output_path=output_path,
-                        build_tag=paths["build_tag"],
-                        cuda=cuda,
-                        metadata=metadata,
-                    )
-                    if "rhel" in tags_ctx.shared_ctx.templates_dir:
-                        arch_ctx = tags_ctx.shared_ctx.architectures
-                        if tags_ctx.cuda_ctx.supported_architecture is not None:
-                            cuda_supported_arch = [
-                                k
-                                for k in arch_ctx
-                                if k in tags_ctx.cuda_ctx.supported_architecture
-                            ]
-                            for sa in cuda_supported_arch:
-                                to_render(arch=sa)
-                    else:
-                        to_render()
-                    generated.append(tpl_file)
+                    for tpl_file in paths["input_paths"]:
+                        arch_ctx = shared_ctx.architectures
+                        to_render = partial(
+                            render_template,
+                            input_name=tpl_file,
+                            inp_fs=ctx._templates_dir,
+                            output_path=paths["output_path"],
+                            out_fs=ctx._generated_dir,
+                            build_tag=paths["build_tag"],
+                            cuda=serialize_cuda,
+                            xx_version=xx_version,
+                            metadata=metadata,
+                        )
 
-
-def _render_template(
-    input_path: Path,
-    output_path: Path,
-    release_ctx: "t.Optional[GenericDict]" = None,
-    build_ctx: "t.Optional[GenericDict]" = None,
-    arch: t.Optional[str] = None,
-    build_tag: t.Optional[str] = None,
-    **kwargs: t.Any,
-):
-    """
-    Render .j2 templates to output path
-    Args:
-        input_path (:obj:`pathlib.Path`):
-            t.List of input path
-        output_path (:obj:`pathlib.Path`):
-            Output path
-        metadata (:obj:`t.Dict[str, Union[str, t.List[str], t.Dict[str, ...]]]`):
-            templates context
-        build_tag (:obj:`t.Optional[str]`):
-            strictly use for FROM args for base image.
-    """
-    cuda_target_arch = {"amd64": "x86_64", "arm64v8": "sbsa", "ppc64le": "ppc64le"}
-    template_env = Environment(
-        extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-    input_name = input_path.name
-    if "readme".upper() in input_name:
-        output_name = input_path.stem
-    elif "dockerfile" in input_name:
-        output_name = DOCKERFILE_NAME
-    else:
-        # specific cases for rhel
-        output_name = (
-            input_name[len("cudnn-") : -len(EXTENSION)]
-            if input_name.startswith("cudnn-") and input_name.endswith(EXTENSION)
-            else input_name
-        )
-        if arch:
-            output_name += f"-{arch}"
-    if not output_path.exists():
-        logger.debug(f"Creating {as_posix(output_path)}...")
-        output_path.mkdir(parents=True, exist_ok=True)
-
-    with input_path.open("r") as inf:
-        template = template_env.from_string(inf.read())
-
-    rendered_path = output_path.joinpath(output_name)
-
-    with rendered_path.open("w") as ouf:
-        ouf.write(
-            template.render(
-                build_ctx=build_ctx,
-                release_ctx=release_ctx,
-                build_tag=build_tag,
-                arch=arch,
-                cuda_target_arch=cuda_target_arch,
-                **kwargs,
-            )
-        )
+                        try:
+                            if "rhel" in shared_ctx.templates_dir:
+                                cuda_supported_arch = [
+                                    k for k in arch_ctx if hasattr(cuda_context, k)
+                                ]
+                                for sa in cuda_supported_arch:
+                                    to_render(arch=sa, cuda_url=cuda_target_arch[sa])
+                            else:
+                                to_render()
+                        except Exception:  # pylint: disable=broad-except
+                            logger.error(traceback.format_exc())
+                        finally:
+                            generated_files.append(generated_output)

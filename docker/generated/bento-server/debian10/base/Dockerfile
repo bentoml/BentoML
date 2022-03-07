@@ -8,6 +8,10 @@
 
 
 
+ARG XX_VERSION=1.1.0
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 FROM debian:10-slim as base
 
 FROM base as base-amd64
@@ -31,11 +35,15 @@ ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
 ENV NVIDIA_ML_REPO_ENABLED 1
 ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
-FROM base as base-s390x
-
 FROM base as base-ppc64le
 
+FROM base as base-s390x
+
 FROM base-${TARGETARCH}
+
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
@@ -54,10 +62,10 @@ ENV DEBIAN_FRONTEND noninteractive
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-RUN apt-get update && \
-    apt-get install -q -y --no-install-recommends \
+RUN xx-apt-get update && \
+    xx-apt-get install -q -y --no-install-recommends \
     ca-certificates bash curl wget git gnupg build-essential && \
-    apt-get clean && \
+    xx-apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Leave these args here to better use the Docker build cache
@@ -95,5 +103,5 @@ RUN set -x && \
 RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
     /opt/conda/bin/conda clean -afy
 
-COPY tools/bashrc /etc/bash.bashrc
+COPY hack/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

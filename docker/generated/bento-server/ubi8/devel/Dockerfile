@@ -17,9 +17,9 @@ FROM base as base-amd64
 
 FROM base as base-arm64
 
-FROM base as base-s390x
-
 FROM base as base-ppc64le
+
+FROM base as base-s390x
 
 FROM base-${TARGETARCH}
 

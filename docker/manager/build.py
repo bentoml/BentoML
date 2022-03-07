@@ -1,3 +1,4 @@
+import os
 import atexit
 import typing as t
 import logging
@@ -5,64 +6,43 @@ from uuid import uuid1
 from concurrent.futures import ThreadPoolExecutor
 
 import click
-from manager import SUPPORTED_OS_RELEASES
-from manager import SUPPORTED_PYTHON_VERSION
-from manager import DOCKERFILE_BUILD_HIERARCHY
 from manager._utils import run
 from manager._utils import as_posix
 from manager._utils import graceful_exit
+from manager._utils import DOCKERFILE_NAME
+from manager._utils import SUPPORTED_REGISTRIES
+from manager._utils import SUPPORTED_PYTHON_VERSION
+from manager._utils import DOCKERFILE_BUILD_HIERARCHY
 from manager._utils import get_docker_platform_mapping
-from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
-from manager._context import ReleaseCtx
-from manager._context import load_context
-from manager._context import DOCKERFILE_NAME
-from manager._container import ManagerContainer
-
-DOCKER_BUILDX_BUILDER_NAME = "bentoml_{package}_multiarch_builder_{uuid}"
+from manager._schemas import ReleaseCtx
+from manager._exceptions import ManagerBuildFailed
+from manager._click_utils import Environment
+from manager._click_utils import pass_environment
 
 logger = logging.getLogger(__name__)
+
+BUILDER_LIST = []
+
+REGISTRIES_ENVARS_MAPPING = {"docker.io": "DOCKER_URL", "ecr": "AWS_URL"}
 
 
 @graceful_exit
 def add_build_command(cli: click.Group) -> None:
     @cli.command()
     @click.option(
-        "--bentoml-version",
-        required=True,
-        type=click.STRING,
-        help="targeted bentoml version",
-    )
-    @click.option(
         "--releases",
         required=False,
         type=click.Choice(DOCKERFILE_BUILD_HIERARCHY),
         multiple=True,
-        help=f"Targeted releases for an image, default is to build all following the order: {DOCKERFILE_BUILD_HIERARCHY}",
+        help=f"Targets releases for an image, default is to build all following the order: {DOCKERFILE_BUILD_HIERARCHY}",
         default=DOCKERFILE_BUILD_HIERARCHY,
     )
     @click.option(
-        "--platforms",
+        "--registry",
         required=False,
-        type=click.Choice(SUPPORTED_ARCHITECTURE_TYPE),
-        multiple=True,
-        help="Targeted a given platforms to build image on: linux/amd64,linux/arm64",
-        default=SUPPORTED_ARCHITECTURE_TYPE,
-    )
-    @click.option(
-        "--distros",
-        required=False,
-        type=click.Choice(SUPPORTED_OS_RELEASES),
-        multiple=True,
-        help="Targeted a distros releases",
-        default=SUPPORTED_OS_RELEASES,
-    )
-    @click.option(
-        "--python-version",
-        required=False,
-        type=click.Choice(SUPPORTED_PYTHON_VERSION),
-        multiple=True,
-        help=f"Targets a python version, default to {SUPPORTED_PYTHON_VERSION}",
-        default=SUPPORTED_PYTHON_VERSION,
+        type=click.Choice(SUPPORTED_REGISTRIES),
+        default=SUPPORTED_REGISTRIES,
+        help="Targets registry to login.",
     )
     @click.option(
         "--max-workers",
@@ -71,29 +51,16 @@ def add_build_command(cli: click.Group) -> None:
         default=5,
         help="Defauls with # of workers used for ThreadPoolExecutor",
     )
-    @click.option(
-        "--generated-dir",
-        type=click.STRING,
-        metavar="generated",
-        help=f"Output directory for generated Dockerfile, default to {ManagerContainer.generated_dir.as_posix()}",
-        default=as_posix(ManagerContainer.generated_dir),
-    )
+    @pass_environment
     def build(
-        docker_package: str,
-        bentoml_version: str,
-        generated_dir: str,
-        releases: t.Tuple[str],
-        platforms: t.Tuple[str],
-        distros: t.Tuple[str],
-        python_version: t.Tuple[str],
-        max_workers: int,
+        ctx: Environment, releases: t.Tuple[str], max_workers: int, registry: str
     ) -> None:
         """
         Build releases docker images with `buildx`. Supports multithreading.
 
         \b
         Usage:
-            manager build --bentoml-version 1.0.0a5
+            manager build --bentoml-version 1.0.0a5 --registry ecr
             manager build --bentoml-version 1.0.0a5 --releases base --max-workers 2
             manager build --bentoml-version 1.0.0a5 --releases base --max-workers 2 --python-version 3.8 --python-version 3.9
             manager build --bentoml-version 1.0.0a5 --docker-package <other-package>
@@ -101,120 +68,156 @@ def add_build_command(cli: click.Group) -> None:
         \b
         By default we will generate all given specs defined under manifest/<docker_package>.yml
         """
-
         # We need to install QEMU to support multi-arch
-        run(
-            "docker",
-            "run",
-            "--rm",
-            "--privileged",
-            "tonistiigi/binfmt",
-            "--install",
-            "all",
-            log_output=False,
+        logger.warning(
+            "Make sure to run [bold red]make emulator[/] to install all required QEMU.",
+            extra={"markup": True},
         )
+        global BUILDER_LIST
 
-        builder_list = []
-
-        build_ctx, release_ctx, _ = load_context(
-            bentoml_version=bentoml_version,
-            docker_package=docker_package,
-            python_version=python_version,
-            generated_dir=generated_dir,
+        base_tag, build_tag = order_build_hierarchy(
+            release_ctx=ctx.release_ctx, releases=releases, distros=ctx.distros
         )
-        base_tag, build_tag = _order_build_tags(
-            release_ctx=release_ctx, releases=releases, distros=distros
-        )
+        cmd_base_tag = [
+            (platform_string, run_args)
+            for tags in base_tag
+            for platform_string, run_args in docker_buildx_cmd(tags, ctx, registry)
+        ]
+        cmd_build_tag = [
+            (platform_string, run_args)
+            for tags in build_tag
+            for platform_string, run_args in docker_buildx_cmd(tags, ctx, registry)
+        ]
 
-        def build_multi_arch(tags: t.Tuple[str, ...]) -> None:
-            image_tag, docker_build_ctx, tag, *platforms = tags
+        def build_multi_arch(args: t.Tuple[str, t.List[str]]) -> None:
+            platform_string, run_args = args
 
-            builder_name = DOCKER_BUILDX_BUILDER_NAME.format(
-                package=docker_package, uuid=uuid1()
-            )
-            builder_list.append(builder_name)
+            builder_name = f"bentoml_{ctx.docker_package}_multiarch_builder_{uuid1()}"
 
-            create_buildx_builder_instance(*platforms, name=builder_name)
-            logger.info(
-                f":brick: [bold yellow] Building {image_tag}...[/]",
-                extra={"markup": True},
+            BUILDER_LIST.append(builder_name)
+            create_buildx_builder_instance(
+                platform_string, name=builder_name, verbose_=ctx.verbose
             )
-            platform_string = ",".join(
-                [v for k, v in get_docker_platform_mapping().items() if k in platforms]
-            )
-            python_version = build_ctx[tag].envars["PYTHON_VERSION"]
 
-            run(
-                "docker",
-                "buildx",
-                "build",
-                "--push",
-                "--platform",
-                platform_string,
-                "--progress",
-                "plain",
-                "--build-arg",
-                f"PYTHON_VERSION={python_version}",
-                "-t",
-                image_tag,
-                "--build-arg",
-                "BUILDKIT_INLINE_CACHE=1",
-                f"--cache-from=type=registry,ref={image_tag}",
-                "-f",
-                as_posix(docker_build_ctx, DOCKERFILE_NAME),
-                ".",
-                log_output=True,
-            )
+            try:
+                run(run_args[0], *run_args[1:], log_output=True)
+            except Exception:
+                run("docker", "buildx", "rm", builder_name)
 
         try:
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                list(executor.map(build_multi_arch, base_tag))
-                list(executor.map(build_multi_arch, build_tag))
+            with ThreadPoolExecutor(
+                max_workers=max_workers * len(SUPPORTED_PYTHON_VERSION)
+            ) as executor:
+                list(executor.map(build_multi_arch, cmd_base_tag))
+                list(executor.map(build_multi_arch, cmd_build_tag))
+            executor.shutdown()
+            atexit.register(run, "docker", "buildx", "prune")
         finally:
-            for b in builder_list:
+            # tries to remove zombie proc.
+            for b in BUILDER_LIST:
                 run("docker", "buildx", "rm", b)
-        atexit.register(run, "docker", "buildx", "prune")
 
 
-def _order_build_tags(
-    release_ctx: t.Dict[str, ReleaseCtx],
-    releases: t.Tuple[str],
-    distros: t.Tuple[str],
-) -> t.Tuple[t.Tuple[str, ...], t.Tuple[str, ...]]:
-    rct = [
-        (k, x["output_path"], z, *v.shared_ctx.architectures)
-        for z, v in release_ctx.items()
-        for k, x in v.release_tags.items()
+def docker_buildx_cmd(
+    tags: t.Tuple[str, str, str, t.Tuple[str, ...]], ctx: Environment, registry: str
+) -> t.Generator[t.Tuple[str, t.List[str]], None, None]:
+
+    image_tag, docker_build_ctx, distro, *platforms = tags
+
+    python_version = ctx.build_ctx[distro][0].envars["PYTHON_VERSION"]
+    tag_prefix = os.environ.get(REGISTRIES_ENVARS_MAPPING[registry], None)
+    if tag_prefix is None:
+        raise ManagerBuildFailed("Failed to retrieve URL prefix for docker registry.")
+
+    baseline = [
+        "docker",
+        "buildx",
+        "build",
+    ]
+    general_kwargs = [
+        "--progress",
+        "plain",
+        "--build-arg",
+        f"PYTHON_VERSION={python_version}",
+        "--build-arg",
+        "BUILDKIT_INLINE_CACHE=1",
+        f"--cache-from=type=registry,ref={image_tag}",
+        "-f",
+        as_posix(docker_build_ctx, DOCKERFILE_NAME),
     ]
 
-    base_tags = list(set((k, v, l, *a) for k, v, l, *a in rct if "base" in k))
+    if "base" in image_tag:
+        # We don't want to release base images
+        # We need to load this image back into docker memory in order to use of for higher hierarchy build
+        platforms_list = [
+            ["--load", "--platform", v]
+            for k, v in get_docker_platform_mapping().items()
+            if k in platforms
+        ]
+        for k in platforms_list:
+            yield (k[2], baseline + k + general_kwargs + ["--tag", image_tag] + ["."])
+    else:
+        # Now each release images would have tag_prefix append.
+        # We can then use buildx build for multiple platform here.
+        platform_string = ",".join(
+            [v for k, v in get_docker_platform_mapping().items() if k in platforms]
+        )
+        yield (
+            platform_string,
+            baseline
+            + ["--push", "--platform", platform_string]
+            + general_kwargs
+            + ["--tag", f"{tag_prefix}/{image_tag}"]
+            + ["."],
+        )
+
+
+def order_build_hierarchy(
+    release_ctx: t.Dict[str, t.List[ReleaseCtx]],
+    releases: t.Optional[t.Tuple[str]],
+    distros: t.Optional[t.List[str]],
+) -> t.Tuple[t.List[t.Any], t.List[t.Any]]:
+    """
+    Returns [(image_tag, docker_build_context, distro, *platforms), ...] for base and other tags
+    """
+    orders = {v: k for k, v in enumerate(DOCKERFILE_BUILD_HIERARCHY)}
+    if releases and all(i in DOCKERFILE_BUILD_HIERARCHY for i in releases):
+        target_releases = tuple(sorted(releases, key=lambda k: orders[k]))
+    else:
+        target_releases = DOCKERFILE_BUILD_HIERARCHY
+
+    if "base" not in target_releases:
+        target_releases = ("base",) + target_releases
+
+    rct = [
+        (tag, meta["output_path"], distro, *ctx.shared_ctx.architectures)
+        for distro, l_rltx in release_ctx.items()
+        for ctx in l_rltx
+        for tr in target_releases
+        for tag, meta in ctx.release_tags.items()
+        if tr in tag
+    ]
+
+    base_tags = [(k, v, l, *a) for k, v, l, *a in rct if "base" in k]
     build_tags = []
 
-    if releases and (releases in DOCKERFILE_BUILD_HIERARCHY):
-        build_tags += [(k, v, l, *a) for k, v, l, *a in rct if releases in k]
-    else:
-        # non "base" items
-        build_tags = []
-        for release in DOCKERFILE_BUILD_HIERARCHY:
-            build_tags += [
-                (k, v, l, *a)
-                for k, v, l, *a in rct
-                if release != "base" and release in k
-            ]
-    build_tags = list(set((k, v, l, *a) for k, v, l, *a in build_tags))
-    if distros is not None:
-        base_tags = sorted(base_tags, key=lambda a: a[0] in distros)
-        build_tags = sorted(build_tags, key=lambda a: a[0] in distros)
+    # non "base" items
+    for release in target_releases:
+        build_tags += [
+            (k, v, l, *a) for k, v, l, *a in rct if release != "base" and release in k
+        ]
+    if distros:
+        base_tags = [(k, v, l, *a) for d in distros for k, v, l, *a in rct if d in k]
+        build_tags = [(k, v, l, *a) for d in distros for k, v, l, *a in rct if d in k]
 
     return base_tags, build_tags
 
 
-def create_buildx_builder_instance(*platform_args: str, name: str):
+def create_buildx_builder_instance(
+    platform_string: str, *, name: str, verbose_: bool = False
+):
     # create one for each thread that build the given images
 
-    platform_string = ",".join(
-        [v for k, v in get_docker_platform_mapping().items() if k in platform_args]
-    )
     run("docker", "buildx", "ls", log_output=False)
     run(
         "docker",
@@ -229,4 +232,5 @@ def create_buildx_builder_instance(*platform_args: str, name: str):
         name,
         log_output=False,
     )
-    run("docker", "buildx", "inspect", "--bootstrap", log_output=False)
+    if verbose_:
+        run("docker", "buildx", "inspect", "--bootstrap", log_output=False)

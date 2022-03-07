@@ -1,6 +1,6 @@
 [nvidia-ml]
 name=nvidia-ml
-baseurl={{ cuda[arch].cuda_repo_url }}/{{ cuda_target_arch[arch] }}
+baseurl={{ cuda.cuda_repo_url }}/{{ cuda_url }}
 enabled=1
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA

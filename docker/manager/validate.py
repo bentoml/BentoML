@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 import yaml
 import click
-from manager import SUPPORTED_OS_RELEASES
 from cerberus import Validator as CerberusValidator
+from manager._utils import SUPPORTED_OS_RELEASES
 
 if TYPE_CHECKING:
 
@@ -318,7 +318,10 @@ def validate_manifest_yaml(manifest: "GenericDict") -> bool:
         )
         logger.exception(yaml.dump(v.errors, indent=2))
     else:
-        logger.info(":white_check_marks: [bold green]Valid manifest.[/bold green]", extra={"markup": True})
+        logger.info(
+            ":white_check_marks: [bold green]Valid manifest.[/bold green]",
+            extra={"markup": True},
+        )
         validated = True
 
     return validated

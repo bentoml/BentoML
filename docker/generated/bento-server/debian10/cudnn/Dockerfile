@@ -7,23 +7,33 @@
 # ===========================================
 
 
+ARG XX_VERSION=1.1.0
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 ARG PYTHON_VERSION
 
 
 FROM bento-server:base-python$PYTHON_VERSION-debian10 as baseline
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH
+
+RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     gnupg2 curl ca-certificates && \
-    curl -fsSL /${NVARCH}/7fa2af80.pub | apt-key add - && \
-    echo "deb /${NVARCH} /" > /etc/apt/sources.list.d/cuda.list && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/7fa2af80.pub | apt-key add - && \
+    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list && \
     if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi && \
-    apt-get purge --autoremove -y curl \
+    xx-apt-get purge --autoremove -y curl \
     && rm -rf /var/lib/apt/lists/*
 
 ENV CUDA_VERSION 11.5.1
 
 # For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     cuda-cudart-11-5=${NVIDIA_CUDA_CUDART_VERSION} \
     ${NVIDIA_CUDA_COMPAT_PACKAGE} \
     && ln -s cuda-11.5 /usr/local/cuda && \
@@ -91,17 +101,21 @@ ENV NVIDIA_CUDNN_PACKAGE "libcudnn8=$NVIDIA_CUDNN_VERSION-1+cuda11.5"
 ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn8"
 
 
-FROM base as base-s390x
-
 FROM base as base-ppc64le
 
+FROM base as base-s390x
+
 FROM base-${TARGETARCH}
+
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     cuda-libraries-11-5=${NVIDIA_CUDA_LIB_VERSION} \
     ${NVIDIA_LIBNPP_PACKAGE} \
     cuda-nvtx-11-5=${NVIDIA_NVTX_VERSION} \

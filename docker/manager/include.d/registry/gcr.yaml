@@ -1,0 +1,9 @@
+%YAML 1.2
+---
+user: "GCR_USER" 
+password: "GCR_PASSWORD"
+password_type: stdin
+provider: "gcr"
+entrypoint: "gcr"
+url: "GCR_URL"
+...

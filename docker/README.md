@@ -1,4 +1,4 @@
-![bentoml-docker](tools/bentoml-docker.png)
+![bentoml-docker](hack/bentoml-docker.png)
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 
@@ -114,22 +114,22 @@ Commands:
 
 Generate all dockerfiles from templates, and dump all build metadata to `build.meta.json` and `releases.meta.json`
 ```bash
-» manager generate bento-server --bentoml_version 1.0.0a5 --dump_metadata
+» manager generate --bentoml_version 1.0.0a5 --dump_metadata
 ```
 
 Authenticate with a given registry:
 ```bash
-manager authenticate bento-server --registry docker.io
+manager authenticate --registry docker.io
 ```
 
 Build all images with supoprts for multiple platform by default:
 ```bash
-manager build bento-server --bentoml_version 1.0.0a5 --max_workers 5
+manager build --bentoml_version 1.0.0a5 --max_workers 5
 ```
 
 Build images for specific releases
 ```bash
-manager build bento-server --bentoml_version 1.0.0a --releases runtime
+manager build --bentoml_version 1.0.0a --releases runtime
 ```
 
 Since we are utilizing `docker buildx`, `--push` is enabled by default when

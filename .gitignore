@@ -25,6 +25,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+!docker/manifest
 poetry.lock
 
 # IDE

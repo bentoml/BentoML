@@ -2,6 +2,10 @@
 
 {% set cached = ['arm32v5', 'arm32v6'] %}
 
+ARG XX_VERSION={{ xx_version }}
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 ARG PYTHON_VERSION
 
 FROM {{ metadata.package }}:{{ build_tag }} as base
@@ -24,7 +28,11 @@ FROM base as base-{{ key }}
 
 FROM base-${TARGETARCH}
 
+COPY --from=xx / /
+
 ARG TARGETARCH
+
+ARG TARGETPLATFORM
 
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
@@ -33,7 +41,7 @@ ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \
-    && apk add --no-cache bash git build-base
+    && xx-apk add --no-cache bash git build-base
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 

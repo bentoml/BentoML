@@ -2,6 +2,10 @@
 
 {% set cached = ['arm32v5', 'arm32v6'] %}
 
+ARG XX_VERSION={{ xx_version }}
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 ARG PYTHON_VERSION
 
 FROM {{ metadata.package }}:{{ build_tag }} as base
@@ -24,7 +28,11 @@ FROM base as base-{{ key }}
 
 FROM base-${TARGETARCH}
 
+COPY --from=xx / /
+
 ARG TARGETARCH
+
+ARG TARGETPLATFORM
 
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 

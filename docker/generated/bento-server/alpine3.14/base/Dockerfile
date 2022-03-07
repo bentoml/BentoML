@@ -8,20 +8,33 @@
 
 
 
+ARG XX_VERSION=1.1.0
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 FROM alpine:3.14 as alpine-glibc
 
-LABEL maintainer="Vlad Frolov"
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH
+
 LABEL src=https://github.com/frol/docker-alpine-glibc
+
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
-RUN ALPINE_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases/download" && \
-    ALPINE_GLIBC_PACKAGE_VERSION="2.33-r0" && \
-    ALPINE_GLIBC_BASE_PACKAGE_FILENAME="glibc-$ALPINE_GLIBC_PACKAGE_VERSION.apk" && \
-    ALPINE_GLIBC_BIN_PACKAGE_FILENAME="glibc-bin-$ALPINE_GLIBC_PACKAGE_VERSION.apk" && \
-    ALPINE_GLIBC_I18N_PACKAGE_FILENAME="glibc-i18n-$ALPINE_GLIBC_PACKAGE_VERSION.apk" && \
-    apk add -q --no-cache --virtual=.build-dependencies wget ca-certificates && \
+# slight modification to improve build time
+
+ARG ALPINE_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases/download"
+ARG ALPINE_GLIBC_PACKAGE_VERSION="2.33-r0"
+ARG ALPINE_GLIBC_BASE_PACKAGE_FILENAME="glibc-$ALPINE_GLIBC_PACKAGE_VERSION.apk"
+ARG ALPINE_GLIBC_BIN_PACKAGE_FILENAME="glibc-bin-$ALPINE_GLIBC_PACKAGE_VERSION.apk"
+ARG ALPINE_GLIBC_I18N_PACKAGE_FILENAME="glibc-i18n-$ALPINE_GLIBC_PACKAGE_VERSION.apk"
+
+RUN xx-apk add -q --no-cache --virtual=.build-dependencies wget ca-certificates && \
     echo \
         "-----BEGIN PUBLIC KEY-----\
         MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApZ2u1KJKUu/fW4A25y9m\
@@ -36,7 +49,7 @@ RUN ALPINE_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases
         "$ALPINE_GLIBC_BASE_URL/$ALPINE_GLIBC_PACKAGE_VERSION/$ALPINE_GLIBC_BASE_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_BASE_URL/$ALPINE_GLIBC_PACKAGE_VERSION/$ALPINE_GLIBC_BIN_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_BASE_URL/$ALPINE_GLIBC_PACKAGE_VERSION/$ALPINE_GLIBC_I18N_PACKAGE_FILENAME" && \
-    apk add -q --no-cache \
+    xx-apk add -q --no-cache \
         "$ALPINE_GLIBC_BASE_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_BIN_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_I18N_PACKAGE_FILENAME" && \
@@ -45,10 +58,10 @@ RUN ALPINE_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases
     /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 "$LANG" || true && \
     echo "export LANG=$LANG" > /etc/profile.d/locale.sh && \
     \
-    apk del -q glibc-i18n && \
+    xx-apk del -q glibc-i18n && \
     \
     rm "/root/.wget-hsts" && \
-    apk del -q .build-dependencies && \
+    xx-apk del -q .build-dependencies && \
     rm \
         "$ALPINE_GLIBC_BASE_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_BIN_PACKAGE_FILENAME" \
@@ -61,11 +74,15 @@ FROM base as base-amd64
 
 FROM base as base-arm64
 
-FROM base as base-s390x
-
 FROM base as base-ppc64le
 
+FROM base as base-s390x
+
 FROM base-${TARGETARCH}
+
+COPY --from=xx / /
+
+ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
@@ -99,7 +116,7 @@ RUN set -x && \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-ppc64le.sh"; \
         SHA256SUM="fa92ee4773611f58ed9333f977d32bbb64769292f605d518732183be1f3321fa"; \
     fi && \
-    apk add -q --no-cache bash procps && \
+    xx-apk add -q --no-cache bash procps && \
     wget --quiet ${MINICONDA_URL} -O miniconda.sh && \
     echo "${SHA256SUM}  miniconda.sh" > miniconda.sha256 && \
     if ! sha256sum -cs miniconda.sha256; then exit 1; fi && \
@@ -113,7 +130,7 @@ RUN set -x && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda clean -afy
 
-COPY tools/bashrc /etc/bash.bashrc
+COPY hack/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc
 
 CMD [ "/bin/bash" ]

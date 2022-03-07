@@ -53,7 +53,7 @@ def add_model_management_commands(
     def model_cli():
         """Model Management"""
 
-    @model_cli.command(help="Get Model information")
+    @model_cli.command()
     @click.argument("model_tag", type=click.STRING)
     @click.option(
         "-o",
@@ -64,6 +64,7 @@ def add_model_management_commands(
     def get(model_tag, output):
         """Print Model details by providing the model_tag
 
+        \b
         bentoml models get FraudDetector:latest
         bentoml models get --output=json FraudDetector:20210709_DE14C9
         """
@@ -79,7 +80,7 @@ def add_model_management_commands(
             info = yaml.dump(model.info, indent=2)
             console.print(info)
 
-    @model_cli.command(name="list", help="List Models in local model store")
+    @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)
     @click.option(
         "-o",
@@ -93,11 +94,13 @@ def add_model_management_commands(
         help="Don't truncate the output",
     )
     def list_models(model_name, output, no_trunc):
-        """Print list of models in local store
+        """List Models in local store
 
+        \b
         # show all models saved
         > bentoml models list
 
+        \b
         # show all verions of bento with the name FraudDetector
         > bentoml models list FraudDetector
         """
@@ -160,6 +163,7 @@ def add_model_management_commands(
 
         Specify target Models to remove:
 
+        \b
         * Delete single model by "name:version", e.g: `bentoml models delete IrisClassifier:v1`
         * Bulk delete all models with a specific name, e.g.: `bentoml models delete IrisClassifier`
         * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete Irisclassifier:v1,MyPredictService:v2`
@@ -193,15 +197,15 @@ def add_model_management_commands(
         MODEL_TAG: model identifier
         OUT_PATH: output path of exported model.
           If this argument is not provided, model is exported to name-version.bentomodel in the current directory.
-          Supported formats are tar('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+          Besides native .bentomodel format, we also support formats like tar('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip.
 
         examples:
 
         \b
-        bentoml models export FraudDetector:latest > my_model.tar
-        bentoml models export FraudDetector:latest > my_model.tar
-        bentoml models export FraudDetector:20210709_DE14C9 ./my_model.tar
-        bentoml models export FraudDetector:20210709_DE14C9 s3://mybucket/models/my_model.gz
+        bentoml models export FraudDetector:latest
+        bentoml models export FraudDetector:latest ./my_model.bentomodel
+        bentoml models export FraudDetector:20210709_DE14C9 ./my_model.bentomodel
+        bentoml models export FraudDetector:20210709_DE14C9 s3://mybucket/models/my_model.bentomodel
         """
         bentomodel = model_store.get(model_tag)
         bentomodel.export(out_path)
@@ -212,8 +216,8 @@ def add_model_management_commands(
     def import_from(model_path):
         """Import a previously exported Model archive file
 
-        bentoml models import ./my_model.tar
-        bentoml models import s3://mybucket/models/my_model.zip
+        bentoml models import ./my_model.bentomodel
+        bentoml models import s3://mybucket/models/my_model.bentomodel
         """
         bentomodel = import_model(model_path)
         logger.info(f"{bentomodel} imported")

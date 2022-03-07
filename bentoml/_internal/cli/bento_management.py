@@ -51,7 +51,7 @@ def add_bento_management_commands(
     cli,
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
-    @cli.command(help="Get Bento information")
+    @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-o",
@@ -62,6 +62,7 @@ def add_bento_management_commands(
     def get(bento_tag, output):
         """Print Bento details by providing the bento_tag
 
+        \b
         bentoml get FraudDetector:latest
         bentoml get --output=json FraudDetector:20210709_DE14C9
         """
@@ -77,7 +78,7 @@ def add_bento_management_commands(
             info = yaml.dump(bento.info, indent=2)
             console.print(info)
 
-    @cli.command(name="list", help="List Bentos in local bento store")
+    @cli.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
     @click.option(
         "-o",
@@ -91,11 +92,13 @@ def add_bento_management_commands(
         help="Don't truncate the output",
     )
     def list_bentos(bento_name, output, no_trunc):
-        """Print list of bentos in local store
+        """List Bentos in local store
 
+        \b
         # show all bentos saved
         > bentoml list
 
+        \b
         # show all verions of bento with the name FraudDetector
         > bentoml list FraudDetector
         """
@@ -158,6 +161,7 @@ def add_bento_management_commands(
 
         Specify target Bentos to remove:
 
+        \b
         * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
         * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
         * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
@@ -195,14 +199,14 @@ def add_bento_management_commands(
         BENTO_TAG: bento identifier
         OUT_PATH: output path of exported bento.
           If this argument is not provided, bento is exported to name-version.bento in the current directory.
-          Supported formats are tar ('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+          Besides native .bento format, we also supported formats like tar ('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip.
 
         \b
         examples:
         bentoml export FraudDetector:20210709_DE14C9
-        bentoml export FraudDetector:20210709_DE14C9 ./my_bento.tar
-        bentoml export FraudDetector:latest ./my_bento.zip
-        bentoml export FraudDetector:latest s3://mybucket/bentos/my_bento.gz
+        bentoml export FraudDetector:20210709_DE14C9 ./my_bento.bento
+        bentoml export FraudDetector:latest ./my_bento.bento
+        bentoml export FraudDetector:latest s3://mybucket/bentos/my_bento.bento
         """
         bento = bento_store.get(bento_tag)
         bento.export(out_path)
@@ -219,8 +223,8 @@ def add_bento_management_commands(
 
         \b
         examples:
-        bentoml import ./my_bento.tar
-        bentoml import s3://mybucket/bentos/my_bento.zip
+        bentoml import ./my_bento.bento
+        bentoml import s3://mybucket/bentos/my_bento.bento
         """
         bento = import_bento(bento_path)
         logger.info(f"{bento} imported")

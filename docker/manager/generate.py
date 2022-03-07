@@ -33,19 +33,19 @@ README_TEMPLATE = ManagerContainer.template_dir.joinpath("docs", "README.md.j2")
 def add_generation_command(cli: click.Group) -> None:
     @cli.command()
     @click.option(
-        "--bentoml_version",
+        "--bentoml-version",
         required=True,
         type=click.STRING,
         help="targeted bentoml version",
     )
     @click.option(
-        "--dump_metadata",
+        "--dump-metadata",
         is_flag=True,
         default=False,
         help="dump metadata to files. Useful for debugging",
     )
     @click.option(
-        "--python_version",
+        "--python-version",
         required=False,
         type=click.Choice(SUPPORTED_PYTHON_VERSION),
         multiple=True,
@@ -53,7 +53,7 @@ def add_generation_command(cli: click.Group) -> None:
         default=SUPPORTED_PYTHON_VERSION,
     )
     @click.option(
-        "--generated_dir",
+        "--generated-dir",
         type=click.STRING,
         metavar="generated",
         help=f"Output directory for generated Dockerfile, default to {ManagerContainer.generated_dir.as_posix()}",
@@ -64,7 +64,7 @@ def add_generation_command(cli: click.Group) -> None:
         bentoml_version: str,
         generated_dir: str,
         dump_metadata: bool,
-        python_version: t.Tuple[t.List[str]],
+        python_version: t.Tuple[str],
     ) -> None:
         """
         Generate Dockerfile and README for a given docker package.
@@ -72,7 +72,7 @@ def add_generation_command(cli: click.Group) -> None:
         \b
         Usage:
             manager generate bento-server --bentoml_version 1.0.0a6
-            manager generate bento-server --bentoml_version 1.0.0a6 --dump_metadata
+            manager generate bento-server --bentoml_version 1.0.0a6 --dump-metadata
 
         \b
         NOTE: --dump_metadata is useful when development to see build and releases context.

@@ -81,7 +81,7 @@ Now manager is a CLI tool :smile:. Install it with:
 ```
 Or run directly from the newly built docker container:
 ```bash
-docker run --init --rm -u $(id -u):$(id -g) -v $GIT_ROOT/docker:/bentoml bentoml-docker manager $@
+» docker run --init --rm -u $(id -u):$(id -g) -v $GIT_ROOT/docker:/bentoml bentoml-docker manager $@
 ```
 
 Check manager flags

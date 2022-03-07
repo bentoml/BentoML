@@ -2,12 +2,25 @@ GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 
 VERSIONTAGS = $(shell sed -n -e 's,^VERSION = .\(\([0-9].[0-9]\).[0-9]\).$$,-v :\1 -v :\2,p' manager/__version__.py)
 PLATFORMS  = linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le
+BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/v\(\)/\1/')
 
 # Create multi-platform docker image. If you have native systems around, using
 # them will be much more efficient at build time. See e.g.
 BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
 # Just one of the many files created
 QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-m68k
+
+DOCKER_IMG := bentoml-docker:1.0
+
+DOCKER_ARGS := -u $(id -u):$(id -g) \
+	--privileged --rm --init --net=host \
+	-v $(realpath /etc/localtime):/etc/localtime:ro \
+	-v ${PWD}:/bentoml \
+	-w /bentoml ${DOCKER_IMG}
+
+DOCKER_BUILD_CMD := DOCKER_BUILDKIT=1 docker build -t ${DOCKER_IMG} -f ${PWD}/Dockerfile .
+
+DOCKER_RUN_MANAGER := docker run ${DOCKER_ARGS} manager
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
@@ -48,5 +61,23 @@ platform-check: emulator ## Test supported platform string
 	@docker buildx build -f tools/Dockerfile-platform --no-cache --progress=plain --platform=${PLATFORMS} .
 
 .PHONY: install-local
-install-local:  # Install manager locally
+install-local: ## Install manager locally
 	@pip install -e .
+
+GENERATE_ARGS := --dump-metadata --bentoml-version $(BENTOML_VERSION)
+BUILD_ARGS := --max-workers 5 --bentoml-version $(BENTOML_VERSION)
+
+run-generate: ## Generate all required files
+	manager generate $(GENERATE_ARGS)
+
+run-build: ## Build all releases images
+	manager build $(BUILD_ARGS)
+
+docker-build:
+	$(DOCKER_BUILD_CMD)
+
+docker-run-generate: ## Run generate from a docker container
+	$(DOCKER_RUN_MANAGER) generate $(GENERATE_ARGS)
+
+docker-run-build: ## Run build from a docker container
+	$(DOCKER_RUN_MANAGER) build $(BUILD_ARGS)

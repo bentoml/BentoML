@@ -27,7 +27,7 @@ ARG TARGETARCH
 
 LABEL maintainer "BentoML Team <contact@bentoml.ai>"
 
-ENV BENTOML_VERSION=1.0.0a5
+ENV BENTOML_VERSION=1.0.0-a5
 
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \

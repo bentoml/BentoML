@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 def add_build_command(cli: click.Group) -> None:
     @cli.command()
     @click.option(
-        "--bentoml_version",
+        "--bentoml-version",
         required=True,
         type=click.STRING,
         help="targeted bentoml version",
@@ -57,7 +57,7 @@ def add_build_command(cli: click.Group) -> None:
         default=SUPPORTED_OS_RELEASES,
     )
     @click.option(
-        "--python_version",
+        "--python-version",
         required=False,
         type=click.Choice(SUPPORTED_PYTHON_VERSION),
         multiple=True,
@@ -65,14 +65,14 @@ def add_build_command(cli: click.Group) -> None:
         default=SUPPORTED_PYTHON_VERSION,
     )
     @click.option(
-        "--max_workers",
+        "--max-workers",
         required=False,
         type=int,
         default=5,
         help="Defauls with # of workers used for ThreadPoolExecutor",
     )
     @click.option(
-        "--generated_dir",
+        "--generated-dir",
         type=click.STRING,
         metavar="generated",
         help=f"Output directory for generated Dockerfile, default to {ManagerContainer.generated_dir.as_posix()}",
@@ -91,10 +91,12 @@ def add_build_command(cli: click.Group) -> None:
         """
         Build releases docker images with `buildx`. Supports multithreading.
 
+        \b
         Usage:
-            manager build --bentoml_version 1.0.0a5
-            manager build --bentoml_version 1.0.0a5 --releases base --max_workers 2
-            manager build --bentoml_version 1.0.0a5 --docker_package runners
+            manager build --bentoml-version 1.0.0a5
+            manager build --bentoml-version 1.0.0a5 --releases base --max-workers 2
+            manager build --bentoml-version 1.0.0a5 --releases base --max-workers 2 --python-version 3.8 --python-version 3.9
+            manager build --bentoml-version 1.0.0a5 --docker-package <other-package>
 
         \b
         By default we will generate all given specs defined under manifest/<docker_package>.yml

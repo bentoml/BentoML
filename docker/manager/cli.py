@@ -42,6 +42,14 @@ class ManagerCommandGroup(click.Group):
     @staticmethod
     def common_params(func: "GenericFunc[t.Any]") -> "WrappedCLI[bool, bool]":
         @click.option(
+            "--docker-package",
+            metavar="<package>",
+            required=False,
+            type=click.STRING,
+            default="bento-server",
+            help="Target docker packages to use, default to `bento-server` [optional]",
+        )
+        @click.option(
             "-q",
             "--quiet",
             is_flag=True,
@@ -53,13 +61,6 @@ class ManagerCommandGroup(click.Group):
             is_flag=True,
             default=False,
             help="Generate debug information",
-        )
-        @click.option(
-            "--docker_package",
-            required=False,
-            type=click.STRING,
-            default="bento-server",
-            help="Target docker packages to use, default to `bento-server` [optional]",
         )
         @wraps(func)
         def wrapper(
@@ -131,22 +132,24 @@ def create_manager_cli():
 
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
+    # fmt: off
     @click.group(cls=ManagerCommandGroup, context_settings=CONTEXT_SETTINGS)
     @click.version_option(MANAGER_VERSION, "-v", "--version")
     def cli() -> None:
         """
-        [bold yellow]Manager[/bold yellow]: BentoML's Docker Images release management system.
+[bold yellow]Manager[/bold yellow]: BentoML's Docker Images release management system.
 
-        [bold red]Features[/bold red]:
+[bold red]Features[/bold red]:
 
-            :memo: Multiple Python version: 3.7, 3.8, 3.9+, ...
-            :memo: Multiple platform: arm64v8, amd64, ppc64le, ...
-            :memo: Multiple Linux Distros that you love: Debian, Ubuntu, UBI, alpine, ...
+    :memo: Multiple Python version: 3.7, 3.8, 3.9+, ...
+    :memo: Multiple platform: arm64v8, amd64, ppc64le, ...
+    :memo: Multiple Linux Distros that you love: Debian, Ubuntu, UBI, alpine, ...
 
-        Get started with:
-            $ manager --help
+Get started with:
+    $ manager --help
         """
 
+    # fmt: on
     add_authenticate_command(cli)
     add_generation_command(cli)
     add_build_command(cli)

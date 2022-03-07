@@ -54,7 +54,8 @@ def add_authenticate_command(cli: click.Group) -> None:
 
         \b
         Usage:
-            manager authenticate bento-server --registry quay.io
+            manager authenticate --registry quay.io
+            manager authenticate --registry quay.io --docker_package <other_package>
 
         """
         from dotenv import load_dotenv
@@ -97,18 +98,18 @@ def add_authenticate_command(cli: click.Group) -> None:
                     f"Failed to login into {r.url} ({r.name}) as {r.user}..."
                 ) from e
 
-    @cli.command()
+    @cli.command(name="push-readmes")
     @click.option(
         "--users",
         required=False,
         type=click.STRING,
-        help="Users to login that overwrite with default config [Optional].",
+        help="Users that have the docker package, default to `bentoml` [optional].",
     )
     @raise_exception
     @inject
     def push_readmes(
         docker_package: str,
-        users: t.Optional[str],
+        users: str,
         default_registries: "t.List[RegistryCtx]" = Provide[
             ManagerContainer.bento_server_registry_ctx
         ],
@@ -118,6 +119,7 @@ def add_authenticate_command(cli: click.Group) -> None:
 
         \b
         Users need to install docker-pushrm at $HOME/.docker/cli-plugins in order to use this command.
+        Usually this is not needed since we setup a CI for this :). However, this is more convenient.
         """
         # sanity check
         if not Path(
@@ -129,7 +131,7 @@ def add_authenticate_command(cli: click.Group) -> None:
             sys.exit(1)
 
         if docker_package != ManagerContainer.bento_server_name:
-            registries = get_registry_context(package=docker_package)
+            registries = get_registry_context(package=docker_package, org_name=users)
         else:
             registries = default_registries
 

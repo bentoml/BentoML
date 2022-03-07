@@ -130,6 +130,6 @@ RUN yum install -y \
     && yum clean all \
     && rm -rf /var/cache/yum/*
 
-ENV BENTOML_VERSION=1.0.0a5
+ENV BENTOML_VERSION=1.0.0-a5
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

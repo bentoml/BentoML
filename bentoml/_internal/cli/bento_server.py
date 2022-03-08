@@ -14,7 +14,7 @@ DEFAULT_RELAOD_DELAY = 0.25
 
 
 def add_serve_command(cli: click.Group) -> None:
-    @cli.command(help="Serve a Bento")
+    @cli.command()
     @click.argument("bento", type=click.STRING)
     @click.option(
         "--production",

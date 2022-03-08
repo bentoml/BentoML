@@ -343,7 +343,7 @@ class Bento(StoreItem):
             event_properties = {
                 "bento_tag": str(self.info.tag),
                 "bento_creation_timestamp": self.info.creation_time.isoformat(),
-                "bento_size": human_readable_size(calc_dir_size(bento_path)),
+                "bento_size_in_bytes": int(calc_dir_size(bento_path)),
                 "models_tags": [str(i) for i in self.info.models],
                 "models_type": [
                     model_store.get(i).info.module for i in self.info.models

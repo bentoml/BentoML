@@ -158,6 +158,16 @@ def serve_development(
 
     try:
         tracking_thread.start()
+        atexit.register(
+            track,
+            event_type=BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE,
+            event_pid=current_pid,
+            event_properties=get_scheduled_event_properties(
+                production=False,
+                bento_identifier=bento_identifier,
+                serve_info=serve_info,
+            ),
+        )
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 f'Starting development BentoServer from "{bento_identifier}" '
@@ -166,17 +176,6 @@ def serve_development(
         )
     finally:
         stop_thread_event.set()
-
-    atexit.register(
-        track,
-        event_type=BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE,
-        event_pid=current_pid,
-        event_properties=get_scheduled_event_properties(
-            production=False,
-            bento_identifier=bento_identifier,
-            serve_info=serve_info,
-        ),
-    )
 
 
 MAX_AF_UNIX_PATH_LENGTH = 103

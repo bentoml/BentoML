@@ -10,8 +10,6 @@ import click
 from click import ClickException
 
 from ...exceptions import BentoMLException
-
-# from ..log import configure_logging
 from ..configuration import CONFIG_ENV_VAR
 from ..configuration import set_debug_mode
 from ..configuration import load_global_config

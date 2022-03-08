@@ -92,7 +92,7 @@ def get_hardware_usage(pid: int) -> t.Dict[str, t.Any]:  # pragma: no cover
     with proc.oneshot():
         return {
             "memory_usage_percent": proc.memory_percent(),
-            "total_memory(MB)": psutil.virtual_memory().total / 1024**2,
+            "total_memory_in_mb": psutil.virtual_memory().total / 1024**2,
             "num_threads": proc.num_threads(),
         }
 

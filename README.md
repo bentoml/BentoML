@@ -73,6 +73,6 @@ export BENTOML_DO_NOT_TRACK=True
 
 ### License ###
 
-[Apache License 2.0](./LICENSE)
+[Apache License 2.0](https://github.com/bentoml/BentoML/blob/main/LICENSE)
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)

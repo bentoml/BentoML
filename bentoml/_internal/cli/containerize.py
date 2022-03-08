@@ -1,3 +1,5 @@
+import sys
+
 import click
 
 from bentoml.bentos import containerize as containerize_bento
@@ -55,7 +57,7 @@ def add_containerize_command(cli):
                 key, value = build_arg_str.split("=")
                 build_args[key] = value
 
-        return containerize_bento(
+        exit_code = not containerize_bento(
             bento_tag,
             docker_image_tag=docker_image_tag,
             build_args=build_args,
@@ -63,3 +65,4 @@ def add_containerize_command(cli):
             no_cache=no_cache,
             platform=platform,
         )
+        sys.exit(exit_code)

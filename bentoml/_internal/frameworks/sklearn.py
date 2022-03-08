@@ -170,7 +170,6 @@ class _SklearnRunner(BaseModelRunner):
             return self._infer_func(inputs)
 
 
-@inject
 def load_runner(
     tag: t.Union[str, Tag],
     function_name: str = "predict",

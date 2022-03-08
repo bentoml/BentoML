@@ -1,10 +1,12 @@
+import io
 import typing as t
 import logging
-from io import BytesIO
+from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
+from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
 from ..types import FileLike
@@ -12,8 +14,13 @@ from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    FileKind = t.Literal["binaryio", "textio"]
 
-class File(IODescriptor[FileLike]):
+    FileType = t.Union[io.IOBase, t.BinaryIO, FileLike[bytes]]
+
+
+class File(IODescriptor["FileType"]):
     """
     :code:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -72,10 +79,20 @@ class File(IODescriptor[FileLike]):
 
     """
 
-    def __init__(self, mime_type: t.Optional[str] = None):
-        self._mime_type = (
-            mime_type if mime_type is not None else "application/octet-stream"
-        )
+    _mime_type: str
+
+    def __new__(
+        cls, kind: "FileKind" = "binaryio", mime_type: t.Optional[str] = None
+    ) -> "File":
+        mime_type = mime_type if mime_type is not None else "application/octet-stream"
+
+        if kind == "binaryio":
+            res = object.__new__(BytesIOFile)
+        else:
+            raise ValueError(f"invalid File kind '{kind}'")
+
+        res._mime_type = mime_type
+        return res
 
     def openapi_schema_type(self) -> t.Dict[str, str]:
         return {"type": "string", "format": "binary"}
@@ -88,25 +105,39 @@ class File(IODescriptor[FileLike]):
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> FileLike:
+    async def to_http_response(self, obj: "FileType") -> Response:
+        if isinstance(obj, bytes):
+            body = obj
+        else:
+            body = obj.read()
+
+        return Response(body, media_type=self._mime_type)
+
+
+class BytesIOFile(File):
+    async def from_http_request(self, request: Request) -> t.IO[bytes]:
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type.decode("utf-8") == "multipart/form-data":
             form = await request.form()
-            f = next(iter(form.values()))
-            content = await f.read()
-            return FileLike(bytes_=content, name=f.filename)
-        if content_type.decode("utf-8") == "application/octet-stream":
+            found_mimes: t.List[str] = []
+            val: t.Union[str, UploadFile]
+            for val in form.values():  # type: ignore
+                if isinstance(val, UploadFile):
+                    found_mimes.append(val.content_type)  # type: ignore
+                    if val.content_type == self._mime_type:
+                        res = FileLike[bytes](val.file, val.filename)
+                        break
+            else:
+                if len(found_mimes) == 0:
+                    raise BentoMLException("no File found in multipart form")
+                else:
+                    raise BentoMLException(
+                        f"multipart File should have Content-Type '{self._mime_type}', got files with content types {', '.join(found_mimes)}"
+                    )
+            return res  # type: ignore
+        if content_type.decode("utf-8") == self._mime_type:
             body = await request.body()
-            return FileLike(bytes_=body)
+            return FileLike(io.BytesIO(body), "<request body>")
         raise BentoMLException(
-            f"{self.__class__.__name__} should have Content-Type"
-            f" b'application/octet-stream' or b'multipart/form-data',"
-            f" got {content_type} instead"
-        )
-
-    async def to_http_response(self, obj: t.Union[FileLike, bytes]) -> Response:
-        if isinstance(obj, bytes):
-            obj = FileLike(bytes_=obj)
-        return Response(
-            t.cast(BytesIO, obj.stream).getvalue(), media_type=self._mime_type
+            f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )

@@ -2,10 +2,8 @@ import io
 import os
 import sys
 import typing as t
-import urllib
 import logging
-import urllib.parse
-import urllib.request
+from types import TracebackType
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
@@ -160,84 +158,84 @@ class LazyType(t.Generic[T]):
 
 @json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
-class FileLike:
+class FileLike(t.Generic[t.AnyStr]):
     """
-    An universal lazy-loading wrapper for file-like objects.
-    It accepts URI, file path or bytes and provides interface like opened file object.
-
-    Class attributes:
-
-    - bytes (`bytes`, `optional`):
-    - uri (:code:`str`, `optional`):
-        The set of possible uris is:
-
-        - :code:`file:///home/user/input.json`
-        - :code:`http://site.com/input.csv` (Not implemented)
-        - :code:`https://site.com/input.csv` (Not implemented)
-
-    - name (:code:`str`, `optional`, default to :obj:`None`)
-
+    A wrapper for file-like objects that includes a custom name.
     """
 
-    bytes_: t.Optional[bytes] = None
-    uri: t.Optional[str] = None
-    name: t.Optional[str] = None
-
-    _stream: t.Optional[t.BinaryIO] = None
-
-    def __post_init__(self):
-        if self.name is None:
-            if self._stream is not None:
-                self.name = getattr(self._stream, "name", None)
-            elif self.uri is not None:
-                p = urllib.parse.urlparse(self.uri)  # type: ignore
-                if p.scheme and p.scheme != "file":
-                    raise NotImplementedError(
-                        f"{self.__class__} now supports scheme 'file://' only"
-                    )
-                _, self.name = os.path.split(self.path)
+    _wrapped: t.IO[t.AnyStr]
+    _name: str
 
     @property
-    def path(self):
-        r"""
-        supports:
-
-            /home/user/file
-            C:\Python27\Scripts\pip.exe
-            \\localhost\c$\WINDOWS\clock.avi
-            \\networkstorage\homes\user
-
-        .. note::
-            https://stackoverflow.com/a/61922504/3089381
-        """
-        parsed = urllib.parse.urlparse(self.uri)  # type: ignore
-        raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))  # type: ignore # noqa: LN001
-        host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
-        path = os.path.abspath(os.path.join(host, raw_path))
-        return path
+    def mode(self) -> str:
+        return self._wrapped.mode
 
     @property
-    def stream(self) -> t.BinaryIO:
-        if self._stream is not None:
-            pass
-        elif self.bytes_ is not None:
-            self._stream = io.BytesIO(self.bytes_)
-        elif self.uri is not None:
-            self._stream = open(self.path, "rb")
-        else:
-            return io.BytesIO()
-        return self._stream
-
-    def read(self, size: int = -1):
-        # TODO: also write to log
-        return self.stream.read(size)
-
-    def seek(self, pos: int):
-        return self.stream.seek(pos)
-
-    def tell(self):
-        return self.stream.tell()
+    def name(self) -> str:
+        return self._name
 
     def close(self):
-        if self._stream is not None:
-            self._stream.close()
+        self._wrapped.close()
+
+    @property
+    def closed(self) -> bool:
+        return self._wrapped.closed
+
+    def fileno(self) -> int:
+        return self._wrapped.fileno()
+
+    def flush(self):
+        self._wrapped.flush()
+
+    def isatty(self) -> bool:
+        return self._wrapped.isatty()
+
+    def read(self, size: int = -1) -> t.AnyStr:
+        return self._wrapped.read(size)
+
+    def readable(self) -> bool:
+        return self._wrapped.readable()
+
+    def readline(self, size: int = -1) -> t.AnyStr:
+        return self._wrapped.readline(size)
+
+    def readlines(self, size: int = -1) -> t.List[t.AnyStr]:
+        return self._wrapped.readlines(size)
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        return self._wrapped.seek(offset, whence)
+
+    def seekable(self) -> bool:
+        return self._wrapped.seekable()
+
+    def tell(self) -> int:
+        return self._wrapped.tell()
+
+    def truncate(self, size: t.Optional[int] = None) -> int:
+        return self._wrapped.truncate(size)
+
+    def writable(self) -> bool:
+        return self._wrapped.writable()
+
+    def write(self, s: t.AnyStr) -> int:
+        return self._wrapped.write(s)
+
+    def writelines(self, lines: t.Iterable[t.AnyStr]):
+        return self._wrapped.writelines(lines)
+
+    def __next__(self) -> t.AnyStr:
+        return next(self._wrapped)
+
+    def __iter__(self) -> t.Iterator[t.AnyStr]:
+        return self._wrapped.__iter__()
+
+    def __enter__(self) -> t.IO[t.AnyStr]:
+        return self._wrapped.__enter__()
+
+    def __exit__(
+        self,
+        typ: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        traceback: t.Optional[TracebackType],
+    ) -> t.Optional[bool]:
+        return self._wrapped.__exit__(typ, value, traceback)

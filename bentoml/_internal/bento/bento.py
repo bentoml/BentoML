@@ -96,8 +96,6 @@ class Bento(StoreItem):
     _model_store: ModelStore
     _doc: t.Optional[str] = None
 
-    _flushed: bool = False
-
     @staticmethod
     def _export_ext() -> str:
         return "bento"
@@ -116,7 +114,7 @@ class Bento(StoreItem):
         self._tag = tag
         self.__fs = bento_fs
         self.check_fs(None, bento_fs)
-        self.info = info
+        self._info = info
         self.validate()
 
     @property
@@ -129,13 +127,7 @@ class Bento(StoreItem):
 
     @property
     def info(self) -> "BentoInfo":
-        self._flushed = False
         return self._info
-
-    @info.setter
-    def info(self, new_info: "BentoInfo"):
-        self._flushed = False
-        self._info = new_info
 
     @classmethod
     @inject
@@ -300,7 +292,6 @@ class Bento(StoreItem):
                 f"Failed to create bento because it contains an invalid '{BENTO_YAML_FILENAME}'"
             )
 
-        res._flushed = True
         return res
 
     @property
@@ -311,13 +302,8 @@ class Bento(StoreItem):
         return self._fs.getsyspath(item)
 
     def flush_info(self):
-        if self._flushed:
-            return
-
         with self._fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             self.info.dump(bento_yaml)
-
-        self._flushed = True
 
     @property
     def doc(self) -> str:
@@ -337,8 +323,6 @@ class Bento(StoreItem):
         self,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     ) -> "Bento":
-        self.flush_info()
-
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid.")
@@ -350,28 +334,6 @@ class Bento(StoreItem):
             self.__fs = out_fs
 
         return self
-
-    def export(
-        self,
-        path: str,
-        output_format: t.Optional[str] = None,
-        *,
-        protocol: t.Optional[str] = None,
-        user: t.Optional[str] = None,
-        passwd: t.Optional[str] = None,
-        params: t.Optional[t.Dict[str, str]] = None,
-        subpath: t.Optional[str] = None,
-    ) -> str:
-        self.flush_info()
-        return super().export(
-            path,
-            output_format,
-            protocol=protocol,
-            user=user,
-            passwd=passwd,
-            params=params,
-            subpath=subpath,
-        )
 
     def validate(self):
         return self._fs.isfile(BENTO_YAML_FILENAME)
@@ -445,8 +407,6 @@ class BentoInfo:
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
 
-    _flushed: bool = False
-
     def __attrs_post_init__(self):
         # Direct set is not available when frozen=True
         object.__setattr__(self, "name", self.tag.name)
@@ -501,10 +461,9 @@ class BentoInfo:
 
 bentoml_cattr.register_unstructure_hook(
     BentoInfo,
-    # Ignore internal private state "_flushed"
     # Ignore tag, tag is saved via the name and version field
     make_dict_unstructure_fn(
-        BentoInfo, bentoml_cattr, _flushed=override(omit=True), tag=override(omit=True)
+        BentoInfo, bentoml_cattr, tag=override(omit=True)
     ),
 )
 

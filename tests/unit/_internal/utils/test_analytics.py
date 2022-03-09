@@ -2,7 +2,6 @@ import typing as t
 from typing import TYPE_CHECKING
 from datetime import datetime
 
-import attrs
 import requests
 from schema import Or
 from schema import And

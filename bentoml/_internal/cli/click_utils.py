@@ -4,7 +4,6 @@ import time
 import typing as t
 import logging
 import functools
-import traceback
 from typing import TYPE_CHECKING
 
 import click

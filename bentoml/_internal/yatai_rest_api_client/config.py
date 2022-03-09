@@ -7,6 +7,7 @@ import attr
 import yaml
 import cattr
 
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import YataiRESTApiClientError
 
 from .yatai import YataiRESTApiClient
@@ -26,10 +27,19 @@ class YataiClientContext:
     name: str
     endpoint: str
     api_token: str
-    email: str
+    email: str = attr.field(converter=attr.converters.default_if_none(""), default=None)
 
     def get_yatai_rest_api_client(self) -> YataiRESTApiClient:
         return YataiRESTApiClient(self.endpoint, self.api_token)
+
+    def __attrs_post_init__(self):
+        yatai_rest_client = self.get_yatai_rest_api_client()
+        user = yatai_rest_client.get_current_user()
+
+        if user is None:
+            raise BentoMLException("Current user is not found.")
+
+        self.email = user.email
 
 
 @attr.define

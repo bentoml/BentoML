@@ -40,18 +40,12 @@ def add_login_command(cli: click.Group) -> None:
         add_context(ctx)
 
         yatai_rest_client = ctx.get_yatai_rest_api_client()
+
         user = yatai_rest_client.get_current_user()
-
-        if user is None:
-            raise CLIException("current user is not found")
-        ctx.email = user.email
-
         org = yatai_rest_client.get_current_organization()
 
         if org is None:
             raise CLIException("current organization is not found")
-
-        update_context(ctx.name, ctx)
 
         logger.info(
             f"login successfully! user: {user.name}, organization: {org.name}",

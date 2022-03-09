@@ -47,7 +47,9 @@ def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
     return wrapper
 
 
-def serializer(inst: type, field: "Attribute[t.Any]", value: t.Any) -> t.Any:  # pragma: no cover
+def serializer(
+    inst: type, field: "Attribute[t.Any]", value: t.Any
+) -> t.Any:  # pragma: no cover
     if isinstance(value, datetime):
         return value.isoformat()
     elif isinstance(value, Tag):
@@ -92,9 +94,12 @@ def get_payload(
 
 
 @slient
-def send_usage_event(payload: TrackingPayload, uri: str, timeout: int) -> None:
-    requests.post(uri, json=asdict(
-        payload, value_serializer=serializer), timeout=timeout)
+def send_usage_event(
+    payload: TrackingPayload, uri: str, timeout: int
+) -> requests.Response:
+    return requests.post(
+        uri, json=asdict(payload, value_serializer=serializer), timeout=timeout
+    )
 
 
 @slient
@@ -114,7 +119,7 @@ def track(
 def scheduled_track(
     event_properties: EventMeta,
     interval: int = BENTOML_USAGE_REPORT_INTERVAL_SECONDS,
-) -> t.Tuple[threading.Thread, threading.Event]:
+) -> t.Tuple[threading.Thread, threading.Event]:  # pragma: no cover
     stop_event = threading.Event()
 
     def loop() -> t.NoReturn:  # type: ignore

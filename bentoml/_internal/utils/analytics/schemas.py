@@ -39,8 +39,8 @@ def get_client_id() -> "t.Optional[ClientInfo]":  # pragma: no cover
 
 @attrs.define
 class ClientInfo:
-    client_creation_timestamp: str
     client_id: str
+    client_creation_timestamp: datetime
 
 
 @lru_cache(maxsize=1)
@@ -62,17 +62,14 @@ class CommonProperties:
     client_id: ClientInfo = attrs.field(default=attrs.Factory(get_client_id))
 
     # yatai-related
-    yatai_user_email: str = attrs.field(
-        default=attrs.Factory(get_yatai_user_email))
+    yatai_user_email: str = attrs.field(default=attrs.Factory(get_yatai_user_email))
 
     # hardware-related
     platform: str = attrs.field(default=attrs.Factory(get_platform))
-    python_version: str = attrs.field(
-        default=attrs.Factory(get_python_version))
+    python_version: str = attrs.field(default=attrs.Factory(get_python_version))
     num_threads: int = attrs.field(init=False)
     memory_usage_percent: float = attrs.field(init=False)
-    total_memory_in_kb: float = attrs.field(
-        init=False, converter=convert_to_kb)
+    total_memory_in_kb: float = attrs.field(init=False, converter=convert_to_kb)
 
     def __attrs_post_init__(self):
         proc = psutil.Process(os.getpgid(os.getpid()))
@@ -86,8 +83,7 @@ class EventMeta(ABC):
     @property
     def _track_event_name(self):
         return "_".join(
-            map(str.lower, re.findall(
-                r"[A-Z][^A-Z]*", self.__class__.__name__))
+            map(str.lower, re.findall(r"[A-Z][^A-Z]*", self.__class__.__name__))
         )
 
 
@@ -144,8 +140,7 @@ class BentoServeDevelopmentOnStartupEvent(EventMeta):
     serve_location: str = attrs.field(init=False)
 
     def __attrs_post_init__(self):
-        self.serve_location = check_local_or_packaged_in_bento(
-            self.bento_identifier)
+        self.serve_location = check_local_or_packaged_in_bento(self.bento_identifier)
 
 
 @attrs.define
@@ -183,8 +178,7 @@ class BentoServeProductionOnStartupEvent(EventMeta):
     serve_location: str = attrs.field(init=False)
 
     def __attrs_post_init__(self):
-        self.serve_location = check_local_or_packaged_in_bento(
-            self.bento_identifier)
+        self.serve_location = check_local_or_packaged_in_bento(self.bento_identifier)
 
 
 @attrs.define

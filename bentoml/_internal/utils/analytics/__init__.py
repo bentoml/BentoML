@@ -1,17 +1,29 @@
+from .schemas import CliEvent
+from .schemas import ModelSaveEvent
+from .schemas import BentoBuildEvent
+from .schemas import BentoServeProductionOnStartupEvent
+from .schemas import BentoServeProductionScheduledEvent
+from .schemas import BentoServeDevelopmentOnStartupEvent
+from .schemas import BentoServeDevelopmentScheduledEvent
+from .schemas import BentoServeProductionOnShutdownEvent
+from .schemas import BentoServeDevelopmentOnShutdownEvent
 from .usage_stats import track
 from .usage_stats import get_serve_info
 from .usage_stats import scheduled_track
 from .usage_stats import BENTOML_DO_NOT_TRACK
-
-CLI_TRACK_EVENT_TYPE = "bentoml_cli"
-MODEL_SAVE_TRACK_EVENT_TYPE = "bentoml_model_save"
-BENTO_BUILD_TRACK_EVENT_TYPE = "bentoml_bento_build"
-BENTO_SERVE_TRACK_EVENT_TYPE = "bentoml_bento_serve_init"
-BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE = "bentoml_bento_serve_shutdown"
 
 __all__ = [
     "track",
     "scheduled_track",
     "get_serve_info",
     "BENTOML_DO_NOT_TRACK",
+    "CliEvent",
+    "ModelSaveEvent",
+    "BentoBuildEvent",
+    "BentoServeProductionScheduledEvent",
+    "BentoServeProductionOnShutdownEvent",
+    "BentoServeDevelopmentOnStartupEvent",
+    "BentoServeProductionOnStartupEvent",
+    "BentoServeDevelopmentScheduledEvent",
+    "BentoServeDevelopmentOnShutdownEvent",
 ]

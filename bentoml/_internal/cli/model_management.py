@@ -2,8 +2,8 @@
 import sys
 import json
 import typing as t
-from typing import TYPE_CHECKING
 import logging
+from typing import TYPE_CHECKING
 
 import yaml
 import click
@@ -57,7 +57,7 @@ def add_model_management_commands(
 ) -> None:
     @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():
-        """Model Management Subgroup"""
+        """Model Subcommands Groups"""
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)

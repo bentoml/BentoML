@@ -22,7 +22,6 @@ from ..store import StoreItem
 from ..types import Tag
 from ..types import PathType
 from ..utils import calc_dir_size
-from ..utils import human_readable_size
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
 from ...exceptions import InvalidArgument
@@ -30,7 +29,7 @@ from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..utils.analytics import track
-from ..utils.analytics import BENTO_BUILD_TRACK_EVENT_TYPE
+from ..utils.analytics import BentoBuildEvent
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -99,7 +98,7 @@ class Bento(StoreItem):
     def _export_ext() -> str:
         return "bento"
 
-    @__fs.validator
+    @__fs.validator  # type: ignore
     def check_fs(self, _attr: t.Any, new_fs: "FS"):
         try:
             new_fs.makedir("models", recreate=True)
@@ -333,28 +332,24 @@ class Bento(StoreItem):
 
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
-            raise BentoMLException("Failed to save Bento because it was invalid")
+            raise BentoMLException("Failed to save Bento because it was invalid.")
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self.__fs = out_fs
-            event_properties = {
-                "bento_tag": str(self.info.tag),
-                "bento_creation_timestamp": self.info.creation_time.isoformat(),
-                "bento_size_in_bytes": int(calc_dir_size(bento_path)),
-                "models_tags": [str(i) for i in self.info.models],
-                "models_type": [
-                    model_store.get(i).info.module for i in self.info.models
-                ],
-            }
-
-        track(
-            BENTO_BUILD_TRACK_EVENT_TYPE,
-            event_pid=os.getpid(),
-            event_properties=event_properties,
-        )
+            track(
+                event_properties=BentoBuildEvent(
+                    bento_tag=self.info.tag,
+                    bento_creation_timestamp=self.info.creation_time,
+                    bento_size_in_kb=calc_dir_size(bento_path),
+                    model_tags=self.info.models,
+                    model_types=[
+                        model_store.get(i).info.module for i in self.info.models
+                    ],
+                ),
+            )
 
         return self
 
@@ -437,7 +432,8 @@ class BentoInfo:
         del yaml_content["version"]
 
         try:
-            return cattr.structure(yaml_content, cls)  # type: ignore[attr-defined]
+            # type: ignore[attr-defined]
+            return cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")
 

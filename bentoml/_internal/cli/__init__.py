@@ -11,10 +11,11 @@ from .model_management import add_model_management_commands
 
 
 def create_bentoml_cli():
-    # add traceback when in interactive shell for development
+    # exclude traceback from the click library
     from rich.traceback import install
 
     install(suppress=[click])
+
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
     @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)

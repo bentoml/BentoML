@@ -20,12 +20,11 @@ from ..store import Store
 from ..store import StoreItem
 from ..types import Tag
 from ..utils import calc_dir_size
-from ..utils import human_readable_size
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..utils.analytics import track
-from ..utils.analytics import MODEL_SAVE_TRACK_EVENT_TYPE
+from ..utils.analytics import ModelSaveEvent
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -157,15 +156,13 @@ class Model(StoreItem):
     ) -> "Model":
         self._save(model_store)
 
-        event_properties = {
-            "module": self.info.module,
-            "model_creation_timestamp": self.info.creation_time.isoformat(),
-            "model_size": human_readable_size(calc_dir_size(self._model_path)),
-        }
         track(
-            MODEL_SAVE_TRACK_EVENT_TYPE,
-            event_pid=os.getpid(),
-            event_properties=event_properties,
+            event_properties=ModelSaveEvent(
+                module=self.info.module,
+                model_tag=self.info.tag,
+                model_creation_timestamp=self.info.creation_time,
+                model_size_in_kb=calc_dir_size(self._model_path),
+            ),
         )
 
         return self

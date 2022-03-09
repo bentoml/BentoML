@@ -195,7 +195,7 @@ def add_bento_management_commands(
         default="",
         required=False,
     )
-    def export(bento_tag: str, out_file: "BytesIO") -> None:
+    def export(bento_tag: str, out_file: str) -> None:
         """Export Bento files to an archive file
 
         \b

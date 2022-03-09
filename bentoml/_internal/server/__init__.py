@@ -8,6 +8,7 @@ import logging
 import tempfile
 import contextlib
 from datetime import datetime
+from datetime import timezone
 
 import psutil
 from simple_di import inject
@@ -21,8 +22,12 @@ from ..utils.circus import create_standalone_arbiter
 from ..utils.analytics import track
 from ..utils.analytics import get_serve_info
 from ..utils.analytics import scheduled_track
-from ..utils.analytics import BENTO_SERVE_TRACK_EVENT_TYPE
-from ..utils.analytics import BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE
+from ..utils.analytics import BentoServeProductionOnStartupEvent
+from ..utils.analytics import BentoServeProductionScheduledEvent
+from ..utils.analytics import BentoServeDevelopmentOnStartupEvent
+from ..utils.analytics import BentoServeDevelopmentScheduledEvent
+from ..utils.analytics import BentoServeProductionOnShutdownEvent
+from ..utils.analytics import BentoServeDevelopmentOnShutdownEvent
 from ..configuration.containers import DeploymentContainer
 
 logger = logging.getLogger(__name__)
@@ -80,17 +85,14 @@ def serve_development(
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     serve_info = get_serve_info()
-    current_pid = os.getpid()
 
     # Track first time
     track(
-        BENTO_SERVE_TRACK_EVENT_TYPE,
-        event_pid=current_pid,
-        event_properties={
-            "production": False,
-            "bento_identifier": bento_identifier,
-            **serve_info,
-        },
+        event_properties=BentoServeDevelopmentOnStartupEvent(
+            serve_id=serve_info.serve_id,
+            serve_creation_timestamp=serve_info.serve_creation_timestamp,
+            bento_identifier=bento_identifier,
+        )
     )
 
     from circus.sockets import CircusSocket  # type: ignore
@@ -147,12 +149,11 @@ def serve_development(
         sockets=list(circus_socket_map.values()),
     )
     tracking_thread, stop_thread_event = scheduled_track(
-        current_pid,
-        event_properties=get_scheduled_event_properties(
-            production=False,
+        event_properties=BentoServeDevelopmentScheduledEvent(
+            serve_id=serve_info.serve_id,
             bento_identifier=bento_identifier,
-            serve_info=serve_info,
-        ),
+            triggered_at=datetime.now(timezone.utc),
+        )
     )
     _ensure_prometheus_dir()
 
@@ -160,12 +161,10 @@ def serve_development(
         tracking_thread.start()
         atexit.register(
             track,
-            event_type=BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE,
-            event_pid=current_pid,
-            event_properties=get_scheduled_event_properties(
-                production=False,
+            event_properties=BentoServeDevelopmentOnShutdownEvent(
+                serve_id=serve_info.serve_id,
                 bento_identifier=bento_identifier,
-                serve_info=serve_info,
+                triggered_at=datetime.now(timezone.utc),
             ),
         )
         arbiter.start(
@@ -193,32 +192,29 @@ def serve_production(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
     serve_info = get_serve_info()
-    current_pid = os.getpid()
-    bento_creation_timestamp = None
 
     # Track first time
     if svc.bento is not None:
         bento = svc.bento
-        bento_creation_timestamp = bento.info.creation_time.isoformat()
-        event_properties = {
-            "production": True,
-            "bento_identifier": bento_identifier,
-            "bento_creation_timestamp": bento_creation_timestamp,
-            **serve_info,
-        }
+        event_properties = BentoServeProductionOnStartupEvent(
+            serve_id=serve_info.serve_id,
+            serve_creation_timestamp=serve_info.serve_creation_timestamp,
+            bento_identifier=bento_identifier,
+            bento_creation_timestamp=bento.info.creation_time,
+            model_tags=bento.info.models,
+            model_types=[
+                bento._model_store.get(i).info.module for i in bento.info.models
+            ],
+        )
     else:
         # In this case serving from a file/directory with --production
-        event_properties = {
-            "production": True,
-            "bento_tag": bento_identifier,
-            **serve_info,
-        }
+        event_properties = BentoServeProductionOnStartupEvent(
+            serve_id=serve_info.serve_id,
+            serve_creation_timestamp=serve_info.serve_creation_timestamp,
+            bento_identifier=bento_identifier,
+        )
 
-    track(
-        BENTO_SERVE_TRACK_EVENT_TYPE,
-        event_pid=current_pid,
-        event_properties=event_properties,
-    )
+    track(event_properties=event_properties)
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -341,17 +337,25 @@ def serve_production(
         sockets=list(circus_socket_map.values()),
     )
     tracking_thread, stop_thread_event = scheduled_track(
-        current_pid,
-        event_properties=get_scheduled_event_properties(
-            production=False,
+        event_properties=BentoServeProductionScheduledEvent(
+            serve_id=serve_info.serve_id,
             bento_identifier=bento_identifier,
-            serve_info=serve_info,
-        ),
+            triggered_at=datetime.now(timezone.utc),
+        )
     )
     _ensure_prometheus_dir()
 
     try:
         tracking_thread.start()
+
+        atexit.register(
+            track,
+            event_properties=BentoServeProductionOnShutdownEvent(
+                serve_id=serve_info.serve_id,
+                bento_identifier=bento_identifier,
+                triggered_at=datetime.now(timezone.utc),
+            ),
+        )
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 f'Starting production BentoServer from "bento_identifier" '
@@ -362,14 +366,3 @@ def serve_production(
         if uds_path is not None:
             shutil.rmtree(uds_path)
         stop_thread_event.set()
-
-    atexit.register(
-        track,
-        event_type=BENTO_SERVE_ON_SHUTDOWN_TRACK_EVENT_TYPE,
-        event_pid=current_pid,
-        event_properties=get_scheduled_event_properties(
-            production=True,
-            bento_identifier=bento_identifier,
-            serve_info=serve_info,
-        ),
-    )

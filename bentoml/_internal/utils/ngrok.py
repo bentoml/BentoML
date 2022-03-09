@@ -17,7 +17,7 @@ from ...exceptions import BentoMLException
 logger = logging.getLogger(__name__)
 
 
-def _get_command() -> str:
+def get_command() -> str:
     """
     ngrok command based on OS
     """
@@ -33,7 +33,7 @@ def _get_command() -> str:
     return command
 
 
-def _log_url() -> None:
+def log_url() -> None:
     localhost_url = "http://localhost:4040/api/tunnels"  # Url with tunnel details
     while True:
         time.sleep(1)
@@ -43,30 +43,30 @@ def _log_url() -> None:
             if data["tunnels"]:
                 tunnel = data["tunnels"][0]
                 logger.info(
-                    "Ngrok running at: %s",
+                    " Ngrok running at: %s",
                     tunnel["public_url"].replace("https://", "http://"),
                 )
-                logger.info("Traffic stats available on http://127.0.0.1:4040")
+                logger.info(" Traffic stats available on http://127.0.0.1:4040")
                 return
         else:
             logger.info("Waiting for ngrok to start...")
 
 
-def _start_ngrok(port: int):
+def start_ngrok(port: int):
     """
     Start ngrok server synchronously
     """
-    command = _get_command()
+    command = get_command()
     ngrok_path = str(Path(tempfile.gettempdir(), "ngrok"))
-    _download_ngrok(ngrok_path)
+    download_ngrok(ngrok_path)
     executable = str(Path(ngrok_path, command))
     os.chmod(executable, 0o777)
-    Thread(target=_log_url).start()
+    Thread(target=log_url).start()
     with subprocess.Popen([executable, "http", str(port)]) as ngrok_process:
         ngrok_process.wait()
 
 
-def _download_ngrok(ngrok_path: str) -> None:
+def download_ngrok(ngrok_path: str) -> None:
     """
     Check OS and decide on ngrok download URL
     """
@@ -81,12 +81,12 @@ def _download_ngrok(ngrok_path: str) -> None:
         url = "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip"
     else:
         raise Exception(f"{system} is not supported")
-    download_path = _download_file(url)
+    download_path = download_file(url)
     with zipfile.ZipFile(download_path, "r") as zip_ref:
         zip_ref.extractall(ngrok_path)
 
 
-def _download_file(url: str) -> str:
+def download_file(url: str) -> str:
     """
     Download ngrok binary file to local
 

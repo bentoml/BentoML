@@ -54,9 +54,7 @@ def test_get_payload():
     payload = analytics_lib.usage_stats.get_payload(
         event_properties=event_properties, session_id=SESSION_ID
     )
-    assert SCHEMA.validate(
-        attrs.asdict(payload, value_serializer=analytics_lib.usage_stats.serializer)
-    )
+    assert SCHEMA.validate(payload)
 
 
 def test_do_not_track(monkeypatch: "MonkeyPatch"):

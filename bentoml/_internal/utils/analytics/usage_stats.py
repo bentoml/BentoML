@@ -85,21 +85,21 @@ def get_serve_info() -> ServeInfo:  # pragma: no cover
 def get_payload(
     event_properties: EventMeta,
     session_id: str = Provide[BentoMLContainer.session_id],
-) -> TrackingPayload:
-    return TrackingPayload(
+) -> t.Dict[str, t.Any]:
+    payload = TrackingPayload(
         session_id=session_id,
         common_properties=CommonProperties(),
         event_properties=event_properties,
     )
+    print(payload)
+    return asdict(payload, value_serializer=serializer)
 
 
 @slient
 def send_usage_event(
-    payload: TrackingPayload, uri: str, timeout: int
+    payload: t.Dict[str, t.Any], uri: str, timeout: int
 ) -> requests.Response:
-    return requests.post(
-        uri, json=asdict(payload, value_serializer=serializer), timeout=timeout
-    )
+    return requests.post(uri, json=payload, timeout=timeout)
 
 
 @slient

@@ -44,38 +44,43 @@ class ClientInfo:
 
 
 @lru_cache(maxsize=1)
-def get_yatai_user_email() -> str:
-    if not os.path.exists(get_config_path()):
-        return ""
-    return get_current_context().email
+def get_yatai_user_email() -> t.Optional[str]:
+    if os.path.exists(get_config_path()):
+        return get_current_context().email
 
 
-def convert_to_kb(size: int) -> float:
+def convert_to_kb(size: t.Union[int, float]) -> float:
     return size / 1024
 
 
 @attrs.define
 class CommonProperties:
 
-    # bentoml-related
-    bentoml_version: str = attrs.field(default=BENTOML_VERSION)
-    client_id: ClientInfo = attrs.field(default=attrs.Factory(get_client_id))
-
-    # yatai-related
-    yatai_user_email: str = attrs.field(default=attrs.Factory(get_yatai_user_email))
-
     # hardware-related
-    platform: str = attrs.field(default=attrs.Factory(get_platform))
-    python_version: str = attrs.field(default=attrs.Factory(get_python_version))
+    platform: str = attrs.field(init=False)
+    python_version: str = attrs.field(init=False)
     num_threads: int = attrs.field(init=False)
     memory_usage_percent: float = attrs.field(init=False)
-    total_memory_in_kb: float = attrs.field(init=False, converter=convert_to_kb)
+    total_memory_in_kb: float = attrs.field(init=False)
+
+    # yatai-related
+    yatai_user_email: t.Optional[str] = attrs.field(init=False)
+
+    # bentoml-related
+    client_id: t.Optional[ClientInfo] = attrs.field(init=False)
+    bentoml_version: str = attrs.field(default=BENTOML_VERSION)
 
     def __attrs_post_init__(self):
-        proc = psutil.Process(os.getpgid(os.getpid()))
+        self.client_id = get_client_id()
+        self.yatai_user_email = get_yatai_user_email()
+
+        self.platform = get_platform()
+        self.python_version = get_python_version()
+
+        proc = psutil.Process(os.getpid())
         with proc.oneshot():
             self.memory_usage_percent = proc.memory_percent()
-            self.total_memory_in_kb = psutil.virtual_memory().total
+            self.total_memory_in_kb = convert_to_kb(psutil.virtual_memory().total)  # type: ignore
             self.num_threads = proc.num_threads()
 
 

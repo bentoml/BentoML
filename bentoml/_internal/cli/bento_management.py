@@ -23,8 +23,6 @@ from ..yatai_client import yatai_client
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from io import BytesIO
-
     from ..bento import BentoStore
 
 logger = logging.getLogger(__name__)
@@ -218,7 +216,7 @@ def add_bento_management_commands(
 
     @cli.command(name="import")
     @click.argument("bento_path", type=click.STRING)
-    def import_bento(bento_path: str) -> None:
+    def import_bento_(bento_path: str) -> None:
         """Import a previously exported Bento archive file
 
         \b

@@ -1,5 +1,4 @@
 # type: ignore[reportUnusedFunction]
-import sys
 import json
 import typing as t
 import logging
@@ -23,7 +22,6 @@ from ..yatai_client import yatai_client
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from io import BytesIO
 
     from ..models import ModelStore
 

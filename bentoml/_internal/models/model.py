@@ -1,4 +1,3 @@
-import os
 import typing as t
 import logging
 from sys import version_info as pyver

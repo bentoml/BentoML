@@ -1,6 +1,7 @@
 import os
 import logging
 from typing import List
+from typing import Optional
 from pathlib import Path
 
 import attr
@@ -32,14 +33,17 @@ class YataiClientContext:
     def get_yatai_rest_api_client(self) -> YataiRESTApiClient:
         return YataiRESTApiClient(self.endpoint, self.api_token)
 
-    def __attrs_post_init__(self):
-        yatai_rest_client = self.get_yatai_rest_api_client()
-        user = yatai_rest_client.get_current_user()
-
-        if user is None:
-            raise BentoMLException("Current user is not found.")
-
-        self.email = user.email
+    def get_email(self) -> str:
+        if not self.email:
+            cli = self.get_yatai_rest_api_client()
+            user = cli.get_current_user()
+            if user is None:
+                raise YataiRESTApiClientError(
+                    "Unable to get current user from yatai server"
+                )
+            self.email = user.email
+            add_context(self, ignore_warning=True)
+        return self.email
 
 
 @attr.define
@@ -76,27 +80,22 @@ def get_config() -> YataiClientConfig:
         return init_config()
     with open(get_config_path(), "r") as f:
         dct = yaml.safe_load(f)
+        if not dct:
+            return init_config()
         return cattr.structure(dct, YataiClientConfig)
 
 
-def add_context(context: YataiClientContext) -> None:
+def add_context(context: YataiClientContext, *, ignore_warning: bool = False) -> None:
     config = get_config()
     for idx, ctx in enumerate(config.contexts):
         if ctx.name == context.name:
-            logger.warning("Overriding existing Yatai context config: %s", ctx.name)
+            if not ignore_warning:
+                logger.warning("Overriding existing Yatai context config: %s", ctx.name)
             config.contexts[idx] = context
             break
     else:
         config.contexts.append(context)
     store_config(config)
-
-
-def update_context(context_name: str, context: YataiClientContext) -> None:
-    config = get_config()
-    for _, ctx in enumerate(config.contexts):
-        if ctx.name == context_name:
-            return add_context(context)
-    raise YataiRESTApiClientError(f"Not found {context_name} yatai context")
 
 
 def get_current_context() -> YataiClientContext:

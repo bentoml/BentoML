@@ -91,7 +91,6 @@ def get_payload(
         common_properties=CommonProperties(),
         event_properties=event_properties,
     )
-    print(payload)
     return asdict(payload, value_serializer=serializer)
 
 

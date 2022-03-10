@@ -27,7 +27,7 @@ SCHEMA = Schema(
             "platform": str,
             "python_version": str,
             "total_memory_in_kb": Or(int, float),
-            "yatai_user_email": str,
+            "yatai_user_email": Or(str, None),
         },
         "event_properties": {
             "module": str,

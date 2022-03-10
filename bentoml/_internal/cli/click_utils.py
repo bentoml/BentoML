@@ -2,20 +2,21 @@ import os
 import re
 import time
 import typing as t
+import difflib
 import logging
 import functools
 from typing import TYPE_CHECKING
 
 import click
 from click import ClickException
-
-from bentoml._internal.utils.analytics.schemas import CliEvent
+from click.exceptions import UsageError
 
 from ...exceptions import BentoMLException
 from ..configuration import CONFIG_ENV_VAR
 from ..configuration import set_debug_mode
 from ..configuration import load_global_config
 from ..utils.analytics import track
+from ..utils.analytics import CliEvent
 from ..utils.analytics import BENTOML_DO_NOT_TRACK
 
 if TYPE_CHECKING:
@@ -190,6 +191,23 @@ class BentoMLCommandGroup(click.Group):
             return super(BentoMLCommandGroup, self).command(*args, **kwargs)(func)
 
         return wrapper
+
+    def resolve_command(
+        self, ctx: click.Context, args: t.List[str]
+    ) -> t.Tuple[str, click.Command, t.List[str]]:
+        try:
+            return super(BentoMLCommandGroup, self).resolve_command(ctx, args)
+        except UsageError as e:
+            error_msg = str(e)
+            original_cmd_name = click.utils.make_str(args[0])
+            matches = difflib.get_close_matches(
+                original_cmd_name, self.list_commands(ctx), 3, 0.5
+            )
+            if matches:
+                fmt_matches = "\n    ".join(matches)
+                error_msg += "\n\n"
+                error_msg += f"Did you mean?\n    {fmt_matches}"
+            raise UsageError(error_msg, e.ctx)
 
 
 def is_valid_bento_tag(value: str) -> bool:

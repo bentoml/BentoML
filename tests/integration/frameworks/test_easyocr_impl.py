@@ -43,8 +43,23 @@ def image_array():
 
 
 @pytest.fixture(scope="module")
-def save_proc() -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
-    def _(lang_list, recog_network, detect_model, metadata) -> "Model":
+def save_proc() -> t.Callable[
+    [
+        t.Dict[str, t.Any],
+        t.Dict[str, t.Any],
+        t.Optional[t.Dict[str, str]],
+        t.Optional[t.Dict[str, t.Any]],
+    ],
+    "Model",
+]:
+    def _(
+        lang_list,
+        recog_network,
+        detect_model,
+        metadata,
+        labels=None,
+        custom_objects=None,
+    ) -> "Model":
         model = easyocr_model()
         tag = bentoml.easyocr.save(
             TEST_MODEL_NAME,
@@ -53,6 +68,8 @@ def save_proc() -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]
             recog_network=recog_network,
             detect_model=detect_model,
             metadata=metadata,
+            labels=labels,
+            custom_objects=custom_objects,
         )
         model = bentoml.models.get(tag)
         return model
@@ -63,12 +80,22 @@ def save_proc() -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]
 @pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_easyocr_save_load(metadata, image_array, save_proc):
 
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
     model = easyocr_model()
     raw_res = model.readtext(IMAGE_PATH)
     assert extract_result(raw_res) == TEST_RESULT
 
-    _model = save_proc(LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata)
+    _model = save_proc(
+        LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata, labels, {"func": custom_f}
+    )
     assert _model.info.metadata is not None
+    for k in labels.keys():
+        assert labels[k] == _model.info.labels[k]
+    assert _model.custom_objects["func"](3) == custom_f(3)
 
     easyocr_loaded = bentoml.easyocr.load(_model.tag)
 

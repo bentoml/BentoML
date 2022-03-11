@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 class MyCoolModel:
     def predict(self, some_integer: int):
-        return some_integer**2
+        return some_integer ** 2
 
     def batch_predict(self, some_integer: t.List[int]):
-        return list(map(lambda x: x**2, some_integer))
+        return list(map(lambda x: x ** 2, some_integer))
 
 
 class MockBatchOptions:
@@ -25,12 +25,16 @@ class MockBatchOptions:
 
 def save_procedure(
     metadata: t.Dict[str, t.Any],
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> "Tag":
     model_to_save = MyCoolModel()
     tag = bentoml.picklable_model.save(
         "test_picklable_model",
         model_to_save,
         metadata=metadata,
+        labels=labels,
+        custom_objects=custom_objects,
     )
     return tag
 
@@ -42,11 +46,20 @@ def save_procedure(
 def test_picklable_model_save_load(
     metadata: t.Dict[str, t.Any],
 ) -> None:
-    tag = save_procedure(metadata)
-    _model = bentoml.models.get(tag)
-    assert _model.info.metadata is not None
 
-    loaded_model = bentoml.picklable_model.load(_model.tag)
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = save_procedure(metadata, labels=labels, custom_objects={"func": custom_f})
+    bentomodel = bentoml.models.get(tag)
+    assert bentomodel.info.metadata is not None
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+
+    loaded_model = bentoml.picklable_model.load(bentomodel.tag)
     assert isinstance(loaded_model, MyCoolModel)
     assert loaded_model.predict(4) == np.array([16])
 
@@ -62,7 +75,7 @@ def test_picklable_model_runner_setup_run() -> None:
 
 def test_pickle_runner_setup_run_method() -> None:
     tag = bentoml.picklable_model.save(
-        "test_pickle_model", lambda x: x**2, metadata={}
+        "test_pickle_model", lambda x: x ** 2, metadata={}
     )
     runner = bentoml.picklable_model.load_runner(tag)
 

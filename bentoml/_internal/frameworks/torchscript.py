@@ -12,7 +12,6 @@ from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from .common.pytorch import torch
 from .common.pytorch import BasePyTorchRunner
 from ..configuration.containers import BentoMLContainer

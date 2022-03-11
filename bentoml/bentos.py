@@ -355,7 +355,7 @@ def containerize(
     no_cache: bool = False,
     platform: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-):
+) -> bool:
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
@@ -386,8 +386,10 @@ def containerize(
         subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
+        return False
     else:
         logger.info(f'Successfully built docker image "{docker_image_tag}"')
+        return True
 
 
 __all__ = [

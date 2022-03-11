@@ -88,6 +88,8 @@ def save(
     lang_list: t.Optional[t.List[str]] = None,
     recog_network: t.Optional[str] = "english_g2",
     detect_model: t.Optional[str] = "craft_mlt_25k",
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -106,6 +108,11 @@ def save(
             Should be same as `easyocr.Reader(recog_network=...)`
         detect_model (:code:`str`, `optional`, default to :code:`craft_mlt_25k`):
             Model used for detection pipeline.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
@@ -160,6 +167,8 @@ def save(
     _model = Model.create(
         name,
         module=MODULE_NAME,
+        labels=labels,
+        custom_objects=custom_objects,
         options=options,
         context=context,
         metadata=metadata,

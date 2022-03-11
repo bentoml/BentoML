@@ -181,6 +181,8 @@ def _save(
     keep_download_from_hub: bool,
     *,
     input_spec: t.Optional[t.Union[t.List["InputSpec"], t.Tuple["InputSpec", ...]]],
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
 ) -> Tag:
@@ -228,6 +230,8 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
         name,
         module=MODULE_NAME,
         context=context,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
     )
     if isinstance(model, str):
@@ -280,6 +284,8 @@ def save(
     input_spec: t.Optional[
         t.Union[t.List["InputSpec"], t.Tuple["InputSpec", ...]]
     ] = None,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -299,6 +305,11 @@ def save(
             `list`/`dict` of them. If `None`, all input variables of the original
             Layer's forward method would be the inputs of the saved model. Generally
             this is **NOT RECOMMENDED** to use unless you know what you are doing.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -370,6 +381,8 @@ def save(
         name=name,
         model=model,
         input_spec=input_spec,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
         model_store=model_store,
         version=None,
@@ -394,6 +407,8 @@ def import_from_paddlehub(
     hub_module_home: t.Optional[str] = None,
     keep_download_from_hub: bool = False,
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -430,6 +445,11 @@ def import_from_paddlehub(
             PaddleHub default cache, which is under :code:`$HOME/.paddlehub`
         keep_download_from_hub (`bool`, `optional`, default to :code:`False`):
             Whether to re-download pretrained model from hub.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -460,6 +480,8 @@ def import_from_paddlehub(
         ignore_env_mismatch=ignore_env_mismatch,
         hub_module_home=hub_module_home,
         keep_download_from_hub=keep_download_from_hub,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
         model_store=model_store,
     )

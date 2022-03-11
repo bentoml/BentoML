@@ -91,7 +91,7 @@ class Model(StoreItem):
         name: str,
         *,
         module: str = "",
-        labels: t.Optional[t.Dict[str, t.Any]] = None,
+        labels: t.Optional[t.Dict[str, str]] = None,
         options: t.Optional[t.Dict[str, t.Any]] = None,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,

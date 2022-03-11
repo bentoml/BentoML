@@ -33,7 +33,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 
-        if LazyType["ext.NpNDArray[t.Any]"]("numpy.ndarray").isinstance(o):
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(o):
             return o.tolist()
         if LazyType["ext.NpGeneric"]("numpy.generic").isinstance(o):
             return o.item()

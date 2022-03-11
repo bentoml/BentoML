@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 class MyCoolModel:
     def predict(self, some_integer: int):
-        return some_integer ** 2
+        return some_integer**2
 
     def batch_predict(self, some_integer: t.List[int]):
-        return list(map(lambda x: x ** 2, some_integer))
+        return list(map(lambda x: x**2, some_integer))
 
 
 class MockBatchOptions:
@@ -75,7 +75,7 @@ def test_picklable_model_runner_setup_run() -> None:
 
 def test_pickle_runner_setup_run_method() -> None:
     tag = bentoml.picklable_model.save(
-        "test_pickle_model", lambda x: x ** 2, metadata={}
+        "test_pickle_model", lambda x: x**2, metadata={}
     )
     runner = bentoml.picklable_model.load_runner(tag)
 

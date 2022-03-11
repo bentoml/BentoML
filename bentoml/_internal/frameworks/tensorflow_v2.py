@@ -278,6 +278,8 @@ def import_from_tfhub(
         options=None,
         context=context,
         metadata=metadata,
+        labels=labels,
+        custom_objects=custom_objects,
     )
     if isinstance(identifier, str):
         current_cache_dir = os.environ.get("TFHUB_CACHE_DIR")

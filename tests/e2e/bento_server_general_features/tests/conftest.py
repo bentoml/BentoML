@@ -1,10 +1,10 @@
 # type: ignore[no-untyped-def]
 
 import os
-import shutil
 import typing as t
 
 import numpy as np
+import psutil
 import pytest
 
 
@@ -43,6 +43,6 @@ def host() -> t.Generator[str, None, None]:
         "service:svc",
         workdir=os.getcwd(),
         config_file="bentoml_config.yml",
-        docker=shutil.LINUX,
+        docker=psutil.LINUX,
     ) as host_address:
         yield host_address

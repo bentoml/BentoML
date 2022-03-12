@@ -7,7 +7,7 @@ from PIL.Image import Image as PILImage
 from PIL.Image import fromarray
 
 import bentoml
-import bentoml.sklearn
+import bentoml.picklable_model
 from bentoml.io import File
 from bentoml.io import JSON
 from bentoml.io import Image
@@ -24,34 +24,42 @@ class _Schema(pydantic.BaseModel):
     endpoints: t.List[str]
 
 
-json_echo_runner = bentoml.sklearn.load_runner(
+json_echo_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="echo_json",
+    method_name="echo_json",
     name="json_echo_runner",
+    batch=True,
 )
-ndarray_pred_runner = bentoml.sklearn.load_runner(
+ndarray_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="predict_ndarray",
+    method_name="predict_ndarray",
     name="ndarray_pred_runner",
+    batch=True,
 )
-dataframe_pred_runner = bentoml.sklearn.load_runner(
+dataframe_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="predict_dataframe",
+    method_name="predict_dataframe",
     name="dataframe_pred_runner",
+    batch=True,
 )
-file_pred_runner = bentoml.sklearn.load_runner(
-    "sk_model", function_name="predict_file", name="file_pred_runner"
+file_pred_runner = bentoml.picklable_model.load_runner(
+    "sk_model",
+    method_name="predict_file",
+    name="file_pred_runner",
+    batch=True,
 )
 
-multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
+multi_ndarray_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="predict_multi_ndarray",
+    method_name="predict_multi_ndarray",
     name="multi_ndarray_pred_runner",
+    batch=True,
 )
-echo_multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
+echo_multi_ndarray_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="echo_multi_ndarray",
+    method_name="echo_multi_ndarray",
     name="echo_multi_ndarray_pred_runner",
+    batch=True,
 )
 
 
@@ -110,7 +118,7 @@ async def predict_ndarray_enforce_dtype(
 async def predict_dataframe1(df: "pd.DataFrame") -> "pd.Series":
     assert df["col1"].dtype == "int64"
     output = await dataframe_pred_runner.async_run(df)
-    assert isinstance(output, pd.Series)
+    assert isinstance(output, pd.Series), type(output)
     return output
 
 

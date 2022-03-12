@@ -1,5 +1,6 @@
 # type: ignore[reportUnusedFunction]
 import typing as t
+import sys
 
 import click
 
@@ -65,7 +66,7 @@ def add_containerize_command(cli: click.Group) -> None:
                 key, value = build_arg_str.split("=")
                 build_args[key] = value
 
-        return containerize_bento(
+        exit_code = not containerize_bento(
             bento_tag,
             docker_image_tag=docker_image_tag,
             build_args=build_args,
@@ -73,3 +74,4 @@ def add_containerize_command(cli: click.Group) -> None:
             no_cache=no_cache,
             platform=platform,
         )
+        sys.exit(exit_code)

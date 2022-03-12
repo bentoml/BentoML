@@ -84,7 +84,12 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ]
 
 
-class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
+class NdarrayContainer(
+    DataContainer[
+        "ext.NpNDArray",
+        "ext.NpNDArray",
+    ]
+):
     @classmethod
     def singles_to_batch(
         cls,

@@ -21,7 +21,7 @@ from ..types import PathType
 from .lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
-    from fs import FS
+    from fs.base import FS
 
     P = t.ParamSpec("P")
 
@@ -60,13 +60,13 @@ def calc_dir_size(path: PathType) -> int:
     return sum(f.stat().st_size for f in Path(path).glob("**/*") if f.is_file())
 
 
-def human_readable_size(size: int, decimal_places: int = 2) -> str:
-    unit: str = "B"
-    for _ in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
-        if size < 1024.0 or _ == "PiB":
-            unit = _
+def human_readable_size(size: t.Union[int, float], decimal_places: int = 2) -> str:
+    for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
+        if size < 1024.0 or unit == "PiB":
             break
         size /= 1024.0
+    else:
+        raise ValueError("size is too large")
     return f"{size:.{decimal_places}f} {unit}"
 
 

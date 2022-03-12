@@ -7,7 +7,7 @@ from PIL.Image import Image as PILImage
 from PIL.Image import fromarray
 
 import bentoml
-import bentoml.sklearn
+import bentoml.picklable_model
 from bentoml.io import File
 from bentoml.io import JSON
 from bentoml.io import Image
@@ -20,43 +20,51 @@ from bentoml._internal.types import JSONSerializable
 
 
 class _Schema(pydantic.BaseModel):
-    name: str
-    endpoints: t.List[str]
+    name: str = "test"
+    endpoints: t.List[str] = ["predict", "health"]
 
 
-json_echo_runner = bentoml.sklearn.load_runner(
+json_echo_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="echo_json",
+    method_name="echo_json",
     name="json_echo_runner",
+    batch=True,
 )
-ndarray_pred_runner = bentoml.sklearn.load_runner(
+ndarray_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="predict_ndarray",
+    method_name="predict_ndarray",
     name="ndarray_pred_runner",
+    batch=True,
 )
-dataframe_pred_runner = bentoml.sklearn.load_runner(
+dataframe_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="predict_dataframe",
+    method_name="predict_dataframe",
     name="dataframe_pred_runner",
+    batch=True,
 )
-file_pred_runner = bentoml.sklearn.load_runner(
-    "sk_model", function_name="predict_file", name="file_pred_runner"
+file_pred_runner = bentoml.picklable_model.load_runner(
+    "sk_model",
+    method_name="predict_file",
+    name="file_pred_runner",
+    batch=True,
 )
 
-multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
+multi_ndarray_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="predict_multi_ndarray",
+    method_name="predict_multi_ndarray",
     name="multi_ndarray_pred_runner",
+    batch=True,
 )
-echo_multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
+echo_multi_ndarray_pred_runner = bentoml.picklable_model.load_runner(
     "sk_model",
-    function_name="echo_multi_ndarray",
+    method_name="echo_multi_ndarray",
     name="echo_multi_ndarray_pred_runner",
+    batch=True,
 )
 
 
 svc = bentoml.Service(
-    name="general",
+    name="general_sync",
     runners=[
         json_echo_runner,
         ndarray_pred_runner,
@@ -74,7 +82,7 @@ def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
 
 
 @svc.api(
-    input=JSON(pydantic_model=_Schema(name="test", endpoints=["predict", "health"])),
+    input=JSON(pydantic_model=_Schema),
     output=JSON(),
 )
 def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
@@ -122,7 +130,7 @@ def predict_file(f: FileLike) -> bytes:
 @svc.api(input=Image(), output=Image(mime_type="image/bmp"))
 def echo_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert isinstance(f, PILImage)
-    return np.array(f)
+    return np.array(f)  # type: ignore
 
 
 @svc.api(

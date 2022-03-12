@@ -41,6 +41,6 @@ class PickleModel:
     @staticmethod
     def predict_dataframe(df: "pd.DataFrame") -> "pd.DataFrame":
         assert isinstance(df, pd.DataFrame)
-        output = df[["col1"]] * 2
+        output = df[["col1"]] * 2  # type: ignore
         assert isinstance(output, pd.DataFrame)
         return output

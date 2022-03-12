@@ -1,0 +1,5 @@
+pandas
+pydantic
+pillow
+scikit-learn
+pyarrow

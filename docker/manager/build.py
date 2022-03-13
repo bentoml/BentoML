@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import atexit
 import typing as t
@@ -48,7 +49,7 @@ def add_build_command(cli: click.Group) -> None:
         required=False,
         is_flag=True,
         default=False,
-        help=f"Dry-run",
+        help="Dry-run",
     )
     @click.option(
         "--max-workers",
@@ -129,12 +130,17 @@ def add_build_command(cli: click.Group) -> None:
             )
 
             _ = run("make", "emulator", "-f", ctx._fs.getsyspath("Makefile"))
+            if os.uname().machine != "arm64":
+                _ = run("make", "install-qemu", "-f", ctx._fs.getsyspath("Makefile"))
 
             def remove_buildx_builder():
                 # tries to remove zombie proc.
                 docker.buildx.prune(filters={"until": "12h"})
                 for b in BUILDER_LIST:
+                    logger.debug(f"Removing {b}...")
                     docker.buildx.remove(b)
+                logger.info("Finished removing intermediaries builder.")
+                sys.exit(0)
 
             atexit.register(remove_buildx_builder)
 
@@ -144,7 +150,7 @@ def add_build_command(cli: click.Group) -> None:
                     list(executor.map(build_multi_arch, build_buildx_args))
                 executor.shutdown()
             finally:
-                with ctx._generated_dir.open(
+                with ctx._manifest_dir.open(
                     built_img_metafile, "w", encoding="utf-8"
                 ) as f:
                     yaml.dump(BUILT_IMAGE, f)
@@ -199,9 +205,8 @@ def order_build_hierarchy(
     if env.distros:
         base_, build_ = {}, {}
         for distro in env.distros:
-            contains_ = lambda x: distro in x
-            base_.update(dicttoolz.keyfilter(contains_, base_tags))
-            build_.update(dicttoolz.keyfilter(contains_, build_tags))
+            base_.update(dicttoolz.keyfilter(lambda x: distro in x, base_tags))
+            build_.update(dicttoolz.keyfilter(lambda x: distro in x, build_tags))
         return base_, build_
     else:
         return base_tags, build_tags

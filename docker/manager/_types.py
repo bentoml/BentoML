@@ -5,14 +5,11 @@ from typing import List
 from typing import Tuple
 from typing import Union
 from typing import Generic
-from typing import Mapping
 from typing import TypeVar
 from typing import Callable
-from typing import Optional
 from typing import TYPE_CHECKING
 
 import click
-import cerberus.errors
 
 if sys.version_info[:2] >= (3, 10):
     from typing import ParamSpec
@@ -49,32 +46,3 @@ if TYPE_CHECKING:
     WrappedCLI = Callable[Concatenate[P], ClickFunctionWrapper[Any, Any]]
 
     ValidateType = Union[str, List[str]]
-
-    class CerberusValidator:
-        root_document: Dict[str, Any]
-        document: Dict[str, Any]
-        errors: cerberus.errors.ErrorList
-
-        def _error(self, field: str, msg: str):
-            ...
-
-        def validate(
-            self,
-            document: Mapping[str, Any],
-            schema: Optional[str] = None,
-            update: bool = False,
-            normalize: bool = True,
-        ):
-            ...
-
-        @classmethod
-        def clear_caches(cls):
-            ...
-
-        def normalized(
-            self,
-            document: Mapping[str, Any],
-            schema: Optional[str] = None,
-            always_return_document: bool = False,
-        ) -> Dict[str, Any]:
-            ...

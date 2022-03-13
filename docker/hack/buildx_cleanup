@@ -11,6 +11,7 @@ if $(docker buildx ls | grep bento-server-builder >| /tmp/builder.log); then
         docker buildx rm "$line"
     done
 
+    rm -rf generated/builder.log
     echo "Finished removing emphemeral builder."
 
 else

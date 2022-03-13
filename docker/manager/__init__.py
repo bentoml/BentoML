@@ -4,7 +4,7 @@ import click
 from rich.logging import RichHandler
 from rich.traceback import install
 
-__version__: str = "0.1.0"
+__version__: str = "1.1.0"
 
 logging.basicConfig(
     level="INFO",

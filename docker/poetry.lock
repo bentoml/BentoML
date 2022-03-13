@@ -94,14 +94,6 @@ python-versions = ">=3.7,<4.0"
 attrs = ">=20"
 
 [[package]]
-name = "cerberus"
-version = "1.3.4"
-description = "Lightweight, extensible schema and data validation tool for Python dictionaries."
-category = "main"
-optional = false
-python-versions = ">=2.7"
-
-[[package]]
 name = "certifi"
 version = "2021.10.8"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -652,7 +644,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "49700cdd8d0c7feb23e8ad7c3b3e7363a1707795eef0d68b1de26c1dcf9d2305"
+content-hash = "28456348d7191c553db3382f6b44225483b4bc745ac050731952527d9270f370"
 
 [metadata.files]
 appdirs = [
@@ -706,9 +698,6 @@ boltons = [
 cattrs = [
     {file = "cattrs-1.10.0-py3-none-any.whl", hash = "sha256:35dd9063244263e63bd0bd24ea61e3015b00272cead084b2c40d788b0f857c46"},
     {file = "cattrs-1.10.0.tar.gz", hash = "sha256:211800f725cdecedcbcf4c753bbd22d248312b37d130f06045434acb7d9b34e1"},
-]
-cerberus = [
-    {file = "Cerberus-1.3.4.tar.gz", hash = "sha256:d1b21b3954b2498d9a79edf16b3170a3ac1021df88d197dc2ce5928ba519237c"},
 ]
 certifi = [
     {file = "certifi-2021.10.8-py2.py3-none-any.whl", hash = "sha256:d62a0163eb4c2344ac042ab2bdf75399a71a2d8c7d47eac2e2ee91b9d6339569"},

@@ -2,7 +2,6 @@ import os
 import logging
 
 import click
-from manager._utils import shellcmd
 from python_on_whales import docker
 from manager._exceptions import ManagerLoginFailed
 from manager._click_utils import Environment
@@ -28,7 +27,7 @@ def main(ctx: Environment, *args, **kwargs) -> None:
     try:
         if not user or not pwd or not url:
             logger.warning(
-                f"Unable to find the given environment variables. "
+                "Unable to find the given environment variables. "
                 "Make sure to put environments under .env ."
             )
             raise ManagerLoginFailed

@@ -76,13 +76,13 @@ FROM base as base-amd64
 
 FROM base as base-arm64
 
-FROM base as base-ppc64le
-
 FROM base as base-s390x
 
 FROM base-${TARGETARCH}
 
 COPY --from=xx / /
+
+ENV /root/.shinit
 
 ARG TARGETPLATFORM
 
@@ -99,8 +99,6 @@ ENV LC_ALL=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1
 
 ARG CONDA_VERSION=latest
-ARG SHA256SUM=1ea2f885b4dbc3098662845560bc64271eb17085387a70c2ba3f29fff6f8d52f
-
 
 # Installing miniconda
 RUN set -x && \
@@ -118,7 +116,7 @@ RUN set -x && \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-ppc64le.sh"; \
         SHA256SUM="fa92ee4773611f58ed9333f977d32bbb64769292f605d518732183be1f3321fa"; \
     fi && \
-    xx-apk add -q --no-cache bash procps && \
+    xx-apk add -q --no-cache musl-dev gcc bash procps && \
     wget --quiet ${MINICONDA_URL} -O miniconda.sh && \
     echo "${SHA256SUM}  miniconda.sh" > miniconda.sha256 && \
     if ! sha256sum -cs miniconda.sha256; then exit 1; fi && \

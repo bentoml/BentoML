@@ -115,6 +115,10 @@ w_cuda_v11.5.1:
     base_image: alpine:3.14
     suffixes: "alpine3.14"
     dependencies: null
+    architectures:
+      - amd64
+      - arm64v8
+      - s390x
     release_types:
       - base
       - runtime

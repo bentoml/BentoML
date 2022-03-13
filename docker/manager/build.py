@@ -82,8 +82,8 @@ def add_build_command(cli: click.Group) -> None:
         """
 
         base_tag, build_tag = order_build_hierarchy(ctx, releases)
-        base_buildx_args = [_ for _ in buildx_args(ctx, base_tag)]
-        build_buildx_args = [_ for _ in buildx_args(ctx, build_tag)]
+        base_buildx_args = [i for i in buildx_args(ctx, base_tag)]
+        build_buildx_args = [i for i in buildx_args(ctx, build_tag)]
 
         if ctx.xx_image == "xx-local":
             prepare_xx_image(ctx)
@@ -240,7 +240,7 @@ def buildx_args(
             "context_path": ctx._fs.getsyspath("/"),
             "build_args": {
                 "PYTHON_VERSION": python_version,
-                # "BUILDKIT_INLINE_CACHE": "1",
+                "BUILDKIT_INLINE_CACHE": "1",
             },
             "progress": "plain",
             "file": ctx._generated_dir.getsyspath(
@@ -253,7 +253,6 @@ def buildx_args(
             "tags": ref,
             "push": True,
             "pull": True,
-            # "cache": True,
             "stream_logs": True,
             "cache_from": f"type=registry,ref={ref}",
             "cache_to": f"type=registry,ref={ref},mode=max",

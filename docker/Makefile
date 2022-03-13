@@ -30,8 +30,15 @@ QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-aarch64
 
 FULL_TAG := ${MANAGER_REPO}:${MANAGER_TAG}-${UNAME_M}
 
-DOCKER_ARGS := -u 1034:1034 \
-	--privileged --rm --init --net=host \
+AS_ROOT ?= false
+
+ifeq ($(AS_ROOT),true)
+	PERMISSION := -u root
+else
+	PERMISSION := -u 1034:1034
+endif
+
+DOCKER_ARGS := $(PERMISSION) --privileged --rm --init \
 	-v $(realpath /etc/localtime):/etc/localtime:ro \
 	-v ${PWD}:/bentoml \
 	-v /var/run/docker.sock:/var/run/docker.sock \
@@ -63,11 +70,14 @@ lint: ## Lint
 
 install-qemu: ${QEMUDETECT} ## Running this in CI to ensure QEMU support
 ${QEMUDETECT}:
-	docker run --privileged multiarch/qemu-user-static --reset -p yes
-	docker ps -a | sed -n 's, *multiarch/qemu-user-static.*,,p' \
-	  | (xargs docker rm 2>&1 || \
-	    echo "Cannot remove docker container on ZFS; retry after next reboot") \
-	  | grep -v 'dataset is busy'
+	@if [[ "${UNAME_M}" != 'arm64' ]]; then \
+		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes; \
+	else \
+		docker run --rm --privileged aptman/qus -s -- -p i386 i486 arm ppc64le mips64 mips64el s390x aarch64 aarch64_be riscv32 riscv64 x86_64; \
+	fi
+remove-qemu: ## Unset registered format
+	docker run --rm --privileged aptman/qus -- -r
+	docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-*
 
 check-buildx: ${BUILDXDETECT}
 ${BUILDXDETECT}:
@@ -80,7 +90,7 @@ ${BUILDXDETECT}:
 		exit 1; \
 	fi
 
-emulator: buildx ## Install all emulator
+emulator: check-buildx install-qemu ## Install all emulator
 	@docker run --privileged --rm tonistiigi/binfmt --install all
 	@echo 'Finish installed emulator from tonistiig/binfmt.'
 
@@ -98,7 +108,7 @@ check-platform: emulator ## Test supported platform string
 docker-bake-%: ## Build a docker target with buildx bake
 	$(eval bake_target_prefix := $(subst docker-bake-, ,$@))
 	$(eval bake_target :=$(bake_target_prefix)-${UNAME_M})
-	 @docker buildx bake $(bake_target)
+	 @docker buildx bake $(bake_target) --no-cache
 
 check_docker_manager:
 	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null`; then \

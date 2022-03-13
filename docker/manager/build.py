@@ -86,11 +86,12 @@ def add_build_command(cli: click.Group) -> None:
         if ctx.xx_image == "xx-local":
             prepare_xx_image(ctx)
         else:
-            built_img_metafile = "built_image.meta.json"
+            built_img_metafile = "built_image.meta.yaml"
             global BUILDER_LIST, BUILT_IMAGE
 
-            with ctx._generated_dir.open(built_img_metafile, "r") as f:
-                BUILT_IMAGE = yaml.safe_load(f)
+            if ctx._generated_dir.exists(built_img_metafile):
+                with ctx._generated_dir.open(built_img_metafile, "r") as f:
+                    BUILT_IMAGE = yaml.safe_load(f)
 
             def build_multi_arch(cmd):
 

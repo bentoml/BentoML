@@ -4,3 +4,4 @@
 _test.py
 bats-core
 *.txt
+*.meta.*

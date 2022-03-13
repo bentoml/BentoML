@@ -3,6 +3,7 @@ import logging
 
 import click
 from manager._utils import shellcmd
+from python_on_whales import docker
 from manager._exceptions import ManagerLoginFailed
 from manager._click_utils import Environment
 from manager._click_utils import pass_environment
@@ -32,16 +33,7 @@ def main(ctx: Environment, *args, **kwargs) -> None:
             )
             raise ManagerLoginFailed
         else:
-            _ = shellcmd(
-                "docker",
-                "login",
-                f"{docker_info.url}/{ctx.docker_package}",
-                "--user",
-                user,
-                "--password",
-                pwd,
-                shell=True,
-            )
+            docker.login(username=user, password=pwd)
     except Exception as e:  # pylint: disable=broad-except
         raise ManagerLoginFailed(
             f"Failed to login into {docker_info.url} (docker.io) as {docker_info.user}..."

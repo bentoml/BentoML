@@ -3,29 +3,34 @@
 {% set cached = ['arm32v5', 'arm32v6'] %}
 
 {% set pip_options = ['--no-cache-dir'] %}
+
+ARG XX_VERSION={{ xx_version }}
+
+{% if xx_image == 'xx-local' %}
+
+FROM {{ xx_image }}:${XX_VERSION}-${TARGETARCH} as xx
+
+{% else %}
+
+FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
+
+{% endif %}
+
 ARG PYTHON_VERSION
 
 FROM {{ metadata.package }}:{{ build_tag }} as base
 
-{% for key in metadata.arch_ctx if key not in cached %}
-    {% if 'arm64' in key %}
+COPY --from=xx / /
 
 FROM base as base-arm64
-    {% elif 'arm' in key %}
 
-FROM base as base-arm
-    {% elif 'i386' in key %}
-
-FROM base as base-386
-    {% else %}
-
-FROM base as base-{{ key }}
-    {% endif %}
-{% endfor %}
+FROM base as base-amd64
 
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
+
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 

@@ -49,7 +49,7 @@ ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 # setup ENV and ARG
 ARG PYTHON_VERSION

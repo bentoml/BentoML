@@ -23,7 +23,7 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 WORKDIR /
 

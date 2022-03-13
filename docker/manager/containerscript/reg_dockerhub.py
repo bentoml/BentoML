@@ -32,7 +32,7 @@ def main(ctx: Environment, *args, **kwargs) -> None:
             )
             raise ManagerLoginFailed
         else:
-            docker.login(username=user, password=pwd)
+            docker.login(username=user, password=pwd, server=url)
     except Exception as e:  # pylint: disable=broad-except
         raise ManagerLoginFailed(
             f"Failed to login into {docker_info.url} (docker.io) as {docker_info.user}..."

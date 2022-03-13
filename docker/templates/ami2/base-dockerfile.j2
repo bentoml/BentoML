@@ -1,26 +1,31 @@
 {{ metadata.header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
 
+ARG XX_VERSION={{ xx_version }}
+
+{% if xx_image == 'xx-local' %}
+
+FROM {{ xx_image }}:${XX_VERSION}-${TARGETARCH} as xx
+
+{% else %}
+
+FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
+
+{% endif %}
+
 FROM {{ metadata.base_image }} as base
 
-{% for key in metadata.arch_ctx if key not in cached %}
-    {% if 'arm' in key %}
+COPY --from=xx / /
 
-FROM base as base-arm
-    {% elif 'i386' in key %}
+FROM base as base-arm64
 
-FROM base as base-386
-    {% else %}
-
-FROM base as base-{{ key }}
-    {% endif %}
-{% endfor %}
+from base as base-amd64
 
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 # setup ENV and ARG
 {% for key, value in metadata.envars.items() if key not in ["BENTOML_VERSION","LC_ALL","LANG"] %}

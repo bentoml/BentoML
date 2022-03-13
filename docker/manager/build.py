@@ -4,6 +4,7 @@ import json
 import atexit
 import typing as t
 import logging
+import traceback
 from uuid import uuid4
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
@@ -148,7 +149,10 @@ def add_build_command(cli: click.Group) -> None:
                 with ThreadPoolExecutor(max_workers=max_workers * 2) as executor:
                     list(executor.map(build_multi_arch, base_buildx_args))
                     list(executor.map(build_multi_arch, build_buildx_args))
-                executor.shutdown()
+            except Exception as e:
+                logger.error(e)
+                traceback.format_exc()
+                raise
             finally:
                 with ctx._manifest_dir.open(
                     built_img_metafile, "w", encoding="utf-8"

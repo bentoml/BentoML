@@ -7,7 +7,15 @@
 # ===========================================
 
 
+ARG XX_VERSION=1.1.0
+
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
+
 FROM registry.access.redhat.com/ubi7/ubi:latest as base
+
+COPY --from=xx / /
 
 FROM base as base-amd64
 ENV NVARCH x86_64
@@ -37,7 +45,7 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 # setup ENV and ARG
 ARG PYTHON_VERSION

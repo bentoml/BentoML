@@ -115,7 +115,7 @@ ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     cuda-libraries-11-5=${NVIDIA_CUDA_LIB_VERSION} \

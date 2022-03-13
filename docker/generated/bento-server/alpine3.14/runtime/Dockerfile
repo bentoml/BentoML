@@ -35,7 +35,7 @@ ARG TARGETARCH
 
 ARG TARGETPLATFORM
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 ENV BENTOML_VERSION=1.0.0a6
 

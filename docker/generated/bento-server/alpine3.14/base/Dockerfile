@@ -90,7 +90,7 @@ ARG TARGETARCH
 
 ENV PATH /opt/conda/bin:/usr/local/bin:$PATH
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 # setup ENV and ARG
 ARG PYTHON_VERSION

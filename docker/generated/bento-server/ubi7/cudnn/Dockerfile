@@ -112,7 +112,7 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.ai>"
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 RUN yum install -y \
     cuda-libraries-11-5-${NVIDIA_CUDA_LIB_VERSION} \

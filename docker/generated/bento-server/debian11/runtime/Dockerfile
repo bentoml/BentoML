@@ -7,11 +7,6 @@
 # ===========================================
 
 
-ARG XX_VERSION=1.1.0
-
-
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
-
 
 ARG PYTHON_VERSION
 
@@ -28,8 +23,6 @@ FROM base as base-ppc64le
 FROM base as base-s390x
 
 FROM base-${TARGETARCH}
-
-COPY --from=xx / /
 
 ARG TARGETARCH
 

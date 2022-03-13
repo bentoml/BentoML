@@ -1,17 +1,6 @@
 {{ metadata.header }}
 
 {% set pip_options = ['--no-cache-dir'] %}
-ARG XX_VERSION={{ xx_version }}
-
-{% if xx_image == 'xx-local' %}
-
-FROM {{ xx_image }}:${XX_VERSION}-${TARGETARCH} as xx
-
-{% else %}
-
-FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
-
-{% endif %}
 
 ARG PYTHON_VERSION
 
@@ -36,8 +25,6 @@ FROM base as base-{{ key }}
 {% endfor %}
 
 FROM base-${TARGETARCH}
-
-COPY --from=xx / /
 
 ARG TARGETARCH
 

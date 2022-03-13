@@ -46,7 +46,7 @@ __all__ = (
     "as_posix",
 )
 
-SUPPORTED_PYTHON_VERSION = ("3.6", "3.7", "3.8", "3.9", "3.10")
+SUPPORTED_PYTHON_VERSION = ("3.7", "3.8", "3.9", "3.10")
 SUPPORTED_OS_RELEASES = (
     "debian11",
     "debian10",

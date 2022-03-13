@@ -97,13 +97,23 @@ def add_generation_command(cli: click.Group) -> None:
 
     @cli.command()
     @click.option(
-        "--dump-metadata",
-        is_flag=True,
-        default=False,
-        help="Dump metadata to files. Useful for debugging",
+        "--xx-image",
+        metavar="<xx-image>",
+        required=False,
+        type=click.STRING,
+        help="xx image tag to use. Useful when running in CI to build this image locally to avoid rate limitting. [optional]",
+    )
+    @click.option(
+        "--xx-version",
+        metavar="<xx-version>",
+        required=False,
+        type=click.STRING,
+        help="version for xx to use. Useful when running in CI to build this image locally to avoid rate limitting. [optional]",
     )
     @pass_environment
-    def generate(ctx: Environment, dump_metadata: bool) -> None:
+    def generate(
+        ctx: Environment, xx_image: t.Optional[str], xx_version: t.Optional[str]
+    ) -> None:
         """
         Generate Dockerfile and README for a given docker package.
 
@@ -121,13 +131,23 @@ def add_generation_command(cli: click.Group) -> None:
                 "`generate` shouldn't be running as root, as "
                 "wrong file permission would break the workflow."
             )
+        xx_info = (xx_image, xx_version)
+        try:
+            if ctx.overwrite:
+                ctx._generated_dir.removetree(".")
 
-        if dump_metadata:
+            # generate readmes and dockerfiles
+            generate_dockerfiles(ctx, xx_info)
+            generate_readmes(ctx)
             if ctx.verbose:
                 logger.info(
-                    "[bold yellow] --dump-metadata is passed, "
-                    "stopped at generating build and release "
-                    "context to [bold]generated[/]... [/]",
+                    f"[green] Finished generating {ctx.docker_package}...[/]",
+                    extra={"markup": True},
+                )
+        finally:
+            if ctx.verbose:
+                logger.debug(
+                    "[bold yellow]Dump context to [bold]generated[/]... [/]",
                     extra={"markup": True},
                 )
 
@@ -136,19 +156,6 @@ def add_generation_command(cli: click.Group) -> None:
             ) as ouf1, ctx._generated_dir.open("tags.meta.json", "w") as ouf2:
                 ouf1.write(json.dumps(unstructure(ctx.build_ctx), indent=2))
                 ouf2.write(json.dumps(unstructure(ctx.release_ctx), indent=2))
-            return
-
-        if ctx.overwrite:
-            ctx._generated_dir.removetree(".")
-
-        # generate readmes and dockerfiles
-        generate_dockerfiles(ctx)
-        generate_readmes(ctx)
-        if ctx.verbose:
-            logger.info(
-                f"[green] Finished generating {ctx.docker_package}...[/]",
-                extra={"markup": True},
-            )
 
 
 def get_python_version_from_tag(tag: str) -> t.List[int]:
@@ -204,7 +211,20 @@ def generate_readmes(ctx: Environment) -> None:
     )
 
 
-def generate_dockerfiles(ctx: Environment):
+def generate_dockerfiles(
+    ctx: Environment, xx_info: t.Tuple[t.Optional[str], t.Optional[str]]
+):
+
+    xx_image, xx_version = xx_info
+
+    if xx_image and xx_image != ctx.xx_image:
+        xx_image_ = xx_image
+    else:
+        xx_image_ = ctx.xx_image
+    if xx_version and xx_image == "xx-local":
+        xx_version_ = xx_version
+    else:
+        xx_version_ = ctx.xx_version
 
     generated_files = []
     for build_info, tag_info in zip(ctx.build_ctx.values(), ctx.release_ctx.values()):
@@ -228,15 +248,15 @@ def generate_dockerfiles(ctx: Environment):
             else:
                 cuda = None
             serialize_cuda = cattr.unstructure(cuda)
+            arch_ctx = shared_ctx.architectures
 
             metadata = {
                 "header": bi.header,
                 "base_image": bi.base_image,
                 "envars": bi.envars,
                 "package": shared_ctx.docker_package,
-                "arch_ctx": shared_ctx.architectures,
+                "arch_ctx": arch_ctx,
             }
-            xx_version = "1.1.0"  # NOTE: we will use this for cross-platform helper.
 
             cuda_target_arch = {
                 "amd64": "x86_64",
@@ -249,8 +269,8 @@ def generate_dockerfiles(ctx: Environment):
                 if generated_output in generated_files:
                     continue
                 else:
+                    generated_files.append(generated_output)
                     for tpl_file in paths["input_paths"]:
-                        arch_ctx = shared_ctx.architectures
                         to_render = partial(
                             render_template,
                             input_name=tpl_file,
@@ -259,7 +279,8 @@ def generate_dockerfiles(ctx: Environment):
                             out_fs=ctx._generated_dir,
                             build_tag=paths["build_tag"],
                             cuda=serialize_cuda,
-                            xx_version=xx_version,
+                            xx_version=xx_version_,
+                            xx_image=xx_image_,
                             metadata=metadata,
                         )
 
@@ -274,5 +295,3 @@ def generate_dockerfiles(ctx: Environment):
                                 to_render()
                         except Exception:  # pylint: disable=broad-except
                             logger.error(traceback.format_exc())
-                        finally:
-                            generated_files.append(generated_output)

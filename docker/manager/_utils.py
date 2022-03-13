@@ -1,7 +1,5 @@
-import io
 import sys
 import json
-import atexit
 import typing as t
 import logging
 import traceback
@@ -11,6 +9,7 @@ from typing import overload
 from typing import TYPE_CHECKING
 from pathlib import Path as pathlib_path
 from functools import wraps
+from functools import partial
 
 import attrs
 import cattr
@@ -24,6 +23,7 @@ from fs.base import FS
 from plumbum import local
 from manager._exceptions import ManagerException
 from manager._exceptions import ManagerInvalidShellCmd
+from python_on_whales.exceptions import DockerException
 
 if TYPE_CHECKING:
     from manager._types import P
@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from manager._schemas import BuildCtx
     from manager._schemas import ReleaseCtx
     from plumbum.machines.local import LocalCommand
+    from plumbum.machines.local import PlumbumLocalPopen
 
 logger = logging.getLogger(__name__)
 
@@ -138,9 +139,8 @@ def graceful_exit(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
     def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> "t.Any":
         try:
             return func(*args, **kwargs)
-        except KeyboardInterrupt:
+        except Exception:
             logger.info("Stopping now...")
-            atexit.register(run, "docker", "buildx", "prune", log_output=False)
             sys.exit(0)
 
     return wrapper
@@ -188,22 +188,21 @@ def jprint(*args: t.Any, indent: int = 2, **kwargs: t.Any) -> None:
     sprint(json.dumps(args[0], indent=indent), *args[1:], **kwargs)
 
 
+def process_docker_arch(arch: str) -> str:
+    # NOTE: hard code these platform, seems easy to manage
+    if "arm64" in arch:
+        fmt = "arm64/v8"
+    elif "arm32" in arch:
+        fmt = "/".join(arch.split("32"))
+    elif "i386" in arch:
+        fmt = arch[1:]
+    else:
+        fmt = arch
+    return fmt
+
+
 def get_docker_platform_mapping() -> t.Dict[str, str]:
-    # hard code these platform, seems easy to manage
-    formatted = "linux/{fmt}"
-
-    def process(arch: str) -> str:
-        if "arm64" in arch:
-            fmt = "arm64/v8"
-        elif "arm32" in arch:
-            fmt = "/".join(arch.split("32"))
-        elif "i386" in arch:
-            fmt = arch[1:]
-        else:
-            fmt = arch
-        return formatted.format(fmt=fmt)
-
-    return {k: process(k) for k in SUPPORTED_ARCHITECTURE_TYPE}
+    return {k: f"linux/{process_docker_arch(k)}" for k in SUPPORTED_ARCHITECTURE_TYPE}
 
 
 def get_data(
@@ -251,52 +250,54 @@ class Output:
     stdout: str
 
 
-def get_bin(bin: str) -> "LocalCommand":
+def get_bin(bin: str) -> "t.Tuple[LocalCommand, str]":
     if "docker" in bin:
         if pathlib_path("/usr/local/bin/docker").exists():
-            bin_name = local["/usr/local/bin/docker"]
+            name = "/usr/local/bin/docker"
         elif pathlib_path("/usr/bin/docker").exists():
-            bin_name = local["/usr/bin/docker"]
+            name = "/usr/bin/docker"
         else:
             raise ManagerInvalidShellCmd("Can't find docker executable!")
     else:
-        bin_name = local[bin]
-    return bin_name
+        name = bin
+
+    return local[name], name
 
 
-@raise_exception
 def shellcmd(
-    bin: str, *args: str, log_output: bool = True, shell: bool = False
-) -> Output:
-    bin_name = get_bin(bin)
-    stdout, stderr = "", ""
-    p = bin_name.popen(
-        args=args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    bin: str,
+    *args: str,
+    shell: bool = False,
+    return_proc: bool = False,
+) -> "t.Union[partial[PlumbumLocalPopen], Output]":
+    bin_name, _ = get_bin(bin)
+    proc = partial(
+        bin_name.popen,
+        args=args,
+        shell=shell,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
-    for i in io.TextIOWrapper(p.stdout, encoding="utf-8"):
-        if log_output:
-            sprint(i)
-        stdout += i
-    for i in io.TextIOWrapper(p.stderr, encoding="utf-8"):
-        if log_output:
-            sprint(i)
-        stderr += i
-    p.communicate()
-    return Output(
-        returncode=p.returncode,
-        stdout=stdout,
-        stderr=stderr,
-    )
+    if return_proc:
+        return proc
+    else:
+        p = proc()
+        stdout, stderr = p.communicate()
+        return Output(
+            returncode=p.returncode,
+            stdout=stdout,
+            stderr=stderr,
+        )
 
 
-@raise_exception
-@graceful_exit
-def run(bin: str, *args: str, verbose: bool = True, **kwargs: t.Any) -> None:
-    result = shellcmd(bin, *args, log_output=verbose, **kwargs)
-    if result.returncode > 0:
-        logger.error(result.stderr)
-    if result.stdout != "":
-        logger.info(result.stdout)
+def run(
+    bin: str, *args: str, return_proc: bool = False, **kwargs: t.Any
+) -> "t.Union[int, partial[PlumbumLocalPopen]]":
+    p = shellcmd(bin, *args, return_proc=return_proc, **kwargs)
+    if isinstance(p, Output):
+        return p.returncode
+    else:
+        return p
 
 
 def preprocess_template_paths(input_name: str, arch: t.Optional[str]) -> str:
@@ -315,6 +316,20 @@ def preprocess_template_paths(input_name: str, arch: t.Optional[str]) -> str:
         if arch:
             output_name += f"-{arch}"
         return output_name
+
+
+def uname_m_to_targetarch():
+    return {
+        "aarch64": "arm64",
+        "arm64": "arm64",
+        "x86_64": "amd64",
+        "armv7l": "arm",
+        "riscv64": "riscv64",
+        "i686": "386",
+        "mips64": "mips64le",
+        "s390x": "s390x",
+        "ppc64le": "ppc64le",
+    }
 
 
 def render_template(
@@ -340,9 +355,27 @@ def render_template(
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    custom_function = {"get_arch_alias": uname_m_to_targetarch}
+    template_env.globals.update(custom_function)
 
     with inp_fs.open(input_name, "r") as inf:
         template = template_env.from_string(inf.read())
 
     with out_path_fs.open(output_name_, "w", encoding="utf-8") as f:
         f.write(template.render(build_tag=build_tag, **kwargs))
+
+
+def stream_logs(resp: t.Iterator[str], tag: str, plain: bool = True) -> None:
+    while True:
+        try:
+            output = next(resp)
+            if plain:
+                sprint(output)
+            else:
+                logger.info(output)
+        except DockerException as e:
+            logger.error(f"[{type(e).__name__}] Error while streaming logs:\n{e}")
+            break
+        except StopIteration:
+            logger.info(f"Successfully built {tag}")
+            break

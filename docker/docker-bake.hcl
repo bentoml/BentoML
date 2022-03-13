@@ -1,40 +1,117 @@
-variable "IMAGE_NAME" {
-    default = "bentoml-docker"
-}
-variable "TAG" {
-    default = "1.0"
-}
-variable "FULL_NAME" {
-    default = "${IMAGE_NAME}:${TAG}"
-}
-variable "USE_GLIBC" {
+/* ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ ███████╗ */
+/* ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗██╔════╝ */
+/* ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝███████╗ */
+/* ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║ */
+/* ██║  ██║███████╗███████╗██║     ███████╗██║  ██║███████║ */
+/* ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝ */
+
+variable "NO_ARCH" {
     default = ""
 }
-
-target "platforms" {
-    platforms = concat(["linux/amd64", "linux/386", "linux/arm64/v8", "linux/arm/v7","linux/arm/v6", "linux/ppc64le", "linux/s390x", "linux/riscv64","linux/mips64le","darwin/amd64", "darwin/arm64", "windows/amd64", "windows/arm", "windows/386"], USE_GLIBC!=""?[]:["windows/arm64"])
+function "TagWithArch" {
+    params = [repo, tag, no_arch, arch]
+    result = [no_arch =="1"?"${repo}:${tag}":"${repo}:${tag}-${arch}",]
 }
 
-function "tag_arch" {
-    params = [arch]
-    result = "${FULL_NAME}-${arch}"
+/* ██╗  ██╗██╗  ██╗     ███╗   ███╗███████╗████████╗ █████╗ */
+/* ╚██╗██╔╝╚██╗██╔╝     ████╗ ████║██╔════╝╚══██╔══╝██╔══██╗ */
+/*  ╚███╔╝  ╚███╔╝█████╗██╔████╔██║█████╗     ██║   ███████║ */
+/*  ██╔██╗  ██╔██╗╚════╝██║╚██╔╝██║██╔══╝     ██║   ██╔══██║ */
+/* ██╔╝ ██╗██╔╝ ██╗     ██║ ╚═╝ ██║███████╗   ██║   ██║  ██║ */
+/* ╚═╝  ╚═╝╚═╝  ╚═╝     ╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ */
+
+variable "XX_REPO" {
+    default = "xx-local"
+}
+variable "XX_TAG"{
+    default = "1.1.0"
+}
+target "_xx_meta"{
+    tags = ["${XX_REPO}:${XX_TAG}"]
+}
+target "_xx-platforms" {
+    platforms = ["linux/amd64", "linux/arm64", "linux/arm", "linux/arm/v6", "linux/ppc64le", "linux/s390x", "linux/386", "linux/riscv64"]
+}
+target "local-xx" {
+    inherits = ["_xx_meta"]
+	context = "vendors/xx/base"
+	target = "base"
+    tags = TagWithArch(XX_REPO, XX_TAG, "1", "")
 }
 
-target "build-arm64" {
+target "local-xx-arm64" {
+    inherits = ["local-xx"]
+    platforms = ["linux/arm64/v8"]
+    tags = TagWithArch(XX_REPO, XX_TAG, NO_ARCH, "arm64")
+    output = ["type=docker"]
+}
+
+target "local-xx-amd64" {
+    inherits = ["local-xx"]
+    platforms = ["linux/amd64"]
+    tags = TagWithArch(XX_REPO, XX_TAG, NO_ARCH, "amd64")
+    output = ["type=docker"]
+}
+target "local-xx-s390x" {
+    inherits = ["local-xx"]
+    platforms = ["linux/s390x"]
+    tags = TagWithArch(XX_REPO, XX_TAG, NO_ARCH, "s390x")
+    output = ["type=docker"]
+}
+target "local-xx-ppc64le" {
+    inherits = ["local-xx"]
+    platforms = ["linux/ppc64le"]
+    tags = TagWithArch(XX_REPO, XX_TAG, NO_ARCH, "ppc64le")
+    output = ["type=docker"]
+}
+
+target "local-xx-all" {
+    inherits = ["local-xx", "_xx-platforms"]
+}
+
+group "xx-default" {
+    targets = ["local-xx-all"]
+}
+
+/* ███╗   ███╗ █████╗ ███╗   ██╗ █████╗  ██████╗ ███████╗██████╗       ███╗   ███╗███████╗████████╗ █████╗ */
+/* ████╗ ████║██╔══██╗████╗  ██║██╔══██╗██╔════╝ ██╔════╝██╔══██╗      ████╗ ████║██╔════╝╚══██╔══╝██╔══██╗ */
+/* ██╔████╔██║███████║██╔██╗ ██║███████║██║  ███╗█████╗  ██████╔╝█████╗██╔████╔██║█████╗     ██║   ███████║ */
+/* ██║╚██╔╝██║██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══╝  ██╔══██╗╚════╝██║╚██╔╝██║██╔══╝     ██║   ██╔══██║ */
+/* ██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║      ██║ ╚═╝ ██║███████╗   ██║   ██║  ██║ */
+/* ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝      ╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ */
+
+variable "MANAGER_REPO" {
+    default = "bentoml-docker"
+}
+variable "MANAGER_TAG"{
+    default = "1.1.0"
+}
+
+target "manager-arm64" {
     platforms = ["linux/arm64/v8"]
     dockerfile = "./hack/dev.Dockerfile"
-    tags = [tag_arch("arm64"),]
+    tags = TagWithArch(MANAGER_REPO, MANAGER_TAG, NO_ARCH, "arm64")
     output = ["type=docker"]
 }
 
-target "build-amd64" {
+target "manager-amd64" {
     platforms = ["linux/amd64"]
     dockerfile = "./hack/dev.Dockerfile"
-    tags = [tag_arch("amd64"),]
+    tags = TagWithArch(MANAGER_REPO, MANAGER_TAG, NO_ARCH, "amd64")
     output = ["type=docker"]
 }
 
+/* ██████╗ ██╗      █████╗ ████████╗███████╗ ██████╗ ██████╗ ███╗   ███╗      ███╗   ███╗███████╗████████╗ █████╗ */
+/* ██╔══██╗██║     ██╔══██╗╚══██╔══╝██╔════╝██╔═══██╗██╔══██╗████╗ ████║      ████╗ ████║██╔════╝╚══██╔══╝██╔══██╗ */
+/* ██████╔╝██║     ███████║   ██║   █████╗  ██║   ██║██████╔╝██╔████╔██║█████╗██╔████╔██║█████╗     ██║   ███████║ */
+/* ██╔═══╝ ██║     ██╔══██║   ██║   ██╔══╝  ██║   ██║██╔══██╗██║╚██╔╝██║╚════╝██║╚██╔╝██║██╔══╝     ██║   ██╔══██║ */
+/* ██║     ███████╗██║  ██║   ██║   ██║     ╚██████╔╝██║  ██║██║ ╚═╝ ██║      ██║ ╚═╝ ██║███████╗   ██║   ██║  ██║ */
+/* ╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝      ╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ */
+
+target "_test-platforms" {
+    platforms = concat(["linux/amd64", "linux/386", "linux/arm64/v8", "linux/arm/v7","linux/arm/v6", "linux/ppc64le", "linux/s390x", "linux/riscv64","linux/mips64le"])
+}
 target "test-platforms" {
-    inherits = ["platforms"]
+    inherits = ["_test-platforms"]
     dockerfile = "./hack/platform.Dockerfile"
 }

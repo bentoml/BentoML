@@ -10,7 +10,9 @@
 
 ARG XX_VERSION=1.1.0
 
+
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 
 FROM alpine:3.14 as alpine-glibc
 

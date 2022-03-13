@@ -70,7 +70,6 @@ def add_authenticate_command(cli: click.Group) -> None:
         ctx.registries = registries
 
     @cli.command(name="push-readmes")
-    @inject
     @raise_exception
     @pass_environment
     def push_readmes(ctx: Environment) -> None:

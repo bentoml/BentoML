@@ -3,3 +3,4 @@
 .env
 _test.py
 bats-core
+*.txt

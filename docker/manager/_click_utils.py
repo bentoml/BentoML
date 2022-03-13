@@ -3,6 +3,7 @@ import os
 import typing as t
 import difflib
 import logging
+import traceback
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from functools import wraps
@@ -11,6 +12,7 @@ import attrs
 import click
 import attrs.converters
 from click import ClickException
+from toolz import dicttoolz
 from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
@@ -19,6 +21,7 @@ from manager._make import set_generation_context
 from manager._utils import SUPPORTED_REGISTRIES
 from manager._utils import SUPPORTED_OS_RELEASES
 from manager._utils import SUPPORTED_PYTHON_VERSION
+from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
 from click.exceptions import UsageError
 from manager._schemas import BuildCtx
 from manager._schemas import ReleaseCtx
@@ -42,6 +45,23 @@ CONTAINERSCRIPT_FOLDER = os.path.abspath(
 )
 
 OPTIONAL_CMD_FOR_VERSION = ["authenticate", "create-manifest"]
+
+
+def to_docker_targetarch(value: t.Optional[t.List[str]]) -> t.List[str]:
+    result = []
+    if not value:
+        value = SUPPORTED_ARCHITECTURE_TYPE
+    for x in value:
+        if x == "arm64v8":
+            x = "arm64"
+        elif "arm32" in x:
+            x = "arm"
+        elif x == "i686":
+            x = "386"
+        elif x == "mips64":
+            x = "mips64le"
+        result.append(x)
+    return result
 
 
 @attrs.define
@@ -83,6 +103,7 @@ class Environment:
     )
 
     # ctx
+    push_registry: t.Optional[str] = attrs.field(default=None)
     registries: t.Dict[str, DockerRegistry] = attrs.field(
         factory=dict,
         validator=attrs.validators.deep_mapping(
@@ -103,6 +124,17 @@ class Environment:
             attrs.validators.in_(SUPPORTED_OS_RELEASES),
             attrs.validators.deep_iterable(attrs.validators.instance_of(ReleaseCtx)),
         ),
+    )
+
+    # NOTE: we will use this for cross-platform helper.
+    xx_version: str = attrs.field(
+        default=None, converter=attrs.converters.default_if_none("1.1.0")
+    )
+    xx_image: str = attrs.field(
+        default=None, converter=attrs.converters.default_if_none("tonistiigi/xx")
+    )
+    docker_target_arch: t.List[str] = attrs.field(
+        default=None, converter=to_docker_targetarch
     )
 
     @inject
@@ -126,7 +158,7 @@ if TYPE_CHECKING:
         str,
         str,
         str,
-        t.Optional[t.Iterable[str]],
+        t.Optional[str],
         t.Optional[t.Iterable[str]],
         t.Optional[t.Iterable[str]],
     ]
@@ -195,7 +227,6 @@ class ManagerCommandGroup(click.Group):
             "--registry",
             required=False,
             type=click.Choice(SUPPORTED_REGISTRIES),
-            multiple=True,
             help="Targets registry to login.",
         )
         @click.option(
@@ -216,7 +247,7 @@ class ManagerCommandGroup(click.Group):
             cuda_version: str,
             docker_package: str,
             bentoml_version: str,
-            registry: t.Optional[t.Iterable[str]],
+            registry: t.Optional[str],
             distros: t.Optional[t.Iterable[str]],
             python_version: t.Optional[t.Iterable[str]],
             *args: "P.args",
@@ -282,12 +313,15 @@ class ManagerCommandGroup(click.Group):
                 loaded_distros, loaded_registries = default_context  # type: ignore
 
             if registry:
-                registries = {k: loaded_registries[k] for k in registry}
+                registries = dicttoolz.keyfilter(
+                    lambda x: x == registry, loaded_registries
+                )
             else:
                 registries = deepcopy(loaded_registries)
 
             ctx.distros = distros
             ctx.registries = registries
+            ctx.push_registry = registry
             ctx.docker_package = docker_package
 
             set_generation_context(ctx, loaded_distros)
@@ -315,6 +349,9 @@ class ManagerCommandGroup(click.Group):
                     logger.info(
                         f"{command_name} failed while --quiet is passed. Remove --quiet to see the stack trace."
                     )
+            except Exception:  # NOTE: for other exception show traceback
+                logger.exception(traceback.format_exc())
+                raise
 
         return t.cast("ClickFunctionWrapper[t.Any, t.Any]", wrapper)
 

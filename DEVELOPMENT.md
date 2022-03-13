@@ -13,7 +13,7 @@ pip --version
 
 Clone the source code from BentoML's GitHub repository:
 ```bash
-git clone https://github.com/bentoml/BentoML.git && cd BentoML
+git clone --recurse-submodules --depth=1 https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
 Install BentoML with pip in `editable` mode:

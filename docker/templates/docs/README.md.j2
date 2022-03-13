@@ -66,6 +66,10 @@ Example image tags:
 - `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
+## NOTICE: MISSING ARCHITECTURE
+
+For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not having support for other architecture.
+
 ## Latest tags for `{{ bentoml_package }} {{ bentoml_release_version }}`
 
 {% for distros, tag_list in tag_ref.items() %}

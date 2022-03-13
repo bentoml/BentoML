@@ -20,6 +20,8 @@ pyyaml-include = "^1.2.post2"
 simple-di = "^0.1.5"
 cattrs = "^1.10.0"
 fs = "^2.4.15"
+python-on-whales = "^0.38.0"
+toolz = "^0.11.2"
 
 
 [tool.poetry.dev-dependencies]

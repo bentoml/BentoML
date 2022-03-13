@@ -30,7 +30,7 @@ ENV DOCKER_BUILDKIT=1 \
     POETRY_HOME="/home/$USER/.local" \
     PATH="$PATH:/root/.local/bin:/home/manager-docker/.local/bin"
 
-RUN xx-apk add --no-cache wget git bash findutils python3 python3-dev curl g++ libmagic skopeo jq
+RUN xx-apk add --no-cache wget git bash findutils python3 python3-dev curl g++ libmagic skopeo jq make
 
 ENV PUSHRM_URL https://github.com/christian-korneck/docker-pushrm/releases/download/v1.8.0/docker-pushrm_linux_
 

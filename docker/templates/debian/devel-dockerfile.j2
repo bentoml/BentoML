@@ -2,7 +2,15 @@
 
 ARG XX_VERSION={{ xx_version }}
 
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+{% if xx_image == 'xx-local' %}
+
+FROM {{ xx_image }}:${XX_VERSION}-${TARGETARCH} as xx
+
+{% else %}
+
+FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
+
+{% endif %}
 
 ARG PYTHON_VERSION
 

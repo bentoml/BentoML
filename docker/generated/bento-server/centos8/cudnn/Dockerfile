@@ -9,14 +9,14 @@
 
 ARG PYTHON_VERSION
 
-FROM bento-server:base-python$PYTHON_VERSION-ubi8 as build_image
+FROM bento-server:base-python$PYTHON_VERSION-centos8 as build_image
 
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
     echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
 
-COPY generated/bento-server/ubi8/cudnn/cuda.repo /etc/yum.repos.d/cuda.repo
-COPY generated/bento-server/ubi8/cudnn/nvidia-ml.repo /etc/yum.repos.d/nvidia-ml.repo
+COPY generated/bento-server/centos8/cudnn/cuda.repo /etc/yum.repos.d/cuda.repo
+COPY generated/bento-server/centos8/cudnn/nvidia-ml.repo /etc/yum.repos.d/nvidia-ml.repo
 
 RUN yum upgrade -y && yum install -y \
         cuda-cudart-11-3 \

@@ -105,7 +105,6 @@ def add_authenticate_command(cli: click.Group) -> None:
             readmes = fs.path.combine(ctx.docker_package, "README.md")
             url = os.environ.get(repo.url, None)
             if url is not None and repo.provider in ["dockerhub", "quay", "harborv2"]:
-                click_ctx.invoke(containerscript_cli)
                 cmd_args = [
                     "pushrm",
                     "--file",

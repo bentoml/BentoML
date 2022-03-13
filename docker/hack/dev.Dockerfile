@@ -62,15 +62,15 @@ RUN set -x && \
 RUN chmod a+x $HOME/.docker/cli-plugins/docker-pushrm && \
     chmod a+x $HOME/.docker/cli-plugins/docker-buildx
 
+RUN if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi
+
+RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; fi
+
 RUN python3 -m ensurepip
 
 RUN rm -r /usr/lib/python*/ensurepip
 
 RUN pip3 install --upgrade pip setuptools
-
-RUN if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi
-
-RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; fi
 
 LABEL maintainer="BentoML Team <contact@bentoml.ai>"
 

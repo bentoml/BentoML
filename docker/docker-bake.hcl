@@ -87,6 +87,10 @@ variable "MANAGER_TAG"{
     default = "1.1.0"
 }
 
+group default {
+   targets = ["manager-arm64", "manager-amd64"]
+}
+
 target "manager-arm64" {
     platforms = ["linux/arm64/v8"]
     dockerfile = "./hack/dev.Dockerfile"

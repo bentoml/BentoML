@@ -44,7 +44,7 @@ CONTAINERSCRIPT_FOLDER = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "containerscript")
 )
 
-OPTIONAL_CMD_FOR_VERSION = ["authenticate", "create-manifest"]
+OPTIONAL_CMD_FOR_VERSION = ["authenticate", "create-manifest", "push-readmes"]
 
 
 def to_docker_targetarch(value: t.Optional[t.List[str]]) -> t.List[str]:

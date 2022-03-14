@@ -3,6 +3,7 @@ import typing as t
 import logging
 import secrets
 import threading
+import contextlib
 from typing import TYPE_CHECKING
 from pathlib import Path
 from datetime import datetime
@@ -127,3 +128,16 @@ def scheduled_track(
 
     thread = threading.Thread(target=loop, daemon=True)
     return thread, stop_event
+
+
+@contextlib.contextmanager
+def server_tracking(event_properties: EventMeta):
+    tracking_thread, stop_thread_event = scheduled_track(
+        event_properties=event_properties
+    )
+    try:
+        tracking_thread.start()
+        yield
+    finally:
+        stop_thread_event.set()
+        tracking_thread.join()

@@ -21,7 +21,7 @@ from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
 from ..utils.analytics import track
 from ..utils.analytics import get_serve_info
-from ..utils.analytics import scheduled_track
+from ..utils.analytics import server_tracking
 from ..utils.analytics import BentoServeProductionOnStartupEvent
 from ..utils.analytics import BentoServeProductionScheduledEvent
 from ..utils.analytics import BentoServeDevelopmentOnStartupEvent
@@ -148,17 +148,14 @@ def serve_development(
         watchers,
         sockets=list(circus_socket_map.values()),
     )
-    tracking_thread, stop_thread_event = scheduled_track(
-        event_properties=BentoServeDevelopmentScheduledEvent(
-            serve_id=serve_info.serve_id,
-            bento_identifier=bento_identifier,
-            triggered_at=datetime.now(timezone.utc),
-        )
+    event_properties = BentoServeDevelopmentScheduledEvent(
+        serve_id=serve_info.serve_id,
+        bento_identifier=bento_identifier,
+        triggered_at=datetime.now(timezone.utc),
     )
     _ensure_prometheus_dir()
 
-    try:
-        tracking_thread.start()
+    with server_tracking(event_properties):
         atexit.register(
             track,
             event_properties=BentoServeDevelopmentOnShutdownEvent(
@@ -173,8 +170,6 @@ def serve_development(
                 f"running on http://{host}:{port} (Press CTRL+C to quit)"
             ),
         )
-    finally:
-        stop_thread_event.set()
 
 
 MAX_AF_UNIX_PATH_LENGTH = 103
@@ -203,7 +198,7 @@ def serve_production(
             bento_creation_timestamp=bento.info.creation_time,
             model_tags=bento.info.models,
             model_types=[
-                bento._model_store.get(i).info.module for i in bento.info.models
+                bento._model_store.get(i).info.module for i in bento.info.models  # type: ignore
             ],
         )
     else:
@@ -336,33 +331,30 @@ def serve_production(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
     )
-    tracking_thread, stop_thread_event = scheduled_track(
-        event_properties=BentoServeProductionScheduledEvent(
-            serve_id=serve_info.serve_id,
-            bento_identifier=bento_identifier,
-            triggered_at=datetime.now(timezone.utc),
-        )
+    event_properties = BentoServeProductionScheduledEvent(
+        serve_id=serve_info.serve_id,
+        bento_identifier=bento_identifier,
+        triggered_at=datetime.now(timezone.utc),
     )
+
     _ensure_prometheus_dir()
 
-    try:
-        tracking_thread.start()
-
-        atexit.register(
-            track,
-            event_properties=BentoServeProductionOnShutdownEvent(
-                serve_id=serve_info.serve_id,
-                bento_identifier=bento_identifier,
-                triggered_at=datetime.now(timezone.utc),
-            ),
-        )
-        arbiter.start(
-            cb=lambda _: logger.info(  # type: ignore
-                f'Starting production BentoServer from "bento_identifier" '
-                f"running on http://{host}:{port} (Press CTRL+C to quit)"
-            ),
-        )
-    finally:
-        if uds_path is not None:
-            shutil.rmtree(uds_path)
-        stop_thread_event.set()
+    with server_tracking(event_properties):
+        try:
+            atexit.register(
+                track,
+                event_properties=BentoServeProductionOnShutdownEvent(
+                    serve_id=serve_info.serve_id,
+                    bento_identifier=bento_identifier,
+                    triggered_at=datetime.now(timezone.utc),
+                ),
+            )
+            arbiter.start(
+                cb=lambda _: logger.info(  # type: ignore
+                    f'Starting production BentoServer from "bento_identifier" '
+                    f"running on http://{host}:{port} (Press CTRL+C to quit)"
+                ),
+            )
+        finally:
+            if uds_path is not None:
+                shutil.rmtree(uds_path)

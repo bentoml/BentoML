@@ -30,15 +30,7 @@ QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-aarch64
 
 FULL_TAG := ${MANAGER_REPO}:${MANAGER_TAG}-${UNAME_M}
 
-AS_ROOT ?= false
-
-ifeq ($(AS_ROOT),true)
-	PERMISSION := -u root
-else
-	PERMISSION := -u 1034:1034
-endif
-
-DOCKER_ARGS := $(PERMISSION) --privileged --rm --init \
+DOCKER_ARGS := -u root --privileged --rm --init \
 	-v $(realpath /etc/localtime):/etc/localtime:ro \
 	-v ${PWD}:/bentoml \
 	-v /var/run/docker.sock:/var/run/docker.sock \
@@ -73,7 +65,7 @@ ${QEMUDETECT}:
 	@if [[ "${UNAME_M}" != 'arm64' ]]; then \
 		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes; \
 	else \
-		docker run --rm --privileged aptman/qus -s -- -p i386 i486 arm ppc64le mips64 mips64el s390x aarch64 aarch64_be riscv32 riscv64 x86_64; \
+		docker run --rm --privileged aptman/qus -s -- -p i386 arm ppc64le mips64 mips64el s390x aarch64 riscv64 x86_64; \
 	fi
 remove-qemu: ## Unset registered format
 	docker run --rm --privileged aptman/qus -- -r
@@ -122,28 +114,39 @@ TESTS_DARGS := --bentoml-version $(BENTOML_VERSION)
 
 # positional args
 generate_pargs = xx-image xx-version
-build_pargs = max-workers registry
+build_pargs = max-workers registry distros python-version xx-image xx-version
 test_pargs = releases platforms max-workers registry
 
-UC = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
-pargs = $(foreach a,$($(subst $2,,$1)_pargs),$(if $(value $a),--$a $($a)))
+# flags only
+FLAGS = verbose quiet dry-run
 
-TASKS := generate build test
+UC = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
+rm = $(subst $2,,$1)
+pargs = $(foreach a,$($(subst $2,,$1)_pargs),$(if $(value $a),--$a $($a)))
+flags_only = $(foreach l,$(FLAGS),$(if $(findstring $l, $1),--$l))
+
+TASKS := generate build
 
 .PHONY: run-all
 run-all: ## Run all task in pipeline: generate -> build -> test
 	$(foreach v,$(TASKS), $(MAKE) run-$(v))
+
+.PHONY: docker-run-all
+docker-run-all: ## Run all task in pipeline: generate -> build -> test
+	$(foreach v,$(TASKS), $(MAKE) docker-run-$(v))
 
 .PHONY: run-%
 run-%: ## Run a task. Currently: generate, build, test
 	$(eval $@_prefix := run-)
 	$(eval $@_target := $(subst $($@_prefix), ,$@))
 	$(eval $@_upper_target := $(call UC, $($@_target)))
-	poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix))
+	@poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
 
 .PHONY: docker-run-%
 docker-run-%: check_docker_manager ## Run a task from a docker container (useful for CI)
 	$(eval $@_prefix := docker-run-)
-	$(eval $@_dtarget := $(subst $($@_prefix),,$@))
+	$(eval $@_dtarget := $(subst $($@_prefix), ,$@))
 	$(eval $@_dupper_target := $(call UC, $($@_dtarget)))
-	$(DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix))
+	$(DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
+%:
+	@true

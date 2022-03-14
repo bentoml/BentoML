@@ -4,7 +4,7 @@
 
 ARG XX_VERSION={{ xx_version }}
 
-{% if xx_image == 'xx-local' %}
+{% if xx_image == 'local-xx' %}
 
 FROM {{ xx_image }}:${XX_VERSION}-${TARGETARCH} as xx
 
@@ -91,7 +91,7 @@ FROM base-${TARGETARCH}
 
 COPY --from=xx / /
 
-ENV /root/.shinit
+ENV ENV /root/.shinit
 
 ARG TARGETPLATFORM
 

@@ -21,7 +21,7 @@ function "TagWithArch" {
 /* ╚═╝  ╚═╝╚═╝  ╚═╝     ╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ */
 
 variable "XX_REPO" {
-    default = "xx-local"
+    default = "local-xx"
 }
 variable "XX_TAG"{
     default = "1.1.0"

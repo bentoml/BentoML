@@ -1,4 +1,3 @@
-import os
 import json
 import typing as t
 import logging
@@ -19,7 +18,6 @@ from manager._utils import TEMPLATES_DIR_MAPPING
 from manager._utils import DOCKERFILE_BUILD_HIERARCHY
 from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
 from manager._utils import SUPPORTED_ARCHITECTURE_TYPE_PER_DISTRO
-from manager._exceptions import ManagerException
 from manager._click_utils import Environment
 from manager._click_utils import pass_environment
 from manager._configuration import MANIFEST_FILENAME
@@ -126,11 +124,7 @@ def add_generation_command(cli: click.Group) -> None:
         NOTE: --dump_metadata is useful when development to see build and releases context.
 
         """
-        if os.geteuid() == 0:
-            raise ManagerException(
-                "`generate` shouldn't be running as root, as "
-                "wrong file permission would break the workflow."
-            )
+
         xx_info = (xx_image, xx_version)
         try:
             if ctx.overwrite:
@@ -221,7 +215,7 @@ def generate_dockerfiles(
         xx_image_ = xx_image
     else:
         xx_image_ = ctx.xx_image
-    if xx_version and xx_image == "xx-local":
+    if xx_version and xx_image == "local-xx":
         xx_version_ = xx_version
     else:
         xx_version_ = ctx.xx_version

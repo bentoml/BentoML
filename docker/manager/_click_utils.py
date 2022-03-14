@@ -127,10 +127,10 @@ class Environment:
     )
 
     # NOTE: we will use this for cross-platform helper.
-    xx_version: str = attrs.field(
+    xx_version: t.Optional[str] = attrs.field(
         default=None, converter=attrs.converters.default_if_none("1.1.0")
     )
-    xx_image: str = attrs.field(
+    xx_image: t.Optional[str] = attrs.field(
         default=None, converter=attrs.converters.default_if_none("tonistiigi/xx")
     )
     docker_target_arch: t.List[str] = attrs.field(
@@ -155,6 +155,8 @@ if TYPE_CHECKING:
         bool,
         bool,
         bool,
+        t.Optional[str],
+        t.Optional[str],
         str,
         str,
         str,
@@ -185,6 +187,22 @@ class ManagerCommandGroup(click.Group):
             required=False,
             type=click.STRING,
             default=DockerManagerContainer.default_name,
+            help="Target docker packages to use, default to `bento-server` [optional]",
+        )
+        @click.option(
+            "--xx-image",
+            metavar="<package>",
+            required=False,
+            type=click.STRING,
+            default="tonistiigi/xx",
+            help="Target docker packages to use, default to `bento-server` [optional]",
+        )
+        @click.option(
+            "--xx-version",
+            metavar="<package>",
+            required=False,
+            type=click.STRING,
+            default="1.1.0",
             help="Target docker packages to use, default to `bento-server` [optional]",
         )
         @click.option(
@@ -244,6 +262,8 @@ class ManagerCommandGroup(click.Group):
             quiet: bool,
             verbose: bool,
             overwrite: bool,
+            xx_image: t.Optional[str],
+            xx_version: t.Optional[str],
             cuda_version: str,
             docker_package: str,
             bentoml_version: str,
@@ -323,6 +343,8 @@ class ManagerCommandGroup(click.Group):
             ctx.registries = registries
             ctx.push_registry = registry
             ctx.docker_package = docker_package
+            ctx.xx_image = xx_image
+            ctx.xx_version = xx_version
 
             set_generation_context(ctx, loaded_distros)
 

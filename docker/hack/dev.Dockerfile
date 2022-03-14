@@ -18,11 +18,6 @@ ENV DOCKER_CLI_EXPERIMENTAL enabled
 
 ENV DOCKER_BUILDKIT=1 
 
-ARG USER=manager-docker
-ARG UID=1034
-ARG GID=1034
-RUN addgroup --gid $GID $USER && adduser --disabled-password --uid $UID --ingroup $USER $USER
-
 WORKDIR /bentoml
 
 VOLUME ["/bentoml"]
@@ -30,9 +25,9 @@ VOLUME ["/bentoml"]
 ENV DOCKER_BUILDKIT=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_CACHE_DIR="/home/${USER}/pypoetry" \
-    POETRY_HOME="/home/${USER}/.local" \
-    PATH="${PATH}:/root/.local/bin:/home/manager-docker/.local/bin"
+    POETRY_CACHE_DIR="$HOME/pypoetry" \
+    POETRY_HOME="$HOME/.local" \
+    PATH="${PATH}:$HOME/.local/bin"
 
 RUN xx-apk add --no-cache wget git bash findutils python3 python3-dev curl g++ libmagic skopeo jq make
 
@@ -40,7 +35,7 @@ ENV PUSHRM_URL https://github.com/christian-korneck/docker-pushrm/releases/downl
 
 ENV BUILDX_URL https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-
 
-RUN mkdir -p /home/${USER}/.docker/cli-plugins/
+RUN mkdir -p $HOME/.docker/cli-plugins/
 
 RUN set -x && \
     UNAME_M="$(uname -m)" && \
@@ -60,11 +55,11 @@ RUN set -x && \
         echo "couldn't find a version for ${UNAME_M} that supports both docker-pushrm and buildx"; \
         exit 1; \
     fi && \
-    wget -O /home/${USER}/.docker/cli-plugins/docker-pushrm $PUSHRM_URL${PUSHRM_ARCH} && \
-    wget -O /home/${USER}/.docker/cli-plugins/docker-buildx $BUILDX_URL${BUILDX_ARCH}
+    wget -O $HOME/.docker/cli-plugins/docker-pushrm $PUSHRM_URL${PUSHRM_ARCH} && \
+    wget -O $HOME/.docker/cli-plugins/docker-buildx $BUILDX_URL${BUILDX_ARCH}
 
-RUN chmod a+x /home/${USER}/.docker/cli-plugins/docker-pushrm && \
-    chmod a+x /home/${USER}/.docker/cli-plugins/docker-buildx
+RUN chmod a+x $HOME/.docker/cli-plugins/docker-pushrm && \
+    chmod a+x $HOME/.docker/cli-plugins/docker-buildx
 
 RUN if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi
 
@@ -76,7 +71,7 @@ RUN rm -r /usr/lib/python*/ensurepip
 
 RUN pip3 install --upgrade pip setuptools
 
-LABEL maintainer="BentoML Team <contact@bentoml.ai>"
+LABEL maintainer="BentoML Team <contact@bentoml.com>"
 
 SHELL ["/bin/bash", "-exo", "pipefail", "-c"]
 
@@ -86,7 +81,7 @@ COPY pyproject.toml .
 
 RUN poetry install
 
-COPY --chown=manager-docker:manager-docker hack/bashrc /etc/bash.bashrc
+COPY hack/bashrc /etc/bash.bashrc
 
 RUN chmod a+rwx /etc/bash.bashrc
 

@@ -10,7 +10,7 @@
 ARG XX_VERSION=1.1.0
 
 
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+FROM local-xx:${XX_VERSION}-${TARGETARCH} as xx
 
 
 FROM amazonlinux:2 as base

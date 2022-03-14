@@ -85,79 +85,74 @@ def add_build_command(cli: click.Group) -> None:
         base_buildx_args = [i for i in buildx_args(ctx, base_tag)]
         build_buildx_args = [i for i in buildx_args(ctx, build_tag)]
 
-        if ctx.xx_image == "xx-local":
+        if ctx.xx_image == "local-xx":
             prepare_xx_image(ctx)
-        else:
-            built_img_metafile = "built_image.meta.yaml"
-            global BUILDER_LIST, BUILT_IMAGE
 
-            if ctx._generated_dir.exists(built_img_metafile):
-                with ctx._generated_dir.open(built_img_metafile, "r") as f:
-                    BUILT_IMAGE = yaml.safe_load(f)
+        built_img_metafile = "built_image.meta.yaml"
+        global BUILDER_LIST, BUILT_IMAGE
 
-            def build_multi_arch(cmd):
+        if ctx._generated_dir.exists(built_img_metafile):
+            with ctx._generated_dir.open(built_img_metafile, "r") as f:
+                BUILT_IMAGE = yaml.safe_load(f)
 
-                builder_name = f"{ctx.docker_package}-builder-{uuid4()}"
+        def build_multi_arch(cmd):
 
-                BUILDER_LIST.append(builder_name)
-                builder = create_buildx_builder_instance(name=builder_name)
+            builder_name = f"{ctx.docker_package}-builder-{uuid4()}"
 
-                if cmd["tags"] in BUILT_IMAGE:
-                    logger.info(f"{cmd['tags']} is already built and pushed.")
-                    return
-                else:
-                    BUILT_IMAGE.append(cmd["tags"])
-                    if ctx.verbose:
-                        logger.info(f"Args: {cmd}")
+            BUILDER_LIST.append(builder_name)
+            builder = create_buildx_builder_instance(name=builder_name)
 
-                    # NOTE: we need to push to registry when releasing different
-                    # * architecture.
-                    resp = docker.buildx.build(**cmd, builder=builder)
-                    stream_logs(t.cast(t.Iterator[str], resp), cmd["tags"], plain=False)
-
-            if dry_run:
-                logger.info("--dry-run, output tags to file.")
-                with ctx._generated_dir.open(
-                    "base_tag.meta.json", "w"
-                ) as f1, ctx._generated_dir.open("build_tag.meta.json", "w") as f2:
-                    json.dump(base_tag, f1)
-                    json.dump(build_tag, f2)
+            if cmd["tags"] in BUILT_IMAGE:
+                logger.info(f"{cmd['tags']} is already built and pushed.")
                 return
+            else:
+                BUILT_IMAGE.append(cmd["tags"])
+                if ctx.verbose:
+                    logger.info(f"Args: {cmd}")
 
-            # We need to install QEMU to support multi-arch
-            logger.info(
-                "[bold yellow]Installing binfmt to added support for QEMU...[/]",
-                extra={"markup": True},
-            )
+                # NOTE: we need to push to registry when releasing different
+                # * architecture.
+                resp = docker.buildx.build(**cmd, builder=builder)
+                stream_logs(t.cast(t.Iterator[str], resp), cmd["tags"])
 
-            _ = run("make", "emulator", "-f", ctx._fs.getsyspath("Makefile"))
-            if os.uname().machine != "arm64":
-                _ = run("make", "install-qemu", "-f", ctx._fs.getsyspath("Makefile"))
+        if dry_run:
+            logger.info("--dry-run, output tags to file.")
+            with ctx._generated_dir.open(
+                "base_tag.meta.json", "w"
+            ) as f1, ctx._generated_dir.open("build_tag.meta.json", "w") as f2:
+                json.dump(base_tag, f1)
+                json.dump(build_tag, f2)
+            return
 
-            def remove_buildx_builder():
-                # tries to remove zombie proc.
-                docker.buildx.prune(filters={"until": "12h"})
-                for b in BUILDER_LIST:
-                    logger.debug(f"Removing {b}...")
-                    docker.buildx.remove(b)
-                logger.info("Finished removing intermediaries builder.")
-                sys.exit(0)
+        # We need to install QEMU to support multi-arch
+        logger.info(
+            "[bold yellow]Installing binfmt to added support for QEMU...[/]",
+            extra={"markup": True},
+        )
+        _ = run("make", "emulator", "-f", ctx._fs.getsyspath("Makefile"))
 
-            atexit.register(remove_buildx_builder)
+        def remove_buildx_builder():
+            # tries to remove zombie proc.
+            docker.buildx.prune(filters={"until": "12h"})
+            for b in BUILDER_LIST:
+                logger.debug(f"Removing {b}...")
+                docker.buildx.remove(b)
+            logger.info("Finished removing intermediaries builder.")
+            sys.exit(0)
 
-            try:
-                with ThreadPoolExecutor(max_workers=max_workers * 2) as executor:
-                    list(executor.map(build_multi_arch, base_buildx_args))
-                    list(executor.map(build_multi_arch, build_buildx_args))
-            except Exception as e:
-                logger.error(e)
-                traceback.format_exc()
-                raise
-            finally:
-                with ctx._manifest_dir.open(
-                    built_img_metafile, "w", encoding="utf-8"
-                ) as f:
-                    yaml.dump(BUILT_IMAGE, f)
+        atexit.register(remove_buildx_builder)
+
+        try:
+            with ThreadPoolExecutor(max_workers=max_workers * 2) as executor:
+                list(executor.map(build_multi_arch, base_buildx_args))
+                list(executor.map(build_multi_arch, build_buildx_args))
+        except Exception as e:
+            logger.error(e)
+            traceback.format_exc()
+            raise
+        finally:
+            with ctx._manifest_dir.open(built_img_metafile, "w", encoding="utf-8") as f:
+                yaml.dump(BUILT_IMAGE, f)
 
 
 def order_build_hierarchy(
@@ -238,10 +233,7 @@ def buildx_args(
 
         yield {
             "context_path": ctx._fs.getsyspath("/"),
-            "build_args": {
-                "PYTHON_VERSION": python_version,
-                "BUILDKIT_INLINE_CACHE": "1",
-            },
+            "build_args": {"PYTHON_VERSION": python_version},
             "progress": "plain",
             "file": ctx._generated_dir.getsyspath(
                 fs.path.combine(output_path, DOCKERFILE_NAME)
@@ -252,7 +244,7 @@ def buildx_args(
             "labels": labels,
             "tags": ref,
             "push": True,
-            "pull": True,
+            "pull": False,
             "stream_logs": True,
             "cache_from": f"type=registry,ref={ref}",
             "cache_to": f"type=registry,ref={ref},mode=max",
@@ -282,7 +274,7 @@ def prepare_xx_image(ctx: Environment):
     )
     try:
         for arch in ctx.docker_target_arch:
-            img = docker.image.list(filters={"reference": f"xx-local:*-{arch}"})
+            img = docker.image.list(filters={"reference": f"local-xx:*-{arch}"})
             if len(img) == 0:
                 config = docker.buildx.bake(
                     targets=f"local-xx-{arch}",

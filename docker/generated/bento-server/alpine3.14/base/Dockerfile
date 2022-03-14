@@ -11,7 +11,7 @@
 ARG XX_VERSION=1.1.0
 
 
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+FROM local-xx:${XX_VERSION}-${TARGETARCH} as xx
 
 
 FROM alpine:3.14 as alpine-glibc
@@ -82,7 +82,7 @@ FROM base-${TARGETARCH}
 
 COPY --from=xx / /
 
-ENV /root/.shinit
+ENV ENV /root/.shinit
 
 ARG TARGETPLATFORM
 

@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import typing as t
@@ -28,6 +29,7 @@ from python_on_whales.exceptions import DockerException
 if TYPE_CHECKING:
     from manager._types import P
     from manager._types import GenericDict
+    from manager._types import GenericFunc
     from manager._types import GenericList
     from manager._schemas import BuildCtx
     from manager._schemas import ReleaseCtx
@@ -332,6 +334,9 @@ def uname_m_to_targetarch():
     }
 
 
+CUSTOM_FUNCTION = {"get_arch_alias": uname_m_to_targetarch}
+
+
 def render_template(
     input_name: str,
     inp_fs: "FS",
@@ -341,6 +346,7 @@ def render_template(
     output_name: t.Optional[str] = None,
     arch: t.Optional[str] = None,
     build_tag: t.Optional[str] = None,
+    custom_function: t.Dict[str, "GenericFunc"] = CUSTOM_FUNCTION,
     **kwargs: t.Any,
 ) -> None:
 
@@ -355,17 +361,22 @@ def render_template(
         trim_blocks=True,
         lstrip_blocks=True,
     )
-    custom_function = {"get_arch_alias": uname_m_to_targetarch}
     template_env.globals.update(custom_function)
 
     with inp_fs.open(input_name, "r") as inf:
         template = template_env.from_string(inf.read())
 
-    with out_path_fs.open(output_name_, "w", encoding="utf-8") as f:
-        f.write(template.render(build_tag=build_tag, **kwargs))
+    out_path_fs.writetext(
+        output_name_, template.render(build_tag=build_tag, **kwargs), newline="\n"
+    )
+    out_path_fs.close()
 
 
-def stream_logs(resp: t.Iterator[str], tag: str, plain: bool = True) -> None:
+def stream_logs(resp: t.Iterator[str], tag: str) -> None:
+    plain = False
+    if os.path.exists("/.dockerenv"):
+        plain = True
+
     while True:
         try:
             output = next(resp)

@@ -71,14 +71,14 @@ def do_not_track() -> bool:
 @attrs.define
 class ServeInfo:
     serve_id: str
-    serve_creation_timestamp: datetime
+    serve_started_timestamp: datetime
 
 
 def get_serve_info() -> ServeInfo:  # pragma: no cover
     # Returns a safe token for serve as well as timestamp of creating this token
     return ServeInfo(
         serve_id=secrets.token_urlsafe(32),
-        serve_creation_timestamp=datetime.now(timezone.utc),
+        serve_started_timestamp=datetime.now(timezone.utc),
     )
 
 

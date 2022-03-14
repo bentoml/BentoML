@@ -1,12 +1,12 @@
 from .schemas import CliEvent
+from .schemas import ServeEndEvent
 from .schemas import ModelSaveEvent
 from .schemas import BentoBuildEvent
-from .schemas import BentoServeProductionOnStartupEvent
-from .schemas import BentoServeProductionScheduledEvent
-from .schemas import BentoServeDevelopmentOnStartupEvent
-from .schemas import BentoServeDevelopmentScheduledEvent
-from .schemas import BentoServeProductionOnShutdownEvent
-from .schemas import BentoServeDevelopmentOnShutdownEvent
+from .schemas import ServeStartEvent
+from .schemas import ServeDevEndEvent
+from .schemas import ServeUpdateEvent
+from .schemas import ServeDevStartEvent
+from .schemas import ServeDevUpdateEvent
 from .usage_stats import track
 from .usage_stats import get_serve_info
 from .usage_stats import scheduled_track
@@ -22,10 +22,10 @@ __all__ = [
     "CliEvent",
     "ModelSaveEvent",
     "BentoBuildEvent",
-    "BentoServeProductionScheduledEvent",
-    "BentoServeProductionOnShutdownEvent",
-    "BentoServeDevelopmentOnStartupEvent",
-    "BentoServeProductionOnStartupEvent",
-    "BentoServeDevelopmentScheduledEvent",
-    "BentoServeDevelopmentOnShutdownEvent",
+    "ServeUpdateEvent",
+    "ServeEndEvent",
+    "ServeDevStartEvent",
+    "ServeStartEvent",
+    "ServeDevUpdateEvent",
+    "ServeDevEndEvent",
 ]

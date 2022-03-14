@@ -7,6 +7,7 @@ import typing as t
 import logging
 import tempfile
 import contextlib
+from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 
@@ -20,15 +21,19 @@ from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
 from ..utils.analytics import track
+from ..utils.analytics import ServeEndEvent
 from ..utils.analytics import get_serve_info
 from ..utils.analytics import server_tracking
-from ..utils.analytics import BentoServeProductionOnStartupEvent
-from ..utils.analytics import BentoServeProductionScheduledEvent
-from ..utils.analytics import BentoServeDevelopmentOnStartupEvent
-from ..utils.analytics import BentoServeDevelopmentScheduledEvent
-from ..utils.analytics import BentoServeProductionOnShutdownEvent
-from ..utils.analytics import BentoServeDevelopmentOnShutdownEvent
+from ..utils.analytics import ServeStartEvent
+from ..utils.analytics import ServeDevEndEvent
+from ..utils.analytics import ServeUpdateEvent
+from ..utils.analytics import ServeDevStartEvent
+from ..utils.analytics import ServeDevUpdateEvent
 from ..configuration.containers import DeploymentContainer
+
+if TYPE_CHECKING:
+    from ..service.service import Service
+    from ..utils.analytics.usage_stats import ServeInfo
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +43,35 @@ SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
 SCRIPT_NGROK = "bentoml._internal.server.cli.ngrok"
 
 
+def track_production_serve_init(svc: "Service") -> "ServeInfo":
+    serve_info = get_serve_info()
+    # Track first time
+    if svc.bento is not None:
+        bento = svc.bento
+        event_properties = ServeStartEvent(
+            serve_id=serve_info.serve_id,
+            serve_started_timestamp=serve_info.serve_started_timestamp,
+            bento_creation_timestamp=bento.info.creation_time,
+            num_of_models=len(bento.info.models),
+            num_of_runners=len(svc.runners),
+            model_types=[
+                bento._model_store.get(i).info.module for i in bento.info.models  # type: ignore
+            ],
+            runner_types=[type(v).__name__ for v in svc.runners.values()]
+        )
+    else:
+        # In this case serving from a file/directory with --production
+        event_properties = ServeStartEvent(
+            serve_id=serve_info.serve_id,
+            serve_started_timestamp=serve_info.serve_started_timestamp,
+        )
+
+    track(event_properties=event_properties)
+    return serve_info
+
+
 @inject
-def _ensure_prometheus_dir(
+def ensure_prometheus_dir(
     prometheus_multiproc_dir: str = Provide[
         DeploymentContainer.prometheus_multiproc_dir
     ],
@@ -88,10 +120,9 @@ def serve_development(
 
     # Track first time
     track(
-        event_properties=BentoServeDevelopmentOnStartupEvent(
+        event_properties=ServeDevStartEvent(
             serve_id=serve_info.serve_id,
-            serve_creation_timestamp=serve_info.serve_creation_timestamp,
-            bento_identifier=bento_identifier,
+            serve_started_timestamp=serve_info.serve_started_timestamp,
         )
     )
 
@@ -148,19 +179,17 @@ def serve_development(
         watchers,
         sockets=list(circus_socket_map.values()),
     )
-    event_properties = BentoServeDevelopmentScheduledEvent(
+    event_properties = ServeDevUpdateEvent(
         serve_id=serve_info.serve_id,
-        bento_identifier=bento_identifier,
         triggered_at=datetime.now(timezone.utc),
     )
-    _ensure_prometheus_dir()
+    ensure_prometheus_dir()
 
     with server_tracking(event_properties):
         atexit.register(
             track,
-            event_properties=BentoServeDevelopmentOnShutdownEvent(
+            event_properties=ServeDevEndEvent(
                 serve_id=serve_info.serve_id,
-                bento_identifier=bento_identifier,
                 triggered_at=datetime.now(timezone.utc),
             ),
         )
@@ -186,30 +215,8 @@ def serve_production(
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
-    serve_info = get_serve_info()
 
-    # Track first time
-    if svc.bento is not None:
-        bento = svc.bento
-        event_properties = BentoServeProductionOnStartupEvent(
-            serve_id=serve_info.serve_id,
-            serve_creation_timestamp=serve_info.serve_creation_timestamp,
-            bento_identifier=bento_identifier,
-            bento_creation_timestamp=bento.info.creation_time,
-            model_tags=bento.info.models,
-            model_types=[
-                bento._model_store.get(i).info.module for i in bento.info.models  # type: ignore
-            ],
-        )
-    else:
-        # In this case serving from a file/directory with --production
-        event_properties = BentoServeProductionOnStartupEvent(
-            serve_id=serve_info.serve_id,
-            serve_creation_timestamp=serve_info.serve_creation_timestamp,
-            bento_identifier=bento_identifier,
-        )
-
-    track(event_properties=event_properties)
+    serve_info = track_production_serve_init(svc)
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -331,21 +338,19 @@ def serve_production(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
     )
-    event_properties = BentoServeProductionScheduledEvent(
+    event_properties = ServeUpdateEvent(
         serve_id=serve_info.serve_id,
-        bento_identifier=bento_identifier,
         triggered_at=datetime.now(timezone.utc),
     )
 
-    _ensure_prometheus_dir()
+    ensure_prometheus_dir()
 
     with server_tracking(event_properties):
         try:
             atexit.register(
                 track,
-                event_properties=BentoServeProductionOnShutdownEvent(
+                event_properties=ServeEndEvent(
                     serve_id=serve_info.serve_id,
-                    bento_identifier=bento_identifier,
                     triggered_at=datetime.now(timezone.utc),
                 ),
             )

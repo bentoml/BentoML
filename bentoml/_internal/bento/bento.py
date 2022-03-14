@@ -21,15 +21,12 @@ from ..store import Store
 from ..store import StoreItem
 from ..types import Tag
 from ..types import PathType
-from ..utils import calc_dir_size
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
-from ..utils.analytics import track
-from ..utils.analytics import BentoBuildEvent
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -169,6 +166,7 @@ class Bento(StoreItem):
         ctx_fs = fs.open_fs(build_ctx)
 
         model_tags = build_config.additional_models
+        runners_info = {k: type(runners).__name__ for k, runners in svc.runners.items()}
         # Add Runner required models to models list
         for runner in svc.runners.values():
             model_tags += runner.required_models
@@ -267,6 +265,7 @@ class Bento(StoreItem):
                 svc,  # type: ignore # attrs converters do not typecheck
                 build_config.labels,
                 list(seen_model_tags),
+                runners=runners_info,
             ),
         )
         # Create bento.yaml
@@ -326,7 +325,6 @@ class Bento(StoreItem):
     def save(
         self,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         self.flush_info()
 
@@ -339,17 +337,6 @@ class Bento(StoreItem):
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self.__fs = out_fs
-            track(
-                event_properties=BentoBuildEvent(
-                    bento_creation_timestamp=self.info.creation_time,
-                    bento_size_in_kb=calc_dir_size(out_fs.getsyspath("/")),
-                    model_size_in_kb=calc_dir_size(out_fs.getsyspath("/models")),
-                    num_of_models=len(self.info.models),
-                    model_types=[
-                        model_store.get(i).info.module for i in self.info.models
-                    ],
-                ),
-            )
 
         return self
 
@@ -395,6 +382,7 @@ class BentoInfo:
     )  # type: ignore[reportPrivateUsage]
     labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
     models: t.List[Tag]  # TODO: populate with model & framework info
+    runners: t.Dict[str, str] = attr.field(factory=dict)
     bentoml_version: str = BENTOML_VERSION
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 

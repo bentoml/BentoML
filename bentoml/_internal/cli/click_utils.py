@@ -34,7 +34,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 # Below contains commands that will have different tracking implementation.
-CMD_WITH_CUSTOM_TRACKING = ["save", "build", "serve"]
+CUSTOM_TRACKING_IMPL = ("serve")
+GETEVENT_MAPPING = { "build" }
 
 
 # TODO: implement custom help message format
@@ -119,33 +120,37 @@ class BentoMLCommandGroup(click.Group):
                 logger.debug(
                     "Executing '%s' command without usage tracking.", command_name
                 )
-            if command_name in CMD_WITH_CUSTOM_TRACKING:
-                return func(*args, **kwargs)
 
-            start_time = time.time()
-            try:
-                return_value = func(*args, **kwargs)
-                duration = time.time() - start_time
-                event_properties = CliEvent(
-                    command_group=cmd_group.name,
-                    command_name=command_name,
-                    duration=duration,
-                )
-                return return_value
-            except BaseException as e:
-                duration = time.time() - start_time
-                return_code = 2 if type(e) == KeyboardInterrupt else 1
-                event_properties = CliEvent(
-                    command_group=cmd_group.name,
-                    command_name=command_name,
-                    duration=duration,
-                    error_type=type(e).__name__,
-                    error_message=str(e),
-                    return_code=return_code,
-                )
-                raise
-            finally:
-                track(event_properties=event_properties)
+            if command_name in CUSTOM_TRACKING_IMPL:
+                return func(*args, **kwargs)
+            else:
+                start_time = time.perf_counter_ns()
+                try:
+                    return_value = func(*args, **kwargs)
+                    duration = time.perf_counter_ns() - start_time
+                    event_properties = CliEvent(
+                        cmd_group.name,
+                        command_name,
+                        "","",
+                        duration_in_ms=duration,
+                    )
+                    track(event_properties=event_properties)
+                    return return_value
+                except BaseException as e:
+                    duration = time.time() - start_time
+                    return_code = 2 if type(e) == KeyboardInterrupt else 1
+                    event_properties = CliEvent(
+                        command_group=cmd_group.name,
+                        command_name=command_name,
+                        duration_in_ms=duration,
+                        error_type=type(e).__name__,
+                        error_message=str(e),
+                        return_code=return_code,
+                    )
+                    track(event_properties=event_properties)
+                    raise
+                else:
+                    track(event_properties=event_properties)
 
         return wrapper
 

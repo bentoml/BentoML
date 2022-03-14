@@ -18,6 +18,8 @@ from ...configuration.containers import CLIENT_ID_PATH
 from ...yatai_rest_api_client.config import get_config_path
 from ...yatai_rest_api_client.config import get_current_context
 
+import click
+
 
 @lru_cache(maxsize=1)
 def get_platform() -> str:
@@ -51,6 +53,10 @@ def get_yatai_user_email() -> t.Optional[str]:
 
 def convert_to_kb(size: t.Union[int, float]) -> float:
     return size / 1024
+
+
+def from_ns_to_ms(duration: t.Union[int, float]) -> float:
+    return duration // 1000000
 
 
 @attrs.define
@@ -88,7 +94,7 @@ class EventMeta(ABC):
     @property
     def _track_event_name(self):
         return "_".join(
-            map(str.lower, re.findall(r"[A-Z][^A-Z]*", self.__class__.__name__))
+            map(str.lower, re.findall(r"[A-Z][^A-Z]*", self.__class__.__name__)[:-1])
         )
 
 
@@ -97,25 +103,17 @@ class CliEvent(EventMeta):
 
     command_group: str
     command_name: str
-    error_type: str = ""
-    error_message: str = ""
+    error_type: t.Optional[str] = attrs.field(default=None, converter=attrs.converters.default_if_none(""))
+    error_message: t.Optional[str] = attrs.field(default=None, converter=attrs.converters.default_if_none(""))
 
-    return_code: int = 0
-    duration: float = 0
+    return_code: t.Optional[int] = attrs.field(default=None, converter=attrs.converters.default_if_none(0))
+    duration_in_ms: float = attrs.field(
+        default=None, converter=attrs.converters.default_if_none(from_ns_to_ms)
+    )
 
     @property
     def _track_event_name(self):
         return f"{self.command_name}_{super()._track_event_name}"
-
-
-@attrs.define
-class ModelSaveEvent(EventMeta):
-    module: str
-
-    model_tag: Tag
-
-    model_creation_timestamp: datetime
-    model_size_in_kb: float = attrs.field(converter=convert_to_kb)
 
 
 @attrs.define
@@ -127,76 +125,72 @@ class BentoBuildEvent(EventMeta):
     num_of_models: int = attrs.field(
         default=None, converter=attrs.converters.default_if_none(0)
     )
-    model_types: t.List[str] = attrs.field(factory=list)
-
-
-def check_local_or_packaged_in_bento(identifier: str) -> str:
-    if re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", identifier) is not None:
-        return "packaged"
-    else:
-        return "local"
-
-
-@attrs.define
-class BentoServeDevelopmentOnStartupEvent(EventMeta):
-    serve_id: str
-    serve_creation_timestamp: datetime
-    bento_identifier: str
-    serve_location: str = attrs.field(init=False)
-
-    def __attrs_post_init__(self):
-        self.serve_location = check_local_or_packaged_in_bento(self.bento_identifier)
-
-
-@attrs.define
-class BentoServeDevelopmentScheduledEvent(EventMeta):
-    serve_id: str
-    bento_identifier: str
-    triggered_at: datetime
-
-
-@attrs.define
-class BentoServeDevelopmentOnShutdownEvent(EventMeta):
-    serve_id: str
-    bento_identifier: str
-    triggered_at: datetime
-
-
-@attrs.define
-class BentoServeProductionOnStartupEvent(EventMeta):
-    serve_id: str
-    serve_creation_timestamp: datetime
-
-    bento_identifier: str
-    bento_tag: t.Optional[str] = attrs.field(
-        default=None, converter=attrs.converters.default_if_none("")
+    num_of_runners: int = attrs.field(
+        default=None, converter=attrs.converters.default_if_none(0)
     )
+    model_types: t.List[str] = attrs.field(factory=list)
+    runner_types: t.List[str] = attrs.field(factory=list)
+
+class CLIContext:
+    events: CliEvent
+    
+
+
+
+@attrs.define
+class ModelSaveEvent(EventMeta):
+    module: str
+
+    model_tag: Tag
+
+    model_creation_timestamp: datetime
+    model_size_in_kb: float = attrs.field(converter=convert_to_kb)
+
+@attrs.define
+class ServeDevStartEvent(EventMeta):
+    serve_id: str
+    serve_started_timestamp: datetime
+
+
+@attrs.define
+class ServeDevUpdateEvent(EventMeta):
+    serve_id: str
+    triggered_at: datetime
+
+
+@attrs.define
+class ServeDevEndEvent(EventMeta):
+    serve_id: str
+    triggered_at: datetime
+
+
+@attrs.define
+class ServeStartEvent(EventMeta):
+    serve_id: str
+    serve_started_timestamp: datetime
+
     bento_creation_timestamp: t.Optional[datetime] = attrs.field(
         default=None, converter=attrs.converters.default_if_none("")
     )
-
-    model_tags: t.List[Tag] = attrs.field(
-        factory=list, converter=lambda x: [str(i) for i in x]
+    num_of_models: int = attrs.field(
+        default=None, converter=attrs.converters.default_if_none(0)
+    )
+    num_of_runners: int = attrs.field(
+        default=None, converter=attrs.converters.default_if_none(0)
     )
     model_types: t.List[str] = attrs.field(factory=list)
-
-    serve_location: str = attrs.field(init=False)
-
-    def __attrs_post_init__(self):
-        self.serve_location = check_local_or_packaged_in_bento(self.bento_identifier)
+    runner_types: t.List[str] = attrs.field(factory=list)
 
 
 @attrs.define
-class BentoServeProductionScheduledEvent(EventMeta):
+class ServeUpdateEvent(EventMeta):
     serve_id: str
-    bento_identifier: str
     triggered_at: datetime
 
 
 @attrs.define
-class BentoServeProductionOnShutdownEvent(EventMeta):
+class ServeEndEvent(EventMeta):
     serve_id: str
-    bento_identifier: str
     triggered_at: datetime
 
 

@@ -1,14 +1,9 @@
 import os
-import hmac
 import uuid
 import typing as t
-import hashlib
 import logging
 import multiprocessing
 from typing import TYPE_CHECKING
-from datetime import datetime
-from datetime import timezone
-from functools import lru_cache
 from dataclasses import dataclass
 
 import yaml
@@ -42,29 +37,9 @@ BENTOML_HOME = expand_env_var(
 )
 DEFAULT_BENTOS_PATH = os.path.join(BENTOML_HOME, "bentos")
 DEFAULT_MODELS_PATH = os.path.join(BENTOML_HOME, "models")
-CLIENT_ID_PATH = os.path.join(BENTOML_HOME, "client_id")
-
-CLOCK_SEQ = 32
-
-
-@lru_cache(maxsize=1)
-def gen_client_id() -> t.Dict[str, str]:
-    # returns an unique client_id and timestamp in ISO format
-    uniq = uuid.uuid1(clock_seq=CLOCK_SEQ).bytes
-    client_id = hmac.new(uniq, digestmod=hashlib.blake2s).hexdigest()
-    created_time = datetime.now(timezone.utc).isoformat()
-
-    return {"client_id": client_id, "client_creation_timestamp": created_time}
-
-
-def create_client_id() -> None:
-    if not os.path.exists(CLIENT_ID_PATH):
-        with open(CLIENT_ID_PATH, "w", encoding="utf-8") as f:
-            yaml.dump(gen_client_id(), stream=f)
 
 
 validate_or_create_dir(BENTOML_HOME, DEFAULT_BENTOS_PATH, DEFAULT_MODELS_PATH)
-create_client_id()
 
 _check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
 _larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
@@ -254,7 +229,7 @@ class BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def session_id() -> str:
-        return uuid.uuid1(clock_seq=CLOCK_SEQ).hex
+        return uuid.uuid1().hex
 
 
 BentoMLContainer = BentoMLContainerClass()

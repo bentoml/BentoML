@@ -264,8 +264,9 @@ class Bento(StoreItem):
                 svc,  # type: ignore # attrs converters do not typecheck
                 build_config.labels,
                 list(seen_model_tags),
-                runners={name: type(runner).__name__ for name, runner in svc.runners.items()}
-
+                runners={
+                    name: type(runner).__name__ for name, runner in svc.runners.items()
+                },
             ),
         )
         # Create bento.yaml

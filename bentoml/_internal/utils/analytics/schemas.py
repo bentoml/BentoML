@@ -1,23 +1,28 @@
 import os
 import re
+import hmac
+import uuid
 import typing as t
+import hashlib
 from abc import ABC
 from typing import TYPE_CHECKING
 from datetime import datetime
+from datetime import timezone
 from platform import platform
 from platform import python_version
 from functools import lru_cache
 
 import yaml
-import attrs
 import click
 import psutil
 import attrs.converters
+from simple_di import inject
+from simple_di import Provide
 
 from ...types import Tag
 from ..lazy_loader import LazyLoader
 from ...configuration import BENTOML_VERSION
-from ...configuration.containers import CLIENT_ID_PATH
+from ...configuration.containers import BentoMLContainer
 from ...yatai_rest_api_client.config import get_config_path
 from ...yatai_rest_api_client.config import get_current_context
 
@@ -36,18 +41,39 @@ def get_python_version() -> str:
     return python_version()
 
 
-@lru_cache(maxsize=1)
-def get_client_id() -> "t.Optional[ClientInfo]":  # pragma: no cover
-    if os.path.exists(CLIENT_ID_PATH):
-        with open(CLIENT_ID_PATH, "r", encoding="utf-8") as f:
-            client_info = yaml.safe_load(f)
-        return ClientInfo(**client_info)
-
-
 @attrs.define
 class ClientInfo:
     client_id: str
     client_creation_timestamp: datetime
+
+
+@inject
+@lru_cache(maxsize=1)
+def get_client_id(
+    bentoml_home=Provide[BentoMLContainer.bentoml_home],
+) -> t.Optional[ClientInfo]:
+    CLIENT_ID_PATH = os.path.join(bentoml_home, "client_id")
+
+    if os.path.exists(CLIENT_ID_PATH):
+        with open(CLIENT_ID_PATH, "r", encoding="utf-8") as f:
+            client_info = yaml.safe_load(f)
+        return ClientInfo(**client_info)
+    else:
+        def create_client_id() -> t.Dict[str, str]:
+            # returns an unique client_id and timestamp in ISO format
+            uniq = uuid.uuid1().bytes
+            client_id = hmac.new(uniq, digestmod=hashlib.blake2s).hexdigest()
+            created_time = datetime.now(timezone.utc).isoformat()
+
+            return {"client_id": client_id, "client_creation_timestamp": created_time}
+
+        def create_client_id_file(client_id: ClientInfo) -> None:
+            with open(CLIENT_ID_PATH, "w", encoding="utf-8") as f:
+                yaml.dump(client_id, stream=f)
+
+        new_client_id = create_client_id()
+        create_client_id_file(new_client_id)
+        return new_client_id
 
 
 @lru_cache(maxsize=1)

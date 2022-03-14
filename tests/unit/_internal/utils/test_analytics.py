@@ -13,7 +13,6 @@ from bentoml._internal.types import Tag
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
 
-_is_lower: t.Callable[[str], bool] = lambda s: s.islower()
 
 SESSION_ID = "asdfasdf"
 
@@ -36,7 +35,7 @@ SCHEMA = Schema(
             "model_size_in_kb": Or(float, int),
         },
         "session_id": str,
-        "event_type": And(str, _is_lower),
+        "event_type": And(str, str.islower),
     }
 )
 

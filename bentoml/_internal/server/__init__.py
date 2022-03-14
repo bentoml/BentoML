@@ -118,7 +118,6 @@ def serve_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     serve_info = get_serve_info()
 
-    # Track first time
     track(
         event_properties=ServeDevStartEvent(
             serve_id=serve_info.serve_id,

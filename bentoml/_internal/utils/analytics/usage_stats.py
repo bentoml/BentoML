@@ -116,12 +116,15 @@ def track(
     return requests.post(uri, json=payload, timeout=timeout)
 
 
-@slient
 @contextlib.contextmanager
 def scheduled_track(
     event_properties: EventMeta,
     interval: int = BENTOML_USAGE_REPORT_INTERVAL_SECONDS,
 ):  # pragma: no cover
+    if do_not_track():
+        yield
+        return
+
     stop_event = threading.Event()
 
     def loop() -> t.NoReturn:  # type: ignore
@@ -133,5 +136,4 @@ def scheduled_track(
         tracking_thread.start()
         yield
     finally:
-        stop_thread_event.set()
         tracking_thread.join()

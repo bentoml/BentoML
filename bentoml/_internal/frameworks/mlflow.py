@@ -176,6 +176,8 @@ def import_from_uri(
     name: str,
     uri: str,
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -194,6 +196,11 @@ def import_from_uri(
                 - :code:`runs:/<mlflow_run_id>/run-relative/path/to/model`
                 - :code:`models:/<model_name>/<model_version>`
                 - :code:`models:/<model_name>/<stage>`
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -250,6 +257,8 @@ def import_from_uri(
     _model = BentoModel.create(
         name,
         module=MODULE_NAME,
+        labels=labels,
+        custom_objects=custom_objects,
         options=None,
         context=context,
         metadata=metadata,

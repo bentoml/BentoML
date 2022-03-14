@@ -54,9 +54,21 @@ def test_tensorflow_v2_save_load(
     ],
     is_ragged: bool,
 ):
-    tag = bentoml.tensorflow.save(MODEL_NAME, mcls)
-    _model = bentoml.models.get(tag)
-    assert_have_file_extension(_model.path, ".pb")
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = bentoml.tensorflow.save(
+        MODEL_NAME, mcls, labels=labels, custom_objects={"func": custom_f}
+    )
+    bentomodel = bentoml.models.get(tag)
+    assert_have_file_extension(bentomodel.path, ".pb")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+
     model = bentoml.tensorflow.load(MODEL_NAME)
     output = predict_fn(model, tensor)
     if is_ragged:
@@ -148,8 +160,19 @@ def test_import_from_tfhub(
     if isinstance(identifier, str):
         import tensorflow_text as text  # noqa # pylint: disable
 
-    tag = bentoml.tensorflow.import_from_tfhub(identifier, name)
-    model = bentoml.models.get(tag)
-    assert model.info.context["import_from_tfhub"]
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = bentoml.tensorflow.import_from_tfhub(
+        identifier, name, labels=labels, custom_objects={"func": custom_f}
+    )
+    bentomodel = bentoml.models.get(tag)
+    assert bentomodel.info.context["import_from_tfhub"]
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+
     module = bentoml.tensorflow.load(tag, tags=tags, load_as_hub_module=wrapped)
     assert module._is_hub_module_v1 == is_module_v1  # pylint: disable

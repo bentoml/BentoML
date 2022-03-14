@@ -12,7 +12,6 @@ from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from .common.pytorch import torch
 from .common.pytorch import BasePyTorchRunner
 from ..configuration.containers import BentoMLContainer
@@ -76,6 +75,8 @@ def save(
     name: str,
     model: "torch.jit.ScriptModule",
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -87,6 +88,11 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (:code:`torch.jit.ScriptModule`):
             Instance of model to be saved
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -144,6 +150,8 @@ def save(
         module=MODULE_NAME,
         options=None,
         context=context,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")

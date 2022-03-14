@@ -8,7 +8,6 @@ from schema import And
 from schema import Schema
 
 import bentoml._internal.utils.analytics as analytics_lib
-from bentoml._internal.types import Tag
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
@@ -30,7 +29,6 @@ SCHEMA = Schema(
         },
         "event_properties": {
             "module": str,
-            "model_tag": str,
             "model_creation_timestamp": str,
             "model_size_in_kb": Or(float, int),
         },
@@ -43,7 +41,6 @@ SCHEMA = Schema(
 def test_get_payload():
     event_properties = analytics_lib.schemas.ModelSaveEvent(
         module="test",
-        model_tag=Tag("test"),
         model_creation_timestamp=datetime.fromisoformat(
             "2222-02-28T06:06:23.798993+00:00"
         ),
@@ -79,15 +76,12 @@ def test_send_usage_event(monkeypatch: "MonkeyPatch"):
 
         event_properties = analytics_lib.schemas.ModelSaveEvent(
             module="test",
-            model_tag=Tag("test"),
             model_creation_timestamp=datetime.fromisoformat(
                 "2222-02-28T06:06:23.798993+00:00"
             ),
             model_size_in_kb=123123123,
         )
         r = analytics_lib.track(
-            event_properties=event_properties,
-            uri=analytics_lib.usage_stats.BENTOML_TRACKING_URL,
-            timeout=2,
+            event_properties,
         )
         print(r)

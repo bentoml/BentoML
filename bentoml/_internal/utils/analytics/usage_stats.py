@@ -5,7 +5,6 @@ import secrets
 import threading
 import contextlib
 from typing import TYPE_CHECKING
-from pathlib import Path
 from datetime import datetime
 from datetime import timezone
 from functools import wraps
@@ -13,27 +12,32 @@ from functools import lru_cache
 
 import attrs
 import requests
-from attrs import asdict
-from attrs import Attribute
 from simple_di import inject
 from simple_di import Provide
 
-from ...types import Tag
 from .schemas import EventMeta
+from .schemas import ServeInitEvent
 from .schemas import TrackingPayload
 from .schemas import CommonProperties
+from .schemas import ServeUpdateEvent
 from ...configuration.containers import BentoMLContainer
+from ...configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
     T = t.TypeVar("T")
     AsyncFunc = t.Callable[P, t.Coroutine[t.Any, t.Any, t.Any]]
 
+    from bentoml import Service
+
+    from ...server.metrics.prometheus import PrometheusClient
+
 logger = logging.getLogger(__name__)
 
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
-BENTOML_TRACKING_URL = "https://t.bentoml.com"
-BENTOML_USAGE_REPORT_INTERVAL_SECONDS = int(12 * 60 * 60)
+USAGE_TRACKING_URL = "https://t.bentoml.com"
+SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 5  # int(12 * 60 * 60)  # every 12 hours
+USAGE_REQUEST_TIMEOUT_SECONDS = 2
 
 
 def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
@@ -46,19 +50,6 @@ def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
             logger.debug(f"{err}")
 
     return wrapper
-
-
-def serializer(
-    inst: type, field: "Attribute[t.Any]", value: t.Any
-) -> t.Any:  # pragma: no cover
-    if isinstance(value, datetime):
-        return value.isoformat()
-    elif isinstance(value, Tag):
-        return str(value)
-    elif isinstance(value, Path):
-        return value.as_posix()
-    else:
-        return value
 
 
 @lru_cache(maxsize=1)
@@ -86,54 +77,109 @@ def get_serve_info() -> ServeInfo:  # pragma: no cover
 def get_payload(
     event_properties: EventMeta,
     session_id: str = Provide[BentoMLContainer.session_id],
-    injected_payload: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
 ) -> t.Dict[str, t.Any]:
-    payload = TrackingPayload(
+    return TrackingPayload(
         session_id=session_id,
         common_properties=CommonProperties(),
         event_properties=event_properties,
-    )
-    res = asdict(payload, value_serializer=serializer)
-    if injected_payload is not None:
-        for k, v in injected_payload.items():
-            res[k].update(v)
-    return res
+    ).to_dict()
 
 
 @slient
 def track(
     event_properties: EventMeta,
-    *,
-    injected_payload: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
-    uri: str = BENTOML_TRACKING_URL,
-    timeout: int = 2,
 ) -> t.Optional[requests.Response]:
     if do_not_track():
         return
-    payload = get_payload(
-        event_properties=event_properties, injected_payload=injected_payload
-    )
-    return requests.post(uri, json=payload, timeout=timeout)
+    payload = get_payload(event_properties=event_properties)
+    import json
+
+    print("tracking:", json.dumps(payload))
+    f = open("/tmp/track.log", "a")
+    f.writelines(json.dumps(payload))
+    f.writelines("\n\n")
+    # return requests.post(
+    #     USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS
+    # )
 
 
+@inject
+def _track_serve_init(
+    svc: "t.Optional[Service]",
+    production: bool,
+    serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
+):
+    if svc.bento is not None:
+        bento = svc.bento
+        event_properties = ServeInitEvent(
+            serve_id=serve_info.serve_id,
+            serve_started_timestamp=serve_info.serve_started_timestamp,
+            serve_from_bento=True,
+            production=production,
+            bento_creation_timestamp=bento.info.creation_time,
+            num_of_models=len(bento.info.models),
+            num_of_runners=len(svc.runners),
+            model_types=[
+                bento._model_store.get(i).info.module for i in bento.info.models  # type: ignore
+            ],
+            runner_types=[type(v).__name__ for v in svc.runners.values()],
+        )
+    else:
+        from ...frameworks.common.model_runner import BaseModelRunner
+        from ...frameworks.common.model_runner import BaseModelSimpleRunner
+
+        event_properties = ServeInitEvent(
+            serve_id=serve_info.serve_id,
+            serve_started_timestamp=serve_info.serve_started_timestamp,
+            serve_from_bento=False,
+            production=production,
+            num_of_models=len(
+                [
+                    r
+                    for r in svc.runners
+                    if isinstance(r, (BaseModelRunner, BaseModelSimpleRunner))
+                ]
+            ),
+            num_of_runners=len(svc.runners),
+            runner_types=[type(v).__name__ for v in svc.runners.values()],
+        )
+
+    track(event_properties)
+
+
+@inject
 @contextlib.contextmanager
-def scheduled_track(
-    event_properties: EventMeta,
-    interval: int = BENTOML_USAGE_REPORT_INTERVAL_SECONDS,
+def track_serve(
+    svc: "t.Optional[Service]",
+    production: bool,
+    metrics_client: "PrometheusClient" = Provide[DeploymentContainer.metrics_client],
+    serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
 ):  # pragma: no cover
     if do_not_track():
         yield
         return
 
+    _track_serve_init(svc, production)
+
     stop_event = threading.Event()
 
+    @slient
     def loop() -> t.NoReturn:  # type: ignore
-        while not stop_event.wait(interval):
-            track(event_properties=event_properties)
+        while not stop_event.wait(SERVE_USAGE_TRACKING_INTERVAL_SECONDS):
+            now = datetime.now(timezone.utc)
+            event_properties = ServeUpdateEvent(
+                serve_id=serve_info.serve_id,
+                production=production,
+                triggered_at=now,
+                duration_in_seconds=(now - serve_info.serve_started_timestamp).seconds,
+                metrics=metrics_client.get_metrics(),
+            )
+            track(event_properties)
 
     tracking_thread = threading.Thread(target=loop, daemon=True)
     try:
         tracking_thread.start()
         yield
     finally:
+        stop_event.set()
         tracking_thread.join()

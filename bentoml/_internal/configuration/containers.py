@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from bentoml._internal.models import ModelStore
 
     from .. import external_typing as ext
+    from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 
 
@@ -237,11 +238,17 @@ BentoMLContainer = BentoMLContainerClass()
 
 @dataclass
 class DeploymentContainerClass:
-
     bentoml_container = BentoMLContainer
     config = bentoml_container.config
     api_server_config = config.bento_server
     runners_config = config.runners
+
+    @providers.SingletonFactory
+    @staticmethod
+    def serve_info() -> "ServeInfo":
+        from ..utils.analytics import get_serve_info
+
+        return get_serve_info()
 
     @providers.SingletonFactory
     @staticmethod

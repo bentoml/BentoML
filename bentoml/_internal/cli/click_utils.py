@@ -17,13 +17,11 @@ from ..configuration import set_debug_mode
 from ..configuration import load_global_config
 from ..utils.analytics import track
 from ..utils.analytics import CliEvent
-from ..utils.analytics import pass_cli_context
+from ..utils.analytics import cli_events_map
 from ..utils.analytics import BENTOML_DO_NOT_TRACK
-from ..utils.analytics.schemas import get_event_properties_mapping
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-    from ..utils.analytics.schemas import CLIContext
 
     class ClickFunctionWrapper(t.Protocol[P]):
         __name__: str
@@ -36,11 +34,8 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-# Below contains commands that will have different tracking implementation.
-CUSTOM_TRACKING_IMPL = ("serve", "build")
 
 
-# TODO: implement custom help message format
 class BentoMLCommandGroup(click.Group):
     """Click command class customized for BentoML CLI, allow specifying a default
     command for each group defined
@@ -112,51 +107,47 @@ class BentoMLCommandGroup(click.Group):
         func: t.Union["t.Callable[P, t.Any]", "ClickFunctionWrapper[t.Any]"],
         cmd_group: click.Group,
         **kwargs: t.Any,
-    ) -> "WrappedCLI[CLIContext, bool]":
+    ):
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
-        @pass_cli_context
-        def wrapper(
-            ctx: "CLIContext", do_not_track: bool, *args: "P.args", **kwargs: "P.kwargs"
-        ) -> t.Any:
+        def wrapper(do_not_track: bool, *args: "P.args", **kwargs: "P.kwargs") -> t.Any:
             if do_not_track:
                 os.environ[BENTOML_DO_NOT_TRACK] = str(True)
-                logger.debug(
-                    "Executing '%s' command without usage tracking.", command_name
-                )
-
-            ctx.command_group = cmd_group.name
-            ctx.custom_event_mapping = get_event_properties_mapping(cmd_group)
-
-            if command_name in CUSTOM_TRACKING_IMPL:
                 return func(*args, **kwargs)
 
             start_time = time.time_ns()
+
+            if (
+                cmd_group.name in cli_events_map
+                and command_name in cli_events_map[cmd_group.name]
+            ):
+                get_tracking_event = functools.partial(
+                    cli_events_map[cmd_group.name][command_name],
+                    cmd_group.name,
+                    command_name,
+                )
+            else:
+                get_tracking_event = lambda ret: CliEvent(
+                    cmd_group=cmd_group.name,
+                    cmd_name=command_name,
+                )
+
             try:
                 return_value = func(*args, **kwargs)
+                event = get_tracking_event(return_value)
                 duration = time.time_ns() - start_time
-                ctx.event = CliEvent(
-                    command_group=cmd_group.name,
-                    command_name=command_name,
-                    duration_in_ms=duration,
-                )
+                event.duration_in_ms = duration
+                track(event)
                 return return_value
             except BaseException as e:
+                event = get_tracking_event(None)
                 duration = time.time_ns() - start_time
-                return_code = 2 if type(e) == KeyboardInterrupt else 1
-                ctx.event = CliEvent(
-                    command_group=cmd_group.name,
-                    command_name=command_name,
-                    duration_in_ms=duration,
-                    error_type=type(e).__name__,
-                    error_message=str(e),
-                    return_code=return_code,
-                )
-                track(event_properties=ctx.event)
+                event.duration_in_ms = duration
+                event.error_type = type(e).__name__
+                event.return_code = 2 if isinstance(e, KeyboardInterrupt) else 1
+                track(event)
                 raise
-            finally:
-                track(event_properties=ctx.event)
 
         return wrapper
 
@@ -191,7 +182,6 @@ class BentoMLCommandGroup(click.Group):
             # Send tracking events before command finish.
             func = BentoMLCommandGroup.bentoml_track_usage(func, self, **kwargs)
             # If BentoMLException raise ClickException instead before exit.
-            # NOTE: Always call this function last for type checker to work.
             func = BentoMLCommandGroup.raise_click_exception(func, self, **kwargs)
 
             # move common parameters to end of the parameters list

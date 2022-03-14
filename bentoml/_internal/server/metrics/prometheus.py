@@ -96,6 +96,12 @@ class PrometheusClient:
     def generate_latest(self):
         return self.prometheus_client.generate_latest(self.registry)
 
+    def get_metrics(self):
+        metrics_text = self.generate_latest().decode()
+        from prometheus_client.parser import text_string_to_metric_families
+
+        return [repr(metric) for metric in text_string_to_metric_families(metrics_text)]
+
     @property
     def CONTENT_TYPE_LATEST(self) -> str:
         return self.prometheus_client.CONTENT_TYPE_LATEST

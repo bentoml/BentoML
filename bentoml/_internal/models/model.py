@@ -156,11 +156,10 @@ class Model(StoreItem):
         self._save(model_store)
 
         track(
-            event_properties=ModelSaveEvent(
+            ModelSaveEvent(
                 module=self.info.module,
-                model_tag=self.info.tag,
                 model_creation_timestamp=self.info.creation_time,
-                model_size_in_kb=calc_dir_size(self._model_path),
+                model_size_in_kb=calc_dir_size(self.__fs.getsyspath("/")),
             ),
         )
 
@@ -179,7 +178,6 @@ class Model(StoreItem):
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self.__fs = out_fs
-            self._model_path = model_path  # used for telemetry
 
         logger.info(f"Successfully saved {self}")
         return self

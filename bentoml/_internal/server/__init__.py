@@ -1,15 +1,12 @@
 import os
 import sys
 import json
-import atexit
 import shutil
 import typing as t
 import logging
 import tempfile
 import contextlib
-from typing import TYPE_CHECKING
 from datetime import datetime
-from datetime import timezone
 
 import psutil
 from simple_di import inject
@@ -20,20 +17,8 @@ from bentoml import load
 from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
-from ..utils.analytics import track
-from ..utils.analytics import ServeEndEvent
-from ..utils.analytics import get_serve_info
-from ..utils.analytics import scheduled_track
-from ..utils.analytics import ServeStartEvent
-from ..utils.analytics import ServeDevEndEvent
-from ..utils.analytics import ServeUpdateEvent
-from ..utils.analytics import ServeDevStartEvent
-from ..utils.analytics import ServeDevUpdateEvent
+from ..utils.analytics import track_serve
 from ..configuration.containers import DeploymentContainer
-
-if TYPE_CHECKING:
-    from ..service.service import Service
-    from ..utils.analytics.usage_stats import ServeInfo
 
 logger = logging.getLogger(__name__)
 
@@ -41,33 +26,6 @@ SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
 SCRIPT_API_SERVER = "bentoml._internal.server.cli.api_server"
 SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
 SCRIPT_NGROK = "bentoml._internal.server.cli.ngrok"
-
-
-def track_production_serve_init(svc: "Service") -> "ServeInfo":
-    serve_info = get_serve_info()
-    # Track first time
-    if svc.bento is not None:
-        bento = svc.bento
-        event_properties = ServeStartEvent(
-            serve_id=serve_info.serve_id,
-            serve_started_timestamp=serve_info.serve_started_timestamp,
-            bento_creation_timestamp=bento.info.creation_time,
-            num_of_models=len(bento.info.models),
-            num_of_runners=len(svc.runners),
-            model_types=[
-                bento._model_store.get(i).info.module for i in bento.info.models  # type: ignore
-            ],
-            runner_types=[type(v).__name__ for v in svc.runners.values()],
-        )
-    else:
-        # In this case serving from a file/directory with --production
-        event_properties = ServeStartEvent(
-            serve_id=serve_info.serve_id,
-            serve_started_timestamp=serve_info.serve_started_timestamp,
-        )
-
-    track(event_properties=event_properties)
-    return serve_info
 
 
 @inject
@@ -116,14 +74,7 @@ def serve_development(
     reload_delay: float = 0.25,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    serve_info = get_serve_info()
-
-    track(
-        event_properties=ServeDevStartEvent(
-            serve_id=serve_info.serve_id,
-            serve_started_timestamp=serve_info.serve_started_timestamp,
-        )
-    )
+    svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -178,20 +129,9 @@ def serve_development(
         watchers,
         sockets=list(circus_socket_map.values()),
     )
-    event_properties = ServeDevUpdateEvent(
-        serve_id=serve_info.serve_id,
-        triggered_at=datetime.now(timezone.utc),
-    )
     ensure_prometheus_dir()
 
-    with scheduled_track(event_properties):
-        atexit.register(
-            track,
-            event_properties=ServeDevEndEvent(
-                serve_id=serve_info.serve_id,
-                triggered_at=datetime.now(timezone.utc),
-            ),
-        )
+    with track_serve(svc, production=False):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 f'Starting development BentoServer from "{bento_identifier}" '
@@ -214,8 +154,6 @@ def serve_production(
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
-
-    serve_info = track_production_serve_init(svc)
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -337,22 +275,11 @@ def serve_production(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
     )
-    event_properties = ServeUpdateEvent(
-        serve_id=serve_info.serve_id,
-        triggered_at=datetime.now(timezone.utc),
-    )
 
     ensure_prometheus_dir()
 
-    with scheduled_track(event_properties):
+    with track_serve(svc, production=True):
         try:
-            atexit.register(
-                track,
-                event_properties=ServeEndEvent(
-                    serve_id=serve_info.serve_id,
-                    triggered_at=datetime.now(timezone.utc),
-                ),
-            )
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
                     f'Starting production BentoServer from "bento_identifier" '

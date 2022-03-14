@@ -344,7 +344,7 @@ class Bento(StoreItem):
                     bento_creation_timestamp=self.info.creation_time,
                     bento_size_in_kb=calc_dir_size(out_fs.getsyspath("/")),
                     model_size_in_kb=calc_dir_size(out_fs.getsyspath("/models")),
-                    model_tags=self.info.models,
+                    num_of_models=len(self.info.models),
                     model_types=[
                         model_store.get(i).info.module for i in self.info.models
                     ],

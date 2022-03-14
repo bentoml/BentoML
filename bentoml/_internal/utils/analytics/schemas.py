@@ -60,10 +60,6 @@ def convert_to_kb(size: t.Union[int, float]) -> float:
     return size / 1024
 
 
-def from_ns_to_ms(duration: t.Union[int, float]) -> float:
-    return duration // 1000000
-
-
 @attrs.define
 class CommonProperties:
 
@@ -103,11 +99,16 @@ class EventMeta(ABC):
         )
 
 
+def from_ns_to_ms(duration: t.Union[int, float]) -> float:
+    return duration / 1e6
+
+
 @attrs.define
 class CliEvent(EventMeta):
 
     command_group: str
     command_name: str
+    duration_in_ms: float = attrs.field(converter=from_ns_to_ms)
     error_type: t.Optional[str] = attrs.field(
         default=None, converter=attrs.converters.default_if_none("")
     )
@@ -117,9 +118,6 @@ class CliEvent(EventMeta):
 
     return_code: t.Optional[int] = attrs.field(
         default=None, converter=attrs.converters.default_if_none(0)
-    )
-    duration_in_ms: float = attrs.field(
-        default=None, converter=attrs.converters.default_if_none(from_ns_to_ms)
     )
 
     @property

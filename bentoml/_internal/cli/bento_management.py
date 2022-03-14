@@ -1,12 +1,12 @@
 # type: ignore[reportUnusedFunction]
 import sys
 import json
+import time
 import typing as t
 import logging
 from typing import TYPE_CHECKING
 
 import yaml
-import attrs
 import click
 from simple_di import inject
 from simple_di import Provide
@@ -273,7 +273,15 @@ def add_bento_management_commands(
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
+        start = time.time_ns()
         bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        duration = time.time_ns() - start
+
         event_properties = ctx.custom_event_mapping["build"](bento=bento)
-        additional_payload = {"duration": ctx.event.duration_in_ms}
-        track(event_properties=event_properties, additional_payload=additional_payload)
+        injected_payload = {
+            "event_properties": {
+                "duration_in_ms": duration / 1e6,
+                "command_group": ctx.command_group,
+            }
+        }
+        track(event_properties=event_properties, injected_payload=injected_payload)

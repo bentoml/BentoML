@@ -125,26 +125,29 @@ class BentoMLCommandGroup(click.Group):
                 logger.debug(
                     "Executing '%s' command without usage tracking.", command_name
                 )
-            common_ = functools.partial(
-                CliEvent,
-                command_group=cmd_group.name,
-                command_name=command_name,
-            )
+
+            ctx.command_group = cmd_group.name
             ctx.custom_event_mapping = get_event_properties_mapping(cmd_group)
+
+            if command_name in CUSTOM_TRACKING_IMPL:
+                return func(*args, **kwargs)
 
             start_time = time.time_ns()
             try:
                 return_value = func(*args, **kwargs)
                 duration = time.time_ns() - start_time
-
-                ctx.command_group = cmd_group.name
-                ctx.event = common_(duration_in_ms=duration)
-
+                ctx.event = CliEvent(
+                    command_group=cmd_group.name,
+                    command_name=command_name,
+                    duration_in_ms=duration,
+                )
                 return return_value
             except BaseException as e:
                 duration = time.time_ns() - start_time
                 return_code = 2 if type(e) == KeyboardInterrupt else 1
-                ctx.event = common_(
+                ctx.event = CliEvent(
+                    command_group=cmd_group.name,
+                    command_name=command_name,
                     duration_in_ms=duration,
                     error_type=type(e).__name__,
                     error_message=str(e),
@@ -153,8 +156,7 @@ class BentoMLCommandGroup(click.Group):
                 track(event_properties=ctx.event)
                 raise
             finally:
-                if command_name not in CUSTOM_TRACKING_IMPL:
-                    track(event_properties=ctx.event)
+                track(event_properties=ctx.event)
 
         return wrapper
 

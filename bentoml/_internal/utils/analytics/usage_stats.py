@@ -86,28 +86,33 @@ def get_serve_info() -> ServeInfo:  # pragma: no cover
 def get_payload(
     event_properties: EventMeta,
     session_id: str = Provide[BentoMLContainer.session_id],
+    injected_payload: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
 ) -> t.Dict[str, t.Any]:
     payload = TrackingPayload(
         session_id=session_id,
         common_properties=CommonProperties(),
         event_properties=event_properties,
     )
-    return asdict(payload, value_serializer=serializer)
+    res = asdict(payload, value_serializer=serializer)
+    if injected_payload:
+        for k, v in injected_payload.items():
+            res[k].update(v)
+    return res
 
 
 @slient
 def track(
     event_properties: EventMeta,
     *,
-    additional_payload: t.Optional[t.Dict[str, t.Any]] = None,
+    injected_payload: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
     uri: str = BENTOML_TRACKING_URL,
     timeout: int = 2,
 ) -> t.Optional[requests.Response]:
     if do_not_track():
         return
-    payload = get_payload(event_properties=event_properties)
-    if additional_payload:
-        payload.update(additional_payload)
+    payload = get_payload(
+        event_properties=event_properties, injected_payload=injected_payload
+    )
     return requests.post(uri, json=payload, timeout=timeout)
 
 

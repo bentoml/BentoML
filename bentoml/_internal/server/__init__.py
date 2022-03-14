@@ -23,7 +23,7 @@ from ..utils.circus import create_standalone_arbiter
 from ..utils.analytics import track
 from ..utils.analytics import ServeEndEvent
 from ..utils.analytics import get_serve_info
-from ..utils.analytics import server_tracking
+from ..utils.analytics import scheduled_track
 from ..utils.analytics import ServeStartEvent
 from ..utils.analytics import ServeDevEndEvent
 from ..utils.analytics import ServeUpdateEvent
@@ -185,7 +185,7 @@ def serve_development(
     )
     ensure_prometheus_dir()
 
-    with server_tracking(event_properties):
+    with scheduled_track(event_properties):
         atexit.register(
             track,
             event_properties=ServeDevEndEvent(
@@ -345,7 +345,7 @@ def serve_production(
 
     ensure_prometheus_dir()
 
-    with server_tracking(event_properties):
+    with scheduled_track(event_properties):
         try:
             atexit.register(
                 track,

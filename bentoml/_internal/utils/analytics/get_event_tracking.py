@@ -20,7 +20,7 @@ def get_event_cli_build(
     *,
     bento: "Bento",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> BentoBuildEvent:
+) -> BentoBuildEvent:  # pragma: no cover
     return BentoBuildEvent(
         bento_creation_timestamp=bento.info.creation_time,
         bento_size_in_kb=calc_dir_size(bento._fs.getsyspath("/")),

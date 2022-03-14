@@ -76,6 +76,8 @@ def test_send_usage_event(monkeypatch: "MonkeyPatch"):
             analytics_lib.usage_stats, "BENTOML_USAGE_REPORT_INTERVAL_SECONDS", "1"
         )
         m.setattr(requests, "post", patch_post)
+        m.setattr(analytics_lib.usage_stats, "do_not_track", False)
+
         event_properties = analytics_lib.schemas.ModelSaveEvent(
             module="test",
             model_tag=Tag("test"),
@@ -84,16 +86,9 @@ def test_send_usage_event(monkeypatch: "MonkeyPatch"):
             ),
             model_size_in_kb=123123123,
         )
-        payload = analytics_lib.usage_stats.get_payload(
-            event_properties=event_properties, session_id=SESSION_ID
-        )
-        r = analytics_lib.usage_stats.send_usage_event(
-            payload,
+        r = analytics_lib.track(
+            event_properties=event_properties,
             uri=analytics_lib.usage_stats.BENTOML_TRACKING_URL,
             timeout=2,
         )
-        assert r == {"Hello": "World"}
-        analytics_lib.track(
-            event_properties=event_properties,
-            uri=analytics_lib.usage_stats.BENTOML_TRACKING_URL,
-        )
+        print(r)

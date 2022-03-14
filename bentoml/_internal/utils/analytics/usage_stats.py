@@ -94,7 +94,7 @@ def get_payload(
         event_properties=event_properties,
     )
     res = asdict(payload, value_serializer=serializer)
-    if injected_payload:
+    if injected_payload is not None:
         for k, v in injected_payload.items():
             res[k].update(v)
     return res
@@ -117,25 +117,18 @@ def track(
 
 
 @slient
+@contextlib.contextmanager
 def scheduled_track(
     event_properties: EventMeta,
     interval: int = BENTOML_USAGE_REPORT_INTERVAL_SECONDS,
-) -> t.Tuple[threading.Thread, threading.Event]:  # pragma: no cover
+):  # pragma: no cover
     stop_event = threading.Event()
 
     def loop() -> t.NoReturn:  # type: ignore
         while not stop_event.wait(interval):
             track(event_properties=event_properties)
 
-    thread = threading.Thread(target=loop, daemon=True)
-    return thread, stop_event
-
-
-@contextlib.contextmanager
-def server_tracking(event_properties: EventMeta):
-    tracking_thread, stop_thread_event = scheduled_track(
-        event_properties=event_properties
-    )
+    tracking_thread = threading.Thread(target=loop, daemon=True)
     try:
         tracking_thread.start()
         yield

@@ -57,7 +57,7 @@ def track_production_serve_init(svc: "Service") -> "ServeInfo":
             model_types=[
                 bento._model_store.get(i).info.module for i in bento.info.models  # type: ignore
             ],
-            runner_types=[type(v).__name__ for v in svc.runners.values()]
+            runner_types=[type(v).__name__ for v in svc.runners.values()],
         )
     else:
         # In this case serving from a file/directory with --production

@@ -96,23 +96,19 @@ def get_payload(
 
 
 @slient
-def send_usage_event(
-    payload: t.Dict[str, t.Any], uri: str, timeout: int
-) -> requests.Response:
-    return requests.post(uri, json=payload, timeout=timeout)
-
-
-@slient
 def track(
     event_properties: EventMeta,
+    *,
+    additional_payload: t.Optional[t.Dict[str, t.Any]] = None,
     uri: str = BENTOML_TRACKING_URL,
     timeout: int = 2,
-) -> None:
+) -> t.Optional[requests.Response]:
     if do_not_track():
         return
-    send_usage_event(
-        get_payload(event_properties=event_properties), timeout=timeout, uri=uri
-    )
+    payload = get_payload(event_properties=event_properties)
+    if additional_payload:
+        payload.update(additional_payload)
+    return requests.post(uri, json=payload, timeout=timeout)
 
 
 @slient

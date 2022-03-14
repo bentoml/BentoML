@@ -17,10 +17,13 @@ from ..configuration import set_debug_mode
 from ..configuration import load_global_config
 from ..utils.analytics import track
 from ..utils.analytics import CliEvent
+from ..utils.analytics import pass_cli_context
 from ..utils.analytics import BENTOML_DO_NOT_TRACK
+from ..utils.analytics.schemas import get_event_properties_mapping
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
+    from ..utils.analytics.schemas import CLIContext
 
     class ClickFunctionWrapper(t.Protocol[P]):
         __name__: str
@@ -34,8 +37,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 # Below contains commands that will have different tracking implementation.
-CUSTOM_TRACKING_IMPL = ("serve")
-GETEVENT_MAPPING = { "build" }
+CUSTOM_TRACKING_IMPL = ("serve", "build")
 
 
 # TODO: implement custom help message format
@@ -110,47 +112,49 @@ class BentoMLCommandGroup(click.Group):
         func: t.Union["t.Callable[P, t.Any]", "ClickFunctionWrapper[t.Any]"],
         cmd_group: click.Group,
         **kwargs: t.Any,
-    ) -> "WrappedCLI[bool]":
+    ) -> "WrappedCLI[CLIContext, bool]":
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
-        def wrapper(do_not_track: bool, *args: "P.args", **kwargs: "P.kwargs") -> t.Any:
+        @pass_cli_context
+        def wrapper(
+            ctx: "CLIContext", do_not_track: bool, *args: "P.args", **kwargs: "P.kwargs"
+        ) -> t.Any:
             if do_not_track:
                 os.environ[BENTOML_DO_NOT_TRACK] = str(True)
                 logger.debug(
                     "Executing '%s' command without usage tracking.", command_name
                 )
+            common_ = functools.partial(
+                CliEvent,
+                command_group=cmd_group.name,
+                command_name=command_name,
+            )
+            ctx.custom_event_mapping = get_event_properties_mapping(cmd_group)
 
-            if command_name in CUSTOM_TRACKING_IMPL:
-                return func(*args, **kwargs)
-            else:
-                start_time = time.perf_counter_ns()
-                try:
-                    return_value = func(*args, **kwargs)
-                    duration = time.perf_counter_ns() - start_time
-                    event_properties = CliEvent(
-                        cmd_group.name,
-                        command_name,
-                        "","",
-                        duration_in_ms=duration,
-                    )
-                    track(event_properties=event_properties)
-                    return return_value
-                except BaseException as e:
-                    duration = time.time() - start_time
-                    return_code = 2 if type(e) == KeyboardInterrupt else 1
-                    event_properties = CliEvent(
-                        command_group=cmd_group.name,
-                        command_name=command_name,
-                        duration_in_ms=duration,
-                        error_type=type(e).__name__,
-                        error_message=str(e),
-                        return_code=return_code,
-                    )
-                    track(event_properties=event_properties)
-                    raise
-                else:
-                    track(event_properties=event_properties)
+            start_time = time.time_ns()
+            try:
+                return_value = func(*args, **kwargs)
+                duration = time.time_ns() - start_time
+
+                ctx.command_group = cmd_group.name
+                ctx.event = common_(duration_in_ms=duration)
+
+                return return_value
+            except BaseException as e:
+                duration = time.time_ns() - start_time
+                return_code = 2 if type(e) == KeyboardInterrupt else 1
+                ctx.event = common_(
+                    duration_in_ms=duration,
+                    error_type=type(e).__name__,
+                    error_message=str(e),
+                    return_code=return_code,
+                )
+                track(event_properties=ctx.event)
+                raise
+            finally:
+                if command_name not in CUSTOM_TRACKING_IMPL:
+                    track(event_properties=ctx.event)
 
         return wrapper
 

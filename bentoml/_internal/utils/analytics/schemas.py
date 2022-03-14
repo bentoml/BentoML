@@ -2,6 +2,7 @@ import os
 import re
 import typing as t
 from abc import ABC
+from typing import TYPE_CHECKING
 from datetime import datetime
 from platform import platform
 from platform import python_version
@@ -9,16 +10,20 @@ from functools import lru_cache
 
 import yaml
 import attrs
+import click
 import psutil
 import attrs.converters
 
 from ...types import Tag
+from ..lazy_loader import LazyLoader
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import CLIENT_ID_PATH
 from ...yatai_rest_api_client.config import get_config_path
 from ...yatai_rest_api_client.config import get_current_context
 
-import click
+if TYPE_CHECKING:
+    P = t.ParamSpec("P")
+    GenericFunction = t.Callable[P, t.Any]
 
 
 @lru_cache(maxsize=1)
@@ -103,10 +108,16 @@ class CliEvent(EventMeta):
 
     command_group: str
     command_name: str
-    error_type: t.Optional[str] = attrs.field(default=None, converter=attrs.converters.default_if_none(""))
-    error_message: t.Optional[str] = attrs.field(default=None, converter=attrs.converters.default_if_none(""))
+    error_type: t.Optional[str] = attrs.field(
+        default=None, converter=attrs.converters.default_if_none("")
+    )
+    error_message: t.Optional[str] = attrs.field(
+        default=None, converter=attrs.converters.default_if_none("")
+    )
 
-    return_code: t.Optional[int] = attrs.field(default=None, converter=attrs.converters.default_if_none(0))
+    return_code: t.Optional[int] = attrs.field(
+        default=None, converter=attrs.converters.default_if_none(0)
+    )
     duration_in_ms: float = attrs.field(
         default=None, converter=attrs.converters.default_if_none(from_ns_to_ms)
     )
@@ -131,10 +142,40 @@ class BentoBuildEvent(EventMeta):
     model_types: t.List[str] = attrs.field(factory=list)
     runner_types: t.List[str] = attrs.field(factory=list)
 
-class CLIContext:
-    events: CliEvent
-    
 
+@attrs.define
+class CLIContext:
+    command_group: str = attrs.field(init=False)
+    event: CliEvent = attrs.field(init=False)
+    custom_event_mapping: "t.Dict[str, GenericFunction[t.Any]]" = attrs.field(
+        init=False
+    )
+
+
+pass_cli_context = click.make_pass_decorator(CLIContext, ensure=True)
+
+
+def command_tree(cli: click.Group) -> t.Generator[t.Tuple[str, str], None, None]:
+    for cmd in cli.commands.values():
+        if isinstance(cmd, click.Group):
+            yield from command_tree(cmd)
+        else:
+            yield cmd.name, f"{cli.name}_{cmd.name}"
+
+
+@lru_cache(maxsize=1)
+def get_event_properties_mapping(
+    cli: click.Group,
+) -> "t.Dict[str, GenericFunction[t.Any]]":
+    getter_func = "get_event_{}"
+    getter = LazyLoader(
+        "getter", globals(), "bentoml._internal.utils.analytics.get_event_tracking"
+    )
+    return {
+        cmd_name: getattr(getter, getter_func.format(full_cli_name))
+        for cmd_name, full_cli_name in command_tree(cli)
+        if getter_func.format(full_cli_name) in getter.__all__
+    }
 
 
 @attrs.define
@@ -145,6 +186,7 @@ class ModelSaveEvent(EventMeta):
 
     model_creation_timestamp: datetime
     model_size_in_kb: float = attrs.field(converter=convert_to_kb)
+
 
 @attrs.define
 class ServeDevStartEvent(EventMeta):

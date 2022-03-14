@@ -3,6 +3,7 @@ from .schemas import ServeEndEvent
 from .schemas import ModelSaveEvent
 from .schemas import BentoBuildEvent
 from .schemas import ServeStartEvent
+from .schemas import pass_cli_context
 from .schemas import ServeDevEndEvent
 from .schemas import ServeUpdateEvent
 from .schemas import ServeDevStartEvent
@@ -15,6 +16,7 @@ from .usage_stats import BENTOML_DO_NOT_TRACK
 
 __all__ = [
     "track",
+    "pass_cli_context",
     "scheduled_track",
     "server_tracking",
     "get_serve_info",

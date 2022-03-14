@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import yaml
+import attrs
 import click
 from simple_di import inject
 from simple_di import Provide
@@ -20,10 +21,13 @@ from ..utils import human_readable_size
 from .click_utils import is_valid_bento_tag
 from .click_utils import is_valid_bento_name
 from ..yatai_client import yatai_client
+from ..utils.analytics import pass_cli_context
 from ..configuration.containers import BentoMLContainer
+from ..utils.analytics.usage_stats import track
 
 if TYPE_CHECKING:
     from ..bento import BentoStore
+    from ..utils.analytics.schemas import CLIContext
 
 logger = logging.getLogger(__name__)
 
@@ -264,8 +268,12 @@ def add_bento_management_commands(
     @click.argument("build_ctx", type=click.Path(), default=".")
     @click.option("-f", "--bentofile", type=click.STRING, default="bentofile.yaml")
     @click.option("--version", type=click.STRING, default=None)
-    def build(build_ctx: str, bentofile: str, version: str) -> None:
+    @pass_cli_context
+    def build(ctx: "CLIContext", build_ctx: str, bentofile: str, version: str) -> None:
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
-        build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        event_properties = ctx.custom_event_mapping["build"](bento=bento)
+        additional_payload = {"duration": ctx.event.duration_in_ms}
+        track(event_properties=event_properties, additional_payload=additional_payload)

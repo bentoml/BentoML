@@ -37,7 +37,6 @@ def add_login_command(cli: click.Group) -> None:
         if user is None:
             raise CLIException("current user is not found")
 
-        user = yatai_rest_client.get_current_user()
         org = yatai_rest_client.get_current_organization()
 
         if org is None:

@@ -1,1 +1,2 @@
 typings/**/*.pyi linguist-generated=true
+docker/templates/**/*.j2 linguist-generated=true

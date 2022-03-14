@@ -43,25 +43,6 @@ def ensure_prometheus_dir(
     os.makedirs(prometheus_multiproc_dir, exist_ok=True)
 
 
-def get_scheduled_event_properties(
-    production: bool,
-    bento_identifier: str,
-    serve_info: t.Optional[t.Dict[str, str]] = None,
-    bento_creation_timestamp: t.Optional[str] = None,
-) -> t.Dict[str, t.Any]:
-    ep = {
-        "production": production,
-        "bento_identifier": bento_identifier,
-        # TODO: models info + metrics
-        "triggered_at": datetime.utcnow().isoformat(),
-    }
-    if serve_info is not None:
-        ep.update(serve_info)
-    if bento_creation_timestamp is not None:
-        ep["bento_creation_timestamp"] = bento_creation_timestamp
-    return ep
-
-
 @inject
 def serve_development(
     bento_identifier: str,

@@ -92,15 +92,9 @@ def track(
     if do_not_track():
         return
     payload = get_payload(event_properties=event_properties)
-    import json
-
-    print("tracking:", json.dumps(payload))
-    f = open("/tmp/track.log", "a")
-    f.writelines(json.dumps(payload))
-    f.writelines("\n\n")
-    # return requests.post(
-    #     USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS
-    # )
+    return requests.post(
+        USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS
+    )
 
 
 @inject

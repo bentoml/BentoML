@@ -25,7 +25,6 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..bento import BentoStore
-
 logger = logging.getLogger(__name__)
 
 

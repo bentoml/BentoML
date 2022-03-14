@@ -120,14 +120,18 @@ class ModelSaveEvent(EventMeta):
 
 @attrs.define
 class BentoBuildEvent(EventMeta):
-    bento_tag: Tag
     bento_creation_timestamp: datetime
     bento_size_in_kb: float = attrs.field(converter=convert_to_kb)
+    model_size_in_kb: float = attrs.field(converter=convert_to_kb)
 
     model_tags: t.List[Tag] = attrs.field(
         factory=list, converter=lambda x: [str(i) for i in x]
     )
+    num_of_models: int = attrs.field(init=False)
     model_types: t.List[str] = attrs.field(factory=list)
+
+    def __attrs_post_init__(self):
+        self.num_of_models = len(self.model_tags)
 
 
 def check_local_or_packaged_in_bento(identifier: str) -> str:

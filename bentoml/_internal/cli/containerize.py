@@ -1,6 +1,6 @@
 # type: ignore[reportUnusedFunction]
-import typing as t
 import sys
+import typing as t
 
 import click
 

@@ -341,9 +341,9 @@ class Bento(StoreItem):
             self.__fs = out_fs
             track(
                 event_properties=BentoBuildEvent(
-                    bento_tag=self.info.tag,
                     bento_creation_timestamp=self.info.creation_time,
-                    bento_size_in_kb=calc_dir_size(bento_path),
+                    bento_size_in_kb=calc_dir_size(out_fs.getsyspath("/")),
+                    model_size_in_kb=calc_dir_size(out_fs.getsyspath("/models")),
                     model_tags=self.info.models,
                     model_types=[
                         model_store.get(i).info.module for i in self.info.models

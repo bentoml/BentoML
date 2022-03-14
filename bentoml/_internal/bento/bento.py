@@ -166,7 +166,6 @@ class Bento(StoreItem):
         ctx_fs = fs.open_fs(build_ctx)
 
         model_tags = build_config.additional_models
-        runners_info = {k: type(runners).__name__ for k, runners in svc.runners.items()}
         # Add Runner required models to models list
         for runner in svc.runners.values():
             model_tags += runner.required_models

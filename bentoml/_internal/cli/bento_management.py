@@ -280,7 +280,7 @@ def add_bento_management_commands(
         event_properties = ctx.custom_event_mapping["build"](bento=bento)
         injected_payload = {
             "event_properties": {
-                "duration_in_ms": duration / 1e6,
+                "duration_in_ms": int(duration / 1e6),
                 "command_group": ctx.command_group,
             }
         }

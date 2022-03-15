@@ -15,9 +15,9 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import Tag
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION

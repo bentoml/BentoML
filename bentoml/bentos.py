@@ -12,8 +12,8 @@ from simple_di import Provide
 
 from bentoml.exceptions import InvalidArgument
 
+from ._internal.tag import Tag
 from ._internal.bento import Bento
-from ._internal.types import Tag
 from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer

@@ -8,10 +8,9 @@ from bentoml import SimpleRunner
 from bentoml.io import IODescriptor
 from bentoml.exceptions import BentoMLException
 
-from ..types import Tag
+from ..tag import Tag
 from ..bento.bento import get_default_bento_readme
 from .inference_api import InferenceAPI
-from ..utils.validation import validate_tag_str
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
@@ -61,8 +60,8 @@ class Service:
         if name != lower_name:
             logger.warning(f"converting {name} to lowercase: {lower_name}")
 
-        # Service name must be a valid dns1123 subdomain string
-        validate_tag_str(lower_name)
+        # Service name must be a valid Tag name; create a dummy tag to use its validation
+        Tag(lower_name)
         self.name = lower_name
 
         if runners is not None:

@@ -12,7 +12,7 @@ import fs.copy
 from fs.base import FS
 from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 
-from ..types import Tag
+from ..tag import Tag
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
 from .docker import ImageProvider

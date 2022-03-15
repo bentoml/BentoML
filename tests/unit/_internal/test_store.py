@@ -8,11 +8,11 @@ import fs
 import attr
 import pytest
 
+from bentoml import Tag
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.store import Store
 from bentoml._internal.store import StoreItem
-from bentoml._internal.types import Tag
 
 if sys.version_info < (3, 7):
     from backports.datetime_fromisoformat import MonkeyPatch

@@ -17,9 +17,9 @@ from fs.copy import copy_file
 from simple_di import inject
 from simple_di import Provide
 
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import Tag
 from ..types import PathType
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore

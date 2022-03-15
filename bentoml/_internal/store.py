@@ -9,7 +9,7 @@ import fs
 import fs.errors
 from fs.base import FS
 
-from .types import Tag
+from .tag import Tag
 from .types import PathType
 from .exportable import Exportable
 from ..exceptions import NotFound

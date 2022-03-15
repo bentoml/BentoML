@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from simple_di import inject
 from simple_di import Provide
 
-from ._internal.types import Tag
+from ._internal.tag import Tag
 from ._internal.models import Model
 from ._internal.configuration.containers import BentoMLContainer
 

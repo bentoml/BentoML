@@ -120,7 +120,6 @@ def save(
     *,
     model_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]] = None,
     model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
-    model_pool: t.Optional["cbt.core.Pool"] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,

@@ -161,7 +161,7 @@ class Exportable(ABC):
                     fs.copy.copy_dir(input_fs, subpath, tempfs, filename)
                 else:
                     input_fs = fs.open_fs(input_uri)
-                    fs.copy.copy_file(input_fs, subpath, input_fs, filename)
+                    fs.copy.copy_file(input_fs, subpath, tempfs, filename)
 
                 res = cls._from_compressed(tempfs.getsyspath(filename), input_format)
 

@@ -25,7 +25,9 @@ configuration file. Here's an example of that process from the `quickstart guide
          - scikit-learn
          - pandas
 
-The service field is the python module that holds the bentoml.Service
+.. note::  
+
+    The ``service`` field is the python module that holds the ``bentoml.Service``
 instance.
 
 Configuring files to include

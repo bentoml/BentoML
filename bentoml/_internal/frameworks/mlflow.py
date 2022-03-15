@@ -7,8 +7,8 @@ import yaml
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model as BentoModel
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -254,7 +254,7 @@ def import_from_uri(
         "pip_dependencies": [f"mlflow=={get_pkg_version('mlflow')}"],
     }
 
-    _model = BentoModel.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
@@ -262,25 +262,25 @@ def import_from_uri(
         options=None,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
 
-    _model.info.options = {"uri": uri}
-    mlflow_obj_path = _download_artifact_from_uri(uri, output_path=_model.path)
-    _model.info.options["mlflow_folder"] = os.path.relpath(mlflow_obj_path, _model.path)
-    exists, _ = _validate_file_exists("MLproject", mlflow_obj_path)
-    if exists:
-        raise BentoMLException("BentoML doesn't accept MLflow Projects.")
-    exists, fpath = _validate_file_exists("MLmodel", mlflow_obj_path)
-    if not exists:
-        raise BentoMLException("Downloaded path is not a valid MLflow Model.")
-    with Path(fpath).open("r") as mf:
-        conf = yaml.safe_load(mf.read())
-        flavor = conf["flavors"]["python_function"]
-        _model.info.options["flavor"] = flavor["loader_module"]
+        _model.info.options = {"uri": uri}
+        mlflow_obj_path = _download_artifact_from_uri(uri, output_path=_model.path)
+        _model.info.options["mlflow_folder"] = os.path.relpath(
+            mlflow_obj_path, _model.path
+        )
+        exists, _ = _validate_file_exists("MLproject", mlflow_obj_path)
+        if exists:
+            raise BentoMLException("BentoML doesn't accept MLflow Projects.")
+        exists, fpath = _validate_file_exists("MLmodel", mlflow_obj_path)
+        if not exists:
+            raise BentoMLException("Downloaded path is not a valid MLflow Model.")
+        with Path(fpath).open("r") as mf:
+            conf = yaml.safe_load(mf.read())
+            flavor = conf["flavors"]["python_function"]
+            _model.info.options["flavor"] = flavor["loader_module"]
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _PyFuncRunner(BaseModelRunner):

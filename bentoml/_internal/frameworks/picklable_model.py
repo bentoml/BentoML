@@ -6,8 +6,8 @@ import cloudpickle  # type: ignore
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 
 from ..models import PKL_EXT
@@ -110,20 +110,19 @@ def save(
     """
     context = {"framework_name": "picklable_model"}
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
-    )
+    ) as _model:
 
-    with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
-        cloudpickle.dump(obj, f)
+        with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
+            cloudpickle.dump(obj, f)
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _PicklableModelRunner(BaseModelRunner):

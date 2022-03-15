@@ -9,8 +9,8 @@ import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -341,7 +341,8 @@ def save(
     options = {
         "custom_objects": True if custom_objects is not None else False,
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=options,
@@ -349,20 +350,18 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    if store_as_json_and_weights:
-        with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
-            jf.write(model.to_json())
-        weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
-        model.save_weights(_model.path_of(weight_fname), save_format=save_format)
-    else:
-        model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
-        model.save(_model.path_of(model_fname), save_format=save_format)
+        if store_as_json_and_weights:
+            with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
+                jf.write(model.to_json())
+            weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
+            model.save_weights(_model.path_of(weight_fname), save_format=save_format)
+        else:
+            model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
+            model.save(_model.path_of(model_fname), save_format=save_format)
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _KerasRunner(_TensorflowRunner):

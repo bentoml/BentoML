@@ -7,8 +7,8 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -164,7 +164,7 @@ def save(
         recog_network=recog_network,
     )
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
@@ -172,23 +172,20 @@ def save(
         options=options,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
+        src_folder: str = model.model_storage_directory
 
-    src_folder: str = model.model_storage_directory
+        detect_filename: str = f"{detect_model}{PTH_EXT}"
+        if not os.path.exists(_model.path_of(detect_filename)):
+            shutil.copyfile(
+                os.path.join(src_folder, detect_filename),
+                _model.path_of(detect_filename),
+            )
 
-    detect_filename: str = f"{detect_model}{PTH_EXT}"
-    if not os.path.exists(_model.path_of(detect_filename)):
-        shutil.copyfile(
-            os.path.join(src_folder, detect_filename),
-            _model.path_of(detect_filename),
-        )
+            fname: str = f"{recog_network}{PTH_EXT}"
+            shutil.copyfile(os.path.join(src_folder, fname), _model.path_of(fname))
 
-        fname: str = f"{recog_network}{PTH_EXT}"
-        shutil.copyfile(os.path.join(src_folder, fname), _model.path_of(fname))
-
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _EasyOCRRunner(BaseModelRunner):

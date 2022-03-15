@@ -10,8 +10,8 @@ import yaml
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -232,7 +232,8 @@ def save(
         "framework_name": "spacy",
         "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
@@ -240,17 +241,16 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    meta = model.meta
-    pip_package = f"{meta['lang']}_{meta['name']}"
-    _model.info.options = {"pip_package": pip_package}
-    if "requirements" in meta:
-        _model.info.options["additional_requirements"] = meta["requirements"]
-    model.to_disk(_model.path)
+        meta = model.meta
+        pip_package = f"{meta['lang']}_{meta['name']}"
+        _model.info.options = {"pip_package": pip_package}
+        if "requirements" in meta:
+            _model.info.options["additional_requirements"] = meta["requirements"]
+        model.to_disk(_model.path)
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 @inject

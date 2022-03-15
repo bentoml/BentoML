@@ -11,8 +11,8 @@ from distutils.dir_util import copy_tree
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -283,7 +283,8 @@ def import_from_tfhub(
             name = _clean_name(identifier)
         else:
             name = f"{identifier.__class__.__name__}_{uuid.uuid4().hex[:5].upper()}"
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
@@ -291,30 +292,29 @@ def import_from_tfhub(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
-    if isinstance(identifier, str):
-        current_cache_dir = os.environ.get("TFHUB_CACHE_DIR")
-        os.environ["TFHUB_CACHE_DIR"] = _model.path
-        fpath: str = resolve(identifier)
-        folder = fpath.split("/")[-1]
-        _model.info.options = {"model": identifier, "local_path": folder}
-        if current_cache_dir is not None:
-            os.environ["TFHUB_CACHE_DIR"] = current_cache_dir
-    else:
-        if hasattr(identifier, "export"):
-            # hub.Module.export()
-            with tf.Session(graph=tf.get_default_graph()) as sess:  # type: ignore
-                sess.run(tf.global_variables_initializer())  # type: ignore
-                identifier.export(_model.path, sess)  # type: ignore
+    ) as _model:
+        if isinstance(identifier, str):
+            current_cache_dir = os.environ.get("TFHUB_CACHE_DIR")
+            os.environ["TFHUB_CACHE_DIR"] = _model.path
+            fpath: str = resolve(identifier)
+            folder = fpath.split("/")[-1]
+            _model.info.options = {"model": identifier, "local_path": folder}
+            if current_cache_dir is not None:
+                os.environ["TFHUB_CACHE_DIR"] = current_cache_dir
         else:
-            tf.saved_model.save(identifier, _model.path)
-        _model.info.options = {
-            "model": identifier.__class__.__name__,
-            "local_path": ".",
-        }
+            if hasattr(identifier, "export"):
+                # hub.Module.export()
+                with tf.Session(graph=tf.get_default_graph()) as sess:  # type: ignore
+                    sess.run(tf.global_variables_initializer())  # type: ignore
+                    identifier.export(_model.path, sess)  # type: ignore
+            else:
+                tf.saved_model.save(identifier, _model.path)
+            _model.info.options = {
+                "model": identifier.__class__.__name__,
+                "local_path": ".",
+            }
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 @inject

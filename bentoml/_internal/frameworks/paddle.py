@@ -8,8 +8,8 @@ from distutils.dir_util import copy_tree
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
@@ -226,54 +226,60 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                     return _tag
             except (FileNotFoundError, NotFound):
                 pass
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         context=context,
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
-    if isinstance(model, str):
-        # NOTE: for paddlehub there is no way to skip Module initialization,
-        #  since `paddlehub` will always initialize a `hub.Module` regardless
-        #  of any situation. Therefore, the bottleneck will only happen one time
-        #  when users haven't saved the pretrained model under paddlehub cache
-        #  directory.
-        if not hub.server_check():
-            raise BentoMLException("Unable to connect to PaddleHub server.")
-        if os.path.isdir(model):
-            directory = model
-            target = _model.path
+    ) as _model:
+        if isinstance(model, str):
+            # NOTE: for paddlehub there is no way to skip Module initialization,
+            #  since `paddlehub` will always initialize a `hub.Module` regardless
+            #  of any situation. Therefore, the bottleneck will only happen one time
+            #  when users haven't saved the pretrained model under paddlehub cache
+            #  directory.
+            if not hub.server_check():
+                raise BentoMLException("Unable to connect to PaddleHub server.")
+            if os.path.isdir(model):
+                directory = model
+                target = _model.path
 
-            _model.info.options["from_local_dir"] = True
-        else:
-            _local_manager = manager.LocalModuleManager(home=hub_module_home)
-            user_module_cls = _local_manager.search(name, source=source, branch=branch)
-            if not user_module_cls or not user_module_cls.version.match(version):
-                user_module_cls = _local_manager.install(
-                    name=name,
-                    version=version,
-                    source=source,
-                    update=update,
-                    branch=branch,
-                    ignore_env_mismatch=ignore_env_mismatch,
+                _model.info.options["from_local_dir"] = True
+            else:
+                _local_manager = manager.LocalModuleManager(home=hub_module_home)
+                user_module_cls = _local_manager.search(
+                    name, source=source, branch=branch
                 )
+                if not user_module_cls or not user_module_cls.version.match(version):
+                    user_module_cls = _local_manager.install(
+                        name=name,
+                        version=version,
+                        source=source,
+                        update=update,
+                        branch=branch,
+                        ignore_env_mismatch=ignore_env_mismatch,
+                    )
 
-            directory = _local_manager._get_normalized_path(user_module_cls.name)
-            target = _model.path_of(user_module_cls.name)
-            print(target)
+                directory = _local_manager._get_normalized_path(user_module_cls.name)
+                target = _model.path_of(user_module_cls.name)
+                print(target)
 
-            _model.info.options = {}
-            _model.info.options.update(hub.Module.load_module_info(directory))
-            _model.info.options["_module_dir"] = os.path.relpath(target, _model.path)
-            _model.info.options["from_local_dir"] = False
-        copy_tree(directory, target)
-    else:
-        paddle.jit.save(model, _model.path_of(SAVE_NAMESPACE), input_spec=input_spec)
+                _model.info.options = {}
+                _model.info.options.update(hub.Module.load_module_info(directory))
+                _model.info.options["_module_dir"] = os.path.relpath(
+                    target, _model.path
+                )
+                _model.info.options["from_local_dir"] = False
+            copy_tree(directory, target)
+        else:
+            paddle.jit.save(
+                model, _model.path_of(SAVE_NAMESPACE), input_spec=input_spec
+            )
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 @inject

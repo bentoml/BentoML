@@ -6,8 +6,8 @@ import joblib  # type: ignore[reportMissingTypeStubs]
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -185,7 +185,7 @@ def save(
         "pip_dependencies": [f"lightgbm=={get_pkg_version('lightgbm')}"],
     }
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
@@ -193,26 +193,24 @@ def save(
         options=booster_params,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
 
-    _model.info.options["sklearn_api"] = False
-    if any(
-        isinstance(model, _)
-        for _ in [
-            lgb.LGBMModel,
-            lgb.LGBMClassifier,
-            lgb.LGBMRegressor,
-            lgb.LGBMRanker,
-        ]
-    ):
-        joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
-        _model.info.options["sklearn_api"] = True
-    else:
-        model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{TXT_EXT}"))  # type: ignore
+        _model.info.options["sklearn_api"] = False
+        if any(
+            isinstance(model, _)
+            for _ in [
+                lgb.LGBMModel,
+                lgb.LGBMClassifier,
+                lgb.LGBMRegressor,
+                lgb.LGBMRanker,
+            ]
+        ):
+            joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
+            _model.info.options["sklearn_api"] = True
+        else:
+            model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{TXT_EXT}"))  # type: ignore
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _LightGBMRunner(BaseModelRunner):

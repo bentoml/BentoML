@@ -25,9 +25,7 @@ configuration file. Here's an example of that process from the `quickstart guide
          - scikit-learn
          - pandas
 
-.. note::  
-
-    The ``service`` field is the python module that holds the ``bentoml.Service``
+The service field is the python module that holds the bentoml.Service
 instance.
 
 Configuring files to include
@@ -67,9 +65,6 @@ This is what a ``.bentoignore`` file would look like.
    .ipynb_checkpoints/
    training_data/
 
-Building a Bento
-================
-
 To build a Bento, simply run the following command from your project
 directory that contains your ``bentofile.yaml``:
 
@@ -84,14 +79,12 @@ that are required by the service code, and pin down the version used
 in current environment.
 
 Bento Format
-================
+============
 
 BentoML is a standard file format that describes how to load and run
 a ``bentoml.Service`` defined by the user. It includes code that
 instantiates the ``bentoml.Service`` instance, as well as related
 configurations, data/model files, and dependencies.
-
-BentoML file format is a YAML file that looks like
 
 .. code:: yaml
 
@@ -127,10 +120,9 @@ pip will just use the latest release.
         - numpy
         - "matplotlib==3.5.1"
 
-If you're using an existing python environment, you can use a
-``requirements.txt``. For a project, you can run
-``pip freeze > requirements.txt`` to generate a requirements file
-to load with BentoML.
+The user needs to put all required python packages for the Bento Service in
+a ``requirements.txt``. For a project, you can run ``pip freeze > requirements.txt``
+to generate a requirements file to load with BentoML.
 
 .. code:: yaml
 
@@ -228,11 +220,14 @@ For more interesting docker development, you can also use a
 ``setup.sh`` for the container. For NLP projects, you can
 preinstall NLTK data you need with:
 
-``setup.sh``
-
 .. code:: shell
-
+   # ``setup.sh``
    python -m nltk.downloader all
+
+Anatomy of a Bentofile
+----------------------
+
+TODO
 
 Conclusion
 ----------

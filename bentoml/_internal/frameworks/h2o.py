@@ -5,8 +5,8 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -153,7 +153,7 @@ def save(
     }
     options: t.Dict[str, t.Any] = dict()
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
@@ -161,13 +161,12 @@ def save(
         options=options,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
+        h2o.save_model(
+            model=model, path=_model.path, force=True, filename=SAVE_NAMESPACE
+        )
 
-    h2o.save_model(model=model, path=_model.path, force=True, filename=SAVE_NAMESPACE)
-
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _H2ORunner(BaseModelRunner):

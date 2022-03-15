@@ -5,8 +5,8 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -201,7 +201,7 @@ def save(
         "framework_name": "catboost",
         "pip_dependencies": [f"catboost=={get_pkg_version('catboost')}"],
     }
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
@@ -209,19 +209,17 @@ def save(
         options=model_params,
         metadata=metadata,
         context=context,
-    )
+    ) as _model:
+        path = _model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
+        format_ = CATBOOST_EXT
+        model.save_model(
+            path,
+            format=format_,
+            export_parameters=model_export_parameters,
+            pool=model_pool,
+        )
 
-    path = _model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
-    format_ = CATBOOST_EXT
-    model.save_model(
-        path,
-        format=format_,
-        export_parameters=model_export_parameters,
-        pool=model_pool,
-    )
-
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _CatBoostRunner(BaseModelRunner):

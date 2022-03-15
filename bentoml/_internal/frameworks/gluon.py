@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml._internal.types import LazyType
 
 from ..models import JSON_EXT
@@ -135,7 +135,7 @@ def save(
         "pip_dependencies": [f"mxnet=={get_pkg_version('mxnet')}"],
     }
     options: t.Dict[str, t.Any] = dict()
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
@@ -143,13 +143,11 @@ def save(
         options=options,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
 
-    model.export(_model.path_of(SAVE_NAMESPACE))
+        model.export(_model.path_of(SAVE_NAMESPACE))
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _GluonRunner(BaseModelRunner):

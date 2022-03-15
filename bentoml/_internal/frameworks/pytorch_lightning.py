@@ -5,8 +5,8 @@ import torch
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -166,7 +166,8 @@ def save(
             f"pytorch_lightning=={get_pkg_version('pytorch_lightning')}",
         ],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
@@ -174,14 +175,13 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    _model.info.context["model_format"] = "pytorch_lightning:v1"
-    torch.jit.save(model.to_torchscript(), weight_file)  # type: ignore[reportUnknownMemberType]
+        weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+        _model.info.context["model_format"] = "pytorch_lightning:v1"
+        torch.jit.save(model.to_torchscript(), weight_file)  # type: ignore[reportUnknownMemberType]
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _PyTorchLightningRunner(BasePyTorchRunner):

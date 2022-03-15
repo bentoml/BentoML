@@ -7,8 +7,8 @@ from torch._C import device
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -177,7 +177,7 @@ def save(
     }
     options: t.Dict[str, t.Any] = dict()
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
@@ -185,21 +185,18 @@ def save(
         options=options,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
+        checkpointer = checkpoint.DetectionCheckpointer(model, save_dir=_model.path)
+        checkpointer.save(SAVE_NAMESPACE)
+        if model_config:
+            with open(
+                _model.path_of(f"{SAVE_NAMESPACE}{YAML_EXT}"),
+                "w",
+                encoding="utf-8",
+            ) as ouf:
+                ouf.write(model_config.dump())
 
-    checkpointer = checkpoint.DetectionCheckpointer(model, save_dir=_model.path)
-    checkpointer.save(SAVE_NAMESPACE)
-    if model_config:
-        with open(
-            _model.path_of(f"{SAVE_NAMESPACE}{YAML_EXT}"),
-            "w",
-            encoding="utf-8",
-        ) as ouf:
-            ouf.write(model_config.dump())
-
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 from .common.model_runner import BaseModelRunner

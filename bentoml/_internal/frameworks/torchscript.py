@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
@@ -145,7 +145,8 @@ def save(
         "framework_name": "torch",
         "pip_dependencies": [f"torch=={get_pkg_version('torch')}"],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
@@ -153,13 +154,12 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
-    weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    _model.info.context["model_format"] = "torchscript:v1"
-    torch.jit.save(model, weight_file)  # type: ignore[reportUnknownMemberType]
+    ) as _model:
+        weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+        _model.info.context["model_format"] = "torchscript:v1"
+        torch.jit.save(model, weight_file)  # type: ignore[reportUnknownMemberType]
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _TorchScriptRunner(BasePyTorchRunner):

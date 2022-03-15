@@ -8,8 +8,8 @@ from importlib import import_module
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -323,7 +323,7 @@ def save(
         "feature_extractor": False,
     }
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         context=context,
@@ -331,56 +331,57 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
-    if LazyType["ext.TransformersPipeline"](
-        "transformers.pipelines.base.Pipeline"
-    ).isinstance(obj):
-        if tokenizer is not None or feature_extractor is not None:
-            logger.warning(
-                "Currently saving a Transformers pipeline. Given params `tokenizer` or `feature_extractor` is useless."
+    ) as _model:
+        if LazyType["ext.TransformersPipeline"](
+            "transformers.pipelines.base.Pipeline"
+        ).isinstance(obj):
+            if tokenizer is not None or feature_extractor is not None:
+                logger.warning(
+                    "Currently saving a Transformers pipeline. Given params `tokenizer` or `feature_extractor` is useless."
+                )
+            obj.save_pretrained(_model.path)
+            _model.info.context["pipeline"] = True
+            _model.info.context["task"] = getattr(obj, "task")
+            _model.info.options["model"] = getattr(obj, "model").__class__.__name__
+            _tokenizer, _fe = getattr(obj, "tokenizer"), getattr(
+                obj, "feature_extractor"
             )
-        obj.save_pretrained(_model.path)
-        _model.info.context["pipeline"] = True
-        _model.info.context["task"] = getattr(obj, "task")
-        _model.info.options["model"] = getattr(obj, "model").__class__.__name__
-        _tokenizer, _fe = getattr(obj, "tokenizer"), getattr(obj, "feature_extractor")
-        if getattr(obj, "feature_extractor") is not None:
-            _model.info.options["feature_extractor"] = _fe.__class__.__name__
-        elif check_tokenizer_type(_tokenizer):
-            _model.info.options["tokenizer"] = _tokenizer.__class__.__name__
-    elif check_model_type(obj):
-        _model.info.options["model"] = obj.__class__.__name__
-        obj.save_pretrained(_model.path)
-        if tokenizer is not None:
-            if not check_tokenizer_type(tokenizer):
-                raise BentoMLException(
-                    "`tokenizer` is neither type `PreTrainedTokenizer` nor `PreTrainedTokenizerFast`"
+            if getattr(obj, "feature_extractor") is not None:
+                _model.info.options["feature_extractor"] = _fe.__class__.__name__
+            elif check_tokenizer_type(_tokenizer):
+                _model.info.options["tokenizer"] = _tokenizer.__class__.__name__
+        elif check_model_type(obj):
+            _model.info.options["model"] = obj.__class__.__name__
+            obj.save_pretrained(_model.path)
+            if tokenizer is not None:
+                if not check_tokenizer_type(tokenizer):
+                    raise BentoMLException(
+                        "`tokenizer` is neither type `PreTrainedTokenizer` nor `PreTrainedTokenizerFast`"
+                    )
+                _model.info.options["tokenizer"] = tokenizer.__class__.__name__
+                tokenizer.save_pretrained(_model.path)
+            elif feature_extractor is not None:
+                if not check_fe_type(feature_extractor):
+                    raise BentoMLException(
+                        "`feature_extractor` is not of type `PreTrainedFeatureExtractor`"
+                    )
+                _model.info.options[
+                    "feature_extractor"
+                ] = feature_extractor.__class__.__name__
+                feature_extractor.save_pretrained(_model.path)
+            else:
+                logger.warning(
+                    "Saving a Transformer model usually includes either a `tokenizer` or `feature_extractor`. None received."
                 )
-            _model.info.options["tokenizer"] = tokenizer.__class__.__name__
-            tokenizer.save_pretrained(_model.path)
-        elif feature_extractor is not None:
-            if not check_fe_type(feature_extractor):
-                raise BentoMLException(
-                    "`feature_extractor` is not of type `PreTrainedFeatureExtractor`"
-                )
-            _model.info.options[
-                "feature_extractor"
-            ] = feature_extractor.__class__.__name__
-            feature_extractor.save_pretrained(_model.path)
         else:
-            logger.warning(
-                "Saving a Transformer model usually includes either a `tokenizer` or `feature_extractor`. None received."
+            raise BentoMLException(
+                "Unknown type for `model`."
+                f" Got {type(obj)} while only accepted"
+                " one of the following types:"
+                " `Pipeline` and `Union[PreTrainedModel,TFPreTrainedModel,FlaxPreTrainedModel]`"
             )
-    else:
-        raise BentoMLException(
-            "Unknown type for `model`."
-            f" Got {type(obj)} while only accepted"
-            " one of the following types:"
-            " `Pipeline` and `Union[PreTrainedModel,TFPreTrainedModel,FlaxPreTrainedModel]`"
-        )
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 # TODO: import_from_huggingface_hub

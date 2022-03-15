@@ -5,8 +5,8 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -170,7 +170,7 @@ def save(
         "pip_dependencies": [f"xgboost=={get_pkg_version('xgboost')}"],
     }
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=__name__,
         options=booster_params,
@@ -178,12 +178,11 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}"))
-    _model.save(model_store)
+        model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}"))
 
-    return _model.tag
+        return _model.tag
 
 
 class _XgBoostRunner(BaseModelRunner):

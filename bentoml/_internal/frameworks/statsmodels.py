@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -150,19 +150,19 @@ def save(
         "framework_name": "statsmodels",
         "pip_dependencies": [f"statsmodels=={get_pkg_version('statsmodels')}"],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=__name__,
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
-    )
+    ) as _model:
 
-    model.save(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
+        model.save(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _StatsModelsRunner(BaseModelRunner):

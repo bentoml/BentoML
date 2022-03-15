@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -151,19 +151,19 @@ def save(
         "framework_name": "pycaret",
         "pip_dependencies": [f"pycaret=={get_pkg_version('pycaret')}"],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
-    )
-    save_model(model, _model.path_of(SAVE_NAMESPACE))
-    save_config(_model.path_of(f"{PYCARET_CONFIG}{PKL_EXT}"))
+    ) as _model:
+        save_model(model, _model.path_of(SAVE_NAMESPACE))
+        save_config(_model.path_of(f"{PYCARET_CONFIG}{PKL_EXT}"))
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _PycaretRunner(BaseModelRunner):

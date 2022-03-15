@@ -11,8 +11,8 @@ from distutils.dir_util import copy_tree
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -272,7 +272,8 @@ def import_from_tfhub(
             name = _clean_name(identifier)
         else:
             name = f"{identifier.__class__.__name__}_{uuid.uuid4().hex[:5].upper()}"
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
@@ -280,30 +281,29 @@ def import_from_tfhub(
         metadata=metadata,
         labels=labels,
         custom_objects=custom_objects,
-    )
-    if isinstance(identifier, str):
-        current_cache_dir = os.environ.get("TFHUB_CACHE_DIR")
-        os.environ["TFHUB_CACHE_DIR"] = _model.path
-        fpath: str = resolve(identifier)
-        folder = fpath.split("/")[-1]
-        _model.info.options = {"model": identifier, "local_path": folder}
-        if current_cache_dir is not None:
-            os.environ["TFHUB_CACHE_DIR"] = current_cache_dir
-    else:
-        if hasattr(identifier, "export"):
-            # hub.Module.export()
-            with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
-                sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
-                identifier.export(_model.path, sess)  # type: ignore
+    ) as _model:
+        if isinstance(identifier, str):
+            current_cache_dir = os.environ.get("TFHUB_CACHE_DIR")
+            os.environ["TFHUB_CACHE_DIR"] = _model.path
+            fpath: str = resolve(identifier)
+            folder = fpath.split("/")[-1]
+            _model.info.options = {"model": identifier, "local_path": folder}
+            if current_cache_dir is not None:
+                os.environ["TFHUB_CACHE_DIR"] = current_cache_dir
         else:
-            tf.saved_model.save(identifier, _model.path)
-        _model.info.options = {
-            "model": identifier.__class__.__name__,
-            "local_path": ".",
-        }
+            if hasattr(identifier, "export"):
+                # hub.Module.export()
+                with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
+                    sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
+                    identifier.export(_model.path, sess)  # type: ignore
+            else:
+                tf.saved_model.save(identifier, _model.path)
+            _model.info.options = {
+                "model": identifier.__class__.__name__,
+                "local_path": ".",
+            }
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 @inject
@@ -382,7 +382,7 @@ def save(
         "pip_dependencies": [f"tensorflow=={get_tf_version()}"],
         "import_from_tfhub": False,
     }
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
@@ -390,21 +390,22 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType]
-        assert os.path.isdir(model)
-        copy_tree(str(model), _model.path)
-    else:
-        if options:
-            logger.warning(
-                f"Parameter 'options: {str(options)}' is ignored when "
-                f"using tensorflow {get_tf_version()}"
+        if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType]
+            assert os.path.isdir(model)
+            copy_tree(str(model), _model.path)
+        else:
+            if options:
+                logger.warning(
+                    f"Parameter 'options: {str(options)}' is ignored when "
+                    f"using tensorflow {get_tf_version()}"
+                )
+            tf.saved_model.save(
+                model, _model.path, signatures=signatures, options=options
             )
-        tf.saved_model.save(model, _model.path, signatures=signatures, options=options)
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _TensorflowRunner(BaseModelRunner):

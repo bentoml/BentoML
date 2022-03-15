@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -229,23 +229,21 @@ def save(
         ],
     }
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
-    )
+    ) as _model:
 
-    if isinstance(model, onnx.ModelProto):
-        onnx.save_model(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
-    else:
-        shutil.copyfile(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+        if isinstance(model, onnx.ModelProto):
+            onnx.save_model(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+        else:
+            shutil.copyfile(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _ONNXRunner(BaseModelRunner):

@@ -86,20 +86,20 @@ def load(
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
 ) -> "CatBoostModel":
     """
-    Load a CatBoost model from BentoML local modelstore with given name.
+    Load a CatBoost model with the given tag from the local BentoML model store.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): Parameters for
-            a CatBoost model. Following parameters can be specified:
-                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        tag (``str`` ``|`` :obj:`~bentoml.Tag`):
+            The tag of the model to get from the store.
+        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
+            Parameters to use when loading the CatBoost model. The following parameters can be
+            specified:
+
+                - model_type(``str``): ``"classifier"`` (``CatBoostClassifier``) or ``"regressor"`` (``CatBoostRegressor``)
 
     Returns:
-        :obj:`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.core.CatBoostRegressor]`: one of :code:`catboost.core.CatBoostClassifier`,
-        :code:`catboost.core.CatBoostRegressor` or :code:`catboost.core.CatBoost` from BentoML modelstore.
+        :obj:`catboost.core.CatBoost` ``|`` :obj:`catboost.core.CatBoostClassifier` ``|`` :obj:`catboost.core.CatBoostRegressor`:
+            The CatBoost model loaded from the model store.
 
     Examples:
 
@@ -128,29 +128,32 @@ def save(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.CatBoostRegressor]`):
-            Instance of model to be saved
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
-            Parameters for a CatBoost model. Following parameters can be specified:
-                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        model_export_parameters (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
-            Export parameters for given model.
-        model_pool (:code:`cbt.core.Pool`, `optional`, default to :code:`None`):
-            CatBoost data pool for given model.
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
-            user-defined additional python objects to be saved alongside the model,
+        name (``str``):
+            The name for given model instance. This must be a valid
+            :obj:`~bentoml.Tag` name.
+        model (:obj:`catboost.core.CatBoost` ``|`` :obj:`catboost.core.CatBoostClassifier` ``|`` :obj:`catboost.core.CatBoostRegressor`):
+            The CatBoost model to be saved.
+        model_params (``dict[str, Any]``, ``optional``, default ``None``):
+            The parameters for the CatBoost model. The following parameters can be specified:
+
+            - model_type (``str``): ``"classifier"`` (``CatBoostClassifier``) or ``"regressor"``
+              (``CatBoostRegressor``)
+        model_export_parameters (:code:`dict[str, Any]`, `optional`, default to :code:`None`):
+            CatBoost export parameters for the given model. See
+            `the documentation <https://catboost.ai/en/docs/concepts/python-reference_catboost_save_model#export_parameters>`_
+            for CatBoost's :code:`save_model`.
+        labels (``dict[str, str]``, `optional`, default ``None``):
+            A dict of immutable default labels for use in model-management programs such as Yatai,
+            e.g. team=nlp, stage=dev
+        custom_objects (``dict[str, Any]``, `optional`, default ``None``):
+            Additional python objects to be saved alongside the model,
             e.g. a tokenizer instance, preprocessor function, model configuration json
-        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        metadata (``dict[str, Any]``, `optional`,  default ``None``):
+            User-defined metadata for storing model training context information or model evaluation
+            metrics e.g. dataset version, training parameters, or model scores
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A tag that can be used to access the model from the BentoML model store.
 
     Examples:
 
@@ -234,9 +237,7 @@ class _CatBoostRunner(BaseModelRunner):
         return int(round(self.resource_quota.cpu))
 
     def _setup(self) -> None:
-        self._model = load(
-            self._tag, model_params=self._model_params
-        )
+        self._model = load(self._tag, model_params=self._model_params)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
@@ -260,11 +261,11 @@ def load_runner(
     wrap around a CatBoost model, which optimize it for the BentoML runtime.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
+        tag (``str`` ``|`` :obj:`~bentoml.Tag`):
             Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (:code:`str`, default to :code:`predict`):
+        predict_fn_name (``str``, default to :code:`predict`):
             Options for inference functions. `predict` are the default function.
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): Parameters for
+        model_params (``dict[str, Any]``, `optional`, default to :code:`None`): Parameters for
             a CatBoost model. Following parameters can be specified:
                 - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
 

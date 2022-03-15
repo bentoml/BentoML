@@ -2,8 +2,6 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import inject
-from simple_di import Provide
 
 import bentoml
 from bentoml import Tag
@@ -45,9 +43,8 @@ CATBOOST_EXT = "cbm"
 def _get_model_info(
     tag: Tag,
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-    model_store: "ModelStore",
 ) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
-    model = model_store.get(tag)
+    model = bentoml.models.get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
@@ -84,11 +81,9 @@ def _load_helper(
     return _m
 
 
-@inject
 def load(
     tag: t.Union[str, Tag],
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "CatBoostModel":
     """
     Load a CatBoost model from BentoML local modelstore with given name.
@@ -114,12 +109,11 @@ def load(
         booster = bentoml.catboost.load("my_model:latest", model_params=dict(model_type="classifier"))
     """  # noqa
 
-    _, _model_file, _model_params = _get_model_info(tag, model_params, model_store)
+    _, _model_file, _model_params = _get_model_info(tag, model_params)
 
     return _load_helper(_model_file, _model_params)
 
 
-@inject
 def save(
     name: str,
     model: "CatBoostModel",
@@ -130,7 +124,6 @@ def save(
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -201,6 +194,7 @@ def save(
         "framework_name": "catboost",
         "pip_dependencies": [f"catboost=={get_pkg_version('catboost')}"],
     }
+
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
@@ -223,7 +217,6 @@ def save(
 
 
 class _CatBoostRunner(BaseModelRunner):
-    @inject
     def __init__(
         self,
         tag: t.Union[str, Tag],
@@ -243,7 +236,7 @@ class _CatBoostRunner(BaseModelRunner):
 
     def _setup(self) -> None:
         self._model = load(
-            self._tag, model_params=self._model_params, model_store=self.model_store
+            self._tag, model_params=self._model_params
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 

@@ -6,8 +6,8 @@ from datetime import timezone
 import fs
 import pytest
 
+from bentoml import Tag
 from bentoml._internal.bento import Bento
-from bentoml._internal.types import Tag
 from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.configuration import BENTOML_VERSION
 from bentoml._internal.bento.build_config import BentoBuildConfig

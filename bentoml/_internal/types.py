@@ -1,8 +1,6 @@
 import io
 import os
 import sys
-import uuid
-import base64
 import typing as t
 import urllib
 import logging
@@ -12,12 +10,8 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from dataclasses import dataclass
 
-import fs
-import attr
 import cattr
 
-from ..exceptions import BentoMLException
-from .utils.validation import validate_tag_str
 from .utils.dataclasses import json_serializer
 
 if sys.version_info < (3, 7):
@@ -165,98 +159,6 @@ class LazyType(t.Generic[T]):
             return isinstance(obj, self.get_class(import_module=False))
         except ValueError:
             return False
-
-
-@attr.define
-class Tag:
-    name: str
-    version: t.Optional[str]
-
-    def __init__(self, name: str, version: t.Optional[str] = None):
-        lname = name.lower()
-        if name != lname:
-            logger.warning(f"converting {name} to lowercase: {lname}")
-
-        validate_tag_str(lname)
-
-        self.name = lname
-
-        if version is not None:
-            lversion = version.lower()
-            if version != lversion:
-                logger.warning(f"converting {version} to lowercase: {lversion}")
-            validate_tag_str(lversion)
-            self.version = lversion
-        else:
-            self.version = None
-
-    def __str__(self):
-        if self.version is None:
-            return self.name
-        else:
-            return f"{self.name}:{self.version}"
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(name={repr(self.name)}, version={repr(self.version)})"
-
-    def __eq__(self, other: "Tag") -> bool:
-        return self.name == other.name and self.version == other.version
-
-    def __lt__(self, other: "Tag") -> bool:
-        if self.name == other.name:
-            if other.version is None:
-                return False
-            if self.version is None:
-                return True
-            return self.version < other.version
-        return self.name < other.name
-
-    def __hash__(self) -> int:
-        return hash((self.name, self.version))
-
-    @classmethod
-    def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
-        if isinstance(taglike, Tag):
-            return taglike
-        return cls.from_str(taglike)
-
-    @classmethod
-    def from_str(cls, tag_str: str) -> "Tag":
-        if ":" not in tag_str:
-            return cls(tag_str, None)
-        try:
-            name, _, version = tag_str.partition(":")
-            if not version:
-                # in case users mistakenly define "bento:"
-                raise BentoMLException(
-                    f"{tag_str} contains trailing ':'. Maybe you meant to use `{tag_str}:latest`?"
-                )
-            return cls(name, version)
-        except ValueError:
-            raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
-
-    def make_new_version(self) -> "Tag":
-        if self.version is not None:
-            raise ValueError(
-                "tried to run 'make_new_version' on a Tag that already has a version"
-            )
-        ver_bytes = bytearray(uuid.uuid1().bytes)
-        # cut out the time_hi and node bits of the uuid
-        ver_bytes = ver_bytes[:6] + ver_bytes[8:12]
-        encoded_ver = base64.b32encode(ver_bytes)
-
-        return Tag(self.name, encoded_ver.decode("ascii").lower())
-
-    def path(self) -> str:
-        if self.version is None:
-            return self.name
-        return fs.path.combine(self.name, self.version)
-
-    def latest_path(self) -> str:
-        return fs.path.combine(self.name, "latest")
-
-
-cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
 
 
 def _format_dt(d: t.Union[datetime, str], _: type) -> datetime:

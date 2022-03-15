@@ -21,7 +21,7 @@ from .bentos import build
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento
-from ._internal.types import Tag
+from ._internal.tag import Tag
 from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.models import Model
 from ._internal.runner import Runner

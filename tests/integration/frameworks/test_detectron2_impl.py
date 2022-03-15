@@ -15,7 +15,7 @@ import bentoml
 if TYPE_CHECKING:
     from detectron2.config import CfgNode
 
-    from bentoml._internal.types import Tag
+    from bentoml import Tag
 
 
 IMAGE_URL: str = "./tests/utils/_static/detectron2_sample.jpg"

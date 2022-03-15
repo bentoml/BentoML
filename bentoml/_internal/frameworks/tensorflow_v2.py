@@ -215,7 +215,7 @@ def import_from_tfhub(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`~bentoml._internal.types.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
+        :obj:`~bentoml.Tag`: A :obj:`~bentoml.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
 
     Example for importing a model from Tensorflow Hub:
 
@@ -345,7 +345,7 @@ def save(
         ValueError: If :obj:`obj` is not trackable.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 

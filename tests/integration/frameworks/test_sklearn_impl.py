@@ -1,8 +1,8 @@
 import typing as t
+from typing import TYPE_CHECKING
 
 import numpy as np
 import joblib
-import psutil
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 
@@ -24,8 +24,8 @@ res_arr = np.array(
 )
 
 # fmt: on
-if t.TYPE_CHECKING:
-    from bentoml._internal.types import Tag
+if TYPE_CHECKING:
+    from bentoml import Tag
 
 
 def save_procedure(

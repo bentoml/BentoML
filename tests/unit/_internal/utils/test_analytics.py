@@ -65,11 +65,11 @@ def test_send_usage_event(monkeypatch: "MonkeyPatch"):
     with monkeypatch.context() as m:
         m.setattr(
             analytics_lib.usage_stats,
-            "BENTOML_TRACKING_URL",
+            "USAGE_TRACKING_URL",
             "http://127.0.0.1:8000/tracking",
         )
         m.setattr(
-            analytics_lib.usage_stats, "BENTOML_USAGE_REPORT_INTERVAL_SECONDS", "1"
+            analytics_lib.usage_stats, "SERVE_USAGE_TRACKING_INTERVAL_SECONDS", "1"
         )
         m.setattr(requests, "post", patch_post)
         m.setattr(analytics_lib.usage_stats, "do_not_track", False)

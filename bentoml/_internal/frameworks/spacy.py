@@ -343,60 +343,62 @@ def projects(
         "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
         "tasks": tasks,
     }
-    _model = Model.create(
+    with bentoml.models.create(
         save_name,
         module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
-    )
-    output_path = _model.path_of(SAVE_NAMESPACE)
-    _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
-    if tasks == "clone":
-        # TODO: update check for master or main branch
-        assert (
-            name is not None
-        ), "`name` of the template is required to clone a project."
-        _model.info.options["name"] = name
-        assert isinstance(repo_or_store, str) and isinstance(branch, str)
-        project_clone(
-            name,
-            Path(output_path),
-            repo=repo_or_store,
-            branch=branch,
-            sparse_checkout=sparse_checkout,
-        )
-        copy_tree(_model.path, output_path)
-    else:
-        # works with S3 bucket, haven't failed yet
-        assert (
-            remotes_config is not None
-        ), """\
-            `remotes_config` is required in order to pull projects into
-             BentoML modelstore. Refers to
-             https://spacy.io/usage/projects#remote
-             for more information. We will accept remotes
-             as shown:
-             {
-                'remotes':
-                {
-                    'default':'s3://spacy-bucket',
-                }
-            }
-             """
-        os.makedirs(output_path, exist_ok=True)
-        with Path(output_path, "project.yml").open("w") as inf:
-            yaml.dump(remotes_config, inf)
-        for remote in remotes_config.get("remotes", {}):
-            for url, res_path in project_pull(  # type: ignore
+    ) as _model:
+        output_path = _model.path_of(SAVE_NAMESPACE)
+        _model.info.options = {
+            "projects_uri": repo_or_store,
+            "target_path": SAVE_NAMESPACE,
+        }
+        if tasks == "clone":
+            # TODO: update check for master or main branch
+            assert (
+                name is not None
+            ), "`name` of the template is required to clone a project."
+            _model.info.options["name"] = name
+            assert isinstance(repo_or_store, str) and isinstance(branch, str)
+            project_clone(
+                name,
                 Path(output_path),
-                remote=remote,
-                verbose=verbose,
-            ):
-                if url is not None:  # pragma: no cover
-                    logger.info(f"Pulled {res_path} from {repo_or_store}")
-    _model.save(model_store)
-    return _model.tag
+                repo=repo_or_store,
+                branch=branch,
+                sparse_checkout=sparse_checkout,
+            )
+            copy_tree(_model.path, output_path)
+        else:
+            # works with S3 bucket, haven't failed yet
+            assert (
+                remotes_config is not None
+            ), """\
+                `remotes_config` is required in order to pull projects into
+                 BentoML modelstore. Refers to
+                 https://spacy.io/usage/projects#remote
+                 for more information. We will accept remotes
+                 as shown:
+                 {
+                    'remotes':
+                    {
+                        'default':'s3://spacy-bucket',
+                    }
+                }
+                 """
+            os.makedirs(output_path, exist_ok=True)
+            with Path(output_path, "project.yml").open("w") as inf:
+                yaml.dump(remotes_config, inf)
+            for remote in remotes_config.get("remotes", {}):
+                for url, res_path in project_pull(  # type: ignore
+                    Path(output_path),
+                    remote=remote,
+                    verbose=verbose,
+                ):
+                    if url is not None:  # pragma: no cover
+                        logger.info(f"Pulled {res_path} from {repo_or_store}")
+        return _model.tag
 
 
 class _SpacyRunner(BaseModelRunner):

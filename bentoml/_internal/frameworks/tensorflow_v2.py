@@ -382,7 +382,7 @@ def save(
         "pip_dependencies": [f"tensorflow=={get_tf_version()}"],
         "import_from_tfhub": False,
     }
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
@@ -390,21 +390,22 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType]
-        assert os.path.isdir(model)
-        copy_tree(str(model), _model.path)
-    else:
-        if options:
-            logger.warning(
-                f"Parameter 'options: {str(options)}' is ignored when "
-                f"using tensorflow {get_tf_version()}"
+        if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType]
+            assert os.path.isdir(model)
+            copy_tree(str(model), _model.path)
+        else:
+            if options:
+                logger.warning(
+                    f"Parameter 'options: {str(options)}' is ignored when "
+                    f"using tensorflow {get_tf_version()}"
+                )
+            tf.saved_model.save(
+                model, _model.path, signatures=signatures, options=options
             )
-        tf.saved_model.save(model, _model.path, signatures=signatures, options=options)
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _TensorflowRunner(BaseModelRunner):

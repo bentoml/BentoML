@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM bento-server:base-python$PYTHON_VERSION-amazonlinux2 as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-amazonlinux2 as base
 
 FROM base as base-arm64
 

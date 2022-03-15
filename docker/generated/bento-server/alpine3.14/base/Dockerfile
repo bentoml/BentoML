@@ -10,9 +10,7 @@
 
 ARG XX_VERSION=1.1.0
 
-
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
-
 
 FROM alpine:3.14 as base
 
@@ -69,40 +67,6 @@ RUN xx-apk add -q --no-cache --virtual=.build-dependencies wget ca-certificates 
         "$GLIBC_BIN_PACKAGE_FILENAME" \
         "$GLIBC_I18N_PACKAGE_FILENAME"
 
-FROM base as base-arm64
-
-ARG GLIBC_TARGET_ARCH=aarch64
-
-RUN set -xe \
-    && xx-apk add --no-cache --purge -uU curl \
-    && mkdir -p /glibc \
-    && GLIBC_PACKAGE_VERSION="$(curl -SL https://api.github.com/repos/SatoshiPortal/alpine-pkg-glibc/releases/latest | awk '/tag_name/{print $4;exit}' FS='[""]' | sed -e 's_v__')" \
-    && echo "Using GLIBC Version: ${GLIBC_PACKAGE_VERSION}" \
-    && GLIBC_KEY="https://github.com/SatoshiPortal/alpine-pkg-glibc/releases/download/${GLIBC_PACKAGE_VERSION}/cyphernode@satoshiportal.com.rsa.pub" \
-    && GLIBC_BASE_URL='https://github.com/SatoshiPortal/alpine-pkg-glibc/releases/download' \
-    && GLIBC_BASE_PACKAGE_FILENAME="glibc-${GLIBC_PACKAGE_VERSION}.apk" \
-    && GLIBC_BIN_PACKAGE_FILENAME="glibc-bin-${GLIBC_PACKAGE_VERSION}.apk" \
-    && GLIBC_I18N_PACKAGE_FILENAME="glibc-i18n-${GLIBC_PACKAGE_VERSION}.apk" \
-    && curl \
-        -jkSL ${GLIBC_KEY} \
-        -o /etc/apk/keys/cyphernode@satoshiportal.com.rsa.pub \
-    && curl \
-        -jkSL ${GLIBC_BASE_URL}/${GLIBC_PACKAGE_VERSION}/glibc-${GLIBC_PACKAGE_VERSION}-${GLIBC_TARGET_ARCH}.apk \
-        -o /glibc/${GLIBC_BASE_PACKAGE_FILENAME} \
-    && curl \
-        -jkSL ${GLIBC_BASE_URL}/${GLIBC_PACKAGE_VERSION}/glibc-bin-${GLIBC_PACKAGE_VERSION}-${GLIBC_TARGET_ARCH}.apk \
-        -o /glibc/${GLIBC_BIN_PACKAGE_FILENAME} \
-    && curl \
-        -jkSL ${GLIBC_BASE_URL}/${GLIBC_PACKAGE_VERSION}/glibc-i18n-${GLIBC_PACKAGE_VERSION}-${GLIBC_TARGET_ARCH}.apk \
-        -o /glibc/${GLIBC_I18N_PACKAGE_FILENAME} \
-    && xx-apk add --update --no-cache /glibc/*.apk; \
-    /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true \
-    && echo "export LANG=C.UTF-8" > /etc/profile.d/locale.sh \
-    && /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib \
-    && echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf \
-    && xx-apk del --purge curl glibc-i18n \
-    && rm -rf /var/cache/apk/* /tmp/* /glibc /etc/apk/keys/cyphernode@satoshiportal.com.rsa.pub
-
 
 
 FROM base-${TARGETARCH}
@@ -112,6 +76,10 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 
 ENV PATH /opt/conda/bin:/usr/local/bin:$PATH
+
+ENV ENV /root/.bashrc
+
+CMD [ "/bin/bash" ]
 
 LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
@@ -145,17 +113,12 @@ RUN set -x \
     && rm -f ~/miniconda.sh \
     && find /opt/conda/ -follow -type f \( -iname '*.a' -o -iname '*.pyc' -o -iname '*.js.map' \) -delete \
     && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
-    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.shinit \
-    && echo "conda activate base" >> ~/.shinit \
     && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
-    && echo "conda activate base" >> ~/.bashrc \
     && conda clean -afy
 
-RUN xx-apk add --no-cache bash
+RUN xx-apk add --no-cache --update bash gcc libc-dev \
+    && conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION \
+    && conda install -y pip \
+    && conda clean -afy
 
-RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION
-
-RUN conda install -y pip \
-    && conda init bash
-
-CMD [ "/bin/bash" ]
+RUN echo "conda activate bentoml-python${PYTHON_VERSION}" >> ~/.bashrc

@@ -1,0 +1,3 @@
+[submodule "docker/vendors/bats-core"]
+	path = docker/vendors/bats-core
+	url = https://github.com/bats-core/bats-core.git

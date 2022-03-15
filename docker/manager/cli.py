@@ -4,7 +4,6 @@ import click
 from manager import __version__ as MANAGER_VERSION
 
 from .build import add_build_command
-from .tests import add_tests_command
 from .generate import add_generation_command
 from .authenticate import add_authenticate_command
 from ._internal.utils import graceful_exit
@@ -35,7 +34,6 @@ def create_manager_cli():
         """
 
     add_build_command(cli)
-    add_tests_command(cli)
     add_generation_command(cli)
     add_authenticate_command(cli)
 

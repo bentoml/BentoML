@@ -403,11 +403,11 @@ def send_log(*args: t.Any, _manager_level: int = logging.INFO, **kwargs: t.Any):
         log_by_level(*args, **kwargs)
 
 
-def stream_logs(resp: t.Iterator[str], tag: str) -> None:
+def stream_docker_logs(resp: t.Iterator[str], tag: str) -> None:
     while True:
         try:
             output = next(resp)
-            send_log(output)
+            send_log(f"[{tag.split('/')[-1]}] {output}")
         except DockerException as e:
             message = f"[{type(e).__name__}] Error while streaming logs:\n{e}"
             send_log(message, _manager_level=logging.ERROR)

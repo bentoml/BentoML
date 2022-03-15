@@ -10,12 +10,10 @@
 
 ARG PYTHON_VERSION
 
-FROM bento-server:base-python$PYTHON_VERSION-alpine3.14 as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-alpine3.14 as base
 
 
 FROM base as base-amd64
-
-FROM base as base-arm64
 
 FROM base-${TARGETARCH}
 
@@ -25,10 +23,10 @@ ARG TARGETPLATFORM
 
 LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
 ENV BENTOML_VERSION=1.0.0a6
 
-RUN xx-apk add --no-cache git build-base
-
-RUN conda activate bentoml-python${PYTHON_VERSION}
+RUN apk --no-cache --update add build-base gcc git
 
 RUN pip install -U git+https://github.com/bentoml/bentoml.git@main

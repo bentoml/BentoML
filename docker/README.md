@@ -1,4 +1,4 @@
-![bentoml-docker](hack/bentoml-docker.png)
+![bentoml-docker](./bentoml-docker.png)
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 

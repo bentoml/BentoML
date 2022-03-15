@@ -111,17 +111,16 @@ def add_generation_command(cli: click.Group) -> None:
 
         """
 
-        xx_info = (ctx.xx_image, ctx.xx_version)
         try:
             if ctx.overwrite:
                 ctx._generated_dir.removetree(".")
 
             # generate readmes and dockerfiles
-            generate_dockerfiles(ctx, xx_info)
+            generate_dockerfiles(ctx)
             generate_readmes(ctx)
             if ctx.verbose:
                 send_log(
-                    f"[green] Finished generating {ctx.docker_package}...[/]",
+                    f"[green]Finished generating {ctx.docker_package}...[/]",
                     extra={"markup": True},
                 )
         finally:
@@ -192,20 +191,7 @@ def generate_readmes(ctx: Environment) -> None:
     )
 
 
-def generate_dockerfiles(
-    ctx: Environment, xx_info: t.Tuple[t.Optional[str], t.Optional[str]]
-):
-
-    xx_image, xx_version = xx_info
-
-    if xx_image and xx_image != ctx.xx_image:
-        xx_image_ = xx_image
-    else:
-        xx_image_ = ctx.xx_image
-    if xx_version and xx_image == "local-xx":
-        xx_version_ = xx_version
-    else:
-        xx_version_ = ctx.xx_version
+def generate_dockerfiles(ctx: Environment):
 
     generated_files = []
     for build_info, tag_info in zip(ctx.build_ctx.values(), ctx.release_ctx.values()):
@@ -235,7 +221,7 @@ def generate_dockerfiles(
                 "header": bi.header,
                 "base_image": bi.base_image,
                 "envars": bi.envars,
-                "package": f"{shared_ctx.docker_package}",
+                "package": f"{ctx.organization}/{shared_ctx.docker_package}",
                 "python_version": shared_ctx.python_version,
                 "arch_ctx": arch_ctx,
             }
@@ -261,9 +247,9 @@ def generate_dockerfiles(
                             out_fs=ctx._generated_dir,
                             build_tag=paths["build_tag"],
                             cuda=serialize_cuda,
-                            xx_version=xx_version_,
-                            xx_image=xx_image_,
                             metadata=metadata,
+                            xx_image="tonistiigi/xx",
+                            xx_version="1.1.0",
                         )
 
                         try:

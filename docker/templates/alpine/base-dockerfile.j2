@@ -4,15 +4,7 @@
 
 ARG XX_VERSION={{ xx_version }}
 
-{% if xx_image == 'local-xx' %}
-
-FROM {{ xx_image }}:${XX_VERSION}-${TARGETARCH} as xx
-
-{% else %}
-
 FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
-
-{% endif %}
 
 FROM {{ metadata.base_image }} as base
 
@@ -134,6 +126,10 @@ ARG TARGETARCH
 
 ENV PATH /opt/conda/bin:/usr/local/bin:$PATH
 
+ENV ENV /root/.bashrc
+
+CMD [ "/bin/bash" ]
+
 LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 # setup ENV and ARG
@@ -169,17 +165,12 @@ RUN set -x \
     && rm -f ~/miniconda.sh \
     && find /opt/conda/ -follow -type f \( -iname '*.a' -o -iname '*.pyc' -o -iname '*.js.map' \) -delete \
     && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
-    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.shinit \
-    && echo "conda activate base" >> ~/.shinit \
     && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
-    && echo "conda activate base" >> ~/.bashrc \
     && conda clean -afy
 
-RUN xx-apk add --no-cache bash
+RUN xx-apk add --no-cache --update bash gcc libc-dev \
+    && conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION \
+    && conda install -y pip \
+    && conda clean -afy
 
-RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION
-
-RUN conda install -y pip \
-    && conda init bash
-
-CMD [ "/bin/bash" ]
+RUN echo "conda activate bentoml-python${PYTHON_VERSION}" >> ~/.bashrc

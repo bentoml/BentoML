@@ -74,6 +74,9 @@ class Environment:
     _generated_dir: FS = attrs.field(init=False)
 
     # misc
+    organization: str = attrs.field(
+        default=None, converter=attrs.converters.default_if_none("bentoml")
+    )
     bentoml_version: str = attrs.field(
         default=None, converter=attrs.converters.default_if_none("")
     )
@@ -129,12 +132,6 @@ class Environment:
     )
 
     # NOTE: we will use this for cross-platform helper.
-    xx_version: t.Optional[str] = attrs.field(
-        default=None, converter=attrs.converters.default_if_none("1.1.0")
-    )
-    xx_image: t.Optional[str] = attrs.field(
-        default=None, converter=attrs.converters.default_if_none("tonistiigi/xx")
-    )
     docker_target_arch: t.List[str] = attrs.field(
         default=None, converter=to_docker_targetarch
     )
@@ -157,8 +154,6 @@ if TYPE_CHECKING:
         bool,
         bool,
         bool,
-        t.Optional[str],
-        t.Optional[str],
         str,
         str,
         str,
@@ -171,7 +166,7 @@ if TYPE_CHECKING:
 
 
 class ManagerCommandGroup(click.Group):
-    COMMON_PARAMS = 11
+    COMMON_PARAMS = 9
 
     @staticmethod
     def common_params(
@@ -185,28 +180,20 @@ class ManagerCommandGroup(click.Group):
             help="Targets bentoml version.",
         )
         @click.option(
+            "--organization",
+            required=False,
+            metavar="<bentoml>",
+            type=click.STRING,
+            default="bentoml",
+            help="Targets organization, default is `bentoml` [optional]",
+        )
+        @click.option(
             "--docker-package",
             metavar="<package>",
             required=False,
             type=click.STRING,
             default=DockerManagerContainer.default_name,
             help="Target docker packages to use, default to `bento-server` [optional]",
-        )
-        @click.option(
-            "--xx-image",
-            metavar="<package>",
-            required=False,
-            type=click.STRING,
-            default="tonistiigi/xx",
-            help="Target a xx image for compilation helpers, default to `tonistiiigi/xx` [optional]",
-        )
-        @click.option(
-            "--xx-version",
-            metavar="<package>",
-            required=False,
-            type=click.STRING,
-            default="1.1.0",
-            help="Target xx image version, default to `1.1.0` [optional]",
         )
         @click.option(
             "--cuda-version",
@@ -265,11 +252,10 @@ class ManagerCommandGroup(click.Group):
             quiet: bool,
             verbose: bool,
             overwrite: bool,
-            xx_image: t.Optional[str],
-            xx_version: t.Optional[str],
             cuda_version: str,
             docker_package: str,
             bentoml_version: str,
+            organization: str,
             registry: t.Optional[str],
             distros: t.Optional[t.Iterable[str]],
             python_version: t.Optional[t.Iterable[str]],
@@ -319,6 +305,8 @@ class ManagerCommandGroup(click.Group):
                 distros = SUPPORTED_OS_RELEASES
             if not python_version:
                 python_version = SUPPORTED_PYTHON_VERSION
+            if not registry:
+                registry = "docker.io"
 
             ctx.cuda_version = cuda_version
             ctx.python_version = python_version
@@ -346,8 +334,7 @@ class ManagerCommandGroup(click.Group):
             ctx.registries = registries
             ctx.push_registry = registry
             ctx.docker_package = docker_package
-            ctx.xx_image = xx_image
-            ctx.xx_version = xx_version
+            ctx.organization = organization
 
             set_generation_context(ctx, loaded_distros)
 

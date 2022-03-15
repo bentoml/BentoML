@@ -10,7 +10,7 @@
 ARG PYTHON_VERSION
 
 
-FROM bento-server:base-python$PYTHON_VERSION-debian10 as baseline
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as baseline
 
 ARG TARGETPLATFORM
 

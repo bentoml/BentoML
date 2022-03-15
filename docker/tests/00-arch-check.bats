@@ -1,12 +1,12 @@
 #!/usr/bin/env bats
 
-load helpers
+load 'helpers'
+load 'assert'
 
-image="bentoml/${__TEST_IMAGE_NAME}:${__TEST_BENTOML_VERSION}-python${__TEST_PYTHON_VERSION}-${__TEST_OS}-runtime"
+image="${__ORGANIZATION}/${__TEST_IMAGE_NAME}:${__TEST_BENTOML_VERSION}-python${__TEST_PYTHON_VERSION}-${__TEST_OS}-runtime"
 
 function setup() {
-    # docker pull --platform linux/${__TEST_ARCH} ${image}
-    docker pull --platform linux/amd64 ${image}
+    docker pull --platform linux/${__TEST_ARCH} ${image}
     check_runtime
 }
 
@@ -20,5 +20,5 @@ function teardown() {
         narch="aarch64"
     fi
     docker_run --rm --env narch=${narch} --platform linux/${__TEST_ARCH} ${image} bash -c '[[ "$(uname -m)" == "${narch}" ]] || false'
-    [ "$status" -eq 0 ]
+    assert_success
 }

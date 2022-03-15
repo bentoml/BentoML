@@ -10,7 +10,7 @@
 ARG PYTHON_VERSION
 
 
-FROM bento-server:base-python$PYTHON_VERSION-debian10 as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as base
 
 
 FROM base as base-amd64

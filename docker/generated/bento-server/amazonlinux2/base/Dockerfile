@@ -9,9 +9,7 @@
 
 ARG XX_VERSION=1.1.0
 
-
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
-
 
 FROM amazonlinux:2 as base
 
@@ -67,7 +65,6 @@ RUN set -x && \
     rm miniconda.sh shasum && \
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.bashrc && \
     find /opt/conda/ -follow -type f -name '*.a' -delete && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda clean -afy && \
@@ -76,8 +73,8 @@ RUN set -x && \
     rm -rf /var/cache/yum
 
 # Install python via conda
-RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION anaconda && \
-        conda activate bentoml-python${PYTHON_VERSION}
+RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION && \
+    conda install -y pip && \
+	conda clean -afy
 
-RUN /opt/conda/bin/conda install -y pip && \
-    /opt/conda/bin/conda clean -afy
+RUN echo "conda activate bentoml-python${PYTHON_VERSION}" >> ~/.bashrc

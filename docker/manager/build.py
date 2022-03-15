@@ -1,5 +1,4 @@
 import os
-import sys
 import json
 import typing as t
 import logging
@@ -8,7 +7,6 @@ from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
 import fs
-import yaml
 import click
 import fs.path
 from toolz import dicttoolz
@@ -16,8 +14,8 @@ from python_on_whales import docker
 
 from ._internal.utils import run
 from ._internal.utils import send_log
-from ._internal.utils import stream_logs
 from ._internal.utils import DOCKERFILE_NAME
+from ._internal.utils import stream_docker_logs
 from ._internal.utils import create_buildx_builder
 from ._internal.utils import DOCKERFILE_BUILD_HIERARCHY
 from ._internal.utils import get_docker_platform_mapping
@@ -28,12 +26,11 @@ from ._internal.exceptions import ManagerBuildFailed
 if TYPE_CHECKING:
     from ._internal.types import GenericDict
 
-    Tags = t.Dict[str, t.Tuple[str, str,str, t.Dict[str, str], t.Tuple[str, ...]]]
+    Tags = t.Dict[str, t.Tuple[str, str, str, t.Dict[str, str], t.Tuple[str, ...]]]
 
 logger = logging.getLogger(__name__)
 
 BUILDER_LIST = []
-BUILT_IMAGE = []
 
 
 def add_build_command(cli: click.Group) -> None:
@@ -85,15 +82,7 @@ def add_build_command(cli: click.Group) -> None:
         base_buildx_args = [i for i in buildx_args(ctx, base_tag)]
         build_buildx_args = [i for i in buildx_args(ctx, build_tag)]
 
-        if ctx.xx_image == "local-xx":
-            prepare_xx_image(ctx)
-
-        built_img_metafile = "built_image.meta.yaml"
-        global BUILDER_LIST, BUILT_IMAGE
-
-        if ctx._generated_dir.exists(built_img_metafile):
-            with ctx._generated_dir.open(built_img_metafile, "r") as f:
-                BUILT_IMAGE = yaml.safe_load(f)
+        global BUILDER_LIST
 
         def build_multi_arch(cmd: "GenericDict") -> None:
             python_version = cmd["build_args"]["PYTHON_VERSION"]
@@ -101,9 +90,6 @@ def add_build_command(cli: click.Group) -> None:
 
             builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}"
 
-            if cmd["tags"] in BUILT_IMAGE:
-                send_log(f"{cmd['tags']} is already built and pushed.")
-                return
             try:
                 builder = create_buildx_builder(name=builder_name)
                 BUILDER_LIST.append(builder)
@@ -113,12 +99,10 @@ def add_build_command(cli: click.Group) -> None:
                 # NOTE: we need to push to registry when releasing different
                 # * architecture.
                 resp = docker.buildx.build(**cmd, builder=builder)
-                stream_logs(t.cast(t.Iterator[str], resp), cmd["tags"])
+                stream_docker_logs(t.cast(t.Iterator[str], resp), cmd["tags"])
             except Exception as e:
                 traceback.format_exc()
                 raise ManagerBuildFailed(f"Error while building:\n {e}") from e
-            finally:
-                BUILT_IMAGE.append(cmd["tags"])
 
         if dry_run:
             send_log("--dry-run, output tags to file.")
@@ -142,10 +126,6 @@ def add_build_command(cli: click.Group) -> None:
                 list(executor.map(build_multi_arch, build_buildx_args))
         except Exception as e:
             send_log(e, _manager_level=logging.ERROR)
-            raise
-        finally:
-            with ctx._manifest_dir.open(built_img_metafile, "w", encoding="utf-8") as f:
-                yaml.dump(BUILT_IMAGE, f)
 
 
 def buildx_args(
@@ -167,12 +147,16 @@ def buildx_args(
         output_path, build_tag, python_version, labels, *platforms = tag_context
 
         ref = image_tag if tag_prefix is None else f"{tag_prefix}/{image_tag}"
-        build_base_image = build_tag.replace("$PYTHON_VERSION", python_version)
 
         # "cache_to": f"type=registry,ref={ref},mode=max",
         cache_from = [{"type": "registry", "ref": ref}]
-        if build_base_image != '':
-            cache_from.append({"type": "registry", "ref": build_base_image})
+
+        if build_tag != "":
+            build_base_image = build_tag.replace("$PYTHON_VERSION", python_version)
+            base_ref = (
+                build_base_image if tag_prefix is None else f"{tag_prefix}/{image_tag}"
+            )
+            cache_from.append({"type": "registry", "ref": base_ref})
 
         yield {
             "context_path": ctx._fs.getsyspath("/"),
@@ -195,7 +179,7 @@ def buildx_args(
 
 
 def order_build_hierarchy(
-    env: Environment, releases: t.Optional[t.Iterable[str]]
+    ctx: Environment, releases: t.Optional[t.Iterable[str]]
 ) -> "t.Tuple[Tags, Tags]":
     """
     Returns {tag: (docker_build_context_path, python_version, *platforms), ...} for base and other tags
@@ -206,7 +190,7 @@ def order_build_hierarchy(
     ) -> t.List[str]:
         return arch if python_version != "3.6" else ["amd64"]
 
-    release_context = env.release_ctx
+    release_context = ctx.release_ctx
 
     orders = {v: k for k, v in enumerate(DOCKERFILE_BUILD_HIERARCHY)}
     if releases and all(i in DOCKERFILE_BUILD_HIERARCHY for i in releases):
@@ -218,21 +202,21 @@ def order_build_hierarchy(
         target_releases = ("base",) + target_releases
 
     hierarchy = {
-        tag: (
+        f"{ctx.organization}/{tag}": (
             meta["output_path"],
-            meta['build_tag'],
-            ctx.shared_ctx.python_version,
+            meta["build_tag"],
+            cx.shared_ctx.python_version,
             {
-                "distro_name": ctx.shared_ctx.distro_name,
-                "docker_package": ctx.shared_ctx.docker_package,
+                "distro_name": cx.shared_ctx.distro_name,
+                "docker_package": cx.shared_ctx.docker_package,
             },
             *filter_support_architecture(
-                ctx.shared_ctx.python_version, ctx.shared_ctx.architectures
+                cx.shared_ctx.python_version, cx.shared_ctx.architectures
             ),
         )
         for distro_contexts in release_context.values()
-        for ctx in distro_contexts
-        for tag, meta in ctx.release_tags.items()
+        for cx in distro_contexts
+        for tag, meta in cx.release_tags.items()
         for tr in target_releases
         if tr in tag
     }
@@ -241,27 +225,11 @@ def order_build_hierarchy(
     build_tags = dicttoolz.keyfilter(lambda x: "base" not in x, hierarchy)
 
     # non "base" items
-    if env.distros:
+    if ctx.distros:
         base_, build_ = {}, {}
-        for distro in env.distros:
+        for distro in ctx.distros:
             base_.update(dicttoolz.keyfilter(lambda x: distro in x, base_tags))
             build_.update(dicttoolz.keyfilter(lambda x: distro in x, build_tags))
         return base_, build_
     else:
         return base_tags, build_tags
-
-
-def prepare_xx_image(ctx: Environment):
-    builder = create_buildx_builder("prepare_xx_image")
-    for arch in ctx.docker_target_arch:
-        img = docker.image.list(filters={"reference": f"local-xx:*-{arch}"})
-        if len(img) == 0:
-            config = docker.buildx.bake(
-                targets=f"local-xx-{arch}",
-                builder=builder,
-                load=True,
-                progress="plain",
-                files=ctx._fs.getsyspath("docker-bake.hcl"),
-            )
-            if ctx.verbose:
-                send_log(config)

@@ -117,7 +117,6 @@ w_cuda_v11.5.1:
     dependencies: null
     architectures:
       - amd64
-      - arm64v8
     release_types:
       - base
       - runtime

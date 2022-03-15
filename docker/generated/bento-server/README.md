@@ -150,7 +150,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
 - [`1.0.0a6-python3.10-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 - [`devel-python3.10-amazonlinux2`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/devel/Dockerfile)
 
-### alpine 3.14 [_amd64_, _arm64v8_]
+### alpine 3.14 [_amd64_]
 
 - [`1.0.0a6-python3.6-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
 - [`devel-python3.6-alpine3.14`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/devel/Dockerfile)

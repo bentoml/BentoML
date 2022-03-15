@@ -2,7 +2,9 @@
 
 set -e
 
-TEST_DIR="$(cd "$( dirname "$(readlink -f $0)")" && pwd)"
+HACK_DIR="$(cd "$( dirname "$(readlink -f $0)")" && pwd)"
+TEST_PATH=$(realpath "${HACK_DIR}/../tests")
+
 
 POSITIONAL_ARGS=()
 
@@ -38,9 +40,15 @@ case $1 in
     shift # past argument
     shift # past value
     ;;
+    -og|--organization)
+    ORGANIZATION="$2"
+    shift # past argument
+    shift # past value
+    ;;
     --default)
     BENTOML_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1) | sed 's/v\(\)/\1/; s/-//g')
     IMAGE_NAME='bento-server'
+    PLATFORMS='amd64'
     shift # past argument
     ;;
     -*|--*)
@@ -56,8 +64,14 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
+run_test(){
+    for test in $(find "$TEST_PATH" -iname "[0-9]*-*.bats" | sort ); do
+        echo "Running tests for ${test}..."
+        /usr/local/bin/bats --tap "${test}"
+    done
+}
+
 main(){
-    # TODO: add debian11 and debian10 with new releases
     export __TEST_PYTHON_VERSION="$PYTHON_VERSION"
     export __TEST_OS="$OS"
     export __TEST_IMAGE_TAG_SUFFIX="$IMAGE_TAG_SUFFIX"
@@ -65,9 +79,10 @@ main(){
     export __TEST_BENTOML_VERSION="$BENTOML_VERSION"
     export __TEST_IMAGE_NAME="$IMAGE_NAME"
     export __TEST_ARCH="$PLATFORMS"
-    # export __TEST_ARCH=$(uname -m) when we have multi-arch
+	export __ORGANIZATION="$ORGANIZATION"
+    export __TEST_ARCH=$(uname -m)
 
-    . $TEST_DIR/scripts/run_tests
+    run_test
 }
 
 main "$@"

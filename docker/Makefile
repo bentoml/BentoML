@@ -1,34 +1,18 @@
-#  ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
-# ██╔════╝██╔═══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
-# ██║     ██║   ██║██╔██╗ ██║███████╗   ██║   ███████║██╔██╗ ██║   ██║   ███████╗
-# ██║     ██║   ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║╚██╗██║   ██║   ╚════██║
-# ╚██████╗╚██████╔╝██║ ╚████║███████║   ██║   ██║  ██║██║ ╚████║   ██║   ███████║
-#  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
-
 UNAME_M ?= $(shell uname -m)
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/v\(\)/\1/; s/-//g')
 
-MANAGER_REPO := bentoml-docker
+MANAGER_REPO := aarnphm/bentoml-docker
 MANAGER_TAG := 1.1.0
 
-# ██████╗  ██████╗  ██████╗██╗  ██╗███████╗██████╗
-# ██╔══██╗██╔═══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗
-# ██║  ██║██║   ██║██║     █████╔╝ █████╗  ██████╔╝
-# ██║  ██║██║   ██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗
-# ██████╔╝╚██████╔╝╚██████╗██║  ██╗███████╗██║  ██║
-# ╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
-
-# Some Dockerfiles use features that are only supported with BuildKit enabled
+# ----------------------
 export DOCKER_BUILDKIT=1
 
-# Create multi-platform docker image. If you have native systems around, using
-# them will be much more efficient at build time. See e.g.
 BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
 # Just one of the many files created
 QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-aarch64
 
-FULL_TAG := ${MANAGER_REPO}:${MANAGER_TAG}-${UNAME_M}
+FULL_TAG := ${MANAGER_REPO}:${MANAGER_TAG}
 
 DOCKER_ARGS := -u root --privileged --rm --init \
 	-v $(realpath /etc/localtime):/etc/localtime:ro \
@@ -37,13 +21,8 @@ DOCKER_ARGS := -u root --privileged --rm --init \
 	-w /bentoml ${FULL_TAG}
 DOCKER_RUN := docker run ${DOCKER_ARGS}
 
-#  ██████╗ ███████╗███╗   ██╗███████╗██████╗  █████╗ ██╗
-# ██╔════╝ ██╔════╝████╗  ██║██╔════╝██╔══██╗██╔══██╗██║
-# ██║  ███╗█████╗  ██╔██╗ ██║█████╗  ██████╔╝███████║██║
-# ██║   ██║██╔══╝  ██║╚██╗██║██╔══╝  ██╔══██╗██╔══██║██║
-# ╚██████╔╝███████╗██║ ╚████║███████╗██║  ██║██║  ██║███████╗
-#  ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
 
+# ----------------------
 .DEFAULT_GOAL := help
 
 .PHONY: install-local
@@ -90,21 +69,16 @@ check-platform: emulator ## Test supported platform string
 	@docker buildx ls | grep platform_check_builder &>/dev/null | docker buildx use platform_check_builder || docker buildx create --use --driver docker-container --name platform_check_builder;
 	@docker buildx bake test-platforms --progress plain --no-cache
 
-#  ██████╗ ██████╗ ███╗   ███╗███╗   ███╗ █████╗ ███╗   ██╗██████╗ ███████╗
-# ██╔════╝██╔═══██╗████╗ ████║████╗ ████║██╔══██╗████╗  ██║██╔══██╗██╔════╝
-# ██║     ██║   ██║██╔████╔██║██╔████╔██║███████║██╔██╗ ██║██║  ██║███████╗
-# ██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║██╔══██║██║╚██╗██║██║  ██║╚════██║
-# ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║██║  ██║██║ ╚████║██████╔╝███████║
-#  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝
 
+# ----------------------
 docker-bake-%: ## Build a docker target with buildx bake
 	$(eval bake_target_prefix := $(subst docker-bake-, ,$@))
-	$(eval bake_target :=$(bake_target_prefix)-${UNAME_M})
-	 @docker buildx bake $(bake_target)
+	$(eval bake_target :=$(bake_target_prefix))
+	 @docker buildx bake $(bake_target) --push
 
 check_docker_manager:
-	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null`; then \
-		@$(MAKE) docker-bake-manager; \
+	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null` || git diff ./hack/dockerfiles/dev.Dockerfile; then \
+		$(MAKE) docker-bake-all; \
 	fi
 
 # default args
@@ -114,8 +88,8 @@ TESTS_DARGS := --bentoml-version $(BENTOML_VERSION)
 AUTHENTICATE_DARGS := dockerhub
 
 # positional args
-generate_pargs = xx-image xx-version
-build_pargs = max-workers registry distros python-version xx-image xx-version releases
+generate_pargs = organization
+build_pargs = max-workers registry distros python-version releases organization
 test_pargs = releases platforms max-workers registry
 
 # flags only
@@ -148,6 +122,6 @@ docker-run-%: check_docker_manager ## Run a task from a docker container (useful
 	$(eval $@_prefix := docker-run-)
 	$(eval $@_dtarget := $(subst $($@_prefix), ,$@))
 	$(eval $@_dupper_target := $(call UC, $($@_dtarget)))
-	$(DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
+	@$(DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
 %:
 	@true

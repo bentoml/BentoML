@@ -2,6 +2,5 @@
 **/*.json
 .env
 _test.py
-bats-core
 *.txt
 *.meta.*

@@ -455,6 +455,8 @@ class _TensorflowRunner(BaseModelRunner):
         self._partial_kwargs: t.Dict[str, t.Any] = (
             partial_kwargs if partial_kwargs is not None else {}
         )
+        self._graph: t.Optional["tf.Graph"] = None
+        self._sess: t.Optional["tf.Session"] = None
 
     def _configure(self, device_id: str) -> None:
         if "GPU" in device_id:
@@ -481,11 +483,20 @@ class _TensorflowRunner(BaseModelRunner):
     def _setup(self) -> None:
         # setup a global session for model runner
         self._configure(self._device_id)
-        self._model = load(self._tag, model_store=self.model_store)
-        raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[  # type: ignore
-            "serving_default"
-        ]
-        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
+        self._graph = tf.get_default_graph()
+        with self._graph.as_default():
+            self._model = load(self._tag, model_store=self.model_store)
+            raw_predict_fn: t.Callable[..., t.Any] = self._model.signatures[  # type: ignore
+                "serving_default"
+            ]
+            self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
+        self._sess = tf.Session(graph=self._graph, config=tf.ConfigProto(**self._config_proto))
+        with self._sess.as_default():
+            tf.global_variables_initializer()
+
+    def _shutdown(self) -> None:
+        tf.reset_default_graph()
+        self._sess.close()
 
     def _run_batch(
         self, *args: "TFArgType", **kwargs: "TFArgType"
@@ -502,11 +513,7 @@ class _TensorflowRunner(BaseModelRunner):
 
             params = params.map(_mapping)
 
-            with tf.Session(
-                graph=tf.get_default_graph(),
-                config=tf.ConfigProto(**self._config_proto),
-            ) as sess:
-                sess.run(tf.global_variables_initializer())  # type: ignore
+            with self._sess.as_default():
                 res = self._predict_fn(*params.args, **params.kwargs)["prediction"]  # type: ignore
                 return t.cast("tf_ext.TensorLike", res)
 

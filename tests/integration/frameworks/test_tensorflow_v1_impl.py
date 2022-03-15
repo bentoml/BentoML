@@ -163,13 +163,11 @@ def test_tensorflow_v1_multi_args(
         partial_kwargs=dict(factor=f2),
     )
 
-    tf.global_variables_initializer()
-    with sess.as_default():
-        res = r1.run_batch(x1=x, x2=x)
-        assert np.isclose(res.eval(), 60.0)
+    res = r1.run_batch(x1=x, x2=x)
+    assert np.isclose(res.eval(session=r1._sess), 60.0)
 
-        res = r2.run_batch(x1=x, x2=x)
-        assert np.isclose(res.eval(), 45.0)
+    res = r2.run_batch(x1=x, x2=x)
+    assert np.isclose(res.eval(session=r2._sess), 45.0)
 
 
 def _plus_one_model_tf1() -> "hub.Module":

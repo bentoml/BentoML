@@ -39,7 +39,7 @@ def main(
         from ...configuration.containers import DeploymentContainer
 
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))
-    svc = load(bento_identifier, working_dir=working_dir)
+    svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
 
     parsed = urlparse(bind)
     uvicorn_options: dict[str, Any] = {

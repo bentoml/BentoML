@@ -36,7 +36,7 @@ def main(
         fd = int(parsed.netloc)
         sock = socket.socket(fileno=fd)
         log_level = "debug" if get_debug_mode() else "info"
-        svc = load(bento_identifier, working_dir=working_dir)
+        svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
         uvicorn_options = {
             "log_level": log_level,
             "backlog": backlog,

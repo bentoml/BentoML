@@ -207,7 +207,7 @@ def import_from_uri(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`~bentoml._internal.types.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
+        :obj:`~bentoml.Tag`: A :obj:`~bentoml.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
 
     Example:
 

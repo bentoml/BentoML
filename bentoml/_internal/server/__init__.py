@@ -6,7 +6,6 @@ import typing as t
 import logging
 import tempfile
 import contextlib
-from datetime import datetime
 
 import psutil
 from simple_di import inject

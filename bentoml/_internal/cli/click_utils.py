@@ -128,10 +128,12 @@ class BentoMLCommandGroup(click.Group):
                     command_name,
                 )
             else:
-                get_tracking_event = lambda ret: CliEvent(
-                    cmd_group=cmd_group.name,
-                    cmd_name=command_name,
-                )
+
+                def get_tracking_event(ret: t.Any) -> CliEvent:
+                    return CliEvent(
+                        cmd_group=cmd_group.name,
+                        cmd_name=command_name,
+                    )
 
             try:
                 return_value = func(*args, **kwargs)

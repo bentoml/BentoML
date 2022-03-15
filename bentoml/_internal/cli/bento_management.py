@@ -1,7 +1,6 @@
 # type: ignore[reportUnusedFunction]
 import sys
 import json
-import time
 import typing as t
 import logging
 from typing import TYPE_CHECKING

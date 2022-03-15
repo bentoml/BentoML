@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:1.3
+# syntax = docker/dockerfile:1.4
 #
 # ===========================================
 #
@@ -11,7 +11,7 @@
 ARG PYTHON_VERSION
 
 
-FROM bento-server:base-python$PYTHON_VERSION-debian10 as base
+FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian10 as base
 
 
 FROM base as base-amd64

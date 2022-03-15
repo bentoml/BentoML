@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:1.3
+# syntax = docker/dockerfile:1.4
 #
 # ===========================================
 #
@@ -10,7 +10,7 @@
 ARG XX_VERSION=1.1.0
 
 
-FROM local-xx:${XX_VERSION}-${TARGETARCH} as xx
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 
 FROM registry.access.redhat.com/ubi7/ubi:latest as base
@@ -98,6 +98,3 @@ RUN set -x && \
 # Install python via conda
 RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
     /opt/conda/bin/conda clean -afy
-
-COPY hack/bashrc /etc/bash.bashrc
-RUN chmod a+r /etc/bash.bashrc

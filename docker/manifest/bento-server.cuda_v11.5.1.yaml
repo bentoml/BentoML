@@ -7,7 +7,7 @@ common: &common
   suffixes: ""
   base_image: ""
   header: |
-    # syntax = docker/dockerfile:1.3
+    # syntax = docker/dockerfile:1.4
     #
     # ===========================================
     #
@@ -118,7 +118,6 @@ w_cuda_v11.5.1:
     architectures:
       - amd64
       - arm64v8
-      - s390x
     release_types:
       - base
       - runtime

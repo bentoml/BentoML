@@ -127,5 +127,3 @@ RUN set -x && \
 RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
     /opt/conda/bin/conda clean -afy
 
-COPY hack/bashrc /etc/bash.bashrc
-RUN chmod a+r /etc/bash.bashrc

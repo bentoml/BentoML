@@ -22,9 +22,11 @@ from glom import PathAssignError
 from jinja2 import Environment
 from fs.base import FS
 from plumbum import local
+from python_on_whales import docker
 from manager._exceptions import ManagerException
 from manager._exceptions import ManagerInvalidShellCmd
 from python_on_whales.exceptions import DockerException
+from python_on_whales.components.buildx.cli_wrapper import Builder
 
 if TYPE_CHECKING:
     from manager._types import P
@@ -48,7 +50,7 @@ __all__ = (
     "as_posix",
 )
 
-SUPPORTED_PYTHON_VERSION = ("3.7", "3.8", "3.9", "3.10")
+SUPPORTED_PYTHON_VERSION = ("3.6", "3.7", "3.8", "3.9", "3.10")
 SUPPORTED_OS_RELEASES = (
     "debian11",
     "debian10",
@@ -109,6 +111,22 @@ def serializer(inst: type, field: "attrs.Attribute[t.Any]", value: t.Any) -> t.A
 
 def is_attrs_cls(cls: type):
     return hasattr(cls, "__attrs_attrs__")
+
+
+def create_buildx_builder(name: str, verbose_: bool = False) -> Builder:
+    BUILDX_LIST = [i.name for i in docker.buildx.list()]
+    if name not in BUILDX_LIST:
+        builder = docker.buildx.create(
+            use=True,
+            name=name,
+            driver="docker-container",
+            driver_options={"image": "moby/buildkit:master"},
+        )
+        if verbose_:
+            docker.buildx.inspect(name)
+        return builder
+    else:
+        return [i for i in docker.buildx.list() if i.name == name][0]
 
 
 def ctx_unstructure_hook(

@@ -71,6 +71,7 @@ class Environment:
     _manifest_dir: FS = attrs.field(init=False)
     _templates_dir: FS = attrs.field(init=False)
     _generated_dir: FS = attrs.field(init=False)
+    organization: str = attrs.field(init=False, default="bentoml")
 
     # misc
     bentoml_version: str = attrs.field(
@@ -160,6 +161,7 @@ if TYPE_CHECKING:
         str,
         str,
         str,
+        str,
         t.Optional[str],
         t.Optional[t.Iterable[str]],
         t.Optional[t.Iterable[str]],
@@ -168,7 +170,7 @@ if TYPE_CHECKING:
 
 
 class ManagerCommandGroup(click.Group):
-    COMMON_PARAMS = 10
+    COMMON_PARAMS = 11
 
     @staticmethod
     def common_params(
@@ -254,6 +256,14 @@ class ManagerCommandGroup(click.Group):
             multiple=True,
             help="Targets a distros releases",
         )
+        @click.option(
+            "--organization",
+            required=False,
+            metavar="<organization>",
+            type=click.STRING,
+            help="Targets docker organization",
+            default="bentoml",
+        )
         @wraps(func)
         @pass_environment
         @inject
@@ -267,6 +277,7 @@ class ManagerCommandGroup(click.Group):
             cuda_version: str,
             docker_package: str,
             bentoml_version: str,
+            organization: str,
             registry: t.Optional[str],
             distros: t.Optional[t.Iterable[str]],
             python_version: t.Optional[t.Iterable[str]],
@@ -345,6 +356,7 @@ class ManagerCommandGroup(click.Group):
             ctx.docker_package = docker_package
             ctx.xx_image = xx_image
             ctx.xx_version = xx_version
+            ctx.organization = organization
 
             set_generation_context(ctx, loaded_distros)
 

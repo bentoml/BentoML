@@ -94,24 +94,8 @@ def add_generation_command(cli: click.Group) -> None:
                 return
 
     @cli.command()
-    @click.option(
-        "--xx-image",
-        metavar="<xx-image>",
-        required=False,
-        type=click.STRING,
-        help="xx image tag to use. Useful when running in CI to build this image locally to avoid rate limitting. [optional]",
-    )
-    @click.option(
-        "--xx-version",
-        metavar="<xx-version>",
-        required=False,
-        type=click.STRING,
-        help="version for xx to use. Useful when running in CI to build this image locally to avoid rate limitting. [optional]",
-    )
     @pass_environment
-    def generate(
-        ctx: Environment, xx_image: t.Optional[str], xx_version: t.Optional[str]
-    ) -> None:
+    def generate(ctx: Environment) -> None:
         """
         Generate Dockerfile and README for a given docker package.
 
@@ -125,7 +109,7 @@ def add_generation_command(cli: click.Group) -> None:
 
         """
 
-        xx_info = (xx_image, xx_version)
+        xx_info = (ctx.xx_image, ctx.xx_version)
         try:
             if ctx.overwrite:
                 ctx._generated_dir.removetree(".")
@@ -248,7 +232,8 @@ def generate_dockerfiles(
                 "header": bi.header,
                 "base_image": bi.base_image,
                 "envars": bi.envars,
-                "package": shared_ctx.docker_package,
+                "package": f"{ctx.organization}/{shared_ctx.docker_package}",
+                "python_version": shared_ctx.python_version,
                 "arch_ctx": arch_ctx,
             }
 

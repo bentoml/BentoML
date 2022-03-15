@@ -1,11 +1,8 @@
 import os
-import sys
 import json
-import atexit
 import typing as t
 import logging
 import traceback
-from uuid import uuid4
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,13 +14,13 @@ from toolz import dicttoolz
 from manager._utils import run
 from manager._utils import stream_logs
 from manager._utils import DOCKERFILE_NAME
+from manager._utils import create_buildx_builder
 from manager._utils import DOCKERFILE_BUILD_HIERARCHY
 from manager._utils import get_docker_platform_mapping
 from python_on_whales import docker
 from manager._exceptions import ManagerBuildFailed
 from manager._click_utils import Environment
 from manager._click_utils import pass_environment
-from python_on_whales.components.buildx.cli_wrapper import Builder
 
 if TYPE_CHECKING:
     from manager._types import GenericDict
@@ -95,18 +92,18 @@ def add_build_command(cli: click.Group) -> None:
             with ctx._generated_dir.open(built_img_metafile, "r") as f:
                 BUILT_IMAGE = yaml.safe_load(f)
 
-        def build_multi_arch(cmd):
+        def build_multi_arch(cmd: "GenericDict") -> None:
+            python_version = cmd["build_args"]["PYTHON_VERSION"]
+            distro_name = cmd["labels"]["distro_name"]
 
-            builder_name = f"{ctx.docker_package}-builder-{uuid4()}"
-
-            BUILDER_LIST.append(builder_name)
-            builder = create_buildx_builder_instance(name=builder_name)
+            builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}"
 
             if cmd["tags"] in BUILT_IMAGE:
                 logger.info(f"{cmd['tags']} is already built and pushed.")
                 return
-            else:
-                BUILT_IMAGE.append(cmd["tags"])
+            try:
+                builder = create_buildx_builder(name=builder_name)
+                BUILDER_LIST.append(builder)
                 if ctx.verbose:
                     logger.info(f"Args: {cmd}")
 
@@ -114,6 +111,11 @@ def add_build_command(cli: click.Group) -> None:
                 # * architecture.
                 resp = docker.buildx.build(**cmd, builder=builder)
                 stream_logs(t.cast(t.Iterator[str], resp), cmd["tags"])
+            except Exception as e:
+                traceback.format_exc()
+                raise ManagerBuildFailed(f"Error while building:\n {e}") from e
+            finally:
+                BUILT_IMAGE.append(cmd["tags"])
 
         if dry_run:
             logger.info("--dry-run, output tags to file.")
@@ -131,17 +133,6 @@ def add_build_command(cli: click.Group) -> None:
         )
         _ = run("make", "emulator", "-f", ctx._fs.getsyspath("Makefile"))
 
-        def remove_buildx_builder():
-            # tries to remove zombie proc.
-            docker.buildx.prune(filters={"until": "12h"})
-            for b in BUILDER_LIST:
-                logger.debug(f"Removing {b}...")
-                docker.buildx.remove(b)
-            logger.info("Finished removing intermediaries builder.")
-            sys.exit(0)
-
-        atexit.register(remove_buildx_builder)
-
         try:
             with ThreadPoolExecutor(max_workers=max_workers * 2) as executor:
                 list(executor.map(build_multi_arch, base_buildx_args))
@@ -153,6 +144,46 @@ def add_build_command(cli: click.Group) -> None:
         finally:
             with ctx._manifest_dir.open(built_img_metafile, "w", encoding="utf-8") as f:
                 yaml.dump(BUILT_IMAGE, f)
+
+
+def buildx_args(
+    ctx: Environment, tags: "Tags"
+) -> "t.Generator[GenericDict, None, None]":
+
+    REGISTRIES_ENVARS_MAPPING = {"docker.io": "DOCKER_URL", "ecr": "AWS_URL"}
+
+    if ctx.push_registry is None:
+        tag_prefix = None
+    else:
+        tag_prefix = os.environ.get(REGISTRIES_ENVARS_MAPPING[ctx.push_registry], None)
+        if tag_prefix is None:
+            raise ManagerBuildFailed(
+                "Failed to retrieve URL prefix for docker registry."
+            )
+
+    for image_tag, tag_context in tags.items():
+        output_path, python_version, labels, *platforms = tag_context
+
+        ref = image_tag if tag_prefix is None else f"{tag_prefix}/{image_tag}"
+
+        yield {
+            "context_path": ctx._fs.getsyspath("/"),
+            "build_args": {"PYTHON_VERSION": python_version},
+            "progress": "plain",
+            "file": ctx._generated_dir.getsyspath(
+                fs.path.combine(output_path, DOCKERFILE_NAME)
+            ),
+            "platforms": [
+                v for k, v in get_docker_platform_mapping().items() if k in platforms
+            ],
+            "labels": labels,
+            "tags": ref,
+            "push": True,
+            "pull": True,
+            "stream_logs": True,
+            "cache_from": f"type=registry,ref={ref}",
+            "cache_to": f"type=registry,ref={ref},mode=max",
+        }
 
 
 def order_build_hierarchy(
@@ -211,78 +242,17 @@ def order_build_hierarchy(
         return base_tags, build_tags
 
 
-def buildx_args(
-    ctx: Environment, tags: "Tags"
-) -> "t.Generator[GenericDict, None, None]":
-
-    REGISTRIES_ENVARS_MAPPING = {"docker.io": "DOCKER_URL", "ecr": "AWS_URL"}
-
-    if ctx.push_registry is None:
-        tag_prefix = None
-    else:
-        tag_prefix = os.environ.get(REGISTRIES_ENVARS_MAPPING[ctx.push_registry], None)
-        if tag_prefix is None:
-            raise ManagerBuildFailed(
-                "Failed to retrieve URL prefix for docker registry."
-            )
-
-    for image_tag, tag_context in tags.items():
-        output_path, python_version, labels, *platforms = tag_context
-
-        ref = image_tag if tag_prefix is None else f"{tag_prefix}/{image_tag}"
-
-        yield {
-            "context_path": ctx._fs.getsyspath("/"),
-            "build_args": {"PYTHON_VERSION": python_version},
-            "progress": "plain",
-            "file": ctx._generated_dir.getsyspath(
-                fs.path.combine(output_path, DOCKERFILE_NAME)
-            ),
-            "platforms": [
-                v for k, v in get_docker_platform_mapping().items() if k in platforms
-            ],
-            "labels": labels,
-            "tags": ref,
-            "push": True,
-            "pull": False,
-            "stream_logs": True,
-            "cache_from": f"type=registry,ref={ref}",
-            "cache_to": f"type=registry,ref={ref},mode=max",
-        }
-
-
-def create_buildx_builder_instance(*, name: str, verbose_: bool = False) -> Builder:
-    # create one for each thread that build the given images
-    logger.info(f"Creating buildx builder {name}...")
-
-    # NOTE: python_on_whales doesn't have support for --platform yet
-    # platform_string = ",".join(platforms)
-    builder = docker.buildx.create(
-        name=name,
-        use=True,
-        driver="docker-container",
-        driver_options={"image": "moby/buildkit:master"},
-    )
-    if verbose_:
-        docker.buildx.inspect(name)
-    return builder
-
-
 def prepare_xx_image(ctx: Environment):
-    builder = docker.buildx.create(
-        use=True, name="prep_xx_image", driver="docker-container"
-    )
-    try:
-        for arch in ctx.docker_target_arch:
-            img = docker.image.list(filters={"reference": f"local-xx:*-{arch}"})
-            if len(img) == 0:
-                config = docker.buildx.bake(
-                    targets=f"local-xx-{arch}",
-                    builder=builder,
-                    load=True,
-                    progress="plain",
-                )
-                if ctx.verbose:
-                    logger.info(config)
-    finally:
-        docker.buildx.remove(builder)
+    builder = create_buildx_builder("prepare_xx_image")
+    for arch in ctx.docker_target_arch:
+        img = docker.image.list(filters={"reference": f"local-xx:*-{arch}"})
+        if len(img) == 0:
+            config = docker.buildx.bake(
+                targets=f"local-xx-{arch}",
+                builder=builder,
+                load=True,
+                progress="plain",
+                files=ctx._fs.getsyspath("docker-bake.hcl"),
+            )
+            if ctx.verbose:
+                logger.info(config)

@@ -113,8 +113,8 @@ BUILD_DARGS := --bentoml-version $(BENTOML_VERSION)
 TESTS_DARGS := --bentoml-version $(BENTOML_VERSION)
 
 # positional args
-generate_pargs = xx-image xx-version
-build_pargs = max-workers registry distros python-version xx-image xx-version
+generate_pargs = xx-image xx-version organization
+build_pargs = max-workers registry distros python-version xx-image xx-version releases organization
 test_pargs = releases platforms max-workers registry
 
 # flags only

@@ -76,7 +76,7 @@ def add_bento_management_commands(
             info = json.dumps(bento.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            info = yaml.dump(bento.info, indent=2)
+            info = yaml.dump(bento.info, indent=2, sort_keys=False)
             console.print(info)
 
     @cli.command(name="list")

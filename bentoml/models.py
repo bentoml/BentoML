@@ -239,6 +239,8 @@ def create(
     )
     try:
         yield res
+    finally:
+        res.save(_model_store)
 
         track(
             ModelSaveEvent(
@@ -247,8 +249,6 @@ def create(
                 model_size_in_kb=calc_dir_size(res.path_of("/")),
             ),
         )
-    finally:
-        res.save(_model_store)
 
 
 @inject

@@ -113,9 +113,7 @@ def _track_serve_init(
             bento_creation_timestamp=bento.info.creation_time,
             num_of_models=len(bento.info.models),
             num_of_runners=len(svc.runners),
-            model_types=[
-                bento._model_store.get(i).info.module for i in bento.info.models  # type: ignore
-            ],
+            model_types=[m.module for m in bento.info.models],  # type: ignore
             runner_types=[type(v).__name__ for v in svc.runners.values()],
         )
     else:

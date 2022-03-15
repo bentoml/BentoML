@@ -10,20 +10,22 @@ import fs
 import click
 from simple_di import inject
 from simple_di import Provide
-from manager._utils import shellcmd
-from manager._utils import raise_exception
-from manager._utils import SUPPORTED_REGISTRIES
-from manager._exceptions import ManagerException
-from manager._click_utils import Environment
-from manager._click_utils import pass_environment
-from manager._click_utils import ContainerScriptGroup
-from manager._configuration import get_manifest_info
-from manager._configuration import DockerManagerContainer
+
+from ._internal.utils import send_log
+from ._internal.utils import shellcmd
+from ._internal.utils import raise_exception
+from ._internal.utils import SUPPORTED_REGISTRIES
+from ._internal.groups import Environment
+from ._internal.groups import pass_environment
+from ._internal.groups import ContainerScriptGroup
+from ._internal.exceptions import ManagerException
+from ._internal.configuration import get_manifest_info
+from ._internal.configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from manager._types import GenericDict
+    from ._internal.types import GenericDict
 
 CONTEXT_SETTINGS = dict(auto_envvar_prefix="Authenticate")
 
@@ -84,8 +86,9 @@ def add_authenticate_command(cli: click.Group) -> None:
         if not Path(
             os.path.expandvars("$HOME/.docker/cli-plugins/"), "docker-pushrm"
         ).exists():
-            logger.error(
-                "docker-pushrm is not found. Hence, this cmd can't be used. Exitting..."
+            send_log(
+                "docker-pushrm is not found. Hence, this cmd can't be used. Exitting...",
+                _manager_level=logging.ERROR,
             )
             sys.exit(1)
 

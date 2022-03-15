@@ -100,7 +100,7 @@ check-platform: emulator ## Test supported platform string
 docker-bake-%: ## Build a docker target with buildx bake
 	$(eval bake_target_prefix := $(subst docker-bake-, ,$@))
 	$(eval bake_target :=$(bake_target_prefix)-${UNAME_M})
-	 @docker buildx bake $(bake_target) --no-cache
+	 @docker buildx bake $(bake_target)
 
 check_docker_manager:
 	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null`; then \
@@ -111,10 +111,11 @@ check_docker_manager:
 GENERATE_DARGS := --bentoml-version $(BENTOML_VERSION) --overwrite
 BUILD_DARGS := --bentoml-version $(BENTOML_VERSION)
 TESTS_DARGS := --bentoml-version $(BENTOML_VERSION)
+AUTHENTICATE_DARGS := dockerhub
 
 # positional args
-generate_pargs = xx-image xx-version organization
-build_pargs = max-workers registry distros python-version xx-image xx-version releases organization
+generate_pargs = xx-image xx-version
+build_pargs = max-workers registry distros python-version xx-image xx-version releases
 test_pargs = releases platforms max-workers registry
 
 # flags only

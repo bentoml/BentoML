@@ -6,12 +6,13 @@ from concurrent.futures import ThreadPoolExecutor
 
 import fs
 import click
-from manager._utils import run
-from manager._utils import DOCKERFILE_BUILD_HIERARCHY
-from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
-from manager._exceptions import ManagerException
-from manager._click_utils import Environment
-from manager._click_utils import pass_environment
+
+from ._internal.utils import run
+from ._internal.utils import DOCKERFILE_BUILD_HIERARCHY
+from ._internal.utils import SUPPORTED_ARCHITECTURE_TYPE
+from ._internal.groups import Environment
+from ._internal.groups import pass_environment
+from ._internal.exceptions import ManagerException
 
 logger = logging.getLogger(__name__)
 

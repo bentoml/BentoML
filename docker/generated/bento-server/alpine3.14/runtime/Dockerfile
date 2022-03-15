@@ -10,7 +10,7 @@
 
 ARG PYTHON_VERSION
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-alpine3.14 as base
+FROM bento-server:base-python$PYTHON_VERSION-alpine3.14 as base
 
 
 FROM base as base-amd64
@@ -25,14 +25,8 @@ ARG TARGETPLATFORM
 
 LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
+RUN conda activate bentoml-python${PYTHON_VERSION}
+
 ENV BENTOML_VERSION=1.0.0a6
-
-RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION anaconda && \
-        conda activate bentoml-python${PYTHON_VERSION}
-
-# bash is needed to run bentoml.
-RUN conda install -y pip \
-    && conda clean -afy \
-    && xx-apk add --no-cache bash git build-base
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

@@ -95,6 +95,9 @@ RUN set -x && \
     yum autoremove -y wget && \
     rm -rf /var/cache/yum
 
+RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION anaconda && \
+        conda activate bentoml-python${PYTHON_VERSION}
+
 # Install python via conda
-RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
+RUN /opt/conda/bin/conda install -y pip && \
     /opt/conda/bin/conda clean -afy

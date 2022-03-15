@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import typing as t
@@ -11,6 +12,7 @@ from typing import TYPE_CHECKING
 from pathlib import Path as pathlib_path
 from functools import wraps
 from functools import partial
+from functools import lru_cache
 
 import attrs
 import cattr
@@ -23,32 +25,24 @@ from jinja2 import Environment
 from fs.base import FS
 from plumbum import local
 from python_on_whales import docker
-from manager._exceptions import ManagerException
-from manager._exceptions import ManagerInvalidShellCmd
 from python_on_whales.exceptions import DockerException
 from python_on_whales.components.buildx.cli_wrapper import Builder
 
+from .exceptions import ManagerException
+from .exceptions import ManagerInvalidShellCmd
+
 if TYPE_CHECKING:
-    from manager._types import P
-    from manager._types import GenericDict
-    from manager._types import GenericFunc
-    from manager._types import GenericList
-    from manager._schemas import BuildCtx
-    from manager._schemas import ReleaseCtx
     from plumbum.machines.local import LocalCommand
     from plumbum.machines.local import PlumbumLocalPopen
 
-logger = logging.getLogger(__name__)
+    from .types import P
+    from .types import GenericDict
+    from .types import GenericFunc
+    from .types import GenericList
+    from .schemas import BuildCtx
+    from .schemas import ReleaseCtx
 
-__all__ = (
-    "sprint",
-    "raise_exception",
-    "get_data",
-    "set_data",
-    "shellcmd",
-    "graceful_exit",
-    "as_posix",
-)
+logger = logging.getLogger(__name__)
 
 SUPPORTED_PYTHON_VERSION = ("3.6", "3.7", "3.8", "3.9", "3.10")
 SUPPORTED_OS_RELEASES = (
@@ -65,11 +59,11 @@ DOCKERFILE_BUILD_HIERARCHY = ("base", "runtime", "cudnn", "devel")
 SUPPORTED_ARCHITECTURE_TYPE = ["amd64", "arm64v8", "ppc64le", "s390x"]
 
 SUPPORTED_ARCHITECTURE_TYPE_PER_DISTRO = {
+    "alpine3.14": SUPPORTED_ARCHITECTURE_TYPE,
     "debian11": SUPPORTED_ARCHITECTURE_TYPE,
     "debian10": SUPPORTED_ARCHITECTURE_TYPE,
     "ubi8": SUPPORTED_ARCHITECTURE_TYPE,
     "ubi7": ["amd64", "s390x", "ppc64le"],
-    "alpine3.14": SUPPORTED_ARCHITECTURE_TYPE,
     "amazonlinux2": ["amd64", "arm64v8"],
 }
 
@@ -114,8 +108,8 @@ def is_attrs_cls(cls: type):
 
 
 def create_buildx_builder(name: str, verbose_: bool = False) -> Builder:
-    BUILDX_LIST = [i.name for i in docker.buildx.list()]
-    if name not in BUILDX_LIST:
+    buildx_list = [i.name for i in docker.buildx.list()]
+    if name not in buildx_list:
         builder = docker.buildx.create(
             use=True,
             name=name,
@@ -160,7 +154,7 @@ def graceful_exit(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
         try:
             return func(*args, **kwargs)
         except Exception:
-            logger.info("Stopping now...")
+            send_log("Stopping now...")
             sys.exit(0)
 
     return wrapper
@@ -201,7 +195,10 @@ def inject_deepcopy_args(
 
 def sprint(*args: t.Any, **kwargs: t.Any) -> None:
     # stream logs inside docker container to sys.stderr
-    print(*args, file=sys.stderr, flush=True, **kwargs)
+    sep = kwargs.pop("sep", " ")
+    end = kwargs.pop("end", "\n")
+    args = tuple(map(lambda x: re.sub(r"[\(\[].*?[\)\]]", "", x), args))
+    print(*args, file=sys.stderr, flush=True, sep=sep, end=end)
 
 
 def jprint(*args: t.Any, indent: int = 2, **kwargs: t.Any) -> None:
@@ -255,10 +252,11 @@ def set_data(
     try:
         _ = glom(obj, Assign(glom_path(*path), value))
     except PathAssignError as err:
-        logger.error(
+        send_log(
             "Exception occurred in "
             "update_data, unable to update "
-            f"{glom_path(*path)} with {value}"
+            f"{glom_path(*path)} with {value}",
+            _manager_level=logging.ERROR,
         )
         raise ManagerException("Error while setting data to object.") from err
 
@@ -338,6 +336,7 @@ def preprocess_template_paths(input_name: str, arch: t.Optional[str]) -> str:
         return output_name
 
 
+@lru_cache(maxsize=1)
 def uname_m_to_targetarch():
     return {
         "aarch64": "arm64",
@@ -390,21 +389,29 @@ def render_template(
     out_path_fs.close()
 
 
-def stream_logs(resp: t.Iterator[str], tag: str) -> None:
-    plain = False
+def send_log(*args: t.Any, _manager_level: int = logging.INFO, **kwargs: t.Any):
     if os.path.exists("/.dockerenv"):
-        plain = True
+        sprint(*args, **kwargs)
+    else:
+        log_by_level = {
+            logging.ERROR: logger.error,
+            logging.INFO: logger.info,
+            logging.WARNING: logger.warning,
+            logging.DEBUG: logger.debug,
+            logging.NOTSET: logger.error,
+        }[_manager_level]
+        log_by_level(*args, **kwargs)
 
+
+def stream_logs(resp: t.Iterator[str], tag: str) -> None:
     while True:
         try:
             output = next(resp)
-            if plain:
-                sprint(output)
-            else:
-                logger.info(output)
+            send_log(output)
         except DockerException as e:
-            logger.error(f"[{type(e).__name__}] Error while streaming logs:\n{e}")
+            message = f"[{type(e).__name__}] Error while streaming logs:\n{e}"
+            send_log(message, _manager_level=logging.ERROR)
             break
         except StopIteration:
-            logger.info(f"Successfully built {tag}")
+            send_log(f"Successfully built {tag}")
             break

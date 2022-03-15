@@ -6,18 +6,19 @@ from itertools import product
 from collections import defaultdict
 
 import cattr
-from manager._utils import ctx_unstructure_hook
-from manager._utils import inject_deepcopy_args
-from manager._schemas import CUDA
-from manager._schemas import BuildCtx
-from manager._schemas import SharedCtx
-from manager._schemas import ReleaseCtx
-from manager._schemas import CUDAVersion
-from manager._schemas import generate_cuda_context
-from manager._configuration import RELEASE_PREFIX
+
+from .utils import ctx_unstructure_hook
+from .utils import inject_deepcopy_args
+from .schemas import CUDA
+from .schemas import BuildCtx
+from .schemas import SharedCtx
+from .schemas import ReleaseCtx
+from .schemas import CUDAVersion
+from .schemas import generate_cuda_context
+from .configuration import RELEASE_PREFIX
 
 if TYPE_CHECKING:
-    from manager._click_utils import Environment
+    from .groups import Environment
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ __all__ = ["set_generation_context"]
 
 
 @inject_deepcopy_args
-def create_context(
+def create_distro_context(
     distro_info: t.Dict[str, t.Any],
     distro_name: str,
     python_version: str,
@@ -89,7 +90,7 @@ def set_generation_context(ctx: "Environment", contexts: t.Dict[str, t.Any]) -> 
         ctx.python_version, contexts.items()
     ):
         for distro_name, distro in distros.items():
-            _build_ctx, _release_ctx = create_context(
+            _build_ctx, _release_ctx = create_distro_context(
                 ctx=ctx,
                 distro_info=deepcopy(distro),
                 python_version=pyver,

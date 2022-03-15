@@ -14,7 +14,7 @@ ARG XX_VERSION=1.1.0
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 
-FROM alpine:3.14 as alpine-glibc
+FROM alpine:3.14 as base
 
 COPY --from=xx / /
 
@@ -22,11 +22,9 @@ ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
-from alpine-glibc as base
-
 FROM base as base-amd64
 
-ARG GLIBC_PACKAGE_VERSION="2.35-r0"
+ARG GLIBC_PACKAGE_VERSION="2.33-r0"
 
 # slight modification to improve build time
 ARG GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases/download"
@@ -109,8 +107,6 @@ RUN set -xe \
 
 FROM base-${TARGETARCH}
 
-COPY --from=xx / /
-
 ARG TARGETPLATFORM
 
 ARG TARGETARCH
@@ -125,18 +121,12 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN xx-apk add -q --no-cache gcc bash procps
-
-ENV ENV /root/.shinit
-
-CMD [ "/bin/sh" ]
-
-ARG CONDA_VERSION=latest
+ARG CONDA_VERSION=py39_4.10.3
 
 # Installing miniconda
-RUN set -x && \
-    UNAME_M="$(uname -m)" && \
-    if [ "${UNAME_M}" = "x86_64" ]; then \
+RUN set -x \
+    && UNAME_M="$(uname -m)" \
+    && if [ "${UNAME_M}" = "x86_64" ]; then \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh"; \
     elif [ "${UNAME_M}" = "s390x" ]; then \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-s390x.sh"; \
@@ -144,20 +134,28 @@ RUN set -x && \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh"; \
     elif [ "${UNAME_M}" = "ppc64le" ]; then \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-ppc64le.sh"; \
-    fi && \
-    wget --quiet ${MINICONDA_URL} -O miniconda.sh && \
-    mkdir -p /opt && \
-    sh miniconda.sh -b -p /opt/conda && \
-    rm miniconda.sh && \
-    /opt/conda/bin/conda update --all --yes && \
-    /opt/conda/bin/conda config --set auto_update_conda False && \
-    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.shinit && \
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.shinit && \
-    echo "conda activate base" >> ~/.bashrc && \
-    find /opt/conda/ -follow -type f -name '*.a' -delete && \
-    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
-    /opt/conda/bin/conda clean -afy
+    fi \
+    && xx-apk add --no-cache --virtual .build-dependencies ca-certificates bash procps \
+    && wget --quiet ${MINICONDA_URL} -O ~/miniconda.sh \
+	&& mkdir -p /opt \
+    && chmod +x ~/miniconda.sh \
+    && ~/miniconda.sh -b -p /opt/conda \
+    \
+    && xx-apk del --purge .build-dependencies \
+    && rm -f ~/miniconda.sh \
+    && find /opt/conda/ -follow -type f \( -iname '*.a' -o -iname '*.pyc' -o -iname '*.js.map' \) -delete \
+    && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.shinit \
+    && echo "conda activate base" >> ~/.shinit \
+    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+    && echo "conda activate base" >> ~/.bashrc \
+    && conda clean -afy
+
+RUN xx-apk add --no-cache bash
+
+RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION
+
+RUN conda install -y pip \
+    && conda init bash
 
 CMD [ "/bin/bash" ]

@@ -17,28 +17,29 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 from rich.console import Console
-from manager._make import set_generation_context
-from manager._utils import SUPPORTED_REGISTRIES
-from manager._utils import SUPPORTED_OS_RELEASES
-from manager._utils import SUPPORTED_PYTHON_VERSION
-from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
 from click.exceptions import UsageError
-from manager._schemas import BuildCtx
-from manager._schemas import ReleaseCtx
 from plumbum.commands import ProcessExecutionError
-from manager._exceptions import ManagerException
-from manager._configuration import DockerRegistry
-from manager._configuration import get_manifest_info
-from manager._configuration import DockerManagerContainer
+
+from ._make import set_generation_context
+from .utils import send_log
+from .utils import SUPPORTED_REGISTRIES
+from .utils import SUPPORTED_OS_RELEASES
+from .utils import SUPPORTED_PYTHON_VERSION
+from .utils import SUPPORTED_ARCHITECTURE_TYPE
+from .schemas import BuildCtx
+from .schemas import ReleaseCtx
+from .exceptions import ManagerException
+from .configuration import DockerRegistry
+from .configuration import get_manifest_info
+from .configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from manager._types import P
-    from manager._types import WrappedCLI
-    from manager._types import GenericDict
-    from manager._types import ClickFunctionWrapper
-
+    from .types import P
+    from .types import WrappedCLI
+    from .types import GenericDict
+    from .types import ClickFunctionWrapper
 
 CONTAINERSCRIPT_FOLDER = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "containerscript")
@@ -71,7 +72,6 @@ class Environment:
     _manifest_dir: FS = attrs.field(init=False)
     _templates_dir: FS = attrs.field(init=False)
     _generated_dir: FS = attrs.field(init=False)
-    organization: str = attrs.field(init=False, default="bentoml")
 
     # misc
     bentoml_version: str = attrs.field(
@@ -80,6 +80,14 @@ class Environment:
     cuda_version: str = attrs.field(
         default=None, converter=attrs.converters.default_if_none("11.5.1")
     )
+    python_version: t.Iterable[str] = attrs.field(
+        converter=attrs.converters.default_if_none(SUPPORTED_PYTHON_VERSION),
+        default=None,
+        validator=lambda _, __, value: set(value).issubset(
+            set(SUPPORTED_PYTHON_VERSION)
+        ),
+    )
+
     docker_package: str = attrs.field(
         default=None,
         converter=attrs.converters.default_if_none(DockerManagerContainer.default_name),
@@ -94,13 +102,6 @@ class Environment:
         converter=attrs.converters.default_if_none(SUPPORTED_OS_RELEASES),
         default=None,
         validator=lambda _, __, value: set(value).issubset(set(SUPPORTED_OS_RELEASES)),
-    )
-    python_version: t.Iterable[str] = attrs.field(
-        converter=attrs.converters.default_if_none(SUPPORTED_PYTHON_VERSION),
-        default=None,
-        validator=lambda _, __, value: set(value).issubset(
-            set(SUPPORTED_PYTHON_VERSION)
-        ),
     )
 
     # ctx
@@ -197,7 +198,7 @@ class ManagerCommandGroup(click.Group):
             required=False,
             type=click.STRING,
             default="tonistiigi/xx",
-            help="Target docker packages to use, default to `bento-server` [optional]",
+            help="Target a xx image for compilation helpers, default to `tonistiiigi/xx` [optional]",
         )
         @click.option(
             "--xx-version",
@@ -205,7 +206,7 @@ class ManagerCommandGroup(click.Group):
             required=False,
             type=click.STRING,
             default="1.1.0",
-            help="Target docker packages to use, default to `bento-server` [optional]",
+            help="Target xx image version, default to `1.1.0` [optional]",
         )
         @click.option(
             "--cuda-version",
@@ -256,14 +257,6 @@ class ManagerCommandGroup(click.Group):
             multiple=True,
             help="Targets a distros releases",
         )
-        @click.option(
-            "--organization",
-            required=False,
-            metavar="<organization>",
-            type=click.STRING,
-            help="Targets docker organization",
-            default="bentoml",
-        )
         @wraps(func)
         @pass_environment
         @inject
@@ -277,7 +270,6 @@ class ManagerCommandGroup(click.Group):
             cuda_version: str,
             docker_package: str,
             bentoml_version: str,
-            organization: str,
             registry: t.Optional[str],
             distros: t.Optional[t.Iterable[str]],
             python_version: t.Optional[t.Iterable[str]],
@@ -356,7 +348,6 @@ class ManagerCommandGroup(click.Group):
             ctx.docker_package = docker_package
             ctx.xx_image = xx_image
             ctx.xx_version = xx_version
-            ctx.organization = organization
 
             set_generation_context(ctx, loaded_distros)
 
@@ -380,7 +371,7 @@ class ManagerCommandGroup(click.Group):
                     msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
                     raise ClickException(click.style(msg, fg="red")) from err
                 elif ctx.quiet:
-                    logger.info(
+                    send_log(
                         f"{command_name} failed while --quiet is passed. Remove --quiet to see the stack trace."
                     )
             except Exception:  # NOTE: for other exception show traceback
@@ -449,7 +440,7 @@ class ContainerScriptGroup(ManagerCommandGroup):
     def get_command(self, ctx: click.Context, name: str) -> t.Optional[click.Command]:
         try:
             mod = __import__(
-                f"manager.containerscript.reg_{name}", None, None, ["main"]
+                f"manager._internal.containerscript.reg_{name}", None, None, ["main"]
             )
         except ImportError:
             return

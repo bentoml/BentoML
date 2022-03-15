@@ -32,13 +32,9 @@ LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION anaconda && \
-        conda activate bentoml-python${PYTHON_VERSION}
+RUN xx-apk add --no-cache git build-base
 
-# bash is needed to run bentoml.
-RUN conda install -y python=$PYTHON_VERSION pip \
-    && conda clean -afy \
-    && xx-apk add --no-cache bash git build-base
+RUN conda activate bentoml-python${PYTHON_VERSION}
 
 RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
 

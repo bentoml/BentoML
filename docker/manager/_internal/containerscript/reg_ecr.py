@@ -1,10 +1,12 @@
 import logging
 
 import click
-from manager._utils import get_bin
-from manager._exceptions import ManagerException
-from manager._click_utils import Environment
-from manager._click_utils import pass_environment
+
+from ..utils import get_bin
+from ..utils import send_log
+from ..groups import Environment
+from ..groups import pass_environment
+from ..exceptions import ManagerException
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,7 @@ def main(ctx: Environment, stdin: str, *args, **kwargs) -> None:
         # write ECR registry to .env files
         # Write changes to .env file.
         dotenv.set_key(dotenv.find_dotenv(), "AWS_URL", uri)
-        logger.info(
+        send_log(
             ":smile: [bold green]Successfully logged into ECR and updated AWS_URL[/]",
             extra={"markup": True},
         )

@@ -3,9 +3,10 @@ import logging
 
 import click
 from python_on_whales import docker
-from manager._exceptions import ManagerLoginFailed
-from manager._click_utils import Environment
-from manager._click_utils import pass_environment
+
+from ..groups import Environment
+from ..groups import pass_environment
+from ..exceptions import ManagerLoginFailed
 
 logger = logging.getLogger(__name__)
 

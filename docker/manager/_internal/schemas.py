@@ -7,19 +7,21 @@ import attrs
 import cattr
 import attrs.converters
 from fs.base import FS
-from manager._utils import DOCKERFILE_NAME
-from manager._utils import raise_exception
-from manager._utils import ctx_unstructure_hook
-from manager._utils import inject_deepcopy_args
-from manager._utils import DOCKERFILE_BUILD_HIERARCHY
-from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
-from manager._exceptions import ManagerException
+
+from .utils import send_log
+from .utils import DOCKERFILE_NAME
+from .utils import raise_exception
+from .utils import ctx_unstructure_hook
+from .utils import inject_deepcopy_args
+from .utils import DOCKERFILE_BUILD_HIERARCHY
+from .utils import SUPPORTED_ARCHITECTURE_TYPE
+from .exceptions import ManagerException
 
 if TYPE_CHECKING:
-    from manager._types import StrList
-    from manager._types import GenericDict
-    from manager._types import DoubleNestedDict
-    from manager._types import GenericNestedDict
+    from .types import StrList
+    from .types import GenericDict
+    from .types import DoubleNestedDict
+    from .types import GenericNestedDict
 
 
 logger = logging.getLogger(__name__)
@@ -106,7 +108,10 @@ def generate_cuda_context(
                         return LibraryVersion(
                             version=cudnn["version"], major_version=key[-1]
                         )
-                logger.debug("current CUDA components doesn't support CUDNN.")
+                send_log(
+                    "current CUDA components doesn't support CUDNN.",
+                    _manager_level=logging.DEBUG,
+                )
 
             cudnn_context = get_cudnn_version()
 
@@ -132,7 +137,10 @@ def is_supported_by_docker(instance: t.Any, attribute: t.Any, value: t.List[str]
         if v not in ALL_DOCKER_SUPPORTED_ARCHITECTURE:
             raise ManagerException(f"{v} architecture is not supported by Docker.")
         if v not in SUPPORTED_ARCHITECTURE_TYPE:
-            logger.debug(f"{v} is not yet supported by BentoML. Use with care!")
+            send_log(
+                f"{v} is not yet supported by BentoML. Use with care!",
+                _manager_level=logging.DEBUG,
+            )
 
 
 def is_in_build_hierachy(instance: t.Any, attribute: t.Any, value: t.List[str]):
@@ -176,7 +184,10 @@ def update_envars_dict(
         for arg, value in updater.items():
             args[arg] = value
     else:
-        logger.error(f"cannot add to args dict with unknown type {type(updater)}")
+        send_log(
+            f"cannot add to args dict with unknown type {type(updater)}",
+            _manager_level=logging.ERROR,
+        )
     return args
 
 

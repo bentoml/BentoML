@@ -2,12 +2,13 @@ import logging
 
 import click
 from manager import __version__ as MANAGER_VERSION
-from manager.build import add_build_command
-from manager.tests import add_tests_command
-from manager._utils import graceful_exit
-from manager.generate import add_generation_command
-from manager._click_utils import ManagerCommandGroup
-from manager.authenticate import add_authenticate_command
+
+from .build import add_build_command
+from .tests import add_tests_command
+from .generate import add_generation_command
+from .authenticate import add_authenticate_command
+from ._internal.utils import graceful_exit
+from ._internal.groups import ManagerCommandGroup
 
 logger = logging.getLogger(__name__)
 

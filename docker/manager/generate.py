@@ -11,17 +11,19 @@ import cattr
 import click
 from simple_di import inject
 from simple_di import Provide
-from manager._make import CUDA
-from manager._utils import unstructure
-from manager._utils import render_template
-from manager._utils import TEMPLATES_DIR_MAPPING
-from manager._utils import DOCKERFILE_BUILD_HIERARCHY
-from manager._utils import SUPPORTED_ARCHITECTURE_TYPE
-from manager._utils import SUPPORTED_ARCHITECTURE_TYPE_PER_DISTRO
-from manager._click_utils import Environment
-from manager._click_utils import pass_environment
-from manager._configuration import MANIFEST_FILENAME
-from manager._configuration import DockerManagerContainer
+
+from ._internal._make import CUDA
+from ._internal.utils import send_log
+from ._internal.utils import unstructure
+from ._internal.utils import render_template
+from ._internal.utils import TEMPLATES_DIR_MAPPING
+from ._internal.utils import DOCKERFILE_BUILD_HIERARCHY
+from ._internal.utils import SUPPORTED_ARCHITECTURE_TYPE
+from ._internal.utils import SUPPORTED_ARCHITECTURE_TYPE_PER_DISTRO
+from ._internal.groups import Environment
+from ._internal.groups import pass_environment
+from ._internal.configuration import MANIFEST_FILENAME
+from ._internal.configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ def add_generation_command(cli: click.Group) -> None:
             )
         else:
             if not ctx.overwrite:
-                logger.info(
+                send_log(
                     f"{ctx._manifest_dir.getsyspath(name)} won't be overwritten."
                     " To overwrite pass `--overwrite`",
                     extra={"markup": True},
@@ -118,15 +120,16 @@ def add_generation_command(cli: click.Group) -> None:
             generate_dockerfiles(ctx, xx_info)
             generate_readmes(ctx)
             if ctx.verbose:
-                logger.info(
+                send_log(
                     f"[green] Finished generating {ctx.docker_package}...[/]",
                     extra={"markup": True},
                 )
         finally:
             if ctx.verbose:
-                logger.debug(
+                send_log(
                     "[bold yellow]Dump context to [bold]generated[/]... [/]",
                     extra={"markup": True},
+                    _manager_level=logging.DEBUG,
                 )
 
             with ctx._generated_dir.open(
@@ -232,7 +235,7 @@ def generate_dockerfiles(
                 "header": bi.header,
                 "base_image": bi.base_image,
                 "envars": bi.envars,
-                "package": f"{ctx.organization}/{shared_ctx.docker_package}",
+                "package": f"{shared_ctx.docker_package}",
                 "python_version": shared_ctx.python_version,
                 "arch_ctx": arch_ctx,
             }
@@ -273,4 +276,5 @@ def generate_dockerfiles(
                             else:
                                 to_render()
                         except Exception:  # pylint: disable=broad-except
-                            logger.error(traceback.format_exc())
+                            traceback.format_exc()
+                            raise

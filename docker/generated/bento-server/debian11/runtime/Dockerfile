@@ -11,7 +11,7 @@
 ARG PYTHON_VERSION
 
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as base
+FROM bento-server:base-python$PYTHON_VERSION-debian11 as base
 
 
 FROM base as base-amd64

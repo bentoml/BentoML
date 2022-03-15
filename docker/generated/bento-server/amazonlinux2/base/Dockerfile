@@ -76,5 +76,8 @@ RUN set -x && \
     rm -rf /var/cache/yum
 
 # Install python via conda
-RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
+RUN conda create -n bentoml-python${PYTHON_VERSION} python=$PYTHON_VERSION anaconda && \
+        conda activate bentoml-python${PYTHON_VERSION}
+
+RUN /opt/conda/bin/conda install -y pip && \
     /opt/conda/bin/conda clean -afy

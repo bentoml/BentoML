@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import typing as t
 import logging
@@ -11,21 +12,23 @@ import yaml
 import click
 import fs.path
 from toolz import dicttoolz
-from manager._utils import run
-from manager._utils import stream_logs
-from manager._utils import DOCKERFILE_NAME
-from manager._utils import create_buildx_builder
-from manager._utils import DOCKERFILE_BUILD_HIERARCHY
-from manager._utils import get_docker_platform_mapping
 from python_on_whales import docker
-from manager._exceptions import ManagerBuildFailed
-from manager._click_utils import Environment
-from manager._click_utils import pass_environment
+
+from ._internal.utils import run
+from ._internal.utils import send_log
+from ._internal.utils import stream_logs
+from ._internal.utils import DOCKERFILE_NAME
+from ._internal.utils import create_buildx_builder
+from ._internal.utils import DOCKERFILE_BUILD_HIERARCHY
+from ._internal.utils import get_docker_platform_mapping
+from ._internal.groups import Environment
+from ._internal.groups import pass_environment
+from ._internal.exceptions import ManagerBuildFailed
 
 if TYPE_CHECKING:
-    from manager._types import GenericDict
+    from ._internal.types import GenericDict
 
-    Tags = t.Dict[str, t.Tuple[str, str, t.Dict[str, str], t.Tuple[str, ...]]]
+    Tags = t.Dict[str, t.Tuple[str, str,str, t.Dict[str, str], t.Tuple[str, ...]]]
 
 logger = logging.getLogger(__name__)
 
@@ -99,13 +102,13 @@ def add_build_command(cli: click.Group) -> None:
             builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}"
 
             if cmd["tags"] in BUILT_IMAGE:
-                logger.info(f"{cmd['tags']} is already built and pushed.")
+                send_log(f"{cmd['tags']} is already built and pushed.")
                 return
             try:
                 builder = create_buildx_builder(name=builder_name)
                 BUILDER_LIST.append(builder)
                 if ctx.verbose:
-                    logger.info(f"Args: {cmd}")
+                    send_log(f"Args: {cmd}")
 
                 # NOTE: we need to push to registry when releasing different
                 # * architecture.
@@ -118,7 +121,7 @@ def add_build_command(cli: click.Group) -> None:
                 BUILT_IMAGE.append(cmd["tags"])
 
         if dry_run:
-            logger.info("--dry-run, output tags to file.")
+            send_log("--dry-run, output tags to file.")
             with ctx._generated_dir.open(
                 "base_tag.meta.json", "w"
             ) as f1, ctx._generated_dir.open("build_tag.meta.json", "w") as f2:
@@ -127,19 +130,18 @@ def add_build_command(cli: click.Group) -> None:
             return
 
         # We need to install QEMU to support multi-arch
-        logger.info(
+        send_log(
             "[bold yellow]Installing binfmt to added support for QEMU...[/]",
             extra={"markup": True},
         )
         _ = run("make", "emulator", "-f", ctx._fs.getsyspath("Makefile"))
 
         try:
-            with ThreadPoolExecutor(max_workers=max_workers * 2) as executor:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 list(executor.map(build_multi_arch, base_buildx_args))
                 list(executor.map(build_multi_arch, build_buildx_args))
         except Exception as e:
-            logger.error(e)
-            traceback.format_exc()
+            send_log(e, _manager_level=logging.ERROR)
             raise
         finally:
             with ctx._manifest_dir.open(built_img_metafile, "w", encoding="utf-8") as f:
@@ -162,9 +164,15 @@ def buildx_args(
             )
 
     for image_tag, tag_context in tags.items():
-        output_path, python_version, labels, *platforms = tag_context
+        output_path, build_tag, python_version, labels, *platforms = tag_context
 
         ref = image_tag if tag_prefix is None else f"{tag_prefix}/{image_tag}"
+        build_base_image = build_tag.replace("$PYTHON_VERSION", python_version)
+
+        # "cache_to": f"type=registry,ref={ref},mode=max",
+        cache_from = [{"type": "registry", "ref": ref}]
+        if build_base_image != '':
+            cache_from.append({"type": "registry", "ref": build_base_image})
 
         yield {
             "context_path": ctx._fs.getsyspath("/"),
@@ -180,9 +188,9 @@ def buildx_args(
             "tags": ref,
             "push": True,
             "pull": True,
+            "cache": True,
             "stream_logs": True,
-            "cache_from": f"type=registry,ref={ref}",
-            "cache_to": f"type=registry,ref={ref},mode=max",
+            "cache_from": cache_from,
         }
 
 
@@ -212,6 +220,7 @@ def order_build_hierarchy(
     hierarchy = {
         tag: (
             meta["output_path"],
+            meta['build_tag'],
             ctx.shared_ctx.python_version,
             {
                 "distro_name": ctx.shared_ctx.distro_name,
@@ -255,4 +264,4 @@ def prepare_xx_image(ctx: Environment):
                 files=ctx._fs.getsyspath("docker-bake.hcl"),
             )
             if ctx.verbose:
-                logger.info(config)
+                send_log(config)

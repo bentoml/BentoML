@@ -47,11 +47,20 @@ def pycaret_model(get_pycaret_data) -> t.Any:
 @pytest.fixture()
 def save_proc(
     pycaret_model,
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
-    def _(metadata) -> "Model":
-        tag = bentoml.pycaret.save(TEST_MODEL_NAME, pycaret_model, metadata=metadata)
-        model = bentoml.models.get(tag)
-        return model
+) -> t.Callable[
+    [t.Dict[str, t.Any], t.Optional[t.Dict[str, str]], t.Optional[t.Dict[str, t.Any]]],
+    "Model",
+]:
+    def _(metadata, labels=None, custom_objects=None) -> "Model":
+        tag = bentoml.pycaret.save(
+            TEST_MODEL_NAME,
+            pycaret_model,
+            metadata=metadata,
+            labels=labels,
+            custom_objects=custom_objects,
+        )
+        bentomodel = bentoml.models.get(tag)
+        return bentomodel
 
     return _
 
@@ -78,13 +87,22 @@ def wrong_module(pycaret_model):
 def test_pycaret_save_load(
     get_pycaret_data, metadata, save_proc
 ):  # noqa # pylint: disable
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
     _, test_data = get_pycaret_data
-    _model = save_proc(metadata)
-    assert _model.info.metadata is not None
-    assert_have_file_extension(_model.path, ".pkl")
+    bentomodel = save_proc(metadata, labels=labels, custom_objects={"func": custom_f})
+    assert bentomodel.info.metadata is not None
+    assert_have_file_extension(bentomodel.path, ".pkl")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
     pycaret_loaded = bentoml.pycaret.load(
-        _model.tag,
+        bentomodel.tag,
     )
     assert isinstance(pycaret_loaded, sklearn.pipeline.Pipeline)
     assert predict_model(pycaret_loaded, data=test_data)["Score"][0] == 0.7609
@@ -98,11 +116,11 @@ def test_pycaret_load_exc(wrong_module, exc):
 
 def test_pycaret_runner_setup_run_batch(get_pycaret_data, save_proc):
     _, test_data = get_pycaret_data
-    info = save_proc(None)
+    bentomodel = save_proc(None)
 
-    runner = bentoml.pycaret.load_runner(tag=info.tag)
+    runner = bentoml.pycaret.load_runner(tag=bentomodel.tag)
 
-    assert info.tag in runner.required_models
+    assert bentomodel.tag in runner.required_models
     assert runner.num_replica == 1
 
     assert runner.run_batch(test_data)["Score"][0] == 0.7609

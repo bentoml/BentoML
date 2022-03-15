@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from simple_di import inject
 from simple_di import Provide
 
-from ._internal.types import Tag
+from ._internal.tag import Tag
 from ._internal.models import Model
 from ._internal.configuration.containers import BentoMLContainer
 
@@ -220,6 +220,7 @@ def create(
     module: str = "",
     labels: t.Optional[t.Dict[str, t.Any]] = None,
     options: t.Optional[t.Dict[str, t.Any]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     context: t.Optional[t.Dict[str, t.Any]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -229,6 +230,7 @@ def create(
         module=module,
         labels=labels,
         options=options,
+        custom_objects=custom_objects,
         metadata=metadata,
         context=context,
     )

@@ -12,14 +12,16 @@ from tests.utils.frameworks.pytorch_utils import LinearModel
 
 @pytest.fixture(scope="module")
 def models():
-    def _(test_type):
+    def _(test_type, labels=None, custom_objects=None):
         _model: nn.Module = LinearModel()
         if "trace" in test_type:
             tracing_inp = torch.ones(5)
             model = torch.jit.trace(_model, tracing_inp)
         else:
             model = torch.jit.script(_model)
-        tag = bentoml.torchscript.save("torchscript_test", model)
+        tag = bentoml.torchscript.save(
+            "torchscript_test", model, labels=labels, custom_objects=custom_objects
+        )
         return tag
 
     return _
@@ -27,10 +29,19 @@ def models():
 
 @pytest.mark.parametrize("test_type", ["tracedmodel", "scriptedmodel"])
 def test_torchscript_save_load(test_type, models):
-    tag = models(test_type)
-    bentoml_model = bentoml.models.get(tag)
-    assert_have_file_extension(bentoml_model.path, ".pt")
-    assert bentoml_model.info.context.get("model_format") == "torchscript:v1"
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = models(test_type, labels=labels, custom_objects={"func": custom_f})
+    bentomodel = bentoml.models.get(tag)
+    assert_have_file_extension(bentomodel.path, ".pt")
+    assert bentomodel.info.context.get("model_format") == "torchscript:v1"
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
     torchscript_loaded: nn.Module = bentoml.torchscript.load(tag)
     assert predict_df(torchscript_loaded, test_df) == 5.0

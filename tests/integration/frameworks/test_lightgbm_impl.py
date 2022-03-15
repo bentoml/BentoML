@@ -52,13 +52,18 @@ def lightgbm_sklearn_model() -> "lgb.LGBMClassifier":
 @pytest.fixture()
 def save_proc(
     lightgbm_model,
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
-    def _(metadata) -> "Model":
+) -> t.Callable[
+    [t.Dict[str, t.Any], t.Optional[t.Dict[str, str]], t.Optional[t.Dict[str, t.Any]]],
+    "Model",
+]:
+    def _(metadata, labels=None, custom_objects=None) -> "Model":
         tag = bentoml.lightgbm.save(
             TEST_MODEL_NAME,
             lightgbm_model,
             booster_params=params,
             metadata=metadata,
+            labels=labels,
+            custom_objects=custom_objects,
         )
         model = bentoml.models.get(tag)
         return model
@@ -103,12 +108,21 @@ def wrong_module(lightgbm_model):
     ],
 )
 def test_lightgbm_save_load(metadata, save_proc):
-    model = save_proc(metadata)
-    assert model.info.metadata is not None
-    assert_have_file_extension(model.path, ".txt")
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    bentomodel = save_proc(metadata, labels=labels, custom_objects={"func": custom_f})
+    assert bentomodel.info.metadata is not None
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+    assert_have_file_extension(bentomodel.path, ".txt")
 
     lgb_loaded = bentoml.lightgbm.load(
-        model.tag,
+        bentomodel.tag,
     )
 
     assert isinstance(lgb_loaded, lgb.basic.Booster)
@@ -122,10 +136,10 @@ def test_lightgbm_load_exc(wrong_module, exc):
 
 
 def test_lightgbm_runner_setup_run_batch(save_proc):
-    info = save_proc(None)
+    bentomodel = save_proc(None)
 
-    runner = bentoml.lightgbm.load_runner(info.tag)
-    assert info.tag in runner.required_models
+    runner = bentoml.lightgbm.load_runner(bentomodel.tag)
+    assert bentomodel.tag in runner.required_models
     assert runner.num_replica == 1
 
     assert runner.run_batch(np.array([[0]])) == np.array([0.0])
@@ -133,11 +147,11 @@ def test_lightgbm_runner_setup_run_batch(save_proc):
 
 
 def test_lightgbm_sklearn_save_load(save_sklearn_proc):
-    info = save_sklearn_proc(None)
-    assert_have_file_extension(info.path, ".pkl")
+    bentomodel = save_sklearn_proc(None)
+    assert_have_file_extension(bentomodel.path, ".pkl")
 
     sklearn_loaded = bentoml.lightgbm.load(
-        info.tag,
+        bentomodel.tag,
     )
 
     assert isinstance(sklearn_loaded, lgb.LGBMClassifier)
@@ -145,10 +159,12 @@ def test_lightgbm_sklearn_save_load(save_sklearn_proc):
 
 
 def test_lightgbm_sklearn_runner_setup_run_batch(save_sklearn_proc):
-    info = save_sklearn_proc(None)
-    runner = bentoml.lightgbm.load_runner(info.tag, infer_api_callback="predict_proba")
+    bentomodel = save_sklearn_proc(None)
+    runner = bentoml.lightgbm.load_runner(
+        bentomodel.tag, infer_api_callback="predict_proba"
+    )
 
-    assert info.tag in runner.required_models
+    assert bentomodel.tag in runner.required_models
     assert runner.num_replica == 1
 
     assert runner.run_batch(np.array([[0] * 10] * 10))[0][0] == 0.999999999999999

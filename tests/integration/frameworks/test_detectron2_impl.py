@@ -15,7 +15,7 @@ import bentoml
 if TYPE_CHECKING:
     from detectron2.config import CfgNode
 
-    from bentoml._internal.types import Tag
+    from bentoml import Tag
 
 
 IMAGE_URL: str = "./tests/utils/_static/detectron2_sample.jpg"
@@ -67,13 +67,19 @@ def fixture_image_array() -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     return np.asarray(imageio.imread(IMAGE_URL))
 
 
-def save_procedure(metadata: t.Dict[str, t.Any]) -> "Tag":
+def save_procedure(
+    metadata: t.Dict[str, t.Any],
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+) -> "Tag":
     model, config = detectron_model_and_config()
     tag_info = bentoml.detectron.save(
         "test_detectron2_model",
         model,
         model_config=config,
         metadata=metadata,
+        labels=labels,
+        custom_objects=custom_objects,
     )
     return tag_info
 
@@ -83,7 +89,17 @@ def test_detectron2_save_load(
     metadata: t.Dict[str, t.Any],
     image_array: "np.ndarray[t.Any, np.dtype[t.Any]]",
 ) -> None:
-    tag = save_procedure(metadata)
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = save_procedure(
+        metadata,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
     _model = bentoml.models.get(tag)
 
     assert _model.info.metadata is not None
@@ -101,6 +117,10 @@ def test_detectron2_save_load(
     raw_result = detectron_loaded(input_data)
     result = extract_result(raw_result[0])
     assert result is not None
+
+    for k in labels.keys():
+        assert labels[k] == _model.info.labels[k]
+    assert _model.custom_objects["func"](3) == custom_f(3)
 
 
 def test_detectron2_setup_run_batch(

@@ -15,9 +15,9 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import Tag
 from ..utils import calc_dir_size
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
@@ -94,7 +94,7 @@ class Model(StoreItem):
         name: str,
         *,
         module: str = "",
-        labels: t.Optional[t.Dict[str, t.Any]] = None,
+        labels: t.Optional[t.Dict[str, str]] = None,
         options: t.Optional[t.Dict[str, t.Any]] = None,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,

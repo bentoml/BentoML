@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml import Tag
 from bentoml import Runner
 from bentoml import SimpleRunner
 
-from ...types import Tag
 from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:

@@ -17,9 +17,9 @@ from fs.copy import copy_file
 from simple_di import inject
 from simple_di import Provide
 
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import Tag
 from ..types import PathType
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
@@ -149,7 +149,9 @@ class Bento(StoreItem):
         assert os.path.isdir(build_ctx), f"build ctx {build_ctx} does not exist"
 
         # This also verifies that svc can be imported correctly
-        svc = import_service(build_config.service, working_dir=build_ctx)
+        svc = import_service(
+            build_config.service, working_dir=build_ctx, change_global_cwd=True
+        )
 
         # Apply default build options
         build_config = build_config.with_defaults()

@@ -8,8 +8,8 @@ from distutils.dir_util import copy_tree
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
@@ -181,6 +181,8 @@ def _save(
     keep_download_from_hub: bool,
     *,
     input_spec: t.Optional[t.Union[t.List["InputSpec"], t.Tuple["InputSpec", ...]]],
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
 ) -> Tag:
@@ -224,52 +226,60 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                     return _tag
             except (FileNotFoundError, NotFound):
                 pass
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         context=context,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
-    )
-    if isinstance(model, str):
-        # NOTE: for paddlehub there is no way to skip Module initialization,
-        #  since `paddlehub` will always initialize a `hub.Module` regardless
-        #  of any situation. Therefore, the bottleneck will only happen one time
-        #  when users haven't saved the pretrained model under paddlehub cache
-        #  directory.
-        if not hub.server_check():
-            raise BentoMLException("Unable to connect to PaddleHub server.")
-        if os.path.isdir(model):
-            directory = model
-            target = _model.path
+    ) as _model:
+        if isinstance(model, str):
+            # NOTE: for paddlehub there is no way to skip Module initialization,
+            #  since `paddlehub` will always initialize a `hub.Module` regardless
+            #  of any situation. Therefore, the bottleneck will only happen one time
+            #  when users haven't saved the pretrained model under paddlehub cache
+            #  directory.
+            if not hub.server_check():
+                raise BentoMLException("Unable to connect to PaddleHub server.")
+            if os.path.isdir(model):
+                directory = model
+                target = _model.path
 
-            _model.info.options["from_local_dir"] = True
-        else:
-            _local_manager = manager.LocalModuleManager(home=hub_module_home)
-            user_module_cls = _local_manager.search(name, source=source, branch=branch)
-            if not user_module_cls or not user_module_cls.version.match(version):
-                user_module_cls = _local_manager.install(
-                    name=name,
-                    version=version,
-                    source=source,
-                    update=update,
-                    branch=branch,
-                    ignore_env_mismatch=ignore_env_mismatch,
+                _model.info.options["from_local_dir"] = True
+            else:
+                _local_manager = manager.LocalModuleManager(home=hub_module_home)
+                user_module_cls = _local_manager.search(
+                    name, source=source, branch=branch
                 )
+                if not user_module_cls or not user_module_cls.version.match(version):
+                    user_module_cls = _local_manager.install(
+                        name=name,
+                        version=version,
+                        source=source,
+                        update=update,
+                        branch=branch,
+                        ignore_env_mismatch=ignore_env_mismatch,
+                    )
 
-            directory = _local_manager._get_normalized_path(user_module_cls.name)
-            target = _model.path_of(user_module_cls.name)
-            print(target)
+                directory = _local_manager._get_normalized_path(user_module_cls.name)
+                target = _model.path_of(user_module_cls.name)
+                print(target)
 
-            _model.info.options = {}
-            _model.info.options.update(hub.Module.load_module_info(directory))
-            _model.info.options["_module_dir"] = os.path.relpath(target, _model.path)
-            _model.info.options["from_local_dir"] = False
-        copy_tree(directory, target)
-    else:
-        paddle.jit.save(model, _model.path_of(SAVE_NAMESPACE), input_spec=input_spec)
+                _model.info.options = {}
+                _model.info.options.update(hub.Module.load_module_info(directory))
+                _model.info.options["_module_dir"] = os.path.relpath(
+                    target, _model.path
+                )
+                _model.info.options["from_local_dir"] = False
+            copy_tree(directory, target)
+        else:
+            paddle.jit.save(
+                model, _model.path_of(SAVE_NAMESPACE), input_spec=input_spec
+            )
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 @inject
@@ -280,6 +290,8 @@ def save(
     input_spec: t.Optional[
         t.Union[t.List["InputSpec"], t.Tuple["InputSpec", ...]]
     ] = None,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -299,13 +311,18 @@ def save(
             `list`/`dict` of them. If `None`, all input variables of the original
             Layer's forward method would be the inputs of the saved model. Generally
             this is **NOT RECOMMENDED** to use unless you know what you are doing.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -370,6 +387,8 @@ def save(
         name=name,
         model=model,
         input_spec=input_spec,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
         model_store=model_store,
         version=None,
@@ -394,6 +413,8 @@ def import_from_paddlehub(
     hub_module_home: t.Optional[str] = None,
     keep_download_from_hub: bool = False,
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -430,13 +451,18 @@ def import_from_paddlehub(
             PaddleHub default cache, which is under :code:`$HOME/.paddlehub`
         keep_download_from_hub (`bool`, `optional`, default to :code:`False`):
             Whether to re-download pretrained model from hub.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -460,6 +486,8 @@ def import_from_paddlehub(
         ignore_env_mismatch=ignore_env_mismatch,
         hub_module_home=hub_module_home,
         keep_download_from_hub=keep_download_from_hub,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
         model_store=model_store,
     )

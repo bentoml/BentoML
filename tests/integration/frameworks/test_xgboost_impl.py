@@ -45,17 +45,27 @@ def xgboost_model() -> "xgb.Booster":
 
 
 @pytest.fixture(scope="module")
-def save_proc() -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
-    def _(booster_params, metadata) -> "Model":
+def save_proc() -> t.Callable[
+    [
+        t.Dict[str, t.Any],
+        t.Dict[str, t.Any],
+        t.Optional[t.Dict[str, str]],
+        t.Optional[t.Dict[str, t.Any]],
+    ],
+    "Model",
+]:
+    def _(booster_params, metadata, labels=None, custom_objects=None) -> "Model":
         model = xgboost_model()
         tag = bentoml.xgboost.save(
             TEST_MODEL_NAME,
             model,
             booster_params=booster_params,
             metadata=metadata,
+            labels=labels,
+            custom_objects=custom_objects,
         )
-        model = bentoml.models.get(tag)
-        return model
+        bentomodel = bentoml.models.get(tag)
+        return bentomodel
 
     return _
 
@@ -86,11 +96,22 @@ def wrong_module():
 def test_xgboost_save_load(
     booster_params, metadata, save_proc
 ):  # noqa # pylint: disable
-    _model = save_proc(booster_params, metadata)
-    assert _model.info.metadata is not None
-    assert_have_file_extension(_model.path, ".json")
 
-    xgb_loaded = bentoml.xgboost.load(_model.tag, booster_params=booster_params)
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    bentomodel = save_proc(
+        booster_params, metadata, labels=labels, custom_objects={"func": custom_f}
+    )
+    assert bentomodel.info.metadata is not None
+    assert_have_file_extension(bentomodel.path, ".json")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+
+    xgb_loaded = bentoml.xgboost.load(bentomodel.tag, booster_params=booster_params)
     config = json.loads(xgb_loaded.save_config())
     if not booster_params:
         assert config["learner"]["generic_param"]["nthread"] == str(psutil.cpu_count())

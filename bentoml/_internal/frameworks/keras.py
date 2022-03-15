@@ -9,8 +9,8 @@ import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -144,12 +144,6 @@ def load(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    default_custom_objects = None
-    if bentoml_model.info.options["custom_objects"]:
-        assert Path(bentoml_model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
-        with Path(bentoml_model.path_of(_CUSTOM_OBJ_FNAME)).open("rb") as dcof:
-            default_custom_objects = cloudpickle.load(dcof)
-
     model_format = bentoml_model.info.context.get("model_format")
     if model_format:
         # ignore version=v1 now because all version should be v1
@@ -165,7 +159,7 @@ def load(
             with Path(bentoml_model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
                 model_json = jsonf.read()
             model = keras.models.model_from_json(
-                model_json, custom_objects=default_custom_objects
+                model_json, custom_objects=bentoml_model.custom_objects
             )
             weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
             model.load_weights(bentoml_model.path_of(weight_fname))
@@ -173,7 +167,7 @@ def load(
             model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
             model = keras.models.load_model(
                 bentoml_model.path_of(model_fname),
-                custom_objects=default_custom_objects,
+                custom_objects=bentoml_model.custom_objects,
             )
         try:
             # if model is a dictionary
@@ -188,8 +182,9 @@ def save(
     model: "keras.Model",
     *,
     save_format: t.Optional[str] = "tf",
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     store_as_json_and_weights: t.Optional[bool] = False,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
@@ -213,7 +208,7 @@ def save(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -346,29 +341,27 @@ def save(
     options = {
         "custom_objects": True if custom_objects is not None else False,
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=options,
         context=context,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    if custom_objects is not None:
-        with Path(_model.path_of(_CUSTOM_OBJ_FNAME)).open("wb") as cof:
-            cloudpickle.dump(custom_objects, cof)
-    if store_as_json_and_weights:
-        with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
-            jf.write(model.to_json())
-        weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
-        model.save_weights(_model.path_of(weight_fname), save_format=save_format)
-    else:
-        model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
-        model.save(_model.path_of(model_fname), save_format=save_format)
+        if store_as_json_and_weights:
+            with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
+                jf.write(model.to_json())
+            weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
+            model.save_weights(_model.path_of(weight_fname), save_format=save_format)
+        else:
+            model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
+            model.save(_model.path_of(model_fname), save_format=save_format)
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _KerasRunner(_TensorflowRunner):

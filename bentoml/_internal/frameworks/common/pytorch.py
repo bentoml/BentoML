@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from simple_di import inject
 
-from ...types import Tag
+from ...tag import Tag
 from ...types import LazyType
 from ...utils.pkg import get_pkg_version
 from .model_runner import BaseModelRunner

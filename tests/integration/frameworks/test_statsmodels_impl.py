@@ -31,9 +31,23 @@ def predict_df(model: t.Any, df: pd.DataFrame):
 @pytest.fixture(scope="module")
 def save_proc(
     holt_model,
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
-    def _(metadata, holt_model) -> "Model":
-        tag = bentoml.statsmodels.save(TEST_MODEL_NAME, holt_model, metadata=metadata)
+) -> t.Callable[
+    [
+        t.Dict[str, t.Any],
+        "HoltWintersResults",
+        t.Optional[t.Dict[str, str]],
+        t.Optional[t.Dict[str, t.Any]],
+    ],
+    "Model",
+]:
+    def _(metadata, holt_model, labels=None, custom_objects=None) -> "Model":
+        tag = bentoml.statsmodels.save(
+            TEST_MODEL_NAME,
+            holt_model,
+            metadata=metadata,
+            labels=labels,
+            custom_objects=custom_objects,
+        )
         model = bentoml.models.get(tag)
         return model
 
@@ -87,10 +101,25 @@ def holt_model() -> "HoltWintersResults":
     ],
 )
 def test_statsmodels_save_load(metadata, holt_model):  # noqa # pylint: disable
-    tag = bentoml.statsmodels.save(TEST_MODEL_NAME, holt_model, metadata=metadata)
-    _model = bentoml.models.get(tag)
-    assert _model.info.metadata is not None
-    assert_have_file_extension(_model.path, ".pkl")
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = bentoml.statsmodels.save(
+        TEST_MODEL_NAME,
+        holt_model,
+        metadata=metadata,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
+    bentomodel = bentoml.models.get(tag)
+    assert bentomodel.info.metadata is not None
+    assert_have_file_extension(bentomodel.path, ".pkl")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
     statsmodels_loaded = bentoml.statsmodels.load(tag)
 
@@ -126,8 +155,8 @@ def test_statsmodels_runner_setup_run_batch(save_proc, holt_model):
 
 @pytest.mark.gpus
 def test_statsmodels_runner_setup_on_gpu(save_proc):
-    info = save_proc(None)
-    runner = bentoml.statsmodels.load_runner(info.tag)
+    bentomodel = save_proc(None)
+    runner = bentoml.statsmodels.load_runner(bentomodel.tag)
 
     assert runner.num_replica == 1
 

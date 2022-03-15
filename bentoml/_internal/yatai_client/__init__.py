@@ -25,9 +25,9 @@ from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
 
+from ..tag import Tag
 from ..bento import Bento
 from ..bento import BentoStore
-from ..types import Tag
 from ..utils import calc_dir_size
 from ..models import Model
 from ..models import copy_model

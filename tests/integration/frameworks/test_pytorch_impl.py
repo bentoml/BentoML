@@ -18,19 +18,30 @@ from tests.utils.frameworks.pytorch_utils import LinearModelWithBatchAxis
 
 @pytest.fixture(scope="module")
 def models():
-    def _():
+    def _(labels=None, custom_objects=None):
         model: nn.Module = LinearModel()
-        tag = bentoml.pytorch.save("pytorch_test", model)
+        tag = bentoml.pytorch.save(
+            "pytorch_test", model, labels=labels, custom_objects=custom_objects
+        )
         return tag
 
     return _
 
 
 def test_pytorch_save_load(models):
-    tag = models()
-    bentoml_model = bentoml.models.get(tag)
-    assert_have_file_extension(bentoml_model.path, ".pt")
-    assert bentoml_model.info.context.get("model_format") == "torch.save:v1"
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = models(labels=labels, custom_objects={"func": custom_f})
+    bentomodel = bentoml.models.get(tag)
+    assert_have_file_extension(bentomodel.path, ".pt")
+    assert bentomodel.info.context.get("model_format") == "torch.save:v1"
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
     pytorch_loaded: nn.Module = bentoml.pytorch.load(tag)
     assert predict_df(pytorch_loaded, test_df) == 5.0

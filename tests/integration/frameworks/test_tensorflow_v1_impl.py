@@ -109,9 +109,24 @@ def tf1_multi_args_model_path() -> Generator[str, None, None]:
 def test_tensorflow_v1_save_load(
     tf1_model_path: Callable[[], Generator[str, None, None]]
 ):
-    tag = bentoml.tensorflow_v1.save("tensorflow_test", tf1_model_path)
-    model_info = bentoml.models.get(tag)
-    assert_have_file_extension(model_info.path, ".pb")
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = bentoml.tensorflow_v1.save(
+        "tensorflow_test",
+        tf1_model_path,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
+    bentomodel = bentoml.models.get(tag)
+    assert_have_file_extension(bentomodel.path, ".pb")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+
     tf1_loaded = bentoml.tensorflow_v1.load("tensorflow_test")
     with tf.get_default_graph().as_default():
         tf.global_variables_initializer()
@@ -170,9 +185,21 @@ def _plus_one_model_tf1() -> "hub.Module":
 
 
 def test_import_from_tfhub():
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
     identifier = _plus_one_model_tf1()
-    tag = bentoml.tensorflow_v1.import_from_tfhub(identifier, "module_hub_tf1")
-    model = bentoml.models.get(tag)
-    assert model.info.context["import_from_tfhub"]
+    tag = bentoml.tensorflow_v1.import_from_tfhub(
+        identifier, "module_hub_tf1", labels=labels, custom_objects={"func": custom_f}
+    )
+    bentomodel = bentoml.models.get(tag)
+    assert bentomodel.info.context["import_from_tfhub"]
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+
     module = bentoml.tensorflow_v1.load(tag, tags=[], load_as_hub_module=False)
     assert module._is_hub_module_v1 is True

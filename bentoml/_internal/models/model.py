@@ -18,12 +18,9 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..utils import calc_dir_size
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
-from ..utils.analytics import track
-from ..utils.analytics import ModelSaveEvent
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -154,14 +151,6 @@ class Model(StoreItem):
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "Model":
         self._save(model_store)
-
-        track(
-            ModelSaveEvent(
-                module=self.info.module,
-                model_creation_timestamp=self.info.creation_time,
-                model_size_in_kb=calc_dir_size(self.__fs.getsyspath("/")),
-            ),
-        )
 
         return self
 

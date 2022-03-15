@@ -244,7 +244,7 @@ def create(
             ModelSaveEvent(
                 module=res.info.module,
                 model_creation_timestamp=res.info.creation_time,
-                model_size_in_kb=calc_dir_size(res.__fs.getsyspath("/")),
+                model_size_in_kb=calc_dir_size(res.path_of("/")),
             ),
         )
     finally:

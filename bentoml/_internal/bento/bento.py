@@ -1,7 +1,6 @@
 import os
 import typing as t
 import logging
-import functools
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
@@ -9,6 +8,7 @@ from datetime import timezone
 import fs
 import attr
 import yaml
+import attrs
 import cattr
 import fs.osfs
 import pathspec
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
     from ..models import Model
     from ..service import Service
+    from ..runner.runner import SimpleRunner
     from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
@@ -387,14 +388,14 @@ class RunnerInfo:
     model_runner_module: t.Optional[str]
 
     @classmethod
-    def from_runner(cls, r: "Runner") -> "RunnerInfo":
+    def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "RunnerInfo":
         from ..frameworks.common.model_runner import BaseModelRunner
 
         model_runner_module = (
             r.model_info.info.module if isinstance(r, BaseModelRunner) else None
         )
         return cls(
-            name=r.name,
+            name=r.name,  # type: ignore
             runner_type=r.__class__.__name__,
             model_runner_module=model_runner_module,
         )
@@ -417,7 +418,7 @@ class ApiInfo:
 
 @attr.define
 class ModelInfo:
-    tag: str = attr.field(converter=str)
+    tag: t.Union[Tag, str] = attr.field(converter=str)
     module: str
     creation_time: datetime
 
@@ -480,6 +481,8 @@ class BentoInfo:
 
         try:
             # type: ignore[attr-defined]
+            print(yaml_content)
+            print(cattr.structure(yaml_content, cls))
             return cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")

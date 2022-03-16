@@ -13,11 +13,12 @@ from platform import python_version
 from functools import lru_cache
 
 import yaml
+import attrs
 import cattr
 import psutil
 import attrs.converters
+from attr import asdict
 from simple_di import inject
-from simple_di import Provide
 
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
@@ -42,13 +43,13 @@ def get_python_version() -> str:
 @attrs.define
 class ClientInfo:
     client_id: str
-    client_creation_timestamp: datetime
+    client_creation_timestamp: str
 
 
 @inject
 @lru_cache(maxsize=1)
 def get_client_id(
-    bentoml_home=Provide[BentoMLContainer.bentoml_home],
+    bentoml_home: str = BentoMLContainer.bentoml_home,
 ) -> t.Optional[ClientInfo]:
     CLIENT_ID_PATH = os.path.join(bentoml_home, "client_id")
 
@@ -58,17 +59,19 @@ def get_client_id(
         return ClientInfo(**client_info)
     else:
 
-        def create_client_id() -> t.Dict[str, str]:
+        def create_client_id() -> ClientInfo:
             # returns an unique client_id and timestamp in ISO format
             uniq = uuid.uuid1().bytes
             client_id = hmac.new(uniq, digestmod=hashlib.blake2s).hexdigest()
             created_time = datetime.now(timezone.utc).isoformat()
 
-            return {"client_id": client_id, "client_creation_timestamp": created_time}
+            return ClientInfo(
+                client_id=client_id, client_creation_timestamp=created_time
+            )
 
         def create_client_id_file(client_id: ClientInfo) -> None:
             with open(CLIENT_ID_PATH, "w", encoding="utf-8") as f:
-                yaml.dump(client_id, stream=f)
+                yaml.dump(asdict(client_id), stream=f)
 
         new_client_id = create_client_id()
         create_client_id_file(new_client_id)

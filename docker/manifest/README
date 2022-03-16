@@ -1,1 +1,0 @@
-Make sure to generate a new manifest with `manager create-manager --docker-package <new_package>`

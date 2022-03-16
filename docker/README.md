@@ -1,4 +1,4 @@
-![bentoml-docker](./bentoml-docker.png)
+![bentoml-docker](./templates/docs/bentoml-docker.png)
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 
@@ -193,10 +193,11 @@ NOTE: this part is currently actively WIP, since I just refactor the system.
 
 ## Image Manifest
 
-Dockerfile metadata and related configs for multiple platforms are defined under [manifest.yml](../manifest.yml).
-This can also be used to control releases with CI pipelines.
-
-The manifest file will be validated while invoking `manager.py`. Refers to [Validation](#validation) for implementations. with the following structure:
+Dockerfile metadata and related configs for multiple platforms are defined under [manifest/](manifest/) directory.
+This can also be used to control releases with CI pipelines. A manifest file is
+partially generated with `manager create-manifest`. Each manifest will have
+a name format `<package>.cuda_v<cuda_version>.yaml`, since we are supporting GPU
+images.
 
 - [specs](#specs): holds general templates for our template context
   - [repository](#repository): enable supports for multiple registries: Heroku, Docker Hub, GCR, NVCR.
@@ -209,54 +210,6 @@ The manifest file will be validated while invoking `manager.py`. Refers to [Vali
 #### Image specs
 `manifest.yml` structure is defined under `specs`, and others sections on the file can reference to each of sub keys.
 See more [here](../manifest.yml).
-
-#### Docker Repository
-
-To determine new registry:
-```yaml
-repository: &repository_spec
-  user: HUB_USERNAME
-  pwd: HUB_PASSWORD
-  urls:
-    api: https://hub.docker.com/v2/users/login/
-    repos: https://hub.docker.com/v2/repositories
-  registry:
-    model-server: docker.io/bentoml/bento-server
-```
-
-A registry definition allows us to set up correct docker information to push our final images, tests, and scan.
-
-- `repository_name`: docker.io, gcr.io, ecr.io, etc.
-
-| Keys | Type | defintions |
-|------|------|------------|
-|`user`| `<str>`| envars for registry username| 
-|`pwd`| `<bool>`|envars for registry password| 
-|`urls`| `<dict>`| handles the registry API urls|
-|`registry`| `<dict>`|handles package registry URIs, which will be parsed by `docker-py`| 
-
-**NOTES**: `urls.api` and `urls.repos` are optional and validated with `cerberus`. We also uses a bit of a hack way 
-to update README since we don't setup automatic Docker releases from BentoML's root directory.
-
-#### dependencies
-
-To determine new CUDA version:
-```yaml
-cuda: &cuda_spec
-  cudart:
-  cudnn8:
-  libcublas:
-  libcurand:
-  libcusparse:
-  libcufft:
-  libcusolver:
-```
-
-This allows us to add multiple versions of CUDA to support for current DL frameworks as well as backward compatibility
-
-CUDA semver will also be validated. Usually devs should use this key-value pairs as this 
-are required library for CUDA and cuDNN. Refers to [cuda's repos](https://developer.download.nvidia.com/compute/cuda/repos/) 
-for supported distros and library version.
 
 #### releases
 
@@ -299,15 +252,10 @@ Tag will also be validated whether keys are defined within the format scope.
 
 High-level workflow when publishing new docker images:
 
-1) validate yaml file
 2) generate build context
 3) render `j2` templates
 4) build from generated directory
 5) push to given registries.
 
-The yaml validation process includes:
-
-- Ensure defined spec are valid for the manager scope
-- Ensure correct tags formatting with keys-values pair
-- Ensure no excess keys are being parsed or setup apart from specs (If you want to include new key-value remember to update `specs` before proceeding.)
-- Correct data parsing: envars, https, etc.
+We are using `attrs` to validate the data from yaml, instead of validating the
+structure of the yaml itself, yet.

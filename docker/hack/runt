@@ -2,8 +2,8 @@
 
 set -e
 
-HACK_DIR="$(cd "$( dirname "$(readlink -f $0)")" && pwd)"
-TEST_PATH=$(realpath "${HACK_DIR}/../tests")
+SCRIPT_DIR="$(cd "$( dirname "$(readlink -f $0)")" && pwd)"
+TEST_PATH=$(realpath "${SCRIPT_DIR}/tests")
 
 
 POSITIONAL_ARGS=()
@@ -64,25 +64,23 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
-run_test(){
-    for test in $(find "$TEST_PATH" -iname "[0-9]*-*.bats" | sort ); do
-        echo "Running tests for ${test}..."
-        /usr/local/bin/bats --tap "${test}"
-    done
-}
-
 main(){
-    export __TEST_PYTHON_VERSION="$PYTHON_VERSION"
-    export __TEST_OS="$OS"
-    export __TEST_IMAGE_TAG_SUFFIX="$IMAGE_TAG_SUFFIX"
-    export __TEST_IMAGE_NAME="$IMAGE_NAME"
-    export __TEST_BENTOML_VERSION="$BENTOML_VERSION"
-    export __TEST_IMAGE_NAME="$IMAGE_NAME"
-    export __TEST_ARCH="$PLATFORMS"
-	export __ORGANIZATION="$ORGANIZATION"
-    export __TEST_ARCH=$(uname -m)
+    export BENTOML_TEST_PYTHON_VERSION="$PYTHON_VERSION"
+    export BENTOML_TEST_OS="$OS"
+    export BENTOML_TEST_IMAGE_TAG_SUFFIX="$IMAGE_TAG_SUFFIX"
+    export BENTOML_TEST_IMAGE_NAME="$IMAGE_NAME"
+    export BENTOML_TEST_BENTOML_VERSION="$BENTOML_VERSION"
+    export BENTOML_TEST_IMAGE_NAME="$IMAGE_NAME"
+    export BENTOML_TEST_ARCH="$PLATFORMS"
+	export BENTOML_TEST_ORGANIZATION="$ORGANIZATION"
 
-    run_test
+	if [ -f "/.dockerenv" ]; then
+		TEST_PATH="./tests"
+    fi
+
+	for file in $(find "$TEST_PATH" -type f -iname "[0-9]*-*.bats" | sort); do
+		bats --tap "$file"
+    done
 }
 
 main "$@"

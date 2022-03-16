@@ -14,12 +14,14 @@ QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-aarch64
 
 FULL_TAG := ${MANAGER_REPO}:${MANAGER_TAG}
 
-DOCKER_ARGS := -u root --privileged --rm --init \
+COMMON_DOCKER_ARGS := -u root --privileged --rm --init \
 	-v $(realpath /etc/localtime):/etc/localtime:ro \
+	-v /var/run/docker.sock:/var/run/docker.sock
+
+MANAGER_DOCKER_ARGS := ${COMMON_DOCKER_ARGS} \
 	-v ${PWD}:/bentoml \
-	-v /var/run/docker.sock:/var/run/docker.sock \
 	-w /bentoml ${FULL_TAG}
-DOCKER_RUN := docker run ${DOCKER_ARGS}
+MANAGER_DOCKER_RUN := docker run ${MANAGER_DOCKER_ARGS}
 
 
 # ----------------------
@@ -117,11 +119,15 @@ run-%: ## Run a task. Currently: generate, build, test
 	$(eval $@_upper_target := $(call UC, $($@_target)))
 	@poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
 
+.PHONY: run-test
+run-test: ## Run test
+	@docker run $(COMMON_DOCKER_ARGS) -v $(PWD):/work aarnphm/bats-test:latest ./hack/runt
+
 .PHONY: docker-run-%
 docker-run-%: check_docker_manager ## Run a task from a docker container (useful for CI)
 	$(eval $@_prefix := docker-run-)
 	$(eval $@_dtarget := $(subst $($@_prefix), ,$@))
 	$(eval $@_dupper_target := $(call UC, $($@_dtarget)))
-	@$(DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
+	@$(MANAGER_DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
 %:
 	@true

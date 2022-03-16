@@ -144,7 +144,7 @@ COPY pyproject.toml .
 
 RUN poetry install
 
-COPY hack/bashrc /etc/bash.bashrc
+COPY hack/shells/bashrc /etc/bash.bashrc
 
 RUN chmod a+rwx /etc/bash.bashrc
 
@@ -152,4 +152,9 @@ RUN echo "source /etc/bash.bashrc" >> $HOME/.bashrc
 
 CMD [ "bash" ]
 
+FROM --platform=${BUILDPLATFORM} aarnphm/bats-test as bats
+
+FROM releases as test-base
+
 FROM releases
+

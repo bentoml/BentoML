@@ -14,14 +14,13 @@ function teardown() {
     cleanup
 }
 
-@test "check_nvcc_installed" {
-    docker_run --gpus 0 ${image} bash -c "stat /usr/local/cuda/bin/nvcc"
+@test "check_if_nvidia_is_available" {
+    docker_run --gpus 0 ${image} nvidia-smi
 	assert_success
 }
 
-@test "check_gcc_installed" {
-    docker_run --gpus 0 ${image} bash -c "gcc --version"
+@test "check_LD_LIBRARY_PATH" {
+    docker_run --gpus 0 ${image} bash -c "printenv | grep -q 'LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64'"
 	assert_success
 }
-
 

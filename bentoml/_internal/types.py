@@ -169,6 +169,10 @@ class LazyType(t.Generic[T]):
                 else:
                     raise ValueError(f"Module {self.module} not imported")
 
+            if isinstance(self.qualname, tuple):
+                self._runtime_class = tuple(
+                    (t.cast("t.Type[T]", getattr(m, x)) for x in self.qualname)
+                )
             self._runtime_class = t.cast("t.Type[T]", getattr(m, self.qualname))
 
         return self._runtime_class

@@ -7,6 +7,10 @@ import logging
 import urllib.parse
 import urllib.request
 from typing import TYPE_CHECKING
+from datetime import date
+from datetime import time
+from datetime import datetime
+from datetime import timedelta
 from dataclasses import dataclass
 
 from .utils.dataclasses import json_serializer
@@ -30,6 +34,24 @@ if TYPE_CHECKING:
     PathType = t.Union[str, os.PathLike[str]]
 else:
     PathType = t.Union[str, os.PathLike]
+
+MetadataType = t.Union[
+    str,
+    bytes,
+    bool,
+    int,
+    float,
+    complex,
+    datetime,
+    date,
+    time,
+    timedelta,
+    t.List["MetadataType"],
+    t.Tuple["MetadataType"],
+    t.Dict[str, "MetadataType"],
+]
+
+MetadataDict = t.Dict[str, MetadataType]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
 

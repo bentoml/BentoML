@@ -7,24 +7,20 @@
 # ===========================================
 
 
-
 ARG PYTHON_VERSION
 
-FROM bentoml/bento-server:base-python$PYTHON_VERSION-ubi8 as base
-
-
-FROM base as base-amd64
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-amazonlinux2 as base
 
 FROM base as base-arm64
 
-FROM base as base-ppc64le
-
-FROM base as base-s390x
+FROM base as base-amd64
 
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-ENV BENTOML_VERSION=1.0.0a6
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+WORKDIR /
+
+RUN pip install -U git+https://github.com/bentoml/bentoml.git@main

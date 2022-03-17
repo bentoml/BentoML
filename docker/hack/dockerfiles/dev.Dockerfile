@@ -23,16 +23,16 @@ apkArch="$(apk --print-arch)";
 
 case "$apkArch" in
     "x86_64")
-        url="https://download.docker.com/linux/static/stable/x86_64/docker-20.10.13.tgz";
+        url="https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz";
         ;;
     "armhf")
-        url="https://download.docker.com/linux/static/stable/armel/docker-20.10.13.tgz";
+        url="https://download.docker.com/linux/static/stable/armel/docker-${DOCKER_VERSION}.tgz";
         ;;
     "armv7")
-        url="https://download.docker.com/linux/static/stable/armhf/docker-20.10.13.tgz";
+        url="https://download.docker.com/linux/static/stable/armhf/docker-${DOCKER_VERSION}.tgz";
         ;;
     "aarch64")
-        url="https://download.docker.com/linux/static/stable/aarch64/docker-20.10.13.tgz";
+        url="https://download.docker.com/linux/static/stable/aarch64/docker-${DOCKER_VERSION}.tgz";
         ;;
     *) echo >&2 "error: unsupported architecture ($apkArch)"; exit 1 ;;
 esac;
@@ -151,10 +151,6 @@ RUN chmod a+rwx /etc/bash.bashrc
 RUN echo "source /etc/bash.bashrc" >> $HOME/.bashrc
 
 CMD [ "bash" ]
-
-FROM --platform=${BUILDPLATFORM} aarnphm/bats-test as bats
-
-FROM releases as test-base
 
 FROM releases
 

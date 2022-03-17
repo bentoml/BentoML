@@ -1,18 +1,17 @@
+from __future__ import annotations
+
 import os
 import re
 import sys
 import json
 import typing as t
 import logging
-import traceback
 import subprocess
 from copy import deepcopy
-from typing import overload
 from typing import TYPE_CHECKING
 from pathlib import Path as pathlib_path
 from functools import wraps
 from functools import partial
-from functools import lru_cache
 
 import attrs
 import cattr
@@ -24,6 +23,7 @@ from glom import PathAssignError
 from jinja2 import Environment
 from fs.base import FS
 from plumbum import local
+from toolz.dicttoolz import keyfilter
 from python_on_whales import docker
 from python_on_whales.exceptions import DockerException
 from python_on_whales.components.buildx.cli_wrapper import Builder
@@ -39,40 +39,14 @@ if TYPE_CHECKING:
     from .types import GenericDict
     from .types import GenericFunc
     from .types import GenericList
-    from .schemas import BuildCtx
-    from .schemas import ReleaseCtx
 
 logger = logging.getLogger(__name__)
 
 SUPPORTED_PYTHON_VERSION = ("3.6", "3.7", "3.8", "3.9", "3.10")
-SUPPORTED_OS_RELEASES = (
-    "debian11",
-    "debian10",
-    "ubi8",
-    "ubi7",
-    "amazonlinux2",
-    "alpine3.14",
-)
 SUPPORTED_REGISTRIES = ("docker.io", "ecr", "quay.io", "gcr")
 DOCKERFILE_BUILD_HIERARCHY = ("base", "runtime", "cudnn", "devel")
 
 SUPPORTED_ARCHITECTURE_TYPE = ["amd64", "arm64v8", "ppc64le", "s390x"]
-
-SUPPORTED_ARCHITECTURE_TYPE_PER_DISTRO = {
-    "alpine3.14": SUPPORTED_ARCHITECTURE_TYPE,
-    "debian11": SUPPORTED_ARCHITECTURE_TYPE,
-    "debian10": SUPPORTED_ARCHITECTURE_TYPE,
-    "ubi8": SUPPORTED_ARCHITECTURE_TYPE,
-    "ubi7": ["amd64", "s390x", "ppc64le"],
-    "amazonlinux2": ["amd64", "arm64v8"],
-}
-
-TEMPLATES_DIR_MAPPING = {
-    "debian": "debian",
-    "ubi": "rhel",
-    "amazonlinux": "rhel",
-    "alpine": "alpine",
-}
 
 # file
 EXTENSION = ".j2"
@@ -80,21 +54,36 @@ DOCKERFILE_NAME = "Dockerfile"
 DOCKERFILE_TEMPLATE_SUFFIX = f"-{DOCKERFILE_NAME.lower()}{EXTENSION}"
 
 
-@overload
-def serializer(
-    inst: type, field: "attrs.Attribute[t.Any]", value: pathlib_path
-) -> t.Any:
-    ...
+def send_log(*args: t.Any, _manager_level: int = logging.INFO, **kwargs: t.Any):
+    if os.path.exists("/.dockerenv"):
+        sprint(*args, **kwargs)
+    else:
+        log_by_level = {
+            logging.ERROR: logger.error,
+            logging.INFO: logger.info,
+            logging.WARNING: logger.warning,
+            logging.DEBUG: logger.debug,
+            logging.NOTSET: logger.error,
+            logging.CRITICAL: logger.critical,
+        }[_manager_level]
+        log_by_level(*args, **kwargs)
 
 
-@overload
-def serializer(
-    inst: type, field: "attrs.Attribute[pathlib_path]", value: pathlib_path
-) -> t.Any:
-    ...
+def stream_docker_logs(resp: t.Iterator[str], tag: str) -> None:
+    while True:
+        try:
+            output = next(resp)
+            send_log(f"[{tag.split('/')[-1]}] {output}")
+        except DockerException as e:
+            message = f"[{type(e).__name__}] Error while streaming logs:\n{e}"
+            send_log(message, _manager_level=logging.ERROR)
+            break
+        except StopIteration:
+            send_log(f"Successfully built {tag}")
+            break
 
 
-def serializer(inst: type, field: "attrs.Attribute[t.Any]", value: t.Any) -> t.Any:
+def serializer(inst: type, field: attrs.Attribute[t.Any], value: t.Any) -> t.Any:
     if isinstance(value, pathlib_path):
         return value.as_posix()
     elif isinstance(value, FS):
@@ -131,16 +120,6 @@ def ctx_unstructure_hook(
     return attrs.asdict(ctx, value_serializer=serializer)
 
 
-@overload
-def unstructure(dct: "t.Dict[str, t.List[BuildCtx]]") -> t.Dict[str, t.Any]:
-    ...
-
-
-@overload
-def unstructure(dct: "t.Dict[str, t.List[ReleaseCtx]]") -> t.Dict[str, t.Any]:
-    ...
-
-
 def unstructure(dct: t.Dict[str, t.List[t.Any]]) -> t.Dict[str, t.Any]:
     return {
         key: [cattr.unstructure(_) if is_attrs_cls(_) else None for _ in value]
@@ -148,9 +127,9 @@ def unstructure(dct: t.Dict[str, t.List[t.Any]]) -> t.Dict[str, t.Any]:
     }
 
 
-def graceful_exit(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
+def graceful_exit(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
     @wraps(func)
-    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> "t.Any":
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
         try:
             return func(*args, **kwargs)
         except Exception:
@@ -160,13 +139,12 @@ def graceful_exit(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
     return wrapper
 
 
-def raise_exception(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
+def raise_exception(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
     @wraps(func)
-    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> "t.Any":
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
         try:
             return func(*args, **kwargs)
         except Exception as err:  # pylint: disable=broad-except
-            traceback.print_exc()
             raise ManagerException from err
 
     return wrapper
@@ -177,11 +155,11 @@ def as_posix(*args: t.Any) -> str:
 
 
 def inject_deepcopy_args(
-    _func: "t.Optional[t.Callable[P, t.Any]]" = None, *, num_args: int = 1
-) -> "t.Callable[P, t.Any]":
-    def decorator(func: "t.Callable[P, t.Any]") -> "t.Callable[P, t.Any]":
+    _func: t.Optional[t.Callable[P, t.Any]] = None, *, num_args: int = 1
+) -> t.Callable[P, t.Any]:
+    def decorator(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
         @wraps(func)
-        def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
             args = tuple(deepcopy(a) for a in args[:num_args]) + args[num_args:]  # type: ignore
             return func(*args, **kwargs)
 
@@ -223,7 +201,7 @@ def get_docker_platform_mapping() -> t.Dict[str, str]:
 
 
 def get_data(
-    obj: "t.Union[GenericDict, t.MutableMapping[str, t.Any]]", *path: str
+    obj: t.Union[GenericDict, t.MutableMapping[str, t.Any]], *path: str
 ) -> "GenericDict":
     """
     Get data from the object by dotted path.
@@ -243,7 +221,7 @@ def get_data(
 
 
 def set_data(
-    obj: "GenericDict", value: "t.Union[GenericDict, GenericList, str]", *path: str
+    obj: GenericDict, value: t.Union[GenericDict, GenericList, str], *path: str
 ) -> None:
     """
     Update data from the object with given value.
@@ -268,7 +246,7 @@ class Output:
     stdout: str
 
 
-def get_bin(bin: str) -> "t.Tuple[LocalCommand, str]":
+def get_bin(bin: str) -> t.Tuple[LocalCommand, str]:
     if "docker" in bin:
         if pathlib_path("/usr/local/bin/docker").exists():
             name = "/usr/local/bin/docker"
@@ -336,34 +314,26 @@ def preprocess_template_paths(input_name: str, arch: t.Optional[str]) -> str:
         return output_name
 
 
-@lru_cache(maxsize=1)
-def uname_m_to_targetarch():
-    return {
-        "aarch64": "arm64",
-        "arm64": "arm64",
-        "x86_64": "amd64",
-        "armv7l": "arm",
-        "riscv64": "riscv64",
-        "i686": "386",
-        "mips64": "mips64le",
-        "s390x": "s390x",
-        "ppc64le": "ppc64le",
-    }
+def _contains_key(
+    filter: GenericList,
+    mapping: GenericDict,
+) -> GenericDict:
+    return keyfilter(lambda x: x in filter, mapping)
 
 
-CUSTOM_FUNCTION = {"get_arch_alias": uname_m_to_targetarch}
+CUSTOM_FUNCTION = {"contains_key": _contains_key}
 
 
 def render_template(
     input_name: str,
-    inp_fs: "FS",
+    inp_fs: FS,
     output_path: str,
-    out_fs: "FS",
+    out_fs: FS,
     *,
     output_name: t.Optional[str] = None,
     arch: t.Optional[str] = None,
     build_tag: t.Optional[str] = None,
-    custom_function: t.Dict[str, "GenericFunc"] = CUSTOM_FUNCTION,
+    custom_function: t.Optional[t.Dict[str, GenericFunc[t.Any]]] = None,
     **kwargs: t.Any,
 ) -> None:
 
@@ -378,7 +348,9 @@ def render_template(
         trim_blocks=True,
         lstrip_blocks=True,
     )
-    template_env.globals.update(custom_function)
+    if custom_function is not None:
+        CUSTOM_FUNCTION.update(custom_function)  # type: ignore
+    template_env.globals.update(CUSTOM_FUNCTION)
 
     with inp_fs.open(input_name, "r") as inf:
         template = template_env.from_string(inf.read())
@@ -387,31 +359,3 @@ def render_template(
         output_name_, template.render(build_tag=build_tag, **kwargs), newline="\n"
     )
     out_path_fs.close()
-
-
-def send_log(*args: t.Any, _manager_level: int = logging.INFO, **kwargs: t.Any):
-    if os.path.exists("/.dockerenv"):
-        sprint(*args, **kwargs)
-    else:
-        log_by_level = {
-            logging.ERROR: logger.error,
-            logging.INFO: logger.info,
-            logging.WARNING: logger.warning,
-            logging.DEBUG: logger.debug,
-            logging.NOTSET: logger.error,
-        }[_manager_level]
-        log_by_level(*args, **kwargs)
-
-
-def stream_docker_logs(resp: t.Iterator[str], tag: str) -> None:
-    while True:
-        try:
-            output = next(resp)
-            send_log(f"[{tag.split('/')[-1]}] {output}")
-        except DockerException as e:
-            message = f"[{type(e).__name__}] Error while streaming logs:\n{e}"
-            send_log(message, _manager_level=logging.ERROR)
-            break
-        except StopIteration:
-            send_log(f"Successfully built {tag}")
-            break

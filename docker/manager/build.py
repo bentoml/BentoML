@@ -2,7 +2,6 @@ import os
 import json
 import typing as t
 import logging
-import traceback
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
@@ -100,9 +99,8 @@ def add_build_command(cli: click.Group) -> None:
                 # * architecture.
                 resp = docker.buildx.build(**cmd, builder=builder)
                 stream_docker_logs(t.cast(t.Iterator[str], resp), cmd["tags"])
-            except Exception as e:
-                traceback.format_exc()
-                raise ManagerBuildFailed(f"Error while building:\n {e}") from e
+            except Exception as err:
+                raise ManagerBuildFailed(f"Error while building:\n {err}") from err
 
         if dry_run:
             send_log("--dry-run, output tags to file.")

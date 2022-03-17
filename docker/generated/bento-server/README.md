@@ -2,7 +2,7 @@
 
 BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
 
-👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
+👉 [Pop into our Slack community!](https://l.linklyhq.com/l/ktOu) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
@@ -36,9 +36,9 @@ There are three type of BentoServer docker base image:
 
 | Image Type | Description                                | Supported OS                                          | Usage                             |
 |------------|--------------------------------------------|-------------------------------------------------------|-----------------------------------|
-| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `centos{7,8}`, `amazonlinux2`, `alpine3.14` | production ready                  |
-| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `centos{7,8}`                               | production ready with GPU support |
-| `devel`    | nightly build from development branch      | `debian`, `centos{7,8}`                               | for development use only          |
+| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `ubi{7,8}`, `amazonlinux2`, `alpine3.14`    | production ready                  |
+| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `ubi{7,8}`                                  | production ready with GPU support |
+| `devel`    | nightly build from development branch      | `debian`, `ubi{7,8}`                                  | for development use only          |
 
 * Note: currently there's no nightly devel image with GPU support.
 
@@ -48,64 +48,117 @@ The final docker image tags will have the following format:
 <release_type>-<python_version>-<distros>-<suffix>
    │             │                │        │
    │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
-   │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, centos7
+   │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, ubi7
    │             └─> Supported Python version: python3.7 | python3.8 | python3.9
    └─>  Release type: devel or official BentoML release (e.g: 1.0.0)
 ```
 
 Example image tags:
 - `bento-server:devel-python3.7-debian`
-- `bento-server:1.0.0-python3.8-centos8-cudnn`
+- `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
+## NOTICE: MISSING ARCHITECTURE
 
-## Latest tags for `bento-server 1.0.0a5`
+For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not having support for other architecture.
+
+## Latest tags for `bento-server 1.0.0a6`
 
 
-### Debian
+### debian 11 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
 
-- [`1.0.0a5-python3.7-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0a5-python3.7-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`1.0.0a5-python3.8-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0a5-python3.8-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`1.0.0a5-python3.9-debian-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
-- [`1.0.0a5-python3.9-debian-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
-- [`devel-python3.7-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
-- [`devel-python3.8-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
-- [`devel-python3.9-debian`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+- [`1.0.0a6-python3.6-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-debian11-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/cudnn/Dockerfile)
+- [`devel-python3.6-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
+- [`1.0.0a6-python3.7-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
+- [`1.0.0a6-python3.7-debian11-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/cudnn/Dockerfile)
+- [`devel-python3.7-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
+- [`1.0.0a6-python3.8-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
+- [`1.0.0a6-python3.8-debian11-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/cudnn/Dockerfile)
+- [`devel-python3.8-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
+- [`1.0.0a6-python3.9-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
+- [`1.0.0a6-python3.9-debian11-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/cudnn/Dockerfile)
+- [`devel-python3.9-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
+- [`1.0.0a6-python3.10-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
+- [`1.0.0a6-python3.10-debian11-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/cudnn/Dockerfile)
+- [`devel-python3.10-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
 
-### Ubi8
+### debian 10 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
 
-- [`1.0.0a5-python3.7-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
-- [`1.0.0a5-python3.7-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
-- [`1.0.0a5-python3.8-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
-- [`1.0.0a5-python3.8-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
-- [`1.0.0a5-python3.9-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
-- [`1.0.0a5-python3.9-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-debian10-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`devel-python3.6-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+- [`1.0.0a6-python3.7-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a6-python3.7-debian10-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`devel-python3.7-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+- [`1.0.0a6-python3.8-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a6-python3.8-debian10-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`devel-python3.8-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+- [`1.0.0a6-python3.9-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a6-python3.9-debian10-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`devel-python3.9-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+- [`1.0.0a6-python3.10-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
+- [`1.0.0a6-python3.10-debian10-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/cudnn/Dockerfile)
+- [`devel-python3.10-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
+
+### UBI 8 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
+
+- [`1.0.0a6-python3.6-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
+- [`devel-python3.6-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
+- [`1.0.0a6-python3.7-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
+- [`1.0.0a6-python3.7-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
 - [`devel-python3.7-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
+- [`1.0.0a6-python3.8-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
+- [`1.0.0a6-python3.8-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
 - [`devel-python3.8-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
+- [`1.0.0a6-python3.9-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
+- [`1.0.0a6-python3.9-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
 - [`devel-python3.9-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
+- [`1.0.0a6-python3.10-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
+- [`1.0.0a6-python3.10-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
+- [`devel-python3.10-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
 
-### Ubi7
+### UBI 7 [_amd64_, _s390x_, _ppc64le_]
 
-- [`1.0.0a5-python3.7-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`1.0.0a5-python3.7-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
-- [`1.0.0a5-python3.8-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`1.0.0a5-python3.8-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
-- [`1.0.0a5-python3.9-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`1.0.0a5-python3.9-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
+- [`devel-python3.6-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
+- [`1.0.0a6-python3.7-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
+- [`1.0.0a6-python3.7-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
 - [`devel-python3.7-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
+- [`1.0.0a6-python3.8-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
+- [`1.0.0a6-python3.8-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
 - [`devel-python3.8-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
+- [`1.0.0a6-python3.9-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
+- [`1.0.0a6-python3.9-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
 - [`devel-python3.9-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
+- [`1.0.0a6-python3.10-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
+- [`1.0.0a6-python3.10-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
+- [`devel-python3.10-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
 
-### Amazonlinux2
+### amazonlinux 2 [_amd64_, _arm64v8_]
 
-- [`1.0.0a5-python3.7-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
-- [`1.0.0a5-python3.8-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
-- [`1.0.0a5-python3.9-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`devel-python3.6-amazonlinux2`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/devel/Dockerfile)
+- [`1.0.0a6-python3.7-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`devel-python3.7-amazonlinux2`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/devel/Dockerfile)
+- [`1.0.0a6-python3.8-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`devel-python3.8-amazonlinux2`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/devel/Dockerfile)
+- [`1.0.0a6-python3.9-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`devel-python3.9-amazonlinux2`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/devel/Dockerfile)
+- [`1.0.0a6-python3.10-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
+- [`devel-python3.10-amazonlinux2`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/devel/Dockerfile)
 
-### Alpine3.14
+### alpine 3.14 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
 
-- [`1.0.0a5-python3.7-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
-- [`1.0.0a5-python3.8-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
-- [`1.0.0a5-python3.9-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`1.0.0a6-python3.6-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`devel-python3.6-alpine3.14`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/devel/Dockerfile)
+- [`1.0.0a6-python3.7-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`devel-python3.7-alpine3.14`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/devel/Dockerfile)
+- [`1.0.0a6-python3.8-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`devel-python3.8-alpine3.14`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/devel/Dockerfile)
+- [`1.0.0a6-python3.9-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`devel-python3.9-alpine3.14`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/devel/Dockerfile)
+- [`1.0.0a6-python3.10-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
+- [`devel-python3.10-alpine3.14`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/devel/Dockerfile)

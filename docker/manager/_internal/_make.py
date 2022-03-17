@@ -46,8 +46,9 @@ def create_distro_context(
 
     try:
         dependencies = distro_info.pop("dependencies")
-        cuda_url_suffix = dependencies.get("cuda_url_suffixes", None)
-        supported_arch = generate_cuda_context(dependencies=dependencies)
+        supported_arch, cuda_url_suffix = generate_cuda_context(
+            dependencies=dependencies
+        )
         cuda_ctx = CUDA(
             cuda_suffix_url=cuda_url_suffix,
             version=cuda_version_,
@@ -75,7 +76,7 @@ def create_distro_context(
         cuda_ctx=cuda_ctx,
         shared_ctx=shared_ctx,
     )
-    release_ctx = ReleaseCtx(shared_ctx=shared_ctx, fs_=ctx._templates_dir)
+    release_ctx = ReleaseCtx(shared_ctx=shared_ctx, fs=ctx._templates_dir)
     return build_ctx, release_ctx
 
 

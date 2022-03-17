@@ -10,7 +10,8 @@
 
 ARG PYTHON_VERSION
 
-FROM bentoml/bento-server:base-python$PYTHON_VERSION-ubi8 as base
+
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as base
 
 
 FROM base as base-amd64
@@ -24,6 +25,10 @@ FROM base as base-s390x
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
+
+ARG TARGETPLATFORM
+
+LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 ENV BENTOML_VERSION=1.0.0a6
 

@@ -35,7 +35,7 @@ help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
 format: ## Format
-	@poetry run python -m autoflake --in-place --remove-all-unused-imports manager/*.py
+	@poetry run python -m autoflake --recursive --in-place --remove-all-unused-imports manager
 	@${GIT_ROOT}/scripts/tools/formatter.sh
 
 lint: ## Lint
@@ -78,9 +78,14 @@ docker-bake-%: ## Build a docker target with buildx bake
 	$(eval bake_target :=$(bake_target_prefix))
 	 @docker buildx bake $(bake_target) --push
 
-check_docker_manager:
-	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null` || git diff ./hack/dockerfiles/dev.Dockerfile; then \
+build_docker_manager:
+	@if `git diff ./hack/dockerfiles/dev.Dockerfile &>/dev/null`; then \
 		$(MAKE) docker-bake-all; \
+	fi
+
+check_docker_manager:
+	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null`; then \
+		docker pull aarnphm/bentoml-docker:latest
 	fi
 
 # default args
@@ -95,7 +100,7 @@ build_pargs = max-workers registry distros python-version releases organization
 test_pargs = releases platforms max-workers registry
 
 # flags only
-FLAGS = verbose quiet dry-run
+FLAGS = verbose quiet dry-run dump-metadata
 
 UC = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
 rm = $(subst $2,,$1)

@@ -1,9 +1,6 @@
 import io
-import os
 import typing as t
-import difflib
 import logging
-import traceback
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from functools import wraps
@@ -17,13 +14,12 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 from rich.console import Console
-from click.exceptions import UsageError
 from plumbum.commands import ProcessExecutionError
 
 from ._make import set_generation_context
 from .utils import send_log
+from .utils import raise_exception
 from .utils import SUPPORTED_REGISTRIES
-from .utils import SUPPORTED_OS_RELEASES
 from .utils import SUPPORTED_PYTHON_VERSION
 from .utils import SUPPORTED_ARCHITECTURE_TYPE
 from .schemas import BuildCtx
@@ -31,6 +27,7 @@ from .schemas import ReleaseCtx
 from .exceptions import ManagerException
 from .configuration import DockerRegistry
 from .configuration import get_manifest_info
+from .configuration import SUPPORTED_OS_RELEASES
 from .configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
@@ -41,11 +38,7 @@ if TYPE_CHECKING:
     from .types import GenericDict
     from .types import ClickFunctionWrapper
 
-CONTAINERSCRIPT_FOLDER = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "containerscript")
-)
-
-OPTIONAL_CMD_FOR_VERSION = ["authenticate", "create-manifest", "push-readmes"]
+OPTIONAL_CMD_FOR_VERSION = ["authenticate", "create-manifest"]
 
 
 def to_docker_targetarch(value: t.Optional[t.List[str]]) -> t.List[str]:
@@ -97,9 +90,9 @@ class Environment:
     )
 
     # boolean
-    verbose: bool = attrs.field(default=True)
-    quiet: bool = attrs.field(default=False)
-    overwrite: bool = attrs.field(default=False)
+    verbose: bool = True
+    quiet: bool = False
+    overwrite: bool = False
 
     distros: t.Iterable[str] = attrs.field(
         converter=attrs.converters.default_if_none(SUPPORTED_OS_RELEASES),
@@ -151,6 +144,7 @@ pass_environment = click.make_pass_decorator(Environment, ensure=True)
 if TYPE_CHECKING:
     ManagerWrapperCLI = WrappedCLI[
         Environment,
+        bool,
         bool,
         bool,
         bool,
@@ -267,7 +261,6 @@ class ManagerCommandGroup(click.Group):
         ) -> t.Any:
             func_name = func.__name__.replace("_", "-")
             current_click_ctx = click.get_current_context()
-            create_manifest_func = cmd_groups.commands["create-manifest"]
 
             def get_options(name: str) -> click.Parameter:
                 for opt in cmd.params:
@@ -312,9 +305,6 @@ class ManagerCommandGroup(click.Group):
             ctx.python_version = python_version
             ctx.bentoml_version = bentoml_version
 
-            if not ctx._manifest_dir.exists(DockerManagerContainer.default_manifest):
-                current_click_ctx.forward(create_manifest_func)
-
             if docker_package != DockerManagerContainer.default_name:
                 loaded_distros, loaded_registries = get_manifest_info(
                     docker_package=ctx.docker_package,
@@ -336,6 +326,9 @@ class ManagerCommandGroup(click.Group):
             ctx.docker_package = docker_package
             ctx.organization = organization
 
+            if func_name == "create-manifest":
+                return func(*args, **kwargs)
+
             set_generation_context(ctx, loaded_distros)
 
             return func(*args, **kwargs)
@@ -349,21 +342,19 @@ class ManagerCommandGroup(click.Group):
         command_name = kwargs.get("name", func.__name__)
 
         @wraps(func)
+        @raise_exception
         @pass_environment
         def wrapper(ctx: Environment, *args: t.Any, **kwargs: t.Any) -> t.Any:
             try:
                 return func(*args, **kwargs)
             except (ManagerException, ProcessExecutionError) as err:
-                if ctx.verbose:
-                    msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
-                    raise ClickException(click.style(msg, fg="red")) from err
-                elif ctx.quiet:
+                if ctx.quiet:
                     send_log(
                         f"{command_name} failed while --quiet is passed. Remove --quiet to see the stack trace."
                     )
-            except Exception:  # NOTE: for other exception show traceback
-                logger.exception(traceback.format_exc())
-                raise
+                    return
+                msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
+                raise ClickException(msg) from err
 
         return t.cast("ClickFunctionWrapper[t.Any, t.Any]", wrapper)
 
@@ -396,39 +387,3 @@ class ManagerCommandGroup(click.Group):
         self.console = Console(file=sio, force_terminal=True)
         self.console.print(self.__doc__)
         formatter.write(sio.getvalue())
-
-    def resolve_command(
-        self, ctx: click.Context, args: t.List[str]
-    ) -> t.Tuple[str, click.Command, t.List[str]]:
-        try:
-            return super(ManagerCommandGroup, self).resolve_command(ctx, args)
-        except UsageError as e:
-            error_msg = str(e)
-            original_cmd_name = click.utils.make_str(args[0])
-            matches = difflib.get_close_matches(
-                original_cmd_name, self.list_commands(ctx), 3, 0.5
-            )
-            if matches:
-                fmt_matches = "\n    ".join(matches)
-                error_msg += "\n\n"
-                error_msg += f"Did you mean?\n    {fmt_matches}"
-            raise UsageError(error_msg, e.ctx)
-
-
-class ContainerScriptGroup(ManagerCommandGroup):
-    def list_commands(self, ctx: click.Context) -> t.Iterable[str]:
-        rv = []
-        for filename in os.listdir(CONTAINERSCRIPT_FOLDER):
-            if filename.endswith(".py") and filename.startswith("reg_"):
-                rv.append(filename[4:-3])
-        rv.sort()
-        return rv
-
-    def get_command(self, ctx: click.Context, name: str) -> t.Optional[click.Command]:
-        try:
-            mod = __import__(
-                f"manager._internal.containerscript.reg_{name}", None, None, ["main"]
-            )
-        except ImportError:
-            return
-        return mod.main

@@ -1,3 +1,4 @@
+import os
 import typing as t
 import logging
 from copy import deepcopy
@@ -10,7 +11,7 @@ from simple_di import Provide
 from ._internal.utils import SUPPORTED_REGISTRIES
 from ._internal.groups import Environment
 from ._internal.groups import pass_environment
-from ._internal.groups import ContainerScriptGroup
+from ._internal.groups import ManagerCommandGroup
 from ._internal.configuration import get_manifest_info
 from ._internal.configuration import DockerManagerContainer
 
@@ -20,6 +21,30 @@ if TYPE_CHECKING:
     from ._internal.types import GenericDict
 
 CONTEXT_SETTINGS = dict(auto_envvar_prefix="Authenticate")
+
+
+CONTAINERSCRIPT_FOLDER = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "_internal", "containerscript")
+)
+
+
+class ContainerScriptGroup(ManagerCommandGroup):
+    def list_commands(self, ctx: click.Context) -> t.Iterable[str]:
+        rv = []
+        for filename in os.listdir(CONTAINERSCRIPT_FOLDER):
+            if filename.endswith(".py") and filename.startswith("reg_"):
+                rv.append(filename[4:-3])
+        rv.sort()
+        return rv
+
+    def get_command(self, ctx: click.Context, name: str) -> t.Optional[click.Command]:
+        try:
+            mod = __import__(
+                f"manager._internal.containerscript.reg_{name}", None, None, ["main"]
+            )
+        except ImportError:
+            return
+        return mod.main
 
 
 def add_authenticate_command(cli: click.Group) -> None:

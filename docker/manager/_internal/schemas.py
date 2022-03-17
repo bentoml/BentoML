@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -15,7 +17,6 @@ from .utils import ctx_unstructure_hook
 from .utils import inject_deepcopy_args
 from .utils import DOCKERFILE_BUILD_HIERARCHY
 from .utils import SUPPORTED_ARCHITECTURE_TYPE
-from .exceptions import ManagerException
 
 if TYPE_CHECKING:
     from .types import StrList
@@ -47,14 +48,13 @@ CUDA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{suffi
 ML_REPO_URL = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{suffixes}"
 )
-CUDA_SUPPORTED_ARCH = ["amd64", "arm64v8", "ppc64le"]
 
 
 @attrs.define
 class LibraryVersion:
     version: str
     major_version: str = attrs.field(
-        default=attrs.Factory(lambda self: self.version[:1], takes_self=True)
+        default=attrs.Factory(lambda self: self.version.split(".")[0], takes_self=True)
     )
 
 
@@ -91,12 +91,13 @@ class CUDA:
 
 @inject_deepcopy_args
 def generate_cuda_context(
-    dependencies: "GenericNestedDict",
-) -> t.Dict[str, SupportedArchitecture]:
-    cuda_req: "GenericNestedDict" = dependencies.get("cuda", None)  # type: ignore
+    dependencies: GenericNestedDict,
+) -> t.Tuple[t.Dict[str, SupportedArchitecture], str]:
+    cuda_req: GenericNestedDict = dependencies.get("cuda", None)  # type: ignore
 
     cuda_supported_arch = {}
     if cuda_req is not None:
+        suffix = cuda_req.pop("cuda_url_suffixes")
         for arch, requirements in cuda_req.items():
             components = requirements["components"]
             requires = requirements["requires"]
@@ -123,32 +124,13 @@ def generate_cuda_context(
                 },
                 requires=requires,
             )
-    return cuda_supported_arch
+    return cuda_supported_arch, suffix
 
 
 cattr.register_unstructure_hook(CUDA, ctx_unstructure_hook)
 cattr.register_unstructure_hook(SupportedArchitecture, ctx_unstructure_hook)
 cattr.register_unstructure_hook(LibraryVersion, ctx_unstructure_hook)
 cattr.register_unstructure_hook(CUDAVersion, ctx_unstructure_hook)
-
-
-def is_supported_by_docker(instance: t.Any, attribute: t.Any, value: t.List[str]):
-    for v in value:
-        if v not in ALL_DOCKER_SUPPORTED_ARCHITECTURE:
-            raise ManagerException(f"{v} architecture is not supported by Docker.")
-        if v not in SUPPORTED_ARCHITECTURE_TYPE:
-            send_log(
-                f"{v} is not yet supported by BentoML. Use with care!",
-                _manager_level=logging.DEBUG,
-            )
-
-
-def is_in_build_hierachy(instance: t.Any, attribute: t.Any, value: t.List[str]):
-    for v in value:
-        if v not in DOCKERFILE_BUILD_HIERARCHY:
-            raise ManagerException(
-                f"{v} is not in DOCKERFILE_BUILD_HIERARCHY. If adding a new type of images make sure to update DOCKERFILE_BUILD_HIERARCHY."
-            )
 
 
 @attrs.define
@@ -162,10 +144,15 @@ class SharedCtx:
     templates_dir: str
 
     release_types: t.List[str] = attrs.field(
-        factory=list, validator=is_in_build_hierachy
+        factory=list,
+        validator=lambda _, __, value: set(value).issubset(DOCKERFILE_BUILD_HIERARCHY),
     )
     architectures: t.List[str] = attrs.field(
-        factory=list, validator=is_supported_by_docker
+        factory=list,
+        validator=[
+            lambda _, __, value: set(value).issubset(ALL_DOCKER_SUPPORTED_ARCHITECTURE),
+            lambda _, __, value: set(value).issubset(SUPPORTED_ARCHITECTURE_TYPE),
+        ],
     )
 
 
@@ -195,12 +182,9 @@ def update_envars_dict(
 class BuildCtx:
     header: str
     base_image: str
-    envars: t.Dict[str, str]
-
+    cuda_ctx: t.Optional[CUDA]
     shared_ctx: SharedCtx
-    cuda_ctx: t.Optional[CUDA] = attrs.field(
-        converter=attrs.converters.default_if_none(""), default=None
-    )
+    envars: t.Dict[str, str]
 
     def __attrs_post_init__(self):
         args = {
@@ -255,9 +239,7 @@ def create_tags_per_distros(shared_ctx: SharedCtx) -> "DoubleNestedDict[str]":
     return metadata
 
 
-def create_path_context(
-    shared_ctx: SharedCtx, template_fs_: "FS"
-) -> "DoubleNestedDict":
+def create_path_context(shared_ctx: SharedCtx, fs_: FS) -> DoubleNestedDict:
 
     tags = create_tags_per_distros(shared_ctx)
 
@@ -277,7 +259,7 @@ def create_path_context(
             "output_path": output_path,
             "input_paths": [
                 f
-                for f in template_fs_.walk.files(filter=[f"{release_type}-*.j2"])
+                for f in fs_.walk.files(filter=[f"{release_type}-*.j2"])
                 if shared_ctx.templates_dir in f
             ],
             "git_tree_path": git_tree_path,
@@ -288,9 +270,9 @@ def create_path_context(
 
 @attrs.define
 class ReleaseCtx:
-    fs_: "FS"
+    fs: FS
     shared_ctx: SharedCtx
     release_tags: t.Dict[str, t.Any] = attrs.field(init=False)
 
     def __attrs_post_init__(self):
-        self.release_tags = create_path_context(self.shared_ctx, self.fs_)
+        self.release_tags = create_path_context(self.shared_ctx, self.fs)

@@ -18,6 +18,8 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
+from ..utils import validate_labels
+from ..utils import validate_metadata
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
@@ -42,8 +44,7 @@ class Model(StoreItem):
     _info: "ModelInfo"
     _custom_objects: t.Optional[t.Dict[str, t.Any]] = None
 
-    _info_flushed = False
-    _custom_objects_flushed = False
+    _flushed: bool = False
 
     @staticmethod
     def _export_ext() -> str:
@@ -59,18 +60,10 @@ class Model(StoreItem):
 
     @property
     def info(self) -> "ModelInfo":
-        self._info_flushed = False
         return self._info
-
-    @info.setter
-    def info(self, new_info: "ModelInfo"):
-        self._info_flushed = False
-        self._info = new_info
 
     @property
     def custom_objects(self) -> t.Dict[str, t.Any]:
-        self._custom_objects_flushed = False
-
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
@@ -128,6 +121,9 @@ class Model(StoreItem):
         context["bentoml_version"] = BENTOML_VERSION
         context["python_version"] = PYTHON_VERSION
 
+        validate_labels(labels)
+        validate_metadata(metadata)
+
         model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
 
         res = Model(
@@ -155,8 +151,7 @@ class Model(StoreItem):
         return self
 
     def _save(self, model_store: "ModelStore") -> "Model":
-        self.flush_info()
-        self.flush_custom_objects()
+        self.flush()
 
         if not self.validate():
             logger.warning(f"Failed to create Model for {self.tag}, not saving.")
@@ -187,8 +182,7 @@ class Model(StoreItem):
                 f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"
             )
 
-        res._info_flushed = True
-        res._custom_objects_flushed = True
+        res._flushed = True
         return res
 
     @property
@@ -198,25 +192,21 @@ class Model(StoreItem):
     def path_of(self, item: str) -> str:
         return self._fs.getsyspath(item)
 
-    def flush_info(self):
-        if self._info_flushed:
-            return
+    def flush(self):
+        if not self._flushed:
+            self._flush_info()
+            self._flush_custom_objects()
+        self._flushed = True
 
+    def _flush_info(self):
         with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
             self.info.dump(model_yaml)
 
-        self._info_flushed = True
-
-    def flush_custom_objects(self):
-        if self._custom_objects_flushed:
-            return
-
+    def _flush_custom_objects(self):
         # pickle custom_objects if it is not None and not empty
         if self.custom_objects:
             with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
                 cloudpickle.dump(self.custom_objects, cofile)
-
-        self._custom_objects_flushed = True
 
     @property
     def creation_time(self) -> datetime:
@@ -233,8 +223,8 @@ class Model(StoreItem):
         params: t.Optional[t.Dict[str, str]] = None,
         subpath: t.Optional[str] = None,
     ) -> str:
-        self.flush_info()
-        self.flush_custom_objects()
+        self.flush()
+
         return super().export(
             path,
             output_format,
@@ -264,13 +254,29 @@ class ModelStore(Store[Model]):
 class ModelInfo:
     tag: Tag
     module: str
-    labels: t.Dict[str, t.Any]
+    labels: t.Dict[str, str]
     options: t.Dict[str, t.Any]
     metadata: t.Dict[str, t.Any]
     context: t.Dict[str, t.Any]
     bentoml_version: str = BENTOML_VERSION
     api_version: str = "v1"
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+
+    def __eq__(self, other):
+        if not isinstance(other, (ModelInfo, FrozenModelInfo)):
+            return False
+
+        return (
+            self.tag == other.tag
+            and self.module == other.module
+            and self.labels == other.labels
+            and self.options == other.options
+            and self.metadata == other.metadata
+            and self.context == other.context
+            and self.bentoml_version == other.bentoml_version
+            and self.api_version == other.api_version
+            and self.creation_time == other.creation_time
+        )
 
     def __attrs_post_init__(self):
         self.validate()
@@ -292,8 +298,8 @@ class ModelInfo:
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
 
-    @classmethod
-    def from_yaml_file(cls, stream: t.IO[t.Any]):
+    @staticmethod
+    def from_yaml_file(stream: t.IO[t.Any]):
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:  # pragma: no cover - simple error handling
@@ -311,7 +317,7 @@ class ModelInfo:
         del yaml_content["version"]
 
         try:
-            model_info = cls(**yaml_content)  # type: ignore
+            model_info = FrozenModelInfo(**yaml_content)  # type: ignore
         except TypeError:  # pragma: no cover - simple error handling
             raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}")
         return model_info
@@ -320,6 +326,15 @@ class ModelInfo:
         # Validate model.yml file schema, content, bentoml version, etc
         # add tests when implemented
         ...
+
+    def freeze(self) -> "ModelInfo":
+        self.__class__ = FrozenModelInfo
+        return self
+
+
+@attr.define(repr=False, frozen=True)
+class FrozenModelInfo(ModelInfo):
+    pass
 
 
 def copy_model(
@@ -346,3 +361,4 @@ def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:
 
 
 yaml.add_representer(ModelInfo, _ModelInfo_dumper)
+yaml.add_representer(FrozenModelInfo, _ModelInfo_dumper)

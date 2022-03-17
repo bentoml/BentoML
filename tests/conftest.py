@@ -1,9 +1,11 @@
 import os
+import typing as t
 
 import pytest
 
 import bentoml
 from bentoml._internal.models import ModelStore
+from bentoml._internal.models.model import ModelInfo
 
 
 @pytest.fixture(scope="function", name="change_test_dir")
@@ -24,3 +26,30 @@ def fixture_dummy_model_store(tmpdir_factory: "pytest.TempPathFactory") -> Model
         pass
 
     return store
+
+
+def pytest_assertrepr_compare(
+    op: str, left: t.Any, right: t.Any
+) -> t.Optional[t.List[str]]:
+    if isinstance(left, ModelInfo) and isinstance(right, ModelInfo) and op == "==":
+        res = ["Model instances equal:"]
+
+        for attr in [
+            "tag",
+            "module",
+            "labels",
+            "options",
+            "metadata",
+            "context",
+            "bentoml_version",
+            "api_version",
+            "creation_time",
+        ]:
+            if getattr(left, attr) != getattr(right, attr):
+                res.append(
+                    "    {attr}: {getattr(left, attr)} != {getattr(right, attr)}"
+                )
+
+        return res
+
+    return None

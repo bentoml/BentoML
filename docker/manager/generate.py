@@ -47,8 +47,9 @@ def add_generation_command(cli: click.Group) -> None:
             ctx._generated_dir.removetree("/")
 
         # generate readmes and dockerfiles
-        gen_readmes(ctx)
         gen_dockerfiles(ctx)
+
+        gen_readmes(ctx)
         send_log(
             f"[green]Finished generating {ctx.docker_package}...[/]",
             extra={"markup": True},

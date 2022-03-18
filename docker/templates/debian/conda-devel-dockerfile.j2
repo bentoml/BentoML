@@ -1,0 +1,30 @@
+{{ metadata.header }}
+{% set cached = ['arm32v5', 'arm32v6'] %}
+ARG PYTHON_VERSION
+
+FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as base
+
+RUN xx-apt-get install -q -y --no-install-recommends git
+
+RUN pip install -U git+https://github.com/bentoml/bentoml.git@main && \
+    xx-apt-get purge --auto-remove -y git && \
+    rm -rf /var/lib/apt/lists/*
+{% for key in metadata.arch_context if key not in cached %}
+    {% if 'arm' in key %}
+
+FROM base as base-arm
+    {% elif 'i386' in key %}
+
+FROM base as base-386
+    {% else %}
+
+FROM base as base-{{ key }}
+    {% endif %}
+{% endfor %}
+
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
+
+ARG TARGETPLATFORM
+

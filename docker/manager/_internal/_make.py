@@ -179,7 +179,7 @@ class BuildCtx:
 
 def create_tags_per_distros(
     shared_context: SharedCtx,
-) -> t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]:
+) -> t.Dict[str, t.Dict[str, t.List[str]]]:
     # returns a list of strings following the build hierarchy
     TAG_FORMAT = "{release_type}-python{python_version}-{suffixes}"
 
@@ -223,7 +223,7 @@ def create_tags_per_distros(
             )
         else:
             build_tag = ""
-        metadata[rt] = {"image_tag": image_tag, "build_tag": build_tag}
+        metadata[rt] = {"image_tag": tag, "build_tag": [build_tag]}
 
     return metadata
 
@@ -237,7 +237,7 @@ def create_path_context(shared_context: SharedCtx, fs_: FS) -> GenericDict:
     for release_type in shared_context.release_types:
         tag = tags[release_type]
 
-        for image_tag in tag["image_tag"]:
+        for image_tag, build_tag in product(tag["image_tag"], tag["build_tag"]):
 
             output_path = fs.path.join(
                 shared_context.docker_package,
@@ -245,23 +245,24 @@ def create_path_context(shared_context: SharedCtx, fs_: FS) -> GenericDict:
                 release_type,
             )
 
-            dockerfile = "Dockerfile"
-            filters = [f"{release_type}-*.j2"]
-            if shared_context.conda:
-                dockerfile += "-conda"
+            if "conda" in image_tag:
+                dockerfile = "Dockerfile-conda"
                 filters = [f"conda-{release_type}-*.j2"]
+            else:
+                dockerfile = "Dockerfile"
+                filters = [f"{release_type}-*.j2"]
 
             git_tree_path = fs.path.combine(output_path, dockerfile)
 
             release_tag[image_tag] = {
                 "output_path": output_path,
+                "build_tag": build_tag,
                 "input_paths": [
                     f
                     for f in fs_.walk.files(filter=filters)
                     if shared_context.templates_dir in f
                 ],
                 "git_tree_path": git_tree_path,
-                "build_tag": tag["build_tag"],
             }
     return release_tag
 
@@ -331,7 +332,9 @@ def create_distro_context(
     return build_ctx, release_ctx
 
 
-def set_generation_context(ctx: "Environment", distros_info: GenericDict) -> None:
+def set_generation_context(
+    ctx: "Environment", distros_info: t.Dict[str, t.Dict[str, t.Any]]
+) -> None:
     release_ctx, build_ctx = defaultdict(list), defaultdict(list)
 
     for pyver, (release_string, distros) in product(

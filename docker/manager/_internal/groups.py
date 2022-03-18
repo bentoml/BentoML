@@ -15,7 +15,6 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 from rich.console import Console
-from toolz.dicttoolz import keyfilter
 
 from ._make import BuildCtx
 from ._make import ReleaseCtx
@@ -69,11 +68,8 @@ class Environment:
         default=None, converter=attrs.converters.default_if_none("11.5.1")
     )
     python_version: t.Optional[t.Iterable[str]] = attrs.field(
-        converter=attrs.converters.default_if_none(SUPPORTED_PYTHON_VERSION),
         default=None,
-        validator=lambda _, __, value: set(value).issubset(
-            set(SUPPORTED_PYTHON_VERSION)
-        ),
+        converter=attrs.converters.default_if_none(SUPPORTED_PYTHON_VERSION),
     )
 
     docker_package: t.Optional[str] = attrs.field(
@@ -84,7 +80,6 @@ class Environment:
     distros: t.Optional[t.Iterable[str]] = attrs.field(
         default=None,
         converter=attrs.converters.default_if_none(SUPPORTED_OS_RELEASES),
-        validator=lambda _, __, value: set(value).issubset(set(SUPPORTED_OS_RELEASES)),
     )
 
     build_ctx: t.Dict[str, t.List[BuildCtx]] = attrs.field(
@@ -198,10 +193,10 @@ class ManagerCommandGroup(click.Group):
             docker_package: t.Optional[str],
             distros: t.Optional[t.Iterable[str]],
             python_version: t.Optional[t.Iterable[str]],
-            *args: P.args,
             default_context: GenericDict = Provide[
                 DockerManagerContainer.default_context
             ],
+            *args: P.args,
             **kwargs: P.kwargs,
         ) -> t.Any:
             func_name = func.__name__.replace("_", "-")
@@ -230,12 +225,17 @@ class ManagerCommandGroup(click.Group):
             if overwrite:
                 ctx.overwrite = True
 
+            if not python_version:
+                python_version = SUPPORTED_PYTHON_VERSION
+            if not distros:
+                distros = SUPPORTED_OS_RELEASES
+
             ctx.cuda_version = cuda_version
             ctx.docker_package = docker_package
-            ctx.python_version = python_version
             ctx.bentoml_version = bentoml_version
+            ctx.python_version = python_version
 
-            if docker_package:
+            if docker_package and docker_package != DockerManagerContainer.default_name:
                 if cuda_version is None:
                     raise ManagerException(
                         "--cuda-version must be passed with --docker-package"
@@ -246,8 +246,11 @@ class ManagerCommandGroup(click.Group):
                 )
             else:
                 get_distro_info = default_context  # type: ignore
-            if distros:
-                get_distro_info = keyfilter(lambda x: x in distros, get_distro_info)
+
+            for k, v in get_distro_info.copy().items():
+                get_distro_info[k] = {
+                    key: attr for key, attr in v.items() if key in distros
+                }
 
             ctx.distros = distros
             ctx.organization = organization

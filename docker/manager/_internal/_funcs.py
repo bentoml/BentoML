@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import wraps
 
-import fs
 import cattr
 from jinja2 import Environment
 from fs.base import FS
@@ -130,16 +129,13 @@ def inject_deepcopy_args(
         return decorator(_func)
 
 
-def preprocess_template_paths(
-    input_name: str, arch: t.Optional[str]
-) -> t.Tuple[str, str]:
+def preprocess_template_paths(input_name: str, arch: t.Optional[str]) -> str:
     if "readme" in input_name.lower():
-        return "README.md", ""
-    elif "conda-" in input_name:
-        conda_parent_dir = input_name.split("-")[1]
-        return "Dockerfile-conda", conda_parent_dir
+        return "README.md"
+    elif "conda" in input_name:
+        return "Dockerfile-conda"
     elif "-dockerfile.j2" in input_name:
-        return "Dockerfile", ""
+        return "Dockerfile"
     else:
         input_name = input_name.split("/")[-1]
         # specific cases for rhel
@@ -150,7 +146,7 @@ def preprocess_template_paths(
         )
         if arch:
             output_name += f"-{arch}"
-        return output_name, ""
+        return output_name
 
 
 def _contains_key(
@@ -178,15 +174,10 @@ def render_template(
 
     if output_name is not None:
         output_name_ = output_name
-        conda_parent_dir = ""
     else:
-        output_name_, conda_parent_dir = preprocess_template_paths(
-            input_name=input_name, arch=arch
-        )
+        output_name_ = preprocess_template_paths(input_name, arch)
 
-    out_path_fs = out_fs.makedirs(
-        fs.path.join(output_path, conda_parent_dir), recreate=True
-    )
+    out_path_fs = out_fs.makedirs(output_path, recreate=True)
 
     template_env = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],

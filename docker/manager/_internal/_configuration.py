@@ -25,18 +25,17 @@ logger = logging.getLogger(__name__)
 
 #########################################################
 
-SUPPORTED_PYTHON_VERSION = ("3.6", "3.7", "3.8", "3.9", "3.10")
-SUPPORTED_REGISTRIES = ("docker.io", "ecr", "quay.io", "gcr")
+SUPPORTED_PYTHON_VERSION = ["3.6", "3.7", "3.8", "3.9", "3.10"]
 DOCKERFILE_BUILD_HIERARCHY = ("base", "runtime", "cudnn", "devel")
-SUPPORTED_ARCHITECTURE_TYPE = ("amd64", "arm64v8", "ppc64le", "s390x")
-SUPPORTED_OS_RELEASES = (
+SUPPORTED_ARCHITECTURE_TYPE = ["amd64", "arm64v8", "ppc64le", "s390x"]
+SUPPORTED_OS_RELEASES = [
     "debian11",
     "debian10",
     "ubi8",
     "ubi7",
     "amazonlinux2",
     "alpine3.14",
-)
+]
 
 DOCKER_DIRECTORY = Path(os.path.dirname(__file__)).parent.parent
 # release entry should always include CUDA support :)
@@ -97,5 +96,4 @@ def get_manifest_info(
     for key in manifest.copy():
         if RELEASE_KEY_RGX.match(key):
             distros[key] = manifest.pop(key)
-
     return distros

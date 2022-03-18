@@ -130,7 +130,7 @@ COPY nvidia-ml.repo-ppc64le /etc/yum.repos.d/nvidia-ml.repo
 
 {% endif -%}
 
-{% for key in metadata.arch_ctx if key not in cached %}
+{% for key in metadata.arch_context if key not in cached %}
     {% if 'arm' in key %}
 
 FROM base as base-arm

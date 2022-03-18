@@ -1,12 +1,15 @@
 {{ metadata.header }}
-
 {% set cached = ['arm32v5', 'arm32v6'] %}
-
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ build_tag }} as base
+FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as base
 
-{% for key in metadata.arch_ctx if key not in cached %}
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+{% for key in metadata.arch_context if key not in cached -%}
     {% if 'arm64' in key %}
 
 FROM base as base-arm64
@@ -27,13 +30,3 @@ FROM base-${TARGETARCH}
 ARG TARGETARCH
 
 ARG TARGETPLATFORM
-
-LABEL maintainer "BentoML Team <contact@bentoml.com>"
-
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
-
-ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
-
-RUN apk --no-cache --update add build-base gcc
-
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir

@@ -7,10 +7,8 @@ authors = ["BentoML Team <contact@bentoml.com>"]
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 Jinja2 = "^3.0.1"
-glom = "^20.11.0"
 python-dotenv = "^0.19.2"
 GitPython = "^3.1.18"
-plumbum = "^1.7.2"
 attrs = "^21.4.0"
 click = "^8.0.4"
 rich = "^11.2.0"

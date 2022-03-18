@@ -1,43 +1,56 @@
-# syntax = docker/dockerfile:1.3-labs
-#
-# ===========================================
-#
-# THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
-#
-# ===========================================
+{{ metadata.header }}
 
+{% set cached = ['arm32v5', 'arm32v6'] %}
 
+ARG XX_VERSION={{ xx_version }}
 
-ARG XX_VERSION=1.1.0
+FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
 
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+FROM {{ metadata.base_image }} as base
 
-FROM debian:11-slim as base
-
+{% if "amd64" in cuda %}
+{% do cached.append("amd64") %}
 FROM base as base-amd64
 ENV NVARCH x86_64
 
-ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
+    {% if "requires" in cuda.amd64 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.amd64.requires }}"
+    {% endif %}
 
-ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
-ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-11-5
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
+ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
+{% endif %}
 
+{% if "arm64v8" in cuda %}
+{% do cached.append("arm64v8") %}
 FROM base as base-arm64
 ENV NVARCH sbsa
 
-ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
+    {% if "requires" in cuda.arm64v8 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
+    {% endif %}
 
-ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
 
 ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
+ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
+{% endif -%}
 
-FROM base as base-ppc64le
+{% for key in metadata.arch_context if key not in cached %}
+    {% if 'arm' in key %}
 
-FROM base as base-s390x
+FROM base as base-arm
+    {% elif 'i386' in key %}
+
+FROM base as base-386
+    {% else %}
+
+FROM base as base-{{ key }}
+    {% endif %}
+{% endfor %}
 
 FROM base-${TARGETARCH}
 
@@ -50,10 +63,13 @@ ARG TARGETARCH
 LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 # setup ENV and ARG
-ARG PYTHON_VERSION
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
-ENV PYTHONDONTWRITEBYTECODE=1
+{% for key, value in metadata.envars.items() if key != "BENTOML_VERSION" %}
+{% if key in ["PYTHON_VERSION"] %}
+ARG {{ key }}
+{% else %}
+ENV {{ key }}={{ value }}
+{% endif %}
+{% endfor %}
 
 ENV PATH /opt/conda/bin:$PATH
 

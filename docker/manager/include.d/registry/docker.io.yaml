@@ -1,9 +1,0 @@
-%YAML 1.2
----
-user: "DOCKER_USER" 
-password: "DOCKER_PASSWORD"
-password_type: envars
-provider: "dockerhub"
-entrypoint: dockerio 
-url: "DOCKER_URL"
-...

@@ -45,7 +45,7 @@ ENV NV_CUDA_CUDART_VERSION {{ cuda.ppc64le.components.cudart.version }}
 
 {% endif %}
 
-{% for key in metadata.arch_ctx if key not in cached %}
+{% for key in metadata.arch_context if key not in cached %}
     {% if 'arm' in key %}
 
 FROM base as base-arm

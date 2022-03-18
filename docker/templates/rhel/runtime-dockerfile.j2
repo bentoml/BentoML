@@ -7,7 +7,7 @@ ARG PYTHON_VERSION
 
 FROM {{ metadata.package }}:{{ build_tag }} as base
 
-{% for key in metadata.arch_ctx if key not in cached %}
+{% for key in metadata.arch_context if key not in cached %}
     {% if 'arm64' in key %}
 
 FROM base as base-arm64

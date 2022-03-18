@@ -6,6 +6,7 @@ common: &common
   templates_dir: ""
   suffixes: ""
   base_image: ""
+  conda: false
   header: |
     # syntax = docker/dockerfile:1.3-labs
     #
@@ -124,19 +125,10 @@ common: &common
 
 
 docker.io:
-  entrypoint: dockerio
   password: DOCKER_PASSWORD
   password_type: envars
-  provider: dockerhub
-  url: DOCKER_URL
+  url: DOCKER_REGISTRY
   user: DOCKER_USER
-ecr:
-  entrypoint: aws
-  password: AWS_PASSWORD
-  password_type: stdin
-  provider: ecr
-  url: AWS_URL
-  user: AWS_USER
 
 
 w_cuda_v11.5.1:
@@ -150,6 +142,7 @@ w_cuda_v11.5.1:
     templates_dir: debian
     base_image: debian:11-slim
     suffixes: debian11
+    conda: true
     dependencies:
       cuda:
         cuda_url_suffixes: "ubuntu2004"
@@ -227,6 +220,7 @@ w_cuda_v11.5.1:
     templates_dir: debian
     base_image: debian:10-slim
     suffixes: debian10
+    conda: true
     dependencies:
       cuda:
         cuda_url_suffixes: "ubuntu2004"

@@ -6,6 +6,7 @@ common: &common
   templates_dir: ""
   suffixes: ""
   base_image: ""
+  conda: false
   header: |
     # syntax = docker/dockerfile:1.3-labs
     #
@@ -32,7 +33,10 @@ common: &common
       {% set arch = unpack_include(cuda_mapping, indent=6) %}
       {{ arch }}
 
-{{ registries }}
+docker.io:
+  user: "DOCKER_USER" 
+  password: "DOCKER_PASSWORD"
+  url: "DOCKER_REGISTRY"
 
 w_cuda_v{{ cuda_version }}:
 {% for k in supported_distros %}
@@ -47,7 +51,7 @@ w_cuda_v{{ cuda_version }}:
     {% if k in cuda_architecture_per_distro %}
     dependencies:
       cuda:
-        {% if 'debian' in k %}
+        {% if "debian" in k %}
         cuda_url_suffixes: "ubuntu2004"
         {% else %}
         cuda_url_suffixes: {{ k }}

@@ -1,9 +1,0 @@
-%YAML 1.2
----
-user: "AWS_USER" 
-password: "AWS_PASSWORD"
-password_type: stdin
-provider: "ecr"
-entrypoint: "aws"
-url: "AWS_URL"
-...

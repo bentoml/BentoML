@@ -1,9 +1,0 @@
-%YAML 1.2
----
-user: "QUAY_USER" 
-password: "QUAY_PASSWORD"
-password_type: envars
-provider: "APIKEY__QUAY_IO"
-entrypoint: "quay"
-url: "QUAY_URL"
-...

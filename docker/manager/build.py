@@ -2,6 +2,7 @@ import os
 import json
 import typing as t
 import logging
+import subprocess
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
@@ -11,25 +12,43 @@ import fs.path
 from toolz import dicttoolz
 from python_on_whales import docker
 
-from ._internal.utils import run
-from ._internal.utils import send_log
-from ._internal.utils import DOCKERFILE_NAME
-from ._internal.utils import stream_docker_logs
-from ._internal.utils import create_buildx_builder
-from ._internal.utils import DOCKERFILE_BUILD_HIERARCHY
-from ._internal.utils import get_docker_platform_mapping
+from ._internal._funcs import send_log
+from ._internal._funcs import stream_docker_logs
+from ._internal._funcs import create_buildx_builder
 from ._internal.groups import Environment
 from ._internal.groups import pass_environment
 from ._internal.exceptions import ManagerBuildFailed
+from ._internal._configuration import DOCKERFILE_BUILD_HIERARCHY
+from ._internal._configuration import DOCKER_TARGETARCH_LINUX_UNAME_ARCH_MAPPING
 
 if TYPE_CHECKING:
-    from ._internal.types import GenericDict
+    GenericDict = t.Dict[str, t.Any]
 
     Tags = t.Dict[str, t.Tuple[str, str, str, t.Dict[str, str], t.Tuple[str, ...]]]
 
 logger = logging.getLogger(__name__)
 
 BUILDER_LIST = []
+
+
+def process_docker_arch(arch: str) -> str:
+    # NOTE: hard code these platform, seems easy to manage
+    if "arm64" in arch:
+        fmt = "arm64/v8"
+    elif "arm32" in arch:
+        fmt = "/".join(arch.split("32"))
+    elif "i386" in arch:
+        fmt = arch[1:]
+    else:
+        fmt = arch
+    return fmt
+
+
+def get_docker_platform_mapping() -> t.Dict[str, str]:
+    return {
+        k: f"linux/{process_docker_arch(k)}"
+        for k in DOCKER_TARGETARCH_LINUX_UNAME_ARCH_MAPPING
+    }
 
 
 def add_build_command(cli: click.Group) -> None:
@@ -92,8 +111,7 @@ def add_build_command(cli: click.Group) -> None:
             try:
                 builder = create_buildx_builder(name=builder_name)
                 BUILDER_LIST.append(builder)
-                if ctx.verbose:
-                    send_log(f"Args: {cmd}")
+                send_log(f"Args: {cmd}")
 
                 # NOTE: we need to push to registry when releasing different
                 # * architecture.
@@ -116,7 +134,11 @@ def add_build_command(cli: click.Group) -> None:
             "[bold yellow]Installing binfmt to added support for QEMU...[/]",
             extra={"markup": True},
         )
-        _ = run("make", "emulator", "-f", ctx._fs.getsyspath("Makefile"))
+        subprocess.check_call(
+            args=["make", "-f", ctx._fs.getsyspath("Makefile")],
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
 
         try:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -130,30 +152,20 @@ def buildx_args(
     ctx: Environment, tags: "Tags"
 ) -> "t.Generator[GenericDict, None, None]":
 
-    REGISTRIES_ENVARS_MAPPING = {"docker.io": "DOCKER_URL", "ecr": "AWS_URL"}
-
-    if ctx.push_registry is None:
-        tag_prefix = None
-    else:
-        tag_prefix = os.environ.get(REGISTRIES_ENVARS_MAPPING[ctx.push_registry], None)
-        if tag_prefix is None:
-            raise ManagerBuildFailed(
-                "Failed to retrieve URL prefix for docker registry."
-            )
+    registry = os.environ.get("DOCKER_REGISTRY", None)
+    if registry is None:
+        raise ManagerBuildFailed("Failed to retrieve docker registry from envars.")
 
     for image_tag, tag_context in tags.items():
         output_path, build_tag, python_version, labels, *platforms = tag_context
 
-        ref = image_tag if tag_prefix is None else f"{tag_prefix}/{image_tag}"
-
+        ref = f"{registry}/{image_tag}"
         # "cache_to": f"type=registry,ref={ref},mode=max",
         cache_from = [{"type": "registry", "ref": ref}]
 
         if build_tag != "":
             build_base_image = build_tag.replace("$PYTHON_VERSION", python_version)
-            base_ref = (
-                build_base_image if tag_prefix is None else f"{tag_prefix}/{image_tag}"
-            )
+            base_ref = f"{registry}/{build_base_image}"
             cache_from.append({"type": "registry", "ref": base_ref})
 
         yield {
@@ -161,7 +173,7 @@ def buildx_args(
             "build_args": {"PYTHON_VERSION": python_version},
             "progress": "plain",
             "file": ctx._generated_dir.getsyspath(
-                fs.path.combine(output_path, DOCKERFILE_NAME)
+                fs.path.combine(output_path, "Dockerfile")
             ),
             "platforms": [
                 v for k, v in get_docker_platform_mapping().items() if k in platforms
@@ -183,11 +195,6 @@ def order_build_hierarchy(
     Returns {tag: (docker_build_context_path, python_version, *platforms), ...} for base and other tags
     """
 
-    def filter_support_architecture(
-        python_version: str, arch: t.List[str]
-    ) -> t.List[str]:
-        return arch if python_version != "3.6" else ["amd64"]
-
     release_context = ctx.release_ctx
 
     orders = {v: k for k, v in enumerate(DOCKERFILE_BUILD_HIERARCHY)}
@@ -203,14 +210,13 @@ def order_build_hierarchy(
         f"{ctx.organization}/{tag}": (
             meta["output_path"],
             meta["build_tag"],
-            cx.shared_ctx.python_version,
+            cx.shared_context.python_version,
             {
-                "distro_name": cx.shared_ctx.distro_name,
-                "docker_package": cx.shared_ctx.docker_package,
+                "distro_name": cx.shared_context.distro_name,
+                "docker_package": cx.shared_context.docker_package,
+                "maintainer": "BentoML Team <contact@bentoml.com>",
             },
-            *filter_support_architecture(
-                cx.shared_ctx.python_version, cx.shared_ctx.architectures
-            ),
+            *cx.shared_context.architectures,
         )
         for distro_contexts in release_context.values()
         for cx in distro_contexts

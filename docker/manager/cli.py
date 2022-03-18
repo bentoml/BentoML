@@ -6,13 +6,11 @@ from manager import __version__ as MANAGER_VERSION
 from .build import add_build_command
 from .generate import add_generation_command
 from .authenticate import add_authenticate_command
-from ._internal.utils import graceful_exit
 from ._internal.groups import ManagerCommandGroup
 
 logger = logging.getLogger(__name__)
 
 
-@graceful_exit
 def create_manager_cli():
 
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}

@@ -67,7 +67,7 @@ emulator: check-buildx install-qemu ## Install all emulator
 	@docker run --privileged --rm tonistiigi/binfmt --install all
 	@echo 'Finish installed emulator from tonistiig/binfmt.'
 
-check-platform: emulator ## Test supported platform string
+check-platform: ## Test supported platform string
 	@docker buildx ls | grep platform_check_builder &>/dev/null | docker buildx use platform_check_builder || docker buildx create --use --driver docker-container --name platform_check_builder;
 	@docker buildx bake test-platforms --progress plain --no-cache
 

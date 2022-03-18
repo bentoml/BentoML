@@ -19,8 +19,7 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.com>"
-
-WORKDIR /
-
-RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
+RUN --mount=type=cache,target=/var/cache/yum yum upgrade -y git \
+	&& pip install -U git+https://github.com/bentoml/bentoml.git@main \
+	&& yum remove -y git gcc \
+	&& yum clean all

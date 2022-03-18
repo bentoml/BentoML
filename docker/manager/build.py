@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import sys
 import typing as t
 import logging
 import subprocess
@@ -89,10 +90,8 @@ def add_build_command(cli: click.Group) -> None:
 
         \b
         Usage:
-            manager build --bentoml-version 1.0.0a5 --registry ecr
             manager build --bentoml-version 1.0.0a5 --releases base --max-workers 2
             manager build --bentoml-version 1.0.0a5 --releases base --max-workers 2 --python-version 3.8 --python-version 3.9
-            manager build --bentoml-version 1.0.0a5 --docker-package <other-package>
 
         \b
         By default we will generate all given specs defined under manifest/<docker_package>.yml
@@ -137,7 +136,7 @@ def add_build_command(cli: click.Group) -> None:
             extra={"markup": True},
         )
         subprocess.check_call(
-            args=["make", "-f", ctx._fs.getsyspath("Makefile")],
+            args=["make", "-f", ctx._fs.getsyspath("Makefile"), "emulator"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
         )
@@ -148,6 +147,7 @@ def add_build_command(cli: click.Group) -> None:
                 list(executor.map(build_multi_arch, build_buildx_args))
         except Exception as e:
             send_log(e, _manager_level=logging.ERROR)
+            sys.exit(1)
 
 
 def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, None]:

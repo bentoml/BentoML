@@ -1,5 +1,5 @@
 target "_all_platforms" {
-    platforms = ["linux/amd64", "linux/arm64/v8", "linux/arm/v7", "linux/arm/v6", "linux/arm/v5","linux/ppc64le", "linux/s390x", "linux/riscv64", "linux/mips64le"]
+    platforms = ["linux/amd64", "linux/arm64/v8", "linux/arm/v7", "linux/arm/v6","linux/ppc64le", "linux/s390x", "linux/riscv64"]
 }
 
 function "TagWithArch" {
@@ -16,14 +16,31 @@ variable "MANAGER_REPO" {
     default = "aarnphm/bentoml-docker"
 }
 
-target "all" {
+target "manager-shared" {
     platforms = ["linux/amd64", "linux/arm64/v8"]
     inherits = ["_all_platforms"]
-    tags = TagWithArch(MANAGER_REPO, TAG, "1", "")
-    dockerfile = "./hack/dockerfiles/dev.Dockerfile"
 	cache-to = ["type=inline"]
+    dockerfile = "./hack/dockerfiles/dev.Dockerfile"
 	pull = true
+    context = "."
+}
+
+target "manager-all" {
+    inherits = ["manager-shared"]
+    tags = TagWithArch(MANAGER_REPO, TAG, "1", "")
+    target = "base"
 	cache-from = ["${MANAGER_REPO}:${TAG}"]
+}
+
+target "base_dev" {
+    inherits = ["manager-shared"]
+    tags = TagWithArch(MANAGER_REPO, "base_dev", "1", "")
+    target = "base_build"
+	cache-from = ["${MANAGER_REPO}:base_dev"]
+}
+
+group default {
+    targets = ["manager-all"]
 }
 
 /* ------------------- */

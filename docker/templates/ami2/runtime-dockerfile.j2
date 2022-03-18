@@ -16,8 +16,9 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.com>"
-
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
 RUN pip install bentoml==${BENTOML_VERSION} {{ pip_options|join(' ') }}
+
+RUN --mount=type=cache,target=/var/cache/yum yum remove -y git gcc \
+	&& yum clean all

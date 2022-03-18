@@ -8,10 +8,6 @@ MANAGER_TAG := 1.1.0
 # ----------------------
 export DOCKER_BUILDKIT=1
 
-BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
-# Just one of the many files created
-QEMUDETECT = /proc/sys/fs/binfmt_misc/qemu-aarch64
-
 FULL_TAG := ${MANAGER_REPO}:${MANAGER_TAG}
 
 COMMON_DOCKER_ARGS := -u root --privileged --rm --init \
@@ -22,7 +18,6 @@ MANAGER_DOCKER_ARGS := ${COMMON_DOCKER_ARGS} \
 	-v ${PWD}:/bentoml \
 	-w /bentoml ${FULL_TAG}
 MANAGER_DOCKER_RUN := docker run ${MANAGER_DOCKER_ARGS}
-
 
 # ----------------------
 .DEFAULT_GOAL := help
@@ -47,57 +42,46 @@ dead: ## ded
 quality: ## Quality check
 	@vulture .
 
-install-qemu: ${QEMUDETECT} ## Running this in CI to ensure QEMU support
-${QEMUDETECT}:
-	@if [[ "${UNAME_M}" != 'arm64' ]]; then \
-		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes; \
-	else \
-		docker run --rm --privileged aptman/qus -s -- -p i386 arm ppc64le mips64 mips64el s390x aarch64 riscv64 x86_64; \
-	fi
-remove-qemu: ## Unset registered format
-	docker run --rm --privileged aptman/qus -- -r
-	docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-*
-
-check-buildx: ${BUILDXDETECT}
-${BUILDXDETECT}:
-	@if ! `docker buildx &>/dev/null`; then \
-		echo; \
-		echo '*** `docker buildx` missing. Install binary for this machine architecture'; \
-		echo '*** from `https://github.com/docker/buildx/releases/latest`'; \
-		echo '*** to `~/.docker/cli-plugins/docker-buildx` and `chmod +x` it.'; \
-		echo; \
-		exit 1; \
-	fi
-
-emulator: check-buildx install-qemu ## Install all emulator
-	@docker run --privileged --rm tonistiigi/binfmt --install all
-	@echo 'Finish installed emulator from tonistiig/binfmt.'
-
-check-platform: ## Test supported platform string
-	@docker buildx ls | grep platform_check_builder &>/dev/null | docker buildx use platform_check_builder || docker buildx create --use --driver docker-container --name platform_check_builder;
-	@docker buildx bake test-platforms --progress plain --no-cache
-
+clean: ## cleanup
+	@./hack/shells/buildx_misc -r manager_docker;
+	@find . -name '__pycache__' -type d -exec rm -rf '{}';\
 
 # ----------------------
+install-qemu:
+	@./hack/shells/buildx_misc --install-qemu
+
+BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
+check-buildx: ${BUILDXDETECT}
+${BUILDXDETECT}:
+	@./hack/shells/buildx_misc --preflight
+
+emulator: check-buildx install-qemu ## Install all emulator
+
+.PHONY: docker-bake
+docker-bake: ## Building devcontainer
+	@./hack/shells/buildx_misc -create manager_docker
+	docker buildx bake --push --no-cache
+
 docker-bake-%: ## Build a docker target with buildx bake
+	@./hack/shells/buildx_misc -create manager_docker
 	$(eval bake_target_prefix := $(subst docker-bake-, ,$@))
 	$(eval bake_target :=$(bake_target_prefix))
-	 @docker buildx bake $(bake_target) --push
-
-build_docker_manager:
-	@if `git diff ./hack/dockerfiles/dev.Dockerfile &>/dev/null`; then \
-		$(MAKE) docker-bake-all; \
-	fi
+	@docker buildx bake $(bake_target) --push
 
 check_docker_manager:
 	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null` ; then \
 		docker pull $(MANAGER_REPO); \
 	fi
 
+check-platform: ## Test supported platform string
+	@./hack/shells/buildx_misc -create test_platform
+	@:$(eval $(call get_builder,$(BUILDER_NAME)))
+	@docker buildx bake test-platforms --progress plain --no-cache
+
+# ----------------------
 # default args
 GENERATE_DARGS := --bentoml-version $(BENTOML_VERSION) --overwrite
 BUILD_DARGS := --bentoml-version $(BENTOML_VERSION)
-AUTHENTICATE_DARGS := dockerhub
 
 # positional args
 generate_pargs = organization
@@ -112,12 +96,9 @@ pargs = $(foreach a,$($(subst $2,,$1)_pargs),$(if $(value $a),--$a $($a)))
 flags_only = $(foreach l,$(FLAGS),$(if $(findstring $l, $1),--$l))
 
 TASKS := generate build
-
-.PHONY: run-all
+.PHONY: run-all docker-run-all
 run-all: ## Run all task in pipeline: generate -> build -> test
 	$(foreach v,$(TASKS), $(MAKE) run-$(v))
-
-.PHONY: docker-run-all
 docker-run-all: ## Run all task in pipeline: generate -> build -> test
 	$(foreach v,$(TASKS), $(MAKE) docker-run-$(v))
 

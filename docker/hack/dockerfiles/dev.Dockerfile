@@ -6,8 +6,10 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM python:3.10.2-alpine3.15 as base_build
 
+COPY --from=xx / /
+
 # this next part is ported from docker/docker
-RUN apk add --no-cache \
+RUN xx-apk add --no-cache \
 		ca-certificates \
 		libc6-compat \
 		openssh-client \
@@ -19,7 +21,7 @@ RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
 
 RUN bash <<"EOT"
 set -eux
-apkArch="$(apk --print-arch)";
+apkArch="$(xx-info alpine-arch)";
 
 case "$apkArch" in
     "x86_64")
@@ -62,17 +64,7 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 
 CMD [ "sh" ]
 
-FROM base_build as base
-
-FROM base as base-amd64
-
-FROM base as base-arm64
-
-FROM base-${TARGETARCH} as releases
-
-ARG TARGETPLATFORM
-
-ARG TARGETARCH
+FROM --platform=$BUILDPLATFORM base_build as base
 
 COPY --from=xx / /
 
@@ -150,7 +142,14 @@ RUN chmod a+rwx /etc/bash.bashrc
 
 RUN echo "source /etc/bash.bashrc" >> $HOME/.bashrc
 
-CMD [ "bash" ]
+CMD [ "/bin/bash" ]
 
-FROM releases
+FROM base as base-amd64
 
+FROM base as base-arm64
+
+FROM base-${TARGETARCH}
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH

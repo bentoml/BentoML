@@ -12,7 +12,7 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM python:$PYTHON_VERSION-slim-buster as base
+FROM --platform=$BUILDPLATFORM python:${PYTHON_VERSION}-slim-buster as base
 
 FROM base as base-amd64
 ENV NVARCH x86_64
@@ -37,8 +37,6 @@ ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-lea
 
 FROM base as base-ppc64le
 
-FROM base as base-s390x
-
 FROM base-${TARGETARCH}
 
 COPY --from=xx / /
@@ -60,4 +58,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-RUN xx-apt-get update
+RUN xx-apt-get update \
+    && xx-apt-get install -q -y --no-install-recommends gcc python3-dev \
+    && xx-apt-get clean \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}

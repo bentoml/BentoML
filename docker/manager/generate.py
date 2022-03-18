@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def add_generation_command(cli: click.Group) -> None:
     @cli.command(name="create-manifest")
     @pass_environment
-    def create_manifest(ctx: Environment) -> None:
+    def create_manifest(ctx: Environment) -> None:  # dead: ignore
         """
         Generate a manifest files to edit.
         Note that we still need to customize this manifest files to fit with our usecase.
@@ -35,7 +35,7 @@ def add_generation_command(cli: click.Group) -> None:
 
     @cli.command()
     @pass_environment
-    def generate(ctx: Environment) -> None:
+    def generate(ctx: Environment) -> None:  # dead: ignore
         """
         Generate Dockerfile and README for a given docker package.
 

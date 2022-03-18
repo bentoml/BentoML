@@ -17,13 +17,11 @@ COPY --from=xx / /
 
 FROM base as base-arm64
 
-from base as base-amd64
+FROM base as base-amd64
 
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
-
-LABEL maintainer "BentoML Team <contact@bentoml.com>"
 
 # setup ENV and ARG
 ARG PYTHON_VERSION

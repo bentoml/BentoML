@@ -58,8 +58,6 @@ DOCKER_TARGETARCH_LINUX_UNAME_ARCH_MAPPING = {
 @container
 class ManagerContainerClass:
 
-    root_dir = DOCKER_DIRECTORY
-
     default_name = "bento-server"
 
     @SingletonFactory

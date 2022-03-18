@@ -7,22 +7,23 @@ function "TagWithArch" {
     result = [no_arch =="1"?"${repo}:${tag}":"${repo}:${tag}-${arch}",]
 }
 
+variable "TAG"{
+    default = "1.1.0"
+}
+
 /* ------------------- */
 variable "MANAGER_REPO" {
     default = "aarnphm/bentoml-docker"
-}
-variable "MANAGER_TAG"{
-    default = "1.1.0"
 }
 
 target "all" {
     platforms = ["linux/amd64", "linux/arm64/v8"]
     inherits = ["_all_platforms"]
-    tags = TagWithArch(MANAGER_REPO, MANAGER_TAG, "1", "")
+    tags = TagWithArch(MANAGER_REPO, TAG, "1", "")
     dockerfile = "./hack/dockerfiles/dev.Dockerfile"
 	cache-to = ["type=inline"]
 	pull = true
-	cache-from = ["${MANAGER_REPO}"]
+	cache-from = ["${MANAGER_REPO}:${TAG}"]
 }
 
 /* ------------------- */
@@ -35,7 +36,7 @@ target "test" {
     tags = TagWithArch(TEST_REPO, "latest", "1", "")
     dockerfile = "./hack/dockerfiles/test.Dockerfile"
 	cache-to = ["type=inline"]
-	cache-from = ["${TEST_REPO}"]
+	cache-from = ["${TEST_REPO}:${TAG}"]
 	target = "test"
 }
 

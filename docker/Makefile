@@ -41,6 +41,12 @@ format: ## Format
 lint: ## Lint
 	@pylint --rcfile="${GIT_ROOT}/pyproject.toml" --disable=E0401,F0010 .
 
+dead: ## ded
+	@dead --files manager/
+
+quality: ## Quality check
+	@vulture .
+
 install-qemu: ${QEMUDETECT} ## Running this in CI to ensure QEMU support
 ${QEMUDETECT}:
 	@if [[ "${UNAME_M}" != 'arm64' ]]; then \
@@ -84,20 +90,18 @@ build_docker_manager:
 	fi
 
 check_docker_manager:
-	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null`; then \
-		docker pull aarnphm/bentoml-docker:latest
+	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null` ; then \
+		docker pull $(MANAGER_REPO); \
 	fi
 
 # default args
 GENERATE_DARGS := --bentoml-version $(BENTOML_VERSION) --overwrite
 BUILD_DARGS := --bentoml-version $(BENTOML_VERSION)
-TESTS_DARGS := --bentoml-version $(BENTOML_VERSION)
 AUTHENTICATE_DARGS := dockerhub
 
 # positional args
 generate_pargs = organization
-build_pargs = max-workers registry distros python-version releases organization
-test_pargs = releases platforms max-workers registry
+build_pargs = max-workers distros python-version releases organization
 
 # flags only
 FLAGS = verbose quiet dry-run dump-metadata
@@ -134,5 +138,6 @@ docker-run-%: check_docker_manager ## Run a task from a docker container (useful
 	$(eval $@_dtarget := $(subst $($@_prefix), ,$@))
 	$(eval $@_dupper_target := $(call UC, $($@_dtarget)))
 	@$(MANAGER_DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
+
 %:
 	@true

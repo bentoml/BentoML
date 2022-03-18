@@ -10,7 +10,7 @@
 ARG PYTHON_VERSION
 
 
-FROM bentoml/bento-server:base-python$PYTHON_VERSION-ubi7 as baseline
+FROM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi7 as baseline
 
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubi7/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \

@@ -8,19 +8,21 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as base
+FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as base
 
 ENV BENTOML_VERSION=1.0.0a6
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+
+RUN xx-apt-get purge --auto-remove -y gcc python3-dev \
+    && xx-apt-get clean \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}
 
 FROM base as base-amd64
 
 FROM base as base-arm64
 
 FROM base as base-ppc64le
-
-FROM base as base-s390x
 
 FROM base-${TARGETARCH}
 

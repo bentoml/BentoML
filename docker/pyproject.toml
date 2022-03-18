@@ -27,6 +27,8 @@ isort = "^5.9.1"
 pylint = "^2.8.3"
 pytest = "^7.0.1"
 autoflake = "^1.4"
+dead = "^1.4.0"
+vulture = "^2.3"
 
 [tool.poetry.scripts]
 manager = "manager.cli:cli"
@@ -34,3 +36,10 @@ manager = "manager.cli:cli"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.vulture]
+ignore_decorators = ["@pass_environment", "@inject"]
+make_whitelist = true
+paths = ["manager"]
+sort_by_size = true
+verbose = false

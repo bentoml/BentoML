@@ -4,10 +4,6 @@ ARG PYTHON_VERSION
 
 FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as baseline
 
-ARG TARGETPLATFORM
-
-ARG TARGETARCH
-
 RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     gnupg2 curl ca-certificates && \
     curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - && \
@@ -180,5 +176,10 @@ RUN apt-mark hold ${NVIDIA_CUDNN_PACKAGE_NAME} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}{
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir && \
-    rm -rf /var/lib/apt/lists/*
+ARG MAMBA_DOCKERFILE_ACTIVATE 1
+
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+
+RUN xx-apt-get purge --auto-remove -y gcc python3-dev \
+    && xx-apt-get clean \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}

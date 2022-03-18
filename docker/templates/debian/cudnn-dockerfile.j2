@@ -180,5 +180,8 @@ RUN apt-mark hold ${NVIDIA_CUDNN_PACKAGE_NAME} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}{
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir && \
-    rm -rf /var/lib/apt/lists/*
+RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+
+RUN xx-apt-get purge --auto-remove -y gcc python3-dev \
+    && xx-apt-get clean \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}

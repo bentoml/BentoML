@@ -65,7 +65,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
 ## Latest tags for `bento-server 1.0.0a6`
 
 
-### debian 11 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
+### debian 11 [_amd64_, _arm64v8_, _ppc64le_]
 
 - [`1.0.0a6-python3.6-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
 - [`1.0.0a6-python3.6-debian11-runtime-conda`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile-conda)
@@ -98,7 +98,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
 - [`devel-python3.10-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
 - [`devel-python3.10-debian11-conda`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile-conda)
 
-### debian 10 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
+### debian 10 [_amd64_, _arm64v8_, _ppc64le_]
 
 - [`1.0.0a6-python3.6-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
 - [`1.0.0a6-python3.6-debian10-runtime-conda`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile-conda)

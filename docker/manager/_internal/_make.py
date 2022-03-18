@@ -50,7 +50,6 @@ class CUDAVersion:
     minor: str
     patch: str
     full: str
-    shortened: str
 
 
 @attrs.define
@@ -93,9 +92,7 @@ def generate_cuda_context(
                 for key in components:
                     if key.startswith("cudnn"):
                         cudnn = components.pop(key)
-                        return LibraryVersion(
-                            version=cudnn["version"], major_version=key[-1]
-                        )
+                        return LibraryVersion(version=cudnn["version"])
                 send_log(
                     "current CUDA components doesn't support CUDNN.",
                     _manager_level=logging.DEBUG,
@@ -185,7 +182,7 @@ def create_tags_per_distros(
 
     metadata = {}
     for rt in shared_context.release_types:
-        tag = []
+        images = []
         image_tag = (
             shared_context.docker_package
             + ":"
@@ -210,20 +207,26 @@ def create_tags_per_distros(
                     suffixes=shared_context.suffixes,
                 )
             )
-        tag.append(image_tag)
+        images.append(image_tag)
         if shared_context.conda:
             conda_tag = f"{image_tag}-conda"
-            tag.append(conda_tag)
+            images.append(conda_tag)
 
+        builds = []
+        build_tag = ""
+        conda_tag = ""
         if rt != "base":
             build_tag = TAG_FORMAT.format(
                 release_type="base",
                 python_version="$PYTHON_VERSION",
                 suffixes=shared_context.suffixes,
             )
-        else:
-            build_tag = ""
-        metadata[rt] = {"image_tag": tag, "build_tag": [build_tag]}
+            if shared_context.conda:
+                conda_tag = build_tag + "-conda"
+        builds.append(build_tag)
+        builds.append(conda_tag)
+
+        metadata[rt] = {"image_tag": images, "build_tag": builds}
 
     return metadata
 
@@ -237,7 +240,7 @@ def create_path_context(shared_context: SharedCtx, fs_: FS) -> GenericDict:
     for release_type in shared_context.release_types:
         tag = tags[release_type]
 
-        for image_tag, build_tag in product(tag["image_tag"], tag["build_tag"]):
+        for image_tag, build_tag in zip(tag["image_tag"], tag["build_tag"]):
 
             output_path = fs.path.join(
                 shared_context.docker_package,
@@ -291,7 +294,6 @@ def create_distro_context(
         major=major,
         minor=minor,
         patch=patch,
-        shortened=f"{major}.{minor}",
         full=cuda_version_full,
     )
 

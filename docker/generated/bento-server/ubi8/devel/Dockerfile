@@ -10,7 +10,7 @@
 ARG PYTHON_VERSION
 
 
-FROM bentoml/bento-server:base-python$PYTHON_VERSION-ubi8 as base
+FROM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi8 as base
 
 
 FROM base as base-amd64

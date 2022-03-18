@@ -138,7 +138,6 @@ w_cuda_v11.5.1:
       - amd64
       - arm64v8
       - ppc64le
-      - s390x
     templates_dir: debian
     base_image: debian:11-slim
     suffixes: debian11
@@ -216,7 +215,6 @@ w_cuda_v11.5.1:
       - amd64
       - arm64v8
       - ppc64le
-      - s390x
     templates_dir: debian
     base_image: debian:10-slim
     suffixes: debian10
@@ -290,11 +288,6 @@ w_cuda_v11.5.1:
 
   ubi8:
     <<: *common
-    architectures:
-      - amd64
-      - arm64v8
-      - ppc64le
-      - s390x
     templates_dir: rhel
     base_image: registry.access.redhat.com/ubi8/ubi:latest
     suffixes: ubi8

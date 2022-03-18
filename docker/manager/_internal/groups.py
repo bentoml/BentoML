@@ -5,7 +5,6 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 from functools import wraps
-from importlib.metadata import version
 
 import attrs
 import click
@@ -50,7 +49,6 @@ if TYPE_CHECKING:
 class Environment:
 
     _fs: FS = attrs.field(init=False)
-    _manifest_dir: FS = attrs.field(init=False)
     _templates_dir: FS = attrs.field(init=False)
     _generated_dir: FS = attrs.field(init=False)
 
@@ -62,7 +60,7 @@ class Environment:
         default=None, converter=attrs.converters.default_if_none("bentoml")
     )
     bentoml_version: t.Optional[str] = attrs.field(
-        default=None, converter=attrs.converters.default_if_none(version("bentoml"))
+        default=None, converter=attrs.converters.default_if_none("")
     )
     cuda_version: t.Optional[str] = attrs.field(
         default=None, converter=attrs.converters.default_if_none("11.5.1")
@@ -102,7 +100,6 @@ class Environment:
         self, root_fs: "FS" = Provide[DockerManagerContainer.root_fs]
     ):
         self._fs = root_fs
-        self._manifest_dir = root_fs.makedirs("manifest", recreate=True)
         self._templates_dir = root_fs.makedirs("templates", recreate=True)
         self._generated_dir = root_fs.makedirs("generated", recreate=True)
 
@@ -220,7 +217,7 @@ class ManagerCommandGroup(click.Group):
 
             from dotenv import load_dotenv
 
-            _ = load_dotenv(dotenv_path=ctx._fs.getsyspath(".env"))
+            load_dotenv(dotenv_path=ctx._fs.getsyspath(".env"))
 
             if overwrite:
                 ctx.overwrite = True
@@ -300,7 +297,7 @@ class ManagerCommandGroup(click.Group):
         return wrapper
 
     def format_help_text(
-        self, ctx: click.Context, formatter: click.HelpFormatter
+        self, ctx: click.Context, formatter: click.HelpFormatter  # dead: ignore
     ) -> None:
         sio = io.StringIO()
         self.console = Console(file=sio, force_terminal=True)

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+eval "$("${MAMBA_BIN}" shell hook --shell=bash)"
+
+# For robustness, try all possible activate commands.
+conda activate "${MAMBA_ENV}" 2>/dev/null \
+  || mamba activate "${MAMBA_ENV}" 2>/dev/null \
+  || micromamba activate "${MAMBA_ENV}"

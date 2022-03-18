@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 import typing as t
@@ -24,7 +26,7 @@ from ._internal._configuration import DOCKER_TARGETARCH_LINUX_UNAME_ARCH_MAPPING
 if TYPE_CHECKING:
     GenericDict = t.Dict[str, t.Any]
 
-    Tags = t.Dict[str, t.Tuple[str, str, str, t.Dict[str, str], t.Tuple[str, ...]]]
+    Tags = t.Dict[str, t.Tuple[str, str, str, t.Dict[str, str], str, t.Tuple[str, ...]]]
 
 logger = logging.getLogger(__name__)
 
@@ -148,16 +150,21 @@ def add_build_command(cli: click.Group) -> None:
             send_log(e, _manager_level=logging.ERROR)
 
 
-def buildx_args(
-    ctx: Environment, tags: "Tags"
-) -> "t.Generator[GenericDict, None, None]":
+def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, None]:
 
     registry = os.environ.get("DOCKER_REGISTRY", None)
     if registry is None:
         raise ManagerBuildFailed("Failed to retrieve docker registry from envars.")
 
     for image_tag, tag_context in tags.items():
-        output_path, build_tag, python_version, labels, *platforms = tag_context
+        (
+            output_path,
+            build_tag,
+            python_version,
+            labels,
+            target_file,
+            *platforms,
+        ) = tag_context
 
         ref = f"{registry}/{image_tag}"
         # "cache_to": f"type=registry,ref={ref},mode=max",
@@ -173,7 +180,7 @@ def buildx_args(
             "build_args": {"PYTHON_VERSION": python_version},
             "progress": "plain",
             "file": ctx._generated_dir.getsyspath(
-                fs.path.combine(output_path, "Dockerfile")
+                fs.path.combine(output_path, target_file)
             ),
             "platforms": [
                 v for k, v in get_docker_platform_mapping().items() if k in platforms
@@ -190,7 +197,7 @@ def buildx_args(
 
 def order_build_hierarchy(
     ctx: Environment, releases: t.Optional[t.Iterable[str]]
-) -> "t.Tuple[Tags, Tags]":
+) -> t.Tuple[Tags, Tags]:
     """
     Returns {tag: (docker_build_context_path, python_version, *platforms), ...} for base and other tags
     """
@@ -216,6 +223,7 @@ def order_build_hierarchy(
                 "docker_package": cx.shared_context.docker_package,
                 "maintainer": "BentoML Team <contact@bentoml.com>",
             },
+            "Dockerfile-conda" if cx.shared_context.conda else "Dockerfile",
             *cx.shared_context.architectures,
         )
         for distro_contexts in release_context.values()

@@ -156,6 +156,7 @@ def gen_manifest(
 
 def gen_dockerfiles(ctx: Environment):
 
+    cached = []
     for builds, tags in zip(ctx.build_ctx.values(), ctx.release_ctx.values()):
 
         for (build_info, tag_info) in zip(builds, tags):
@@ -195,35 +196,40 @@ def gen_dockerfiles(ctx: Environment):
 
             for paths in release_tags.values():
                 for tpl_file in paths["input_paths"]:
-                    to_render = partial(
-                        render_template,
-                        input_name=tpl_file,
-                        inp_fs=ctx._templates_dir,
-                        output_path=paths["output_path"],
-                        out_fs=ctx._generated_dir,
-                        build_tag=paths["build_tag"],
-                        cuda=cattr.unstructure(cuda),
-                        metadata=metadata,
-                        distros=build_info.shared_context.distro_name,
-                        xx_image="tonistiigi/xx",
-                        xx_version="1.1.0",
-                    )
-
-                    try:
-                        if "rhel" in shared_context.templates_dir:
-                            cuda_supported_arch = [
-                                k for k in arch_context if hasattr(cuda_context, k)
-                            ]
-                            for sa in cuda_supported_arch:
-                                to_render(arch=sa, cuda_url=cuda_target_arch[sa])
-                        else:
-                            to_render()
-                    except Exception as e:  # pylint: disable=broad-except
-                        send_log(
-                            f"Error while generating Dockerfiles:\n{e}",
-                            _manager_level=logging.ERROR,
+                    cached_key = f"{build_info.shared_context.distro_name}{ctx._templates_dir.getsyspath(tpl_file)}"
+                    if cached_key in cached:
+                        continue
+                    else:
+                        cached.append(cached_key)
+                        to_render = partial(
+                            render_template,
+                            input_name=tpl_file,
+                            inp_fs=ctx._templates_dir,
+                            output_path=paths["output_path"],
+                            out_fs=ctx._generated_dir,
+                            build_tag=paths["build_tag"],
+                            cuda=cattr.unstructure(cuda),
+                            metadata=metadata,
+                            distros=build_info.shared_context.distro_name,
+                            xx_image="tonistiigi/xx",
+                            xx_version="1.1.0",
                         )
-                        raise
+
+                        try:
+                            if "rhel" in shared_context.templates_dir:
+                                cuda_supported_arch = [
+                                    k for k in arch_context if hasattr(cuda_context, k)
+                                ]
+                                for sa in cuda_supported_arch:
+                                    to_render(arch=sa, cuda_url=cuda_target_arch[sa])
+                            else:
+                                to_render()
+                        except Exception as e:  # pylint: disable=broad-except
+                            send_log(
+                                f"Error while generating Dockerfiles:\n{e}",
+                                _manager_level=logging.ERROR,
+                            )
+                            raise
 
 
 def get_python_version_from_tag(tag: str) -> t.List[int]:

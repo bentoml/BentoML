@@ -1,12 +1,9 @@
 {{ metadata.header }}
-
 {% set cached = ['arm32v5', 'arm32v6'] %}
-
 {% set pip_options = ['--no-cache-dir'] %}
-
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ build_tag }} as base
+FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
 
 FROM base as base-arm64
 
@@ -19,3 +16,7 @@ ARG TARGETARCH
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
 RUN pip install bentoml==${BENTOML_VERSION} {{ pip_options|join(' ') }}
+
+RUN yum remove -y openssl11-devel bzip2-devel wget curl git libff-devel openssl11 \
+    && yum clean all \
+    && rm -rf /var/cache/yum

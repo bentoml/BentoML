@@ -2,7 +2,7 @@
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as base
+FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 

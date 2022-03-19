@@ -3,7 +3,7 @@
 {% set pip_options = ['--no-cache-dir'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as base
+FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 

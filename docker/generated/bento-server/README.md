@@ -36,16 +36,17 @@ There are three type of BentoServer docker base image:
 
 | Image Type | Description                                | Supported OS                                          | Usage                             |
 |------------|--------------------------------------------|-------------------------------------------------------|-----------------------------------|
-| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `ubi{7,8}`, `amazonlinux2`, `alpine3.14`    | production ready                  |
-| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `ubi{7,8}`                                  | production ready with GPU support |
-| `devel`    | nightly build from development branch      | `debian`, `ubi{7,8}`                                  | for development use only          |
+| `runtime`  | contains latest BentoML releases from PyPI | `debian{11,10}`, `ubi8`, `amazonlinux2`, `alpine3.14` | production ready                  |
+| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian{11,10}`, `ubi8`                               | production ready with GPU support |
+| `devel`    | nightly build from development branch      | `debian{11,10}`, `ubi8`                               | for development use only          |
+| `conda`    | runtime + conda + optional GPU supports    | `debian{11,10}`,                                      | production ready                  |
 
 * Note: currently there's no nightly devel image with GPU support.
 
 The final docker image tags will have the following format:
 
 ```markdown
-<release_type>-<python_version>-<distros>-<suffix>
+<release_type>-<python_version>-<distros>-<suffix>-<?:conda>
    │             │                │        │
    │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
    │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, ubi7
@@ -58,14 +59,29 @@ Example image tags:
 - `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
-## NOTICE: MISSING ARCHITECTURE
+## NOTICE: MISSING PYTHON VERSION ON UBI
 
-For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not having support for other architecture.
+Python 3.7 and 3.10 is missing. The reason being RedHat doesn't provide support for these Python version.
+If you need to use UBI and Python 3.7 make sure to contact the BentoML team for supports..
+
+## NOTICE: CONDA AVAILABILITY ONLY ON DEBIAN
+
+From 1.0.0a7 onwards, BentoML will only provide conda supports with debian variants only.
+
+We ran into a lot of trouble building BentoML to supports Python from 3.6 to 3.10 with conda environment on other distros than debian. In order to reduce 
+complexity we will now only provides conda on Debian-based image. Conda will be available with all of BentoML image type, including `runtime`, `devel`, `cudnn`. 
+
+If you need to use conda on other distros contact the BentoML team for supports.
+
+Example conda tags:
+- `bento-server:1.0.0a7-python3.8-debian11-runtime-conda`
+- `bento-server:1.0.0a7-python3.8-debian11-cudnn-conda`
+- `bento-server:devel-python3.8-debian11-cudnn-conda`
 
 ## Latest tags for `bento-server 1.0.0a6`
 
 
-### debian 11 [_amd64_, _arm64v8_, _ppc64le_]
+### debian 11 [ _amd64_, _arm64v8_, _ppc64le_ ]
 
 - [`1.0.0a6-python3.6-debian11-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile)
 - [`1.0.0a6-python3.6-debian11-runtime-conda`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/runtime/Dockerfile-conda)
@@ -98,7 +114,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
 - [`devel-python3.10-debian11`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile)
 - [`devel-python3.10-debian11-conda`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian11/devel/Dockerfile-conda)
 
-### debian 10 [_amd64_, _arm64v8_, _ppc64le_]
+### debian 10 [ _amd64_, _arm64v8_, _ppc64le_ ]
 
 - [`1.0.0a6-python3.6-debian10-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile)
 - [`1.0.0a6-python3.6-debian10-runtime-conda`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/runtime/Dockerfile-conda)
@@ -131,7 +147,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
 - [`devel-python3.10-debian10`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile)
 - [`devel-python3.10-debian10-conda`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/debian10/devel/Dockerfile-conda)
 
-### UBI 8 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
+### UBI 8 [ _amd64_, _arm64v8_, _ppc64le_ ]
 
 - [`1.0.0a6-python3.6-ubi8-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/runtime/Dockerfile)
 - [`1.0.0a6-python3.6-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
@@ -149,25 +165,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
 - [`1.0.0a6-python3.10-ubi8-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/cudnn/Dockerfile)
 - [`devel-python3.10-ubi8`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi8/devel/Dockerfile)
 
-### UBI 7 [_amd64_, _s390x_, _ppc64le_]
-
-- [`1.0.0a6-python3.6-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
-- [`1.0.0a6-python3.6-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`devel-python3.6-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
-- [`1.0.0a6-python3.7-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
-- [`1.0.0a6-python3.7-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`devel-python3.7-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
-- [`1.0.0a6-python3.8-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
-- [`1.0.0a6-python3.8-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`devel-python3.8-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
-- [`1.0.0a6-python3.9-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
-- [`1.0.0a6-python3.9-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`devel-python3.9-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
-- [`1.0.0a6-python3.10-ubi7-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/runtime/Dockerfile)
-- [`1.0.0a6-python3.10-ubi7-cudnn`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/cudnn/Dockerfile)
-- [`devel-python3.10-ubi7`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/ubi7/devel/Dockerfile)
-
-### amazonlinux 2 [_amd64_, _arm64v8_]
+### amazonlinux 2 [ _amd64_, _arm64v8_ ]
 
 - [`1.0.0a6-python3.6-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 - [`1.0.0a6-python3.7-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
@@ -175,7 +173,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
 - [`1.0.0a6-python3.9-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 - [`1.0.0a6-python3.10-amazonlinux2-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/amazonlinux2/runtime/Dockerfile)
 
-### alpine 3.14 [_amd64_, _arm64v8_, _ppc64le_, _s390x_]
+### alpine 3.14 [ _amd64_, _arm64v8_, _ppc64le_, _s390x_ ]
 
 - [`1.0.0a6-python3.6-alpine3.14-runtime`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/runtime/Dockerfile)
 - [`devel-python3.6-alpine3.14`](https://github.com/bentoml/BentoML/tree/main/docker/generated/bento-server/alpine3.14/devel/Dockerfile)

@@ -109,11 +109,11 @@ def add_build_command(cli: click.Group) -> None:
             distro_name = cmd["labels"]["distro_name"]
 
             builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if 'conda' in cmd['tags'] else ''}"
+            send_log(f"args for buildx: {cmd}")
 
             try:
                 builder = create_buildx_builder(name=builder_name)
                 BUILDER_LIST.append(builder)
-                send_log(f"Args: {cmd}")
 
                 # NOTE: we need to push to registry when releasing different
                 # * architecture.
@@ -171,7 +171,11 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
             *platforms,
         ) = tag_context
 
-        ref = f"{registry}/{image_tag}"
+        build_args = {"PYTHON_VERSION": python_version}
+        if "ubi" in image_tag:
+            build_args["UBIFORMAT"] = f'python-{python_version.replace(".","")}'
+
+        ref = f"{registry}/{ctx.organization}/{image_tag}"
         # "cache_to": f"type=registry,ref={ref},mode=max",
         cache_from = [{"type": "registry", "ref": ref}]
 
@@ -192,7 +196,7 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
 
         yield {
             "context_path": ctx._fs.getsyspath("/"),
-            "build_args": {"PYTHON_VERSION": python_version},
+            "build_args": build_args,
             "progress": "plain",
             "file": ctx._generated_dir.getsyspath(
                 fs.path.combine(output_path, target_file)
@@ -234,7 +238,7 @@ def order_build_hierarchy(
         target_releases = ("base",) + target_releases
 
     hierarchy = {
-        f"{ctx.organization}/{tag}": (
+        tag: (
             meta["output_path"],
             meta["build_tag"],
             cx.shared_context.python_version,
@@ -251,6 +255,7 @@ def order_build_hierarchy(
         for tag, meta in cx.release_tags.items()
         for tr in target_releases
         if tr in tag
+        and cx.shared_context.python_version not in cx.shared_context.ignore_python
     }
 
     base_tags = dicttoolz.keyfilter(lambda x: "base" in x, hierarchy)

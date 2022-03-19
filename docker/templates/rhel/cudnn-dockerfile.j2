@@ -4,21 +4,59 @@ ARG PYTHON_VERSION
 
 {% set cached = ['arm32v5', 'arm32v6'] %}
 
-FROM {{ metadata.package }}:{{ build_tag }} as baseline
+FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as nvidia-base
+
+{% if "amd64" in cuda %}
+FROM nvidia-base as nvidia-base-amd64
+ENV NVARCH x86_64
+
+    {% if "requires" in cuda.amd64 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.amd64.requires }}"
+    {% endif %}
+ENV NV_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
+
+{% endif %}
+
+{% if "arm64v8" in cuda %}
+FROM nvidia-base as nvidia-base-arm64
+ENV NVARCH sbsa
+
+    {% if "requires" in cuda.arm64v8 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
+    {% endif %}
+ENV NV_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
+
+{% endif %}
+
+{% if "ppc64le" in cuda %}
+FROM nvidia-base as nvidia-base-ppc64le
+ENV NVARCH ppc64le
+
+    {% if "requires" in cuda.ppc64le %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.ppc64le.requires }}"
+    {% endif %}
+ENV NV_CUDA_CUDART_VERSION {{ cuda.ppc64le.components.cudart.version }}
+
+{% endif %}
+FROM nvidia-base-${TARGETARCH} as stage_cached
+
+FROM nvidia-base-${TARGETARCH} as baseline
+
+ARG TARGETARCH
+
+ENV CUDA_VERSION {{ cuda.version.full }}
 
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
     echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
 
-ENV CUDA_VERSION {{ cuda.version.full }}
-
 # For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
-RUN yum upgrade -y && yum install -y \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/yum \
+    yum upgrade -y && yum install -y \
     cuda-cudart-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_CUDA_CUDART_VERSION} \
     cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }} \
     && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda \
-    && yum clean all \
-    && rm -rf /var/cache/yum/*
+    && yum clean all
 
 # nvidia-docker 1.0
 RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
@@ -33,7 +71,7 @@ COPY NGC-DL-CONTAINER-LICENSE /
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-from baseline as base
+FROM baseline as base
 
 ENV NVIDIA_CUDA_LIB_VERSION {{ cuda.version.full + "-1" }}
 
@@ -147,9 +185,8 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.com>"
-
-RUN yum install -y \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/yum \
+    yum install -y \
     cuda-libraries-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_CUDA_LIB_VERSION} \
     cuda-nvtx-{{ cuda.version.major }}-{{ cuda.version.minor }}-${NVIDIA_NVTX_VERSION} \
     {% if has_libnpp_package %}
@@ -160,9 +197,12 @@ RUN yum install -y \
     ${NVIDIA_LIBNCCL_PACKAGE} \
     {% endif %}
     ${NVIDIA_CUDNN_PACKAGE} \
-    && yum clean all \
-    && rm -rf /var/cache/yum/*
+    && yum clean all
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+
+RUN yum remove -y gcc curl make git \
+    && yum clean all \
+    && rm -rf /var/cache/yum

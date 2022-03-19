@@ -122,6 +122,10 @@ class SharedCtx:
     templates_dir: str
     conda: bool
 
+    ignore_python: t.Optional[t.List[str]] = attrs.field(
+        converter=attrs.converters.default_if_none([""]), default=None
+    )
+
     release_types: t.List[str] = attrs.field(
         factory=list,
         validator=lambda _, __, value: set(value).issubset(DOCKERFILE_BUILD_HIERARCHY),
@@ -216,10 +220,14 @@ def create_tags_per_distros(
         build_tag = ""
         conda_tag = ""
         if rt != "base":
-            build_tag = TAG_FORMAT.format(
-                release_type="base",
-                python_version="$PYTHON_VERSION",
-                suffixes=shared_context.suffixes,
+            build_tag = (
+                shared_context.docker_package
+                + ":"
+                + TAG_FORMAT.format(
+                    release_type="base",
+                    python_version="$PYTHON_VERSION",
+                    suffixes=shared_context.suffixes,
+                )
             )
             if shared_context.conda:
                 conda_tag = build_tag + "-conda"
@@ -296,6 +304,10 @@ def create_distro_context(
         patch=patch,
         full=cuda_version_full,
     )
+    templates_dir = distro_info.pop("templates_dir")
+    base_image = distro_info.pop("base_image")
+    if templates_dir == "rhel" and "ubi" in base_image:
+        base_image = base_image.format(f"python-$UBIFORMAT")
 
     try:
         dependencies = distro_info.pop("dependencies")
@@ -315,16 +327,17 @@ def create_distro_context(
     shared_context = SharedCtx(
         distro_name=distro_name,
         python_version=python_version,
+        ignore_python=distro_info.pop("ignore_python"),
         conda=distro_info.pop("conda"),
         suffixes=distro_info.pop("suffixes"),
         release_types=distro_info.pop("release_types"),
-        templates_dir=distro_info.pop("templates_dir"),
+        templates_dir=templates_dir,
         architectures=distro_info.pop("architectures"),
         bentoml_version=ctx.bentoml_version,
         docker_package=ctx.docker_package,
     )
     build_ctx = BuildCtx(
-        base_image=distro_info.pop("base_image"),
+        base_image=base_image,
         header=distro_info.pop("header"),
         envars=distro_info.pop("envars"),
         cuda_context=cuda_context,

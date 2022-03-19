@@ -2,9 +2,9 @@
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as stage_cached
+FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as stage_cached
 
-FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as base
+FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
 
 RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \

@@ -44,16 +44,17 @@ There are three type of BentoServer docker base image:
 
 | Image Type | Description                                | Supported OS                                          | Usage                             |
 |------------|--------------------------------------------|-------------------------------------------------------|-----------------------------------|
-| `runtime`  | contains latest BentoML releases from PyPI | `debian`, `ubi{7,8}`, `amazonlinux2`, `alpine3.14`    | production ready                  |
-| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian`, `ubi{7,8}`                                  | production ready with GPU support |
-| `devel`    | nightly build from development branch      | `debian`, `ubi{7,8}`                                  | for development use only          |
+| `runtime`  | contains latest BentoML releases from PyPI | `debian{11,10}`, `ubi8`, `amazonlinux2`, `alpine3.14` | production ready                  |
+| `cudnn`    | runtime + support for CUDA-enabled GPU     | `debian{11,10}`, `ubi8`                               | production ready with GPU support |
+| `devel`    | nightly build from development branch      | `debian{11,10}`, `ubi8`                               | for development use only          |
+| `conda`    | runtime + conda + optional GPU supports    | `debian{11,10}`,                                      | production ready                  |
 
 * Note: currently there's no nightly devel image with GPU support.
 
 The final docker image tags will have the following format:
 
 ```markdown
-<release_type>-<python_version>-<distros>-<suffix>
+<release_type>-<python_version>-<distros>-<suffix>-<?:conda>
    │             │                │        │
    │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
    │             │                └─> formatted <dist><dist_version>, e.g: ami2, debian, ubi7
@@ -66,9 +67,24 @@ Example image tags:
 - `bento-server:1.0.0-python3.8-ubi8-cudnn`
 - `bento-server:1.0.0-python3.7-ami2-runtime`
 
-## NOTICE: MISSING ARCHITECTURE
+## NOTICE: MISSING PYTHON VERSION ON UBI
 
-For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not having support for other architecture.
+Python 3.7 and 3.10 is missing. The reason being RedHat doesn't provide support for these Python version.
+If you need to use UBI and Python 3.7 make sure to contact the BentoML team for supports..
+
+## NOTICE: CONDA AVAILABILITY ONLY ON DEBIAN
+
+From 1.0.0a7 onwards, BentoML will only provide conda supports with debian variants only.
+
+We ran into a lot of trouble building BentoML to supports Python from 3.6 to 3.10 with conda environment on other distros than debian. In order to reduce 
+complexity we will now only provides conda on Debian-based image. Conda will be available with all of BentoML image type, including `runtime`, `devel`, `cudnn`. 
+
+If you need to use conda on other distros contact the BentoML team for supports.
+
+Example conda tags:
+- `bento-server:1.0.0a7-python3.8-debian11-runtime-conda`
+- `bento-server:1.0.0a7-python3.8-debian11-cudnn-conda`
+- `bento-server:devel-python3.8-debian11-cudnn-conda`
 
 ## Latest tags for `{{ bentoml_package }} {{ bentoml_release_version }}`
 
@@ -96,7 +112,7 @@ For all 3.6 images, only `x86_64` is provided. This is due to Python3.6 not havi
     {% endfor %}
 
     {%- set tags_path = tag_ref[distros] %}
-    {% print"\n### " %}{% print distro_string %} {% print distro_version %} [{{ formatted_arch | join(", ") }}]{% print "\n\n" %}
+    {% print"\n### " %}{% print distro_string %} {% print distro_version %} [ {{ formatted_arch | join(", ") }} ]{% print "\n\n" %}
     {% for (tag, path) in tags_path %}
         {% if bentoml_package in tag %}
         {% set tagname = tag.split(':')[1] %}

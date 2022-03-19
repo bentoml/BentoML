@@ -19,6 +19,7 @@ from yamlinclude import YamlIncludeConstructor
 from ._make import CUDACtx
 from ._funcs import send_log
 from ._funcs import render_template
+from .exceptions import ManagerGenerateFailed
 from ._configuration import DOCKERFILE_BUILD_HIERARCHY
 from ._configuration import SUPPORTED_ARCHITECTURE_TYPE
 
@@ -41,7 +42,6 @@ CUDA_ARCHITECTURE_PER_DISTRO = {
     "debian11": ["amd64", "arm64v8"],
     "debian10": ["amd64", "arm64v8"],
     "ubi8": ["amd64", "arm64v8", "ppc64le"],
-    "ubi7": ["amd64", "arm64v8", "ppc64le"],
 }
 
 ARCHITECTURE_PER_DISTRO = {
@@ -49,7 +49,6 @@ ARCHITECTURE_PER_DISTRO = {
     "debian11": SUPPORTED_ARCHITECTURE_TYPE,
     "debian10": SUPPORTED_ARCHITECTURE_TYPE,
     "ubi8": SUPPORTED_ARCHITECTURE_TYPE,
-    "ubi7": ["amd64", "s390x", "ppc64le"],
     "amazonlinux2": ["amd64", "arm64v8"],
 }
 
@@ -156,6 +155,10 @@ def gen_manifest(
 
 def gen_dockerfiles(ctx: Environment):
 
+    registry = os.environ.get("DOCKER_REGISTRY", None)
+    if registry is None:
+        raise ManagerGenerateFailed("Failed to retrieve docker registry from envars.")
+
     cached = []
     for builds, tags in zip(ctx.build_ctx.values(), ctx.release_ctx.values()):
 
@@ -183,7 +186,7 @@ def gen_dockerfiles(ctx: Environment):
                 "header": build_info.header,
                 "base_image": build_info.base_image,
                 "envars": build_info.envars,
-                "package": f"{ctx.organization}/{shared_context.docker_package}",
+                "organization": ctx.organization,
                 "python_version": shared_context.python_version,
                 "arch_context": arch_context,
             }

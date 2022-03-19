@@ -32,7 +32,6 @@ SUPPORTED_OS_RELEASES = [
     "debian11",
     "debian10",
     "ubi8",
-    "ubi7",
     "amazonlinux2",
     "alpine3.14",
 ]

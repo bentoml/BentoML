@@ -121,11 +121,11 @@ docker-run-%: ## Run a task from a docker container (useful for CI)
 .PHONY: all
 all:
 	$(eval $@_ORG := aarnphm)
-	$(eval $@_DISTROS := debian10)
+	$(eval $@_DISTROS := amazonlinux2)
 	$(eval $@_RELEASES:= base)
 	$(eval $@_distro_args := $(call expands,distros,$($@_DISTROS)))
 	$(eval $@_releases_args := $(call expands,releases,$($@_RELEASES)))
 	$(MAKE) docker-run-generate organization=$($@_ORG)
-	$(MAKE) docker-run-build organization=$($@_ORG) $($@_distro_args) $($@_releases_args)
+	$(MAKE) run-build organization=$($@_ORG) $($@_distro_args) $($@_releases_args)
 %:
 	@true

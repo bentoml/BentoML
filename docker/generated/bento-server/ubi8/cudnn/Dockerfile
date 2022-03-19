@@ -10,21 +10,47 @@
 ARG PYTHON_VERSION
 
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi8 as baseline
+FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi8 as nvidia-base
 
-RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubi8/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
-    echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+FROM nvidia-base as nvidia-base-amd64
+ENV NVARCH x86_64
+
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
+ENV NV_CUDA_CUDART_VERSION 11.5.117-1
+
+
+FROM nvidia-base as nvidia-base-arm64
+ENV NVARCH sbsa
+
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
+ENV NV_CUDA_CUDART_VERSION 11.5.117-1
+
+
+FROM nvidia-base as nvidia-base-ppc64le
+ENV NVARCH ppc64le
+
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
+ENV NV_CUDA_CUDART_VERSION 11.5.117-1
+
+FROM nvidia-base-${TARGETARCH} as stage_cached
+
+FROM nvidia-base-${TARGETARCH} as baseline
+
+ARG TARGETARCH
 
 ENV CUDA_VERSION 11.5.1
 
+RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel8/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
+    echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+
 # For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
-RUN yum upgrade -y && yum install -y \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/yum \
+    yum upgrade -y && yum install -y \
     cuda-cudart-11-5-${NVIDIA_CUDA_CUDART_VERSION} \
     cuda-compat-11-5 \
     && ln -s cuda-11.5 /usr/local/cuda \
-    && yum clean all \
-    && rm -rf /var/cache/yum/*
+    && yum clean all
 
 # nvidia-docker 1.0
 RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
@@ -39,7 +65,7 @@ COPY NGC-DL-CONTAINER-LICENSE /
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-from baseline as base
+FROM baseline as base
 
 ENV NVIDIA_CUDA_LIB_VERSION 11.5.1-1
 
@@ -106,24 +132,24 @@ COPY cuda.repo-ppc64le /etc/yum.repos.d/cuda.repo
 COPY nvidia-ml.repo-ppc64le /etc/yum.repos.d/nvidia-ml.repo
 
 
-FROM base as base-s390x
-
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-LABEL maintainer "BentoML Team <contact@bentoml.com>"
-
-RUN yum install -y \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/yum \
+    yum install -y \
     cuda-libraries-11-5-${NVIDIA_CUDA_LIB_VERSION} \
     cuda-nvtx-11-5-${NVIDIA_NVTX_VERSION} \
     ${NVIDIA_LIBNPP_PACKAGE} \
     libcublas-11-5-${NVIDIA_LIBCUBLAS_VERSION} \
     ${NVIDIA_LIBNCCL_PACKAGE} \
     ${NVIDIA_CUDNN_PACKAGE} \
-    && yum clean all \
-    && rm -rf /var/cache/yum/*
+    && yum clean all
 
 ENV BENTOML_VERSION=1.0.0a6
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+
+RUN yum remove -y gcc curl make git \
+    && yum clean all \
+    && rm -rf /var/cache/yum

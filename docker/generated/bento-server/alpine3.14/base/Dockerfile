@@ -46,4 +46,4 @@ ENV LC_ALL=C.UTF-8
 
 ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN xx-apk add --no-cache --update bash gcc libc-dev
+RUN --mount=type=cache,target=/var/cache/apk xx-apk add --update bash gcc libc-dev

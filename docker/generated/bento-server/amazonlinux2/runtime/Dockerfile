@@ -24,6 +24,3 @@ ARG TARGETARCH
 ENV BENTOML_VERSION=1.0.0a6
 
 RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
-
-RUN --mount=type=cache,target=/var/cache/yum yum remove -y git gcc \
-	&& yum clean all

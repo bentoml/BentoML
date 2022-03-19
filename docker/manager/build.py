@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
-import json
 import sys
+import json
 import typing as t
 import logging
 import subprocess
@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 BUILDER_LIST = []
+CONDA_DISTROS = ["debian11", "debian10"]
 
 
 def process_docker_arch(arch: str) -> str:
@@ -86,7 +87,7 @@ def add_build_command(cli: click.Group) -> None:
     ) -> None:
         """
         Build releases docker images with `buildx`. Utilize ThreadPoolExecutor.
-        # of workers = max-workers * 2 to speed up releases since we have so many :)
+        # of workers = max-workers to speed up releases since we have so many :)
 
         \b
         Usage:
@@ -107,7 +108,7 @@ def add_build_command(cli: click.Group) -> None:
             python_version = cmd["build_args"]["PYTHON_VERSION"]
             distro_name = cmd["labels"]["distro_name"]
 
-            builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}"
+            builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if distro_name in CONDA_DISTROS else ''}"
 
             try:
                 builder = create_buildx_builder(name=builder_name)
@@ -172,8 +173,18 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
 
         if build_tag != "":
             build_base_image = build_tag.replace("$PYTHON_VERSION", python_version)
-            base_ref = f"{registry}/{build_base_image}"
-            cache_from.append({"type": "registry", "ref": base_ref})
+            base_ref = {
+                "type": "registry",
+                "ref": f"{registry}/{ctx.organization}/{build_base_image}",
+            }
+            cache_from.append(base_ref)
+            # remove below after first releases
+            if ctx.organization == "bentoml":
+                prebuilt = {
+                    "type": "registry",
+                    "ref": f"{registry}/aarnphm/{build_base_image}",
+                }
+                cache_from.append(prebuilt)
 
         yield {
             "context_path": ctx._fs.getsyspath("/"),

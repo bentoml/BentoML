@@ -14,7 +14,8 @@ SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 ENV BENTOML_VERSION=1.0.0a6
 
-RUN xx-apk --no-cache --update add build-base git
+RUN --mount=type=cache,target=/var/cache/apk \
+    xx-apk --update add build-base git musl-dev linux-headers g++
 
 RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
 

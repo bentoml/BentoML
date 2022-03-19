@@ -2,24 +2,55 @@
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as baseline
+FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as nvidia-base
 
-RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
-    gnupg2 curl ca-certificates && \
-    curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - && \
-    echo "deb {{ cuda.cuda_repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list && \
-    if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi && \
-    xx-apt-get purge --autoremove -y curl \
-    && rm -rf /var/lib/apt/lists/*
+{% if "amd64" in cuda %}
+FROM nvidia-base as nvidia-base-amd64
+ENV NVARCH x86_64
+
+    {% if "requires" in cuda.amd64 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.amd64.requires }}"
+    {% endif %}
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
+{% endif %}
+{% if "arm64v8" in cuda %}
+FROM nvidia-base as nvidia-base-arm64
+ENV NVARCH sbsa
+
+    {% if "requires" in cuda.arm64v8 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
+    {% endif %}
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
+{% endif -%}
+
+FROM nvidia-base-${TARGETARCH}
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH
 
 ENV CUDA_VERSION {{ cuda.version.full }}
 
-# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
-RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
-    cuda-cudart-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_CUDART_VERSION} \
-    ${NVIDIA_CUDA_COMPAT_PACKAGE} \
-    && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda && \
-    rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    xx-apt-get install -y --no-install-recommends \
+        gnupg2 curl ca-certificates \
+    && curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - \
+    && echo "deb {{ cuda.cuda_repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
+    && if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi \
+    && xx-apt-get install -y --no-install-recommends \
+        cuda-cudart-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_CUDART_VERSION} \
+        ${NVIDIA_CUDA_COMPAT_PACKAGE} \
+    && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda \
+    && rm -rf /var/lib/apt/lists/*
 
 # Required for nvidia-docker v1
 RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf \
@@ -34,7 +65,11 @@ COPY NGC-DL-CONTAINER-LICENSE /
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-FROM baseline as base
+FROM nvidia-base-${TARGETARCH} as base
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH
 
 ENV NVIDIA_CUDA_LIB_VERSION {{ cuda.version.full + "-1" }}
 
@@ -157,7 +192,8 @@ ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
-RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    xx-apt-get install -y --no-install-recommends \
     cuda-libraries-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_LIB_VERSION} \
     {% if has_libnpp_package %}
     ${NVIDIA_LIBNPP_PACKAGE} \
@@ -169,6 +205,7 @@ RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \
     {% if has_libnccl_package %}
     ${NVIDIA_LIBNCCL_PACKAGE} \
     {% endif %}
+    && xx-apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Keep apt from auto upgrading the cublas and nccl packages. See https://gitlab.com/nvidia/container-images/cuda/-/issues/88
@@ -178,8 +215,7 @@ ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
 ARG MAMBA_DOCKERFILE_ACTIVATE 1
 
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 
-RUN xx-apt-get purge --auto-remove -y gcc python3-dev \
-    && xx-apt-get clean \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN rm -rf /var/lib/{apt,dpkg,cache,log}

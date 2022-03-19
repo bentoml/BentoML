@@ -4,6 +4,7 @@ BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=
 
 MANAGER_REPO := aarnphm/bentoml-docker
 MANAGER_TAG := 1.1.0
+MAX_WORKERS := 5
 
 # ----------------------
 export DOCKER_BUILDKIT=1
@@ -68,11 +69,6 @@ docker-bake-%: ## Build a docker target with buildx bake
 	$(eval bake_target :=$(bake_target_prefix))
 	@docker buildx bake $(bake_target) --push
 
-check_docker_manager:
-	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null` ; then \
-		docker pull $(MANAGER_REPO); \
-	fi
-
 check-platform: ## Test supported platform string
 	@./hack/shells/buildx_misc -create test_platform
 	@:$(eval $(call get_builder,$(BUILDER_NAME)))
@@ -81,20 +77,19 @@ check-platform: ## Test supported platform string
 # ----------------------
 # default args
 GENERATE_DARGS := --bentoml-version $(BENTOML_VERSION) --overwrite
-BUILD_DARGS := --bentoml-version $(BENTOML_VERSION)
+BUILD_DARGS := --bentoml-version $(BENTOML_VERSION) --max-workers $(MAX_WORKERS)
 
 # positional args
 generate_pargs = organization
-build_pargs = max-workers distros python-version releases organization
+build_pargs = distros python-version releases organization
 
-# flags only
-FLAGS = verbose quiet dry-run dump-metadata
-
+# functions
 UC = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
 rm = $(subst $2,,$1)
 pargs = $(foreach a,$($(subst $2,,$1)_pargs),$(if $(value $a),--$a $($a)))
-flags_only = $(foreach l,$(FLAGS),$(if $(findstring $l, $1),--$l))
+expands = $(foreach a,$2, $1=$a)
 
+# tasks
 TASKS := generate build
 .PHONY: run-all docker-run-all
 run-all: ## Run all task in pipeline: generate -> build -> test
@@ -107,18 +102,28 @@ run-%: ## Run a task. Currently: generate, build, test
 	$(eval $@_prefix := run-)
 	$(eval $@_target := $(subst $($@_prefix), ,$@))
 	$(eval $@_upper_target := $(call UC, $($@_target)))
-	@poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
+	@poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix))
 
 .PHONY: run-test
 run-test: ## Run test
 	@docker run $(COMMON_DOCKER_ARGS) -v $(PWD):/work aarnphm/bats-test:latest ./hack/runt
 
 .PHONY: docker-run-%
-docker-run-%: check_docker_manager ## Run a task from a docker container (useful for CI)
+docker-run-%: ## Run a task from a docker container (useful for CI)
+	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null` ; then \
+		docker pull $(MANAGER_REPO); \
+	fi
 	$(eval $@_prefix := docker-run-)
-	$(eval $@_dtarget := $(subst $($@_prefix), ,$@))
-	$(eval $@_dupper_target := $(call UC, $($@_dtarget)))
-	@$(MANAGER_DOCKER_RUN) poetry run manager $($@_dtarget) ${$($@_dupper_target)_DARGS} $(call pargs, $@, $($@_prefix)) $(call flags_only, $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)))
+	$(eval $@_target := $(subst $($@_prefix), ,$@))
+	$(eval $@_upper_target := $(call UC, $($@_target)))
+	@$(MANAGER_DOCKER_RUN) poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix))
 
+.PHONY: all
+all:
+	$(eval $@_org := aarnphm)
+	$(eval $@_DISTROS := debian10 debian11)
+	$(eval $@_distro_args := $(call expands,distros,$($@_DISTROS)))
+	$(MAKE) docker-run-generate organization=$($@_org)
+	$(MAKE) run-build organization=$($@_org) $($@_distro_args) 
 %:
 	@true

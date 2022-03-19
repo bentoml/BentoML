@@ -17,6 +17,10 @@ FROM amazonlinux:2 as python
 
 WORKDIR /tmp
 
+RUN --mount=type=cache,target=/var/cache/yum yum upgrade -y \
+	&& yum groupinstall "Development Tools" \
+	&& yum -y install gcc openssl11 openssl11-devel bzip2-devel libffi-devel wget curl gcc-c++ make git
+
 RUN <<"EOT"
 if [ "${PYTHON_VERSION}" == "3.6" ]; then
 	FULL_VERSION="3.6.15"
@@ -29,11 +33,7 @@ elif [ "${PYTHON_VERSION}" == "3.9" ]; then
 elif [ "${PYTHON_VERSION}" == "3.10" ]; then
 	FULL_VERSION="3.10.3"
 fi
-yum -y update
-yum groupinstall "Development Tools" && \
-	yum -y install \
-		gcc openssl11 openssl11-devel bzip2-devel libffi-devel wget curl
-
+	
 curl -O https://bootstrap.pypa.io/get-pip.py
 wget https://www.python.org/ftp/python/${FULL_VERSION}/Python-${FULL_VERSION}.tgz && tar xvf Python-${FULL_VERSION}.tgz
 cd Python-${PYTHON_VERSION}*/ && ./configure --enable-optimizations
@@ -62,10 +62,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-ENV PATH "$PATH:$HOME/.local/bin"
+ENV PATH "$PATH:/root/.local/bin:$HOME/.local/bin"
 
 RUN python3 get-pip.py --user
-
-RUN --mount=type=cache,target=/var/cache/yum yum upgrade -y \
-		&& yum install -y gcc gcc-c++ make \
-		&& yum clean all

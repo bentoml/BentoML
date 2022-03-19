@@ -7,11 +7,8 @@ FROM --platform=$BUILDPLATFORM {{ metadata.package }}:{{ build_tag }} as base
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN pip install bentoml==${BENTOML_VERSION} {{ pip_options|join(' ') }}
-
-RUN xx-apt-get purge --auto-remove -y gcc python3-dev \
-    && xx-apt-get clean \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install bentoml==${BENTOML_VERSION} {{ pip_options|join(' ') }}
 {% for key in metadata.arch_context if key not in cached %}
     {% if 'arm64' in key %}
 
@@ -33,3 +30,6 @@ FROM base-${TARGETARCH}
 ARG TARGETARCH
 
 ARG TARGETPLATFORM
+
+RUN xx-apt-get purge -y -q curl \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}

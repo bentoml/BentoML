@@ -10,7 +10,7 @@ ARG XX_VERSION=1.1.0
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
-FROM --platform=$BUILDPLATFORM debian:11-slim as build
+FROM --platform=$BUILDPLATFORM debian:11-slim as mamba
 
 COPY --from=xx / /
 
@@ -74,7 +74,10 @@ ARG TARGETARCH
 
 COPY --from=xx / /
 
-RUN xx-apt-get install -y -q --no-install-recommends bash
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    xx-apt-get install -y -q --no-install-recommends bash gcc python3-dev \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}
 
 ENV DEBIAN_FRONTEND noninteractive
 ARG PYTHON_VERSION
@@ -92,8 +95,8 @@ ENV MAMBA_ENV="base"
 
 ENV PATH="${MAMBA_ROOT_PREFIX}/bin:/usr/local/bin:$PATH"
 
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /tmp/bin/micromamba /bin/micromamba
+COPY --from=mamba /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=mamba /tmp/bin/micromamba /bin/micromamba
 
 RUN bash <<"EOT"
 echo "source /usr/local/bin/activate_conda" >> ~/.bashrc
@@ -111,7 +114,3 @@ SHELL [ "/usr/local/bin/run_conda_in_docker" ]
 RUN "${MAMBA_BIN}" install -y -n base -c conda-forge \
     python=${PYTHON_VERSION} pip \
     && micromamba clean --all --yes
-
-RUN xx-apt-get install -q -y --no-install-recommends gcc python3-dev \
-    && xx-apt-get clean \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}

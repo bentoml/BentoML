@@ -500,7 +500,6 @@ w_cuda_v11.5.1:
     release_types:
       - base
       - runtime
-      - devel
 
   alpine3.14:
     <<: *common

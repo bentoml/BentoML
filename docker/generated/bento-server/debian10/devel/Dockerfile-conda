@@ -10,15 +10,13 @@ ARG PYTHON_VERSION
 
 FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-debian10-conda as base
 
-RUN xx-apt-get install -q -y --no-install-recommends git
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    xx-apt-get install -q -y --no-install-recommends git
 
 ARG MAMBA_DOCKERFILE_ACTIVATE 1
 
-RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
-
-RUN xx-apt-get purge --auto-remove -y git gcc python3-dev \
-    && xx-apt-get clean \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install -U git+https://github.com/bentoml/bentoml.git@main
 
 FROM base as base-amd64
 

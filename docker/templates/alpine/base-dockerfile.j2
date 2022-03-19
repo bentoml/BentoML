@@ -48,4 +48,4 @@ ENV {{ key }}={{ value }}
 {% endif %}
 {% endfor %}
 
-RUN xx-apk add --no-cache --update bash gcc libc-dev
+RUN --mount=type=cache,target=/var/cache/apk xx-apk add --update bash gcc libc-dev

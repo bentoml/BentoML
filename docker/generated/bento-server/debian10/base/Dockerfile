@@ -58,7 +58,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-RUN xx-apt-get update \
-    && xx-apt-get install -q -y --no-install-recommends gcc python3-dev \
-    && xx-apt-get clean \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    xx-apt-get install -q -y --no-install-recommends gcc python3-dev \
+    && rm -rf /var/lib/apt/lists/*

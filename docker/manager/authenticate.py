@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def add_authenticate_command(cli: click.Group) -> None:
     @cli.command(name="auth-docker")
-    def auth_docker():  # dead: ignore
+    def auth_docker():
         """
         Authenticate to Docker Hub.
         Make sure to set environment vars under .env.

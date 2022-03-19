@@ -12,37 +12,6 @@ FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
 ARG PYTHON_VERSION
 
 FROM --platform=$BUILDPLATFORM python:${PYTHON_VERSION}-{{ py_img }} as base
-
-{% if "amd64" in cuda %}
-{% do cached.append("amd64") %}
-FROM base as base-amd64
-ENV NVARCH x86_64
-
-    {% if "requires" in cuda.amd64 %}
-ENV NVIDIA_REQUIRE_CUDA "{{ cuda.amd64.requires }}"
-    {% endif %}
-
-ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
-ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
-
-ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
-{% endif %}
-
-{% if "arm64v8" in cuda %}
-{% do cached.append("arm64v8") %}
-FROM base as base-arm64
-ENV NVARCH sbsa
-
-    {% if "requires" in cuda.arm64v8 %}
-ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
-    {% endif %}
-
-ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
-
-ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
-{% endif -%}
 {% for key in metadata.arch_context if key not in cached -%}
     {% if 'arm' in key %}
 
@@ -63,6 +32,13 @@ COPY --from=xx / /
 ARG TARGETPLATFORM
 
 ARG TARGETARCH
+
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    xx-apt-get install -q -y --no-install-recommends bash gcc python3-dev \
+    && xx-apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 {% for key, value in metadata.envars.items() if key != "BENTOML_VERSION" %}
 {% if key in ["PYTHON_VERSION"] %}
 
@@ -77,8 +53,3 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
-
-RUN xx-apt-get update \
-    && xx-apt-get install -q -y --no-install-recommends gcc python3-dev \
-    && xx-apt-get clean \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}

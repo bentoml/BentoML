@@ -8,7 +8,8 @@ SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN xx-apk --no-cache --update add build-base git
+RUN --mount=type=cache,target=/var/cache/apk \
+    xx-apk --update add build-base git musl-dev linux-headers g++
 
 RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
 {% for key in metadata.arch_context if key not in cached -%}

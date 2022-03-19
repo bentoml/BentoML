@@ -4,7 +4,7 @@ ARG XX_VERSION={{ xx_version }}
 
 FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
 
-FROM --platform=$BUILDPLATFORM {{ metadata.base_image }} as build
+FROM --platform=$BUILDPLATFORM {{ metadata.base_image }} as mamba
 
 COPY --from=xx / /
 
@@ -39,37 +39,6 @@ tar -xf /tmp/micromamba-${MAMBA_VERSION}.tar.bz2 -C "/tmp" "bin/micromamba"
 EOT
 
 FROM {{ metadata.base_image }} as base
-
-{% if "amd64" in cuda %}
-{% do cached.append("amd64") %}
-FROM base as base-amd64
-ENV NVARCH x86_64
-
-    {% if "requires" in cuda.amd64 %}
-ENV NVIDIA_REQUIRE_CUDA "{{ cuda.amd64.requires }}"
-    {% endif %}
-
-ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.amd64.components.cudart.version }}
-ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }}
-
-ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
-{% endif %}
-{% if "arm64v8" in cuda %}
-{% do cached.append("arm64v8") %}
-FROM base as base-arm64
-ENV NVARCH sbsa
-
-    {% if "requires" in cuda.arm64v8 %}
-ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
-    {% endif %}
-
-ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
-
-ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
-{% endif -%}
-
 {% for key in metadata.arch_context if key not in cached %}
     {% if 'arm' in key %}
 
@@ -89,7 +58,11 @@ ARG TARGETARCH
 
 COPY --from=xx / /
 
-RUN xx-apt-get install -y -q --no-install-recommends bash
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    xx-apt-get install -y -q --no-install-recommends bash gcc python3-dev \
+    && xx-apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND noninteractive
 {% for key, value in metadata.envars.items() if key != "BENTOML_VERSION" %}
@@ -108,8 +81,8 @@ ENV MAMBA_ENV="base"
 
 ENV PATH="${MAMBA_ROOT_PREFIX}/bin:/usr/local/bin:$PATH"
 
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /tmp/bin/micromamba /bin/micromamba
+COPY --from=mamba /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=mamba /tmp/bin/micromamba /bin/micromamba
 
 RUN bash <<"EOT"
 echo "source /usr/local/bin/activate_conda" >> ~/.bashrc
@@ -127,8 +100,3 @@ SHELL [ "/usr/local/bin/run_conda_in_docker" ]
 RUN "${MAMBA_BIN}" install -y -n base -c conda-forge \
     python=${PYTHON_VERSION} pip \
     && micromamba clean --all --yes
-
-RUN xx-apt-get install -q -y --no-install-recommends gcc python3-dev \
-    && xx-apt-get clean \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
-

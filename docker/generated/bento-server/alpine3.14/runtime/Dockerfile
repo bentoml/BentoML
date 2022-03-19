@@ -14,7 +14,11 @@ SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 ENV BENTOML_VERSION=1.0.0a6
 
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+RUN --mount=type=cache,target=/var/cache/apk \
+    xx-apk add --update musl-dev build-base linux-headers g++
+
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 
 FROM base as base-amd64
 

@@ -4,6 +4,8 @@ ARG XX_VERSION={{ xx_version }}
 
 FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
 
+FROM {{ metadata.base_image }} as stage_cached
+
 FROM --platform=$BUILDPLATFORM {{ metadata.base_image }} as mamba
 
 COPY --from=xx / /
@@ -40,9 +42,12 @@ EOT
 
 FROM {{ metadata.base_image }} as base
 {% for key in metadata.arch_context if key not in cached %}
-    {% if 'arm' in key %}
+    {% if 'arm32' in key %}
 
 FROM base as base-arm
+    {% elif 'arm64' in key %}
+
+FROM base as base-arm64
     {% elif 'i386' in key %}
 
 FROM base as base-386
@@ -59,7 +64,8 @@ ARG TARGETARCH
 COPY --from=xx / /
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
     xx-apt-get install -y -q --no-install-recommends bash gcc python3-dev \
     && xx-apt-get clean \
     && rm -rf /var/lib/apt/lists/*

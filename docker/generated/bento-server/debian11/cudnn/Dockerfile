@@ -8,27 +8,52 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as baseline
+FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as nvidia-base
+
+FROM nvidia-base as nvidia-base-amd64
+ENV NVARCH x86_64
+
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
+
+ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-11-5
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
+
+FROM nvidia-base as nvidia-base-arm64
+ENV NVARCH sbsa
+
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
+
+ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
+FROM nvidia-base-${TARGETARCH} as stage_cached
+
+ARG TARGETARCH
+
+FROM nvidia-base-${TARGETARCH}
 
 ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
-    xx-apt-get install -y --no-install-recommends \
-    gnupg2 curl ca-certificates && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/7fa2af80.pub | apt-key add - && \
-    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list && \
-    if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi
-
 ENV CUDA_VERSION 11.5.1
 
-# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
     xx-apt-get install -y --no-install-recommends \
-    cuda-cudart-11-5=${NVIDIA_CUDA_CUDART_VERSION} \
-    ${NVIDIA_CUDA_COMPAT_PACKAGE} \
-    && ln -s cuda-11.5 /usr/local/cuda
+        gnupg2 curl ca-certificates \
+    && curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/7fa2af80.pub | apt-key add - \
+    && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
+    && if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi \
+    && xx-apt-get install -y --no-install-recommends \
+        cuda-cudart-11-5=${NVIDIA_CUDA_CUDART_VERSION} \
+        ${NVIDIA_CUDA_COMPAT_PACKAGE} \
+    && ln -s cuda-11.5 /usr/local/cuda \
+    && rm -rf /var/lib/apt/lists/*
 
 # Required for nvidia-docker v1
 RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf \
@@ -43,7 +68,11 @@ COPY NGC-DL-CONTAINER-LICENSE /
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-FROM baseline as base
+FROM nvidia-base-${TARGETARCH} as base
+
+ARG TARGETPLATFORM
+
+ARG TARGETARCH
 
 ENV NVIDIA_CUDA_LIB_VERSION 11.5.1-1
 
@@ -102,7 +131,8 @@ ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
     xx-apt-get install -y --no-install-recommends \
     cuda-libraries-11-5=${NVIDIA_CUDA_LIB_VERSION} \
     ${NVIDIA_LIBNPP_PACKAGE} \
@@ -110,7 +140,9 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     libcusparse-11-5=${NVIDIA_LIBCUSPARSE_VERSION} \
     ${NVIDIA_LIBCUBLAS_PACKAGE} \
     ${NVIDIA_CUDNN_PACKAGE} \
-    ${NVIDIA_LIBNCCL_PACKAGE}
+    ${NVIDIA_LIBNCCL_PACKAGE} \
+    && xx-apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Keep apt from auto upgrading the cublas and nccl packages. See https://gitlab.com/nvidia/container-images/cuda/-/issues/88
 RUN apt-mark hold ${NVIDIA_CUDNN_PACKAGE_NAME} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME} ${NVIDIA_LIBNCCL_PACKAGE_NAME}
@@ -118,3 +150,5 @@ ENV BENTOML_VERSION=1.0.0a6
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+
+RUN rm -rf /var/lib/{apt,dpkg,cache,log}

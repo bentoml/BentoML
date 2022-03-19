@@ -44,11 +44,17 @@ preflight() {
 
 }
 
-qemu() {
-	if [[ "$(uname)" == "Darwin" ]]; then
-		docker run --rm --privileged tonistiigi/binfmt --install all
+ARGS=(--rm --privileged)
+
+install_qemu() {
+	if [[ -f "/.dockerenv" ]]; then
+		docker run "${ARGS[@]}" multiarch/qemu-user-static:register
 	else
-		docker run --rm --privileged aptman/qus -s -l -- -p arm i386 mips64 mips64el ppc64le s390x aarch64 x86_64
+		if [[ "$(uname)" == "Darwin" ]]; then
+			docker run "${ARGS[@]}" tonistiigi/binfmt --install all
+		else
+			docker run "${ARGS[@]}" aptman/qus -s -l -- -p arm i386 mips64 mips64el ppc64le s390x aarch64 x86_64
+		fi
 	fi
 	exit 0
 }
@@ -85,7 +91,7 @@ while [[ $# -gt 0 ]]; do
 		preflight
 		;;
 	-i | -install-qemu | --install-qemu)
-		qemu
+		install_qemu
 		;;
 	-c | -create | --create)
 		NAME="$2"

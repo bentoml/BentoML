@@ -26,3 +26,6 @@ FROM base-${TARGETARCH}
 ARG TARGETARCH
 
 ARG TARGETPLATFORM
+
+RUN xx-apt-get purge -y -q curl \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}

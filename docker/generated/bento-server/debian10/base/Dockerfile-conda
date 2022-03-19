@@ -10,6 +10,8 @@ ARG XX_VERSION=1.1.0
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
+FROM debian:10-slim as stage_cached
+
 FROM --platform=$BUILDPLATFORM debian:10-slim as mamba
 
 COPY --from=xx / /
@@ -47,24 +49,8 @@ EOT
 FROM debian:10-slim as base
 
 FROM base as base-amd64
-ENV NVARCH x86_64
 
-ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
-
-ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
-ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-11-5
-
-ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 FROM base as base-arm64
-ENV NVARCH sbsa
-
-ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
-
-ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
-
-ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
 FROM base as base-ppc64le
 
@@ -75,9 +61,11 @@ ARG TARGETARCH
 COPY --from=xx / /
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
     xx-apt-get install -y -q --no-install-recommends bash gcc python3-dev \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+    && xx-apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND noninteractive
 ARG PYTHON_VERSION

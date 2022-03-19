@@ -102,11 +102,11 @@ run-%: ## Run a task. Currently: generate, build, test
 	$(eval $@_prefix := run-)
 	$(eval $@_target := $(subst $($@_prefix), ,$@))
 	$(eval $@_upper_target := $(call UC, $($@_target)))
-	@poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix))
+	poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix))
 
 .PHONY: run-test
 run-test: ## Run test
-	@docker run $(COMMON_DOCKER_ARGS) -v $(PWD):/work aarnphm/bats-test:latest ./hack/runt
+	docker run $(COMMON_DOCKER_ARGS) -v $(PWD):/work aarnphm/bats-test:latest ./hack/runt
 
 .PHONY: docker-run-%
 docker-run-%: ## Run a task from a docker container (useful for CI)
@@ -116,14 +116,16 @@ docker-run-%: ## Run a task from a docker container (useful for CI)
 	$(eval $@_prefix := docker-run-)
 	$(eval $@_target := $(subst $($@_prefix), ,$@))
 	$(eval $@_upper_target := $(call UC, $($@_target)))
-	@$(MANAGER_DOCKER_RUN) poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix))
+	$(MANAGER_DOCKER_RUN) poetry run manager $($@_target) ${$($@_upper_target)_DARGS} $(call pargs, $@, $($@_prefix))
 
 .PHONY: all
 all:
-	$(eval $@_org := aarnphm)
-	$(eval $@_DISTROS := debian10 debian11)
+	$(eval $@_ORG := aarnphm)
+	$(eval $@_DISTROS := debian10)
+	$(eval $@_RELEASES:= base)
 	$(eval $@_distro_args := $(call expands,distros,$($@_DISTROS)))
-	$(MAKE) docker-run-generate organization=$($@_org)
-	$(MAKE) run-build organization=$($@_org) $($@_distro_args) 
+	$(eval $@_releases_args := $(call expands,releases,$($@_RELEASES)))
+	$(MAKE) docker-run-generate organization=$($@_ORG)
+	$(MAKE) docker-run-build organization=$($@_ORG) $($@_distro_args) $($@_releases_args)
 %:
 	@true

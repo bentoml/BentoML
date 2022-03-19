@@ -32,6 +32,10 @@ ENV NVIDIA_ML_REPO_ENABLED 1
 ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
 {% endif -%}
 
+FROM nvidia-base-${TARGETARCH} as stage_cached
+
+ARG TARGETARCH
+
 FROM nvidia-base-${TARGETARCH}
 
 ARG TARGETPLATFORM
@@ -40,7 +44,8 @@ ARG TARGETARCH
 
 ENV CUDA_VERSION {{ cuda.version.full }}
 
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
     xx-apt-get install -y --no-install-recommends \
         gnupg2 curl ca-certificates \
     && curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - \
@@ -192,7 +197,8 @@ ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
     xx-apt-get install -y --no-install-recommends \
     cuda-libraries-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_LIB_VERSION} \
     {% if has_libnpp_package %}

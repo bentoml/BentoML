@@ -60,7 +60,7 @@ def add_build_command(cli: click.Group) -> None:
     @click.option(
         "--releases",
         required=False,
-        type=click.Choice(DOCKERFILE_BUILD_HIERARCHY),
+        type=click.Choice(DOCKERFILE_BUILD_HIERARCHY + ("all",)),
         multiple=True,
         help=f"Targets releases for an image, default is to build all following the order: {DOCKERFILE_BUILD_HIERARCHY}",
     )
@@ -108,7 +108,7 @@ def add_build_command(cli: click.Group) -> None:
             python_version = cmd["build_args"]["PYTHON_VERSION"]
             distro_name = cmd["labels"]["distro_name"]
 
-            builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if distro_name in CONDA_DISTROS else ''}"
+            builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if 'conda' in cmd['tags'] else ''}"
 
             try:
                 builder = create_buildx_builder(name=builder_name)
@@ -136,11 +136,15 @@ def add_build_command(cli: click.Group) -> None:
             "[bold yellow]Installing binfmt to added support for QEMU...[/]",
             extra={"markup": True},
         )
-        subprocess.check_call(
-            args=["make", "-f", ctx._fs.getsyspath("Makefile"), "emulator"],
+        if os.path.exists("/.dockerenv"):
+            path = "Makefile"
+        else:
+            path = ctx._fs.getsyspath("Makefile")
+        subprocess.Popen(
+            args=["make", "-f", path, "emulator"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
-        )
+        ).communicate()
 
         try:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -207,7 +211,7 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
 
 
 def order_build_hierarchy(
-    ctx: Environment, releases: t.Optional[t.Iterable[str]]
+    ctx: Environment, releases: t.Optional[t.Union[t.Literal["all"], t.Iterable[str]]]
 ) -> t.Tuple[Tags, Tags]:
     """
     Returns {tag: (docker_build_context_path, python_version, *platforms), ...} for base and other tags
@@ -215,11 +219,16 @@ def order_build_hierarchy(
 
     release_context = ctx.release_ctx
 
-    orders = {v: k for k, v in enumerate(DOCKERFILE_BUILD_HIERARCHY)}
-    if releases and all(i in DOCKERFILE_BUILD_HIERARCHY for i in releases):
-        target_releases = tuple(sorted(releases, key=lambda k: orders[k]))
-    else:
+    if releases == "all":
         target_releases = DOCKERFILE_BUILD_HIERARCHY
+    else:
+        if releases is not None and all(
+            i in DOCKERFILE_BUILD_HIERARCHY for i in releases
+        ):
+            orders = {v: k for k, v in enumerate(DOCKERFILE_BUILD_HIERARCHY)}
+            target_releases = tuple(sorted(releases, key=lambda k: orders[k]))
+        else:
+            target_releases = DOCKERFILE_BUILD_HIERARCHY
 
     if "base" not in target_releases:
         target_releases = ("base",) + target_releases
@@ -234,7 +243,7 @@ def order_build_hierarchy(
                 "docker_package": cx.shared_context.docker_package,
                 "maintainer": "BentoML Team <contact@bentoml.com>",
             },
-            "Dockerfile-conda" if cx.shared_context.conda else "Dockerfile",
+            "Dockerfile-conda" if "conda" in tag else "Dockerfile",
             *cx.shared_context.architectures,
         )
         for distro_contexts in release_context.values()

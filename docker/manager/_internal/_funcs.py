@@ -33,7 +33,10 @@ def sprint(*args: t.Any, **kwargs: t.Any) -> None:
     # stream logs inside docker container to sys.stderr
     sep = kwargs.pop("sep", " ")
     end = kwargs.pop("end", "\n")
-    args = tuple(map(lambda x: re.sub(r"[\(\[].*?[\)\]]", "", x), args))
+    try:
+        args = tuple(map(lambda x: re.sub(r"[\(\[].*?[\)\]]", "", x), args))
+    except Exception:
+        pass
     print(*args, file=sys.stderr, flush=True, sep=sep, end=end)
 
 
@@ -84,21 +87,6 @@ def create_buildx_builder(name: str, verbose_: bool = False) -> Builder:
 
 cattr.register_unstructure_hook(Path, lambda x: str(x.__fspath__()))
 cattr.register_unstructure_hook(FS, lambda x: repr(x))
-
-
-# def serializer(inst: type, field: attrs.Attribute[t.Any], value: t.Any) -> t.Any:
-#     if isinstance(value, Path):
-#         return value.as_posix()
-#     elif isinstance(value, FS):
-#         return repr(value)
-#     else:
-#         return value
-# def ctx_unstructure_hook(
-#     cls: t.Optional[type],
-# ) -> t.Optional[t.Dict[str, t.Any]]:
-#     if not cls or not hasattr(cls, "__attrs_attrs__"):
-#         return None
-#     return attrs.asdict(cls, value_serializer=serializer)
 
 
 def raise_exception(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:

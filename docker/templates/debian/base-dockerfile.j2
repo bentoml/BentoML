@@ -5,20 +5,25 @@
 {% elif '10-slim' in metadata.base_image %}
 {% set py_img = 'slim-buster' %}
 {% endif %}
+ARG PYTHON_VERSION
+
 ARG XX_VERSION={{ xx_version }}
 
 FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
 
-ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION}-{{ py_img }} as stage_cached
 
 FROM --platform=$BUILDPLATFORM python:${PYTHON_VERSION}-{{ py_img }} as base
 {% for key in metadata.arch_context if key not in cached -%}
-    {% if 'arm' in key %}
+    {% if 'arm32' in key %}
 
 FROM base as base-arm
     {% elif 'i386' in key %}
 
 FROM base as base-386
+    {% elif 'arm64' in key %}
+
+FROM base as base-arm64
     {% else %}
 
 FROM base as base-{{ key }}
@@ -34,7 +39,8 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
     xx-apt-get install -q -y --no-install-recommends bash gcc python3-dev \
     && xx-apt-get clean \
     && rm -rf /var/lib/apt/lists/*

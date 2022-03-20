@@ -48,8 +48,8 @@ def add_generation_command(cli: click.Group) -> None:
 
         # generate readmes and dockerfiles
         gen_dockerfiles(ctx)
-
         gen_readmes(ctx)
+
         send_log(
             f"[green]Finished generating {ctx.docker_package}...[/]",
             extra={"markup": True},

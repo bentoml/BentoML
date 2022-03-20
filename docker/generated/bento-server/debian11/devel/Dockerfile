@@ -8,13 +8,11 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as stage_cached
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as stage_cached
 
-FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as base
 
-RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -q -y --no-install-recommends git \
+RUN xx-apt-get install -q -y --no-install-recommends git \
     && xx-apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,9 +21,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 
 FROM base as base-amd64
 
-FROM base as base-arm
-
-FROM base as base-ppc64le
+FROM base as base-arm64
 
 FROM base-${TARGETARCH}
 
@@ -33,5 +29,4 @@ ARG TARGETARCH
 
 ARG TARGETPLATFORM
 
-RUN xx-apt-get purge -y -q curl git \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN rm -rf /var/lib/{apt,dpkg,cache,log}

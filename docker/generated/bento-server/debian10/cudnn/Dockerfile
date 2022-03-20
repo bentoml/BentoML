@@ -8,9 +8,11 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as nvidia-base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as base
 
-FROM nvidia-base as nvidia-base-amd64
+ENV NVIDIA_CUDA_LIB_VERSION 11.5.1-1
+
+FROM base as base-amd64
 ENV NVARCH x86_64
 
 ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471"
@@ -21,7 +23,26 @@ ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-11-5
 ENV NVIDIA_ML_REPO_ENABLED 1
 ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
-FROM nvidia-base as nvidia-base-arm64
+ENV NVIDIA_NVTX_VERSION 11.5.114-1
+ENV NVIDIA_LIBNPP_VERSION 11.5.1.107-1
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-11-5=${NVIDIA_LIBNPP_VERSION}
+
+ENV NVIDIA_LIBCUSPARSE_VERSION 11.7.0.107-1
+
+ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-11-5
+ENV NVIDIA_LIBCUBLAS_VERSION 11.7.4.6-1
+ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
+
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION 2.11.4-1
+ENV NCCL_VERSION 2.11.4-1
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda11.5
+ENV NVIDIA_CUDNN_VERSION 8.3.1.22
+
+ENV NVIDIA_CUDNN_PACKAGE "libcudnn8=$NVIDIA_CUDNN_VERSION-1+cuda11.5"
+ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn8"
+
+FROM base as base-arm64
 ENV NVARCH sbsa
 
 ENV NVIDIA_REQUIRE_CUDA "cuda>=11.5"
@@ -30,17 +51,47 @@ ENV NVIDIA_CUDA_CUDART_VERSION 11.5.117-1
 
 ENV NVIDIA_ML_REPO_ENABLED 1
 ENV NVIDIA_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
-FROM nvidia-base-${TARGETARCH} as stage_cached
 
-ARG TARGETARCH
+ENV NVIDIA_NVTX_VERSION 11.5.114-1
+ENV NVIDIA_LIBNPP_VERSION 11.5.1.107-1
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-11-5=${NVIDIA_LIBNPP_VERSION}
 
-FROM nvidia-base-${TARGETARCH}
+ENV NVIDIA_LIBCUSPARSE_VERSION 11.7.0.107-1
+
+ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-11-5
+ENV NVIDIA_LIBCUBLAS_VERSION 11.7.4.6-1
+ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
+
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION 2.11.4-1
+ENV NCCL_VERSION 2.11.4-1
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda11.5
+
+ENV NVIDIA_CUDNN_VERSION 8.3.1.22
+
+ENV NVIDIA_CUDNN_PACKAGE "libcudnn8=$NVIDIA_CUDNN_VERSION-1+cuda11.5"
+ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn8"
+
+FROM base-${TARGETARCH} as stage_cached
+
+FROM base-${TARGETARCH}
 
 ARG TARGETPLATFORM
 
 ARG TARGETARCH
 
 ENV CUDA_VERSION 11.5.1
+
+# Required for nvidia-docker v1
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf \
+    && echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
+# nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
@@ -54,82 +105,6 @@ RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
         ${NVIDIA_CUDA_COMPAT_PACKAGE} \
     && ln -s cuda-11.5 /usr/local/cuda \
     && rm -rf /var/lib/apt/lists/*
-
-# Required for nvidia-docker v1
-RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf \
-    && echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
-
-ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
-ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
-
-COPY NGC-DL-CONTAINER-LICENSE /
-
-# nvidia-container-runtime
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
-
-FROM nvidia-base-${TARGETARCH} as base
-
-ARG TARGETPLATFORM
-
-ARG TARGETARCH
-
-ENV NVIDIA_CUDA_LIB_VERSION 11.5.1-1
-
-FROM base as base-amd64
-
-ENV NVIDIA_NVTX_VERSION 11.5.114-1
-ENV NVIDIA_LIBNPP_VERSION 11.5.1.107-1
-ENV NVIDIA_LIBNPP_PACKAGE libnpp-11-5=${NVIDIA_LIBNPP_VERSION}
-
-ENV NVIDIA_LIBCUSPARSE_VERSION 11.7.0.107-1
-
-ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-11-5
-ENV NVIDIA_LIBCUBLAS_VERSION 11.7.4.6-1
-ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
-
-ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
-ENV NVIDIA_LIBNCCL_PACKAGE_VERSION 2.11.4-1
-ENV NCCL_VERSION 2.11.4-1
-ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda11.5
-ENV NVIDIA_CUDNN_VERSION 8.3.1.22
-
-ENV NVIDIA_CUDNN_PACKAGE "libcudnn8=$NVIDIA_CUDNN_VERSION-1+cuda11.5"
-ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn8"
-
-
-FROM base as base-arm64
-
-ENV NVIDIA_NVTX_VERSION 11.5.114-1
-ENV NVIDIA_LIBNPP_VERSION 11.5.1.107-1
-ENV NVIDIA_LIBNPP_PACKAGE libnpp-11-5=${NVIDIA_LIBNPP_VERSION}
-
-ENV NVIDIA_LIBCUSPARSE_VERSION 11.7.0.107-1
-
-ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-11-5
-ENV NVIDIA_LIBCUBLAS_VERSION 11.7.4.6-1
-ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
-
-ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
-ENV NVIDIA_LIBNCCL_PACKAGE_VERSION 2.11.4-1
-ENV NCCL_VERSION 2.11.4-1
-ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda11.5
-
-ENV NVIDIA_CUDNN_VERSION 8.3.1.22
-
-ENV NVIDIA_CUDNN_PACKAGE "libcudnn8=$NVIDIA_CUDNN_VERSION-1+cuda11.5"
-ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn8"
-
-
-FROM base as base-ppc64le
-
-FROM base-${TARGETARCH}
-
-COPY --from=xx / /
-
-ARG TARGETPLATFORM
-
-ARG TARGETARCH
 
 RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \

@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 BUILDER_LIST = []
-BUILT_IMAGE = []
 
 
 def process_docker_arch(arch: str) -> str:
@@ -72,6 +71,12 @@ def add_build_command(cli: click.Group) -> None:
         help="Dry-run",
     )
     @click.option(
+        "--skip-base/--no-skip-base",
+        required=False,
+        is_flag=True,
+        help="Skip building base releases",
+    )
+    @click.option(
         "--max-workers",
         required=False,
         type=int,
@@ -82,6 +87,7 @@ def add_build_command(cli: click.Group) -> None:
     def build(
         ctx: Environment,
         releases: t.Optional[t.Iterable[str]],
+        skip_base: bool,
         max_workers: int,
         dry_run: bool,
     ) -> None:
@@ -98,34 +104,31 @@ def add_build_command(cli: click.Group) -> None:
         By default we will generate all given specs defined under manifest/<docker_package>.yml
         """
 
-        base_tag, build_tag = order_build_hierarchy(ctx, releases)
+        base_tag, build_tag = order_build_hierarchy(ctx, releases, skip_base=skip_base)
         base_buildx_args = [i for i in buildx_args(ctx, base_tag)]
         build_buildx_args = [i for i in buildx_args(ctx, build_tag)]
 
-        global BUILDER_LIST, BUILT_IMAGE
+        global BUILDER_LIST
 
         def build_multi_arch(cmd: "GenericDict") -> None:
             tag = cmd["tags"]
-            if tag in BUILT_IMAGE:
-                send_log(f"{tag} is already built and pushed. Skipping...")
-            else:
-                BUILT_IMAGE.append(tag)
-                python_version = cmd["build_args"]["PYTHON_VERSION"]
-                distro_name = cmd["labels"]["distro_name"]
+            python_version = cmd["build_args"]["PYTHON_VERSION"]
+            distro_name = cmd["labels"]["distro_name"]
 
-                builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if 'conda' in tag else ''}"
-                send_log(f"args for buildx: {cmd}")
+            builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if 'conda' in tag else ''}"
+            send_log(f"args for buildx: {cmd}")
 
-                try:
-                    builder = create_buildx_builder(name=builder_name)
-                    BUILDER_LIST.append(builder)
+            try:
+                builder = create_buildx_builder(name=builder_name)
+                BUILDER_LIST.append(builder)
 
-                    # NOTE: we need to push to registry when releasing different
-                    # * architecture.
-                    resp = docker.buildx.build(**cmd, builder=builder)
-                    stream_docker_logs(t.cast(t.Iterator[str], resp), tag)
-                except Exception as err:
-                    raise ManagerBuildFailed(f"Error while building:\n {err}") from err
+                # NOTE: we need to push to registry when releasing different
+                # * architecture.
+                resp = docker.buildx.build(**cmd, builder=builder)
+                stream_docker_logs(t.cast(t.Iterator[str], resp), tag)
+            except Exception as err:
+                logger.error(f"Error while building:\n {err}")
+                sys.exit(1)
 
         if dry_run:
             send_log("--dry-run, output tags to file.")
@@ -153,7 +156,8 @@ def add_build_command(cli: click.Group) -> None:
 
         try:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                list(executor.map(build_multi_arch, base_buildx_args))
+                if not skip_base:
+                    list(executor.map(build_multi_arch, base_buildx_args))
                 list(executor.map(build_multi_arch, build_buildx_args))
         except Exception as e:
             send_log(e, _manager_level=logging.ERROR)
@@ -176,9 +180,13 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
             *platforms,
         ) = tag_context
 
+        context_path = ctx._fs.getsyspath("/")
+        if "cudnn" in image_tag:
+            context_path = ctx._generated_dir.getsyspath(output_path)
+
         build_args = {"PYTHON_VERSION": python_version}
         if "ubi" in image_tag:
-            build_args["UBIFORMAT"] = f'python-{python_version.replace(".","")}'
+            build_args["UBIFORMAT"] = f'python-{python_version.replace(".", "")}'
 
         ref = f"{registry}/{ctx.organization}/{image_tag}"
         # "cache_to": f"type=registry,ref={ref},mode=max",
@@ -200,7 +208,7 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
                 cache_from.append(prebuilt)
 
         yield {
-            "context_path": ctx._fs.getsyspath("/"),
+            "context_path": context_path,
             "build_args": build_args,
             "progress": "plain",
             "file": ctx._generated_dir.getsyspath(
@@ -220,7 +228,10 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
 
 
 def order_build_hierarchy(
-    ctx: Environment, releases: t.Optional[t.Union[t.Literal["all"], t.Iterable[str]]]
+    ctx: Environment,
+    releases: t.Optional[t.Union[t.Literal["all"], t.Iterable[str]]],
+    *,
+    skip_base: bool = False,
 ) -> t.Tuple[Tags, Tags]:
     """
     Returns {tag: (docker_build_context_path, python_version, *platforms), ...} for base and other tags
@@ -239,7 +250,7 @@ def order_build_hierarchy(
         else:
             target_releases = DOCKERFILE_BUILD_HIERARCHY
 
-    if "base" not in target_releases:
+    if not skip_base and "base" not in target_releases:
         target_releases = ("base",) + target_releases
 
     hierarchy = {

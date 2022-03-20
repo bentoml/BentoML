@@ -2,22 +2,23 @@
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as stage_cached
+FROM {{ metadata.organization }}/{{ build_tag }} as stage_cached
 
-FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
+FROM {{ metadata.organization }}/{{ build_tag }} as base
 
-RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -q -y --no-install-recommends git \
+RUN xx-apt-get install -q -y --no-install-recommends git \
     && xx-apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     pip install -U git+https://github.com/bentoml/bentoml.git@main
 {% for key in metadata.arch_context if key not in cached %}
-    {% if 'arm' in key %}
+    {% if 'arm32' in key %}
 
 FROM base as base-arm
+    {% elif 'arm64' in key %}
+
+FROM base as base-arm64
     {% elif 'i386' in key %}
 
 FROM base as base-386
@@ -33,5 +34,4 @@ ARG TARGETARCH
 
 ARG TARGETPLATFORM
 
-RUN xx-apt-get purge -y -q curl git \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN rm -rf /var/lib/{apt,dpkg,cache,log}

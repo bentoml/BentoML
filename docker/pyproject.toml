@@ -31,7 +31,7 @@ dead = "^1.4.0"
 vulture = "^2.3"
 
 [tool.poetry.scripts]
-manager = "manager.cli:cli"
+manager = "manager.__main__:cli"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

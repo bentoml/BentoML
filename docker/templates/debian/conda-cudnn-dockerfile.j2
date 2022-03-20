@@ -2,10 +2,13 @@
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as nvidia-base
+FROM {{ metadata.organization }}/{{ build_tag }} as base
+
+ENV NVIDIA_CUDA_LIB_VERSION {{ cuda.version.full + "-1" }}
 
 {% if "amd64" in cuda %}
-FROM nvidia-base as nvidia-base-amd64
+{% do cached.append("amd64") %}
+FROM base as base-amd64
 ENV NVARCH x86_64
 
     {% if "requires" in cuda.amd64 %}
@@ -17,70 +20,6 @@ ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda.version.major }}-{{ cuda.vers
 
 ENV NVIDIA_ML_REPO_ENABLED 1
 ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
-{% endif %}
-{% if "arm64v8" in cuda %}
-FROM nvidia-base as nvidia-base-arm64
-ENV NVARCH sbsa
-
-    {% if "requires" in cuda.arm64v8 %}
-ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
-    {% endif %}
-
-ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
-
-ENV NVIDIA_ML_REPO_ENABLED 1
-ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
-{% endif -%}
-
-FROM nvidia-base-${TARGETARCH} as stage_cached
-
-ARG TARGETARCH
-
-FROM nvidia-base-${TARGETARCH}
-
-ARG TARGETPLATFORM
-
-ARG TARGETARCH
-
-ENV CUDA_VERSION {{ cuda.version.full }}
-
-RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -y --no-install-recommends \
-        gnupg2 curl ca-certificates \
-    && curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - \
-    && echo "deb {{ cuda.cuda_repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
-    && if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi \
-    && xx-apt-get install -y --no-install-recommends \
-        cuda-cudart-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_CUDART_VERSION} \
-        ${NVIDIA_CUDA_COMPAT_PACKAGE} \
-    && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda \
-    && rm -rf /var/lib/apt/lists/*
-
-# Required for nvidia-docker v1
-RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf \
-    && echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
-
-ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
-ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
-
-COPY NGC-DL-CONTAINER-LICENSE /
-
-# nvidia-container-runtime
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
-
-FROM nvidia-base-${TARGETARCH} as base
-
-ARG TARGETPLATFORM
-
-ARG TARGETARCH
-
-ENV NVIDIA_CUDA_LIB_VERSION {{ cuda.version.full + "-1" }}
-
-{% if "amd64" in cuda %}
-{% do cached.append("amd64") %}
-FROM base as base-amd64
 
 ENV NVIDIA_NVTX_VERSION {{ cuda.amd64.components.nvtx.version }}
     {% if "libnpp" in cuda.amd64.components %}
@@ -113,10 +52,19 @@ ENV NVIDIA_CUDNN_PACKAGE "libcudnn{{ cuda.amd64.cudnn.major_version }}=$NVIDIA_C
 ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda.amd64.cudnn.major_version }}"
 
 {% endif %}
-
 {% if "arm64v8" in cuda %}
 {% do cached.append("arm64v8") %}
 FROM base as base-arm64
+ENV NVARCH sbsa
+
+    {% if "requires" in cuda.arm64v8 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.arm64v8.requires }}"
+    {% endif %}
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda.arm64v8.components.cudart.version }}
+
+ENV NVIDIA_ML_REPO_ENABLED 1
+ENV NVIDIA_ML_REPO_URL {{ cuda.ml_repo_url }}/${NVARCH}
 
 ENV NVIDIA_NVTX_VERSION {{ cuda.arm64v8.components.nvtx.version }}
     {% if "libnpp" in cuda.arm64v8.components %}
@@ -148,38 +96,14 @@ ENV NVIDIA_CUDNN_VERSION {{ cudnn_version }}
 
 ENV NVIDIA_CUDNN_PACKAGE "libcudnn{{ cuda.arm64v8.cudnn.major_version }}=$NVIDIA_CUDNN_VERSION-1+cuda{{ cuda.version.major }}.{{ cuda.version.minor }}"
 ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda.arm64v8.cudnn.major_version }}"
-
-{% endif -%}
-
-{% if "ppc64le" in cuda %}
-{% do cached.append("ppc64le") %}
-FROM base as base-ppc64le
-
-ENV NVIDIA_NVTX_VERSION {{ cuda.ppc64le.components.nvtx.version }}
-    {% if "libnpp" in cuda.ppc64le.components %}
-        {% set has_libnpp_package = true %}
-ENV NVIDIA_LIBNPP_VERSION {{ cuda.ppc64le.components.libnpp.version }}
-ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_LIBNPP_VERSION}
-    {% endif %}
-ENV NVIDIA_LIBCUSPARSE_VERSION {{ cuda.ppc64le.components.libcusparse.version }}
-
-ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-{{ cuda.version.major }}-{{ cuda.version.minor }}
-ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda.ppc64le.components.libcublas.version }}
-ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
-
-    {% if "libnccl2" in cuda.ppc64le.components and cuda.ppc64le.components.libnccl2 %}
-        {% set has_libnccl_package = true %}
-ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
-ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda.ppc64le.components.libnccl2_dev.version }}
-ENV NCCL_VERSION {{ cuda.ppc64le.components.libnccl2_dev.version }}
-ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda.version.major }}.{{ cuda.version.minor }}
-    {% endif %}
-
 {% endif -%}
 {% for key in metadata.arch_context if key not in cached %}
-    {% if 'arm' in key %}
+    {% if 'arm32' in key %}
 
 FROM base as base-arm
+    {% elif 'arm64' in key %}
+
+FROM base as base-arm64
     {% elif 'i386' in key %}
 
 FROM base as base-386
@@ -189,13 +113,39 @@ FROM base as base-{{ key }}
     {% endif %}
 {% endfor %}
 
-FROM base-${TARGETARCH}
+FROM base-${TARGETARCH} as stage_cached
 
-COPY --from=xx / /
+FROM base-${TARGETARCH}
 
 ARG TARGETPLATFORM
 
 ARG TARGETARCH
+
+ENV CUDA_VERSION {{ cuda.version.full }}
+
+# Required for nvidia-docker v1
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf \
+    && echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
+# nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
+    xx-apt-get install -y --no-install-recommends \
+        gnupg2 curl ca-certificates \
+    && curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - \
+    && echo "deb {{ cuda.cuda_repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
+    && if [ ! -z ${NVIDIA_ML_REPO_ENABLED} ]; then echo "deb ${NVIDIA_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi \
+    && xx-apt-get install -y --no-install-recommends \
+        cuda-cudart-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_CUDART_VERSION} \
+        ${NVIDIA_CUDA_COMPAT_PACKAGE} \
+    && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \

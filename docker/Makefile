@@ -69,11 +69,6 @@ docker-bake-%: ## Build a docker target with buildx bake
 	$(eval bake_target :=$(bake_target_prefix))
 	@docker buildx bake $(bake_target) --push
 
-check-platform: ## Test supported platform string
-	@./hack/shells/buildx_misc -create test_platform
-	@:$(eval $(call get_builder,$(BUILDER_NAME)))
-	@docker buildx bake test-platforms --progress plain --no-cache
-
 # ----------------------
 # default args
 GENERATE_DARGS := --bentoml-version $(BENTOML_VERSION) --overwrite
@@ -88,14 +83,6 @@ UC = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
 rm = $(subst $2,,$1)
 pargs = $(foreach a,$($(subst $2,,$1)_pargs),$(if $(value $a),--$a $($a)))
 expands = $(foreach a,$2, $1=$a)
-
-# tasks
-TASKS := generate build
-.PHONY: run-all docker-run-all
-run-all: ## Run all task in pipeline: generate -> build -> test
-	$(foreach v,$(TASKS), $(MAKE) run-$(v))
-docker-run-all: ## Run all task in pipeline: generate -> build -> test
-	$(foreach v,$(TASKS), $(MAKE) docker-run-$(v))
 
 .PHONY: run-%
 run-%: ## Run a task. Currently: generate, build, test
@@ -121,11 +108,12 @@ docker-run-%: ## Run a task from a docker container (useful for CI)
 .PHONY: all
 all:
 	$(eval $@_ORG := aarnphm)
-	$(eval $@_DISTROS := ubi8 alpine3.14 amazonlinux2 debian10 debian11)
+	$(eval $@_DISTROS := amazonlinux2 alpine3.14 ubi8 debian11 debian10)
 	$(eval $@_RELEASES:= all)
 	$(eval $@_distro_args := $(call expands,distros,$($@_DISTROS)))
 	$(eval $@_releases_args := $(call expands,releases,$($@_RELEASES)))
 	$(MAKE) docker-run-generate organization=$($@_ORG)
 	$(MAKE) run-build organization=$($@_ORG) $($@_distro_args) $($@_releases_args)
+
 %:
 	@true

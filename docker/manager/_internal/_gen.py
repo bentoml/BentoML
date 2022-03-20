@@ -215,6 +215,7 @@ def gen_dockerfiles(ctx: Environment):
                             distros=build_info.shared_context.distro_name,
                             xx_image="tonistiigi/xx",
                             xx_version="1.1.0",
+                            context_path=paths["output_path"],
                         )
 
                         try:
@@ -264,24 +265,45 @@ def gen_readmes(ctx: Environment) -> None:
         "supported": arch,
         "tag_ref": tag_ref,
         "emphemeral": False,
+        "main_readme": False,
     }
 
-    readme_file = fs.path.combine("docs", "README.md.j2")
+    readme_tmpl = fs.path.combine("docs", "README.md.j2")
+    tmp_fs = fs.open_fs("temp://")
 
-    render_template(
-        readme_file,
-        ctx._templates_dir,
-        ctx.docker_package,
-        ctx._generated_dir,
-        **readme_context,
-    )
+    def render_final_readmes(
+        out_name: str,
+        out_fs: FS,
+        *,
+        template_files: t.List[str] = ["headers.md.j2", "body.md.j2"],
+        extends: t.Optional[t.Dict[str, t.Any]] = None,
+    ):
+        final_context = {}
 
-    readme_context["emphemeral"] = True
+        if extends:
+            readme_context.update(extends)
 
-    render_template(
-        readme_file,
-        ctx._templates_dir,
-        "/",
-        ctx._generated_dir,
-        **readme_context,
-    )
+        for file in template_files:
+            tmpl = fs.path.combine("docs", file)
+            filename = file.strip(".j2")
+            render_template(
+                tmpl,
+                ctx._templates_dir,
+                "/",
+                tmp_fs,
+                output_name=filename,
+                **readme_context,
+            )
+            with tmp_fs.open(filename, "r") as f:
+                final_context[filename.split(".")[0]] = "".join(f.readlines())
+        render_template(
+            readme_tmpl,
+            ctx._templates_dir,
+            out_name,
+            out_fs,
+            **final_context,
+        )
+
+    render_final_readmes(ctx.docker_package, ctx._generated_dir)
+    render_final_readmes("/", ctx._fs, extends={"main_readme": True})
+    render_final_readmes("/", ctx._generated_dir, extends={"emphemeral": True})

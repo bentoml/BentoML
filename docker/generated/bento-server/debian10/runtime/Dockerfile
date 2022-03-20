@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as base
 
 ENV BENTOML_VERSION=1.0.0a6
 
@@ -19,13 +19,10 @@ FROM base as base-amd64
 
 FROM base as base-arm64
 
-FROM base as base-ppc64le
-
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
 ARG TARGETPLATFORM
 
-RUN xx-apt-get purge -y -q curl \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN rm -rf /var/lib/{apt,dpkg,cache,log}

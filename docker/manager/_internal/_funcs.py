@@ -13,12 +13,16 @@ from functools import wraps
 import cattr
 from jinja2 import Environment
 from fs.base import FS
+from simple_di import inject
+from simple_di import Provide
+from jinja2.loaders import FileSystemLoader
 from toolz.dicttoolz import keyfilter
 from python_on_whales import docker
 from python_on_whales.exceptions import DockerException
 from python_on_whales.components.buildx.cli_wrapper import Builder
 
 from .exceptions import ManagerException
+from ._configuration import DockerManagerContainer
 
 if TYPE_CHECKING:
 
@@ -147,6 +151,7 @@ def _contains_key(
 CUSTOM_FUNCTION: t.Dict[str, GenericFunc[...]] = {"contains_key": _contains_key}
 
 
+@inject
 def render_template(
     input_name: str,
     inp_fs: FS,
@@ -157,6 +162,7 @@ def render_template(
     arch: t.Optional[str] = None,
     build_tag: t.Optional[str] = None,
     custom_function: t.Optional[t.Dict[str, GenericFunc[t.Any]]] = None,
+    fs: FS = Provide[DockerManagerContainer.root_fs],
     **kwargs: t.Any,
 ) -> None:
 
@@ -167,11 +173,15 @@ def render_template(
 
     out_path_fs = out_fs.makedirs(output_path, recreate=True)
 
+    docker_loader = FileSystemLoader(fs.getsyspath("/"), followlinks=True)
+
     template_env = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
         trim_blocks=True,
         lstrip_blocks=True,
+        loader=docker_loader,
     )
+
     if custom_function is not None:
         CUSTOM_FUNCTION.update(custom_function)
     template_env.globals.update(CUSTOM_FUNCTION)
@@ -179,7 +189,6 @@ def render_template(
     with inp_fs.open(input_name, "r") as inf:
         template = template_env.from_string(inf.read())
 
-    out_path_fs.writetext(
-        output_name_, template.render(build_tag=build_tag, **kwargs), newline="\n"
-    )
+    content = template.render(build_tag=build_tag, **kwargs)
+    out_path_fs.writetext(output_name_, content, newline="\n")
     out_path_fs.close()

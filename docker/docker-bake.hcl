@@ -16,7 +16,7 @@ variable "MANAGER_REPO" {
     default = "aarnphm/bentoml-docker"
 }
 
-target "manager-shared" {
+target "shared" {
     platforms = ["linux/amd64", "linux/arm64/v8"]
     inherits = ["_all_platforms"]
 	cache-to = ["type=inline"]
@@ -26,14 +26,14 @@ target "manager-shared" {
 }
 
 target "manager" {
-    inherits = ["manager-shared"]
+    inherits = ["shared"]
     tags = TagWithArch(MANAGER_REPO, TAG, "1", "")
     target = "base"
 	cache-from = ["${MANAGER_REPO}:${TAG}"]
 }
 
 target "base_dev" {
-    inherits = ["manager-shared"]
+    inherits = ["shared"]
     tags = TagWithArch(MANAGER_REPO, "base_dev", "1", "")
     target = "base_build"
 	cache-from = ["${MANAGER_REPO}:base_dev"]
@@ -55,9 +55,4 @@ target "test" {
 	cache-to = ["type=inline"]
 	cache-from = ["${TEST_REPO}:${TAG}"]
 	target = "test"
-}
-
-target "test-platforms" {
-    inherits = ["_all_platforms"]
-    dockerfile = "./hack/dockerfiles/platform.Dockerfile"
 }

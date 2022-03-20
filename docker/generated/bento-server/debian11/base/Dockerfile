@@ -14,13 +14,11 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM python:${PYTHON_VERSION}-slim-bullseye as stage_cached
 
-FROM --platform=$BUILDPLATFORM python:${PYTHON_VERSION}-slim-bullseye as base
+FROM python:${PYTHON_VERSION}-slim-bullseye as base
 
 FROM base as base-amd64
 
 FROM base as base-arm64
-
-FROM base as base-ppc64le
 
 FROM base-${TARGETARCH}
 
@@ -33,7 +31,8 @@ ARG TARGETARCH
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -q -y --no-install-recommends bash build-essential python3-dev \
+    xx-apt-get install -q -y --no-install-recommends --allow-remove-essential \
+        bash build-essential \
     && xx-apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

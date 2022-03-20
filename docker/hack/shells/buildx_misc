@@ -81,36 +81,40 @@ usage() {
 	EOF
 }
 
-while [[ $# -gt 0 ]]; do
-	case $1 in
-	-h | -help | --help)
-		usage
-		exit
-		;;
-	-p | -preflight | --preflight)
-		preflight
-		;;
-	-i | -install-qemu | --install-qemu)
-		install_qemu
-		;;
-	-c | -create | --create)
-		NAME="$2"
-		create "$NAME"
-		shift
-		shift
-		;;
-	-r | -remove | --remove)
-		NAME="$2"
-		cleanup "$NAME"
-		shift
-		shift
-		;;
-	-*)
-		echo "Unknown option $1"
-		exit 1
-		;;
-	*)
-		shift
-		;;
-	esac
-done
+main() {
+	while [[ $# -gt 0 ]]; do
+		case $1 in
+		-h | -help | --help)
+			usage
+			exit
+			;;
+		-p | -preflight | --preflight)
+			preflight
+			;;
+		-i | -install-qemu | --install-qemu)
+			install_qemu
+			;;
+		-c | -create | --create)
+			NAME="$2"
+			create "$NAME"
+			shift
+			shift
+			;;
+		-r | -remove | --remove)
+			NAME="$2"
+			cleanup "$NAME"
+			shift
+			shift
+			;;
+		-*)
+			echo "Unknown option $1"
+			exit 1
+			;;
+		*)
+			shift
+			;;
+		esac
+	done
+}
+
+main "$@"

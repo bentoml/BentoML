@@ -37,8 +37,9 @@ ENV {{ key }}={{ value }}
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
+USER root
+
 RUN --mount=type=cache,sharing=shared,target=/var/cache/yum \
     yum upgrade -y \
     && yum install -y wget git ca-certificates curl gcc gcc-c++ make \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+    && yum clean all

@@ -1,5 +1,5 @@
 target "_all_platforms" {
-    platforms = ["linux/amd64", "linux/arm64/v8", "linux/arm/v7", "linux/arm/v6", "linux/ppc64le", "linux/s390x", "linux/riscv64"]
+    platforms = ["linux/amd64", "linux/arm64/v8", "linux/riscv64"]
 }
 
 function "TagWithArch" {
@@ -25,7 +25,7 @@ target "manager-shared" {
     context = "."
 }
 
-target "manager-all" {
+target "manager" {
     inherits = ["manager-shared"]
     tags = TagWithArch(MANAGER_REPO, TAG, "1", "")
     target = "base"
@@ -40,7 +40,7 @@ target "base_dev" {
 }
 
 group default {
-    targets = ["manager-all"]
+    targets = ["manager"]
 }
 
 /* ------------------- */

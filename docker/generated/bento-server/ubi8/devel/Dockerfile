@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi8 as base
+FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-ubi8 as base
 
 FROM base as base-amd64
 
@@ -20,8 +20,7 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install -U git+https://github.com/bentoml/bentoml.git@main
 
-RUN yum remove -y gcc curl make git \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+RUN rm -rf /var/cache/yum

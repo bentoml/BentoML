@@ -125,7 +125,6 @@ def gen_manifest(
                 "debian11": "debian",
                 "debian10": "debian",
                 "ubi8": "rhel",
-                "ubi7": "rhel",
                 "amazonlinux2": "ami2",
                 "alpine3.14": "alpine",
             },

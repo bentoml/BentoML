@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as nvidia-base
+FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as nvidia-base
 
 FROM nvidia-base as nvidia-base-amd64
 ENV NVARCH x86_64

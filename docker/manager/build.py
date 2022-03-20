@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 BUILDER_LIST = []
-CONDA_DISTROS = ["debian11", "debian10"]
+BUILT_IMAGE = []
 
 
 def process_docker_arch(arch: str) -> str:
@@ -102,25 +102,30 @@ def add_build_command(cli: click.Group) -> None:
         base_buildx_args = [i for i in buildx_args(ctx, base_tag)]
         build_buildx_args = [i for i in buildx_args(ctx, build_tag)]
 
-        global BUILDER_LIST
+        global BUILDER_LIST, BUILT_IMAGE
 
         def build_multi_arch(cmd: "GenericDict") -> None:
-            python_version = cmd["build_args"]["PYTHON_VERSION"]
-            distro_name = cmd["labels"]["distro_name"]
+            tag = cmd["tags"]
+            if tag in BUILT_IMAGE:
+                send_log(f"{tag} is already built and pushed. Skipping...")
+            else:
+                BUILT_IMAGE.append(tag)
+                python_version = cmd["build_args"]["PYTHON_VERSION"]
+                distro_name = cmd["labels"]["distro_name"]
 
-            builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if 'conda' in cmd['tags'] else ''}"
-            send_log(f"args for buildx: {cmd}")
+                builder_name = f"{ctx.docker_package}-{python_version}-{distro_name}{'-conda' if 'conda' in tag else ''}"
+                send_log(f"args for buildx: {cmd}")
 
-            try:
-                builder = create_buildx_builder(name=builder_name)
-                BUILDER_LIST.append(builder)
+                try:
+                    builder = create_buildx_builder(name=builder_name)
+                    BUILDER_LIST.append(builder)
 
-                # NOTE: we need to push to registry when releasing different
-                # * architecture.
-                resp = docker.buildx.build(**cmd, builder=builder)
-                stream_docker_logs(t.cast(t.Iterator[str], resp), cmd["tags"])
-            except Exception as err:
-                raise ManagerBuildFailed(f"Error while building:\n {err}") from err
+                    # NOTE: we need to push to registry when releasing different
+                    # * architecture.
+                    resp = docker.buildx.build(**cmd, builder=builder)
+                    stream_docker_logs(t.cast(t.Iterator[str], resp), tag)
+                except Exception as err:
+                    raise ManagerBuildFailed(f"Error while building:\n {err}") from err
 
         if dry_run:
             send_log("--dry-run, output tags to file.")

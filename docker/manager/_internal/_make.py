@@ -307,7 +307,7 @@ def create_distro_context(
     templates_dir = distro_info.pop("templates_dir")
     base_image = distro_info.pop("base_image")
     if templates_dir == "rhel" and "ubi" in base_image:
-        base_image = base_image.format(f"python-$UBIFORMAT")
+        base_image = base_image.format(f"$UBIFORMAT")
 
     try:
         dependencies = distro_info.pop("dependencies")

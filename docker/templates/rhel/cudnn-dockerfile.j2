@@ -46,6 +46,8 @@ ARG TARGETARCH
 
 ENV CUDA_VERSION {{ cuda.version.full }}
 
+USER root
+
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
     echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
@@ -201,8 +203,7 @@ RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/yum \
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 
-RUN yum remove -y gcc curl make git \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+RUN rm -rf /var/cache/yum

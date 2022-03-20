@@ -2,18 +2,18 @@
 
 set -e
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd $GIT_ROOT/docker || exit 1
+cd "$GIT_ROOT/docker" || exit 1
 
 cleanup() {
-	prefix="$@"
+	prefix="$1"
 	LOG_PATH="$GIT_ROOT/docker/generated/builder.log"
-	if $(docker buildx ls | grep "$prefix" >|/tmp/builder.log); then
+	if docker buildx ls | grep "$prefix" >|/tmp/builder.log; then
 
 		sed -n 'p;n' /tmp/builder.log | cut -d ' ' -f 1 >"$LOG_PATH"
 
-		cat "$LOG_PATH" | while read -r line; do
+		while read -r line; do
 			docker buildx rm "$line"
-		done
+		done <"$LOG_PATH"
 		rm -rf "$LOG_PATH"
 		echo "Finished removing emphemeral builder."
 	else
@@ -23,8 +23,8 @@ cleanup() {
 }
 
 create() {
-	prefix="$@"
-	if ! $(docker buildx ls | grep "$prefix" &>/dev/null); then
+	prefix="$1"
+	if ! docker buildx ls | grep "$prefix" &>/dev/null; then
 		docker buildx create --use --driver docker-container --name "$prefix" --driver-opt image=moby/buildkit:master
 	else
 		docker buildx use "$prefix"
@@ -32,11 +32,11 @@ create() {
 }
 
 preflight() {
-	if ! $(docker buildx &>/dev/null); then
+	if ! docker buildx &>/dev/null; then
 		echo
-		echo '*** `docker buildx` missing. Install binary for this machine architecture'
-		echo '*** from `https://github.com/docker/buildx/releases/latest`'
-		echo '*** to `~/.docker/cli-plugins/docker-buildx` and `chmod +x` it.'
+		echo "*** \`docker buildx\` missing. Install binary for this machine architecture"
+		echo "*** from \`https://github.com/docker/buildx/releases/latest\`"
+		echo "*** to \`~/.docker/cli-plugins/docker-buildx\` and \`chmod +x\` it."
 		echo
 		exit 1
 	fi
@@ -105,7 +105,7 @@ while [[ $# -gt 0 ]]; do
 		shift
 		shift
 		;;
-	-* | --*)
+	-*)
 		echo "Unknown option $1"
 		exit 1
 		;;

@@ -47,6 +47,7 @@ FROM amazonlinux:2 as base
 
 COPY --from=python /usr /usr
 COPY --from=python /lib /lib
+COPY --from=python /etc /etc
 COPY --from=python /tmp/get-pip.py /tmp/get-pip.py
 
 FROM base as base-arm64
@@ -64,6 +65,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
-ENV PATH "$PATH:/root/.local/bin:$HOME/.local/bin:/usr/local/bin"
+ENV PATH "$PATH:/root/.local/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin"
 
 RUN python3 /tmp/get-pip.py --user
+
+RUN if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi
+
+RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; fi

@@ -4,7 +4,7 @@ BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=
 
 MANAGER_REPO := aarnphm/bentoml-docker
 MANAGER_TAG := 1.1.0
-MAX_WORKERS := 5
+MAX_WORKERS := 6
 
 # ----------------------
 export DOCKER_BUILDKIT=1
@@ -121,8 +121,8 @@ docker-run-%: ## Run a task from a docker container (useful for CI)
 .PHONY: all
 all:
 	$(eval $@_ORG := aarnphm)
-	$(eval $@_DISTROS := amazonlinux2)
-	$(eval $@_RELEASES:= base)
+	$(eval $@_DISTROS := ubi8 alpine3.14 amazonlinux2 debian10 debian11)
+	$(eval $@_RELEASES:= all)
 	$(eval $@_distro_args := $(call expands,distros,$($@_DISTROS)))
 	$(eval $@_releases_args := $(call expands,releases,$($@_RELEASES)))
 	$(MAKE) docker-run-generate organization=$($@_ORG)

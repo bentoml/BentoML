@@ -21,11 +21,7 @@ COPY hack/runt .
 
 FROM base as test
 
-FROM ppc64le/docker as test-ppc64le
-
 COPY --from=base / /
-
-FROM s390x/docker as test-s390x
 
 COPY --from=base / /
 

@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-debian10 as base
+FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as base
 
 ENV BENTOML_VERSION=1.0.0a6
 

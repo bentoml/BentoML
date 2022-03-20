@@ -11,7 +11,8 @@ ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 RUN --mount=type=cache,target=/var/cache/apk \
     xx-apk --update add build-base git musl-dev linux-headers g++
 
-RUN pip install -U git+https://github.com/bentoml/bentoml.git@main
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install -U git+https://github.com/bentoml/bentoml.git@main
 {% for key in metadata.arch_context if key not in cached -%}
     {% if 'arm64' in key %}
 

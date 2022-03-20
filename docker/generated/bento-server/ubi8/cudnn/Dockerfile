@@ -10,7 +10,7 @@
 ARG PYTHON_VERSION
 
 
-FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi8 as nvidia-base
+FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-ubi8 as nvidia-base
 
 FROM nvidia-base as nvidia-base-amd64
 ENV NVARCH x86_64
@@ -39,6 +39,8 @@ FROM nvidia-base-${TARGETARCH} as baseline
 ARG TARGETARCH
 
 ENV CUDA_VERSION 11.5.1
+
+USER root
 
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel8/${NVARCH}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
@@ -148,8 +150,7 @@ RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/yum \
 
 ENV BENTOML_VERSION=1.0.0a6
 
-RUN pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 
-RUN yum remove -y gcc curl make git \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+RUN rm -rf /var/cache/yum

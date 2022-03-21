@@ -184,7 +184,7 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
         if "cudnn" in image_tag:
             context_path = ctx._generated_dir.getsyspath(output_path)
 
-        build_args = {"PYTHON_VERSION": python_version}
+        build_args = {"PYTHON_VERSION": python_version, "BUILDKIT_INLINE_CACHE": 1}
         if "ubi" in image_tag:
             build_args["UBIFORMAT"] = f'python-{python_version.replace(".", "")}'
 

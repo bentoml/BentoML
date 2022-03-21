@@ -98,7 +98,7 @@ run-test: ## Run test
 .PHONY: docker-run-%
 docker-run-%: ## Run a task from a docker container (useful for CI)
 	@if ! `docker image ls | grep $(MANAGER_REPO) &>/dev/null` ; then \
-		docker pull $(MANAGER_REPO); \
+		docker pull $(FULL_TAG); \
 	fi
 	$(eval $@_prefix := docker-run-)
 	$(eval $@_target := $(subst $($@_prefix), ,$@))
@@ -107,8 +107,8 @@ docker-run-%: ## Run a task from a docker container (useful for CI)
 
 .PHONY: all
 all:
-	$(eval $@_ORG := aarnphm)
-	$(eval $@_DISTROS := amazonlinux2 alpine3.14 ubi8 debian11 debian10)
+	$(eval $@_ORG := bentoml)
+	$(eval $@_DISTROS := amazonlinux2 alpine3.14 alpine3.14 debian10 debian11)
 	$(eval $@_RELEASES:= all)
 	$(eval $@_distro_args := $(call expands,distros,$($@_DISTROS)))
 	$(eval $@_releases_args := $(call expands,releases,$($@_RELEASES)))

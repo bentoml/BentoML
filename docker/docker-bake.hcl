@@ -11,32 +11,33 @@ variable "TAG"{
     default = "1.1.0"
 }
 
-/* ------------------- */
-variable "MANAGER_REPO" {
-    default = "aarnphm/bentoml-docker"
+variable "ORG" {
+    default = "aarnphm"
 }
+
+/* ------------------- */
 
 target "shared" {
     platforms = ["linux/amd64", "linux/arm64/v8"]
     inherits = ["_all_platforms"]
 	cache-to = ["type=inline"]
-    dockerfile = "./hack/dockerfiles/dev.Dockerfile"
+    dockerfile = "./hack/dockerfiles/builder.Dockerfile"
 	pull = true
     context = "."
 }
 
 target "manager" {
     inherits = ["shared"]
-    tags = TagWithArch(MANAGER_REPO, TAG, "1", "")
-    target = "base"
-	cache-from = ["${MANAGER_REPO}:${TAG}"]
+    tags = TagWithArch("${ORG}/bentoml-docker", TAG, "1", "")
+    target = "releases"
+	cache-from = ["${ORG}/bentoml-docker:${TAG}"]
 }
 
-target "base_dev" {
+target "base" {
     inherits = ["shared"]
-    tags = TagWithArch(MANAGER_REPO, "base_dev", "1", "")
-    target = "base_build"
-	cache-from = ["${MANAGER_REPO}:base_dev"]
+    tags = TagWithArch("${ORG}/bentoml-docker", "build", "1", "")
+    target = "build"
+	cache-from = ["${ORG}/bentoml-docker:build"]
 }
 
 group default {
@@ -44,15 +45,12 @@ group default {
 }
 
 /* ------------------- */
-variable "TEST_REPO" {
-    default = "aarnphm/bats-test"
-}
 
 target "test" {
     inherits = ["_all_platforms"]
-    tags = TagWithArch(TEST_REPO, "latest", "1", "")
-    dockerfile = "./hack/dockerfiles/test.Dockerfile"
+    tags = TagWithArch("${ORG}/bats-test", TAG, "1", "")
+    dockerfile = "./hack/dockerfiles/bats-test.Dockerfile"
 	cache-to = ["type=inline"]
-	cache-from = ["${TEST_REPO}:${TAG}"]
+	cache-from = ["${ORG}/bats-test:${TAG}"]
 	target = "test"
 }

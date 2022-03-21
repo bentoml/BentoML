@@ -4,7 +4,7 @@ ARG XX_VERSION=1.1.0
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
-FROM python:3.10.2-alpine3.15 as base_build
+FROM python:3.10.2-alpine3.15 as build
 
 COPY --from=xx / /
 
@@ -52,8 +52,8 @@ dockerd --version
 docker --version
 EOT
 
-COPY ./hack/dockerfiles/modprobe.sh /usr/local/bin/modprobe
-COPY ./hack/dockerfiles/docker-entrypoint.sh /usr/local/bin/
+COPY ./hack/shells/modprobe.sh /usr/local/bin/modprobe
+COPY ./hack/shells/docker-entrypoint.sh /usr/local/bin/
 
 # https://github.com/docker-library/docker/pull/166
 ENV DOCKER_TLS_CERTDIR=/certs
@@ -64,7 +64,7 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 
 CMD [ "sh" ]
 
-FROM --platform=$BUILDPLATFORM base_build as base
+FROM --platform=$BUILDPLATFORM build as releases
 
 COPY --from=xx / /
 
@@ -144,13 +144,12 @@ RUN echo "source /etc/bash.bashrc" >> $HOME/.bashrc
 
 CMD [ "/bin/bash" ]
 
-FROM base as base-amd64
+FROM releases as releases-amd64
 
-FROM base as base-arm64
+FROM releases as releases-arm64
 
-FROM base-${TARGETARCH}
+FROM releases-${TARGETARCH}
 
 ARG TARGETPLATFORM
 
 ARG TARGETARCH
-

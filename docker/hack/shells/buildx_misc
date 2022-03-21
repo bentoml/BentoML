@@ -22,7 +22,7 @@ cleanup() {
 	fi
 }
 
-create() {
+create_builder() {
 	prefix="$1"
 	if ! docker buildx ls | grep "$prefix" &>/dev/null; then
 		docker buildx create --use --driver docker-container --name "$prefix" --driver-opt image=moby/buildkit:master
@@ -96,7 +96,7 @@ main() {
 			;;
 		-c | -create | --create)
 			NAME="$2"
-			create "$NAME"
+			create_builder "$NAME"
 			shift
 			shift
 			;;

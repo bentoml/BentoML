@@ -113,8 +113,6 @@ FROM base as base-{{ key }}
     {% endif %}
 {% endfor %}
 
-FROM base-${TARGETARCH} as stage_cached
-
 FROM base-${TARGETARCH}
 
 ARG TARGETPLATFORM
@@ -134,9 +132,7 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -y --no-install-recommends \
+RUN xx-apt-get install -y --no-install-recommends \
         gnupg2 curl ca-certificates \
     && curl -fsSL {{ cuda.cuda_repo_url }}/${NVARCH}/7fa2af80.pub | apt-key add - \
     && echo "deb {{ cuda.cuda_repo_url }}/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
@@ -147,9 +143,7 @@ RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     && ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda \
     && rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -y --no-install-recommends \
+RUN xx-apt-get install -y --no-install-recommends \
     cuda-libraries-{{ cuda.version.major }}-{{ cuda.version.minor }}=${NVIDIA_CUDA_LIB_VERSION} \
     {% if has_libnpp_package %}
     ${NVIDIA_LIBNPP_PACKAGE} \

@@ -72,8 +72,6 @@ ENV NVIDIA_CUDNN_VERSION 8.3.1.22
 ENV NVIDIA_CUDNN_PACKAGE "libcudnn8=$NVIDIA_CUDNN_VERSION-1+cuda11.5"
 ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn8"
 
-FROM base-${TARGETARCH} as stage_cached
-
 FROM base-${TARGETARCH}
 
 ARG TARGETPLATFORM
@@ -93,9 +91,7 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -y --no-install-recommends \
+RUN xx-apt-get install -y --no-install-recommends \
         gnupg2 curl ca-certificates \
     && curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/7fa2af80.pub | apt-key add - \
     && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
@@ -106,9 +102,7 @@ RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     && ln -s cuda-11.5 /usr/local/cuda \
     && rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -y --no-install-recommends \
+RUN xx-apt-get install -y --no-install-recommends \
     cuda-libraries-11-5=${NVIDIA_CUDA_LIB_VERSION} \
     ${NVIDIA_LIBNPP_PACKAGE} \
     cuda-nvtx-11-5=${NVIDIA_NVTX_VERSION} \

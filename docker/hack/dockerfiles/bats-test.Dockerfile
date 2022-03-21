@@ -8,22 +8,16 @@ FROM tonistiigi/bats-assert AS assert
 
 FROM --platform=$BUILDPLATFORM docker:${DOCKERD_VERSION}-alpine${ALPINE_VERSION} as base
 
+WORKDIR /work
+
 COPY --from=assert . .
 COPY --from=xx / /
 
-WORKDIR /work
-
-RUN xx-apk add --no-cache bats
-
-COPY ./tests ./test
-
-COPY hack/runt .
+RUN --mount=type=cache,target=/pkg-cache \
+    ln -s /pkg-cache /etc/apk/cache && \
+    xx-apk add --no-cache bats vim
 
 FROM base as test
-
-COPY --from=base / /
-
-COPY --from=base / /
 
 FROM base as test-amd64
 

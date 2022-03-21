@@ -7,57 +7,56 @@ ARCH=$(uname -m)
 
 # check for nividia-docker driver
 HAS_GPU=$(docker info | grep Runtimes | grep -q 'nvidia')
-GPU_SUPPORTED_OS=( debian11 debian10 ubi8 ubi7 )
+GPU_SUPPORTED_OS=(debian11 debian10 ubi8 ubi7)
 
 # make sure that we are using runc
 RUNTIME="$(docker info | grep Runtimes)"
 
 function debug() {
-    if [[ $DEBUG -eq 1 ]]; then
-        echo "DEBUG: $@" | sed -e 's/^/# /' >&3 ;
-    fi
+	if [[ $DEBUG -eq 1 ]]; then
+		echo "DEBUG: " "${@}" | sed -e 's/^/# /' >&3
+	fi
 }
 
 function check_runc() {
-    if ! $(echo"$RUNTIME" | grep 'runc' &>/dev/null ); then
+	if ! echo"$RUNTIME" | grep 'runc' &>/dev/null; then
 		fail "Required runc as container runtime."
-    fi
-    debug "$RUNTIME"
+	fi
+	debug "$RUNTIME"
 }
 
 function cleanup() {
-    # Check caller.
+	# Check caller.
 	if batslib_is_caller --indirect 'teardown'; then
 		echo "Must be called from \`teardown'" \
-		batslib_decorate 'ERROR: clean_up' \
-		fail
+			batslib_decorate 'ERROR: clean_up' \
+			fail
 		return $?
 	fi
 
-    echo "doing some cleanup..."
-    run unset "${!BENTOML_TEST@}"
+	echo "doing some cleanup..."
+	run unset "${!BENTOML_TEST@}"
 }
 
 function setup_general() {
 	requires root nividialess
-	PLATFORM = "$1"
-    IMG = "$2"
+	PLATFORM="$1"
+	IMG="$2"
 
-    docker pull --platform "$PLATFORM" "$IMG"
+	docker pull --platform "$PLATFORM" "$IMG"
 
 	if [[ $DEBUG -eq 1 ]]; then
 		check_runc
-    fi
+	fi
 }
 
-function setup_gpu(){
+function setup_gpu() {
 	requires root nividia
-	PLATFORM = "$1"
-	IMG = "$2"
+	PLATFORM="$1"
+	IMG="$2"
 
-    docker pull --platform "$PLATFORM" "$IMG"
+	docker pull --platform "$PLATFORM" "$IMG"
 }
-
 
 function requires() {
 	for var in "$@"; do
@@ -84,7 +83,7 @@ function requires() {
 			fi
 			;;
 		supports_gpu)
-		    if [[ "${GPU_SUPPORTED_OS[*]}" =~ "${BENTOML_TEST_OS}" ]]; then
+			if [[ "${GPU_SUPPORTED_OS[*]}" =~ ${BENTOML_TEST_OS} ]]; then
 				skip_me=1
 			fi
 			;;
@@ -108,28 +107,27 @@ function requires() {
 	done
 }
 
-
 # Taken from runc tests
 function docker_run() {
-    run docker run --privileged --rm --init "$@"
-    echo "docker run $@ (status=$status):" >&2
-    echo "$output" >&2
+	run docker run --privileged --rm --init "$@"
+	echo "docker run $@ (status=$status):" >&2
+	echo "$output" >&2
 }
 
 function docker_run_arch() {
-    run docker run --privileged --rm --init --platform linux/"$ARCH" "$@"
-    echo "docker run $@ (status=$status):" >&2
-    echo "$output" >&2
+	run docker run --privileged --rm --init --platform linux/"$ARCH" "$@"
+	echo "docker run $@ (status=$status):" >&2
+	echo "$output" >&2
 }
 
 function docker_pull() {
-    run docker pull --platform linux/"$ARCH" "$@"
-    echo "docker pull $@ (status=$status):" >&2
-    echo "$output" >&2
+	run docker pull --platform linux/"$ARCH" "$@"
+	echo "docker pull $@ (status=$status):" >&2
+	echo "$output" >&2
 }
 
 function docker_rmi() {
-    run docker rmi -f "$@"
-    echo "docker rmi $@ (status=$status):" >&2
-    echo "$output" >&2
+	run docker rmi -f "$@"
+	echo "docker rmi $@ (status=$status):" >&2
+	echo "$output" >&2
 }

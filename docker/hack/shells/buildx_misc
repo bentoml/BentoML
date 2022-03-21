@@ -2,7 +2,8 @@
 
 set -e
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd "$GIT_ROOT/docker" || exit 1
+DOCKER_DIR="$GIT_ROOT/docker"
+cd "$DOCKER_DIR" || exit 1
 
 cleanup() {
 	prefix="$1"
@@ -44,6 +45,16 @@ preflight() {
 
 }
 
+bake_env() {
+	python_version="$1"
+	bentoml_version=$(git describe --tags "$(git rev-list --tags --max-count=1)" | sed 's/v\(\)/\1/; s/-//g')
+	cat <<-EOF >"$DOCKER_DIR/env.hcl"
+		BENTOML_VERSION="$bentoml_version"
+		PYTHON_VERSION="$python_version"
+	EOF
+
+}
+
 ARGS=(--rm --privileged)
 
 install_qemu() {
@@ -61,23 +72,25 @@ install_qemu() {
 
 usage() {
 	cat <<-EOF
-		Usage: buildx_misc [--help][--preflight][--install-qemu][--cleanup <NAME>][--create <NAME>]
-		  Some helpers functions for interacting with buildx
-		  -h|--help|-help:
-		      display this usage.
-		  -r|--cleanup|-cleanup <BUILDER>:
-		      remove a builder with given name.
-		  -c|--create|-create <BUILDER>:
-		      create a new builder with given name.
-		  -i|--install-qemu|-install-qemu:
-		      install qemu to support building on multiple architecture.
-		  -p|--preflight|-preflight:
-		      preflight if buildx is available.
+		Usage: buildx_misc [--help][--preflight][--qemu][--cleanup <NAME>][--create <NAME>][--genvar]
+			Some helpers functions for interacting with buildx
+			-h|--help|-help:
+				display this usage.
+			-r|--cleanup|-cleanup <BUILDER>:
+				remove a builder with given name.
+			-c|--create|-create <BUILDER>:
+				create a new builder with given name.
+			-q|--qemu|-qemu:
+				install qemu to support building on multiple architecture.
+			-p|--preflight|-preflight:
+				preflight if buildx is available.
+			-g|--genvar|-genvar:
+				Create test environments for buildx bake.
 
-		  To create a builder, use:
-		      buildx_misc -c manager_builder
-		  To remove a builder for postflight e.g.:
-		      buildx_misc -r manager_builder
+			To create a builder, use:
+				buildx_misc -c manager_builder
+			To remove a builder for postflight e.g.:
+				buildx_misc -r manager_builder
 	EOF
 }
 
@@ -91,7 +104,7 @@ main() {
 		-p | -preflight | --preflight)
 			preflight
 			;;
-		-i | -install-qemu | --install-qemu)
+		-q | -qemu | --qemu)
 			install_qemu
 			;;
 		-c | -create | --create)
@@ -103,6 +116,12 @@ main() {
 		-r | -remove | --remove)
 			NAME="$2"
 			cleanup "$NAME"
+			shift
+			shift
+			;;
+		-g | -genvar | --genvar)
+			PYTHON_VERSION="$2"
+			bake_env "$PYTHON_VERSION"
 			shift
 			shift
 			;;

@@ -1,12 +1,16 @@
-SHELL ?=/bin/bash
 DOCKER ?= docker
 
 ORG ?= aarnphm
 TAG ?= 1.1.0
-MAX_WORKERS ?= 6
 
+# functions
+pargs = $(foreach a, $1, $(if $(value $a),--$a $($a)))
+expands = $(foreach a,$2, $1=$a)
 upper = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
-rm = $(subst $1, ,$2)
+word-dash = $(word $2,$(subst -, ,$1))
+
+# Some more functions from shell
+GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 
 # ----------------------
 export DOCKER_BUILDKIT=1
@@ -20,35 +24,40 @@ MANAGER_ARGS := ${COMMON_ARGS} \
 HADOLINT_ARGS := ${COMMON_ARGS} \
 				-i -v ${PWD}:/workdir \
 				-w /workdir ghcr.io/hadolint/hadolint
+TEST_ARGS := ${COMMON_ARGS} \
+			 -v ${PWD}:/work/manager \
+			 -w /work ${ORG}/bats-test:${TAG}
 
-docker-run-%:
-	$(eval $@_args := $(call upper, $(call rm, docker-run-, $@)))
+docker-run-%: ## Run with predefined args and cmd: make docker-run-hadolint -- /bin/hadolint Dockerfile
+	$(eval $@_args := $(call upper, $(call word-dash, $@, 3)))
 	$(DOCKER) run ${$($@_args)_ARGS} $(filter-out $@,$(MAKECMDGOALS))
 
-# ----------------------
-docker-lint: ## Lint docker with hadolint
+docker-runi-%: ## Run a container interactively
+	$(eval $@_args := $(call upper, $(call word-dash, $@, 3)))
+	$(DOCKER) run -it ${$($@_args)_ARGS} bash
+
+docker-bake-%: ## Build a docker target with buildx bake: make docker-bake-test
+	$(eval $@_target := $(call word-dash, $@, 3))
+	$(MAKE) buildx-misc-create -- manager-docker
+	$(DOCKER) buildx bake -f ${GIT_ROOT}/docker/docker-bake.hcl $(filter-out $@,$(MAKECMDGOALS)) $($@_target) 
+
+BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
+emulator: ${BUILDXDETECT} ## Setup emulator for supporting multiarchitecture.
+${BUILDXDETECT}:
+	$(MAKE) buildx-misc-preflight
+	$(MAKE) buildx-misc-qemu
+
+buildx-misc-%: ## Run support tasks for buildx
+	$(eval $@_target := $(call word-dash, $@, 3))
+	./hack/shells/buildx_misc -$($@_target) $(filter-out $@,$(MAKECMDGOALS))
+
+lint-dockerfile: ## Lint docker with hadolint
 	export LINT_ERRORS=0; \
 	IFS=$$'\n'; for dockerfile in $(shell git ls-files | { grep Dockerfile || echo ""; }); do \
-		docker run --rm -i -v "$$(pwd)":/workdir -w /workdir ghcr.io/hadolint/hadolint /bin/hadolint "$${dockerfile}" || LINT_ERRORS=$$((LINT_ERRORS+1)); \
+		$(MAKE) docker-run-hadolint -- /bin/hadolint "$${dockerfile}" || LINT_ERRORS=$$((LINT_ERRORS+1)); \
 	done; \
 	exit "$${LINT_ERRORS}"
 
-docker-buildx-clean: ## clean docker
-	@./hack/shells/buildx_misc -r manager_docker
-
-# ----------------------
-install-qemu:
-	@./hack/shells/buildx_misc -install-qemu
-
-BUILDXDETECT = ${HOME}/.docker/cli-plugins/docker-buildx
-check-buildx: ${BUILDXDETECT}
-${BUILDXDETECT}:
-	@./hack/shells/buildx_misc -preflight
-
-emulator: check-buildx install-qemu ## Install all emulator
-
-docker-bake-%: ## Build a docker target with buildx bake
-	@./hack/shells/buildx_misc -create manager_docker
-	$(eval bake_target_prefix := $(subst docker-bake-, ,$@))
-	$(eval bake_target :=$(bake_target_prefix))
-	@docker buildx bake $(bake_target) --push --no-cache
+.PHONY: help
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | sed 's/^[^:]*://g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'

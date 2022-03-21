@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as base
+FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as base
 
 ENV BENTOML_VERSION=1.0.0a6
 

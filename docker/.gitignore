@@ -4,3 +4,4 @@
 _test.py
 *.txt
 *.meta.*
+env.hcl

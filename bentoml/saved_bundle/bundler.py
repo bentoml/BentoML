@@ -191,6 +191,13 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
     with open(os.path.join(path, "docs.json"), "w") as f:
         json.dump(get_open_api_spec_json(bento_service), f, indent=2)
 
+    copy_zip_import_archives(
+        os.path.join(path, bento_service.name, ZIPIMPORT_DIR),
+        bento_service.__class__.__module__,
+        list(get_zipmodules().keys()),
+        bento_service.env._zipimport_archives or [],
+    )
+
 
 def save_to_dir(
     bento_service: "BentoService", path: str, version: str = None, silent: bool = False
@@ -244,13 +251,6 @@ def save_to_dir(
                 _upload_file_to_remote_path(path, tarfile_path, tarfile_name)
     else:
         _write_bento_content_to_dir(bento_service, path)
-
-    copy_zip_import_archives(
-        os.path.join(path, bento_service.name, ZIPIMPORT_DIR),
-        bento_service.__class__.__module__,
-        list(get_zipmodules().keys()),
-        bento_service.env._zipimport_archives or [],
-    )
 
     if not silent:
         logger.info(

@@ -45,16 +45,6 @@ preflight() {
 
 }
 
-bake_env() {
-	python_version="$1"
-	bentoml_version=$(git describe --tags "$(git rev-list --tags --max-count=1)" | sed 's/v\(\)/\1/; s/-//g')
-	cat <<-EOF >"$DOCKER_DIR/env.hcl"
-		BENTOML_VERSION="$bentoml_version"
-		PYTHON_VERSION="$python_version"
-	EOF
-
-}
-
 ARGS=(--rm --privileged)
 
 install_qemu() {
@@ -72,7 +62,7 @@ install_qemu() {
 
 usage() {
 	cat <<-EOF
-		Usage: buildx_misc [--help][--preflight][--qemu][--cleanup <NAME>][--create <NAME>][--genvar]
+		Usage: buildx_misc [--help][--preflight][--qemu][--cleanup <NAME>][--create <NAME>]
 			Some helpers functions for interacting with buildx
 			-h|--help|-help:
 				display this usage.
@@ -84,8 +74,6 @@ usage() {
 				install qemu to support building on multiple architecture.
 			-p|--preflight|-preflight:
 				preflight if buildx is available.
-			-g|--genvar|-genvar:
-				Create test environments for buildx bake.
 
 			To create a builder, use:
 				buildx_misc -c manager_builder
@@ -116,12 +104,6 @@ main() {
 		-r | -remove | --remove)
 			NAME="$2"
 			cleanup "$NAME"
-			shift
-			shift
-			;;
-		-g | -genvar | --genvar)
-			PYTHON_VERSION="$2"
-			bake_env "$PYTHON_VERSION"
 			shift
 			shift
 			;;

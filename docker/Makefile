@@ -12,6 +12,8 @@ USE_DOCKER ?= true
 RELEASES ?= all
 # Default distros that we releases
 DISTROS ?= amazonlinux2 alpine3.14 ubi8 debian10 debian11
+# Default python version
+PYTHON_VERSION ?= 3.6 3.7 3.8 3.9 3.10
 # number of max workers to use
 MAX_WORKERS ?= 6
 
@@ -43,6 +45,7 @@ quality: ## Quality check
 
 # ----------------------
 # Run some manager commands
+expands_equal = $(foreach a,$2, $1=$a)
 
 POETRY_RUN := poetry run manager $(1)
 
@@ -67,13 +70,13 @@ endif
 
 .PHONY: run-test
 run-test: ## Test
-	$(MAKE) buildx-misc-genvar $(TEST_PYTHON_VERSION)
-	$(MAKE) docker-bake-test -- -f ./env.hcl
+	$(MAKE) docker-run-test_runtime -- -python_version ${PYTHON_VERSION} -distros ${DISTROS} -suffix ${TEST_TYPE} -organization ${ORGANIZATION} -bentoml_version ${BENTOML_VERSION}
+
 
 .PHONY: all
 all: ## To release all or not release all?
 	$(MAKE) run-generate organization=$(ORG)
-	$(MAKE) run-build organization=$(ORG) $(call expands,distros,$(DISTROS)) $(call expands,releases,$(RELEASES))
+	$(MAKE) run-build organization=$(ORG) $(call expands_equal,distros,$(DISTROS)) $(call expands_equal,releases,$(RELEASES))
 
 %:
 	@true

@@ -5,7 +5,6 @@ TAG ?= 1.1.0
 
 # functions
 pargs = $(foreach a, $1, $(if $(value $a),--$a $($a)))
-expands = $(foreach a,$2, $1=$a)
 upper = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
 word-dash = $(word $2,$(subst -, ,$1))
 
@@ -24,9 +23,12 @@ MANAGER_ARGS := ${COMMON_ARGS} \
 HADOLINT_ARGS := ${COMMON_ARGS} \
 				-i -v ${PWD}:/workdir \
 				-w /workdir ghcr.io/hadolint/hadolint
-TEST_ARGS := ${COMMON_ARGS} \
-			 -v ${PWD}:/work/manager \
-			 -w /work ${ORG}/bats-test:${TAG}
+
+COMMON_TEST_ARGS := ${COMMON_ARGS} \
+			 		-v ${PWD}:/work/manager \
+					-w /work
+TEST_RUNTIME_ARGS := ${COMMON_TEST_ARGS} ${ORG}/bentoml-docker:test-runtime
+TEST_CUDNN_ARGS := ${COMMON_TEST_ARGS} ${ORG}/bentoml-docker:test-cudnn
 
 docker-run-%: ## Run with predefined args and cmd: make docker-run-hadolint -- /bin/hadolint Dockerfile
 	$(eval $@_args := $(call upper, $(call word-dash, $@, 3)))

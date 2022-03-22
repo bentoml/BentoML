@@ -6,23 +6,13 @@ ROOTLESS=$(id -u)
 ARCH=$(uname -m)
 
 # check for nividia-docker driver
-HAS_GPU=$(docker info | grep Runtimes | grep -q 'nvidia')
+HAS_GPU=0
 GPU_SUPPORTED_OS=(debian11 debian10 ubi8 ubi7)
-
-# make sure that we are using runc
-RUNTIME="$(docker info | grep Runtimes)"
 
 function debug() {
 	if [[ $DEBUG -eq 1 ]]; then
 		echo "DEBUG: " "${@}" | sed -e 's/^/# /' >&3
 	fi
-}
-
-function check_runc() {
-	if ! echo"$RUNTIME" | grep 'runc' &>/dev/null; then
-		fail "Required runc as container runtime."
-	fi
-	debug "$RUNTIME"
 }
 
 function cleanup() {
@@ -39,19 +29,15 @@ function cleanup() {
 }
 
 function setup_general() {
-	requires root nividialess
+	requires root
 	PLATFORM="$1"
 	IMG="$2"
 
 	docker pull --platform "$PLATFORM" "$IMG"
-
-	if [[ $DEBUG -eq 1 ]]; then
-		check_runc
-	fi
 }
 
 function setup_gpu() {
-	requires root nividia
+	requires root nvidia
 	PLATFORM="$1"
 	IMG="$2"
 
@@ -73,11 +59,6 @@ function requires() {
 			fi
 			;;
 		nvidia)
-			if [ "$HAS_GPU" -ne 0 ]; then
-				skip_me=1
-			fi
-			;;
-		nvidialess)
 			if [ "$HAS_GPU" -eq 0 ]; then
 				skip_me=1
 			fi

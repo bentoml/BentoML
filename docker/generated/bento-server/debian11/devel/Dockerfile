@@ -8,9 +8,9 @@
 
 ARG PYTHON_VERSION
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as stage_cached
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as stage_cached
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11 as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian11 as base
 
 RUN xx-apt-get install -q -y --no-install-recommends git \
     && xx-apt-get clean \

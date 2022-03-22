@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi8 as base
+FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-ubi8 as base
 
 FROM base as base-amd64
 

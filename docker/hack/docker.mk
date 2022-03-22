@@ -7,7 +7,6 @@ TEST_TYPE ?= runtime
 INTERACTIVE ?= 0
 
 # functions
-pargs = $(foreach a, $1, $(if $(value $a),--$a $($a)))
 upper = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
 word-dash = $(word $2,$(subst -, ,$1))
 

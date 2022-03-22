@@ -8,9 +8,9 @@
 
 ARG PYTHON_VERSION
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian10-conda as stage_cached
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian10-conda as stage_cached
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian10-conda as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian10-conda as base
 
 RUN --mount=type=cache,from=stage_cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=stage_cached,sharing=shared,target=/var/lib/apt \

@@ -8,15 +8,16 @@ include hack/docker.mk
 SHELL := /bin/bash
 
 # TODO: authentication issue with buildkit when using docker to push
-USE_DOCKER ?= false
+USE_DOCKER ?= true
 # type of releases: base, runtime, cudnn, or `all` of them :/
 RELEASES ?= all
 # Default distros that we releases
-DISTROS ?= amazonlinux2 ubi8 alpine3.14 debian10 debian11
+DISTROS ?= amazonlinux2
 # Default python version
 PYTHON_VERSION ?= 3.6 3.7 3.8 3.9 3.10
 # number of max workers to use
 MAX_WORKERS ?= 6
+
 # ----------------------
 BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/v\(\)/\1/; s/-//g')
 
@@ -42,7 +43,7 @@ quality: ## Quality check
 
 # ----------------------
 # Run some manager commands
-expands_equal = $(foreach a,$2, $1=$a)
+pargs = $(foreach a, $1, $(if $(value $a),--$a $($a)))
 
 POETRY_RUN := poetry run manager $(1)
 
@@ -76,15 +77,20 @@ endif
 	IFS=$$'\n'; for python_version in ${PYTHON_VERSION}; do \
 		for distros in ${DISTROS}; do \
 			$(MAKE) docker-run-test -- -default -platforms $(shell uname -m) -python_version "$${python_version}" -distros "$${distros}" -suffix ${TEST_TYPE} -organization ${ORG} -bentoml_version ${BENTOML_VERSION} || TEST_ERRORS=$$((TEST_ERRORS+1)); \
-			done; \
+		done; \
 	done; \
 	exit "$${TEST_ERRORS}"
 
 
 .PHONY: all
 all: ## To release all or not release all?
-	$(MAKE) run-generate organization=$(ORG)
-	$(MAKE) run-build organization=$(ORG) $(call expands_equal,distros,$(DISTROS)) $(call expands_equal,releases,$(RELEASES))
+	@set -x;
+	@$(MAKE) run-generate -- organization=$(ORG);
+	@IFS=$$'\n'; for DISTRO in ${DISTROS}; do \
+		for RELEASE in ${RELEASES}; do \
+			$(MAKE) run-build -- organization=$(ORG) distros="$${DISTRO}" releases="$${RELEASE}"; \
+		done; \
+	done; \
 
 %:
 	@true

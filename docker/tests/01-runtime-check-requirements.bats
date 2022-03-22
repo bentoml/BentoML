@@ -3,33 +3,31 @@
 load 'helpers'
 load 'assert'
 
-image="${BENTOML_TEST_ORGANIZATION}/${BENTOML_TEST_IMAGE_NAME}:${BENTOML_TEST_BENTOML_VERSION}-python${BENTOML_TEST_PYTHON_VERSION}-${BENTOML_TEST_OS}-${BENTOML_TEST_IMAGE_TAG_PREFIX}"
-
 function setup() {
-    DEBUG=1
-    setup_general ${BENTOML_TEST_ARCH} ${image}
+    setup_general ${BENTOML_TEST_ARCH} ${IMAGE}
 }
 
 function teardown() {
     cleanup
 }
 
+
 @test "bentoml_version" {
-    docker_run ${image} bentoml --version
+    docker_run ${IMAGE} bentoml --version
 	assert_success
 }
 
 @test "conda_version" {
-    docker_run ${image} conda --version
+    docker_run ${IMAGE} conda --version
 	assert_success
 }
 
 @test "bash_version" {
-    docker_run ${image} bash --version
+    docker_run ${IMAGE} bash --version
 	assert_success
 }
 
 @test "python_version" {
-    docker_run ${image} python --version
+    docker_run ${IMAGE} python --version
 	assert_success
 }

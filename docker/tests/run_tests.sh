@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 TEST_PATH="$(realpath $(cd "$(dirname "$(readlink -f "$0")")" && pwd))"
 POSITIONAL_ARGS=()
 
 usage() {
 	cat <<-EOF
-		Usage: run_tests.sh [--help][--image_name][--bentoml_version][--python_version][--distros][--suffix][--platforms][--organization][--default]
+		Usage: run_tests.sh [--help] [image_name][bentoml_version][python_version][distros][suffix][platforms][organization][default] OPTS
 		  Some helpers functions for interacting with buildx
 		  -h|--help|-help:
 		      display this usage.
-		  -python_version|--python_version:
+		  python_version|-python_version|--python_version:
 		      Set python version.
-		  -distros|--distros:
+		  distros|-distros|--distros:
 		      Set distros to test on.
-		  -bentoml_version|--bentoml_version:
+		  bentoml_version|-bentoml_version|--bentoml_version:
 		      Set bentoml version.
-		  -image_name|--image_name:
+		  image_name|-image_name|--image_name:
 		      Set image name, default to \`bento-server\`
-		  -suffix|--suffix:
+		  suffix|-suffix|--suffix:
 		      Set suffix, default to \`runtime\`.
-		  -organization|--organization:
+		  organization|-organization|--organization:
 		      Set organization, default to \`bentoml\`.
-		  -platforms|--platforms:
+		  platforms|-platforms|--platforms:
 		      Set platforms, default to \`amd64\`.
 
 		To run tests locally, make sure to install bats, bats-assert, bats-support. Otherwise use the Docker image.
@@ -37,44 +37,44 @@ while [[ $# -gt 0 ]]; do
 		usage
 		exit
 		;;
-	-python_version | --python_version)
+	python_version | -python_version | --python_version)
 		PYTHON_VERSION="$2"
 		shift # past argument
 		shift # past value
 		;;
-	-distros | --distros)
+	distros | -distros | --distros)
 		OS="$2"
 		shift # past argument
 		shift # past value
 		;;
-	-default | --default)
+	default | -default | --default)
 		PLATFORMS='amd64'
 		ORGANIZATION="bentoml"
 		IMAGE_NAME='bento-server'
 		IMAGE_TAG_SUFFIX="runtime"
 		shift # past argument
 		;;
-	-suffix | --suffix)
+	suffix | -suffix | --suffix)
 		IMAGE_TAG_SUFFIX="$2"
 		shift # past argument
 		shift # past value
 		;;
-	-organization | --organization)
+	organization | -organization | --organization)
 		ORGANIZATION="$2"
 		shift # past argument
 		shift # past value
 		;;
-	-platforms | --platforms)
+	platforms | -platforms | --platforms)
 		PLATFORMS="$2"
 		shift # past argument
 		shift # past value
 		;;
-	-image_name | --image_name)
+	image_name | -image_name | --image_name)
 		IMAGE_NAME="$2"
 		shift # past argument
 		shift # past value
 		;;
-	-bentoml_version | --bentoml_version)
+	bentoml_version | -bentoml_version | --bentoml_version)
 		BENTOML_VERSION="$2"
 		shift # past argument
 		shift # past value
@@ -93,14 +93,9 @@ done
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 main() {
-	export BENTOML_TEST_PYTHON_VERSION="$PYTHON_VERSION"
-	export BENTOML_TEST_OS="$OS"
-	export BENTOML_TEST_IMAGE_TAG_SUFFIX="$IMAGE_TAG_SUFFIX"
-	export BENTOML_TEST_IMAGE_NAME="$IMAGE_NAME"
-	export BENTOML_TEST_BENTOML_VERSION="$BENTOML_VERSION"
-	export BENTOML_TEST_IMAGE_NAME="$IMAGE_NAME"
 	export BENTOML_TEST_ARCH="$PLATFORMS"
-	export BENTOML_TEST_ORGANIZATION="$ORGANIZATION"
+	image="${ORGANIZATION}/${IMAGE_NAME}:${BENTOML_VERSION}-python${PYTHON_VERSION}-${OS}-${IMAGE_TAG_SUFFIX}"
+	export IMAGE="$image"
 
 	for file in $(find "$TEST_PATH" -type f -iname "[0-9]*-*.bats" | sort); do
 		bats --tap "$file"

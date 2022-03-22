@@ -7,19 +7,16 @@ include hack/docker.mk
 # Set the shell
 SHELL := /bin/bash
 
-USE_DOCKER ?= true
+# TODO: authentication issue with buildkit when using docker to push
+USE_DOCKER ?= false
 # type of releases: base, runtime, cudnn, or `all` of them :/
 RELEASES ?= all
 # Default distros that we releases
-DISTROS ?= amazonlinux2 alpine3.14 ubi8 debian10 debian11
+DISTROS ?= amazonlinux2 ubi8 alpine3.14 debian10 debian11
 # Default python version
 PYTHON_VERSION ?= 3.6 3.7 3.8 3.9 3.10
 # number of max workers to use
 MAX_WORKERS ?= 6
-
-# test python version
-TEST_PYTHON_VERSION ?= 3.10
-
 # ----------------------
 BENTOML_VERSION := $(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's/v\(\)/\1/; s/-//g')
 
@@ -70,7 +67,18 @@ endif
 
 .PHONY: run-test
 run-test: ## Test
-	$(MAKE) docker-run-test_runtime -- -python_version ${PYTHON_VERSION} -distros ${DISTROS} -suffix ${TEST_TYPE} -organization ${ORGANIZATION} -bentoml_version ${BENTOML_VERSION}
+ifeq ($(TEST_TYPE),runtime)
+	docker pull ${ORG}/bentoml-docker:test-runtime
+else
+	docker pull ${ORG}/bentoml-docker:test-cudnn
+endif
+	export TEST_ERRORS=0; \
+	IFS=$$'\n'; for python_version in ${PYTHON_VERSION}; do \
+		for distros in ${DISTROS}; do \
+			$(MAKE) docker-run-test -- -default -platforms $(shell uname -m) -python_version "$${python_version}" -distros "$${distros}" -suffix ${TEST_TYPE} -organization ${ORG} -bentoml_version ${BENTOML_VERSION} || TEST_ERRORS=$$((TEST_ERRORS+1)); \
+			done; \
+	done; \
+	exit "$${TEST_ERRORS}"
 
 
 .PHONY: all

@@ -3,6 +3,9 @@ DOCKER ?= docker
 ORG ?= aarnphm
 TAG ?= 1.1.0
 
+TEST_TYPE ?= runtime
+INTERACTIVE ?= 0
+
 # functions
 pargs = $(foreach a, $1, $(if $(value $a),--$a $($a)))
 upper = $(shell echo '$1' | tr '[:lower:]' '[:upper:]')
@@ -24,19 +27,22 @@ HADOLINT_ARGS := ${COMMON_ARGS} \
 				-i -v ${PWD}:/workdir \
 				-w /workdir ghcr.io/hadolint/hadolint
 
-COMMON_TEST_ARGS := ${COMMON_ARGS} \
-			 		-v ${PWD}:/work/manager \
-					-w /work
-TEST_RUNTIME_ARGS := ${COMMON_TEST_ARGS} ${ORG}/bentoml-docker:test-runtime
-TEST_CUDNN_ARGS := ${COMMON_TEST_ARGS} ${ORG}/bentoml-docker:test-cudnn
+ifeq ($(TEST_TYPE),runtime)
+_TEST_IMAGE := ${ORG}/bentoml-docker:test-runtime
+else
+_TEST_IMAGE := ${ORG}/bentoml-docker:test-cudnn
+endif
+TEST_ARGS := ${COMMON_ARGS} \
+			 -v ${PWD}:/work/manager \
+			 -w /work ${_TEST_IMAGE} /work/run_tests.sh
 
-docker-run-%: ## Run with predefined args and cmd: make docker-run-hadolint -- /bin/hadolint Dockerfile
+docker-run-%: ## Run with predefined args and cmd (interactive/non-interactive): make docker-run-hadolint -- /bin/hadolint Dockerfile
 	$(eval $@_args := $(call upper, $(call word-dash, $@, 3)))
-	$(DOCKER) run ${$($@_args)_ARGS} $(filter-out $@,$(MAKECMDGOALS))
-
-docker-runi-%: ## Run a container interactively
-	$(eval $@_args := $(call upper, $(call word-dash, $@, 3)))
-	$(DOCKER) run -it ${$($@_args)_ARGS} bash
+	$(eval $@_runargs:=${$($@_args)_ARGS} $(filter-out $@,$(MAKECMDGOALS)))
+ifeq ($(INTERACTIVE),1)
+	$(eval $@_runargs:=-it ${$($@_args)_ARGS} $(filter-out $@,$(MAKECMDGOALS)) bash)
+endif
+	$(DOCKER) run $($@_runargs)
 
 docker-bake-%: ## Build a docker target with buildx bake: make docker-bake-test
 	$(eval $@_target := $(call word-dash, $@, 3))

@@ -1,5 +1,9 @@
 {{ metadata.header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
+ARG XX_VERSION={{ xx_version }}
+
+FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
+
 FROM {{ metadata.base_image }} as python
 ARG PYTHON_VERSION
 
@@ -38,6 +42,8 @@ make -j4 install
 EOT
 
 FROM {{ metadata.base_image }} as base
+
+COPY --from=xx / /
 
 COPY --from=python /usr /usr
 COPY --from=python /lib /lib

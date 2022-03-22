@@ -3,10 +3,8 @@
 load 'helpers'
 load 'assert'
 
-image="${BENTOML_TEST_ORGANIZATION}/${BENTOML_TEST_IMAGE_NAME}:${BENTOML_TEST_BENTOML_VERSION}-python${BENTOML_TEST_PYTHON_VERSION}-${BENTOML_TEST_OS}-${BENTOML_TEST_IMAGE_TAG_PREFIX}"
-
 function setup() {
-    setup_general ${BENTOML_TEST_ARCH} ${image}
+    setup_general ${BENTOML_TEST_ARCH} ${IMAGE}
 }
 
 function teardown() {
@@ -14,7 +12,6 @@ function teardown() {
 }
 
 @test "check_architecture" {
-    narch=${BENTOML_TEST_ARCH}
-    docker_run --rm --env narch=${narch} --platform linux/${BENTOML_TEST_ARCH} ${image} bash -c '[[ "$(uname -m)" == "${narch}" ]] || false'
+    docker_run_arch ${BENTOML_TEST_ARCH} --env narch=${BENTOML_TEST_ARCH} ${IMAGE} bash -c '[[ "$(uname -m)" == "${narch}" ]] || false'
     assert_success
 }

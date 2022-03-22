@@ -8,6 +8,10 @@
 
 ARG UBIFORMAT
 
+ARG XX_VERSION=1.1.0
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 FROM registry.access.redhat.com/ubi8/$UBIFORMAT:latest as base
 
 FROM base as base-amd64
@@ -19,6 +23,8 @@ FROM base as base-ppc64le
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
+
+COPY --from=xx / /
 
 ARG PYTHON_VERSION
 

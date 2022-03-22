@@ -6,6 +6,10 @@
 #
 # ===========================================
 
+ARG XX_VERSION=1.1.0
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
 FROM amazonlinux:2 as python
 ARG PYTHON_VERSION
 
@@ -44,6 +48,8 @@ make -j4 install
 EOT
 
 FROM amazonlinux:2 as base
+
+COPY --from=xx / /
 
 COPY --from=python /usr /usr
 COPY --from=python /lib /lib

@@ -29,12 +29,13 @@ COPY ./helpers.bash /work
 FROM bats-test as bats-runtime
 
 COPY ./00-runtime-check-arch.bats /work/00-check-arch.bats
-COPY ./01-runtime-check-requirements.bats /work/01-check-requirements.bats
+COPY ./01-runtime-check-requirements.bats /work/01-requirements.bats
 
 FROM bats-test as bats-cudnn
 
-COPY ./02-cudnn-nvidia-version.bats /work/00-check-nvidia-version.bats
-COPY ./03-cudnn-nvidia-tools.bats /work/01-check-nvidia-tools.bats
+COPY ./00-runtime-check-arch.bats /work/00-check-arch.bats
+COPY ./02-cudnn-nvidia-version.bats /work/01-nvidia-version.bats
+COPY ./03-cudnn-nvidia-tools.bats /work/02-nvidia-tools.bats
 
 FROM bats-${TEST_TYPE} as test
 

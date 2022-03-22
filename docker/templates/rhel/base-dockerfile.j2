@@ -4,6 +4,10 @@
 ARG UBIFORMAT
 
 {% endif %}
+ARG XX_VERSION={{ xx_version }}
+
+FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
+
 FROM {{ metadata.base_image }} as base
 {% for key in metadata.arch_context if key not in cached %}
     {% if 'arm32' in key %}
@@ -24,6 +28,8 @@ FROM base as base-{{ key }}
 FROM base-${TARGETARCH}
 
 ARG TARGETARCH
+
+COPY --from=xx / /
 
 {% for key, value in metadata.envars.items() if key not in ["BENTOML_VERSION","LC_ALL","LANG"] %}
 {% if key in ["PYTHON_VERSION"] %}

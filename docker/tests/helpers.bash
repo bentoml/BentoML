@@ -3,8 +3,6 @@
 # Check if we're in rootless mode.
 ROOTLESS=$(id -u)
 
-ARCH=$(uname -m)
-
 # check for nividia-docker driver
 HAS_GPU=0
 GPU_SUPPORTED_OS=(debian11 debian10 ubi8 ubi7)
@@ -26,22 +24,7 @@ function cleanup() {
 
 	echo "doing some cleanup..."
 	run unset "${!BENTOML_TEST@}"
-}
-
-function setup_general() {
-	requires root
-	PLATFORM="$1"
-	IMG="$2"
-
-	docker pull --platform "$PLATFORM" "$IMG"
-}
-
-function setup_gpu() {
-	requires root nvidia
-	PLATFORM="$1"
-	IMG="$2"
-
-	docker pull --platform "$PLATFORM" "$IMG"
+	run unset "${IMAGE}"
 }
 
 function requires() {
@@ -68,16 +51,6 @@ function requires() {
 				skip_me=1
 			fi
 			;;
-		arch_x86_64)
-			if [ "$ARCH" != "x86_64" ]; then
-				skip_me=1
-			fi
-			;;
-		arch_arm64)
-			if [ "$ARCH" != "aarch64" ] || [ "$ARCH" != 'arm64' ]; then
-				skip_me=1
-			fi
-			;;
 		*)
 			fail "BUG: Invalid requires $var."
 			;;
@@ -91,24 +64,38 @@ function requires() {
 # Taken from runc tests
 function docker_run() {
 	run docker run --privileged --rm --init "$@"
-	echo "docker run $@ (status=$status):" >&2
+	echo "docker run --privileged --rm --init $@ (status=$status):" >&2
 	echo "$output" >&2
 }
 
 function docker_run_arch() {
-	run docker run --privileged --rm --init --platform linux/"$ARCH" "$@"
-	echo "docker run $@ (status=$status):" >&2
+	ARCH="$1"
+	shift
+	run docker run --privileged --rm --init --platform "linux/$ARCH" "$@"
+	echo "docker run --privileged --rm --init --platform linux/$ARCH $@ (status=$status):" >&2
 	echo "$output" >&2
 }
 
 function docker_pull() {
-	run docker pull --platform linux/"$ARCH" "$@"
-	echo "docker pull $@ (status=$status):" >&2
+	ARCH="$1"
+	shift
+	run docker pull --platform "linux/$ARCH" "$@"
+	echo "docker pull --platform linux/$ARCH $@ (status=$status):" >&2
 	echo "$output" >&2
 }
 
 function docker_rmi() {
 	run docker rmi -f "$@"
-	echo "docker rmi $@ (status=$status):" >&2
+	echo "docker rmi -f $@ (status=$status):" >&2
 	echo "$output" >&2
+}
+
+function setup_general() {
+	requires root
+	docker_pull "$1" "$2"
+}
+
+function setup_gpu() {
+	requires root nvidia
+	docker_pull "$1" "$2"
 }

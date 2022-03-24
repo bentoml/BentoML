@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # A git hook to block an unsigned-off commit
 
 COMMIT_MSG_FILE=$1
@@ -7,9 +7,9 @@ signoff_pattern="Signed-off-by: .+ <.+@.+>"
 commit_message=$(cat "$COMMIT_MSG_FILE")
 
 if [[ ! "$commit_message" =~ $signoff_pattern ]]; then
-  echo "Aborted \`git commit\` because it's not signed-off."
-  echo "You can sign-off your commit using the \`-s\` flag as follow:"
-  echo
-  echo "git commit -sm <commit message>"
-  exit 1
+	echo "Aborted \`git commit\` because it's not signed-off."
+	echo "You can sign-off your commit using the \`-s\` flag as follow:"
+	echo
+	echo "git commit -sm <commit message>"
+	exit 1
 fi

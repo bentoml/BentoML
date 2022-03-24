@@ -194,52 +194,86 @@ def mem_converter(mem: t.Union[int, str]) -> int:
 
 
 @lru_cache(maxsize=1)
-def query_cgroup_cpu_count() -> float:
+def query_cgroup_cpu_count() -> int:
     # Query active cpu processor count using cgroup v1 API, based on OpenJDK
     # implementation for `active_processor_count` using cgroup v1:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupSubsystem_linux.cpp
     # For cgroup v2, see:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupV2Subsystem_linux.cpp
-    def _read_integer_file(filename: str) -> int:
+    def _read_cgroup_file(filename: str) -> float:
         with open(filename, "r", encoding="utf-8") as f:
-            return int(f.read().rstrip())
+            return float(f.read())
 
     cgroup_root = "/sys/fs/cgroup/"
     cfs_quota_us_file = os.path.join(cgroup_root, "cpu", "cpu.cfs_quota_us")
     cfs_period_us_file = os.path.join(cgroup_root, "cpu", "cpu.cfs_period_us")
+    cpu_set_file = os.path.join(cgroup_root, "cpuset", "cpuset.cpus")
     shares_file = os.path.join(cgroup_root, "cpu", "cpu.shares")
+    cpu_max_file = os.path.join(cgroup_root, "cpu.max")
 
-    quota = shares = period = -1
-    if os.path.isfile(cfs_quota_us_file):
-        quota = _read_integer_file(cfs_quota_us_file)
+    quota, shares = None, None
 
-    if os.path.isfile(shares_file):
-        shares = _read_integer_file(shares_file)
-        if shares == 1024:
-            shares = -1
+    if os.path.exists(cfs_quota_us_file) and os.path.exists(cfs_period_us_file):
+        try:
+            quota = _read_cgroup_file(cfs_quota_us_file) / _read_cgroup_file(
+                cfs_period_us_file
+            )
+        except Exception:
+            logger.exception("Caught exception while calculating CPU quota.")
+    elif os.path.exists(cpu_max_file):
+        try:
+            max_file = open(cpu_max_file).read()
+            quota_str, period_str = max_file.split()
+            if quota_str.isnumeric() and period_str.isnumeric():
+                quota = float(quota_str) / float(period_str)
+            else:
+                # quota_str is "max" meaning the cpu quota is unset
+                quota = None
+        except Exception:
+            logger.exception("Caught exception while calculating CPU quota.")
+    if quota is not None and quota < 0:
+        quota = None
+    elif quota == 0:
+        quota = 1
 
-    if os.path.isfile(cfs_period_us_file):
-        period = _read_integer_file(cfs_period_us_file)
+    if os.path.exists(shares_file):
+        try:
+            shares = _read_cgroup_file(shares_file) / float(1024)
+        except Exception:
+            logger.exception("Caught exception while getting CPU shares.")
+
+    cpuset = None
+    if os.path.exists(cpu_set_file):
+        try:
+            # https://man7.org/linux/man-pages/man7/cpuset.7.html List format section
+            with open(cpu_set_file, "r") as set:
+                range = set.read()
+                ranges = range.split(",")
+                cpu_ids = []
+                for r in ranges:
+                    if "-" in r:
+                        start, end = r.split("-")
+                        cpu_ids.extend(list(range(int(start), int(end) + 1)))  # type: ignore
+                    else:
+                        cpu_ids.append(int(r))
+                cpuset = len(cpu_ids)
+        except Exception:
+            logger.exception("Caught exception while calculating cpuset ids.")
 
     os_cpu_count = float(os.cpu_count() or 1)
 
     limit_count = math.inf
-    quota_count = 0.0
-    share_count = 0.0
 
-    if quota > -1 and period > 0:
-        quota_count = float(quota) / float(period)
-    if shares > -1:
-        share_count = float(shares) / float(1024)
+    if quota is not None and shares is not None:
+        limit_count = min(quota, shares)
+    if quota is not None:
+        limit_count = quota
+    elif shares is not None:
+        limit_count = shares
+    elif cpuset is not None:
+        limit_count = cpuset
 
-    if quota_count != 0 and share_count != 0:
-        limit_count = min(quota_count, share_count)
-    if quota_count != 0:
-        limit_count = quota_count
-    if share_count != 0:
-        limit_count = share_count
-
-    return float(min(limit_count, os_cpu_count))
+    return int(min(limit_count, os_cpu_count))
 
 
 @SingletonFactory

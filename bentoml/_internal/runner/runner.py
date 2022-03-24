@@ -34,14 +34,14 @@ else:
     final = lambda x: x
 
 
-def _get_default_cpu() -> float:
+def _get_default_cpu() -> int:
     # Default to the total CPU count available in current node or cgroup
     if psutil.POSIX:
         return query_cgroup_cpu_count()
     else:
         cpu_count = os.cpu_count()
         if cpu_count is not None:
-            return float(cpu_count)
+            return cpu_count
         raise ValueError("CPU count is NoneType")
 
 
@@ -55,7 +55,7 @@ def _get_default_mem() -> int:
 
 @attr.define
 class ResourceQuota:
-    cpu: float = attr.field(converter=cpu_converter, factory=_get_default_cpu)
+    cpu: int = attr.field(converter=cpu_converter, factory=_get_default_cpu)
     mem: int = attr.field(converter=mem_converter, factory=_get_default_mem)
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment

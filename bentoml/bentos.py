@@ -354,6 +354,8 @@ def containerize(
     labels: t.Optional[t.Dict[str, str]] = None,
     no_cache: bool = False,
     platform: t.Optional[str] = None,
+    load: bool = True,
+    push: bool = False,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> bool:
     bento = _bento_store.get(tag)
@@ -364,6 +366,12 @@ def containerize(
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")
     docker_build_cmd += ["-f", dockerfile_path]
     docker_build_cmd += ["-t", docker_image_tag]
+
+    if load:
+        docker_build_cmd.append("--load")
+
+    if push:
+        docker_build_cmd.append("--push")
 
     if no_cache:
         docker_build_cmd.append("--no-cache")

@@ -547,7 +547,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
     def _num_threads(self) -> int:
         if self._enable_gpu and self.resource_quota.on_gpu:
             return 1
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:

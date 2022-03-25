@@ -160,7 +160,7 @@ class _SklearnRunner(BaseModelRunner):
 
     @property
     def _num_threads(self) -> int:
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:

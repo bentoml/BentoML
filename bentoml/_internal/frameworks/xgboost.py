@@ -216,7 +216,7 @@ class _XgBoostRunner(BaseModelRunner):
             booster_params["nthread"] = 1
         else:
             booster_params["predictor"] = "cpu_predictor"
-            booster_params["nthread"] = int(round(self.resource_quota.cpu))
+            booster_params["nthread"] = max(round(self.resource_quota.cpu), 1)
 
         return booster_params
 

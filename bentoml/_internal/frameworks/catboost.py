@@ -239,7 +239,7 @@ class _CatBoostRunner(BaseModelRunner):
 
     @property
     def num_replica(self) -> int:
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
         self._model = load(

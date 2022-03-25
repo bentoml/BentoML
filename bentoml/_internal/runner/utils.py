@@ -218,8 +218,8 @@ def query_cgroup_cpu_count() -> float:
             quota = _read_cgroup_file(cfs_quota_us_file) / _read_cgroup_file(
                 cfs_period_us_file
             )
-        except Exception:
-            logger.exception("Caught exception while calculating CPU quota.")
+        except FileNotFoundError as err:
+            logger.warning(f"Caught exception while calculating CPU quota: {err}")
     # reading from cpu.max for cgroup v2
     elif os.path.exists(cpu_max_file):
         try:
@@ -231,8 +231,8 @@ def query_cgroup_cpu_count() -> float:
                 else:
                     # quota_str is "max" meaning the cpu quota is unset
                     quota = None
-        except Exception:
-            logger.exception("Caught exception while calculating CPU quota.")
+        except FileNotFoundError as err:
+            logger.warning(f"Caught exception while calculating CPU quota: {err}")
     if quota is not None and quota < 0:
         quota = None
     elif quota == 0:
@@ -241,8 +241,8 @@ def query_cgroup_cpu_count() -> float:
     if os.path.exists(shares_file):
         try:
             shares = _read_cgroup_file(shares_file) / float(1024)
-        except Exception:
-            logger.exception("Caught exception while getting CPU shares.")
+        except FileNotFoundError as err:
+            logger.warning(f"Caught exception while getting CPU shares: {err}")
 
     os_cpu_count = float(os.cpu_count() or 1.0)
 

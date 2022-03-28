@@ -200,44 +200,60 @@ def query_cgroup_cpu_count() -> float:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupSubsystem_linux.cpp
     # For cgroup v2, see:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupV2Subsystem_linux.cpp
-    def _read_integer_file(filename: str) -> int:
+    # Possible supports: cpuset.cpus on kubernetes
+    def _read_cgroup_file(filename: str) -> float:
         with open(filename, "r", encoding="utf-8") as f:
-            return int(f.read().rstrip())
+            return int(f.read().strip())
 
     cgroup_root = "/sys/fs/cgroup/"
     cfs_quota_us_file = os.path.join(cgroup_root, "cpu", "cpu.cfs_quota_us")
     cfs_period_us_file = os.path.join(cgroup_root, "cpu", "cpu.cfs_period_us")
     shares_file = os.path.join(cgroup_root, "cpu", "cpu.shares")
+    cpu_max_file = os.path.join(cgroup_root, "cpu.max")
 
-    quota = shares = period = -1
-    if os.path.isfile(cfs_quota_us_file):
-        quota = _read_integer_file(cfs_quota_us_file)
+    quota, shares = None, None
 
-    if os.path.isfile(shares_file):
-        shares = _read_integer_file(shares_file)
-        if shares == 1024:
-            shares = -1
+    if os.path.exists(cfs_quota_us_file) and os.path.exists(cfs_period_us_file):
+        try:
+            quota = _read_cgroup_file(cfs_quota_us_file) / _read_cgroup_file(
+                cfs_period_us_file
+            )
+        except FileNotFoundError as err:
+            logger.warning(f"Caught exception while calculating CPU quota: {err}")
+    # reading from cpu.max for cgroup v2
+    elif os.path.exists(cpu_max_file):
+        try:
+            with open(cpu_max_file, "r") as max_file:
+                cfs_string = max_file.read()
+                quota_str, period_str = cfs_string.split()
+                if quota_str.isnumeric() and period_str.isnumeric():
+                    quota = float(quota_str) / float(period_str)
+                else:
+                    # quota_str is "max" meaning the cpu quota is unset
+                    quota = None
+        except FileNotFoundError as err:
+            logger.warning(f"Caught exception while calculating CPU quota: {err}")
+    if quota is not None and quota < 0:
+        quota = None
+    elif quota == 0:
+        quota = 1
 
-    if os.path.isfile(cfs_period_us_file):
-        period = _read_integer_file(cfs_period_us_file)
+    if os.path.exists(shares_file):
+        try:
+            shares = _read_cgroup_file(shares_file) / float(1024)
+        except FileNotFoundError as err:
+            logger.warning(f"Caught exception while getting CPU shares: {err}")
 
-    os_cpu_count = float(os.cpu_count() or 1)
+    os_cpu_count = float(os.cpu_count() or 1.0)
 
     limit_count = math.inf
-    quota_count = 0.0
-    share_count = 0.0
 
-    if quota > -1 and period > 0:
-        quota_count = float(quota) / float(period)
-    if shares > -1:
-        share_count = float(shares) / float(1024)
-
-    if quota_count != 0 and share_count != 0:
-        limit_count = min(quota_count, share_count)
-    if quota_count != 0:
-        limit_count = quota_count
-    if share_count != 0:
-        limit_count = share_count
+    if quota and shares:
+        limit_count = min(quota, shares)
+    elif quota:
+        limit_count = quota
+    elif shares:
+        limit_count = shares
 
     return float(min(limit_count, os_cpu_count))
 

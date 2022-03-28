@@ -69,7 +69,7 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
     def _num_threads(self) -> int:
         if self._on_gpu:
             return 1
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:

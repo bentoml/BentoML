@@ -468,7 +468,7 @@ class _TensorflowRunner(BaseModelRunner):
     def _num_threads(self) -> int:
         if is_gpu_available() and self.resource_quota.on_gpu:
             return 1
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:

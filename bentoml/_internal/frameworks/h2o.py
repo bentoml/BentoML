@@ -188,7 +188,7 @@ class _H2ORunner(BaseModelRunner):
 
     def _setup(self) -> None:
         _init_params = self._init_params or dict()
-        _init_params["nthreads"] = int(round(self.resource_quota.cpu))
+        _init_params["nthreads"] = max(round(self.resource_quota.cpu), 1)
         self._model = load(
             self._tag, init_params=_init_params, model_store=self.model_store
         )

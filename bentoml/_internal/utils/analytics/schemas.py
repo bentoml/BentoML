@@ -61,8 +61,7 @@ def get_client_id(
 
         def create_client_id() -> ClientInfo:
             # returns an unique client_id and timestamp in ISO format
-            uniq = uuid.uuid1().bytes
-            client_id = hmac.new(uniq, digestmod=hashlib.blake2s).hexdigest()
+            client_id = str(uuid.uuid4())
             created_time = datetime.now(timezone.utc).isoformat()
 
             return ClientInfo(

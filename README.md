@@ -1,7 +1,7 @@
 [<img src="https://raw.githubusercontent.com/bentoml/BentoML/main/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
 <br>
 
-# 🍱 BentoML: Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
+# 🍱 BentoML: The Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
@@ -57,8 +57,8 @@ There are many ways to contribute to the project:
 ### Usage Reporting ###
 
 BentoML collects anonymous usage data that helps our team to improve the product.
-Only BentoML's internal API calls and CLI commands are being reported and we striped out any potentially 
-sensitive information as much as possible, we will never collect user code, model data, model name or stacktrace. 
+Only BentoML's internal API calls and CLI commands are being reported. We strip out as much potentially 
+sensitive information as possible, and we will never collect user code, model data, model names, or stack traces.
 Here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.
 You can opt-out of usage tracking by the `--do-not-track` CLI option:
 ```bash

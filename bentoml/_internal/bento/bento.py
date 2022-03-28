@@ -481,8 +481,6 @@ class BentoInfo:
 
         try:
             # type: ignore[attr-defined]
-            print(yaml_content)
-            print(cattr.structure(yaml_content, cls))
             return cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")

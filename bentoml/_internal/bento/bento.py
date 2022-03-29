@@ -270,9 +270,11 @@ class Bento(StoreItem):
                 tag,
                 svc,  # type: ignore # attrs converters do not typecheck
                 build_config.labels,
-                models=[ModelInfo.from_bento_model(m) for m in models],
-                runners=[RunnerInfo.from_runner(r) for r in svc.runners.values()],
-                apis=[ApiInfo.from_inference_api(api) for api in svc.apis.values()],
+                models=[BentoModelInfo.from_bento_model(m) for m in models],
+                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners.values()],
+                apis=[
+                    BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
+                ],
             ),
         )
         # Create bento.yaml
@@ -382,13 +384,13 @@ class BentoStore(Store[Bento]):
 
 
 @attr.define
-class RunnerInfo:
+class BentoRunnerInfo:
     name: str
     runner_type: str
     model_runner_module: t.Optional[str]
 
     @classmethod
-    def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "RunnerInfo":
+    def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "BentoRunnerInfo":
         from ..frameworks.common.model_runner import BaseModelRunner
 
         model_runner_module = (
@@ -402,13 +404,13 @@ class RunnerInfo:
 
 
 @attr.define
-class ApiInfo:
+class BentoApiInfo:
     name: str
     input_type: str
     output_type: str
 
     @classmethod
-    def from_inference_api(cls, api: "InferenceAPI") -> "ApiInfo":
+    def from_inference_api(cls, api: "InferenceAPI") -> "BentoApiInfo":
         return cls(
             name=api.name,
             input_type=api.input.__class__.__name__,
@@ -417,13 +419,13 @@ class ApiInfo:
 
 
 @attr.define
-class ModelInfo:
-    tag: t.Union[Tag, str] = attr.field(converter=str)
-    module: str
-    creation_time: datetime
+class BentoModelInfo:
+    tag: Tag = attr.field(converter=Tag.from_taglike)
+    module: str = attr.field(default="")
+    creation_time: datetime = attr.field(default=0)
 
     @classmethod
-    def from_bento_model(cls, bento_model: "Model") -> "ModelInfo":
+    def from_bento_model(cls, bento_model: "Model") -> "BentoModelInfo":
         return cls(
             tag=bento_model.tag,
             module=bento_model.info.module,
@@ -438,9 +440,9 @@ class BentoInfo:
         converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
     )  # type: ignore[reportPrivateUsage]
     labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
-    models: t.List[ModelInfo] = attr.field(factory=list)
-    runners: t.List[RunnerInfo] = attr.field(factory=list)
-    apis: t.List[ApiInfo] = attr.field(factory=list)
+    models: t.List[BentoModelInfo] = attr.field(factory=list)
+    runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
+    apis: t.List[BentoApiInfo] = attr.field(factory=list)
     bentoml_version: str = BENTOML_VERSION
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 

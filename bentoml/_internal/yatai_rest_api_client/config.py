@@ -27,9 +27,7 @@ class YataiClientContext:
     name: str
     endpoint: str
     api_token: str
-    email: Optional[str] = attr.field(
-        converter=attr.converters.default_if_none(""), default=None
-    )
+    email: Optional[str] = attr.field(default=None)
 
     def get_yatai_rest_api_client(self) -> YataiRESTApiClient:
         return YataiRESTApiClient(self.endpoint, self.api_token)

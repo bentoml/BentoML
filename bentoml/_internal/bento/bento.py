@@ -481,6 +481,13 @@ class BentoInfo:
         del yaml_content["name"]
         del yaml_content["version"]
 
+        if "models" in yaml_content:
+            # For backwards compatibility for bentos created prior to version 1.0.0a7
+            models = yaml_content["models"]
+            if models and len(models) > 0 and isinstance(models[0], str):
+                yaml_content["models"] = list(
+                    map(lambda model_tag: {"tag": model_tag}, models)
+                )
         try:
             # type: ignore[attr-defined]
             return cattr.structure(yaml_content, cls)

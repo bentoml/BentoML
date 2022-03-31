@@ -104,6 +104,25 @@ class Store(ABC, t.Generic[Item]):
         """
         return self._item_type.from_fs(self._fs.opendir(tag.path()))
 
+    def _recreate_latest(self, tag: Tag):
+        try:
+            items = self.list(tag.name)
+        except NotFound:
+            raise NotFound(
+                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._fs}"
+            )
+
+        if len(items) == 0:
+            raise NotFound(
+                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._fs}"
+            )
+
+        items.sort(reverse=True, key=lambda item: item.creation_time)
+        tag.version = items[0].tag.version
+
+        with self._fs.open(tag.latest_path(), "w") as latest_file:
+            latest_file.write(tag.version)
+
     def get(self, tag: t.Union[Tag, str]) -> Item:
         """
         store.get("my_bento")
@@ -114,10 +133,11 @@ class Store(ABC, t.Generic[Item]):
         if _tag.version is None or _tag.version == "latest":
             try:
                 _tag.version = self._fs.readtext(_tag.latest_path())
+
+                if not self._fs.exists(_tag.path()):
+                    self._recreate_latest(_tag)
             except fs.errors.ResourceNotFound:
-                raise NotFound(
-                    f"no {self._item_type.get_typename()}s with name '{_tag.name}' exist in BentoML store {self._fs}"
-                )
+                self._recreate_latest(_tag)
 
         path = _tag.path()
         if self._fs.exists(path):

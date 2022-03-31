@@ -294,7 +294,7 @@ def load(
             logger.info("Service imported from source: %s", svc)
         except ImportServiceError as e1:
             try:
-                svc = load_bento(bento_identifier, change_global_cwd)
+                svc = load_bento(bento_identifier, change_global_cwd=change_global_cwd)
                 logger.info("Service loaded from Bento store: %s", svc)
             except (NotFound, ImportServiceError) as e2:
                 raise BentoMLException(

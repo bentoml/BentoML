@@ -130,3 +130,4 @@ class Tag:
 
 
 cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
+cattr.register_unstructure_hook(Tag, lambda tag: str(tag))

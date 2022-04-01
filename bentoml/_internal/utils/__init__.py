@@ -17,6 +17,7 @@ if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
 else:
     from backports.cached_property import cached_property
 
+from .cattr import bentoml_cattr
 from ..types import PathType
 from .lazy_loader import LazyLoader
 
@@ -32,6 +33,7 @@ _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 
 __all__ = [
+    "bentoml_cattr",
     "cached_property",
     "cached_contextmanager",
     "reserve_free_port",

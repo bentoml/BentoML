@@ -6,8 +6,8 @@ import logging
 
 import fs
 import attr
-import cattr
 
+from .utils import bentoml_cattr
 from ..exceptions import InvalidArgument
 from ..exceptions import BentoMLException
 
@@ -129,5 +129,5 @@ class Tag:
         return fs.path.combine(self.name, "latest")
 
 
-cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
-cattr.register_unstructure_hook(Tag, lambda tag: str(tag))
+bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
+bentoml_cattr.register_unstructure_hook(Tag, lambda tag: str(tag))

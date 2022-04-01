@@ -8,8 +8,6 @@ from datetime import timezone
 import fs
 import attr
 import yaml
-import attrs
-import cattr
 import fs.osfs
 import pathspec
 import fs.errors
@@ -22,6 +20,7 @@ from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
 from ..types import PathType
+from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
 from ...exceptions import InvalidArgument
@@ -387,7 +386,7 @@ class BentoStore(Store[Bento]):
 class BentoRunnerInfo:
     name: str
     runner_type: str
-    model_runner_module: t.Optional[str]
+    model_runner_module: t.Optional[str]  # only applicable for ModelRunner
 
     @classmethod
     def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "BentoRunnerInfo":
@@ -459,9 +458,9 @@ class BentoInfo:
             "bentoml_version": self.bentoml_version,
             "creation_time": self.creation_time,
             "labels": self.labels,
-            "models": cattr.unstructure(self.models),
-            "runners": cattr.unstructure(self.runners),
-            "apis": cattr.unstructure(self.apis),
+            "models": bentoml_cattr.unstructure(self.models),
+            "runners": bentoml_cattr.unstructure(self.runners),
+            "apis": bentoml_cattr.unstructure(self.apis),
         }
 
     def dump(self, stream: t.IO[t.Any]):
@@ -497,7 +496,7 @@ class BentoInfo:
                 )
         try:
             # type: ignore[attr-defined]
-            return cattr.structure(yaml_content, cls)
+            return bentoml_cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")
 

@@ -12,12 +12,12 @@ from functools import lru_cache
 
 import yaml
 import attrs
-import cattr
 import psutil
 import attrs.converters
 from simple_di import inject
 from simple_di import Provide
 
+from ...utils import bentoml_cattr
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
 from ...yatai_rest_api_client.config import get_config_path
@@ -54,7 +54,7 @@ def get_client_info(
     if os.path.exists(CLIENT_INFO_FILE_PATH):
         with open(CLIENT_INFO_FILE_PATH, "r", encoding="utf-8") as f:
             client_info = yaml.safe_load(f)
-        return cattr.structure(client_info, ClientInfo)
+        return bentoml_cattr.structure(client_info, ClientInfo)
     else:
         # Create new client id
         new_client_info = ClientInfo(
@@ -77,14 +77,16 @@ def get_yatai_user_email() -> t.Optional[str]:
 @lru_cache(maxsize=1)
 def is_interactive() -> bool:
     import __main__ as main
-    return not hasattr(main, '__file__')
+
+    return not hasattr(main, "__file__")
 
 
 @lru_cache(maxsize=1)
 def in_notebook() -> bool:
     try:
         from IPython import get_ipython
-        if 'IPKernelApp' not in get_ipython().config:  # pragma: no cover
+
+        if "IPKernelApp" not in get_ipython().config:  # pragma: no cover
             return False
     except ImportError:
         return False
@@ -192,18 +194,6 @@ ALL_EVENT_TYPES = t.Union[
 ]
 
 
-def datetime_decoder(dt_like, _):
-    if isinstance(dt_like, str):
-        return datetime.fromisoformat(dt_like)
-    elif isinstance(dt_like, datetime):
-        return dt_like
-    else:
-        raise Exception(f"Unable to parse datetime from '{dt_like}'")
-
-cattr.register_unstructure_hook(datetime, lambda dt: dt.isoformat())
-cattr.register_structure_hook(datetime, datetime_decoder)
-
-
 @attrs.define
 class TrackingPayload:
     session_id: str
@@ -212,4 +202,4 @@ class TrackingPayload:
     event_type: str
 
     def to_dict(self):
-        return cattr.unstructure(self)
+        return bentoml_cattr.unstructure(self)

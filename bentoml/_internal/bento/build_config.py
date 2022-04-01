@@ -7,12 +7,12 @@ from sys import version_info as pyver
 import fs
 import attr
 import yaml
-import cattr
 import fs.copy
 from fs.base import FS
 from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 
 from ..tag import Tag
+from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
 from .docker import ImageProvider
@@ -368,7 +368,7 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]):
     return PythonOptions(**d)
 
 
-cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
+bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
 def _dict_arg_converter(  # type: ignore
@@ -456,7 +456,7 @@ class BentoBuildConfig:
             raise
 
         try:
-            return cattr.structure(yaml_content, cls)
+            return bentoml_cattr.structure(yaml_content, cls)
         except KeyError as e:
             if str(e) == "'service'":
                 raise InvalidArgument(

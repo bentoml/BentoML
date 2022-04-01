@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
 USAGE_TRACKING_URL = "https://t.bentoml.com"
-SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 5  # int(12 * 60 * 60)  # every 12 hours
+SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)  # every 12 hours
 USAGE_REQUEST_TIMEOUT_SECONDS = 2
 
 

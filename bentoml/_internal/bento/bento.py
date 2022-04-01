@@ -386,19 +386,13 @@ class BentoStore(Store[Bento]):
 class BentoRunnerInfo:
     name: str
     runner_type: str
-    model_runner_module: t.Optional[str]  # only applicable for ModelRunner
 
     @classmethod
     def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "BentoRunnerInfo":
-        from ..frameworks.common.model_runner import BaseModelRunner
-
-        model_runner_module = (
-            r.model_info.info.module if isinstance(r, BaseModelRunner) else None
-        )
+        # Add runner default resource quota and batching config here
         return cls(
             name=r.name,  # type: ignore
             runner_type=r.__class__.__name__,
-            model_runner_module=model_runner_module,
         )
 
 

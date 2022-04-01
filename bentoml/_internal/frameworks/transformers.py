@@ -241,7 +241,6 @@ def load(
         return None, tmodel, tfe  # type: ignore
 
 
-@inject
 def save(
     name: str,
     obj: t.Union["ext.TransformersModelType", "ext.TransformersPipeline"],  # type: ignore
@@ -251,7 +250,6 @@ def save(
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.

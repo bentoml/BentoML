@@ -171,7 +171,6 @@ def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
 save.__doc__ = SAVE_WARNING
 
 
-@inject
 def import_from_uri(
     name: str,
     uri: str,
@@ -179,7 +178,6 @@ def import_from_uri(
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Imports a MLFlow model format to BentoML modelstore via given URI.

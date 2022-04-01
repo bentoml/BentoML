@@ -138,14 +138,14 @@ class BentoMLCommandGroup(click.Group):
             try:
                 return_value = func(*args, **kwargs)
                 event = get_tracking_event(return_value)
-                duration = time.time_ns() - start_time
-                event.duration_in_ms = duration
+                duration_in_ns = time.time_ns() - start_time
+                event.duration_in_ms = duration_in_ns / 1e6
                 track(event)
                 return return_value
             except BaseException as e:
                 event = get_tracking_event(None)
-                duration = time.time_ns() - start_time
-                event.duration_in_ms = duration
+                duration_in_ns = time.time_ns() - start_time
+                event.duration_in_ms = duration_in_ns / 1e6
                 event.error_type = type(e).__name__
                 event.return_code = 2 if isinstance(e, KeyboardInterrupt) else 1
                 track(event)

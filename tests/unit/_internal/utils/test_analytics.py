@@ -41,9 +41,6 @@ SCHEMA = Schema(
 def test_get_payload():
     event_properties = analytics_lib.schemas.ModelSaveEvent(
         module="test",
-        model_creation_timestamp=datetime.fromisoformat(
-            "2222-02-28T06:06:23.798993+00:00"
-        ),
         model_size_in_kb=123123123,
     )
     payload = analytics_lib.usage_stats.get_payload(

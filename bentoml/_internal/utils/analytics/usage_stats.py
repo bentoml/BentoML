@@ -82,6 +82,7 @@ def get_payload(
         session_id=session_id,
         common_properties=CommonProperties(),
         event_properties=event_properties,
+        event_type=event_properties.event_name,
     ).to_dict()
 
 
@@ -107,7 +108,6 @@ def _track_serve_init(
         bento = svc.bento
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
-            serve_started_timestamp=serve_info.serve_started_timestamp,
             serve_from_bento=True,
             production=production,
             bento_creation_timestamp=bento.info.creation_time,
@@ -122,7 +122,6 @@ def _track_serve_init(
 
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
-            serve_started_timestamp=serve_info.serve_started_timestamp,
             serve_from_bento=False,
             production=production,
             num_of_models=len(

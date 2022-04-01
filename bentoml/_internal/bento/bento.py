@@ -421,8 +421,8 @@ class BentoApiInfo:
 @attr.define
 class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
-    module: str = attr.field(default="")
-    creation_time: datetime = attr.field(default=0)
+    module: str
+    creation_time: datetime
 
     @classmethod
     def from_bento_model(cls, bento_model: "Model") -> "BentoModelInfo":
@@ -486,7 +486,14 @@ class BentoInfo:
             models = yaml_content["models"]
             if models and len(models) > 0 and isinstance(models[0], str):
                 yaml_content["models"] = list(
-                    map(lambda model_tag: {"tag": model_tag}, models)
+                    map(
+                        lambda model_tag: {
+                            "tag": model_tag,
+                            "module": "unknown",
+                            "creation_time": datetime.fromordinal(1),
+                        },
+                        models,
+                    )
                 )
         try:
             # type: ignore[attr-defined]

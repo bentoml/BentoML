@@ -8,7 +8,8 @@ import pytest
 
 from bentoml import Tag
 from bentoml._internal.bento import Bento
-from bentoml._internal.bento.bento import BentoInfo, BentoModelInfo
+from bentoml._internal.bento.bento import BentoInfo
+from bentoml._internal.bento.bento import BentoModelInfo
 from bentoml._internal.configuration import BENTOML_VERSION
 from bentoml._internal.bento.build_config import BentoBuildConfig
 
@@ -31,8 +32,16 @@ def test_bento_info(tmpdir: "Path"):
     service = "testservice"
     labels = {"label": "stringvalue"}
     model_creation_time = datetime.now(timezone.utc)
-    model_a = BentoModelInfo(tag=Tag("model_a", "v1"), module="model_a_module", creation_time=model_creation_time)
-    model_b = BentoModelInfo(tag=Tag("model_b", "v3"), module="model_b_module", creation_time=model_creation_time)
+    model_a = BentoModelInfo(
+        tag=Tag("model_a", "v1"),
+        module="model_a_module",
+        creation_time=model_creation_time,
+    )
+    model_b = BentoModelInfo(
+        tag=Tag("model_b", "v3"),
+        module="model_b_module",
+        creation_time=model_creation_time,
+    )
     models = [model_a, model_b]
     bentoinfo_b = BentoInfo(tag=tag, service=service, labels=labels, models=models)
 
@@ -63,7 +72,7 @@ apis: []
         assert bento_yaml_b.read() == expected_yaml.format(
             bentoml_version=BENTOML_VERSION,
             creation_time=bentoinfo_b.creation_time.isoformat(),
-            model_creation_time=model_creation_time.isoformat()
+            model_creation_time=model_creation_time.isoformat(),
         )
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:

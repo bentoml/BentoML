@@ -10,8 +10,8 @@ import click
 from simple_di import inject
 from simple_di import Provide
 from rich.table import Table
-from rich.console import Console
 from rich.syntax import Syntax
+from rich.console import Console
 
 from bentoml.bentos import import_bento
 from bentoml.bentos import build_bentofile
@@ -78,7 +78,7 @@ def add_bento_management_commands(
             console.print_json(info)
         else:
             info = yaml.dump(bento.info, indent=2, sort_keys=False)
-            console.print(Syntax(info, 'yaml'))
+            console.print(Syntax(info, "yaml"))
 
     @cli.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
@@ -122,7 +122,7 @@ def add_bento_management_commands(
             print(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            print(Syntax(info, 'yaml'))
+            print(Syntax(info, "yaml"))
         else:
             table = Table(box=None)
             table.add_column("Tag")

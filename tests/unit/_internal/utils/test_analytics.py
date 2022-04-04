@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from unittest.mock import patch
-import requests
 
+import requests
 from schema import Or
 from schema import And
 from schema import Schema
@@ -89,7 +89,7 @@ def test_send_usage_failure(mock_do_not_track, mock_post, mock_logger):
     )
 
     mock_do_not_track.return_value = False
-    mock_post.side_effect = AssertionError('something went wrong')
+    mock_post.side_effect = AssertionError("something went wrong")
     # nothing should happen
     analytics_lib.track(
         event_properties,

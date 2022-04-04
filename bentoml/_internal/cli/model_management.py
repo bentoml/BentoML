@@ -9,8 +9,8 @@ import click
 from simple_di import inject
 from simple_di import Provide
 from rich.table import Table
-from rich.console import Console
 from rich.syntax import Syntax
+from rich.console import Console
 
 from bentoml.models import import_model
 
@@ -83,7 +83,7 @@ def add_model_management_commands(
             console.print_json(info)
         else:
             info = yaml.dump(model.info, indent=2, sort_keys=False)
-            console.print(Syntax(info, 'yaml'))
+            console.print(Syntax(info, "yaml"))
 
     @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)
@@ -128,7 +128,7 @@ def add_model_management_commands(
             console.print_json(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            console.print(Syntax(info, 'yaml'))
+            console.print(Syntax(info, "yaml"))
         else:
             table = Table(box=None)
             table.add_column("Tag")

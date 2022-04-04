@@ -13,9 +13,10 @@ import pathspec
 import fs.errors
 import fs.mirror
 from fs.copy import copy_file
+from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
-from cattr.gen import make_dict_unstructure_fn, override
 
 from ..tag import Tag
 from ..store import Store
@@ -438,7 +439,7 @@ class BentoInfo:
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    labels: t.Dict[str, t.Any]  = attr.field(factory=dict)
+    labels: t.Dict[str, t.Any] = attr.field(factory=dict)
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
@@ -496,9 +497,14 @@ class BentoInfo:
         # Validate bento.yml file schema, content, bentoml version, etc
         ...
 
-bentoml_cattr.register_unstructure_hook(BentoInfo, make_dict_unstructure_fn(
-    BentoInfo, bentoml_cattr, _flushed=override(omit=True), tag=override(omit=True)
-))
+
+bentoml_cattr.register_unstructure_hook(
+    BentoInfo,
+    make_dict_unstructure_fn(
+        BentoInfo, bentoml_cattr, _flushed=override(omit=True), tag=override(omit=True)
+    ),
+)
+
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
     return dumper.represent_dict(info.to_dict())

@@ -11,6 +11,7 @@ from simple_di import inject
 from simple_di import Provide
 from rich.table import Table
 from rich.console import Console
+from rich.syntax import Syntax
 
 from bentoml.bentos import import_bento
 from bentoml.bentos import build_bentofile
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 def parse_delete_targets_argument_callback(
     ctx: "click.Context", params: "click.Parameter", value: t.Any
-) -> t.Any:  # pylint: disable=unused-argument
+) -> t.List[str]:  # pylint: disable=unused-argument
     if value is None:
         return value
     delete_targets = value.split(",")
@@ -77,7 +78,7 @@ def add_bento_management_commands(
             console.print_json(info)
         else:
             info = yaml.dump(bento.info, indent=2, sort_keys=False)
-            console.print(info)
+            console.print(Syntax(info, 'yaml'))
 
     @cli.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
@@ -121,7 +122,7 @@ def add_bento_management_commands(
             print(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            print(info)
+            print(Syntax(info, 'yaml'))
         else:
             table = Table(box=None)
             table.add_column("Tag")
@@ -155,7 +156,7 @@ def add_bento_management_commands(
         help="Skip confirmation when deleting a specific bento bundle",
     )
     def delete(
-        delete_targets: str,
+        delete_targets: t.List[str],
         yes: bool,
     ) -> None:
         """Delete Bento in local bento store.

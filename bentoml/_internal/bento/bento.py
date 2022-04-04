@@ -15,6 +15,7 @@ import fs.mirror
 from fs.copy import copy_file
 from simple_di import inject
 from simple_di import Provide
+from cattr.gen import make_dict_unstructure_fn, override
 
 from ..tag import Tag
 from ..store import Store
@@ -266,9 +267,9 @@ class Bento(StoreItem):
             tag,
             bento_fs,
             BentoInfo(
-                tag,
-                svc,  # type: ignore # attrs converters do not typecheck
-                build_config.labels,
+                tag=tag,
+                service=svc,  # type: ignore # attrs converters do not typecheck
+                labels=build_config.labels,
                 models=[BentoModelInfo.from_bento_model(m) for m in models],
                 runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners.values()],
                 apis=[
@@ -432,30 +433,27 @@ class BentoInfo:
     service: str = attr.field(
         converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
     )  # type: ignore[reportPrivateUsage]
-    labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
+    name: str = attr.field(init=False)
+    version: str = attr.field(init=False)
+    bentoml_version: str = attr.field(default=BENTOML_VERSION)
+    creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+
+    labels: t.Dict[str, t.Any]  = attr.field(factory=dict)
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
-    bentoml_version: str = BENTOML_VERSION
-    creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
     _flushed: bool = False
 
     def __attrs_post_init__(self):
+        # Direct set is not available when frozen=True
+        object.__setattr__(self, "name", self.tag.name)
+        object.__setattr__(self, "version", self.tag.version)
+
         self.validate()
 
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return {
-            "service": self.service,
-            "name": self.tag.name,
-            "version": self.tag.version,
-            "bentoml_version": self.bentoml_version,
-            "creation_time": self.creation_time,
-            "labels": self.labels,
-            "models": bentoml_cattr.unstructure(self.models),
-            "runners": bentoml_cattr.unstructure(self.runners),
-            "apis": bentoml_cattr.unstructure(self.apis),
-        }
+        return bentoml_cattr.unstructure(self)
 
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
@@ -498,6 +496,9 @@ class BentoInfo:
         # Validate bento.yml file schema, content, bentoml version, etc
         ...
 
+bentoml_cattr.register_unstructure_hook(BentoInfo, make_dict_unstructure_fn(
+    BentoInfo, bentoml_cattr, _flushed=override(omit=True), tag=override(omit=True)
+))
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
     return dumper.represent_dict(info.to_dict())

@@ -10,6 +10,7 @@ from simple_di import inject
 from simple_di import Provide
 from rich.table import Table
 from rich.console import Console
+from rich.syntax import Syntax
 
 from bentoml.models import import_model
 
@@ -82,7 +83,7 @@ def add_model_management_commands(
             console.print_json(info)
         else:
             info = yaml.dump(model.info, indent=2, sort_keys=False)
-            console.print(info)
+            console.print(Syntax(info, 'yaml'))
 
     @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)
@@ -108,6 +109,7 @@ def add_model_management_commands(
         # show all verions of bento with the name FraudDetector
         > bentoml models list FraudDetector
         """
+        console = Console()
         models = model_store.list(model_name)
         res = [
             {
@@ -123,10 +125,10 @@ def add_model_management_commands(
         ]
         if output == "json":
             info = json.dumps(res, indent=2)
-            print(info)
+            console.print_json(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            print(info)
+            console.print(Syntax(info, 'yaml'))
         else:
             table = Table(box=None)
             table.add_column("Tag")
@@ -142,7 +144,6 @@ def add_model_management_commands(
                     model["size"],
                     model["creation_time"],
                 )
-            console = Console()
             console.print(table)
 
     @model_cli.command()

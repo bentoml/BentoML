@@ -163,7 +163,7 @@ def track_serve(
                 production=production,
                 triggered_at=now,
                 duration_in_seconds=(now - serve_info.serve_started_timestamp).seconds,
-                metrics=metrics_client.get_metrics(),
+                metrics=metrics_client.get_metrics_report(),
             )
             track(event_properties)
 

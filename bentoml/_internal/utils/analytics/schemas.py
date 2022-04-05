@@ -110,14 +110,14 @@ class CommonProperties:
     # resource related
     num_threads: int = attrs.field(init=False)
     memory_usage_percent: float = attrs.field(init=False)
-    total_memory_in_kb: float = attrs.field(init=False)
+    total_memory_in_mb: float = attrs.field(init=False)
 
     # client related
     client: ClientInfo = attrs.field(factory=get_client_info)
     yatai_user_email: t.Optional[str] = attrs.field(factory=get_yatai_user_email)
 
     def __attrs_post_init__(self):
-        self.total_memory_in_kb = psutil.virtual_memory().total / 1024
+        self.total_memory_in_mb = int(psutil.virtual_memory().total / 1024.0 / 1024.0)
         proc = psutil.Process(os.getpid())
         with proc.oneshot():
             self.memory_usage_percent = proc.memory_percent()

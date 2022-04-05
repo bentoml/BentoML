@@ -21,7 +21,7 @@ SCHEMA = Schema(
             "num_threads": int,
             "platform": str,
             "python_version": str,
-            "total_memory_in_kb": Or(int, float),
+            "total_memory_in_mb": int,
             "yatai_user_email": Or(str, None),
             "is_interactive": bool,
             "in_notebook": bool,

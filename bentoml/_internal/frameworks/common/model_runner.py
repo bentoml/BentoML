@@ -27,7 +27,7 @@ class BaseModelRunner(Runner):
         self._model_store = model_store
 
     @property
-    def _model_info(self):
+    def model_info(self):
         return self.model_store.get(self._tag)
 
     @property

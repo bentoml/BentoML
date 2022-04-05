@@ -1,6 +1,7 @@
 [<img src="https://raw.githubusercontent.com/bentoml/BentoML/main/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
+<br>
 
-# Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
+# 🍱 BentoML: The Unified Model Serving Framework  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20The%20Unified%20Model%20Serving%20Framework%20&url=https://github.com/bentoml&via=bentomlai&hashtags=mlops,bentoml)
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
@@ -55,18 +56,20 @@ There are many ways to contribute to the project:
 
 ### Usage Reporting ###
 
-BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com/). 
-It only collects BentoML library's own actions and parameters, no user or model data will be collected. 
-Here is the [code](https://github.com/bentoml/BentoML/blob/main/bentoml/_internal/utils/usage_stats.py) that does it.
+BentoML collects anonymous usage data that helps our team to improve the product.
+Only BentoML's internal API calls and CLI commands are being reported. We strip out as much potentially 
+sensitive information as possible, and we will never collect user code, model data, model names, or stack traces.
+Here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.
+You can opt-out of usage tracking by the `--do-not-track` CLI option:
+```bash
+bentoml [command] --do-not-track
+```
 
-This helps the BentoML team to understand how the community is using this tool and what to build next. 
-You can easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.
+Or by setting environment variable `BENTOML_DO_NOT_TRACK=True`:
+```bash
+export BENTOML_DO_NOT_TRACK=True
+```
 
-    > bentoml [command] --do-not-track
-
-You can also opt-out via setting environment variable `BENTOML_DO_NOT_TRACK=True`
-
-    > export BENTOML_DO_NOT_TRACK=True
 
 ### License ###
 

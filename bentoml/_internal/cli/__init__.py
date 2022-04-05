@@ -1,6 +1,6 @@
 import click
 
-from bentoml import __version__
+from bentoml import __version__ as BENTOML_VERSION
 
 from .yatai import add_login_command
 from .click_utils import BentoMLCommandGroup
@@ -11,8 +11,15 @@ from .model_management import add_model_management_commands
 
 
 def create_bentoml_cli():
-    @click.group(cls=BentoMLCommandGroup)
-    @click.version_option(version=__version__)
+    # exclude traceback from the click library
+    from rich.traceback import install
+
+    install(suppress=[click])
+
+    CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
+
+    @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
+    @click.version_option(BENTOML_VERSION, "-v", "--version")  # type: ignore
     def cli():
         """BentoML CLI"""
 

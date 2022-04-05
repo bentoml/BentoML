@@ -424,7 +424,7 @@ class _TransformersRunner(BaseModelRunner):
         # tokenizer-related
         try:
             self._has_tokenizer = (
-                self._model_info.info.options["feature_extractor"] is False
+                self.model_info.info.options["feature_extractor"] is False
             )
         except Exception:
             self._has_tokenizer = False
@@ -450,7 +450,7 @@ class _TransformersRunner(BaseModelRunner):
             **self._kwargs,
         )
 
-        if self._model_info.info.context["pipeline"]:
+        if self.model_info.info.context["pipeline"]:
             self._pipeline = params
         else:
             self._config, self._model, _tfe = params

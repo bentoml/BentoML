@@ -10,6 +10,9 @@ on:
   schedule:
     - cron: "0 0 * * 1/2"
 
+env:
+  BENTOML_DO_NOT_TRACK: True
+
 jobs:
   diff:
     runs-on: ubuntu-latest

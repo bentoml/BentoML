@@ -1,5 +1,5 @@
-# type: ignore[stub]
 import os
+import uuid
 import typing as t
 import logging
 import multiprocessing
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from bentoml._internal.models import ModelStore
 
     from .. import external_typing as ext
+    from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 
 
@@ -38,11 +39,9 @@ BENTOML_HOME = expand_env_var(
 DEFAULT_BENTOS_PATH = os.path.join(BENTOML_HOME, "bentos")
 DEFAULT_MODELS_PATH = os.path.join(BENTOML_HOME, "models")
 
-validate_or_create_dir(BENTOML_HOME)
-validate_or_create_dir(DEFAULT_BENTOS_PATH)
-validate_or_create_dir(DEFAULT_MODELS_PATH)
 
-_is_upper: t.Callable[[str], bool] = lambda string: string.isupper()
+validate_or_create_dir(BENTOML_HOME, DEFAULT_BENTOS_PATH, DEFAULT_MODELS_PATH)
+
 _check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
 _larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
     lambda target: lambda val: val > target
@@ -210,7 +209,7 @@ class BentoMLContainerClass:
 
     config = providers.Configuration()
 
-    bentoml_home = BENTOML_HOME
+    bentoml_home: str = BENTOML_HOME
     default_bento_store_base_dir: str = DEFAULT_BENTOS_PATH
     default_model_store_base_dir: str = DEFAULT_MODELS_PATH
 
@@ -228,17 +227,28 @@ class BentoMLContainerClass:
 
         return ModelStore(base_dir)
 
+    @providers.SingletonFactory
+    @staticmethod
+    def session_id() -> str:
+        return uuid.uuid1().hex
+
 
 BentoMLContainer = BentoMLContainerClass()
 
 
 @dataclass
 class DeploymentContainerClass:
-
     bentoml_container = BentoMLContainer
     config = bentoml_container.config
     api_server_config = config.bento_server
     runners_config = config.runners
+
+    @providers.SingletonFactory
+    @staticmethod
+    def serve_info() -> "ServeInfo":
+        from ..utils.analytics import get_serve_info
+
+        return get_serve_info()
 
     @providers.SingletonFactory
     @staticmethod
@@ -350,7 +360,7 @@ class DeploymentContainerClass:
             return provider
 
     # Mapping from runner name to RunnerApp file descriptor
-    remote_runner_mapping = providers.Static[t.Dict[str, str]](dict())
+    remote_runner_mapping = providers.Static[t.Dict[str, str]]({})
     plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
 
 

@@ -568,7 +568,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
         return_argmax: bool = False,
         **kwargs: str,
     ) -> t.Any:
-        model_info = self._model_info
+        model_info = self.model_info
         if "paddlehub" in model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:

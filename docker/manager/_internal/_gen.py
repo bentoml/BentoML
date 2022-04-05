@@ -92,66 +92,6 @@ def unpack_include_content(include_: IncludeMapping, indent: int = 0) -> str:
     return res
 
 
-@lru_cache(maxsize=1)
-def gen_manifest(
-    docker_package: str,
-    cuda_version: str,
-    supported_distro: t.Iterable[str],
-    *,
-    overwrite: bool,
-    docker_fs: FS,
-):
-    name = f"{docker_package}.cuda_v{cuda_version}.yaml"
-    include_path = fs.path.join("manager", "include.d")
-
-    include_fs = docker_fs.makedirs(include_path, recreate=True)
-    manifest_fs = docker_fs.opendir("manifest")
-
-    cuda_map = walk_include_dir(
-        include_fs, "cuda", cuda_version, filter_key=lambda x: x.split(".")[-1]
-    )
-
-    if not manifest_fs.exists(name) or overwrite:
-
-        spec_tmpl = {
-            "cuda_version": cuda_version,
-            "cuda_mapping": cuda_map,
-            "supported_distros": supported_distro,
-            "architectures": SUPPORTED_ARCHITECTURE_TYPE,
-            "release_types": DOCKERFILE_BUILD_HIERARCHY,
-            "cuda_architecture_per_distro": CUDA_ARCHITECTURE_PER_DISTRO,
-            "architecture_per_distros": ARCHITECTURE_PER_DISTRO,
-            "templates_entries": {
-                "debian11": "debian",
-                "debian10": "debian",
-                "ubi8": "rhel",
-                "amazonlinux2": "ami2",
-                "alpine3.14": "alpine",
-            },
-        }
-
-        render_template(
-            "spec.yaml.j2",
-            include_fs,
-            "/",
-            manifest_fs,
-            output_name=name,
-            overwrite_output_path=overwrite,
-            preserve_output_path_name=True,
-            create_as_dir=False,
-            custom_function={"unpack_include": unpack_include_content},
-            **spec_tmpl,
-        )
-    else:
-        if not overwrite:
-            send_log(
-                f"{manifest_fs.getsyspath(name)} won't be overwritten."
-                " To overwrite pass `--overwrite`",
-                extra={"markup": True},
-            )
-            return
-
-
 def gen_dockerfiles(ctx: Environment):
 
     registry = os.environ.get("DOCKER_REGISTRY", None)

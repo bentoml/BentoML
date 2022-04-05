@@ -59,6 +59,12 @@ def do_not_track() -> bool:
     return os.environ.get(BENTOML_DO_NOT_TRACK, str(False)).lower() == "true"
 
 
+@lru_cache(maxsize=1)
+def _usage_event_debugging() -> bool:
+    # For BentoML developers only - debug and print event payload if turned on
+    return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
+
+
 @attrs.define
 class ServeInfo:
     serve_id: str
@@ -93,6 +99,15 @@ def track(
     if do_not_track():
         return
     payload = get_payload(event_properties=event_properties)
+
+    if _usage_event_debugging():
+        # For internal debugging purpose
+        global SERVE_USAGE_TRACKING_INTERVAL_SECONDS  # pylint: disable=global-statement
+        global USAGE_TRACKING_URL  # pylint: disable=global-statement
+        SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 5
+        USAGE_TRACKING_URL = "localhost:8888"
+        logger.info("track: %s", payload)
+
     return requests.post(
         USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS
     )

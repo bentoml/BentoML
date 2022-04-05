@@ -307,6 +307,13 @@ git clone git@github.com:bentoml/stubs.git
 \rm -rf typings/.git* typings/*.{sh,toml,txt,cfg,py,md}
 ```
 
+## Usage tracking
+
+To debug usage tracking set `__BENTOML_DEBUG_USAGE` to True:
+```bash
+export __BENTOML_DEBUG_USAGE=True
+```
+
 ## Creating Pull Request on GitHub
 
 [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and

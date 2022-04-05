@@ -32,6 +32,7 @@ class ImportServiceError(BentoMLException):
 @inject
 def import_service(
     svc_import_path: str,
+    *,
     working_dir: t.Optional[str] = None,
     change_global_cwd: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -225,7 +226,10 @@ def _load_bento(bento: Bento, change_global_cwd: bool) -> "Service":
     model_store = ModelStore(bento._fs.getsyspath("models"))
 
     svc = import_service(
-        bento.info.service, working_dir, model_store, change_global_cwd
+        bento.info.service,
+        working_dir=working_dir,
+        change_global_cwd=change_global_cwd,
+        model_store=model_store,
     )
     svc.version = bento.info.tag.version
     svc.tag = bento.info.tag
@@ -282,7 +286,7 @@ def load(
         os.path.expanduser(os.path.join(bento_identifier, BENTO_YAML_FILENAME))
     ):
         try:
-            svc = load_bento_dir(bento_identifier, change_global_cwd)
+            svc = load_bento_dir(bento_identifier, change_global_cwd=change_global_cwd)
         except ImportServiceError as e:
             raise BentoMLException(
                 f"Failed loading Bento from directory {bento_identifier}: {e}"
@@ -290,11 +294,15 @@ def load(
         logger.info("Service loaded from Bento directory: %s", svc)
     else:
         try:
-            svc = import_service(bento_identifier, working_dir, change_global_cwd)
+            svc = import_service(
+                bento_identifier,
+                working_dir=working_dir,
+                change_global_cwd=change_global_cwd,
+            )
             logger.info("Service imported from source: %s", svc)
         except ImportServiceError as e1:
             try:
-                svc = load_bento(bento_identifier, change_global_cwd)
+                svc = load_bento(bento_identifier, change_global_cwd=change_global_cwd)
                 logger.info("Service loaded from Bento store: %s", svc)
             except (NotFound, ImportServiceError) as e2:
                 raise BentoMLException(

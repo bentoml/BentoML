@@ -547,7 +547,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
     def _num_threads(self) -> int:
         if self._enable_gpu and self.resource_quota.on_gpu:
             return 1
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:
@@ -568,7 +568,7 @@ class _PaddlePaddleRunner(BaseModelRunner):
         return_argmax: bool = False,
         **kwargs: str,
     ) -> t.Any:
-        model_info = self._model_info
+        model_info = self.model_info
         if "paddlehub" in model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:

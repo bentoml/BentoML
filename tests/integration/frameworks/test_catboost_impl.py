@@ -2,7 +2,6 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-import psutil
 import pytest
 import catboost as cbt
 from catboost.core import CatBoost
@@ -143,5 +142,5 @@ def test_catboost_runner_setup_run_batch() -> None:
     runner = bentoml.catboost.load_runner(tag)
 
     assert tag in runner.required_models
-    assert runner.num_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
     assert runner.run_batch(test_df) == np.array([1])

@@ -5,7 +5,7 @@ attrs>=21.1
 GitPython>=2.0
 setup-cfg-fmt
 yamllint
-setuptools
+setuptools>=62.0.0
 twine
 types-chardet
 types-click

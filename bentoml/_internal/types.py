@@ -7,10 +7,7 @@ import logging
 import urllib.parse
 import urllib.request
 from typing import TYPE_CHECKING
-from datetime import datetime
 from dataclasses import dataclass
-
-import cattr
 
 from .utils.dataclasses import json_serializer
 
@@ -159,15 +156,6 @@ class LazyType(t.Generic[T]):
             return isinstance(obj, self.get_class(import_module=False))
         except ValueError:
             return False
-
-
-def _format_dt(d: t.Union[datetime, str], _: type) -> datetime:
-    if isinstance(d, str):
-        return datetime.fromisoformat(d)
-    return d
-
-
-cattr.register_structure_hook(datetime, _format_dt)  # type: ignore[misc]
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

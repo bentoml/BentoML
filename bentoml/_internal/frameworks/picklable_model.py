@@ -136,7 +136,7 @@ class _PicklableModelRunner(BaseModelRunner):
 
     @property
     def num_replica(self) -> int:
-        return max(int(self.resource_quota.cpu), 1)
+        return max(round(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
         self._model = load(self._tag, model_store=self.model_store)
@@ -159,7 +159,7 @@ class _PicklableModelSimpleRunner(BaseModelSimpleRunner):
 
     @property
     def num_replica(self) -> int:
-        return max(int(self.resource_quota.cpu), 1)
+        return max(round(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
         self._model = load(self._tag, model_store=self.model_store)

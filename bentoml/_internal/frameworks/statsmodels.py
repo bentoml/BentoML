@@ -178,7 +178,7 @@ class _StatsModelsRunner(BaseModelRunner):
     @property
     def _num_threads(self) -> int:
         # NOTE: Statsmodels currently doesn't use GPU, so return max. no. of CPU's.
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:

@@ -6,7 +6,10 @@ from simple_di import inject
 from simple_di import Provide
 
 from ._internal.tag import Tag
+from ._internal.utils import calc_dir_size
 from ._internal.models import Model
+from ._internal.utils.analytics import track
+from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -238,6 +241,13 @@ def create(
         yield res
     finally:
         res.save(_model_store)
+
+        track(
+            ModelSaveEvent(
+                module=res.info.module,
+                model_size_in_kb=calc_dir_size(res.path_of("/")) / 1024,
+            ),
+        )
 
 
 @inject

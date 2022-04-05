@@ -96,6 +96,28 @@ class PrometheusClient:
     def generate_latest(self):
         return self.prometheus_client.generate_latest(self.registry)
 
+    def get_metrics_report(
+        self,
+    ) -> t.List[t.Dict[str, t.Union[str, float]]]:
+        metrics_text = self.generate_latest().decode()
+        if not metrics_text:
+            return []
+
+        from prometheus_client.parser import text_string_to_metric_families
+
+        for metric in text_string_to_metric_families(metrics_text):
+            if (
+                metric.type == "counter"
+                and metric.name.startswith("BENTOML_")
+                and metric.name.endswith("_request")
+            ):
+                return [
+                    {**sample.labels, "value": sample.value}
+                    for sample in metric.samples
+                ]
+
+        return []
+
     @property
     def CONTENT_TYPE_LATEST(self) -> str:
         return self.prometheus_client.CONTENT_TYPE_LATEST

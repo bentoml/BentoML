@@ -224,6 +224,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
 
+    env:
+      SETUPTOOLS_USE_DISTUTILS: stdlib
+      BENTOML_BUNDLE_LOCAL_BUILD: True
+
     steps:
       - uses: actions/checkout@v2
         with:

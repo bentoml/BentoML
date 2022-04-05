@@ -62,6 +62,8 @@ def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
         except Exception as err:  # pylint: disable=broad-except
             if _usage_event_debugging():
                 logger.info(f"Tracking Error: {err}")
+            else:
+                logger.debug(f"Tracking Error: {err}")
 
     return wrapper
 

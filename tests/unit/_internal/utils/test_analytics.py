@@ -95,4 +95,4 @@ def test_send_usage_failure(mock_do_not_track, mock_post, mock_logger):
     )
     assert mock_do_not_track.called
     assert mock_post.called
-    mock_logger.debug.assert_called_with("something went wrong")
+    mock_logger.debug.assert_called_with("Tracking Error: something went wrong")

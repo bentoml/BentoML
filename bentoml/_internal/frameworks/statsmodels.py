@@ -77,7 +77,6 @@ def load(
     return sm.load(model_file)
 
 
-@inject
 def save(
     name: str,
     model: "ModelType",
@@ -85,7 +84,6 @@ def save(
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.

@@ -17,11 +17,14 @@ if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
 else:
     from backports.cached_property import cached_property
 
+from .cattr import bentoml_cattr
 from ..types import PathType
 from .lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     from fs.base import FS
+
+    P = t.ParamSpec("P")
 
 
 C = t.TypeVar("C")
@@ -30,6 +33,7 @@ _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 
 __all__ = [
+    "bentoml_cattr",
     "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
@@ -83,12 +87,11 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._fallback = fallback
         self._raises = raises
 
-    # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
-    def __call__(  # noqa: F811
-        self, func: t.Callable[..., _T_co]
-    ) -> t.Callable[..., t.Optional[_T_co]]:
+    def __call__(
+        self, func: "t.Callable[P, _T_co]"
+    ) -> "t.Callable[P, t.Optional[_T_co]]":
         @functools.wraps(func)
-        def _(*args: t.Any, **kwargs: t.Any) -> t.Optional[_T_co]:
+        def _(*args: "P.args", **kwargs: "P.kwargs") -> t.Optional[_T_co]:
             try:
                 return func(*args, **kwargs)
             except self._catch_exc:
@@ -189,15 +192,14 @@ class cached_contextmanager:
         self._cache: t.Dict[t.Any, t.Any] = {}
 
     def __call__(
-        self,
-        func: t.Callable[..., t.Generator[VT, None, None]],
-    ) -> t.Callable[..., t.ContextManager[VT]]:
+        self, func: "t.Callable[P, t.Generator[VT, None, None]]"
+    ) -> "t.Callable[P, t.ContextManager[VT]]":
 
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager
         @functools.wraps(func)
-        def _func(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        def _func(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
             import inspect
 
             bound_args = inspect.signature(func).bind(*args, **kwargs)

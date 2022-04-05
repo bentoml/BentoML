@@ -59,26 +59,6 @@ There are many ways to contribute to the project:
 - Contributing code or documentation to the project by submitting a Github pull request. See the `development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_.
 - See more in the `contributing guide <ttps://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md>`_.
 
-Usage Reporting
----------------
-
-BentoML by default collects anonymous usage data using `Amplitude <https://amplitude.com/>`_. 
-It only collects BentoML library's own actions and parameters, no user or model data will be collected. 
-Here is the `code <https://github.com/bentoml/BentoML/blob/main/bentoml/utils/usage_stats.py>`_ that does it.
-
-This helps the BentoML team to understand how the community is using this tool and what to build next. 
-You can easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.
-
-.. code-block:: bash
-
-   > bentoml [command] --do-not-track
-
-You can also opt-out via setting environment variable `BENTOML_DO_NOT_TRACK=True`
-
-.. code-block:: bash
-
-   > export BENTOML_DO_NOT_TRACK=True
-
 
 License
 -------

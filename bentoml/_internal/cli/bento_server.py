@@ -1,3 +1,4 @@
+# type: ignore[reportUnusedFunction]
 import sys
 import typing as t
 import logging
@@ -75,7 +76,7 @@ def add_serve_command(cli: click.Group) -> None:
         help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, only available in dev mode",
         show_default=True,
     )
-    def serve(  # type: ignore[reportUnusedFunction]
+    def serve(
         bento: str,
         production: bool,
         port: int,

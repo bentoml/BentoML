@@ -51,11 +51,11 @@ This is what a `.bentoignore` file would look like.
 
 .. note::
 
-**pycache**/
-_.py[cod]
-_$py.class
-.ipynb_checkpoints/
-training_data/
+   __pycache__/
+   *.py[cod]
+   *$py.class
+   .ipynb_checkpoints/
+   training_data/
 
 To build a Bento, simply run the following command from your project
 directory that contains your `bentofile.yaml`:
@@ -70,7 +70,8 @@ the same directory. It will also automatically infer all PyPI packages
 that are required by the service code, and pin down the version used
 in current environment.
 
-# Bento Format
+Bento Format
+============
 
 BentoML is a standard file format that describes how to load and run
 a `bentoml.Service` defined by the user. It includes code that
@@ -105,7 +106,7 @@ python:
 packages: - numpy - "matplotlib==3.5.1"
 
 The user needs to put all required python packages for the Bento Service in
-a `requirements.txt`. For a project, you can run `pip freeze > requirements.txt`
+a ``requirements.txt``. For a project, you can run ``pip freeze > requirements.txt``
 to generate a requirements file to load with BentoML.
 
 .. code:: yaml
@@ -196,12 +197,11 @@ For more interesting docker development, you can also use a
 preinstall NLTK data you need with:
 
 .. code:: shell
+   # ``setup.sh``
+   python -m nltk.downloader all
 
-# `setup.sh`
-
-python -m nltk.downloader all
-
-## Anatomy of a Bentofile
+Anatomy of a Bentofile
+----------------------
 
 +-------------+----------+---------------+
 | Field       | Subfield | Default Value |
@@ -213,7 +213,8 @@ python -m nltk.downloader all
 | labels      |          |               |
 +-------------+----------+---------------+
 
-## Conclusion
+Conclusion
+----------
 
 The `bentofile.yaml` is essential when generating a Bento,
 and can be as simple or in-depth as you need. All configuration

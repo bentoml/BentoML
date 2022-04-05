@@ -108,7 +108,6 @@ class CommonProperties:
     in_notebook: bool = attrs.field(factory=in_notebook)
 
     # resource related
-    num_threads: int = attrs.field(init=False)
     memory_usage_percent: float = attrs.field(init=False)
     total_memory_in_mb: float = attrs.field(init=False)
 
@@ -121,7 +120,6 @@ class CommonProperties:
         proc = psutil.Process(os.getpid())
         with proc.oneshot():
             self.memory_usage_percent = proc.memory_percent()
-            self.num_threads = proc.num_threads()
 
 
 class EventMeta(ABC):
@@ -169,11 +167,14 @@ class ServeInitEvent(EventMeta):
     production: bool
     serve_from_bento: bool
 
-    bento_creation_timestamp: datetime
+    bento_creation_timestamp: t.Optional[datetime]
     num_of_models: int = attrs.field(default=0)
     num_of_runners: int = attrs.field(default=0)
+    num_of_apis: int = attrs.field(default=0)
     model_types: t.List[str] = attrs.field(factory=list)
     runner_types: t.List[str] = attrs.field(factory=list)
+    api_input_types: t.List[str] = attrs.field(factory=list)
+    api_output_types: t.List[str] = attrs.field(factory=list)
 
 
 @attrs.define

@@ -18,7 +18,6 @@ SCHEMA = Schema(
             "bentoml_version": str,
             "client": {"creation_timestamp": str, "id": str},
             "memory_usage_percent": Or(int, float),
-            "num_threads": int,
             "platform": str,
             "python_version": str,
             "total_memory_in_mb": int,

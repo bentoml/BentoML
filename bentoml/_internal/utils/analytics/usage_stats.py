@@ -40,18 +40,6 @@ SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)  # every 12 hours
 USAGE_REQUEST_TIMEOUT_SECONDS = 1
 
 
-def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
-    # Slient errors when tracking
-    @wraps(func)
-    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
-        try:
-            return func(*args, **kwargs)
-        except Exception as err:  # pylint: disable=broad-except
-            logger.debug(f"{err}")
-
-    return wrapper
-
-
 @lru_cache(maxsize=1)
 def do_not_track() -> bool:
     # Returns True if and only if the environment variable is defined and has value True.
@@ -63,6 +51,19 @@ def do_not_track() -> bool:
 def _usage_event_debugging() -> bool:
     # For BentoML developers only - debug and print event payload if turned on
     return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
+
+
+def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
+    # Slient errors when tracking
+    @wraps(func)
+    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
+        try:
+            return func(*args, **kwargs)
+        except Exception as err:  # pylint: disable=broad-except
+            if _usage_event_debugging():
+                logger.info(f"Tracking Error: {err}")
+
+    return wrapper
 
 
 @attrs.define
@@ -95,7 +96,7 @@ def get_payload(
 @slient
 def track(
     event_properties: EventMeta,
-) -> t.Optional[requests.Response]:
+):
     if do_not_track():
         return
     payload = get_payload(event_properties=event_properties)
@@ -103,12 +104,11 @@ def track(
     if _usage_event_debugging():
         # For internal debugging purpose
         global SERVE_USAGE_TRACKING_INTERVAL_SECONDS  # pylint: disable=global-statement
-        global USAGE_TRACKING_URL  # pylint: disable=global-statement
         SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 5
-        USAGE_TRACKING_URL = "localhost:8888"
-        logger.info("track: %s", payload)
+        logger.info("Tracking Payload: %s", payload)
+        return
 
-    return requests.post(
+    requests.post(
         USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS
     )
 
@@ -128,8 +128,11 @@ def _track_serve_init(
             bento_creation_timestamp=bento.info.creation_time,
             num_of_models=len(bento.info.models),
             num_of_runners=len(svc.runners),
-            model_types=[m.module for m in bento.info.models],  # type: ignore
-            runner_types=[type(v).__name__ for v in svc.runners.values()],
+            num_of_apis=len(bento.info.apis),
+            model_types=[m.module for m in bento.info.models],
+            runner_types=[r.runner_type for r in bento.info.runners],
+            api_input_types=[api.input_type for api in bento.info.apis],
+            api_output_types=[api.output_type for api in bento.info.apis],
         )
     else:
         from ...frameworks.common.model_runner import BaseModelRunner
@@ -139,6 +142,7 @@ def _track_serve_init(
             serve_id=serve_info.serve_id,
             serve_from_bento=False,
             production=production,
+            bento_creation_timestamp=None,
             num_of_models=len(
                 [
                     r
@@ -147,7 +151,12 @@ def _track_serve_init(
                 ]
             ),
             num_of_runners=len(svc.runners),
+            num_of_apis=len(svc.apis.keys()),
             runner_types=[type(v).__name__ for v in svc.runners.values()],
+            api_input_types=[api.input.__class__.__name__ for api in svc.apis.values()],
+            api_output_types=[
+                api.output.__class__.__name__ for api in svc.apis.values()
+            ],
         )
 
     track(event_properties)

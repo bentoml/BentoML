@@ -98,8 +98,11 @@ class PrometheusClient:
 
     def get_metrics_report(
         self,
-    ) -> t.Optional[t.List[t.Dict[str, t.Union[str, float]]]]:
+    ) -> t.List[t.Dict[str, t.Union[str, float]]]:
         metrics_text = self.generate_latest().decode()
+        if not metrics_text:
+            return []
+
         from prometheus_client.parser import text_string_to_metric_families
 
         for metric in text_string_to_metric_families(metrics_text):
@@ -113,7 +116,7 @@ class PrometheusClient:
                     for sample in metric.samples
                 ]
 
-        return None
+        return []
 
     @property
     def CONTENT_TYPE_LATEST(self) -> str:

@@ -434,8 +434,8 @@ class BentoInfo:
     service: str = attr.field(
         converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
     )  # type: ignore[reportPrivateUsage]
-    name: str = attr.field(init=False)
-    version: str = attr.field(init=False)
+    name: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
+    version: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
@@ -500,6 +500,8 @@ class BentoInfo:
 
 bentoml_cattr.register_unstructure_hook(
     BentoInfo,
+    # Ignore internal private state "_flushed"
+    # Ignore tag, tag is saved via the name and version field
     make_dict_unstructure_fn(
         BentoInfo, bentoml_cattr, _flushed=override(omit=True), tag=override(omit=True)
     ),

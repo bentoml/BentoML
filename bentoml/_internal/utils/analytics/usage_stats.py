@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
 USAGE_TRACKING_URL = "https://t.bentoml.com"
 SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)  # every 12 hours
-USAGE_REQUEST_TIMEOUT_SECONDS = 2
+USAGE_REQUEST_TIMEOUT_SECONDS = 1
 
 
 def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover

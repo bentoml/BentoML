@@ -88,8 +88,7 @@ class BentoMLCommandGroup(click.Group):
                 load_global_config(config)
 
             if quiet:
-                # TODO: fix configure logging
-                # configure_logging(logging_level=logging.ERROR)
+                logging.getLogger("bentoml").setLevel(logging.ERROR)
                 if verbose:
                     logger.warning(
                         "The bentoml command option `--verbose/--debug` is ignored when"

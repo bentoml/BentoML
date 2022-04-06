@@ -22,6 +22,7 @@ from ..utils import human_readable_size
 from ..utils import display_path_under_home
 from .click_utils import is_valid_bento_tag
 from .click_utils import is_valid_bento_name
+from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
 from ..yatai_client import yatai_client
 from ..configuration.containers import BentoMLContainer
 
@@ -267,7 +268,9 @@ def add_bento_management_commands(
 
     @cli.command(help="Build a new Bento from current directory")
     @click.argument("build_ctx", type=click.Path(), default=".")
-    @click.option("-f", "--bentofile", type=click.STRING, default="bentofile.yaml")
+    @click.option(
+        "-f", "--bentofile", type=click.STRING, default=DEFAULT_BENTO_BUILD_FILE
+    )
     @click.option("--version", type=click.STRING, default=None)
     def build(build_ctx: str, bentofile: str, version: str) -> None:
         if sys.path[0] != build_ctx:

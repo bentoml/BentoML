@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
+DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
 
 def get_default_bento_readme(svc: "Service"):

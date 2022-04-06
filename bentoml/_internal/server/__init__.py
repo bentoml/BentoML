@@ -242,6 +242,7 @@ def serve_production(
                 working_dir,
                 "--backlog",
                 f"{backlog}",
+                "--as-worker",
             ],
             copy_env=True,
             numprocesses=app_workers or 1,

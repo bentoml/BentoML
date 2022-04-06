@@ -20,7 +20,7 @@ import click
 @click.command()
 @click.argument("bento_identifier", type=click.STRING)
 @click.argument("bind", type=click.STRING)
-@click.option("--runner-map", type=click.STRING)
+@click.option("--runner-map", type=click.STRING, envvar="BENTOML_RUNNER_MAP")
 @click.option("--backlog", type=click.INT)
 @click.option("--working-dir", type=click.Path(exists=True))
 def main(

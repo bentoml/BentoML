@@ -11,6 +11,7 @@ from .schemas import schema_to_json
 from .schemas import schema_from_json
 from .schemas import CreateBentoSchema
 from .schemas import CreateModelSchema
+from .schemas import UpdateBentoSchema
 from .schemas import OrganizationSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
@@ -100,6 +101,17 @@ class YataiRESTApiClient:
             self.endpoint, f"/api/v1/bento_repositories/{bento_repository_name}/bentos"
         )
         resp = self.session.post(url, data=schema_to_json(req))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, BentoSchema)
+
+    def update_bento(
+        self, bento_repository_name: str, version: str, req: UpdateBentoSchema
+    ) -> BentoSchema:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}",
+        )
+        resp = self.session.patch(url, data=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 

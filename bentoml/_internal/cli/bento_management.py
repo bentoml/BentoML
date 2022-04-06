@@ -170,6 +170,7 @@ def add_bento_management_commands(
         * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
         * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
         """  # noqa
+
         def delete_target(target: str) -> None:
             tag = Tag.from_str(target)
 

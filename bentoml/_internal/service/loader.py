@@ -321,7 +321,9 @@ def load(
                 raise BentoMLException(
                     f"Failed loading Bento from directory {bento_identifier}: {e}"
                 )
-            logger.info("Service loaded from Bento directory: %s", svc)
+            logger.info(
+                "Service loaded from project directory '%s': %s", bento_identifier, svc
+            )
         else:
             raise BentoMLException(
                 f"Failed loading service from path {bento_identifier}. When loading from a path, it must be either a Bento containing bento.yaml or a project directory containing bentofile.yaml"

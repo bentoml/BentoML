@@ -19,6 +19,7 @@ from bentoml.bentos import build_bentofile
 
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
+from ..utils import display_path_under_home
 from .click_utils import is_valid_bento_tag
 from .click_utils import is_valid_bento_name
 from ..yatai_client import yatai_client
@@ -109,8 +110,7 @@ def add_bento_management_commands(
         res = [
             {
                 "tag": str(bento.tag),
-                "service": bento.info.service,
-                "path": bento.path,
+                "path": display_path_under_home(bento.path),
                 "size": human_readable_size(calc_dir_size(bento.path)),
                 "creation_time": bento.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
             }
@@ -118,28 +118,26 @@ def add_bento_management_commands(
                 bentos, key=lambda x: x.info.creation_time, reverse=True
             )
         ]
+        console = Console()
         if output == "json":
             info = json.dumps(res, indent=2)
-            print(info)
+            console.print(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            print(Syntax(info, "yaml"))
+            console.print(Syntax(info, "yaml"))
         else:
             table = Table(box=None)
             table.add_column("Tag")
-            table.add_column("Service")
-            table.add_column("Path")
             table.add_column("Size")
             table.add_column("Creation Time")
+            table.add_column("Path")
             for bento in res:
                 table.add_row(
                     bento["tag"],
-                    bento["service"],
-                    bento["path"],
                     bento["size"],
                     bento["creation_time"],
+                    bento["path"],
                 )
-            console = Console()
             console.print(table)
 
     @cli.command()

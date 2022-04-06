@@ -17,6 +17,7 @@ from bentoml.models import import_model
 
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
+from ..utils import display_path_under_home
 from .click_utils import is_valid_bento_tag
 from .click_utils import BentoMLCommandGroup
 from .click_utils import is_valid_bento_name
@@ -116,7 +117,7 @@ def add_model_management_commands(
             {
                 "tag": str(model.tag),
                 "module": model.info.module,
-                "path": model.path,
+                "path": display_path_under_home(model.path),
                 "size": human_readable_size(calc_dir_size(model.path)),
                 "creation_time": model.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
             }
@@ -134,16 +135,16 @@ def add_model_management_commands(
             table = Table(box=None)
             table.add_column("Tag")
             table.add_column("Module")
-            table.add_column("Path")
             table.add_column("Size")
             table.add_column("Creation Time")
+            table.add_column("Path")
             for model in res:
                 table.add_row(
                     model["tag"],
                     model["module"],
-                    model["path"],
                     model["size"],
                     model["creation_time"],
+                    model["path"],
                 )
             console.print(table)
 

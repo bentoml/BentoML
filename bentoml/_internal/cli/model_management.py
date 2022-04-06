@@ -12,6 +12,7 @@ from rich.table import Table
 from rich.syntax import Syntax
 from rich.console import Console
 
+from bentoml import Tag
 from bentoml.models import import_model
 
 from ..utils import calc_dir_size
@@ -169,13 +170,19 @@ def add_model_management_commands(
         Specify target Models to remove:
 
         \b
-        * Delete single model by "name:version", e.g: `bentoml models delete IrisClassifier:v1`
-        * Bulk delete all models with a specific name, e.g.: `bentoml models delete IrisClassifier`
-        * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete Irisclassifier:v1,MyPredictService:v2`
+        * Delete single model by "name:version", e.g: `bentoml models delete iris_clf:v1`
+        * Bulk delete all models with a specific name, e.g.: `bentoml models delete iris_clf`
+        * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete iris_clf:v1,iris_clf:v2`
+        * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
         """  # noqa
 
         def delete_target(target: str) -> None:
-            to_delete_models = model_store.list(target)
+            tag = Tag.from_str(target)
+
+            if tag.version is None:
+                to_delete_models = model_store.list(target)
+            else:
+                to_delete_models = [model_store.get(tag)]
 
             for model in to_delete_models:
                 if yes:

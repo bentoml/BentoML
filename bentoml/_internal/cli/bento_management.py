@@ -13,6 +13,7 @@ from rich.table import Table
 from rich.syntax import Syntax
 from rich.console import Console
 
+from bentoml import Tag
 from bentoml.bentos import import_bento
 from bentoml.bentos import build_bentofile
 
@@ -167,10 +168,16 @@ def add_bento_management_commands(
         * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
         * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
         * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+        * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
         """  # noqa
 
         def delete_target(target: str) -> None:
-            to_delete_bentos = bento_store.list(target)
+            tag = Tag.from_str(target)
+
+            if tag.version is None:
+                to_delete_bentos = bento_store.list(target)
+            else:
+                to_delete_bentos = [bento_store.get(tag)]
 
             for bento in to_delete_bentos:
                 if yes:

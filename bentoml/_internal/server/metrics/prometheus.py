@@ -60,12 +60,8 @@ class PrometheusClient:
     def registry(self):
         if self._registry is None:
             if self.multiproc:
-                registry = self.prometheus_client.CollectorRegistry()
-                self.prometheus_client.multiprocess.MultiProcessCollector(registry)
                 self._pid = os.getpid()
-                self._registry = registry
-            else:
-                self._registry = self.prometheus_client.REGISTRY
+            self._registry = self.prometheus_client.REGISTRY
         else:
             if self.multiproc:
                 assert self._pid is not None
@@ -94,7 +90,12 @@ class PrometheusClient:
         )
 
     def generate_latest(self):
-        return self.prometheus_client.generate_latest(self.registry)
+        if self.multiproc:
+            registry = self.prometheus_client.CollectorRegistry()
+            self.prometheus_client.multiprocess.MultiProcessCollector(registry)
+            return self.prometheus_client.generate_latest(registry)
+        else:
+            return self.prometheus_client.generate_latest()
 
     def get_metrics_report(
         self,

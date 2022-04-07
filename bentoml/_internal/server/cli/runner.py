@@ -16,15 +16,15 @@ import click
 
 
 @click.command()
-@click.argument("bento_identifier", type=click.STRING)
-@click.argument("runner_name", type=click.STRING)
-@click.argument("bind", type=click.STRING)
+@click.argument("bento_identifier", type=click.STRING, required=False, default=".")
+@click.option("--runner-name", type=click.STRING, required=True)
+@click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
 def main(
-    bento_identifier: str = "",
-    runner_name: str = "",
-    bind: str = "",
-    working_dir: t.Optional[str] = None,
+    bento_identifier: str,
+    runner_name: str,
+    bind: str,
+    working_dir: t.Optional[str],
 ) -> None:
     """
     Start a runner server.
@@ -80,4 +80,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

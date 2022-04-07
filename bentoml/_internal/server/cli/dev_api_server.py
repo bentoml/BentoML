@@ -11,18 +11,19 @@ from ...trace import ServiceContext
 
 
 @click.command()
-@click.argument("bento_identifier", type=click.STRING)
-@click.argument("bind", type=click.STRING)
+@click.argument("bento_identifier", type=click.STRING, required=False, default=".")
+@click.option("--bind", type=click.STRING, required=True)
+@click.option("--backlog", type=click.INT, default=2048)
 @click.option("--working-dir", required=False, type=click.Path(), default=None)
 @click.option("--reload", required=False, type=click.BOOL, is_flag=True, default=False)
 @click.option("--reload-delay", required=False, type=click.FLOAT, default=None)
 def main(
-    bento_identifier: str = "",
-    bind: str = "",
-    working_dir: t.Optional[str] = None,
-    reload: bool = False,
-    reload_delay: t.Optional[float] = None,
-    backlog: int = 2048,
+    bento_identifier: str,
+    bind: str,
+    working_dir: t.Optional[str],
+    reload: bool,
+    reload_delay: t.Optional[float],
+    backlog: int,
 ):
     import uvicorn  # type: ignore
 
@@ -65,4 +66,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

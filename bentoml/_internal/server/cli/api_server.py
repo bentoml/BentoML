@@ -19,8 +19,8 @@ import click
 
 
 @click.command()
-@click.argument("bento_identifier", type=click.STRING)
-@click.argument("bind", type=click.STRING)
+@click.argument("bento_identifier", type=click.STRING, required=False, default=".")
+@click.option("--bind", type=click.STRING, required=True)
 @click.option("--runner-map", type=click.STRING, envvar="BENTOML_RUNNER_MAP")
 @click.option("--backlog", type=click.INT, default=2048)
 @click.option("--working-dir", type=click.Path(exists=True))
@@ -32,12 +32,12 @@ import click
     default=False,
 )
 def main(
-    bento_identifier: str = "",
-    bind: str = "",
-    runner_map: t.Optional[str] = None,
-    backlog: int = 2048,
-    working_dir: t.Optional[str] = None,
-    as_worker: bool = False,
+    bento_identifier: str,
+    bind: str,
+    runner_map: t.Optional[str],
+    backlog: int,
+    working_dir: t.Optional[str],
+    as_worker: bool,
 ):
     """
     Start BentoML API server.
@@ -48,6 +48,10 @@ def main(
         BentoML identifier.
     bind: str
         Bind address.
+        values:
+            - "tcp://127.0.0.1:3000"
+            - "unix:///tmp/bento_api.sock"
+            - "fd://12"
     runner_map: str
         Path to runner map file.
     backlog: int
@@ -102,4 +106,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

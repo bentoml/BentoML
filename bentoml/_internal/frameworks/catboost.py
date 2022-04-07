@@ -249,4 +249,3 @@ def load_runner(
         model_params=model_params,
         name=name,
     )
-    

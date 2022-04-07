@@ -92,7 +92,6 @@ def load(
             The tag of the model to get from the store.
         model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): The parameters for loading the CatBoost model. model_type (``str``): can be one of the following:
                 * ``"classifier"`` (``CatBoostClassifier``) 
-                or
                 * ``"regressor"`` (``CatBoostRegressor``)
     Returns:
         :obj:`catboost.core.CatBoost` ``|`` :obj:`catboost.core.CatBoostClassifier` ``|`` :obj:`catboost.core.CatBoostRegressor`:
@@ -129,7 +128,6 @@ def save(
         model_params (``dict[str, Any]``, ``optional``, default ``None``):
             The parameters for the CatBoost model. model_type (``str``): can be one of the following:
             * ``"classifier"`` (``CatBoostClassifier``)
-            or
             * ``"regressor"``(``CatBoostRegressor``)
         model_export_parameters (:code:`dict[str, Any]`, `optional`, default to :code:`None`):
             CatBoost export parameters for the given model. See
@@ -251,3 +249,4 @@ def load_runner(
         model_params=model_params,
         name=name,
     )
+    

@@ -27,12 +27,14 @@ def bin_file(tmpdir) -> str:
 
 
 def pytest_configure(config):  # pylint: disable=unused-argument
-    import os
     import sys
     import subprocess
 
     cmd = f"{sys.executable} {os.path.join(os.getcwd(), 'train.py')}"
     subprocess.run(cmd, shell=True, check=True)
+
+    # use the local bentoml package in development
+    os.environ["BENTOML_BUNDLE_LOCAL_BUILD"] = "True"
 
 
 @pytest.fixture(scope="session")
@@ -41,7 +43,6 @@ def host() -> t.Generator[str, None, None]:
 
     with host_bento(
         "service:svc",
-        workdir=os.getcwd(),
         config_file="bentoml_config.yml",
         docker=psutil.LINUX,
     ) as host_address:

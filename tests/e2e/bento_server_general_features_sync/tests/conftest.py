@@ -4,9 +4,8 @@
 import typing as t
 
 import numpy as np
+import psutil
 import pytest
-
-from bentoml.testing.server import run_api_server
 
 
 @pytest.fixture()
@@ -35,14 +34,17 @@ def pytest_configure(config):  # pylint: disable=unused-argument
     cmd = f"{sys.executable} {os.path.join(os.getcwd(), 'train.py')}"
     subprocess.run(cmd, shell=True, check=True)
 
+    # use the local bentoml package in development
+    os.environ["BENTOML_BUNDLE_LOCAL_BUILD"] = "True"
+
 
 @pytest.fixture(scope="session")
 def host() -> t.Generator[str, None, None]:
-    import bentoml
+    from bentoml.testing.server import host_bento
 
-    bentoml.build("service:svc")
-
-    with run_api_server(
-        bento="general:latest", config_file="bentoml_config.yml"
+    with host_bento(
+        bento="general:latest",
+        config_file="bentoml_config.yml",
+        docker=psutil.LINUX,
     ) as host:
         yield host

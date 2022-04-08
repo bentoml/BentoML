@@ -13,6 +13,7 @@ import urllib.request
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
+from .._internal.tag import Tag
 from .._internal.utils import reserve_free_port
 from .._internal.utils import cached_contextmanager
 
@@ -23,9 +24,6 @@ if TYPE_CHECKING:
     from aiohttp.typedefs import LooseHeaders
     from starlette.datastructures import Headers
     from starlette.datastructures import FormData
-
-
-clean_context = contextlib.ExitStack()
 
 
 async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
@@ -52,7 +50,7 @@ async def async_request(
     timeout: t.Optional[int] = None,
 ) -> t.Tuple[int, "Headers", bytes]:
     """
-    raw async request client
+    A HTTP client with async API.
     """
     import aiohttp
     from starlette.datastructures import Headers
@@ -101,33 +99,35 @@ def _wait_until_api_server_ready(
         return False
 
 
-@contextmanager
-def export_service_bundle(_):
+@cached_contextmanager("{project_path}")
+def bentoml_build(project_path: str) -> t.Generator["Tag", None, None]:
     """
-    Export a bentoml service to a temporary directory, yield the path.
-    Delete the temporary directory on close.
-    """
-    yield
-
-
-@cached_contextmanager("{project_path}, {image_tag}")
-def build_api_server_docker_image(
-    project_path: str, image_tag: t.Optional[str] = None
-) -> t.Generator[str, None, None]:
-    """
-    Build the docker image for a saved bentoml bundle, yield the docker image object.
+    Build a BentoML project.
     """
     import bentoml
 
+    logger.info(f"Building bento: {project_path}")
     bento = bentoml.bentos.build_bentofile(build_ctx=project_path)
-    tag = bento.info.tag
+    yield bento.tag
+    logger.info(f"Deleting bento: {bento.tag}")
+    subprocess.call(["bentoml", "delete", "-y", str(bento.tag)])
+
+
+@cached_contextmanager("{bento_tag}, {image_tag}")
+def bentoml_containerize(
+    bento_tag: t.Union[str, "Tag"],
+    image_tag: t.Optional[str] = None,
+) -> t.Generator[str, None, None]:
+    """
+    Build the docker image from a saved bento, yield the docker image tag
+    """
+    bento_tag = Tag.from_taglike(bento_tag)
     if image_tag is None:
-        image_tag = tag.name
-
-    logger.info(f"Building API server docker image from build context: {project_path}")
-    subprocess.check_call(["bentoml", "containerize", str(tag), "-t", image_tag])
-
+        image_tag = bento_tag.name
+    logger.info(f"Building bento server docker image: {bento_tag}")
+    subprocess.check_call(["bentoml", "containerize", str(bento_tag), "-t", image_tag])
     yield image_tag
+    logger.info(f"Removing bento server docker image: {image_tag}")
     subprocess.call(["docker", "rmi", image_tag])
 
 
@@ -138,7 +138,7 @@ def run_api_server_in_docker(
     timeout: float = 40,
 ):
     """
-    Launch a bentoml service container from a docker image, yields the host URL.
+    Launch a bentoml service container from a docker image, yield the host URL
     """
     container_name = f"bentoml-test-{image_tag}"
     with reserve_free_port() as port:
@@ -192,31 +192,17 @@ def run_api_server(
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
     workdir = workdir if workdir is not None else "./"
-
-    serve_cmd = "serve"
-
     my_env = os.environ.copy()
-
     with reserve_free_port() as port:
-        cmd = [sys.executable, "-m", "bentoml", serve_cmd]
-
+        cmd = [sys.executable, "-m", "bentoml", "serve"]
         if not dev_server:
             cmd += ["--production"]
-
         if port:
             cmd += ["--port", f"{port}"]
         cmd += [bento]
         cmd += ["--working-dir", workdir]
 
-    print(cmd)
-
-    # def print_log(p: "subprocess.Popen"):
-    # try:
-    # for line in p.stdout:
-    # print(line.decode(), end="")
-    # except ValueError:
-    # pass
-
+    logger.info(f"Running command: `{cmd}`")
     if config_file is not None:
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
@@ -226,41 +212,60 @@ def run_api_server(
         env=my_env,
     )
     try:
-        # threading.Thread(target=print_log, args=(p,), daemon=True).start()
         host_url = f"127.0.0.1:{port}"
         _wait_until_api_server_ready(host_url, timeout=timeout)
         yield host_url
     finally:
-        # TODO: can not terminate the subprocess on Windows
         p.terminate()
         p.wait()
 
 
-@cached_contextmanager("{bento}, {config_file}, {workdir}, {docker}, {dev_server}")
+@cached_contextmanager("{bento}, {project_path}, {config_file}, {docker}, {dev_server}")
 def host_bento(
-    bento: str,
+    bento: t.Union[str, Tag, None] = None,
+    project_path: str = ".",
     config_file: str = "bentoml_config.yml",
-    workdir: str = "./",
     docker: bool = False,
     dev_server: bool = False,
 ) -> t.Generator[str, None, None]:
+    """
+    Host a bentoml service, yields the host URL.
+
+    Args:
+        bento: a beoto tag or `module_path:service`
+        project_path: the path to the project directory
+        config_file: the path to the config file
+        docker: whether to use docker to host the service
+        dev_server: whether to use the dev server to host the service
+    """
 
     if not os.path.exists(config_file):
         raise Exception(f"config file not found: {config_file}")
 
+    import bentoml
+
+    clean_context = contextlib.ExitStack()
     try:
+        if bento is None or not bentoml.list(bento):
+            bento_tag = clean_context.enter_context(bentoml_build(project_path))
+        else:
+            bento_tag = bentoml.get(bento).tag
+
         if docker:
-            logger.info("Building API server docker image...")
-            with build_api_server_docker_image(workdir) as image_tag:
-                logger.info("Running API server docker image...")
-                with run_api_server_in_docker(image_tag, config_file) as host_url:
-                    yield host_url
+            image_tag = clean_context.enter_context(bentoml_containerize(bento_tag))
+            host = clean_context.enter_context(
+                run_api_server_in_docker(
+                    image_tag,
+                    config_file,
+                )
+            )
+            yield host
         elif dev_server:
             host = clean_context.enter_context(
                 run_api_server(
-                    bento,
+                    str(bento_tag),
                     config_file=config_file,
-                    workdir=workdir,
+                    workdir=project_path,
                     dev_server=True,
                 )
             )
@@ -268,11 +273,12 @@ def host_bento(
         else:
             host = clean_context.enter_context(
                 run_api_server(
-                    bento,
+                    str(bento_tag),
                     config_file=config_file,
-                    workdir=workdir,
+                    workdir=project_path,
                 )
             )
             yield host
     finally:
         logger.info("Cleaning up...")
+        clean_context.close()

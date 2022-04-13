@@ -26,6 +26,7 @@ from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner import SimpleRunner
+from ._internal.context import InferenceApiContext as Context
 from ._internal.service import Service
 from ._internal.yatai_client import YataiClient
 from ._internal.service.loader import load
@@ -91,6 +92,7 @@ else:
 
 __all__ = [
     "__version__",
+    "Context",
     "Service",
     "models",
     "Tag",

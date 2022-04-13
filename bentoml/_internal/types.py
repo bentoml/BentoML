@@ -23,6 +23,9 @@ if sys.version_info < (3, 7):
 
     MonkeyPatch.patch_fromisoformat()
 
+if TYPE_CHECKING:
+    from types import UnionType
+
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +46,8 @@ JSONSerializable = t.NewType("JSONSerializable", object)
 
 
 def is_compatible_type(
-    t1: "t.Union[t.Type[t.Any], LazyType[t.Any]]",
-    t2: "t.Union[t.Type[t.Any], LazyType[t.Any]]",
+    t1: "t.Union[t.Type[t.Any], UnionType, LazyType[t.Any]]",
+    t2: "t.Union[t.Type[t.Any], UnionType, LazyType[t.Any]]",
 ) -> bool:
     """
     A very loose check that it is possible for an object to be both an instance of ``t1``

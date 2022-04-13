@@ -126,7 +126,7 @@ def get_open_api_spec_json(
                 "schema": {"type": f"{type}"},
             }
             parameters.append(parameter)
-            path = path.replace(bracket, "{%s}"%(name))
+            path = path.replace(bracket, "{%s}" % (name))
 
         paths[path] = OrderedDict(
             post=OrderedDict(

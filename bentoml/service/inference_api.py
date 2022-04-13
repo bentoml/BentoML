@@ -270,7 +270,9 @@ class InferenceAPI(object):
                     user_return, tasks=filtered_tasks
                 )
         else:
-            user_return = self.user_func(*user_args, tasks=filtered_tasks, **user_kwargs)
+            user_return = self.user_func(
+                *user_args, tasks=filtered_tasks, **user_kwargs
+            )
             if (
                 isinstance(user_return, (list, tuple))
                 and len(user_return)

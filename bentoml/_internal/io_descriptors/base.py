@@ -63,6 +63,10 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         return self._init_str
 
     @abstractmethod
+    def input_type(self) -> t.Union[t.Type[t.Any], t.Dict[str, t.Type[t.Any]]]:
+        ...
+
+    @abstractmethod
     def openapi_schema_type(self) -> t.Dict[str, str]:
         ...
 
@@ -79,7 +83,11 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         ...
 
     @abstractmethod
-    async def to_http_response(self, obj: IOPyObj) -> Response:
+    async def init_http_response(self) -> Response:
+        ...
+
+    @abstractmethod
+    async def finalize_http_response(self, response: Response, obj: IOPyObj):
         ...
 
     # TODO: gRPC support

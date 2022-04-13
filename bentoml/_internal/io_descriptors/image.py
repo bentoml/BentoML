@@ -11,6 +11,7 @@ from .base import ImageType
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
+from ..utils.http import finalize_http_response
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
@@ -145,6 +146,11 @@ class Image(IODescriptor[ImageType]):
         self._pilmode: t.Optional["_Mode"] = pilmode
         self._format = self.MIME_EXT_MAPPING[mime_type]
 
+    def input_type(
+        self,
+    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+        return ImageType
+
     def openapi_schema_type(self) -> t.Dict[str, str]:
         return {"type": "string", "format": "binary"}
 
@@ -171,7 +177,10 @@ class Image(IODescriptor[ImageType]):
             )
         return PIL.Image.open(io.BytesIO(bytes_))
 
-    async def to_http_response(self, obj: ImageType) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=self._mime_type)
+
+    async def finalize_http_response(self, response: Response, obj: ImageType):
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
         elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
@@ -194,6 +203,7 @@ class Image(IODescriptor[ImageType]):
             )
         else:
             content_disposition = f'attachment; filename="{filename}"'
-        headers = {"content-disposition": content_disposition}
 
-        return Response(ret.getvalue(), media_type=self._mime_type, headers=headers)
+        response.headers["content-disposition"] = content_disposition
+        response.body = ret.getvalue()
+        finalize_http_response(response)

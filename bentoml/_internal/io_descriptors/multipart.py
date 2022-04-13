@@ -7,6 +7,7 @@ from starlette.responses import Response
 
 from .base import IOType
 from .base import IODescriptor
+from ..utils.http import finalize_http_response
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.formparser import populate_multipart_requests
@@ -159,11 +160,14 @@ class Multipart(IODescriptor[MultipartIO]):
             ],
         ] = inputs
 
+    def input_type(self) -> t.Dict[str, t.Type[t.Any]]:
+        return {k: v.input_type() for (k, v) in self._inputs.items()}
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {
             "type": "object",
             "properties": {
-                k: io.openapi_schema_type() for k, io in self._inputs.items()
+                k: io.openapi_schema_type() for (k, io) in self._inputs.items()
             },
         }
 
@@ -191,10 +195,15 @@ class Multipart(IODescriptor[MultipartIO]):
             res[k] = v
         return res
 
-    async def to_http_response(self, obj: MultipartIO) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None)
+
+    async def finalize_http_response(self, response: Response, obj: MultipartIO):
         res_mapping: t.Dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]
             # TODO(aarnphm): fix with stubs
-            res_mapping[k] = await io_.to_http_response(data)  # type: ignore[reportGeneralTypeIssue]
-        return await concat_to_multipart_responses(res_mapping)
+            resp = io_.init_http_response()
+            res_mapping[k] = await io_.finalize_http_response(resp, data)  # type: ignore[reportGeneralTypeIssue]
+        await concat_to_multipart_responses(response, res_mapping)
+        finalize_http_response(response)

@@ -8,6 +8,8 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from ..types import FileLike
+from ..types import LazyType
+from ..utils.http import finalize_http_response
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -77,6 +79,11 @@ class File(IODescriptor[FileLike]):
             mime_type if mime_type is not None else "application/octet-stream"
         )
 
+    def input_type(
+        self,
+    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+        return FileLike
+
     def openapi_schema_type(self) -> t.Dict[str, str]:
         return {"type": "string", "format": "binary"}
 
@@ -104,9 +111,14 @@ class File(IODescriptor[FileLike]):
             f" got {content_type} instead"
         )
 
-    async def to_http_response(self, obj: t.Union[FileLike, bytes]) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=self._mime_type)
+
+    async def finalize_http_response(
+        self, response: Response, obj: t.Union[FileLike, bytes]
+    ):
         if isinstance(obj, bytes):
             obj = FileLike(bytes_=obj)
-        return Response(
-            t.cast(BytesIO, obj.stream).getvalue(), media_type=self._mime_type
-        )
+
+        response.body = t.cast(BytesIO, obj.stream).getvalue()
+        finalize_http_response(response)

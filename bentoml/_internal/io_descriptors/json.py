@@ -9,6 +9,7 @@ from starlette.responses import Response
 from .base import JSONType
 from .base import IODescriptor
 from ..types import LazyType
+from ..utils.http import finalize_http_response
 from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
 
@@ -140,6 +141,11 @@ class JSON(IODescriptor[JSONType]):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
+    def input_type(
+        self,
+    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+        return JsonType
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if self._pydantic_model is None:
             return {"type": "object"}
@@ -168,7 +174,10 @@ class JSON(IODescriptor[JSONType]):
                 raise BadInput("Invalid JSON Request received")
         return json_obj
 
-    async def to_http_response(self, obj: JSONType) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
+
+    async def finalize_http_response(self, response: Response, obj: JSONType):
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,
@@ -177,4 +186,6 @@ class JSON(IODescriptor[JSONType]):
             indent=None,
             separators=(",", ":"),
         )
-        return Response(json_str, media_type=MIME_TYPE_JSON)
+
+        response.body = response.render(json_str)
+        finalize_http_response(response)

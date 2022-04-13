@@ -462,9 +462,7 @@ class BentoInfo:
 bentoml_cattr.register_unstructure_hook(
     BentoInfo,
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(
-        BentoInfo, bentoml_cattr, tag=override(omit=True)
-    ),
+    make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),
 )
 
 

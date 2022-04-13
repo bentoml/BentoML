@@ -4,12 +4,13 @@ Building Bentos
 ===============
 
 Bento is a standardized file archive format in BentoML that describes
-how to load and run a ``bentoml.Service`` defined by the user. It includes
-code that instantiates the ``bentoml.Service`` instance, as well
-as related configurations, data/model files, and dependencies.
+how to load and run a ``bentoml.Service`` defined by the user. It
+includes code that instantiates the ``bentoml.Service`` instance, as
+well as related configurations, data/model files, and dependencies.
 
-A Bento can be built with the ``bentoml build`` command with the ``bentofile.yaml``
-configuration file. Here's an example of that process from the `quickstart guide (https://github.com/bentoml/gallery/tree/main/quickstart#build-bento-for-deployment)_`.
+A Bento can be built with the ``bentoml build`` command with the
+``bentofile.yaml`` configuration file. Here's an example of that
+process from the `quickstart guide (https://github.com/bentoml/gallery/tree/main/quickstart#build-bento-for-deployment)_`.
 
 .. code:: yaml
 
@@ -120,8 +121,8 @@ pip will just use the latest release.
         - numpy
         - "matplotlib==3.5.1"
 
-The user needs to put all required python packages for the Bento Service in
-a ``requirements.txt``. For a project, you can run ``pip freeze > requirements.txt``
+The user needs to put all required python packages for the Bento Service in a
+``requirements.txt``. For a project, you can run ``pip freeze > requirements.txt``
 to generate a requirements file to load with BentoML.
 
 .. code:: yaml
@@ -147,12 +148,18 @@ Additionally, there are more fields that can help manage larger projects.
      wheels:
         - "./libs/my_package.whl"
 
+Package Locking
+---------------
+
 By default, when the BentoML service generates package requirements
 from the Bentofile, the package versions will be locked for easier
-reproducibility.
+reproducibility. BentoML uses pip-tools to lock the packages.
 
 If the ``requirements.txt`` includes locked packages, or a configuration
 you need, set the ``lock_packages`` field to False.
+
+Pip Wheels
+----------
 
 If you're maintaining a private pip wheel, it can be included
 with the ``wheels`` field.
@@ -212,13 +219,14 @@ For the ``distro`` options, you can choose from 5.
 
 This config can be explored from `BentoML's Docker page <https://hub.docker.com/r/bentoml/bento-server>`_.
 
-The `gpu` field will also allocate a GPU in the Docker.
-If you're using the standard devices variable in PyTorch,
-for example, this field will enable the gpu.
+The `gpu` field instructs BentoML to select a Docker base
+image that contains NVIDIA drivers and cuDNN library.
 
-For more interesting docker development, you can also use a
-``setup.sh`` for the container. For NLP projects, you can
-preinstall NLTK data you need with:
+For further Docker development, you can also use a ``setup_script``
+for the container. This script will run during the ``docker build``
+process, as Docker containerizes the image.
+
+For example, with NLP projects you can preinstall NLTK data with:
 
 .. code:: shell
    # ``setup.sh``

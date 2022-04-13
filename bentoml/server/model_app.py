@@ -428,12 +428,14 @@ class ModelApp:
 
             return response
 
-        def api_func_with_tracing():
+        def api_func_with_tracing(**view_kwargs):
             with self.tracer.span(
                 service_name=f"BentoService.{self.bento_service.name}",
                 span_name=f"InferenceAPI {api.name} HTTP route",
                 request_headers=request.headers,
             ):
+                if view_kwargs:
+                    api.user_func_kwargs = view_kwargs
                 return api_func()
 
         return api_func_with_tracing

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections import OrderedDict
+import re
 
 from simple_di import Provide, inject
 
@@ -105,6 +106,28 @@ def get_open_api_spec_json(
 
     for api in bento_service.inference_apis:
         path = "/{}".format(api.route)
+
+        parameters = []
+        regex = "(<([^<>]+:)?([^<>]+)>)"
+        for bracket, converter, name in re.findall(regex, path):
+            if converter == "":
+                type = "string"
+            elif converter[:-1] == "int":
+                type = "integer"
+            elif converter[:-1] == "string":
+                type = "string"
+            else:
+                raise Exception(f"{converter[:-1]} is not supported")
+
+            parameter = {
+                "required": True,
+                "name": f"{name}",
+                "in": "path",
+                "schema": {"type": f"{type}"},
+            }
+            parameters.append(parameter)
+            path = path.replace(bracket, "{%s}"%(name))
+
         paths[path] = OrderedDict(
             post=OrderedDict(
                 tags=["app"],
@@ -113,6 +136,8 @@ def get_open_api_spec_json(
                 responses=default_response,
             )
         )
+        if parameters:
+            paths[path]["post"]["parameters"] = parameters
 
     docs["paths"] = paths
     return docs

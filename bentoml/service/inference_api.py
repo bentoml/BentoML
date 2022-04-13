@@ -115,6 +115,7 @@ class InferenceAPI(object):
                 f"'{type(output_adapter).__name__}'"
             )
         self._doc = doc
+        self.user_func_kwargs = None
 
     @property
     def service(self):
@@ -241,6 +242,9 @@ class InferenceAPI(object):
         user_args = self.input_adapter.extract_user_func_args(inf_tasks)
         filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
 
+        # extract kwargs
+        user_kwargs = self.user_func_kwargs if self.user_func_kwargs else {}
+
         # call user function
         if not self.batch:  # For single inputs
             user_return = []
@@ -248,7 +252,7 @@ class InferenceAPI(object):
                 filtered_tasks,
                 self.input_adapter.iter_batch_args(user_args, tasks=filtered_tasks),
             ):
-                ret = self.user_func(*legacy_user_args, task=task)
+                ret = self.user_func(*legacy_user_args, task=task, **user_kwargs)
                 if task.is_discarded:
                     continue
                 else:
@@ -266,7 +270,7 @@ class InferenceAPI(object):
                     user_return, tasks=filtered_tasks
                 )
         else:
-            user_return = self.user_func(*user_args, tasks=filtered_tasks)
+            user_return = self.user_func(*user_args, tasks=filtered_tasks, **user_kwargs)
             if (
                 isinstance(user_return, (list, tuple))
                 and len(user_return)

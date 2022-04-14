@@ -67,9 +67,13 @@ class Model(StoreItem):
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
-                    self._custom_objects = cloudpickle.load(cofile)
+                    self._custom_objects: "t.Optional[t.Dict[str, t.Any]]" = (
+                        cloudpickle.load(cofile)
+                    )
+                    if not isinstance(self._custom_objects, dict):
+                        raise ValueError("Invalid custom objects found.")
             else:
-                self._custom_objects = {}
+                self._custom_objects: "t.Optional[t.Dict[str, t.Any]]" = {}
 
         return self._custom_objects
 
@@ -262,7 +266,7 @@ class ModelInfo:
     api_version: str = "v1"
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    def __eq__(self, other):
+    def __eq__(self, other: "t.Union[ModelInfo, FrozenModelInfo]"):
         if not isinstance(other, (ModelInfo, FrozenModelInfo)):
             return False
 
@@ -332,7 +336,7 @@ class ModelInfo:
         return self
 
 
-@attr.define(repr=False, frozen=True)
+@attr.define(repr=False, frozen=True)  # type: ignore (pyright doesn't allow for a frozen subclass)
 class FrozenModelInfo(ModelInfo):
     pass
 

@@ -157,7 +157,9 @@ class LazyType(t.Generic[T]):
     def __repr__(self) -> str:
         return f'LazyType("{self.module}", "{self.qualname}")'
 
-    def get_class(self, import_module: bool = True) -> "t.Type[T]":
+    def get_class(
+        self, import_module: bool = True
+    ) -> "t.Union[t.Type[T], t.Tuple[t.Type[T]]]":
         if self._runtime_class is None:
             try:
                 m = sys.modules[self.module]

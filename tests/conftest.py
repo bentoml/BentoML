@@ -10,9 +10,9 @@ from bentoml._internal.models.model import ModelInfo
 
 @pytest.fixture(scope="function", name="change_test_dir")
 def fixture_change_test_dir(request: pytest.FixtureRequest):
-    os.chdir(request.fspath.dirname)
+    os.chdir(request.fspath.dirname)  # type: ignore (bad pytest stubs)
     yield
-    os.chdir(request.config.invocation_dir)
+    os.chdir(request.config.invocation_dir)  # type: ignore (bad pytest stubs)
 
 
 @pytest.fixture(scope="session", name="dummy_model_store")

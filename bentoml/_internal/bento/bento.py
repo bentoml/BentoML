@@ -100,7 +100,7 @@ class Bento(StoreItem):
     def _export_ext() -> str:
         return "bento"
 
-    @__fs.validator  # type: ignore
+    @__fs.validator  # type:ignore (attrs validators not supported by pyright)
     def check_fs(self, _attr: t.Any, new_fs: "FS"):
         try:
             new_fs.makedir("models", recreate=True)

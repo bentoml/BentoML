@@ -144,7 +144,7 @@ class JSON(IODescriptor[JSONType]):
     def input_type(
         self,
     ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
-        return JsonType
+        return JSONType
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if self._pydantic_model is None:

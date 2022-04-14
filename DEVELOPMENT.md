@@ -1,30 +1,23 @@
 ## Install BentoML from source
 
-Make sure to have [Git](https://git-scm.com/) and [Python3.7+](https://www.python.org/downloads/) installed.
+1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.7+](https://www.python.org/downloads/) installed.
 
-Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using UNIX-based system for better developer experience.
-If you don't want to use `make` then refers to [Makefile](./Makefile) for specific commands on given make target.
+Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
+If you don't want to use `make` then please refer to [Makefile](./Makefile) for specific commands on a given make target.
 
-```bash
-python --version
-
-pip --version
-```
-
-Clone the source code from BentoML's GitHub repository:
+2. Clone the source code from BentoML's GitHub repository:
 ```bash
 git clone https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
-Install BentoML with pip in `editable` mode:
+3. Install BentoML with pip in `editable` mode:
 ```bash
 pip install -e .
 ```
 
-This will make `bentoml` available on your system which links to the sources of
-your local clone and pick up changes you made locally.
+This installs BentoML in an editable state. The changes you make will automatically be reflected even without reinstalling BentoML.
 
-Test the BentoML installation either with `bash` or in an IPython session:
+4. Test the BentoML installation either with `bash` or in an IPython session:
 ```bash
 bentoml --version
 ```
@@ -33,40 +26,34 @@ bentoml --version
 print(bentoml.__version__)
 ```
 
-### Install BentoML from other forks or branches
+<details>
+<summary><h2>Start Developing with VSCode</h2></summary>
 
-`pip` also supports installing directly from remote git repository. This makes it
-easy to try out new BentoML feature that has not been released, test changes in a pull
-request. For example, to install BentoML from its main branch:
+1. Confirm that you have the following installed:
+	- [Python3.7+](https://www.python.org/downloads/)
+	- VSCode with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
 
+2. Clone the Github repository with the following steps:
+	1. Open the command palette with Ctrl+Shift+P and type in clone.
+	2. Select Git: Clone(Recursive).
+	3. Clone BentoML.
+
+3. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the New Terminal option. Next, add a virtual environment with this command:
 ```bash
-pip install git+https://github.com/bentoml/BentoML.git
+python -m venv .venv
 ```
+4. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
+	1. Open any python file in the directory.
+	2. Select the interpreter selector on the blue status bar at the bottom of the editor.
+  <img src="/docs/source/_static/img/vscode-status-bar.png" alt="VSCode Status Bar"></img>
+	3. Switch to the path that includes .venv from the dropdown at the top.
+  <img src="/docs/source/_static/img/vscode-select-venv.png" alt="VSCode Interpreter Selection Menu"></img>
 
-Or to install from your own fork of BentoML:
-```bash
-pip install git+https://github.com/{your_github_username}/BentoML.git
+5. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
 ```
-
-You can also specify what branch to install from:
-```bash
-pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_name}
+	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
-
-
-### Creating Bento with custom bentoml source
-
-It is possible to force a Bento to use a custom BentoML source distribution:
-
-1. Install custom BentoML in editable mode. e.g.:
-   * git clone your bentoml fork
-   * `pip install -e PATH_TO_THE_FORK`
-2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True`
-   * make sure you have the latest setuptools installed:  `pip install -U setuptools`
-3. Build a new Bento with `bentoml build` in your project directory
-4. The new Bento will include a wheel file built from the BentoML source, and 
-`bentoml containrize` will install it to override the default BentoML installation in base image
-
+</details>
 
 ## Testing
 
@@ -353,4 +340,3 @@ Once your pull request created, an automated test run will be triggered on
 your branch and the BentoML authors will be notified to review your code
 changes. Once tests are passed and reviewer has signed off, we will merge
 your pull request.
-

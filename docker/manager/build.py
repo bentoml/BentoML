@@ -15,13 +15,10 @@ import fs.path
 from toolz import dicttoolz
 from python_on_whales import docker
 
-from ._internal._funcs import send_log
-from ._internal._funcs import stream_docker_logs
-from ._internal._funcs import create_buildx_builder
-from ._internal.groups import Environment
-from ._internal.groups import pass_environment
-from ._internal._configuration import DOCKERFILE_BUILD_HIERARCHY
-from ._internal._configuration import DOCKER_TARGETARCH_LINUX_UNAME_ARCH_MAPPING
+from ._utils import send_log
+from ._utils import stream_docker_logs
+from ._utils import create_buildx_builder
+from ._configuration import DOCKERFILE_BUILD_HIERARCHY
 
 if TYPE_CHECKING:
     GenericDict = t.Dict[str, t.Any]
@@ -31,6 +28,20 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 BUILDER_LIST = []
+
+# We only care about linux mapping to uname
+DOCKER_TARGETARCH_LINUX_UNAME_ARCH_MAPPING = {
+    "amd64": "x86_64",
+    "arm64v8": "aarch64",
+    "arm32v5": "armv7l",
+    "arm32v6": "armv7l",
+    "arm32v7": "armv7l",
+    "i386": "386",
+    "ppc64le": "ppc64le",
+    "s390x": "s390x",
+    "riscv64": "riscv64",
+    "mips64le": "mips64",
+}
 
 
 def process_docker_arch(arch: str) -> str:
@@ -103,9 +114,9 @@ def add_build_command(cli: click.Group) -> None:
         By default we will generate all given specs defined under manifest/<docker_package>.yml
         """
 
-        base_tag, build_tag = order_build_hierarchy(ctx, releases, skip_base=skip_base)
+        base_tag, base_tag = order_build_hierarchy(ctx, releases, skip_base=skip_base)
         base_buildx_args = [i for i in buildx_args(ctx, base_tag)]
-        build_buildx_args = [i for i in buildx_args(ctx, build_tag)]
+        build_buildx_args = [i for i in buildx_args(ctx, base_tag)]
 
         global BUILDER_LIST
 
@@ -133,9 +144,9 @@ def add_build_command(cli: click.Group) -> None:
             send_log("--dry-run, output tags to file.")
             with ctx._generated_dir.open(
                 "base_tag.meta.json", "w"
-            ) as f1, ctx._generated_dir.open("build_tag.meta.json", "w") as f2:
+            ) as f1, ctx._generated_dir.open("base_tag.meta.json", "w") as f2:
                 json.dump(base_tag, f1)
-                json.dump(build_tag, f2)
+                json.dump(base_tag, f2)
             return
 
         # We need to install QEMU to support multi-arch
@@ -172,7 +183,7 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
     for image_tag, tag_context in tags.items():
         (
             output_path,
-            build_tag,
+            base_tag,
             python_version,
             labels,
             target_file,
@@ -191,8 +202,8 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
         # "cache_to": f"type=registry,ref={ref},mode=max",
         cache_from = [{"type": "registry", "ref": ref}]
 
-        if build_tag != "":
-            build_base_image = build_tag.replace("$PYTHON_VERSION", python_version)
+        if base_tag != "":
+            build_base_image = base_tag.replace("$PYTHON_VERSION", python_version)
             base_ref = {
                 "type": "registry",
                 "ref": f"{registry}/{ctx.organization}/{build_base_image}",
@@ -255,7 +266,7 @@ def order_build_hierarchy(
     hierarchy = {
         tag: (
             meta["output_path"],
-            meta["build_tag"],
+            meta["base_tag"],
             cx.shared_context.python_version,
             {
                 "distro_name": cx.shared_context.distro_name,
@@ -274,14 +285,14 @@ def order_build_hierarchy(
     }
 
     base_tags = dicttoolz.keyfilter(lambda x: "base" in x, hierarchy)
-    build_tags = dicttoolz.keyfilter(lambda x: "base" not in x, hierarchy)
+    base_tags = dicttoolz.keyfilter(lambda x: "base" not in x, hierarchy)
 
     # non "base" items
     if ctx.distros:
         base_, build_ = {}, {}
         for distro in ctx.distros:
             base_.update(dicttoolz.keyfilter(lambda x: distro in x, base_tags))
-            build_.update(dicttoolz.keyfilter(lambda x: distro in x, build_tags))
+            build_.update(dicttoolz.keyfilter(lambda x: distro in x, base_tags))
         return base_, build_
     else:
-        return base_tags, build_tags
+        return base_tags, base_tags

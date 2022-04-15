@@ -1,9 +1,9 @@
-{{ metadata.header }}
+{{ header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
-{% for key in metadata.arch_context if key not in cached %}
+FROM --platform=$BUILDPLATFORM {{ organization }}/{{ base_tag }} as base
+{% for key in architectures if key not in cached %}
     {% if 'arm64' in key %}
 
 FROM base as base-arm64

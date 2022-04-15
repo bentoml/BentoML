@@ -29,7 +29,8 @@ common: &common
     - cudnn
     - devel
   dependencies:
-    cuda:
+    cuda: &cuda
+      version: 11.5.1
       cuda_url_suffixes: ""
       amd64:
         components:
@@ -122,287 +123,74 @@ common: &common
             version: 11.5.114-1
         requires: cuda>=11.5
 
+debian11:
+  <<: *common
+  architectures:
+    - amd64
+    - arm64v8
+  templates_dir: debian
+  base_image: debian:11-slim
+  suffixes: debian11
+  conda: true
+  dependencies:
+    cuda:
+      <<: *cuda
+      cuda_url_suffixes: ubuntu2004
+      ppc64le:
 
-w_cuda_v11.5.1:
-  debian11:
-    <<: *common
-    architectures:
-      - amd64
-      - arm64v8
-    templates_dir: debian
-    base_image: debian:11-slim
-    suffixes: debian11
-    conda: true
-    dependencies:
-      cuda:
-        cuda_url_suffixes: "ubuntu2004"
-        amd64:
-          components:
-            cudart:
-              version: 11.5.117-1
-            cudart_dev:
-              version: 11.5.117-1
-            cudnn8:
-              version: 8.3.1.22-1
-            libcublas:
-              version: 11.7.4.6-1
-            libcublas_dev:
-              version: 11.7.4.6-1
-            libcusparse:
-              version: 11.7.0.107-1
-            libcusparse_dev:
-              version: 11.7.0.107-1
-            libnccl2:
-              version: 2.11.4-1
-            libnccl2_dev:
-              version: 2.11.4-1
-            libnpp:
-              version: 11.5.1.107-1
-            libnpp_dev:
-              version: 11.5.1.107-1
-            nvml_dev:
-              version: 11.5.50-1
-            nvprof:
-              version: 11.5.114-1
-            nvtx:
-              version: 11.5.114-1
-          requires: cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441
-            brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471
-        arm64v8:
-          components:
-            cudart:
-              version: 11.5.117-1
-            cudart_dev:
-              version: 11.5.117-1
-            cudnn8:
-              version: 8.3.1.22-1
-            libcublas:
-              version: 11.7.4.6-1
-            libcublas_dev:
-              version: 11.7.4.6-1
-            libcusparse:
-              version: 11.7.0.107-1
-            libcusparse_dev:
-              version: 11.7.0.107-1
-            libnccl2:
-              version: 2.11.4-1
-            libnccl2_dev:
-              version: 2.11.4-1
-            libnpp:
-              version: 11.5.1.107-1
-            libnpp_dev:
-              version: 11.5.1.107-1
-            nvml_dev:
-              version: 11.5.50-1
-            nvprof:
-              version: 11.5.114-1
-            nvtx:
-              version: 11.5.114-1
-          requires: cuda>=11.5
+debian10:
+  <<: *common
+  architectures:
+    - amd64
+    - arm64v8
+  templates_dir: debian
+  base_image: debian:10-slim
+  suffixes: debian10
+  conda: true
+  dependencies:
+    cuda:
+      <<: *cuda
+      cuda_url_suffixes: ubuntu2004
+      ppc64le:
 
-  debian10:
-    <<: *common
-    architectures:
-      - amd64
-      - arm64v8
-    templates_dir: debian
-    base_image: debian:10-slim
-    suffixes: debian10
-    conda: true
-    dependencies:
-      cuda:
-        cuda_url_suffixes: "ubuntu2004"
-        amd64:
-          components:
-            cudart:
-              version: 11.5.117-1
-            cudart_dev:
-              version: 11.5.117-1
-            cudnn8:
-              version: 8.3.1.22-1
-            libcublas:
-              version: 11.7.4.6-1
-            libcublas_dev:
-              version: 11.7.4.6-1
-            libcusparse:
-              version: 11.7.0.107-1
-            libcusparse_dev:
-              version: 11.7.0.107-1
-            libnccl2:
-              version: 2.11.4-1
-            libnccl2_dev:
-              version: 2.11.4-1
-            libnpp:
-              version: 11.5.1.107-1
-            libnpp_dev:
-              version: 11.5.1.107-1
-            nvml_dev:
-              version: 11.5.50-1
-            nvprof:
-              version: 11.5.114-1
-            nvtx:
-              version: 11.5.114-1
-          requires: cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441
-            brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471
-        arm64v8:
-          components:
-            cudart:
-              version: 11.5.117-1
-            cudart_dev:
-              version: 11.5.117-1
-            cudnn8:
-              version: 8.3.1.22-1
-            libcublas:
-              version: 11.7.4.6-1
-            libcublas_dev:
-              version: 11.7.4.6-1
-            libcusparse:
-              version: 11.7.0.107-1
-            libcusparse_dev:
-              version: 11.7.0.107-1
-            libnccl2:
-              version: 2.11.4-1
-            libnccl2_dev:
-              version: 2.11.4-1
-            libnpp:
-              version: 11.5.1.107-1
-            libnpp_dev:
-              version: 11.5.1.107-1
-            nvml_dev:
-              version: 11.5.50-1
-            nvprof:
-              version: 11.5.114-1
-            nvtx:
-              version: 11.5.114-1
-          requires: cuda>=11.5
+ubi8:
+  <<: *common
+  templates_dir: rhel
+  base_image: registry.access.redhat.com/ubi8/{}:latest
+  suffixes: ubi8
+  ignore_python:
+    - "3.10"
+    - "3.7"
+  architectures:
+    - amd64
+    - arm64v8
+    - ppc64le
+  dependencies:
+    cuda:
+      <<: *cuda
+      cuda_url_suffixes: rhel8
 
-  ubi8:
-    <<: *common
-    templates_dir: rhel
-    base_image: registry.access.redhat.com/ubi8/{}:latest
-    suffixes: ubi8
-    ignore_python:
-      - "3.10"
-      - "3.7"
-    architectures:
-      - amd64
-      - arm64v8
-      - ppc64le
-    dependencies:
-      cuda:
-        cuda_url_suffixes: rhel8
-        amd64:
-          components:
-            cudart:
-              version: 11.5.117-1
-            cudart_dev:
-              version: 11.5.117-1
-            cudnn8:
-              version: 8.3.1.22-1
-            libcublas:
-              version: 11.7.4.6-1
-            libcublas_dev:
-              version: 11.7.4.6-1
-            libcusparse:
-              version: 11.7.0.107-1
-            libcusparse_dev:
-              version: 11.7.0.107-1
-            libnccl2:
-              version: 2.11.4-1
-            libnccl2_dev:
-              version: 2.11.4-1
-            libnpp:
-              version: 11.5.1.107-1
-            libnpp_dev:
-              version: 11.5.1.107-1
-            nvml_dev:
-              version: 11.5.50-1
-            nvprof:
-              version: 11.5.114-1
-            nvtx:
-              version: 11.5.114-1
-          requires: cuda>=11.5 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441
-            brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461 brand=tesla,driver>=470,driver<471
-        arm64v8:
-          components:
-            cudart:
-              version: 11.5.117-1
-            cudart_dev:
-              version: 11.5.117-1
-            cudnn8:
-              version: 8.3.1.22-1
-            libcublas:
-              version: 11.7.4.6-1
-            libcublas_dev:
-              version: 11.7.4.6-1
-            libcusparse:
-              version: 11.7.0.107-1
-            libcusparse_dev:
-              version: 11.7.0.107-1
-            libnccl2:
-              version: 2.11.4-1
-            libnccl2_dev:
-              version: 2.11.4-1
-            libnpp:
-              version: 11.5.1.107-1
-            libnpp_dev:
-              version: 11.5.1.107-1
-            nvml_dev:
-              version: 11.5.50-1
-            nvprof:
-              version: 11.5.114-1
-            nvtx:
-              version: 11.5.114-1
-          requires: cuda>=11.5
-        ppc64le:
-          components:
-            cudart:
-              version: 11.5.117-1
-            cudart_dev:
-              version: 11.5.117-1
-            cudnn8:
-              version: 8.3.1.22-1
-            libcublas:
-              version: 11.7.4.6-1
-            libcublas_dev:
-              version: 11.7.4.6-1
-            libnccl2:
-              version: 2.11.4-1
-            libnccl2_dev:
-              version: 2.11.4-1
-            libnpp:
-              version: 11.5.1.107-1
-            libnpp_dev:
-              version: 11.5.1.107-1
-            nvml_dev:
-              version: 11.5.50-1
-            nvprof:
-              version: 11.5.114-1
-            nvtx:
-              version: 11.5.114-1
-          requires: cuda>=11.5
+amazonlinux2:
+  <<: *common
+  architectures:
+    - amd64
+    - arm64v8
+  templates_dir: ami2
+  suffixes: amazonlinux2
+  base_image: amazonlinux:2
+  dependencies: null
+  release_types:
+    - base
+    - runtime
 
-  amazonlinux2:
-    <<: *common
-    architectures:
-      - amd64
-      - arm64v8
-    templates_dir: ami2
-    suffixes: amazonlinux2
-    base_image: amazonlinux:2
-    dependencies: null
-    release_types:
-      - base
-      - runtime
-
-  alpine3.14:
-    <<: *common
-    base_image: alpine:3.14
-    templates_dir: alpine
-    suffixes: alpine3.14
-    dependencies: null
-    release_types:
-      - base
-      - runtime
-      - devel
+alpine3.14:
+  <<: *common
+  base_image: alpine:3.14
+  templates_dir: alpine
+  suffixes: alpine3.14
+  dependencies: null
+  release_types:
+    - base
+    - runtime
+    - devel
 

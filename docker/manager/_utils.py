@@ -11,6 +11,7 @@ from pathlib import Path
 from functools import wraps
 
 import cattr
+import fs
 from jinja2 import Environment
 from fs.base import FS
 from simple_di import inject
@@ -152,42 +153,34 @@ CUSTOM_FUNCTION: t.Dict[str, GenericFunc[...]] = {"contains_key": _contains_key}
 
 @inject
 def render_template(
-    input_name: str,
-    inp_fs: FS,
+    input_path: str,
     output_path: str,
-    out_fs: FS,
     *,
-    output_name: t.Optional[str] = None,
-    arch: t.Optional[str] = None,
-    build_tag: t.Optional[str] = None,
-    custom_function: t.Optional[t.Dict[str, GenericFunc[t.Any]]] = None,
-    fs: FS = Provide[DockerManagerContainer.root_fs],
+    inp_fs: FS = Provide[DockerManagerContainer.templates_fs],
+    out_fs: FS = Provide[DockerManagerContainer.generated_fs],
+    root_fs: FS = Provide[DockerManagerContainer.root_fs],
+    base_tag: t.Optional[str] = None,
+    custom_jinja_function: t.Optional[t.Dict[str, GenericFunc[t.Any]]] = None,
     **kwargs: t.Any,
 ) -> None:
 
-    if output_name is not None:
-        output_name_ = output_name
-    else:
-        output_name_ = preprocess_template_paths(input_name, arch)
-
-    out_path_fs = out_fs.makedirs(output_path, recreate=True)
-
-    docker_loader = FileSystemLoader(fs.getsyspath("/"), followlinks=True)
+    dirs, output_name_ = fs.path.split(output_path)
+    out_path_fs = out_fs.makedirs(dirs, recreate=True)
 
     template_env = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
         trim_blocks=True,
         lstrip_blocks=True,
-        loader=docker_loader,
+        loader=FileSystemLoader(root_fs.getsyspath("/"), followlinks=True),
     )
 
-    if custom_function is not None:
-        CUSTOM_FUNCTION.update(custom_function)
+    if custom_jinja_function is not None:
+        CUSTOM_FUNCTION.update(custom_jinja_function)
     template_env.globals.update(CUSTOM_FUNCTION)
 
-    with inp_fs.open(input_name, "r") as inf:
+    with inp_fs.open(input_path, "r") as inf:
         template = template_env.from_string(inf.read())
 
-    content = template.render(build_tag=build_tag, **kwargs)
+    content = template.render(base_tag=base_tag, **kwargs)
     out_path_fs.writetext(output_name_, content, newline="\n")
     out_path_fs.close()

@@ -1,10 +1,10 @@
-{{ metadata.header }}
+{{ header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG XX_VERSION={{ xx_version }}
 
 FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
 
-FROM {{ metadata.base_image }} as python
+FROM {{ base_image }} as python
 ARG PYTHON_VERSION
 
 ENV PYTHON_VERSION="${PYTHON_VERSION}"
@@ -41,7 +41,7 @@ cd Python-"${FULL_VERSION}"/ && ./configure --enable-optimizations
 make -j4 install
 EOT
 
-FROM {{ metadata.base_image }} as base
+FROM {{ base_image }} as base
 
 COPY --from=xx / /
 
@@ -59,7 +59,7 @@ FROM base-${TARGETARCH}
 ARG TARGETARCH
 
 # setup ENV and ARG
-{% for key, value in metadata.envars.items() if key not in ["BENTOML_VERSION","LC_ALL","LANG"] %}
+{% for key, value in envars.items() if key not in ["BENTOML_VERSION","LC_ALL","LANG"] %}
 {% if key in ["PYTHON_VERSION"] %}
 ARG {{ key }}
 {% else %}

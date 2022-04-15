@@ -1,9 +1,9 @@
-{{ metadata.header }}
+{{ header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
 {% set pip_options = ['--no-cache-dir'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
+FROM --platform=$BUILDPLATFORM {{ organization }}/{{ base_tag }} as base
 
 FROM base as base-arm64
 
@@ -13,7 +13,7 @@ FROM base-${TARGETARCH}
 
 ARG TARGETARCH
 
-ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+ENV BENTOML_VERSION={{ envars['BENTOML_VERSION'] }}
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     pip install bentoml==${BENTOML_VERSION} {{ pip_options|join(' ') }}

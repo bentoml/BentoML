@@ -1,8 +1,8 @@
-{{ metadata.header }}
+{{ header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM {{ metadata.organization }}/{{ build_tag }} as base
+FROM {{ organization }}/{{ base_tag }} as base
 
 ENV NVIDIA_CUDA_LIB_VERSION {{ cuda.version.full + "-1" }}
 
@@ -97,7 +97,7 @@ ENV NVIDIA_CUDNN_VERSION {{ cudnn_version }}
 ENV NVIDIA_CUDNN_PACKAGE "libcudnn{{ cuda.arm64v8.cudnn.major_version }}=$NVIDIA_CUDNN_VERSION-1+cuda{{ cuda.version.major }}.{{ cuda.version.minor }}"
 ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda.arm64v8.cudnn.major_version }}"
 {% endif -%}
-{% for key in metadata.arch_context if key not in cached %}
+{% for key in architectures if key not in cached %}
     {% if 'arm32' in key %}
 
 FROM base as base-arm
@@ -161,7 +161,7 @@ RUN xx-apt-get install -y --no-install-recommends \
 # Keep apt from auto upgrading the cublas and nccl packages. See https://gitlab.com/nvidia/container-images/cuda/-/issues/88
 RUN apt-mark hold ${NVIDIA_CUDNN_PACKAGE_NAME} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}{% if has_libnccl_package %} ${NVIDIA_LIBNCCL_PACKAGE_NAME}{% endif %}
 
-ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+ENV BENTOML_VERSION={{ envars['BENTOML_VERSION'] }}
 
 ARG MAMBA_DOCKERFILE_ACTIVATE 1
 

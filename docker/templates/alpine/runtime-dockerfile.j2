@@ -1,19 +1,19 @@
-{{ metadata.header }}
+{{ header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM {{ metadata.organization }}/{{ build_tag }} as base
+FROM --platform=$BUILDPLATFORM {{ organization }}/{{ base_tag }} as base
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+ENV BENTOML_VERSION={{ envars['BENTOML_VERSION'] }}
 
 RUN --mount=type=cache,target=/var/cache/apk \
     xx-apk add --update musl-dev build-base linux-headers g++
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     pip install bentoml==${BENTOML_VERSION} --no-cache-dir
-{% for key in metadata.arch_context if key not in cached -%}
+{% for key in architectures if key not in cached -%}
     {% if 'arm64' in key %}
 
 FROM base as base-arm64

@@ -115,7 +115,7 @@ RUN xx-apt-get install -y --no-install-recommends \
 
 # Keep apt from auto upgrading the cublas and nccl packages. See https://gitlab.com/nvidia/container-images/cuda/-/issues/88
 RUN apt-mark hold ${NVIDIA_CUDNN_PACKAGE_NAME} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME} ${NVIDIA_LIBNCCL_PACKAGE_NAME}
-ENV BENTOML_VERSION=1.0.0a6
+ENV BENTOML_VERSION=1.0.0a7
 
 ARG MAMBA_DOCKERFILE_ACTIVATE 1
 

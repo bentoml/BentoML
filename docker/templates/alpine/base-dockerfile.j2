@@ -1,4 +1,4 @@
-{{ metadata.header }}
+{{ header }}
 {% set cached = ['arm32v5', 'arm32v6'] %}
 ARG PYTHON_VERSION
 
@@ -9,7 +9,7 @@ ARG RELEASE_DISTROS={{ distros }}
 FROM --platform=$BUILDPLATFORM {{ xx_image }}:${XX_VERSION} AS xx
 
 FROM --platform=$BUILDPLATFORM python:${PYTHON_VERSION}-${RELEASE_DISTROS} as base
-{% for key in metadata.arch_context if key not in cached -%}
+{% for key in architectures if key not in cached -%}
     {% if 'arm64' in key %}
 
 FROM base as base-arm64
@@ -38,7 +38,7 @@ ENV PATH /usr/local/bin:$PATH
 ENV ENV /root/.bashrc
 
 CMD [ "/bin/bash" ]
-{% for key, value in metadata.envars.items() if key != "BENTOML_VERSION"%}
+{% for key, value in envars.items() if key != "BENTOML_VERSION"%}
 {% if key in ["PYTHON_VERSION"] %}
 
 ARG {{ key }}

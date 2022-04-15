@@ -63,8 +63,8 @@ class SupportedArchitecture:
 class CUDACtx:
     cuda_suffix_url: str
     version: CUDAVersion
-    amd64: t.Optional[SupportedArchitecture]
-    arm64v8: t.Optional[SupportedArchitecture]
+    amd64: SupportedArchitecture
+    arm64v8: SupportedArchitecture
     ppc64le: t.Optional[SupportedArchitecture]
     cuda_repo_url: str = attrs.field(init=False)
     ml_repo_url: str = attrs.field(init=False)
@@ -78,7 +78,7 @@ class CUDACtx:
 def generate_cuda_context(
     dependencies: t.Dict[str, GenericDict],
 ) -> t.Tuple[t.Dict[str, SupportedArchitecture], str]:
-    cuda_req = dependencies.get("cuda", None)  # type: ignore
+    cuda_req = dependencies.get("cuda", None)
 
     cuda_supported_arch = {}
     suffix = ""

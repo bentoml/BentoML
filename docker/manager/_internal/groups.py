@@ -19,7 +19,6 @@ from ._make import BuildCtx
 from ._make import ReleaseCtx
 from ._make import set_generation_context
 from ._funcs import raise_exception
-from .exceptions import ManagerException
 from ._configuration import get_manifest_info
 from ._configuration import SUPPORTED_OS_RELEASES
 from ._configuration import DockerManagerContainer
@@ -234,7 +233,7 @@ class ManagerCommandGroup(click.Group):
 
             if docker_package and docker_package != DockerManagerContainer.default_name:
                 if cuda_version is None:
-                    raise ManagerException(
+                    raise Exception(
                         "--cuda-version must be passed with --docker-package"
                     )
                 get_distro_info = get_manifest_info(
@@ -268,7 +267,7 @@ class ManagerCommandGroup(click.Group):
         def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             try:
                 return func(*args, **kwargs)
-            except ManagerException as err:
+            except Exception as err:
                 msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
                 raise ClickException(click.style(msg, fg="red")) from err
 
@@ -284,7 +283,7 @@ class ManagerCommandGroup(click.Group):
         def wrapper(func: AnyWrapperCLI) -> click.Command:
             # add common parameters to command.
             wrapped = ManagerCommandGroup.common_params(func, self)
-            # If ManagerException raise ClickException instead before exit.
+            # If Exception raise ClickException instead before exit.
             wrapped = ManagerCommandGroup.raise_click_exception(wrapped, self, **kwargs)
 
             # move common parameters to end of the parameters list

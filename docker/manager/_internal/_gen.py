@@ -19,7 +19,6 @@ from yamlinclude import YamlIncludeConstructor
 from ._make import CUDACtx
 from ._funcs import send_log
 from ._funcs import render_template
-from .exceptions import ManagerGenerateFailed
 from ._configuration import DOCKERFILE_BUILD_HIERARCHY
 from ._configuration import SUPPORTED_ARCHITECTURE_TYPE
 
@@ -96,7 +95,7 @@ def gen_dockerfiles(ctx: Environment):
 
     registry = os.environ.get("DOCKER_REGISTRY", None)
     if registry is None:
-        raise ManagerGenerateFailed("Failed to retrieve docker registry from envars.")
+        raise Exception("Failed to retrieve docker registry from envars.")
 
     cached = []
     for builds, tags in zip(ctx.build_ctx.values(), ctx.release_ctx.values()):

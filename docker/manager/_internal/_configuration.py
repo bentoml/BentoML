@@ -14,8 +14,6 @@ from simple_di import Provide
 from simple_di import container
 from simple_di.providers import SingletonFactory
 
-from .exceptions import ManagerException
-
 if TYPE_CHECKING:
     from fs.base import FS
 
@@ -25,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 #########################################################
 
-SUPPORTED_PYTHON_VERSION = ["3.6", "3.7", "3.8", "3.9", "3.10"]
+SUPPORTED_PYTHON_VERSION = ["3.7", "3.8", "3.9", "3.10"]
 DOCKERFILE_BUILD_HIERARCHY = ("base", "runtime", "cudnn", "devel")
 SUPPORTED_ARCHITECTURE_TYPE = ["amd64", "arm64v8", "ppc64le", "s390x"]
 SUPPORTED_OS_RELEASES = [
@@ -83,7 +81,7 @@ def get_manifest_info(
     manifest_fs = docker_fs_.opendir("manifest")
     fname = f"{docker_package}.cuda_v{cuda_version}.yaml"
     if not manifest_fs.exists(fname):
-        raise ManagerException(f"{fname} doesn't exist under manifest directory.")
+        raise Exception(f"{fname} doesn't exist under manifest directory.")
 
     with manifest_fs.open(fname, "r", encoding="utf-8") as f:
         manifest = yaml.load(f.read(), Loader=yaml.FullLoader)

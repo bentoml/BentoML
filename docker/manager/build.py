@@ -20,7 +20,6 @@ from ._internal._funcs import stream_docker_logs
 from ._internal._funcs import create_buildx_builder
 from ._internal.groups import Environment
 from ._internal.groups import pass_environment
-from ._internal.exceptions import ManagerBuildFailed
 from ._internal._configuration import DOCKERFILE_BUILD_HIERARCHY
 from ._internal._configuration import DOCKER_TARGETARCH_LINUX_UNAME_ARCH_MAPPING
 
@@ -168,7 +167,7 @@ def buildx_args(ctx: Environment, tags: Tags) -> t.Generator[GenericDict, None, 
 
     registry = os.environ.get("DOCKER_REGISTRY", None)
     if registry is None:
-        raise ManagerBuildFailed("Failed to retrieve docker registry from envars.")
+        raise Exception("Failed to retrieve docker registry from envars.")
 
     for image_tag, tag_context in tags.items():
         (

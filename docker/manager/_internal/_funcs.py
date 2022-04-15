@@ -21,7 +21,6 @@ from python_on_whales import docker
 from python_on_whales.exceptions import DockerException
 from python_on_whales.components.buildx.cli_wrapper import Builder
 
-from .exceptions import ManagerException
 from ._configuration import DockerManagerContainer
 
 if TYPE_CHECKING:
@@ -99,7 +98,7 @@ def raise_exception(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
         try:
             return func(*args, **kwargs)
         except Exception as err:  # pylint: disable=broad-except
-            raise ManagerException from err
+            raise err
 
     return wrapper
 

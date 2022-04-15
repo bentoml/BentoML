@@ -25,7 +25,7 @@ common model serving scenarios.
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_array: np.ndarray) -> np.ndarray:
         # Define pre-processing logic
-        result = await runner.run(input_array)
+        result = runner.run(input_array)
         # Define post-processing logic
         return result
 
@@ -59,9 +59,10 @@ two runners simultaneously, and returns the better result.
         )
         return compare_results(results)
 
-The asynchronous API implementation is more efficient because while the coroutine is awaiting for 
-results from the feature store or the model runners, the event loop is freed up to serve another request. 
-BentoML will intelligently create an optimally sized event loop based on the available number of CPU cores. Further tuning of event loop configuration is not needed under common use cases.
+The asynchronous API implementation is more efficient because when an asynchronous method is invoked, the event loop is
+released to service other requests while this request awaits the results of the method. In addition, BentoML will automatically
+configure the ideal amount of parallelism based on the available number of CPU cores. Further tuning of event loop configuration
+is not needed under common use cases.
 
 IO Descriptors
 --------------
@@ -168,4 +169,6 @@ descriptor can be customized with independent schema and validation logic.
 
 .. todo::
 
-    Add further reading section
+Further Reading
+---------------
+- :ref:`API Reference for IO descriptors <api-io-descriptors>`

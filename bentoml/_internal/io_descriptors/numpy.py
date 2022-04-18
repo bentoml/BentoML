@@ -151,9 +151,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return {"type": self._infer_types()}
         return {}
 
-    def input_type(
-        self,
-    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+    def input_type(self) -> LazyType["ext.NpNDArray"]:
         return LazyType("numpy", "NdArray")
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:

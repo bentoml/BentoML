@@ -14,11 +14,14 @@ from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_responses
 
 if TYPE_CHECKING:
+    from types import UnionType
+
     from .file import File
     from .json import JSON
     from .text import Text
     from .image import Image
     from .numpy import NumpyNdarray
+    from ..types import LazyType
     from .pandas import PandasSeries
     from .pandas import PandasDataFrame
 
@@ -160,8 +163,19 @@ class Multipart(IODescriptor[MultipartIO]):
             ],
         ] = inputs
 
-    def input_type(self) -> t.Dict[str, t.Type[t.Any]]:
-        return {k: v.input_type() for (k, v) in self._inputs.items()}
+    def input_type(
+        self,
+    ) -> t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]]:
+        res: t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]] = {}
+        for (k, v) in self._inputs.items():
+            inp_type = v.input_type()
+            if isinstance(inp_type, dict):
+                raise TypeError(
+                    "A multipart descriptor cannot take a multi-valued I/O descriptor as input"
+                )
+            res[k] = inp_type
+
+        return res
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {

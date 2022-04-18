@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # Check for parquet support
 @functools.lru_cache(maxsize=1)
-def get_parquet_engine():
+def get_parquet_engine() -> str:
     if importlib.util.find_spec("pyarrow") is not None:
         return "pyarrow"
     elif importlib.util.find_spec("fastparquet") is not None:
@@ -45,7 +45,9 @@ def get_parquet_engine():
         logger.warning(
             "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
         )
-        return None
+        raise MissingDependencyException(
+            "Parquet serialization is not available. Try installing pyarrow or fastparquet first."
+        )
 
 
 def _infer_type(item: str) -> str:  # pragma: no cover
@@ -260,7 +262,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
     def input_type(
         self,
-    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+    ) -> LazyType["ext.PdDataFrame"]:
         return LazyType("pandas", "DataFrame")
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
@@ -462,7 +464,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         )
 
 
-class PandasSeries(IODescriptor["ext.PdSeries"]):
+class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -591,7 +593,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
 
     def input_type(
         self,
-    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+    ) -> LazyType["ext.PdSeries[t.Any]"]:
         return LazyType("pandas", "Series")
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
@@ -605,7 +607,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         """Returns OpenAPI schema for outgoing responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> "ext.PdSeries":
+    async def from_http_request(self, request: Request) -> "ext.PdSeries[t.Any]":
         """
         Process incoming requests and convert incoming
          objects to `pd.Series`
@@ -651,7 +653,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         return Response(None, media_type=MIME_TYPE_JSON)
 
     async def finalize_http_response(
-        self, response: Response, obj: t.Union[t.Any, "ext.PdSeries"]
+        self, response: Response, obj: t.Union[t.Any, "ext.PdSeries[t.Any]"]
     ):
         """
         Process given objects and convert it to HTTP response.
@@ -663,7 +665,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if not LazyType["ext.PdSeries"](pd.Series).isinstance(obj):
+        if not LazyType["ext.PdSeries[t.Any]"](pd.Series).isinstance(obj):
             raise InvalidArgument(
                 f"return object is not of type `pd.Series`, got type {type(obj)} instead"
             )

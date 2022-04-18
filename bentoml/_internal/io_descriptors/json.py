@@ -14,6 +14,8 @@ from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
+    from types import UnionType
+
     import pydantic
 
     from .. import external_typing as ext  # noqa
@@ -40,7 +42,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
             return o.item()
         if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(o):
             return o.to_dict()  # type: ignore[attr-defined]
-        if LazyType["ext.PdSeries"]("pandas.Series").isinstance(o):
+        if LazyType["ext.PdSeries[t.Any]"]("pandas.Series").isinstance(o):
             return o.to_dict()  # type: ignore[attr-defined]
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(o):
             obj_dict = o.dict()
@@ -141,9 +143,7 @@ class JSON(IODescriptor[JSONType]):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
-    def input_type(
-        self,
-    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+    def input_type(self) -> "UnionType":
         return JSONType
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:

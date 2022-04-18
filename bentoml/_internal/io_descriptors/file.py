@@ -8,7 +8,6 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from ..types import FileLike
-from ..types import LazyType
 from ..utils.http import finalize_http_response
 from ...exceptions import BentoMLException
 
@@ -79,9 +78,7 @@ class File(IODescriptor[FileLike]):
             mime_type if mime_type is not None else "application/octet-stream"
         )
 
-    def input_type(
-        self,
-    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+    def input_type(self) -> t.Type[t.Any]:
         return FileLike
 
     def openapi_schema_type(self) -> t.Dict[str, str]:

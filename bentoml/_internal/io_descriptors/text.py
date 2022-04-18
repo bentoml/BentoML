@@ -4,7 +4,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from ..types import LazyType
 from ..utils.http import finalize_http_response
 
 MIME_TYPE = "text/plain"
@@ -74,9 +73,7 @@ class Text(IODescriptor[str]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that strings type.
     """
 
-    def input_type(
-        self,
-    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+    def input_type(self) -> t.Type[str]:
         return str
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:

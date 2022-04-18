@@ -17,6 +17,8 @@ from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
 
 if TYPE_CHECKING:
+    from types import UnionType
+
     import PIL.Image
 
     from .. import external_typing as ext  # noqa
@@ -146,9 +148,7 @@ class Image(IODescriptor[ImageType]):
         self._pilmode: t.Optional["_Mode"] = pilmode
         self._format = self.MIME_EXT_MAPPING[mime_type]
 
-    def input_type(
-        self,
-    ) -> t.Union[t.Type[t.Any], LazyType[t.Any], t.Dict[str, t.Type[t.Any]]]:
+    def input_type(self) -> "UnionType":
         return ImageType
 
     def openapi_schema_type(self) -> t.Dict[str, str]:
@@ -168,7 +168,7 @@ class Image(IODescriptor[ImageType]):
         if mime_type == "multipart/form-data":
             form = await request.form()
             bytes_ = await next(iter(form.values())).read()
-        elif mime_type.startswith("image/") or content_type == self._mime_type:
+        elif mime_type.startswith("image/") or mime_type == self._mime_type:
             bytes_ = await request.body()
         else:
             raise BadInput(

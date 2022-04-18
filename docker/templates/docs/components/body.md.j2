@@ -1,7 +1,4 @@
 {% if emphemeral != True %}
-{% if main_readme == True %}
-{% extends "templates/docs/markdown/development.md" %}
-{% else %}
 ## Latest tags for `{{ bentoml_package }} {{ bentoml_release_version }}`
 
 {% for distros, tag_list in tag_ref.items() %}
@@ -32,9 +29,8 @@
     {% for (tag, path) in tags_path %}
         {% if bentoml_package in tag %}
         {% set tagname = tag.split(':')[1] %}
-        {% print "- [`" %}{% print tagname %}{% print "`](https://github.com/bentoml/BentoML/tree/main/docker/generated/" %}{% print path %}{% print ")\n" %}
+        {% print "- [`" %}{% print tagname %}{% print "`](https://github.com/bentoml/BentoML/tree/main/docker/generated" %}{% print path %}{% print ")\n" %}
         {% endif %}
     {% endfor %}
 {% endfor %}
-{% endif %}
 {% endif %}

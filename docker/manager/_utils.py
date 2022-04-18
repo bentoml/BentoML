@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import wraps
 
-import cattr
 import fs
+import cattr
 from jinja2 import Environment
 from fs.base import FS
 from simple_di import inject
@@ -181,6 +181,7 @@ def render_template(
     with inp_fs.open(input_path, "r") as inf:
         template = template_env.from_string(inf.read())
 
-    content = template.render(base_tag=base_tag, **kwargs)
+    content = template.render(base_tag=base_tag or {}, **kwargs)
+    print(content)
     out_path_fs.writetext(output_name_, content, newline="\n")
     out_path_fs.close()

@@ -66,7 +66,7 @@ If you need to use UBI and Python 3.7 make sure to contact the BentoML team for 
 
 ## NOTICE: CONDA AVAILABILITY ONLY ON DEBIAN
 
-From 1.0.0a7 onwards, BentoML will only provide conda supports with debian variants only.
+From 1.0.0a8 onwards, BentoML will only provide conda supports with debian variants only.
 
 We ran into a lot of trouble building BentoML to supports Python from 3.6 to 3.10 with conda environment on other distros than debian. In order to reduce 
 complexity we will now only provides conda on Debian-based image. Conda will be available with all of BentoML image type, including `runtime`, `devel`, `cudnn`. 
@@ -74,6 +74,6 @@ complexity we will now only provides conda on Debian-based image. Conda will be 
 If you need to use conda on other distros contact the BentoML team for supports.
 
 Example conda tags:
-- `bento-server:1.0.0a7-python3.8-debian11-runtime-conda`
-- `bento-server:1.0.0a7-python3.8-debian11-cudnn-conda`
+- `bento-server:1.0.0a8-python3.8-debian11-runtime-conda`
+- `bento-server:1.0.0a8-python3.8-debian11-cudnn-conda`
 - `bento-server:devel-python3.8-debian11-cudnn-conda`

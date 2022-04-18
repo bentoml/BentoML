@@ -4,9 +4,9 @@ import click
 from manager import __version__ as MANAGER_VERSION
 
 from .build import add_build_command
+from .groups import ManagerCommandGroup
 from .generate import add_generation_command
 from .authenticate import add_authenticate_command
-from .groups import ManagerCommandGroup
 
 logger = logging.getLogger(__name__)
 

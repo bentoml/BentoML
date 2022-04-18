@@ -2,20 +2,20 @@ from __future__ import annotations
 
 import typing as t
 import logging
-from copy import deepcopy
 from typing import TYPE_CHECKING
 from itertools import product
-from collections import defaultdict
-import cattrs
 
 import fs
 import attrs
+import cattrs
 import attrs.converters
 from fs.base import FS
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
 from ._utils import send_log
-from ._utils import inject_deepcopy_args, preprocess_template_paths
+from ._utils import inject_deepcopy_args
+from ._utils import preprocess_template_paths
 from ._configuration import DockerManagerContainer
 
 if TYPE_CHECKING:
@@ -144,31 +144,8 @@ def generate_envars(
     return args
 
 
-@inject
-def generate_base_tags(
-    suffixes: str,
-    conda: bool,
-    *,
-    docker_package: str = DockerManagerContainer.docker_package,
-) -> t.Dict[str, str]:
-    base_tag = {}
-    base_ = (
-        docker_package
-        + ":"
-        + TAG_FORMAT.format(
-            release_type="base",
-            python_version="$PYTHON_VERSION",
-            suffixes=suffixes,
-        )
-    )
-    base_tag = {"base": base_, "conda": ""}
-    if conda:
-        base_tag["conda"] = base_ + "-conda"
-    return base_tag
-
-
 @attrs.define
-class FileGenerationContext:
+class DockerfileGenerationContext:
 
     distros: str
     release_type: str = attrs.field(
@@ -234,115 +211,100 @@ class FileGenerationContext:
         }
 
 
-def create_tags_per_distros(context: ReleaseCtx) -> t.Dict[str, DictStrList]:
-    # returns a list of strings following the build hierarchy
+@attrs.define
+class DistrosManifest:
+    templates_dir: str
+    suffixes: str
+    base_image: str
+    conda: bool
+    ignore_python: t.Optional[t.List[str]]
+    header: str
+    envars: t.List[str]
+    architectures: t.List[str]
+    release_types: t.List[str]
+    dependencies: t.Dict[str, GenericDict]
 
-    metadata = {}
-    base_tag = context.docker_package + ":"
-    for rt in context.release_types:
-        images, builds = [], []
+    python_versions: t.Iterable[str] = attrs.field(init=False)
 
-        # generate releases tag
+    def __attrs_post_init__(self):
+        if self.ignore_python is None:
+            self.python_versions = DockerManagerContainer.SUPPORTED_PYTHON_VERSION
+        else:
+            self.python_versions = tuple(
+                [
+                    i
+                    for i in DockerManagerContainer.SUPPORTED_PYTHON_VERSION
+                    if i not in self.ignore_python
+                ]
+            )
+
+
+@inject
+def generate_base_tags(
+    suffixes: str,
+    conda: bool,
+    *,
+    docker_package: str = DockerManagerContainer.docker_package,
+) -> t.Dict[str, str]:
+    base_tag = {}
+    base_ = (
+        docker_package
+        + ":"
+        + TAG_FORMAT.format(
+            release_type="base",
+            python_version="$PYTHON_VERSION",
+            suffixes=suffixes,
+        )
+    )
+    base_tag = {"base": base_, "conda": ""}
+    if conda:
+        base_tag["conda"] = base_ + "-conda"
+    return base_tag
+
+
+@inject
+def generate_releases_tags_mapping(
+    distros_name: str,
+    distros: DistrosManifest,
+    *,
+    bentoml_version: str = Provide[DockerManagerContainer.bentoml_version],
+) -> t.List[t.Tuple[str, str]]:
+    # distros is the dictionary representation from manifest file.
+    metadata = []
+    prefix_ = f"{DockerManagerContainer.docker_package}:"
+
+    for rt, python_version in product(distros.release_types, distros.python_versions):
+        if rt == "base":
+            continue
+
+        git_tree_path = fs.path.join(
+            f"/{DockerManagerContainer.docker_package}", distros_name, rt
+        )
+
         if rt not in ["runtime", "cudnn"]:
             tag = TAG_FORMAT.format(
                 release_type=rt,
-                python_version=context.python_version,
-                suffixes=context.tag_suffix,
+                python_version=python_version,
+                suffixes=distros.suffixes,
             )
         else:
             tag = "-".join(
                 [
                     TAG_FORMAT.format(
-                        release_type=context.bentoml_version,
-                        python_version=context.python_version,
-                        suffixes=context.tag_suffix,
+                        release_type=bentoml_version,
+                        python_version=python_version,
+                        suffixes=distros.suffixes,
                     ),
                     rt,
                 ]
             )
-        image_tag = base_tag + tag
-
-        images.append(image_tag)
-        if context.conda:
-            images.append(f"{image_tag}-conda")
-
-        # generate base image tag
-        base_tag = ""
-        conda_base_tag = ""
-        if rt != "base":
-            base_tag = (
-                context.docker_package
-                + ":"
-                + TAG_FORMAT.format(
-                    release_type="base",
-                    python_version="$PYTHON_VERSION",
-                    suffixes=context.tag_suffix,
+        release_tags = f"{prefix_}{tag}"
+        metadata.append((release_tags, fs.path.combine(git_tree_path, "Dockerfile")))
+        if distros.conda:
+            metadata.append(
+                (
+                    release_tags + "-conda",
+                    fs.path.combine(git_tree_path, "Dockerfile-conda"),
                 )
             )
-            if context.conda:
-                conda_base_tag = base_tag + "-conda"
-        builds += [base_tag, conda_base_tag]
-
-        metadata[rt] = {"image_tag": images, "base_tag": builds}
-
     return metadata
-
-
-@attrs.define
-class ReleaseCtx:
-    tag_suffix: str
-    templates_dir: str
-    docker_package: str
-    conda: bool
-
-    ignore_python: t.Optional[t.List[str]]
-
-    release_types: t.List[str] = attrs.field(
-        validator=lambda _, __, value: set(value).issubset(DOCKERFILE_BUILD_HIERARCHY),
-    )
-    release_tags: GenericDict = attrs.field(init=False)
-
-    def __attrs_post_init__(self):
-        self.release_tags = create_tags_context(self)
-
-
-@inject
-def create_tags_context(
-    context: ReleaseCtx, fs_: FS = Provide[DockerManagerContainer.generated_fs]
-) -> GenericDict:
-
-    tags = create_tags_per_distros(context)
-
-    release_tag = {}
-
-    for release_type in context.release_types:
-        tag = tags[release_type]
-
-        for image_tag, base_tag in zip(tag["image_tag"], tag["base_tag"]):
-
-            output_path = fs.path.join(
-                context.docker_package,
-                context.distro_name,
-                release_type,
-            )
-
-            if "conda" in image_tag:
-                dockerfile = "Dockerfile-conda"
-                filters = [f"conda-{release_type}-*.j2"]
-            else:
-                dockerfile = "Dockerfile"
-                filters = [f"{release_type}-*.j2"]
-
-            git_tree_path = fs.path.combine(output_path, dockerfile)
-
-            release_tag[image_tag] = {
-                "output_path": output_path,
-                "base_tag": base_tag,
-                "input_paths": [
-                    f
-                    for f in fs_.walk.files(filter=filters)
-                    if context.templates_dir in f
-                ],
-                "git_tree_path": git_tree_path,
-            }
-    return release_tag

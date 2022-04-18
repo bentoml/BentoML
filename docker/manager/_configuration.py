@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import os
-import platform
 import typing as t
-import importlib.metadata
 import logging
+import importlib.metadata
 from typing import TYPE_CHECKING
 from pathlib import Path
 
 import fs
 import yaml
-from simple_di import inject, container
+from simple_di import inject
 from simple_di import Provide
+from simple_di import container
 from simple_di.providers import SingletonFactory
 
 if TYPE_CHECKING:
@@ -51,9 +51,12 @@ class ManagerContainerClass:
     @SingletonFactory
     @staticmethod
     def bentoml_version() -> str:
-        version = importlib.metadata.version("bentoml").split("+")[0]
-        version = version.rsplit(".", maxsplit=1)[0]
-        return version
+        try:
+            return os.environ["DOCKER_BENTOML_VERSION"]
+        except KeyError:
+            version = importlib.metadata.version("bentoml").split("+")[0]
+            version = version.rsplit(".", maxsplit=1)[0]
+            return version
 
     @SingletonFactory
     @staticmethod

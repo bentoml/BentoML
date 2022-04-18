@@ -12,7 +12,7 @@ FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-a
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-ENV BENTOML_VERSION=1.0.0a7
+ENV BENTOML_VERSION=1.0.0a8
 
 RUN --mount=type=cache,target=/var/cache/apk \
     xx-apk add --update musl-dev build-base linux-headers g++

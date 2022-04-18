@@ -12,8 +12,8 @@ from simple_di import Provide
 
 from bentoml.exceptions import InvalidArgument
 
+from ._internal.tag import Tag
 from ._internal.bento import Bento
-from ._internal.types import Tag
 from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
@@ -291,7 +291,17 @@ def build(
         build_ctx=build_ctx,
         model_store=_model_store,
     ).save(_bento_store)
-    logger.info("Bento build success, %s created", bento)
+    logger.info(
+        """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
+    )
+    logger.info('Successfully built %s at "%s"', bento, bento.path)
     return bento
 
 
@@ -355,7 +365,7 @@ def containerize(
     no_cache: bool = False,
     platform: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-):
+) -> bool:
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
@@ -386,8 +396,10 @@ def containerize(
         subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
+        return False
     else:
         logger.info(f'Successfully built docker image "{docker_image_tag}"')
+        return True
 
 
 __all__ = [

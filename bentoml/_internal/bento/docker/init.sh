@@ -20,9 +20,9 @@ if [ $# -eq 0 ] || [ $1 == "ensure_python" ] ; then
   if [ -f ./env/python/version.txt ]; then
     PY_VERSION_SAVED=$(cat ./env/python/version.txt)
     # remove PATCH version - since most patch version only contains backwards compatible
-    # bug fixes and the BentoML defautl docker base image will include the latest
+    # bug fixes and the BentoML default docker base image will include the latest
     # patch version of each Python minor release
-    DESIRED_PY_VERSION=${PY_VERSION_SAVED:0:3} # returns 3.7, 3.8 or 3.9
+    DESIRED_PY_VERSION=${PY_VERSION_SAVED%.*} # returns major.minor
     CURRENT_PY_VERSION=$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 
     if [[ "$DESIRED_PY_VERSION" == "$CURRENT_PY_VERSION" ]]; then

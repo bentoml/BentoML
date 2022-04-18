@@ -7,8 +7,8 @@ import yaml
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model as BentoModel
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -171,13 +171,13 @@ def save(*args: str, **kwargs: str) -> None:  # noqa # pylint: disable
 save.__doc__ = SAVE_WARNING
 
 
-@inject
 def import_from_uri(
     name: str,
     uri: str,
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Imports a MLFlow model format to BentoML modelstore via given URI.
@@ -194,13 +194,18 @@ def import_from_uri(
                 - :code:`runs:/<mlflow_run_id>/run-relative/path/to/model`
                 - :code:`models:/<model_name>/<model_version>`
                 - :code:`models:/<model_name>/<stage>`
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`~bentoml._internal.types.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
+        :obj:`~bentoml.Tag`: A :obj:`~bentoml.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
 
     Example:
 
@@ -247,31 +252,33 @@ def import_from_uri(
         "pip_dependencies": [f"mlflow=={get_pkg_version('mlflow')}"],
     }
 
-    _model = BentoModel.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        labels=labels,
+        custom_objects=custom_objects,
         options=None,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
 
-    _model.info.options = {"uri": uri}
-    mlflow_obj_path = _download_artifact_from_uri(uri, output_path=_model.path)
-    _model.info.options["mlflow_folder"] = os.path.relpath(mlflow_obj_path, _model.path)
-    exists, _ = _validate_file_exists("MLproject", mlflow_obj_path)
-    if exists:
-        raise BentoMLException("BentoML doesn't accept MLflow Projects.")
-    exists, fpath = _validate_file_exists("MLmodel", mlflow_obj_path)
-    if not exists:
-        raise BentoMLException("Downloaded path is not a valid MLflow Model.")
-    with Path(fpath).open("r") as mf:
-        conf = yaml.safe_load(mf.read())
-        flavor = conf["flavors"]["python_function"]
-        _model.info.options["flavor"] = flavor["loader_module"]
+        _model.info.options = {"uri": uri}
+        mlflow_obj_path = _download_artifact_from_uri(uri, output_path=_model.path)
+        _model.info.options["mlflow_folder"] = os.path.relpath(
+            mlflow_obj_path, _model.path
+        )
+        exists, _ = _validate_file_exists("MLproject", mlflow_obj_path)
+        if exists:
+            raise BentoMLException("BentoML doesn't accept MLflow Projects.")
+        exists, fpath = _validate_file_exists("MLmodel", mlflow_obj_path)
+        if not exists:
+            raise BentoMLException("Downloaded path is not a valid MLflow Model.")
+        with Path(fpath).open("r") as mf:
+            conf = yaml.safe_load(mf.read())
+            flavor = conf["flavors"]["python_function"]
+            _model.info.options["flavor"] = flavor["loader_module"]
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _PyFuncRunner(BaseModelRunner):
@@ -280,7 +287,7 @@ class _PyFuncRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, self.model_store)
 
     def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._model.predict(*args, **kwargs)  # type: ignore

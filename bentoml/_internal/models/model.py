@@ -15,9 +15,9 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import Tag
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
@@ -91,7 +91,7 @@ class Model(StoreItem):
         name: str,
         *,
         module: str = "",
-        labels: t.Optional[t.Dict[str, t.Any]] = None,
+        labels: t.Optional[t.Dict[str, str]] = None,
         options: t.Optional[t.Dict[str, t.Any]] = None,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -151,7 +151,7 @@ class Model(StoreItem):
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "Model":
         self._save(model_store)
-        logger.info(f"Successfully saved {self}")
+
         return self
 
     def _save(self, model_store: "ModelStore") -> "Model":

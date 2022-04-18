@@ -6,8 +6,8 @@ import cloudpickle  # type: ignore
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 
 from ..models import PKL_EXT
@@ -61,13 +61,13 @@ def load(
         return pickle.load(f)
 
 
-@inject
 def save(
     name: str,
     obj: t.Any,
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -77,13 +77,18 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         obj:
             Instance of an object to be saved.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -103,13 +108,19 @@ def save(
     """
     context = {"framework_name": "picklable_model"}
 
-    _model = Model.create(name, module=MODULE_NAME, metadata=metadata, context=context)
+    with bentoml.models.create(
+        name,
+        module=MODULE_NAME,
+        labels=labels,
+        custom_objects=custom_objects,
+        metadata=metadata,
+        context=context,
+    ) as _model:
 
-    with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
-        cloudpickle.dump(obj, f)
+        with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
+            cloudpickle.dump(obj, f)
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _PicklableModelRunner(BaseModelRunner):
@@ -123,10 +134,10 @@ class _PicklableModelRunner(BaseModelRunner):
 
     @property
     def num_replica(self) -> int:
-        return max(int(self.resource_quota.cpu), 1)
+        return max(round(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         if self._method_name == "__call__":
             self._infer_func = self._model
         else:
@@ -146,10 +157,10 @@ class _PicklableModelSimpleRunner(BaseModelSimpleRunner):
 
     @property
     def num_replica(self) -> int:
-        return max(int(self.resource_quota.cpu), 1)
+        return max(round(self.resource_quota.cpu), 1)
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
 
         if self._method_name == "__call__":
             self._infer_func = self._model

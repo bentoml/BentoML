@@ -8,19 +8,21 @@ from datetime import timezone
 import fs
 import attr
 import yaml
-import cattr
 import fs.osfs
 import pathspec
 import fs.errors
 import fs.mirror
 from fs.copy import copy_file
+from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import Tag
 from ..types import PathType
+from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
 from ...exceptions import InvalidArgument
@@ -32,14 +34,19 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from fs.base import FS
 
+    from bentoml import Runner
+
     from ..models import Model
     from ..service import Service
+    from ..runner.runner import SimpleRunner
+    from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
 
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
+DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
 
 def get_default_bento_readme(svc: "Service"):
@@ -95,7 +102,7 @@ class Bento(StoreItem):
     def _export_ext() -> str:
         return "bento"
 
-    @__fs.validator
+    @__fs.validator  # type: ignore
     def check_fs(self, _attr: t.Any, new_fs: "FS"):
         try:
             new_fs.makedir("models", recreate=True)
@@ -149,7 +156,9 @@ class Bento(StoreItem):
         assert os.path.isdir(build_ctx), f"build ctx {build_ctx} does not exist"
 
         # This also verifies that svc can be imported correctly
-        svc = import_service(build_config.service, working_dir=build_ctx)
+        svc = import_service(
+            build_config.service, working_dir=build_ctx, change_global_cwd=True
+        )
 
         # Apply default build options
         build_config = build_config.with_defaults()
@@ -260,10 +269,14 @@ class Bento(StoreItem):
             tag,
             bento_fs,
             BentoInfo(
-                tag,
-                svc,  # type: ignore # attrs converters do not typecheck
-                build_config.labels,
-                list(seen_model_tags),
+                tag=tag,
+                service=svc,  # type: ignore # attrs converters do not typecheck
+                labels=build_config.labels,
+                models=[BentoModelInfo.from_bento_model(m) for m in models],
+                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners.values()],
+                apis=[
+                    BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
+                ],
             ),
         )
         # Create bento.yaml
@@ -321,13 +334,14 @@ class Bento(StoreItem):
 
     @inject
     def save(
-        self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
+        self,
+        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     ) -> "Bento":
         self.flush_info()
 
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
-            raise BentoMLException("Failed to save Bento because it was invalid")
+            raise BentoMLException("Failed to save Bento because it was invalid.")
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
@@ -371,32 +385,77 @@ class BentoStore(Store[Bento]):
         super().__init__(base_path, Bento)
 
 
+@attr.define
+class BentoRunnerInfo:
+    name: str
+    runner_type: str
+
+    @classmethod
+    def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "BentoRunnerInfo":
+        # Add runner default resource quota and batching config here
+        return cls(
+            name=r.name,  # type: ignore
+            runner_type=r.__class__.__name__,
+        )
+
+
+@attr.define
+class BentoApiInfo:
+    name: str
+    input_type: str
+    output_type: str
+
+    @classmethod
+    def from_inference_api(cls, api: "InferenceAPI") -> "BentoApiInfo":
+        return cls(
+            name=api.name,
+            input_type=api.input.__class__.__name__,
+            output_type=api.output.__class__.__name__,
+        )
+
+
+@attr.define
+class BentoModelInfo:
+    tag: Tag = attr.field(converter=Tag.from_taglike)
+    module: str
+    creation_time: datetime
+
+    @classmethod
+    def from_bento_model(cls, bento_model: "Model") -> "BentoModelInfo":
+        return cls(
+            tag=bento_model.tag,
+            module=bento_model.info.module,
+            creation_time=bento_model.info.creation_time,
+        )
+
+
 @attr.define(repr=False, frozen=True)
 class BentoInfo:
     tag: Tag
     service: str = attr.field(
         converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
     )  # type: ignore[reportPrivateUsage]
-    labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
-    models: t.List[Tag]  # TODO: populate with model & framework info
-    bentoml_version: str = BENTOML_VERSION
+    name: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
+    version: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
+    bentoml_version: str = attr.field(default=BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+
+    labels: t.Dict[str, t.Any] = attr.field(factory=dict)
+    models: t.List[BentoModelInfo] = attr.field(factory=list)
+    runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
+    apis: t.List[BentoApiInfo] = attr.field(factory=list)
 
     _flushed: bool = False
 
     def __attrs_post_init__(self):
+        # Direct set is not available when frozen=True
+        object.__setattr__(self, "name", self.tag.name)
+        object.__setattr__(self, "version", self.tag.version)
+
         self.validate()
 
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return {
-            "service": self.service,
-            "name": self.tag.name,
-            "version": self.tag.version,
-            "bentoml_version": self.bentoml_version,
-            "creation_time": self.creation_time,
-            "labels": self.labels,
-            "models": [str(model) for model in self.models],
-        }
+        return bentoml_cattr.unstructure(self)
 
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
@@ -415,14 +474,39 @@ class BentoInfo:
         del yaml_content["name"]
         del yaml_content["version"]
 
+        if "models" in yaml_content:
+            # For backwards compatibility for bentos created prior to version 1.0.0a7
+            models = yaml_content["models"]
+            if models and len(models) > 0 and isinstance(models[0], str):
+                yaml_content["models"] = list(
+                    map(
+                        lambda model_tag: {
+                            "tag": model_tag,
+                            "module": "unknown",
+                            "creation_time": datetime.fromordinal(1),
+                        },
+                        models,
+                    )
+                )
         try:
-            return cattr.structure(yaml_content, cls)  # type: ignore[attr-defined]
+            # type: ignore[attr-defined]
+            return bentoml_cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")
 
     def validate(self):
         # Validate bento.yml file schema, content, bentoml version, etc
         ...
+
+
+bentoml_cattr.register_unstructure_hook(
+    BentoInfo,
+    # Ignore internal private state "_flushed"
+    # Ignore tag, tag is saved via the name and version field
+    make_dict_unstructure_fn(
+        BentoInfo, bentoml_cattr, _flushed=override(omit=True), tag=override(omit=True)
+    ),
+)
 
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:

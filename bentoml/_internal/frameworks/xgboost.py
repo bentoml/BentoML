@@ -5,8 +5,8 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -112,14 +112,14 @@ def load(
     )
 
 
-@inject
 def save(
     name: str,
     model: "xgb.core.Booster",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -131,13 +131,18 @@ def save(
             Instance of model to be saved
         booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, default to :code:`None`):
             Params for booster initialization
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -163,18 +168,19 @@ def save(
         "pip_dependencies": [f"xgboost=={get_pkg_version('xgboost')}"],
     }
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=__name__,
         options=booster_params,
         context=context,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}"))
-    _model.save(model_store)
+        model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}"))
 
-    return _model.tag
+        return _model.tag
 
 
 class _XgBoostRunner(BaseModelRunner):
@@ -208,7 +214,7 @@ class _XgBoostRunner(BaseModelRunner):
             booster_params["nthread"] = 1
         else:
             booster_params["predictor"] = "cpu_predictor"
-            booster_params["nthread"] = int(round(self.resource_quota.cpu))
+            booster_params["nthread"] = max(round(self.resource_quota.cpu), 1)
 
         return booster_params
 
@@ -216,6 +222,7 @@ class _XgBoostRunner(BaseModelRunner):
         self._model = load(
             self._tag,
             booster_params=self._booster_params,
+            model_store=self.model_store,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 

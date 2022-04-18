@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -147,13 +147,13 @@ def load(
     )
 
 
-@inject
 def save(
     name: str,
     model: t.Union[onnx.ModelProto, PathType],
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -163,13 +163,18 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (Union[onnx.ModelProto, path-like object]):
             Instance of model to be saved.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -222,21 +227,21 @@ def save(
         ],
     }
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
         context=context,
-    )
+    ) as _model:
 
-    if isinstance(model, onnx.ModelProto):
-        onnx.save_model(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
-    else:
-        shutil.copyfile(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+        if isinstance(model, onnx.ModelProto):
+            onnx.save_model(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+        else:
+            shutil.copyfile(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
 
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _ONNXRunner(BaseModelRunner):
@@ -317,7 +322,7 @@ class _ONNXRunner(BaseModelRunner):
     def _num_threads(self) -> int:
         if self.resource_quota.on_gpu:
             return 1
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:
@@ -332,6 +337,7 @@ class _ONNXRunner(BaseModelRunner):
             backend=self._backend,
             providers=self._providers,
             session_options=session_options,
+            model_store=self.model_store,
         )
         self._infer_func = getattr(self._model, "run")
 

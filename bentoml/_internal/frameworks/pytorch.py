@@ -7,14 +7,13 @@ import cloudpickle
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from .common.pytorch import torch
 from .common.pytorch import BasePyTorchRunner
 from .common.pytorch import PyTorchTensorContainer  # pylint: disable=unused-import
@@ -78,13 +77,13 @@ def load(
     return model
 
 
-@inject
 def save(
     name: str,
     model: "torch.nn.Module",
     *,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -94,13 +93,18 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (:code:`torch.nn.Module`):
             Instance of model to be saved
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -144,25 +148,27 @@ def save(
         "framework_name": "torch",
         "pip_dependencies": [f"torch=={get_pkg_version('torch')}"],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        labels=labels,
+        custom_objects=custom_objects,
         options=None,
         context=context,
         metadata=metadata,
-    )
-    weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    _model.info.context["model_format"] = "torch.save:v1"
-    with open(weight_file, "wb") as file:
-        torch.save(model, file, pickle_module=cloudpickle)
+    ) as _model:
+        weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+        _model.info.context["model_format"] = "torch.save:v1"
+        with open(weight_file, "wb") as file:
+            torch.save(model, file, pickle_module=cloudpickle)
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _PyTorchRunner(BasePyTorchRunner):
     def _load_model(self):
-        return load(self._tag, device_id=self._device_id)
+        return load(self._tag, device_id=self._device_id, model_store=self.model_store)
 
 
 def load_runner(

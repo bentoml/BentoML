@@ -1,3 +1,7 @@
+# type: ignore[reportUnusedFunction]
+import sys
+import typing as t
+
 import click
 
 from bentoml.bentos import containerize as containerize_bento
@@ -5,7 +9,7 @@ from bentoml.bentos import containerize as containerize_bento
 from ..utils.docker import validate_tag
 
 
-def add_containerize_command(cli):
+def add_containerize_command(cli: click.Group) -> None:
     @cli.command(
         help="Containerizes given Bento into a ready-to-use Docker image.",
     )
@@ -21,7 +25,14 @@ def add_containerize_command(cli):
     @click.option("--label", multiple=True, help="docker image label")
     @click.option("--no-cache", is_flag=True, default=False)
     @click.option("--platform", default=None)
-    def containerize(bento_tag, docker_image_tag, build_arg, label, no_cache, platform):
+    def containerize(
+        bento_tag: str,
+        docker_image_tag: str,
+        build_arg: t.List[str],
+        label: t.List[str],
+        no_cache: bool,
+        platform: str,
+    ) -> None:
         """Containerize specified Bento.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -55,7 +66,7 @@ def add_containerize_command(cli):
                 key, value = build_arg_str.split("=")
                 build_args[key] = value
 
-        return containerize_bento(
+        exit_code = not containerize_bento(
             bento_tag,
             docker_image_tag=docker_image_tag,
             build_args=build_args,
@@ -63,3 +74,4 @@ def add_containerize_command(cli):
             no_cache=no_cache,
             platform=platform,
         )
+        sys.exit(exit_code)

@@ -53,10 +53,22 @@ def train_h2o_aml() -> h2o.automl.H2OAutoML:
 
 @pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_h2o_save_load(train_h2o_aml, metadata):
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
     test_df: pd.DataFrame = pd.read_json(json.dumps(TEST_DATA))
     model = train_h2o_aml.leader
 
-    tag = bentoml.h2o.save(TEST_MODEL_NAME, model, metadata=metadata)
+    tag = bentoml.h2o.save(
+        TEST_MODEL_NAME,
+        model,
+        metadata=metadata,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
 
     h2o_loaded: h2o.model.model_base.ModelBase = bentoml.h2o.load(
         tag,
@@ -65,3 +77,8 @@ def test_h2o_save_load(train_h2o_aml, metadata):
     # fmt: off
     assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(h2o_loaded, test_df)  # noqa
     # fmt: on
+
+    bentomodel = bentoml.models.get(tag)
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)

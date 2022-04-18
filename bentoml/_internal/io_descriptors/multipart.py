@@ -59,7 +59,7 @@ class Multipart(IODescriptor[MultipartIO]):
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
-        [INFO] API Server running on http://0.0.0.0:5000
+        [INFO] API Server running on http://0.0.0.0:3000
 
     Users can then send requests to the newly started services with any client:
 
@@ -75,11 +75,11 @@ class Multipart(IODescriptor[MultipartIO]):
                         'field2': ('filename', open('test.json', 'rb'), 'application/json')}
                 )
 
-            requests.post('http://0.0.0.0:5000/predict', data=m, headers={'Content-Type': m.content_type})
+            requests.post('http://0.0.0.0:3000/predict', data=m, headers={'Content-Type': m.content_type})
 
         .. code-tab:: bash
 
-            % curl -X POST -H "Content-Type: multipart/form-data" -F annotations=@test.json -F arr='[5,4,3,2]' http://0.0.0.0:5000/predict
+            % curl -X POST -H "Content-Type: multipart/form-data" -F annotations=@test.json -F arr='[5,4,3,2]' http://0.0.0.0:3000/predict
 
             --b1d72c201a064ecd92a17a412eb9208e
             Content-Disposition: form-data; name="output"

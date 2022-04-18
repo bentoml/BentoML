@@ -9,7 +9,7 @@ import fs
 import fs.errors
 from fs.base import FS
 
-from .types import Tag
+from .tag import Tag
 from .types import PathType
 from .exportable import Exportable
 from ..exceptions import NotFound
@@ -29,8 +29,7 @@ class StoreItem(Exportable):
         raise NotImplementedError
 
     @classmethod
-    @property
-    def typename(cls) -> str:
+    def get_typename(cls) -> str:
         return cls.__name__
 
     @property
@@ -48,7 +47,7 @@ class StoreItem(Exportable):
         raise NotImplementedError
 
     def __repr__(self):
-        return f'{self.typename}(tag="{self.tag}")'
+        return f'{self.get_typename()}(tag="{self.tag}")'
 
 
 Item = t.TypeVar("Item", bound=StoreItem)
@@ -85,7 +84,7 @@ class Store(ABC, t.Generic[Item]):
         if _tag.version is None:
             if not self._fs.isdir(_tag.name):
                 raise NotFound(
-                    f"no {self._item_type.typename}s with name '{_tag.name}' found"
+                    f"no {self._item_type.get_typename()}s with name '{_tag.name}' found"
                 )
 
             tags = sorted(
@@ -105,6 +104,25 @@ class Store(ABC, t.Generic[Item]):
         """
         return self._item_type.from_fs(self._fs.opendir(tag.path()))
 
+    def _recreate_latest(self, tag: Tag):
+        try:
+            items = self.list(tag.name)
+        except NotFound:
+            raise NotFound(
+                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._fs}"
+            )
+
+        if len(items) == 0:
+            raise NotFound(
+                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._fs}"
+            )
+
+        items.sort(reverse=True, key=lambda item: item.creation_time)
+        tag.version = items[0].tag.version
+
+        with self._fs.open(tag.latest_path(), "w") as latest_file:
+            latest_file.write(tag.version)
+
     def get(self, tag: t.Union[Tag, str]) -> Item:
         """
         store.get("my_bento")
@@ -115,10 +133,11 @@ class Store(ABC, t.Generic[Item]):
         if _tag.version is None or _tag.version == "latest":
             try:
                 _tag.version = self._fs.readtext(_tag.latest_path())
+
+                if not self._fs.exists(_tag.path()):
+                    self._recreate_latest(_tag)
             except fs.errors.ResourceNotFound:
-                raise NotFound(
-                    f"no {self._item_type.typename}s with name '{_tag.name}' exist in BentoML store {self._fs}"
-                )
+                self._recreate_latest(_tag)
 
         path = _tag.path()
         if self._fs.exists(path):
@@ -128,7 +147,7 @@ class Store(ABC, t.Generic[Item]):
         counts = matches.count().directories
         if counts == 0:
             raise NotFound(
-                f"{self._item_type.typename} '{tag}' is not found in BentoML store {self._fs}"
+                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}"
             )
         elif counts == 1:
             match = next(iter(matches))
@@ -166,7 +185,7 @@ class Store(ABC, t.Generic[Item]):
         _tag = Tag.from_taglike(tag)
 
         if not self._fs.exists(_tag.path()):
-            raise NotFound(f"{self._item_type.typename} '{tag}' not found")
+            raise NotFound(f"{self._item_type.get_typename()} '{tag}' not found")
 
         self._fs.removetree(_tag.path())
         if self._fs.isdir(_tag.name):

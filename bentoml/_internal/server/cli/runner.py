@@ -16,15 +16,15 @@ import click
 
 
 @click.command()
-@click.argument("bento_identifier", type=click.STRING)
-@click.argument("runner_name", type=click.STRING)
-@click.argument("bind", type=click.STRING)
+@click.argument("bento_identifier", type=click.STRING, required=False, default=".")
+@click.option("--runner-name", type=click.STRING, required=True)
+@click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
 def main(
-    bento_identifier: str = "",
-    runner_name: str = "",
-    bind: str = "",
-    working_dir: t.Optional[str] = None,
+    bento_identifier: str,
+    runner_name: str,
+    bind: str,
+    working_dir: t.Optional[str],
 ) -> None:
     """
     Start a runner server.
@@ -46,7 +46,7 @@ def main(
 
     ServiceContext.component_name_var.set(runner_name)
 
-    svc = load(bento_identifier, working_dir=working_dir)
+    svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
     runner = svc.runners[runner_name]
     app = t.cast("ASGI3Application", RunnerAppFactory(runner)())
 
@@ -80,4 +80,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

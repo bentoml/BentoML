@@ -2,7 +2,6 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-import psutil
 import pytest
 import catboost as cbt
 from catboost.core import CatBoost
@@ -44,6 +43,8 @@ def create_catboost_model() -> cbt.core.CatBoostClassifier:
 def save_procedure(
     model_params: t.Dict[str, t.Any],
     metadata: t.Dict[str, t.Any],
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> "Tag":
     catboost_model = create_catboost_model()
     tag_info = bentoml.catboost.save(
@@ -51,6 +52,8 @@ def save_procedure(
         catboost_model,
         model_params=model_params,
         metadata=metadata,
+        labels=labels,
+        custom_objects=custom_objects,
     )
     return tag_info
 
@@ -70,13 +73,30 @@ def forbidden_procedure():
 
 
 @pytest.mark.parametrize(
-    "model_params, metadata", [(dict(model_type="classifier"), {"acc": 0.876})]
+    "model_params, metadata",
+    [
+        (
+            dict(model_type="classifier"),
+            {"acc": 0.876},
+        ),
+    ],
 )
 def test_catboost_save_load(
     model_params: t.Dict[str, t.Any],
     metadata: t.Dict[str, t.Any],
 ) -> None:
-    tag = save_procedure(model_params, metadata)
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = save_procedure(
+        model_params,
+        metadata,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
     _model = bentoml.models.get(tag)
     assert _model.info.metadata is not None
     assert_have_file_extension(_model.path, ".cbm")
@@ -84,6 +104,9 @@ def test_catboost_save_load(
     cbt_loaded = bentoml.catboost.load(_model.tag, model_params=model_params)
     assert isinstance(cbt_loaded, CatBoostClassifier)
     assert cbt_loaded.predict(test_df) == np.array([1])
+    for k in labels.keys():
+        assert labels[k] == _model.info.labels[k]
+    assert _model.custom_objects["func"](3) == custom_f(3)
 
 
 def test_catboost_load_exc() -> None:
@@ -119,5 +142,5 @@ def test_catboost_runner_setup_run_batch() -> None:
     runner = bentoml.catboost.load_runner(tag)
 
     assert tag in runner.required_models
-    assert runner.num_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
     assert runner.run_batch(test_df) == np.array([1])

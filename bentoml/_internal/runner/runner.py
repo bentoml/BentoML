@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING
 import attr
 import psutil
 
+from ..tag import Tag
 from .utils import cpu_converter
 from .utils import gpu_converter
 from .utils import mem_converter
 from .utils import query_cgroup_cpu_count
-from ..types import Tag
 from ..utils import cached_property
 from ..configuration.containers import DeploymentContainer
 

@@ -61,15 +61,17 @@ def sklearn_onnx_model():
 
 @pytest.fixture()
 def save_proc(sklearn_onnx_model):
-    def _(metadata):
+    def _(metadata, labels=None, custom_objects=None):
         model, _ = sklearn_onnx_model
         tag = bentoml.onnx.save(
             TEST_MODEL_NAME,
             model,
             metadata=metadata,
+            labels=labels,
+            custom_objects=custom_objects,
         )
-        info = bentoml.models.get(tag)
-        return info
+        bentomodel = bentoml.models.get(tag)
+        return bentomodel
 
     return _
 
@@ -84,9 +86,9 @@ def wrong_module(sklearn_onnx_model):
         options=None,
         metadata=None,
         context=None,
-    ) as _model:
-        onnx.save(model, _model.path_of("saved_model.onnx"))
-        return _model.path
+    ) as bentomodel:
+        onnx.save(model, bentomodel.path_of("saved_model.onnx"))
+        return bentomodel.path
 
 
 @pytest.mark.parametrize(
@@ -97,15 +99,24 @@ def wrong_module(sklearn_onnx_model):
     ],
 )
 def test_onnx_save_load(metadata, save_proc, sklearn_onnx_model):
-    model, data = sklearn_onnx_model
-    model = save_proc(metadata)
-    assert model.info.metadata is not None
-    assert_have_file_extension(model.path, ".onnx")
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    _, data = sklearn_onnx_model
+    bentomodel = save_proc(metadata, labels=labels, custom_objects={"func": custom_f})
+    assert bentomodel.info.metadata is not None
+    assert_have_file_extension(bentomodel.path, ".onnx")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
     opts = ort.SessionOptions()
     opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
     opts.log_verbosity_level = 1
-    loaded = bentoml.onnx.load(model.tag, session_options=opts)
+    loaded = bentoml.onnx.load(bentomodel.tag, session_options=opts)
     assert predict_arr(loaded, data)[0] == 0
 
 
@@ -131,12 +142,12 @@ def test_load_raise_exc(kwargs, exc, sklearn_onnx_model):
 
 def test_onnx_runner_setup_run_batch(save_proc, sklearn_onnx_model):
     _, data = sklearn_onnx_model
-    info = save_proc(None)
-    runner = bentoml.onnx.load_runner(info.tag)
+    bentomodel = save_proc(None)
+    runner = bentoml.onnx.load_runner(bentomodel.tag)
     res = runner.run_batch(data)
     np.testing.assert_array_equal(res[0], res_arr)
 
-    assert info.tag in runner.required_models
+    assert bentomodel.tag in runner.required_models
     assert runner.num_replica == 1
     assert isinstance(runner._model, ort.InferenceSession)
 
@@ -179,8 +190,8 @@ def test_onnx_runner_with_partial_inputs(tmpdir, bias_pair):
 @pytest.mark.gpus
 def test_sklearn_runner_setup_on_gpu(save_proc, sklearn_onnx_model):
     _, data = sklearn_onnx_model
-    info = save_proc(None)
-    runner = bentoml.onnx.load_runner(info.tag, backend="onnxruntime-gpu")
+    bentomodel = save_proc(None)
+    runner = bentoml.onnx.load_runner(bentomodel.tag, backend="onnxruntime-gpu")
     _ = runner.run_batch(data)
     assert runner.num_replica == 1
     assert "CUDAExecutionProvider" in runner._model.get_providers()

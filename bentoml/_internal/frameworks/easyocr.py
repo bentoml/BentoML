@@ -7,8 +7,8 @@ import numpy as np
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -80,7 +80,6 @@ def load(
     )
 
 
-@inject
 def save(
     name: str,
     model: easyocr.Reader,
@@ -88,8 +87,9 @@ def save(
     lang_list: t.Optional[t.List[str]] = None,
     recog_network: t.Optional[str] = "english_g2",
     detect_model: t.Optional[str] = "craft_mlt_25k",
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -106,13 +106,18 @@ def save(
             Should be same as `easyocr.Reader(recog_network=...)`
         detect_model (:code:`str`, `optional`, default to :code:`craft_mlt_25k`):
             Model used for detection pipeline.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.ModelStore`, default to :code:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -157,29 +162,28 @@ def save(
         recog_network=recog_network,
     )
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        labels=labels,
+        custom_objects=custom_objects,
         options=options,
         context=context,
         metadata=metadata,
-    )
+    ) as _model:
+        src_folder: str = model.model_storage_directory
 
-    src_folder: str = model.model_storage_directory
+        detect_filename: str = f"{detect_model}{PTH_EXT}"
+        if not os.path.exists(_model.path_of(detect_filename)):
+            shutil.copyfile(
+                os.path.join(src_folder, detect_filename),
+                _model.path_of(detect_filename),
+            )
 
-    detect_filename: str = f"{detect_model}{PTH_EXT}"
-    if not os.path.exists(_model.path_of(detect_filename)):
-        shutil.copyfile(
-            os.path.join(src_folder, detect_filename),
-            _model.path_of(detect_filename),
-        )
+            fname: str = f"{recog_network}{PTH_EXT}"
+            shutil.copyfile(os.path.join(src_folder, fname), _model.path_of(fname))
 
-        fname: str = f"{recog_network}{PTH_EXT}"
-        shutil.copyfile(os.path.join(src_folder, fname), _model.path_of(fname))
-
-    _model.save(model_store)
-
-    return _model.tag
+        return _model.tag
 
 
 class _EasyOCRRunner(BaseModelRunner):
@@ -204,7 +208,7 @@ class _EasyOCRRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(self, input_data: "ext.NpNDArray") -> "ext.NpNDArray":  # type: ignore

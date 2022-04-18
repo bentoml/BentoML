@@ -1,8 +1,8 @@
 import typing as t
+from typing import TYPE_CHECKING
 
 import numpy as np
 import joblib
-import psutil
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 
@@ -24,16 +24,22 @@ res_arr = np.array(
 )
 
 # fmt: on
-if t.TYPE_CHECKING:
-    from bentoml._internal.types import Tag
+if TYPE_CHECKING:
+    from bentoml import Tag
 
 
-def save_procedure(metadata: t.Dict[str, t.Any]) -> "Tag":
+def save_procedure(
+    metadata: t.Dict[str, t.Any],
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+) -> "Tag":
     model, _ = sklearn_model_data(clf=RandomForestClassifier)
     tag_info = bentoml.sklearn.save(
         "test_sklearn_model",
         model,
         metadata=metadata,
+        labels=labels,
+        custom_objects=custom_objects,
     )
     return tag_info
 
@@ -60,13 +66,22 @@ def forbidden_procedure() -> "Tag":
     ],
 )
 def test_sklearn_save_load(metadata: t.Dict[str, t.Any]) -> None:
-    _, data = sklearn_model_data(clf=RandomForestClassifier)
-    tag = save_procedure(metadata)
-    _model = bentoml.models.get(tag)
-    assert _model.info.metadata is not None
-    assert_have_file_extension(_model.path, ".pkl")
 
-    loaded = bentoml.sklearn.load(_model.tag)
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    _, data = sklearn_model_data(clf=RandomForestClassifier)
+    tag = save_procedure(metadata, labels=labels, custom_objects={"func": custom_f})
+    bentomodel = bentoml.models.get(tag)
+    assert bentomodel.info.metadata is not None
+    assert_have_file_extension(bentomodel.path, ".pkl")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
+
+    loaded = bentoml.sklearn.load(bentomodel.tag)
 
     assert isinstance(loaded, RandomForestClassifier)
 

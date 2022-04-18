@@ -43,13 +43,27 @@ def predict_df(model: pl.LightningModule, df: pd.DataFrame):
 
 
 def test_pl_save_load():
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
     model: "pl.LightningModule" = AdditionModel()
-    tag = bentoml.pytorch_lightning.save("pytorch_lightning_test", model)
-    bentoml_model = bentoml.models.get(tag)
-    assert_have_file_extension(bentoml_model.path, ".pt")
-    assert bentoml_model.info.context.get("model_format") == "pytorch_lightning:v1"
+    tag = bentoml.pytorch_lightning.save(
+        "pytorch_lightning_test",
+        model,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
+    bentomodel = bentoml.models.get(tag)
+    assert_have_file_extension(bentomodel.path, ".pt")
+    assert bentomodel.info.context.get("model_format") == "pytorch_lightning:v1"
 
     pl_loaded: "pl.LightningModule" = bentoml.pytorch_lightning.load(tag)
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
     assert predict_df(pl_loaded, test_df) == [[6, 5, 4, 3]]
 

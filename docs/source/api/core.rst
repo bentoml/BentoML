@@ -26,7 +26,7 @@ Runner
 Tag
 ---
 
-.. autoclass:: bentoml._internal.types.Tag
+.. autoclass:: bentoml.Tag
 
 
 Model

@@ -8,8 +8,8 @@ from importlib import import_module
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -241,15 +241,15 @@ def load(
         return None, tmodel, tfe  # type: ignore
 
 
-@inject
 def save(
     name: str,
     obj: t.Union["ext.TransformersModelType", "ext.TransformersPipeline"],  # type: ignore
     *,
     tokenizer: t.Optional["ext.TransformersTokenizerType"] = None,  # type: ignore
     feature_extractor: t.Optional["ext.PreTrainedFeatureExtractor"] = None,  # type: ignore
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -274,12 +274,17 @@ def save(
             accordingly to your use case provided by :obj:`transformers`. Refers to
             `Feature Extractor API <https://huggingface.co/docs/transformers/main_classes/feature_extractor>`_
             for more information
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -316,62 +321,65 @@ def save(
         "feature_extractor": False,
     }
 
-    _model = Model.create(
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         context=context,
         options=options,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
-    )
-    if LazyType["ext.TransformersPipeline"](
-        "transformers.pipelines.base.Pipeline"
-    ).isinstance(obj):
-        if tokenizer is not None or feature_extractor is not None:
-            logger.warning(
-                "Currently saving a Transformers pipeline. Given params `tokenizer` or `feature_extractor` is useless."
+    ) as _model:
+        if LazyType["ext.TransformersPipeline"](
+            "transformers.pipelines.base.Pipeline"
+        ).isinstance(obj):
+            if tokenizer is not None or feature_extractor is not None:
+                logger.warning(
+                    "Currently saving a Transformers pipeline. Given params `tokenizer` or `feature_extractor` is useless."
+                )
+            obj.save_pretrained(_model.path)
+            _model.info.context["pipeline"] = True
+            _model.info.context["task"] = getattr(obj, "task")
+            _model.info.options["model"] = getattr(obj, "model").__class__.__name__
+            _tokenizer, _fe = getattr(obj, "tokenizer"), getattr(
+                obj, "feature_extractor"
             )
-        obj.save_pretrained(_model.path)
-        _model.info.context["pipeline"] = True
-        _model.info.context["task"] = getattr(obj, "task")
-        _model.info.options["model"] = getattr(obj, "model").__class__.__name__
-        _tokenizer, _fe = getattr(obj, "tokenizer"), getattr(obj, "feature_extractor")
-        if getattr(obj, "feature_extractor") is not None:
-            _model.info.options["feature_extractor"] = _fe.__class__.__name__
-        elif check_tokenizer_type(_tokenizer):
-            _model.info.options["tokenizer"] = _tokenizer.__class__.__name__
-    elif check_model_type(obj):
-        _model.info.options["model"] = obj.__class__.__name__
-        obj.save_pretrained(_model.path)
-        if tokenizer is not None:
-            if not check_tokenizer_type(tokenizer):
-                raise BentoMLException(
-                    "`tokenizer` is neither type `PreTrainedTokenizer` nor `PreTrainedTokenizerFast`"
+            if getattr(obj, "feature_extractor") is not None:
+                _model.info.options["feature_extractor"] = _fe.__class__.__name__
+            elif check_tokenizer_type(_tokenizer):
+                _model.info.options["tokenizer"] = _tokenizer.__class__.__name__
+        elif check_model_type(obj):
+            _model.info.options["model"] = obj.__class__.__name__
+            obj.save_pretrained(_model.path)
+            if tokenizer is not None:
+                if not check_tokenizer_type(tokenizer):
+                    raise BentoMLException(
+                        "`tokenizer` is neither type `PreTrainedTokenizer` nor `PreTrainedTokenizerFast`"
+                    )
+                _model.info.options["tokenizer"] = tokenizer.__class__.__name__
+                tokenizer.save_pretrained(_model.path)
+            elif feature_extractor is not None:
+                if not check_fe_type(feature_extractor):
+                    raise BentoMLException(
+                        "`feature_extractor` is not of type `PreTrainedFeatureExtractor`"
+                    )
+                _model.info.options[
+                    "feature_extractor"
+                ] = feature_extractor.__class__.__name__
+                feature_extractor.save_pretrained(_model.path)
+            else:
+                logger.warning(
+                    "Saving a Transformer model usually includes either a `tokenizer` or `feature_extractor`. None received."
                 )
-            _model.info.options["tokenizer"] = tokenizer.__class__.__name__
-            tokenizer.save_pretrained(_model.path)
-        elif feature_extractor is not None:
-            if not check_fe_type(feature_extractor):
-                raise BentoMLException(
-                    "`feature_extractor` is not of type `PreTrainedFeatureExtractor`"
-                )
-            _model.info.options[
-                "feature_extractor"
-            ] = feature_extractor.__class__.__name__
-            feature_extractor.save_pretrained(_model.path)
         else:
-            logger.warning(
-                "Saving a Transformer model usually includes either a `tokenizer` or `feature_extractor`. None received."
+            raise BentoMLException(
+                "Unknown type for `model`."
+                f" Got {type(obj)} while only accepted"
+                " one of the following types:"
+                " `Pipeline` and `Union[PreTrainedModel,TFPreTrainedModel,FlaxPreTrainedModel]`"
             )
-    else:
-        raise BentoMLException(
-            "Unknown type for `model`."
-            f" Got {type(obj)} while only accepted"
-            " one of the following types:"
-            " `Pipeline` and `Union[PreTrainedModel,TFPreTrainedModel,FlaxPreTrainedModel]`"
-        )
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 # TODO: import_from_huggingface_hub
@@ -416,7 +424,7 @@ class _TransformersRunner(BaseModelRunner):
         # tokenizer-related
         try:
             self._has_tokenizer = (
-                self._model_info.info.options["feature_extractor"] is False
+                self.model_info.info.options["feature_extractor"] is False
             )
         except Exception:
             self._has_tokenizer = False
@@ -438,10 +446,11 @@ class _TransformersRunner(BaseModelRunner):
             revision=self._revision,
             use_fast=self._use_fast,
             use_auth_token=self._use_auth_token,
+            model_store=self.model_store,
             **self._kwargs,
         )
 
-        if self._model_info.info.context["pipeline"]:
+        if self.model_info.info.context["pipeline"]:
             self._pipeline = params
         else:
             self._config, self._model, _tfe = params

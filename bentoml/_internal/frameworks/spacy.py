@@ -10,8 +10,8 @@ import yaml
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -185,13 +185,13 @@ def load(
     )
 
 
-@inject
 def save(
     name: str,
     model: "spacy.language.Language",
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -201,13 +201,18 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`spacy.language.Language`):
             Instance of model to be saved
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -225,23 +230,25 @@ def save(
         "framework_name": "spacy",
         "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=MODULE_NAME,
         options=None,
         context=context,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
-    )
+    ) as _model:
 
-    meta = model.meta
-    pip_package = f"{meta['lang']}_{meta['name']}"
-    _model.info.options = {"pip_package": pip_package}
-    if "requirements" in meta:
-        _model.info.options["additional_requirements"] = meta["requirements"]
-    model.to_disk(_model.path)
+        meta = model.meta
+        pip_package = f"{meta['lang']}_{meta['name']}"
+        _model.info.options = {"pip_package": pip_package}
+        if "requirements" in meta:
+            _model.info.options["additional_requirements"] = meta["requirements"]
+        model.to_disk(_model.path)
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 @inject
@@ -280,7 +287,7 @@ def projects(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     .. warning::
 
@@ -334,60 +341,62 @@ def projects(
         "pip_dependencies": [f"spacy=={get_pkg_version('spacy')}"],
         "tasks": tasks,
     }
-    _model = Model.create(
+    with bentoml.models.create(
         save_name,
         module=MODULE_NAME,
         options=None,
         context=context,
         metadata=metadata,
-    )
-    output_path = _model.path_of(SAVE_NAMESPACE)
-    _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
-    if tasks == "clone":
-        # TODO: update check for master or main branch
-        assert (
-            name is not None
-        ), "`name` of the template is required to clone a project."
-        _model.info.options["name"] = name
-        assert isinstance(repo_or_store, str) and isinstance(branch, str)
-        project_clone(
-            name,
-            Path(output_path),
-            repo=repo_or_store,
-            branch=branch,
-            sparse_checkout=sparse_checkout,
-        )
-        copy_tree(_model.path, output_path)
-    else:
-        # works with S3 bucket, haven't failed yet
-        assert (
-            remotes_config is not None
-        ), """\
-            `remotes_config` is required in order to pull projects into
-             BentoML modelstore. Refers to
-             https://spacy.io/usage/projects#remote
-             for more information. We will accept remotes
-             as shown:
-             {
-                'remotes':
-                {
-                    'default':'s3://spacy-bucket',
-                }
-            }
-             """
-        os.makedirs(output_path, exist_ok=True)
-        with Path(output_path, "project.yml").open("w") as inf:
-            yaml.dump(remotes_config, inf)
-        for remote in remotes_config.get("remotes", {}):
-            for url, res_path in project_pull(  # type: ignore
+    ) as _model:
+        output_path = _model.path_of(SAVE_NAMESPACE)
+        _model.info.options = {
+            "projects_uri": repo_or_store,
+            "target_path": SAVE_NAMESPACE,
+        }
+        if tasks == "clone":
+            # TODO: update check for master or main branch
+            assert (
+                name is not None
+            ), "`name` of the template is required to clone a project."
+            _model.info.options["name"] = name
+            assert isinstance(repo_or_store, str) and isinstance(branch, str)
+            project_clone(
+                name,
                 Path(output_path),
-                remote=remote,
-                verbose=verbose,
-            ):
-                if url is not None:  # pragma: no cover
-                    logger.info(f"Pulled {res_path} from {repo_or_store}")
-    _model.save(model_store)
-    return _model.tag
+                repo=repo_or_store,
+                branch=branch,
+                sparse_checkout=sparse_checkout,
+            )
+            copy_tree(_model.path, output_path)
+        else:
+            # works with S3 bucket, haven't failed yet
+            assert (
+                remotes_config is not None
+            ), """\
+                `remotes_config` is required in order to pull projects into
+                 BentoML modelstore. Refers to
+                 https://spacy.io/usage/projects#remote
+                 for more information. We will accept remotes
+                 as shown:
+                 {
+                    'remotes':
+                    {
+                        'default':'s3://spacy-bucket',
+                    }
+                }
+                 """
+            os.makedirs(output_path, exist_ok=True)
+            with Path(output_path, "project.yml").open("w") as inf:
+                yaml.dump(remotes_config, inf)
+            for remote in remotes_config.get("remotes", {}):
+                for url, res_path in project_pull(  # type: ignore
+                    Path(output_path),
+                    remote=remote,
+                    verbose=verbose,
+                ):
+                    if url is not None:  # pragma: no cover
+                        logger.info(f"Pulled {res_path} from {repo_or_store}")
+        return _model.tag
 
 
 class _SpacyRunner(BaseModelRunner):
@@ -495,6 +504,7 @@ class _SpacyRunner(BaseModelRunner):
             exclude=self._exclude,
             disable=self._disable,
             config=self._config,
+            model_store=self.model_store,
         )
 
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]

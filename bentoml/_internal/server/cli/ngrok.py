@@ -1,5 +1,5 @@
 def main():
-    from ...utils.flask_ngrok import start_ngrok
+    from ...utils.ngrok import start_ngrok
     from ...configuration.containers import DeploymentContainer
 
     start_ngrok(DeploymentContainer.api_server_config.port.get())

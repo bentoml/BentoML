@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+import bentoml
 from bentoml import Tag
-from bentoml import Model
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
@@ -77,13 +77,13 @@ def load(
     return sm.load(model_file)
 
 
-@inject
 def save(
     name: str,
     model: "ModelType",
     *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -93,13 +93,18 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`t.Any`):
             Instance of model to be saved.
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
+            user-defined additional python objects to be saved alongside the model,
+            e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml._internal.types.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -143,17 +148,19 @@ def save(
         "framework_name": "statsmodels",
         "pip_dependencies": [f"statsmodels=={get_pkg_version('statsmodels')}"],
     }
-    _model = Model.create(
+
+    with bentoml.models.create(
         name,
         module=__name__,
+        labels=labels,
+        custom_objects=custom_objects,
         metadata=metadata,
         context=context,
-    )
+    ) as _model:
 
-    model.save(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
+        model.save(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
 
-    _model.save(model_store)
-    return _model.tag
+        return _model.tag
 
 
 class _StatsModelsRunner(BaseModelRunner):
@@ -169,7 +176,7 @@ class _StatsModelsRunner(BaseModelRunner):
     @property
     def _num_threads(self) -> int:
         # NOTE: Statsmodels currently doesn't use GPU, so return max. no. of CPU's.
-        return int(round(self.resource_quota.cpu))
+        return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:
@@ -177,7 +184,7 @@ class _StatsModelsRunner(BaseModelRunner):
         return 1
 
     def _setup(self) -> None:
-        self._model = load(self._tag)
+        self._model = load(self._tag, model_store=self.model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(self, input_data: t.Union["ext.NpNDArray", "ext.PdDataFrame"]) -> t.Any:  # type: ignore[override] # noqa

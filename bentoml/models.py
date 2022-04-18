@@ -5,8 +5,11 @@ from contextlib import contextmanager
 from simple_di import inject
 from simple_di import Provide
 
-from ._internal.types import Tag
+from ._internal.tag import Tag
+from ._internal.utils import calc_dir_size
 from ._internal.models import Model
+from ._internal.utils.analytics import track
+from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -220,6 +223,7 @@ def create(
     module: str = "",
     labels: t.Optional[t.Dict[str, t.Any]] = None,
     options: t.Optional[t.Dict[str, t.Any]] = None,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     context: t.Optional[t.Dict[str, t.Any]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -229,6 +233,7 @@ def create(
         module=module,
         labels=labels,
         options=options,
+        custom_objects=custom_objects,
         metadata=metadata,
         context=context,
     )
@@ -236,6 +241,13 @@ def create(
         yield res
     finally:
         res.save(_model_store)
+
+        track(
+            ModelSaveEvent(
+                module=res.info.module,
+                model_size_in_kb=calc_dir_size(res.path_of("/")) / 1024,
+            ),
+        )
 
 
 @inject

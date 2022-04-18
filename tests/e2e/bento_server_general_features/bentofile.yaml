@@ -1,0 +1,3 @@
+service: service:svc
+python:
+  requirements_txt: ./requirements.txt

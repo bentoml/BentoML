@@ -12,10 +12,11 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
-from bentoml._internal.utils import reserve_free_port
-from bentoml._internal.utils.uri import path_to_uri
-from bentoml._internal.utils.circus import create_standalone_arbiter
 
+from ..utils import reserve_free_port
+from ..utils.uri import path_to_uri
+from ..utils.circus import create_standalone_arbiter
+from ..utils.analytics import track_serve
 from ..configuration.containers import DeploymentContainer
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ SCRIPT_NGROK = "bentoml._internal.server.cli.ngrok"
 
 
 @inject
-def _ensure_prometheus_dir(
+def ensure_prometheus_dir(
     prometheus_multiproc_dir: str = Provide[
         DeploymentContainer.prometheus_multiproc_dir
     ],
@@ -53,6 +54,7 @@ def serve_development(
     reload_delay: float = 0.25,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
+    svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -90,6 +92,7 @@ def serve_development(
                 "-m",
                 SCRIPT_DEV_API_SERVER,
                 bento_identifier,
+                "--bind",
                 "fd://$(circus.sockets._bento_api_server)",
                 "--working-dir",
                 working_dir,
@@ -107,14 +110,15 @@ def serve_development(
         watchers,
         sockets=list(circus_socket_map.values()),
     )
-    _ensure_prometheus_dir()
+    ensure_prometheus_dir()
 
-    arbiter.start(
-        cb=lambda _: logger.info(  # type: ignore
-            f'Starting development BentoServer from "{bento_identifier}" '
-            f"running on http://{host}:{port} (Press CTRL+C to quit)"
-        ),
-    )
+    with track_serve(svc, production=False):
+        arbiter.start(
+            cb=lambda _: logger.info(  # type: ignore
+                f'Starting development BentoServer from "{bento_identifier}" '
+                f"running on http://{host}:{port} (Press CTRL+C to quit)"
+            ),
+        )
 
 
 MAX_AF_UNIX_PATH_LENGTH = 103
@@ -130,7 +134,7 @@ def serve_production(
     app_workers: t.Optional[int] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir)
+    svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -162,7 +166,9 @@ def serve_production(
                         "-m",
                         SCRIPT_RUNNER,
                         bento_identifier,
+                        "--runner-name",
                         runner_name,
+                        "--bind",
                         f"fd://$(circus.sockets.{runner_name})",
                         "--working-dir",
                         working_dir,
@@ -198,7 +204,9 @@ def serve_production(
                             "-m",
                             SCRIPT_RUNNER,
                             bento_identifier,
+                            "--runner-name",
                             runner_name,
+                            "--bind",
                             f"fd://$(circus.sockets.{runner_name})",
                             "--working-dir",
                             working_dir,
@@ -232,6 +240,7 @@ def serve_production(
                 "-m",
                 SCRIPT_API_SERVER,
                 bento_identifier,
+                "--bind",
                 "fd://$(circus.sockets._bento_api_server)",
                 "--runner-map",
                 json.dumps(runner_bind_map),
@@ -239,6 +248,7 @@ def serve_production(
                 working_dir,
                 "--backlog",
                 f"{backlog}",
+                "--as-worker",
             ],
             copy_env=True,
             numprocesses=app_workers or 1,
@@ -253,14 +263,16 @@ def serve_production(
         sockets=list(circus_socket_map.values()),
     )
 
-    _ensure_prometheus_dir()
-    try:
-        arbiter.start(
-            cb=lambda _: logger.info(  # type: ignore
-                f'Starting production BentoServer from "bento_identifier" '
-                f"running on http://{host}:{port} (Press CTRL+C to quit)"
-            ),
-        )
-    finally:
-        if uds_path is not None:
-            shutil.rmtree(uds_path)
+    ensure_prometheus_dir()
+
+    with track_serve(svc, production=True):
+        try:
+            arbiter.start(
+                cb=lambda _: logger.info(  # type: ignore
+                    f'Starting production BentoServer from "bento_identifier" '
+                    f"running on http://{host}:{port} (Press CTRL+C to quit)"
+                ),
+            )
+        finally:
+            if uds_path is not None:
+                shutil.rmtree(uds_path)

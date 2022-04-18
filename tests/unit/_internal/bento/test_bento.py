@@ -6,9 +6,10 @@ from datetime import timezone
 import fs
 import pytest
 
+from bentoml import Tag
 from bentoml._internal.bento import Bento
-from bentoml._internal.types import Tag
 from bentoml._internal.bento.bento import BentoInfo
+from bentoml._internal.bento.bento import BentoModelInfo
 from bentoml._internal.configuration import BENTOML_VERSION
 from bentoml._internal.bento.build_config import BentoBuildConfig
 
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
 def test_bento_info(tmpdir: "Path"):
     start = datetime.now(timezone.utc)
-    bentoinfo_a = BentoInfo(Tag("tag"), "service", {}, [])
+    bentoinfo_a = BentoInfo(tag=Tag("tag"), service="service")
     end = datetime.now(timezone.utc)
 
     assert bentoinfo_a.bentoml_version == BENTOML_VERSION
@@ -30,8 +31,19 @@ def test_bento_info(tmpdir: "Path"):
     tag = Tag("test", "version")
     service = "testservice"
     labels = {"label": "stringvalue"}
-    models = [Tag("model", "v1"), Tag("model2", "latest")]
-    bentoinfo_b = BentoInfo(tag, service, labels, models)
+    model_creation_time = datetime.now(timezone.utc)
+    model_a = BentoModelInfo(
+        tag=Tag("model_a", "v1"),
+        module="model_a_module",
+        creation_time=model_creation_time,
+    )
+    model_b = BentoModelInfo(
+        tag=Tag("model_b", "v3"),
+        module="model_b_module",
+        creation_time=model_creation_time,
+    )
+    models = [model_a, model_b]
+    bentoinfo_b = BentoInfo(tag=tag, service=service, labels=labels, models=models)
 
     bento_yaml_b_filename = os.path.join(tmpdir, "b_dump.yml")
     with open(bento_yaml_b_filename, "w", encoding="utf-8") as bento_yaml_b:
@@ -42,18 +54,25 @@ service: testservice
 name: test
 version: version
 bentoml_version: {bentoml_version}
-creation_time: {creation_time}
+creation_time: '{creation_time}'
 labels:
   label: stringvalue
 models:
-- model:v1
-- model2:latest
+- tag: model_a:v1
+  module: model_a_module
+  creation_time: '{model_creation_time}'
+- tag: model_b:v3
+  module: model_b_module
+  creation_time: '{model_creation_time}'
+runners: []
+apis: []
 """
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:
         assert bento_yaml_b.read() == expected_yaml.format(
             bentoml_version=BENTOML_VERSION,
-            creation_time=bentoinfo_b.creation_time.isoformat(" "),
+            creation_time=bentoinfo_b.creation_time.isoformat(),
+            model_creation_time=model_creation_time.isoformat(),
         )
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:

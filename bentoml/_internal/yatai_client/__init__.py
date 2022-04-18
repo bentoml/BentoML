@@ -25,9 +25,9 @@ from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
 
+from ..tag import Tag
 from ..bento import Bento
 from ..bento import BentoStore
-from ..types import Tag
 from ..utils import calc_dir_size
 from ..models import Model
 from ..models import copy_model
@@ -206,8 +206,8 @@ class YataiClient:
         if version is None:
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
-        model_names = info.models
-        with ThreadPoolExecutor(max_workers=max(len(model_names), 1)) as executor:
+        model_tags = [m.tag for m in info.models]
+        with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
             def push_model(model: "Model"):
                 model_upload_task_id = self.transmission_progress.add_task(
@@ -216,7 +216,7 @@ class YataiClient:
                 self._do_push_model(model, model_upload_task_id, force=force)
 
             futures = executor.map(
-                push_model, (model_store.get(name) for name in model_names)
+                push_model, (model_store.get(name) for name in model_tags)
             )
             list(futures)
         with self.spin(text=f'Fetching Bento repository "{name}"'):
@@ -247,7 +247,7 @@ class YataiClient:
                 for key, value in info.labels.items()
             ]
             apis: t.Dict[str, BentoApiSchema] = {}
-            models = [str(m) for m in info.models]
+            models = [str(m.tag) for m in info.models]
             with self.spin(text=f'Registering Bento "{bento.tag}" with Yatai..'):
                 yatai_rest_client.create_bento(
                     bento_repository_name=bento_repository.name,

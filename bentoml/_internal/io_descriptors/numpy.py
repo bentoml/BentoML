@@ -38,7 +38,7 @@ def _is_matched_shape(
     return True
 
 
-class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
+class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     """
     :code:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -71,7 +71,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
-        [INFO] API Server running on http://0.0.0.0:5000
+        [INFO] API Server running on http://0.0.0.0:3000
 
     Users can then send requests to the newly started services with any client:
 
@@ -79,7 +79,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
 
     .. code-block:: bash
 
-        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:3000/predict
 
         [1]%
 
@@ -162,9 +162,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
 
     def _verify_ndarray(
         self,
-        obj: "ext.NpNDArray[t.Any]",
+        obj: "ext.NpNDArray",
         exception_cls: t.Type[Exception] = BadInput,
-    ) -> "ext.NpNDArray[t.Any]":
+    ) -> "ext.NpNDArray":
         if self._dtype is not None and self._dtype != obj.dtype:
             if self._enforce_dtype:
                 raise exception_cls(
@@ -186,7 +186,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
                 logger.warning(f"{self.__class__.__name__}: {e}")
         return obj
 
-    async def from_http_request(self, request: Request) -> "ext.NpNDArray[t.Any]":
+    async def from_http_request(self, request: Request) -> "ext.NpNDArray":
         """
         Process incoming requests and convert incoming
          objects to `numpy.ndarray`
@@ -201,7 +201,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         import numpy as np
 
         obj = await request.json()
-        res: "ext.NpNDArray[t.Any]"
+        res: "ext.NpNDArray"
         try:
             res = np.array(obj, dtype=self._dtype)  # type: ignore[arg-type]
         except ValueError:
@@ -209,7 +209,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
         res = self._verify_ndarray(res, BadInput)
         return res
 
-    async def to_http_response(self, obj: "ext.NpNDArray[t.Any]") -> Response:
+    async def to_http_response(self, obj: "ext.NpNDArray") -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -226,7 +226,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray[t.Any]"]):
     @classmethod
     def from_sample(
         cls,
-        sample_input: "ext.NpNDArray[t.Any]",
+        sample_input: "ext.NpNDArray",
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> "NumpyNdarray":

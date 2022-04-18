@@ -74,11 +74,22 @@ def test_onnxmlir_save_load(
     compile_model,
     tmpdir,
 ):  # noqa
+
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
     model = os.path.join(tmpdir, "model.so")
-    tag = bentoml.onnxmlir.save("onnx_model_tests", model)
-    _model = bentoml.models.get(tag)
-    assert "compiled_path" in _model.info.options
-    assert_have_file_extension(str(_model.path), ".so")
+    tag = bentoml.onnxmlir.save(
+        "onnx_model_tests", model, labels=labels, custom_objects={"func": custom_f}
+    )
+    bentomodel = bentoml.models.get(tag)
+    assert "compiled_path" in bentomodel.info.options
+    assert_have_file_extension(str(bentomodel.path), ".so")
+    for k in labels.keys():
+        assert labels[k] == bentomodel.info.labels[k]
+    assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
     session = bentoml.onnxmlir.load(tag)
     assert predict_df(session, test_df)[0] == np.array([[15.0]])

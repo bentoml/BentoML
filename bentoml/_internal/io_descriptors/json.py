@@ -33,7 +33,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 
-        if LazyType["ext.NpNDArray[t.Any]"]("numpy.ndarray").isinstance(o):
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(o):
             return o.tolist()
         if LazyType["ext.NpGeneric"]("numpy.generic").isinstance(o):
             return o.item()
@@ -86,7 +86,7 @@ class JSON(IODescriptor[JSONType]):
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
         [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
-        [INFO] API Server running on http://0.0.0.0:5000
+        [INFO] API Server running on http://0.0.0.0:3000
 
     Users can then send requests to the newly started services with any client:
 
@@ -96,14 +96,14 @@ class JSON(IODescriptor[JSONType]):
 
             import requests
             requests.post(
-                "http://0.0.0.0:5000/predict",
+                "http://0.0.0.0:3000/predict",
                 headers={"content-type": "application/json"},
                 data='[{"0":5,"1":4,"2":3,"3":2}]'
             ).text
 
         .. code-tab:: bash
 
-            % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
+            % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:3000/predict
 
             {"res":"[{\"0\":1}]"}%
 

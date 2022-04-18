@@ -9,6 +9,8 @@ from simple_di import inject
 from simple_di import Provide
 
 from ..context import trace_context
+from ..context import InferenceApiContext as Context
+from ..utils.http import finalize_http_response
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -313,17 +315,37 @@ class ServiceAppFactory(BaseAppFactory):
             # handle_request may raise 4xx or 5xx exception.
             try:
                 input_data = await api.input.from_http_request(request)
+                response = await api.output.init_http_response()
+                ctx = None
                 if asyncio.iscoroutinefunction(api.func):
                     if isinstance(api.input, Multipart):
+                        if api.needs_ctx:
+                            ctx = Context.from_http(request, response)
+                            input_data[api.ctx_param] = ctx
                         output = await api.func(**input_data)
                     else:
-                        output = await api.func(input_data)
+                        if api.needs_ctx:
+                            ctx = Context.from_http(request, response)
+                            output = await api.func(input_data, ctx)
+                        else:
+                            output = await api.func(input_data)
                 else:
                     if isinstance(api.input, Multipart):
+                        if api.needs_ctx:
+                            ctx = Context.from_http(request, response)
+                            input_data[api.ctx_param] = ctx
                         output: t.Any = await run_in_threadpool(api.func, **input_data)
                     else:
-                        output: t.Any = await run_in_threadpool(api.func, input_data)
-                response = await api.output.to_http_response(output)
+                        if api.needs_ctx:
+                            ctx = Context.from_http(request, response)
+                            output = await run_in_threadpool(
+                                api.func(input_data, ctx=ctx)
+                            )
+                        else:
+                            output = await run_in_threadpool(api.func, input_data)
+
+                await api.output.finalize_http_response(response, output)
+                finalize_http_response(response)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 

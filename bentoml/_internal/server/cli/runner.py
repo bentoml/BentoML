@@ -66,7 +66,6 @@ def main(
         params = ctx.params
         params["bind"] = f"fd://$(circus.sockets.{runner_name})"
         params["as_worker"] = True
-        print(unparse_click_params(params, ctx.command.params))
         watcher = Watcher(
             name=f"runner_{runner_name}",
             cmd=sys.executable,

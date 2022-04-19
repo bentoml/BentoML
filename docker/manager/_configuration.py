@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 DOCKER_DIRECTORY = Path(os.path.dirname(__file__)).parent
 CUDA_VERSION = "11.5.1"
+docker_fs = fs.open_fs(DOCKER_DIRECTORY.__fspath__())
 
 
 @container

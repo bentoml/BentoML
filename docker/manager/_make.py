@@ -193,7 +193,10 @@ class DockerfileGenerationContext:
 
     @inject
     def generate_paths_mapping(
-        self, *, _templates_fs: FS = Provide[DockerManagerContainer.templates_fs]
+        self,
+        *,
+        _templates_fs: FS = Provide[DockerManagerContainer.templates_fs],
+        docker_package: str = DockerManagerContainer.docker_package,
     ) -> t.Dict[str, str]:
         input_paths = [
             f
@@ -202,7 +205,7 @@ class DockerfileGenerationContext:
         ]
         return {
             inp: fs.path.join(
-                f"/{DockerManagerContainer.docker_package}",
+                f"/{docker_package}",
                 self.distros,
                 self.release_type,
                 preprocess_template_paths(inp, self.architecture),
@@ -268,11 +271,12 @@ def generate_releases_tags_mapping(
     distros: DistrosManifest,
     *,
     bentoml_version: str = Provide[DockerManagerContainer.bentoml_version],
+    docker_package: str = DockerManagerContainer.docker_package,
     skip_base_image: bool = True,
 ) -> t.List[t.Tuple[str, str]]:
     # distros is the dictionary representation from manifest file.
     metadata = []
-    prefix_ = f"{DockerManagerContainer.docker_package}:"
+    prefix_ = f"{docker_package}:"
 
     for rt, python_version in product(distros.release_types, distros.python_versions):
         if skip_base_image and rt == "base":

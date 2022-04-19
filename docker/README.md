@@ -8,9 +8,12 @@ Install `manager`:
 make install
 ```
 
-Generate new Dockerfile and README for new bentoml version:
+Login to docker, then generate new Dockerfile and README for new bentoml version:
 ```bash
 manager generate --bentoml-version <new_version>
 ```
 
-Build 
+Build a given releases:
+```bash
+manager build --bentoml-version <new_version> --releases runtime --max-worker 5
+```

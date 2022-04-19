@@ -37,6 +37,7 @@ Get started with:
         add_help=False,
     )
     build_parser.add_argument("--releases", action="append", nargs="+")
+    build_parser.add_argument("--distros", action="append", nargs="+")
     build_parser.add_argument("--dry-run", action="store_true")
     build_parser.add_argument("--max-worker", type=int, default=5)
     build_parser.set_defaults(func=build)

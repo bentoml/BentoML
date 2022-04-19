@@ -69,10 +69,13 @@ def get_docker_platform_mapping() -> t.Dict[str, str]:
     }
 
 
+@inject
 def order_build_hierarchy(
     distro_name: str,
     ctx: DistrosManifest,
-    release_types: t.Optional[t.Union[t.Literal["all"], t.Iterable[str]]] = None,
+    release_types: t.Union[t.Literal["all"], t.Iterable[str]] = "all",
+    *,
+    docker_package: str = DockerManagerContainer.docker_package,
 ) -> t.Tuple[Tags, Tags]:
     """
     Returns {tag: (docker_build_context_path, python_version, *platforms), ...} for base and other tags
@@ -80,7 +83,7 @@ def order_build_hierarchy(
 
     release_hierarchy = DockerManagerContainer.RELEASE_TYPE_HIERARCHY
 
-    if release_types is None or release_types == "all":
+    if release_types == "all":
         target_releases = release_hierarchy
     else:
         if not all(i in release_hierarchy for i in release_types):
@@ -102,7 +105,7 @@ def order_build_hierarchy(
             tag.split(":")[-1].split("-")[1].strip("python"),  # python version
             {
                 "distro_name": distro_name,
-                "docker_package": DockerManagerContainer.docker_package,
+                "docker_package": docker_package,
                 "maintainer": "BentoML Team <contact@bentoml.com>",
             },
             "Dockerfile-conda" if "conda" in tag else "Dockerfile",
@@ -188,12 +191,14 @@ def buildx_args(
 
 @inject
 def build_images(
-    releases: t.Optional[t.Iterable[str]],
+    releases: t.Iterable[str],
+    distros: t.Iterable[str],
     dry_run: bool,
     max_workers: int = 5,
     *,
     _fs: FS = Provide[DockerManagerContainer.root_fs],
     _generated_fs: FS = Provide[DockerManagerContainer.generated_fs],
+    docker_package: str = DockerManagerContainer.docker_package,
 ) -> None:
     """
     Build releases docker images with `buildx`. Utilize ThreadPoolExecutor.
@@ -208,15 +213,21 @@ def build_images(
     By default we will generate all given specs defined under manifest/<docker_package>.yml
     """
 
-    docker_package = DockerManagerContainer.docker_package
-
     bases, builds = {}, {}
+
+    if not all(d in DockerManagerContainer.SUPPORTED_DISTRO_TYPE for d in distros):
+        raise ValueError(
+            f"Invalid distro type: {distros}. Valid distro types are: {DockerManagerContainer.SUPPORTED_DISTRO_TYPE}"
+        )
+
     for distro, context in get_manifest_info().items():
-        base_tag, build_tag = order_build_hierarchy(
+        if distro not in distros:
+            continue
+        base, build = order_build_hierarchy(
             distro, DistrosManifest(**context), release_types=releases
         )
-        bases.update(base_tag)
-        builds.update(build_tag)
+        bases.update(base)
+        builds.update(build)
 
     base_buildx_args = [i for i in buildx_args(bases)]
     build_buildx_args = [i for i in buildx_args(builds)]
@@ -278,18 +289,29 @@ def build_images(
         sys.exit(1)
 
 
+def flatten_list(lst: t.List[t.List[str]]) -> t.List[str]:
+    return [item for sublist in lst for item in sublist]
+
+
 def main(args):
     if args.releases is None:
-        raise ValueError("--releases is required when using build.")
-    releases = [i for s in args.releases for i in s]
+        releases = DockerManagerContainer.RELEASE_TYPE_HIERARCHY
+    else:
+        releases = flatten_list(args.releases)
+
+    if args.distros is None:
+        distros = DockerManagerContainer.SUPPORTED_DISTRO_TYPE
+    else:
+        distros = flatten_list(args.distros)
 
     if args.dry_run:
         send_log(
-            f"input args: --releases {releases} --dry-run {args.dry_run} --max-worker {args.max_worker} --bentoml-version {args.bentoml_version}\n",
+            f"input args: --releases {releases} --dry-run {args.dry_run} --max-worker {args.max_worker} --bentoml-version {args.bentoml_version} --distros {distros}\n",
         )
 
     build_images(
         releases=releases,
+        distros=distros,
         dry_run=args.dry_run,
         max_workers=args.max_worker,
     )

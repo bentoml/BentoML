@@ -8,7 +8,7 @@
 
 ARG PYTHON_VERSION
 
-FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian11-conda as base
+FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian11-conda as base
 
 ENV NVIDIA_CUDA_LIB_VERSION 11.5.1-1
 

@@ -7,6 +7,7 @@ from collections import defaultdict
 
 import fs
 import cattrs
+from simple_di import inject
 from manager._make import DistrosManifest
 from manager._make import DockerfileGenerationContext
 from manager._make import generate_releases_tags_mapping
@@ -78,7 +79,8 @@ def get_python_version_from_tag(tag: str) -> t.List[int]:
     return [int(u) for u in tag.split(":")[-1].split("-")[1].strip("python").split(".")]
 
 
-def generate_readmes():
+@inject
+def generate_readmes(*, docker_package: str = DockerManagerContainer.docker_package):
     tag_ref = defaultdict(list)
     arch = {}
 
@@ -93,7 +95,7 @@ def generate_readmes():
         arch[distro] = ctx.architectures
 
     readme_jinja2_context = {
-        "bentoml_package": DockerManagerContainer.docker_package,
+        "bentoml_package": docker_package,
         "bentoml_release_version": DockerManagerContainer.bentoml_version.get(),
         "supported": arch,
         "tag_ref": tag_ref,
@@ -122,7 +124,7 @@ def generate_readmes():
                 final_context[filename.split(".")[0]] = "".join(outf.readlines())
         render_template(readme_tmpl, output_path, **final_context)
 
-    render_from_components(f"/{DockerManagerContainer.docker_package}/README.md")
+    render_from_components(f"/{docker_package}/README.md")
     render_from_components(f"/README.md", extends={"emphemeral": True})
 
 

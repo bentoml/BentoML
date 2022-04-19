@@ -140,12 +140,19 @@ class BentoApiSchema:
 
 
 @attr.define
+class BentoRunnerSchema:
+    name: str
+    runner_type: str
+
+
+@attr.define
 class BentoManifestSchema:
     service: str
     bentoml_version: str
     size_bytes: int
     apis: Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: List[str] = attr.field(factory=list)
+    runners: Optional[List[BentoRunnerSchema]] = attr.field(factory=list)
 
 
 @attr.define
@@ -177,6 +184,12 @@ class CreateBentoSchema:
     manifest: BentoManifestSchema
     build_at: datetime = attr.field(factory=datetime.now)
     labels: List[LabelItemSchema] = attr.field(factory=list)
+
+
+@attr.define
+class UpdateBentoSchema:
+    manifest: Optional[BentoManifestSchema] = attr.field(default=None)
+    labels: Optional[List[LabelItemSchema]] = attr.field(default=None)
 
 
 @attr.define

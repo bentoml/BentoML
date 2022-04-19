@@ -216,7 +216,6 @@ class Multipart(IODescriptor[MultipartIO]):
         res_mapping: t.Dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]
-            # TODO(aarnphm): fix with stubs
             resp = io_.init_http_response()
             res_mapping[k] = await io_.finalize_http_response(resp, data)  # type: ignore[reportGeneralTypeIssue]
         await concat_to_multipart_responses(response, res_mapping)

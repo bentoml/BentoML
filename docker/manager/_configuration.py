@@ -41,12 +41,16 @@ class ManagerContainerClass:
     RELEASE_TYPE_HIERARCHY = ("base", "runtime", "cudnn", "devel")
 
     docker_package = "bento-server"
-    organization = "bentoml"
+
+    @SingletonFactory
+    @staticmethod
+    def organization() -> str:
+        return "bentoml"
 
     @SingletonFactory
     @staticmethod
     def cuda_version() -> str:
-        return os.environ.get("CUDA_VERSION", CUDA_VERSION)
+        return os.environ.get("DOCKER_CUDA_VERSION", CUDA_VERSION)
 
     @SingletonFactory
     @staticmethod

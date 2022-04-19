@@ -8,13 +8,13 @@ include hack/docker.mk
 SHELL := /bin/bash
 
 # TODO: authentication issue with buildkit when using docker to push
-USE_DOCKER ?= true
+USE_DOCKER ?= false
 # type of releases: base, runtime, cudnn, or `all` of them :/
 RELEASES ?= all
 # Default distros that we releases
 DISTROS ?= amazonlinux2
 # Default python version
-PYTHON_VERSION ?= 3.6 3.7 3.8 3.9 3.10
+PYTHON_VERSION ?= 3.7 3.8 3.9 3.10
 # number of max workers to use
 MAX_WORKERS ?= 6
 
@@ -48,12 +48,12 @@ pargs = $(foreach a, $1, $(if $(value $a),--$a $($a)))
 POETRY_RUN := poetry run manager $(1)
 
 # default args
-GENERATE_DEFAULTS := --bentoml-version $(BENTOML_VERSION) --overwrite
+GENERATE_DEFAULTS := --bentoml-version $(BENTOML_VERSION)
 BUILD_DEFAULTS := --bentoml-version $(BENTOML_VERSION) --max-workers $(MAX_WORKERS)
 
 # positional args
 GENERATE_POSITIONAL := organization
-BUILD_POSITIONAL := distros python-version releases organization
+BUILD_POSITIONAL := releases organization
 
 .PHONY: run-%
 run-%: ## Run a task. Currently: generate, build, test

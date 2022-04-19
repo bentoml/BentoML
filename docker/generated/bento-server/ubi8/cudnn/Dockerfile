@@ -10,7 +10,7 @@
 ARG PYTHON_VERSION
 
 
-FROM bentoml/bento-server:base-python$PYTHON_VERSION-ubi8 as base
+FROM aarnphm/bento-server:base-python$PYTHON_VERSION-ubi8 as base
 
 ENV NVIDIA_CUDA_LIB_VERSION 11.5.1-1
 
@@ -128,7 +128,7 @@ RUN --mount=type=cache,sharing=shared,target=/var/cache/yum \
     ${NVIDIA_LIBNCCL_PACKAGE} \
     ${NVIDIA_CUDNN_PACKAGE}
 
-ENV BENTOML_VERSION=1.0.0a8
+ENV BENTOML_VERSION=1.0.0a7
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     pip install bentoml==${BENTOML_VERSION} --no-cache-dir

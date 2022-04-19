@@ -1,21 +1,19 @@
 from __future__ import annotations
-from collections import defaultdict
 
 import typing as t
 import logging
 import itertools
+from collections import defaultdict
 
 import fs
 import cattrs
-
-from ._make import (
-    DockerfileGenerationContext,
-    generate_releases_tags_mapping,
-    DistrosManifest,
-)
-from ._utils import render_template
-from ._configuration import get_manifest_info
-from ._configuration import DockerManagerContainer
+from manager._make import DistrosManifest
+from manager._make import DockerfileGenerationContext
+from manager._make import generate_releases_tags_mapping
+from manager._utils import send_log
+from manager._utils import render_template
+from manager._configuration import get_manifest_info
+from manager._configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
 
@@ -126,3 +124,9 @@ def generate_readmes():
 
     render_from_components(f"/{DockerManagerContainer.docker_package}/README.md")
     render_from_components(f"/README.md", extends={"emphemeral": True})
+
+
+def main(args):
+    generate_dockerfiles()
+    generate_readmes()
+    send_log("Generated Dockerfiles and README.md")

@@ -8,11 +8,11 @@
 
 ARG PYTHON_VERSION
 
-FROM --platform=$BUILDPLATFORM bentoml/bento-server:base-python$PYTHON_VERSION-alpine3.14 as base
+FROM --platform=$BUILDPLATFORM aarnphm/bento-server:base-python$PYTHON_VERSION-alpine3.14 as base
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-ENV BENTOML_VERSION=1.0.0a8
+ENV BENTOML_VERSION=1.0.0a7
 
 RUN --mount=type=cache,target=/var/cache/apk \
     xx-apk add --update musl-dev build-base linux-headers g++

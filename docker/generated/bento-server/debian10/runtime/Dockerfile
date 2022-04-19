@@ -8,9 +8,9 @@
 
 ARG PYTHON_VERSION
 
-FROM bentoml/bento-server:base-python$PYTHON_VERSION-debian10 as base
+FROM aarnphm/bento-server:base-python$PYTHON_VERSION-debian10 as base
 
-ENV BENTOML_VERSION=1.0.0a8
+ENV BENTOML_VERSION=1.0.0a7
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     pip install bentoml==${BENTOML_VERSION} --no-cache-dir

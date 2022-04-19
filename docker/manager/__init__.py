@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import click
 import simple_di
@@ -7,7 +8,7 @@ from rich.traceback import install
 
 __version__: str = "1.1.0"
 
-install(suppress=[click, simple_di])
+install(suppress=[click, simple_di, traceback])
 
 logging.basicConfig(
     level="INFO",

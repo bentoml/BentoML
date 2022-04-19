@@ -1,5 +1,5 @@
 target "_all_platforms" {
-    platforms = ["linux/amd64", "linux/arm64/v8", "linux/arm/v7"]
+    platforms = ["linux/amd64", "linux/arm64/v8"]
 }
 
 function "TagWithArch" {

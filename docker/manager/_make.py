@@ -268,13 +268,14 @@ def generate_releases_tags_mapping(
     distros: DistrosManifest,
     *,
     bentoml_version: str = Provide[DockerManagerContainer.bentoml_version],
+    skip_base_image: bool = True,
 ) -> t.List[t.Tuple[str, str]]:
     # distros is the dictionary representation from manifest file.
     metadata = []
     prefix_ = f"{DockerManagerContainer.docker_package}:"
 
     for rt, python_version in product(distros.release_types, distros.python_versions):
-        if rt == "base":
+        if skip_base_image and rt == "base":
             continue
 
         git_tree_path = fs.path.join(

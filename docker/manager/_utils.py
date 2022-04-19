@@ -7,11 +7,9 @@ import typing as t
 import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING
-from pathlib import Path
 from functools import wraps
 
 import fs
-import cattr
 from jinja2 import Environment
 from fs.base import FS
 from simple_di import inject
@@ -89,24 +87,9 @@ def create_buildx_builder(name: str, verbose_: bool = False) -> Builder:
         return [i for i in docker.buildx.list() if i.name == name][0]
 
 
-cattr.register_unstructure_hook(Path, lambda x: str(x.__fspath__()))
-cattr.register_unstructure_hook(FS, lambda x: repr(x))
-
-
-def raise_exception(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-        try:
-            return func(*args, **kwargs)
-        except Exception as err:  # pylint: disable=broad-except
-            raise err
-
-    return wrapper
-
-
 def inject_deepcopy_args(
-    _func: t.Optional[t.Callable[P, t.Any]] = None, *, num_args: int = 1
-) -> t.Callable[P, t.Any]:
+    _func: t.Optional[GenericFunc[t.Any]] = None, *, num_args: int = 1
+) -> GenericFunc[t.Any]:
     def decorator(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
@@ -182,6 +165,5 @@ def render_template(
         template = template_env.from_string(inf.read())
 
     content = template.render(base_tag=base_tag or {}, **kwargs)
-    print(content)
     out_path_fs.writetext(output_name_, content, newline="\n")
     out_path_fs.close()

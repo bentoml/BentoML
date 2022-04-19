@@ -37,13 +37,25 @@ def pytest_configure(config):  # pylint: disable=unused-argument
     os.environ["BENTOML_BUNDLE_LOCAL_BUILD"] = "True"
 
 
-@pytest.fixture(scope="session")
-def host() -> t.Generator[str, None, None]:
+@pytest.fixture(
+    scope="session",
+    params=[
+        # "dev",
+        "standalone",
+        "docker",
+        "distributed",
+    ],
+)
+def host(request) -> t.Generator[str, None, None]:
+    deployment_mode = request.param
+    if psutil.MACOS and deployment_mode == "docker":
+        pytest.skip("docker is not supported on macos of GitHub Actions")
+
     from bentoml.testing.server import host_bento
 
     with host_bento(
         "service:svc",
         config_file="bentoml_config.yml",
-        docker=psutil.LINUX,
+        deployment_mode=deployment_mode,
     ) as host_address:
         yield host_address

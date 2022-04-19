@@ -1,3 +1,4 @@
+import sys
 import socket
 import typing as t
 from typing import TYPE_CHECKING
@@ -20,11 +21,21 @@ import click
 @click.option("--runner-name", type=click.STRING, required=True)
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
+@click.option(
+    "--as-worker",
+    required=False,
+    type=click.BOOL,
+    is_flag=True,
+    default=False,
+)
+@click.pass_context
 def main(
+    ctx: click.Context,
     bento_identifier: str,
     runner_name: str,
     bind: str,
     working_dir: t.Optional[str],
+    as_worker: bool,
 ) -> None:
     """
     Start a runner server.
@@ -38,7 +49,38 @@ def main(
             - file:///path/to/unix.sock
             - fd://12
         working_dir: (Optional) the working directory
+        as_worker: (Optional) if True, the runner will be started as a worker
     """
+
+    if not as_worker:
+        # Start a standalone server with a supervisor process
+        from circus.watcher import Watcher
+
+        from bentoml._internal.server import ensure_prometheus_dir
+        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml._internal.utils.circus import create_standalone_arbiter
+        from bentoml._internal.utils.circus import create_circus_socket_from_uri
+
+        ensure_prometheus_dir()
+        circus_socket = create_circus_socket_from_uri(bind, name=runner_name)
+        params = ctx.params
+        params["bind"] = f"fd://$(circus.sockets.{runner_name})"
+        params["as_worker"] = True
+        print(unparse_click_params(params, ctx.command.params))
+        watcher = Watcher(
+            name=f"runner_{runner_name}",
+            cmd=sys.executable,
+            args=["-m", "bentoml._internal.server.cli.runner"]
+            + unparse_click_params(params, ctx.command.params),
+            copy_env=True,
+            numprocesses=1,
+            stop_children=True,
+            use_sockets=True,
+            working_dir=working_dir,
+        )
+        arbiter = create_standalone_arbiter(watchers=[watcher], sockets=[circus_socket])
+        arbiter.start()
+        return
 
     import uvicorn  # type: ignore
 

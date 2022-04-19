@@ -1,13 +1,11 @@
+import sys
 import json
 import socket
 import typing as t
-from typing import Any
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from bentoml import load
-from bentoml._internal.server import ensure_prometheus_dir
-from bentoml._internal.utils.uri import uri_to_path
+import bentoml
 
 from ...log import LOGGING_CONFIG
 from ...trace import ServiceContext
@@ -31,7 +29,9 @@ import click
     is_flag=True,
     default=False,
 )
+@click.pass_context
 def main(
+    ctx: click.Context,
     bento_identifier: str,
     bind: str,
     runner_map: t.Optional[str],
@@ -63,8 +63,33 @@ def main(
         with a supervisor process.
     """
     if not as_worker:
-        # if not as_worker, ensure_prometheus_dir may cause a race.
+        # Start a standalone server with a supervisor process
+        from circus.watcher import Watcher
+
+        from bentoml._internal.server import ensure_prometheus_dir
+        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml._internal.utils.circus import create_standalone_arbiter
+        from bentoml._internal.utils.circus import create_circus_socket_from_uri
+
         ensure_prometheus_dir()
+        circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
+        params = ctx.params
+        params["bind"] = "fd://$(circus.sockets._bento_api_server)"
+        params["as_worker"] = True
+        watcher = Watcher(
+            name="bento_api_server",
+            cmd=sys.executable,
+            args=["-m", "bentoml._internal.server.cli.api_server"]
+            + unparse_click_params(params, ctx.command.params),
+            copy_env=True,
+            numprocesses=1,
+            stop_children=True,
+            use_sockets=True,
+            working_dir=working_dir,
+        )
+        arbiter = create_standalone_arbiter(watchers=[watcher], sockets=[circus_socket])
+        arbiter.start()
+        return
 
     import uvicorn  # type: ignore
 
@@ -75,34 +100,25 @@ def main(
         from ...configuration.containers import DeploymentContainer
 
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))
-    svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
+    svc = bentoml.load(
+        bento_identifier, working_dir=working_dir, change_global_cwd=True
+    )
 
     parsed = urlparse(bind)
-    uvicorn_options: dict[str, Any] = {
+    uvicorn_options: dict[str, t.Any] = {
         "log_level": log_level,
         "backlog": backlog,
         "log_config": LOGGING_CONFIG,
         "workers": 1,
     }
     app = t.cast("ASGI3Application", svc.asgi_app)
-    if parsed.scheme in ("file", "unix"):
-        path = uri_to_path(bind)
-        uvicorn_options["uds"] = path
-        config = uvicorn.Config(app, **uvicorn_options)
-        uvicorn.Server(config).run()
-    elif parsed.scheme == "tcp":
-        uvicorn_options["host"] = parsed.hostname
-        uvicorn_options["port"] = parsed.port
-        config = uvicorn.Config(app, **uvicorn_options)
-        uvicorn.Server(config).run()
-    elif parsed.scheme == "fd":
-        # when fd is provided, we will skip the uvicorn internal supervisor, thus there is only one process
-        fd = int(parsed.netloc)
-        sock = socket.socket(fileno=fd)
-        config = uvicorn.Config(app, **uvicorn_options)
-        uvicorn.Server(config).run(sockets=[sock])
-    else:
-        raise ValueError(f"Unsupported bind scheme: {bind}")
+    assert parsed.scheme == "fd"
+
+    # skip the uvicorn internal supervisor
+    fd = int(parsed.netloc)
+    sock = socket.socket(fileno=fd)
+    config = uvicorn.Config(app, **uvicorn_options)
+    uvicorn.Server(config).run(sockets=[sock])
 
 
 if __name__ == "__main__":

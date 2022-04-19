@@ -1,9 +1,41 @@
 import typing as t
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
+    from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
     from circus.watcher import Watcher  # type: ignore[reportMissingTypeStubs]
+
+
+def create_circus_socket_from_uri(
+    uri: str,
+    *args: t.Any,
+    name: str = "",
+    **kwargs: t.Any,
+) -> "CircusSocket":
+    from circus.sockets import CircusSocket
+
+    from bentoml._internal.utils.uri import uri_to_path
+
+    parsed = urlparse(uri)
+    if parsed.scheme in ("file", "unix"):
+        return CircusSocket(
+            name=name,
+            path=uri_to_path(uri),
+            *args,
+            **kwargs,
+        )
+    elif parsed.scheme == "tcp":
+        return CircusSocket(
+            name=name,
+            host=parsed.hostname,
+            port=parsed.port,
+            *args,
+            **kwargs,
+        )
+    else:
+        raise ValueError(f"Unsupported URI scheme: {parsed.scheme}")
 
 
 def create_standalone_arbiter(

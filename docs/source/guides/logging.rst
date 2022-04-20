@@ -3,33 +3,33 @@
 Logging
 =======
 
-BentoML provides a powerful and detailed logging pattern out of the box. Request logs for webservices are logged along with requests to each of the model runner services. We use [RichHandler](https://rich.readthedocs.io/en/stable/logging.html) to provide appropriate color coding to the logs in order to make them more easily read.
+BentoML provides a powerful and detailed logging pattern out of the box. Request logs for webservices are logged along with requests to each of the model runner services. We use `RichHandler <https://rich.readthedocs.io/en/stable/logging.html>`_ to provide appropriate color coding to the logs in order to make them more easily read.
 
-.. image:: _static/img/bentoml-logs.png
+.. image:: ../_static/img/bentoml-logs.png
 
 OpenTelemetry Compatible
 ------------------------
 
-The BentoML logging system implements the [OpenTelemetry](https://opentelemetry.io/docs/) standard for [http](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md) throughout the call stack to provide for maximum debuggability. Propogation of the OpenTelemetry parameters follows the standard provided [here](https://opentelemetry.lightstep.com/core-concepts/context-propagation/)
+The BentoML logging system implements the `OpenTelemetry <https://opentelemetry.io/docs/>`_ standard for `http <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md>`_ throughout the call stack to provide for maximum debuggability. Propogation of the OpenTelemetry parameters follows the standard provided `here <https://opentelemetry.lightstep.com/core-concepts/context-propagation/>`_
 
 The following are parameters which are provided in the logs as well for correlation back to particular requests.
 
-- trace_id is the id of a trace which tracks “the progression of a single request, as it is handled by services that make up an application” - [OpenTelemetry Basic Documentation](https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/basics)
-- span_id is the id of a span which is contained within a trace. “A span is the building block of a trace and is a named, timed operation that represents a piece of the workflow in the distributed system. Multiple spans are pieced together to create a trace.” - [OpenTelemetry Span Documentation](https://opentelemetry.lightstep.com/spans/)
-- sampled is the number of times this trace has been sampled. “Sampling is a mechanism to control the noise and overhead introduced by OpenTelemetry by reducing the number of samples of traces collected and sent to the backend.” - [OpenTelemetry SDK Documentation](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md)
+- `trace_id` is the id of a trace which tracks “the progression of a single request, as it is handled by services that make up an application” - `OpenTelemetry Basic Documentation <https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/basics>`_
+- `span_id is` the id of a span which is contained within a trace. “A span is the building block of a trace and is a named, timed operation that represents a piece of the workflow in the distributed system. Multiple spans are pieced together to create a trace.” - `OpenTelemetry Span Documentation <https://opentelemetry.lightstep.com/spans/>`_
+- `sampled is` the number of times this trace has been sampled. “Sampling is a mechanism to control the noise and overhead introduced by OpenTelemetry by reducing the number of samples of traces collected and sent to the backend.” - `OpenTelemetry SDK Documentation <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md>`_
 
-Error Logging
--------------
+Exception Logging
+-----------------
 
 
-Any time an error is thrown, [RichHandler](https://rich.readthedocs.io/en/stable/logging.html) will log the exception stack in it’s own nicely designed format for maximum readability.
+Any time an error is thrown, `RichHandler <https://rich.readthedocs.io/en/stable/logging.html>`_ will log the exception stack in it’s own nicely designed format for maximum readability.
 
-.. image:: _static/img/bentoml-logs-exception.png
+.. image:: ../_static/img/bentoml-logs-exception.png
 
 Logging Configuration
 ---------------------
 
-Logs can be configured from the bentofile.yaml file.
+Logs can be configured from the bentofile.yaml file for both web requests and model serving requests.
 
 Web Service Requests
 ^^^^^^^^^^^^^^^^^^^^

@@ -70,6 +70,11 @@ Or by setting environment variable `BENTOML_DO_NOT_TRACK=True`:
 export BENTOML_DO_NOT_TRACK=True
 ```
 
+### Contributers! ###
+Thanks to all of our amazing contributors!
+<a href="https://github.com/bentoml/BentoML/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=bentoml/BentoML" />
+</a>
 
 ### License ###
 

@@ -5,9 +5,9 @@ Adaptive Batching
 
 Batching is the term used for combining multiple inputs for submission to processing at the same time. The idea is that processing multiple messages is be faster than processing each individual message one at a time. In practice many ML frameworks have optimizations for processing multiple messages at a time because that how the underlying hardware works in many cases.
 
-This is what the [TensorFlow documentation](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/batching/README.md) mentions:
-
-> While serving a TensorFlow model, batching individual model inference requests together can be important for performance. In particular, batching is necessary to unlock the high throughput promised by hardware accelerators such as GPUs.
+.. epigraph::
+    While serving a TensorFlow model, batching individual model inference requests together can be important for performance. In particular, batching is necessary to unlock the high throughput promised by hardware accelerators such as GPUs.
+    -- `TensorFlow documentation <https://github.com/tensorflow/serving/blob/master/tensorflow_serving/batching/README.md>`_
 
 As an optimization for a real-time service, batching works off of 2 main concepts.
 
@@ -21,7 +21,7 @@ Architecture
 
 The batching mechanism is located on the model runner. Each model runner receives inference requests and batches those requests based on optimal latency.
 
-.. image:: _static/img/batching-diagram.png
+.. image:: ../_static/img/batching-diagram.png
 
 The load balancer will distribute the requests to each of the running web services. The web services will in turn distribute the inference requests to the model runners. The distribution of to the model runners is random rather than round robin by default. This is because a proper round robin distribution does not optimize for batch processing and will actually be slower in many cases than a random distribution. In the future we plan to have different distribution algorithm options.
 

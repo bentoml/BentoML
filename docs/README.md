@@ -19,13 +19,12 @@ Once you have `sphinx` installed, you can build the documentation and enable wat
 » make watch-docs
 ```
 
-For Apple Silicon (M1), a environment variable is required:
+For Apple Silicon (M1), follow the latest suggested installation method for [PyEnchant](https://pyenchant.github.io/pyenchant/install.html)
+As of this writing there is no compatible arm64 version of pyenchant and the best way to install is the following commands:
+
 ```bash
-» export PYENCHANT_LIBRARY_PATH=/opt/homebrew/lib/libenchant-2.2.dylib
-```
-then install pychant with `brew`:
-```bash
-» arch -arm64 brew install enchant
+» arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+» arch -x86_64 /usr/local/bin/brew install enchant
 ```
 
 ## Documentation specification

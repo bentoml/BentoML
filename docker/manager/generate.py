@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+from typing import TYPE_CHECKING
 import logging
 import itertools
 from collections import defaultdict
@@ -18,8 +19,11 @@ from manager._configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from argparse import Namespace
 
-def generate_dockerfiles():
+
+def generate_dockerfiles(args: Namespace) -> None:
     """
     Generate Dockerfile for a given docker package.
     """
@@ -68,7 +72,7 @@ def generate_dockerfiles():
                     cuda_url=cuda_url_target_arch[architecture]
                     if "rhel" in input_path
                     else None,
-                    organization=DockerManagerContainer.organization,
+                    organization=args.organization,
                     xx_image="tonistiigi/xx",
                     xx_version="1.1.0",
                     **cattrs.unstructure(file_context),
@@ -80,7 +84,11 @@ def get_python_version_from_tag(tag: str) -> t.List[int]:
 
 
 @inject
-def generate_readmes(*, docker_package: str = DockerManagerContainer.docker_package):
+def generate_readmes(
+    args: Namespace,
+    *,
+    docker_package: str = DockerManagerContainer.docker_package,
+) -> None:
     tag_ref = defaultdict(list)
     arch = {}
 
@@ -96,7 +104,7 @@ def generate_readmes(*, docker_package: str = DockerManagerContainer.docker_pack
 
     readme_jinja2_context = {
         "bentoml_package": docker_package,
-        "bentoml_release_version": DockerManagerContainer.bentoml_version.get(),
+        "bentoml_release_version": args.bentoml_version,
         "supported": arch,
         "tag_ref": tag_ref,
         "emphemeral": False,
@@ -109,6 +117,7 @@ def generate_readmes(*, docker_package: str = DockerManagerContainer.docker_pack
     ):
         if extends:
             readme_jinja2_context.update(extends)
+
         readme_tmpl = fs.path.combine("docs", "README.md.j2")
         tmp_fs = fs.open_fs("temp://")
 
@@ -128,7 +137,10 @@ def generate_readmes(*, docker_package: str = DockerManagerContainer.docker_pack
     render_from_components(f"/README.md", extends={"emphemeral": True})
 
 
-def main(args):
-    generate_dockerfiles()
-    generate_readmes()
-    send_log("Generated Dockerfiles and README.md")
+def entrypoint(args: Namespace) -> None:
+    generate_dockerfiles(args)
+    generate_readmes(args)
+
+    send_log(
+        "[bold green]Generated Dockerfiles and README.md.[/]", extra={"markup": True}
+    )

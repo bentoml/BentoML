@@ -2,8 +2,8 @@ import sys
 import logging
 import argparse
 
-from manager.build import main as build
-from manager.generate import main as generate
+from manager.build import entrypoint as entrypoint_build
+from manager.generate import entrypoint as entrypoint_generate
 from manager._configuration import DockerManagerContainer
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ Get started with:
     parser.add_argument("--organization", type=str)
 
     subparser = parser.add_subparsers()
+
     build_parser = subparser.add_parser(
         "build",
         help="build docker images from generated Dockerfiles.",
@@ -40,7 +41,7 @@ Get started with:
     build_parser.add_argument("--distros", action="append", nargs="+")
     build_parser.add_argument("--dry-run", action="store_true")
     build_parser.add_argument("--max-worker", type=int, default=5)
-    build_parser.set_defaults(func=build)
+    build_parser.set_defaults(func=entrypoint_build)
 
     generate_parser = subparser.add_parser(
         "generate",
@@ -48,7 +49,7 @@ Get started with:
         parents=[parser],
         add_help=False,
     )
-    generate_parser.set_defaults(func=generate)
+    generate_parser.set_defaults(func=entrypoint_generate)
 
     args = parser.parse_args()
 

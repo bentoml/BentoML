@@ -30,6 +30,8 @@ if TYPE_CHECKING:
     Tags = t.Dict[str, t.Tuple[str, str, str, t.Dict[str, str], str, t.Tuple[str, ...]]]
     from fs.base import FS
 
+    from argparse import Namespace
+
 logger = logging.getLogger(__name__)
 
 BUILDER_LIST = []
@@ -293,7 +295,7 @@ def flatten_list(lst: t.List[t.List[str]]) -> t.List[str]:
     return [item for sublist in lst for item in sublist]
 
 
-def main(args):
+def entrypoint(args: Namespace) -> None:
     if args.releases is None:
         releases = DockerManagerContainer.RELEASE_TYPE_HIERARCHY
     else:

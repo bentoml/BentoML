@@ -30,7 +30,7 @@ It’s as simple as creating 2 runners and using them together in your predictio
 Multiple dependent models
 -------------------------
 
-In cases where certain steps may be dependent on one another, the `~asyncio.gather` method can be used to await the completion of multiple model results. For example if you were running 2 models side by side to compare the results, you could await both as follows:
+In cases where certain steps may be dependent on one another, the ``asyncio.gather`` method can be used to await the completion of multiple model results. For example if you were running 2 models side by side to compare the results, you could await both as follows:
 
 .. code-block:: python
 

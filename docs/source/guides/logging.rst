@@ -7,6 +7,14 @@ BentoML provides a powerful and detailed logging pattern out of the box. Request
 
 .. image:: ../_static/img/bentoml-logs.png
 
+The log format is as follows:
+
+.. parsed-literal::
+
+    "[%(component)s] %(message)s"
+
+Where `component` is the BentoML module which is logging and `message` is the log message itself.
+
 OpenTelemetry Compatible
 ------------------------
 
@@ -31,8 +39,8 @@ Logging Configuration
 
 Logs can be configured from the bentofile.yaml file for both web requests and model serving requests.
 
-Web Service Requests
-^^^^^^^^^^^^^^^^^^^^
+Web Service Request Logging
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For web requests, logging can be enabled and disabled using the `logging.access` parameter at the top level of the bentofile.yaml.
 
@@ -48,10 +56,10 @@ For web requests, logging can be enabled and disabled using the `logging.access`
 
 In addition we provide the following parameters that can enabled or disabled in each log line. Each of these parameters comes from the http headers in the requests and response.
 
-- `request_content_length`: Is the size of the content that is being received
-- `request_content_type`: Is the type of content in the request
-- `response_content_length`: Is the content length of the data that is being returned in the response
-- `response_content_type`: Is the type of data being returned in the response
+- `request_content_length` is the size of the content that is being received
+- `request_content_type` is the type of content in the request
+- `response_content_length` is the content length of the data that is being returned in the response
+- `response_content_type` is the type of data being returned in the response
 
 Model Runner Request Logging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -71,7 +79,7 @@ Depending on how you’ve configured BentoML, the webserver may be separated fro
 
 Each additional parameter may be configured to be shown or not:
 
-- `request_content_length`: Is the size of the content that is being received coming from the web service
-- `request_content_type`: Is the type of content in the request coming from the web service
-- `response_content_length`: Is the content length of the data that is being returned in the response to the webservice
-- `response_content_type`: Is the type of data being returned in the response to the webservice
+- `request_content_length` is the size of the content that is being received coming from the web service
+- `request_content_type` is the type of content in the request coming from the web service
+- `response_content_length` is the content length of the data that is being returned in the response to the webservice
+- `response_content_type` is the type of data being returned in the response to the webservice

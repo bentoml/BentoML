@@ -5,19 +5,36 @@
 Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
 If you don't want to use `make` then please refer to [Makefile](./Makefile) for specific commands on a given make target.
 
-2. Clone the source code from BentoML's GitHub repository:
+2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
+
+3. Clone the source code from your fork of BentoML's GitHub repository:
 ```bash
-git clone https://github.com/bentoml/BentoML.git && cd BentoML
+git clone https://github.com/yourusername/BentoML.git && cd BentoML
 ```
 
-3. Install BentoML with pip in `editable` mode:
+4. Add the BentoML upstream remote to your local BentoML clone:
+```bash
+git remote add upstream git@github.com:bentoml/BentoML.git
+```
+
+5. Switch to main:
+```bash
+git switch main
+```
+
+6. Configure git to pull from the upstream remote:
+```bash
+git branch --set-upstream-to=upstream/main
+```
+
+7. Install BentoML with pip in `editable` mode:
 ```bash
 pip install -e .
 ```
 
 This installs BentoML in an editable state. The changes you make will automatically be reflected even without reinstalling BentoML.
 
-4. Test the BentoML installation either with `bash` or in an IPython session:
+8. Test the BentoML installation either with `bash` or in an IPython session:
 ```bash
 bentoml --version
 ```
@@ -26,33 +43,108 @@ bentoml --version
 print(bentoml.__version__)
 ```
 
-<details>
-<summary><h2>Start Developing with VSCode</h2></summary>
+<details><summary><h2>Start Developing with VSCode</h2></summary>
 
 1. Confirm that you have the following installed:
 	- [Python3.7+](https://www.python.org/downloads/)
 	- VSCode with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
 
-2. Clone the Github repository with the following steps:
-	1. Open the command palette with Ctrl+Shift+P and type in clone.
+2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
+
+3. Clone the GitHub repository with the following steps:
+	1. Open the command palette with Ctrl+Shift+P and type in 'clone'.
 	2. Select Git: Clone(Recursive).
 	3. Clone BentoML.
 
-3. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the New Terminal option. Next, add a virtual environment with this command:
+4. Add an BentoML upstream remote with these steps:
+  1. Open the command palette and enter 'add remote'.
+  2. Select Git: Add Remote.
+  3. Press enter to select Add remote from GitHub.
+  4. Enter https://github.com/bentoml/BentoML.git to select the BentoML repository.
+  5. Name your remote 'upstream'.
+
+4. Pull from the BentoML upstream remote to your main branch with the following steps:
+  1. Open the command palette and enter 'checkout'.
+  2. Select Git: Checkout to...
+  3. Choose main to switch to the main branch.
+  4. Open the command palette again and enter 'pull from'.
+  5. Click on Git: Pull from...
+  6. Select upstream.
+
+5. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the New Terminal option. Next, add a virtual environment with this command:
 ```bash
 python -m venv .venv
 ```
-4. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
+6. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
 	1. Open any python file in the directory.
 	2. Select the interpreter selector on the blue status bar at the bottom of the editor.
   <img src="/docs/source/_static/img/vscode-status-bar.png" alt="VSCode Status Bar"></img>
 	3. Switch to the path that includes .venv from the dropdown at the top.
   <img src="/docs/source/_static/img/vscode-select-venv.png" alt="VSCode Interpreter Selection Menu"></img>
 
-5. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
+7. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
 ```
 	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
+</details>
+
+<details><summary><h2>Making Changes</h2></summary>
+
+## Using the Command Line
+1. Make sure you're on the main branch.
+```bash
+git switch main
+```
+
+2. Use the git pull command to retrieve content from the BentoML Github repository.
+```bash
+git pull
+```
+
+3. Create a new branch and switch to it.
+```bash
+git switch -c my-new-branch-name
+```
+
+4. Use the git add command to save the state of files you have changed.
+```bash
+git add <names of the files you have changed>
+```
+
+5. Commit your changes.
+```bash
+git commit
+```
+
+6. Push all changes to your fork on GitHub.
+```bash
+git push
+```
+
+## Using VSCode
+1. Switch to the main branch:
+  1. Open the command palette with Ctrl+Shift+P.
+  2. Search for Git: Checkout to...
+  3. Select main.
+
+2. Pull from the upstream remote:
+  1. Open the command palette.
+  2. Enter and select Git: Pull...
+  3. Select upstream.
+
+3. Create and change to a new branch:
+  1. Type in Git: Create Branch... in the command palette.
+  2. Enter a branch name.
+
+4. Stage all your changes:
+  1. Enter and select Git: Stage All Changes... in the command palette.
+
+5. Commit your changes:
+  1. Open the command palette and enter Git: Commit.
+
+6. Push your changes:
+  1. Enter and select Git: Push... in the command palette.
+
 </details>
 
 ## Testing
@@ -295,28 +387,6 @@ git clone git@github.com:bentoml/stubs.git
 ```
 
 ## Creating Pull Request on GitHub
-
-[Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and
-add upstream remotes to local BentoML clone:
-
-```bash
-git remote add upstream git@github.com:bentoml/BentoML.git
-```
-
-Make the changes either to fix a known issue or adding new feature
-
-In order for us to manage PR and Issues systematically, we encourage developers to use hierarchical branch folders to manage branch naming.
-Run `./dev/install_git_hooks.sh` to install `pre-commit` hooks. We will check if your branch naming
-follows the given regex : `^(feature|bugfix|improv|lib|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$`. This
-is partially based on how [Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/repos/git/require-branch-folders?view=azure-devops&tabs=browser)
-manages its repos and conventional commits spec (see below for more information):
-- feature: new features/proposals users want to integrate into the library, not a new feature for a build script
-- bugfix: bugfix of a feature, not a fix to a build script
-- improv: improvements/refactor/cleanup production code, eg. reformat, pylint, etc.
-- lib: related to internal libraries, features required by the production code
-- prerelease: alpha/beta features that might should be included in the prerelease of the library. This would help testing new features/integrations for the library
-- release: included all features that is production ready
-- hotifx: patch of current bugs in production code
 
 Push changes to your fork and follow [this
 article](https://help.github.com/en/articles/creating-a-pull-request)

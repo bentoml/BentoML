@@ -7,6 +7,10 @@ import logging
 import urllib.parse
 import urllib.request
 from typing import TYPE_CHECKING
+from datetime import date
+from datetime import time
+from datetime import datetime
+from datetime import timedelta
 from dataclasses import dataclass
 
 from .utils.dataclasses import json_serializer
@@ -30,6 +34,24 @@ if TYPE_CHECKING:
     PathType = t.Union[str, os.PathLike[str]]
 else:
     PathType = t.Union[str, os.PathLike]
+
+MetadataType = t.Union[
+    str,
+    bytes,
+    bool,
+    int,
+    float,
+    complex,
+    datetime,
+    date,
+    time,
+    timedelta,
+    t.List["MetadataType"],
+    t.Tuple["MetadataType"],
+    t.Dict[str, "MetadataType"],
+]
+
+MetadataDict = t.Dict[str, MetadataType]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
 
@@ -135,7 +157,9 @@ class LazyType(t.Generic[T]):
     def __repr__(self) -> str:
         return f'LazyType("{self.module}", "{self.qualname}")'
 
-    def get_class(self, import_module: bool = True) -> "t.Type[T]":
+    def get_class(
+        self, import_module: bool = True
+    ) -> "t.Union[t.Type[T], t.Tuple[t.Type[T]]]":
         if self._runtime_class is None:
             try:
                 m = sys.modules[self.module]
@@ -147,6 +171,10 @@ class LazyType(t.Generic[T]):
                 else:
                     raise ValueError(f"Module {self.module} not imported")
 
+            if isinstance(self.qualname, tuple):
+                self._runtime_class = tuple(
+                    (t.cast("t.Type[T]", getattr(m, x)) for x in self.qualname)
+                )
             self._runtime_class = t.cast("t.Type[T]", getattr(m, self.qualname))
 
         return self._runtime_class

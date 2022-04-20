@@ -240,6 +240,7 @@ def create(
     try:
         yield res
     finally:
+        res.info.freeze()
         res.save(_model_store)
 
         track(

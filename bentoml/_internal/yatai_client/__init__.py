@@ -38,10 +38,12 @@ from ..configuration.containers import BentoMLContainer
 from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
 from ..yatai_rest_api_client.schemas import BentoApiSchema
 from ..yatai_rest_api_client.schemas import LabelItemSchema
+from ..yatai_rest_api_client.schemas import BentoRunnerSchema
 from ..yatai_rest_api_client.schemas import BentoUploadStatus
 from ..yatai_rest_api_client.schemas import CreateBentoSchema
 from ..yatai_rest_api_client.schemas import CreateModelSchema
 from ..yatai_rest_api_client.schemas import ModelUploadStatus
+from ..yatai_rest_api_client.schemas import UpdateBentoSchema
 from ..yatai_rest_api_client.schemas import BentoManifestSchema
 from ..yatai_rest_api_client.schemas import ModelManifestSchema
 from ..yatai_rest_api_client.schemas import FinishUploadBentoSchema
@@ -241,13 +243,24 @@ class YataiClient:
                 f'[bold blue]Push failed: Bento "{bento.tag}" already exists in Yatai'
             )
             return
+        labels: t.List[LabelItemSchema] = [
+            LabelItemSchema(key=key, value=value) for key, value in info.labels.items()
+        ]
+        apis: t.Dict[str, BentoApiSchema] = {}
+        models = [str(m.tag) for m in info.models]
+        runners = [
+            BentoRunnerSchema(name=r.name, runner_type=r.runner_type)
+            for r in info.runners
+        ]
+        manifest = BentoManifestSchema(
+            service=info.service,
+            bentoml_version=info.bentoml_version,
+            apis=apis,
+            models=models,
+            runners=runners,
+            size_bytes=calc_dir_size(bento.path),
+        )
         if not remote_bento:
-            labels: t.List[LabelItemSchema] = [
-                LabelItemSchema(key=key, value=value)
-                for key, value in info.labels.items()
-            ]
-            apis: t.Dict[str, BentoApiSchema] = {}
-            models = [str(m.tag) for m in info.models]
             with self.spin(text=f'Registering Bento "{bento.tag}" with Yatai..'):
                 yatai_rest_client.create_bento(
                     bento_repository_name=bento_repository.name,
@@ -255,13 +268,17 @@ class YataiClient:
                         description="",
                         version=version,
                         build_at=info.creation_time,
-                        manifest=BentoManifestSchema(
-                            service=info.service,
-                            bentoml_version=info.bentoml_version,
-                            apis=apis,
-                            models=models,
-                            size_bytes=calc_dir_size(bento.path),
-                        ),
+                        manifest=manifest,
+                        labels=labels,
+                    ),
+                )
+        else:
+            with self.spin(text=f'Updating Bento "{bento.tag}"..'):
+                yatai_rest_client.update_bento(
+                    bento_repository_name=bento_repository.name,
+                    version=version,
+                    req=UpdateBentoSchema(
+                        manifest=manifest,
                         labels=labels,
                     ),
                 )

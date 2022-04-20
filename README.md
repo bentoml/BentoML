@@ -70,7 +70,8 @@ Or by setting environment variable `BENTOML_DO_NOT_TRACK=True`:
 export BENTOML_DO_NOT_TRACK=True
 ```
 
-### Contributers ###
+---
+### Contributors! ###
 
 Thanks to all of our amazing contributors!
 

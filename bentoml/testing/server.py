@@ -243,7 +243,7 @@ def run_bento_server_distributed(
 
     path = bento_service.path
 
-    with open(os.path.join(path, "bento.yaml"), "r") as f:
+    with open(os.path.join(path, "bento.yaml"), "r", encoding="utf-8") as f:
         bentofile = yaml.safe_load(f)
 
     runner_map = {}

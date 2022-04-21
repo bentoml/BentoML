@@ -51,6 +51,9 @@ def host(request) -> t.Generator[str, None, None]:
     if psutil.MACOS and deployment_mode == "docker":
         pytest.skip("docker is not supported on macos of GitHub Actions")
 
+    if deployment_mode == "distributed" and not psutil.LINUX:
+        pytest.skip("distributed deployment is only supported on Linux")
+
     from bentoml.testing.server import host_bento
 
     with host_bento(

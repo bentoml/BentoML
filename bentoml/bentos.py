@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 User facing python APIs for managing local bentos and build new bentos
 """

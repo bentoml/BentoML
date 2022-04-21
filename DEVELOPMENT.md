@@ -52,18 +52,18 @@ print(bentoml.__version__)
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 
 3. Clone the GitHub repository with the following steps:
-	1. Open the command palette with Ctrl+Shift+P and type in 'clone'.
+  1. Open the command palette with Ctrl+Shift+P and type in 'clone'.
 	2. Select Git: Clone(Recursive).
 	3. Clone BentoML.
 
 4. Add an BentoML upstream remote with these steps:
-  1. Open the command palette and enter 'add remote'.
-  2. Select Git: Add Remote.
-  3. Press enter to select Add remote from GitHub.
-  4. Enter https://github.com/bentoml/BentoML.git to select the BentoML repository.
-  5. Name your remote 'upstream'.
+    1. Open the command palette and enter 'add remote'.
+    2. Select Git: Add Remote.
+    3. Press enter to select Add remote from GitHub.
+    4. Enter https://github.com/bentoml/BentoML.git to select the BentoML repository.
+    5. Name your remote 'upstream'.
 
-4. Pull from the BentoML upstream remote to your main branch with the following steps:
+5. Pull from the BentoML upstream remote to your main branch with the following steps:
   1. Open the command palette and enter 'checkout'.
   2. Select Git: Checkout to...
   3. Choose main to switch to the main branch.
@@ -71,18 +71,18 @@ print(bentoml.__version__)
   5. Click on Git: Pull from...
   6. Select upstream.
 
-5. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the New Terminal option. Next, add a virtual environment with this command:
+6. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the New Terminal option. Next, add a virtual environment with this command:
 ```bash
 python -m venv .venv
 ```
-6. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
+7. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
 	1. Open any python file in the directory.
 	2. Select the interpreter selector on the blue status bar at the bottom of the editor.
   <img src="/docs/source/_static/img/vscode-status-bar.png" alt="VSCode Status Bar"></img>
 	3. Switch to the path that includes .venv from the dropdown at the top.
   <img src="/docs/source/_static/img/vscode-select-venv.png" alt="VSCode Interpreter Selection Menu"></img>
 
-7. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
+8. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
 ```
 	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```

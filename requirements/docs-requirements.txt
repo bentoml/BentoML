@@ -10,3 +10,4 @@ sphinxcontrib-spelling
 sphinx-copybutton
 pyenchant
 mock
+Jinja2<3.1

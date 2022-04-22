@@ -6,8 +6,8 @@
 
 1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.7+](https://www.python.org/downloads/) installed.
 
-Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
-If you don't want to use `make` then please refer to the [Makefile](./Makefile) for specific commands on a given make target.
+   Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
+   If you don't want to use `make` then please refer to the [Makefile](./Makefile) for specific commands on a given make target.
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 
@@ -32,7 +32,7 @@ If you don't want to use `make` then please refer to the [Makefile](./Makefile) 
    pip install -e .
    ```
 
-This installs BentoML in an editable state. The changes you make will automatically be reflected without reinstalling BentoML.
+   This installs BentoML in an editable state. The changes you make will automatically be reflected without reinstalling BentoML.
 
 7. Install the BentoML development requirements:
    ```bash
@@ -81,9 +81,9 @@ This installs BentoML in an editable state. The changes you make will automatica
     6. Select 'upstream'.
 
 6. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the 'New Terminal' option. Next, add a virtual environment with this command:
-```bash
-python -m venv .venv
-```
+   ```bash
+   python -m venv .venv
+   ```
 7. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
 	  1. Open any python file in the directory.
 	  2. Select the interpreter selector on the blue status bar at the bottom of the editor.
@@ -92,9 +92,9 @@ python -m venv .venv
     <img src="/docs/source/_static/img/vscode-select-venv.png" alt="VS Code Interpreter Selection Menu"></img>
 
 8. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
-```
-	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
+   ```
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
 </details>
 
 ## Making Changes
@@ -102,36 +102,36 @@ python -m venv .venv
 <details><summary><h3>using the Command Line</h3></summary>
 
 1. Make sure you're on the main branch.
-```bash
-git switch main
-```
+   ```bash
+   git switch main
+   ```
 
 2. Use the git pull command to retrieve content from the BentoML Github repository.
-```bash
-git pull
-```
+   ```bash
+   git pull
+   ```
 
 3. Create a new branch and switch to it.
-```bash
-git switch -c my-new-branch-name
-```
+   ```bash
+   git switch -c my-new-branch-name
+   ```
 
 4. Make your changes!
 
 5. Use the git add command to save the state of files you have changed.
-```bash
-git add <names of the files you have changed>
-```
+   ```bash
+   git add <names of the files you have changed>
+   ```
 
 6. Commit your changes.
-```bash
-git commit
-```
+   ```bash
+   git commit
+   ```
 
 7. Push all changes to your fork on GitHub.
-```bash
-git push
-```
+   ```bash
+   git push
+   ```
 </details>
 
 <details><summary><h3>using VS Code</h3></summary>

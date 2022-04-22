@@ -1,4 +1,8 @@
-<details><summary><h2>Start Developing with the Command Line</h2></summary>
+# Developer Guide
+
+## Start Developing
+
+<details><summary><h3>with the Command Line</h3></summary>
 
 1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.7+](https://www.python.org/downloads/) installed.
 
@@ -45,9 +49,10 @@ This installs BentoML in an editable state. The changes you make will automatica
    ```python
    print(bentoml.__version__)
    ```
+
 </details>
 
-<details><summary><h2>Start Developing with VS Code</h2></summary>
+<details><summary><h3>with VS Code</h3></summary>
 
 1. Confirm that you have the following installed:
 	- [Python3.7+](https://www.python.org/downloads/)
@@ -92,9 +97,10 @@ python -m venv .venv
 ```
 </details>
 
-<details><summary><h2>Making Changes</h2></summary>
+## Making Changes
 
-## Using the Command Line
+<details><summary><h3>using the Command Line</h3></summary>
+
 1. Make sure you're on the main branch.
 ```bash
 git switch main
@@ -126,8 +132,10 @@ git commit
 ```bash
 git push
 ```
+</details>
 
-## Using VS Code
+<details><summary><h3>using VS Code</h3></summary>
+
 1. Switch to the main branch:
     1. Open the command palette with Ctrl+Shift+P.
     2. Search for 'Git: Checkout to...'

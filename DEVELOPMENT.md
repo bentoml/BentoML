@@ -1,86 +1,90 @@
-## Install BentoML from source
+<details><summary><h2>Start Developing with the Command Line</h2></summary>
 
 1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.7+](https://www.python.org/downloads/) installed.
 
 Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
-If you don't want to use `make` then please refer to [Makefile](./Makefile) for specific commands on a given make target.
+If you don't want to use `make` then please refer to the [Makefile](./Makefile) for specific commands on a given make target.
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 
 3. Clone the source code from your fork of BentoML's GitHub repository:
-```bash
-git clone https://github.com/yourusername/BentoML.git && cd BentoML
-```
+   ```bash
+   git clone https://github.com/yourusername/BentoML.git && cd BentoML
+   ```
 
 4. Add the BentoML upstream remote to your local BentoML clone:
-```bash
-git remote add upstream git@github.com:bentoml/BentoML.git
-```
+   ```bash
+   git remote add upstream git@github.com:bentoml/BentoML.git
+   ```
 
-5. Switch to main:
-```bash
-git switch main
-```
+5. Configure git to pull from the upstream remote:
+   ```bash
+   git switch main # ensure you're on the main branch
+   git branch --set-upstream-to=upstream/main
+   ```
 
-6. Configure git to pull from the upstream remote:
-```bash
-git branch --set-upstream-to=upstream/main
-```
+6. Install BentoML with pip in editable mode:
+   ```bash
+   pip install -e .
+   ```
 
-7. Install BentoML with pip in `editable` mode:
-```bash
-pip install -e .
-```
+This installs BentoML in an editable state. The changes you make will automatically be reflected without reinstalling BentoML.
 
-This installs BentoML in an editable state. The changes you make will automatically be reflected even without reinstalling BentoML.
+7. Install the BentoML development requirements:
+   ```bash
+   pip install -r ./requirements/dev-requirements.txt
+   ```
 
-8. Test the BentoML installation either with `bash` or in an IPython session:
-```bash
-bentoml --version
-```
+8. Test the BentoML installation either with `bash`:
+   ```bash
+   bentoml --version
+   ```
 
-```python
-print(bentoml.__version__)
-```
+   or in a Python session:
 
-<details><summary><h2>Start Developing with VSCode</h2></summary>
+   ```python
+   print(bentoml.__version__)
+   ```
+</details>
+
+<details><summary><h2>Start Developing with VS Code</h2></summary>
 
 1. Confirm that you have the following installed:
 	- [Python3.7+](https://www.python.org/downloads/)
-	- VSCode with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
+	- VS Code with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 
-3. Clone the GitHub repository with the following steps:
+3. Clone the GitHub repository:
     1. Open the command palette with Ctrl+Shift+P and type in 'clone'.
-	  2. Select Git: Clone(Recursive).
+	  2. Select 'Git: Clone(Recursive)'.
 	  3. Clone BentoML.
 
-4. Add an BentoML upstream remote with these steps:
+4. Add an BentoML upstream remote:
     1. Open the command palette and enter 'add remote'.
-    2. Select Git: Add Remote.
-    3. Press enter to select Add remote from GitHub.
+    2. Select 'Git: Add Remote'.
+    3. Press enter to select 'Add remote' from GitHub.
     4. Enter https://github.com/bentoml/BentoML.git to select the BentoML repository.
     5. Name your remote 'upstream'.
 
-5. Pull from the BentoML upstream remote to your main branch with the following steps:
+5. Pull from the BentoML upstream remote to your main branch:
     1. Open the command palette and enter 'checkout'.
-    2. Select Git: Checkout to...
-    3. Choose main to switch to the main branch.
+    2. Select 'Git: Checkout to...'
+    3. Choose 'main' to switch to the main branch.
     4. Open the command palette again and enter 'pull from'.
-    5. Click on Git: Pull from...
-    6. Select upstream.
+    5. Click on 'Git: Pull from...'
+    6. Select 'upstream'.
 
-6. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the New Terminal option. Next, add a virtual environment with this command:
+6. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the 'New Terminal' option. Next, add a virtual environment with this command:
 ```bash
 python -m venv .venv
 ```
 7. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
 	  1. Open any python file in the directory.
 	  2. Select the interpreter selector on the blue status bar at the bottom of the editor.
-    <img src="/docs/source/_static/img/vscode-status-bar.png" alt="VSCode Status Bar"></img>
+    <img src="/docs/source/_static/img/vscode-status-bar.png" alt="VS Code Status Bar"></img>
 	  3. Switch to the path that includes .venv from the dropdown at the top.
-    <img src="/docs/source/_static/img/vscode-select-venv.png" alt="VSCode Interpreter Selection Menu"></img>
+    <img src="/docs/source/_static/img/vscode-select-venv.png" alt="VS Code Interpreter Selection Menu"></img>
 
 8. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
 ```
@@ -106,44 +110,48 @@ git pull
 git switch -c my-new-branch-name
 ```
 
-4. Use the git add command to save the state of files you have changed.
+4. Make your changes!
+
+5. Use the git add command to save the state of files you have changed.
 ```bash
 git add <names of the files you have changed>
 ```
 
-5. Commit your changes.
+6. Commit your changes.
 ```bash
 git commit
 ```
 
-6. Push all changes to your fork on GitHub.
+7. Push all changes to your fork on GitHub.
 ```bash
 git push
 ```
 
-## Using VSCode
+## Using VS Code
 1. Switch to the main branch:
     1. Open the command palette with Ctrl+Shift+P.
-    2. Search for Git: Checkout to...
-    3. Select main.
+    2. Search for 'Git: Checkout to...'
+    3. Select 'main'.
 
 2. Pull from the upstream remote:
     1. Open the command palette.
-    2. Enter and select Git: Pull...
-    3. Select upstream.
+    2. Enter and select 'Git: Pull...'
+    3. Select 'upstream'.
 
 3. Create and change to a new branch:
-    1. Type in Git: Create Branch... in the command palette.
+    1. Type in 'Git: Create Branch...' in the command palette.
     2. Enter a branch name.
 
-4. Stage all your changes:
-    1. Enter and select Git: Stage All Changes... in the command palette.
+4. Make your changes!
 
-5. Commit your changes:
-    1. Open the command palette and enter Git: Commit.
+5. Stage all your changes:
+    1. Enter and select 'Git: Stage All Changes...' in the command palette.
 
-6. Push your changes:
-    1. Enter and select Git: Push... in the command palette.
+6. Commit your changes:
+    1. Open the command palette and enter 'Git: Commit'.
+
+7. Push your changes:
+    1. Enter and select 'Git: Push...' in the command palette.
 
 </details>
 
@@ -154,12 +162,12 @@ Make sure to install all test dependencies:
 pip install -r requirements/tests-requirements.txt
 ```
 
-If you are adding new frameworks it is recommended that you also added tests for our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
+If you are adding new frameworks it is recommended that you also add tests for our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
 
-We recommended you to use [`nektos/act`](https://github.com/nektos/act) to run and tests Actions locally.
+We recommend using [`nektos/act`](https://github.com/nektos/act) to run and test Actions locally.
 
 
-We introduce a tests script [run_tests.sh](./scripts/ci/run_tests.sh) that can be used to run tests locally and on CI.
+The following tests script [run_tests.sh](./scripts/ci/run_tests.sh) can be used to run tests locally.
 ```bash
 ./scripts/ci/run_tests.sh -h
 Running unit/integration tests with pytest and generate coverage reports. Make sure that given testcases is defined under ./scripts/ci/config.yml.
@@ -172,13 +180,13 @@ Flags:
   -v, --verbose         set verbose scripts
 
 
-If pytest_additional_arguments is given, this will be appended to given tests run.
+If pytest_additional_arguments is given, the additional arguments will be passed to all of the tests run by the tests script.
 
 Example:
   $ ./scripts/ci/run_tests.sh pytorch --gpus --capture=tee-sys
 ```
 
-All tests are then defined under [config.yml](./scripts/ci/config.yml) where each fields follow the following format:
+All tests are then defined under [config.yml](./scripts/ci/config.yml) where each field follows the following format:
 ```yaml
 <target>: &tmpl
   root_test_dir: "tests/integration/frameworks"
@@ -189,7 +197,7 @@ All tests are then defined under [config.yml](./scripts/ci/config.yml) where eac
   type_tests: "integration"
 ```
 
-By default, each of our frameworks tests file with have the format: `test_<frameworks>_impl.py`. If `is_dir` set to `true` we will try to match the given `<target>` under `root_test_dir` to run tests from.
+By default, each of our frameworks tests files with the format: `test_<frameworks>_impl.py`. If `is_dir` set to `true` we will try to match the given `<target>` under `root_test_dir` to run tests from.
 
 | Keys | Type | Defintions |
 |------|------|------------|
@@ -200,10 +208,9 @@ By default, each of our frameworks tests file with have the format: `test_<frame
 |`external_scripts`| `<str>`| optional shell scripts that can be run on top of `./scripts/ci/run_tests.sh` for given testsuite |
 |`type_tests`| `<Literal["e2e","unit","integration"]>`| define type of tests for given `target` |
 
-When `type_tests` is set to `e2e`, `./scripts/ci/run_tests.sh` will change current directory into given `root_test_dir` and will run testsuite from there.
+When `type_tests` is set to `e2e`, `./scripts/ci/run_tests.sh` will change current directory into the given `root_test_dir`, and will run the testsuite from there.
 
-The reason why we encourage developers to use the scripts in CI is that under the hood when we uses pytest, we will create a custom reports for given tests. This report then
- can be used as carryforward flags on codecov for consistent reporting.
+The reason why we encourage developers to use the scripts in CI is that under the hood when we use pytest, we will create a custom report for the given tests. This report can then be used as carryforward flags on codecov for consistent reporting.
 
 Example:
 ```yaml
@@ -225,7 +232,7 @@ pytorch_lightning:
     - "torchvision==0.10.0+cpu"
 ```
 
-Refers to [config.yml](./scripts/ci/config.yml) for more examples.
+Refer to [config.yml](./scripts/ci/config.yml) for more examples.
 
 ### Unit tests
 
@@ -247,7 +254,7 @@ make tests-unit
 
 ### Integration tests
 
-Run given tests after defining target under `scripts/ci/config.yml` with `run_tests.sh`:
+Run given tests after defining a target under `scripts/ci/config.yml` with `run_tests.sh`:
 ```bash
 # example: run Keras TF1 integration tests
 ./scripts/ci/run_tests.sh keras_tf1
@@ -326,8 +333,8 @@ python -m http.server --directory ./docs/build/html
 Docs can then be accessed at [localhost:8000](http://localhost:8000)
 
 If you are developing under macOS or Linux, we also made a script that watches docs
-file changes, automatically rebuild the docs, and refreshes the browser
-tab to show the change (UNIX-based system only):
+file changes, automatically rebuilds the docs, and refreshes the browser
+tab to show changes (UNIX-based system only):
 ```bash
 ./scripts/watch_docs.sh
 ```
@@ -352,14 +359,14 @@ brew install fswatch
 ```
 
 #### Debian-based distros
-Make sure you have `inotifywait` installed
+Make sure you have `inotifywait` installed:
 ```shell script
 sudo apt install inotify-tools
 ```
 
 ## Python tools ecosystem
 
-Currently BentoML are [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible via `setup.cfg` and `pyproject.toml`.
+Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible via `setup.cfg` and `pyproject.toml`.
  We also define most of our config for Python tools where:
  - `pyproject.toml` contains config for `setuptools`, `black`, `pytest`, `pylint`, `isort`, `pyright`
  - `setup.cfg` contains metadata for `bentoml` library and `coverage`
@@ -374,19 +381,18 @@ BentoML also provides git hooks that developers can install with:
 make hooks
 ```
 ## Stubs
-Refers to [Installation](https://github.com/microsoft/pyright#installation) to install pyright correctly.
+Refer to [Installation](https://github.com/microsoft/pyright#installation) to install pyright correctly.
 
-In order to make pyright function correctly one also need to run the following scripts alongside with the stubs provided
- in the main repository.
+In order for pyright to function correctly you must also run the following scripts alongside the stubs provided in the main repository.
 
-One can also clone a [copy](https://github.com/bentoml/stubs) of all dependencies stubs used by BentoML to `typings/` via:
+You can also clone a [copy](https://github.com/bentoml/stubs) of all the dependencies stubs used by BentoML to `typings/` via:
 ```bash
 # Assuming at $GIT_ROOT
 git clone git@github.com:bentoml/stubs.git
 \rm -rf typings/.git* typings/*.{sh,toml,txt,cfg,py,md}
 ```
 
-## Creating Pull Request on GitHub
+## Creating Pull Requests on GitHub
 
 Push changes to your fork and follow [this
 article](https://help.github.com/en/articles/creating-a-pull-request)
@@ -406,7 +412,7 @@ specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
 - ci: (changes to configuration files and scripts)
 - revert: (reverts a previous commit)
 
-Once your pull request created, an automated test run will be triggered on
+Once your pull request is created, an automated test run will be triggered on
 your branch and the BentoML authors will be notified to review your code
-changes. Once tests are passed and reviewer has signed off, we will merge
+changes. Once tests are passed and a reviewer has signed off, we will merge
 your pull request.

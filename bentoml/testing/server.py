@@ -182,7 +182,7 @@ def run_bento_server_in_docker(
                     f"API server {host_url} failed to start within {timeout} seconds"
                 )
         finally:
-            subprocess.check_call(["docker", "stop", container_name])
+            subprocess.call(["docker", "stop", container_name])
     time.sleep(1)
 
 

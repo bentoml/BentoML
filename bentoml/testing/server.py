@@ -217,6 +217,7 @@ def run_bento_server(
         cmd,
         stderr=subprocess.STDOUT,
         env=my_env,
+        encoding="utf-8",
     )
     try:
         host_url = f"127.0.0.1:{port}"

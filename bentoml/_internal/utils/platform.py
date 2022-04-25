@@ -1,9 +1,10 @@
+import typing as t
 import subprocess
 
 import psutil
 
 
-def kill_subprocess_tree(p: "subprocess.Popen[bytes]") -> None:
+def kill_subprocess_tree(p: "subprocess.Popen[t.Any]") -> None:
     """
     Tell the process to terminate and kill all of its children. Availabe both on Windows and Linux.
     Note: It will return immediately rather than wait for the process to terminate.

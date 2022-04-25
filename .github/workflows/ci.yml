@@ -255,6 +255,9 @@ jobs:
           pip install .
           pip install -r requirements/tests-requirements.txt
 
+      - name: Export Action Envvar
+        run: export GITHUB_ACTION=true
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh general_features -x -s
 

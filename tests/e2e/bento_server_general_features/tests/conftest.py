@@ -48,10 +48,17 @@ def pytest_configure(config):  # pylint: disable=unused-argument
 )
 def host(request) -> t.Generator[str, None, None]:
     deployment_mode = request.param
-    if psutil.MACOS and deployment_mode == "docker":
-        pytest.skip("docker is not supported on macos of GitHub Actions")
+    if (
+        (psutil.WINDOWS or psutil.MACOS)
+        and os.environ.get("GITHUB_ACTION")
+        and deployment_mode == "docker"
+    ):
+        pytest.skip(
+            "due to GitHub Action's limitation, docker deployment is not supported on "
+            "windows/macos. But you can still run this test on macos/windows locally."
+        )
 
-    if deployment_mode == "distributed" and not psutil.LINUX:
+    if not psutil.LINUX and deployment_mode == "distributed":
         pytest.skip("distributed deployment is only supported on Linux")
 
     from bentoml.testing.server import host_bento

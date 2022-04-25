@@ -199,7 +199,6 @@ def run_bento_server(
     """
     workdir = workdir if workdir is not None else "./"
     my_env = os.environ.copy()
-    my_env["PYTHONIOENCODING"] = "utf-8"
     if config_file is not None:
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 

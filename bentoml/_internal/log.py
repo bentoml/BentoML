@@ -6,7 +6,6 @@ from logging import Filter
 from logging import Formatter
 
 import psutil
-import rich.console
 
 from .trace import ServiceContext
 from .configuration import get_debug_mode
@@ -56,12 +55,10 @@ class TraceFormatter(Formatter):
 
 
 if psutil.WINDOWS:
+    # required by rich logging Handler
     import sys
 
     sys.stdout.reconfigure(encoding="utf-8")
-    console = rich.console.Console(color_system="windows", legacy_windows=False)
-else:
-    console = rich.console.Console()
 
 
 LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
@@ -79,7 +76,6 @@ LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
             "filters": ["tracing"],
             "formatter": "tracing",
             "()": "rich.logging.RichHandler",
-            "console": console,
             "omit_repeated_times": False,
             "rich_tracebacks": True,
             "show_path": get_debug_mode(),  # show log line # in debug mode
@@ -89,7 +85,6 @@ LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
             "filters": ["tracing"],
             "formatter": "tracing",
             "()": "rich.logging.RichHandler",
-            "console": console,
             "omit_repeated_times": False,
             "rich_tracebacks": True,
             "show_path": get_debug_mode(),  # show log line # in debug mode

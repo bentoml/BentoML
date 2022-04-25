@@ -56,6 +56,9 @@ class TraceFormatter(Formatter):
 
 
 if psutil.WINDOWS:
+    import sys
+
+    sys.stdout.reconfigure(encoding="utf-8")
     console = rich.console.Console(color_system="windows", legacy_windows=False)
 else:
     console = rich.console.Console()

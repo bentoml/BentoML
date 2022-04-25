@@ -7,9 +7,8 @@ from typing import Optional
 
 import yaml
 
-import bentoml
-
 from ..types import is_compatible_type
+from ..context import InferenceApiContext as Context
 from ...exceptions import InvalidArgument
 from ..io_descriptors import IODescriptor
 
@@ -58,7 +57,7 @@ class InferenceAPI:
                 if key not in sig.parameters:
                     if (
                         key in ["context", "ctx"]
-                        or sig.parameters[key].annotation == bentoml.Context
+                        or sig.parameters[key].annotation == Context
                     ):
                         if self.needs_ctx:
                             raise ValueError(
@@ -111,7 +110,7 @@ class InferenceAPI:
                     isinstance(annotation, t.Type)
                     and annotation != inspect.Signature.empty
                 ):
-                    if not annotation == bentoml.Context:
+                    if not annotation == Context:
                         raise TypeError(
                             f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
                         )

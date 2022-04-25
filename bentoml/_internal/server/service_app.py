@@ -338,9 +338,7 @@ class ServiceAppFactory(BaseAppFactory):
                     else:
                         if api.needs_ctx:
                             ctx = Context.from_http(request, response)
-                            output = await run_in_threadpool(
-                                api.func(input_data, ctx=ctx)
-                            )
+                            output = await run_in_threadpool(api.func, input_data, ctx)
                         else:
                             output = await run_in_threadpool(api.func, input_data)
 

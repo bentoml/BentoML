@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import typing
 import logging
 import logging.config
@@ -58,7 +57,7 @@ if psutil.WINDOWS:
     # required by rich logging Handler
     import sys
 
-    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
 
 
 LOGGING_CONFIG: typing.Dict[str, typing.Any] = {

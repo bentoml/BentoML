@@ -4,6 +4,8 @@ import logging.config
 from logging import Filter
 from logging import Formatter
 
+import psutil
+
 from .trace import ServiceContext
 from .configuration import get_debug_mode
 
@@ -49,6 +51,13 @@ class TraceFormatter(Formatter):
             return self.control_formmater.format(record)
         else:
             return self.trace_formatter.format(record)
+
+
+if psutil.WINDOWS:
+    # required by rich logging Handler
+    import sys
+
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
 
 
 LOGGING_CONFIG: typing.Dict[str, typing.Any] = {

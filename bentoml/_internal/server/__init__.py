@@ -76,12 +76,14 @@ def serve_development(
             )
         )
 
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
-    circus_socket_map["_bento_api_server"] = CircusSocket(
-        name="_bento_api_server",
-        host=host,
-        port=port,
-        backlog=backlog,
+    circus_sockets: t.List[CircusSocket] = []
+    circus_sockets.append(
+        CircusSocket(
+            name="_bento_api_server",
+            host=host,
+            port=port,
+            backlog=backlog,
+        )
     )
 
     watchers.append(
@@ -108,7 +110,7 @@ def serve_development(
 
     arbiter = create_standalone_arbiter(
         watchers,
-        sockets=list(circus_socket_map.values()),
+        sockets=circus_sockets,
     )
     ensure_prometheus_dir()
 
@@ -172,6 +174,7 @@ def serve_production(
                         f"fd://$(circus.sockets.{runner_name})",
                         "--working-dir",
                         working_dir,
+                        "--as-worker",
                     ],
                     copy_env=True,
                     stop_children=True,
@@ -210,6 +213,7 @@ def serve_production(
                             f"fd://$(circus.sockets.{runner_name})",
                             "--working-dir",
                             working_dir,
+                            "--as-worker",
                         ],
                         copy_env=True,
                         stop_children=True,

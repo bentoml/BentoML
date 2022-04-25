@@ -14,9 +14,12 @@ import urllib.request
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
+import psutil
+
 from .._internal.tag import Tag
 from .._internal.utils import reserve_free_port
 from .._internal.utils import cached_contextmanager
+from .._internal.utils.platform import cancel_subprocess
 from .._internal.utils.platform import kill_subprocess_tree
 
 logger = logging.getLogger("bentoml.tests")
@@ -71,7 +74,7 @@ def _wait_until_api_server_ready(
     host_url: str,
     timeout: float,
     check_interval: float = 1,
-    popen: t.Optional["subprocess.Popen[bytes]"] = None,
+    popen: t.Optional["subprocess.Popen[t.Any]"] = None,
 ) -> bool:
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
@@ -168,10 +171,15 @@ def run_bento_server_in_docker(
     cmd.append(image_tag)
 
     logger.info(f"Running API server docker image: {cmd}")
+    if psutil.WINDOWS:
+        options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}  # type: ignore
+    else:
+        options = {}
     with subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
         encoding="utf-8",
+        **options,
     ) as proc:
         try:
             host_url = f"127.0.0.1:{port}"
@@ -182,7 +190,7 @@ def run_bento_server_in_docker(
                     f"API server {host_url} failed to start within {timeout} seconds"
                 )
         finally:
-            kill_subprocess_tree(proc)
+            cancel_subprocess(proc)
     time.sleep(1)
 
 

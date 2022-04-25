@@ -23,7 +23,7 @@ The batching mechanism is located on the model runner. Each model runner receive
 
 .. image:: ../_static/img/batching-diagram.png
 
-The load balancer will distribute the requests to each of the running web services. The web services will in turn distribute the inference requests to the model runners. The distribution of to the model runners is random rather than round robin by default. This is because a proper round robin distribution does not optimize for batch processing and will actually be slower in many cases than a random distribution. In the future we plan to have different distribution algorithm options.
+The load balancer will distribute the requests to each of the running API services. The API services will in turn distribute the inference requests to the model runners. The distribution of requests to the model runners is random rather than round robin by default. This is because a proper round robin distribution does not optimize for batch processing and will actually be slower in many cases than a random distribution. In the future we plan to have different distribution algorithm options.
 
 Running with Adaptive Batching
 ------------------------------

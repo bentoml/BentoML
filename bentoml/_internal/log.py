@@ -56,7 +56,7 @@ class TraceFormatter(Formatter):
 
 
 if psutil.WINDOWS:
-    console = rich.console.Console(color_system="windows")
+    console = rich.console.Console(color_system="windows", legacy_windows=False)
 else:
     console = rich.console.Console()
 

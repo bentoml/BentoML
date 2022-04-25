@@ -171,6 +171,7 @@ def run_bento_server_in_docker(
     with subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
+        encoding="utf-8",
     ) as proc:
         try:
             host_url = f"127.0.0.1:{port}"
@@ -253,7 +254,7 @@ def run_bento_server_distributed(
         bentofile = yaml.safe_load(f)
 
     runner_map = {}
-    processes: t.List[subprocess.Popen[bytes]] = []
+    processes: t.List[subprocess.Popen[str]] = []
 
     for runner in bentofile["runners"]:
         with reserve_free_port() as port:
@@ -277,6 +278,7 @@ def run_bento_server_distributed(
         processes.append(
             subprocess.Popen(
                 cmd,
+                encoding="utf-8",
                 stderr=subprocess.STDOUT,
                 env=my_env,
             )
@@ -301,6 +303,7 @@ def run_bento_server_distributed(
         subprocess.Popen(
             cmd,
             stderr=subprocess.STDOUT,
+            encoding="utf-8",
             env=my_env,
         )
     )

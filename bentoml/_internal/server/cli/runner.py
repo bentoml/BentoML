@@ -4,6 +4,8 @@ import typing as t
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+import psutil
+
 from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
@@ -56,12 +58,10 @@ def main(
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
 
-        from bentoml._internal.server import ensure_prometheus_dir
         from bentoml._internal.utils.click import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
         from bentoml._internal.utils.circus import create_circus_socket_from_uri
 
-        ensure_prometheus_dir()
         circus_socket = create_circus_socket_from_uri(bind, name=runner_name)
         params = ctx.params
         params["bind"] = f"fd://$(circus.sockets.{runner_name})"
@@ -97,6 +97,13 @@ def main(
         "log_config": LOGGING_CONFIG,
         "workers": 1,
     }
+
+    if psutil.WINDOWS:
+        uvicorn_options["loop"] = "asyncio"
+        import asyncio
+
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
+
     if parsed.scheme in ("file", "unix"):
         uvicorn.run(
             app,

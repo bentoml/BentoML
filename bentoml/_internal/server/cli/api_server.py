@@ -5,6 +5,8 @@ import typing as t
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+import psutil
+
 import bentoml
 
 from ...log import LOGGING_CONFIG
@@ -111,6 +113,12 @@ def main(
         "log_config": LOGGING_CONFIG,
         "workers": 1,
     }
+    if psutil.WINDOWS:
+        uvicorn_options["loop"] = "asyncio"
+        import asyncio
+
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
+
     app = t.cast("ASGI3Application", svc.asgi_app)
     assert parsed.scheme == "fd"
 

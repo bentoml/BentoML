@@ -17,6 +17,7 @@ from contextlib import contextmanager
 from .._internal.tag import Tag
 from .._internal.utils import reserve_free_port
 from .._internal.utils import cached_contextmanager
+from .._internal.utils.platform import kill_subprocess_tree
 
 logger = logging.getLogger("bentoml.tests")
 
@@ -167,7 +168,10 @@ def run_bento_server_in_docker(
     cmd.append(image_tag)
 
     logger.info(f"Running API server docker image: {cmd}")
-    with subprocess.Popen(cmd, stdin=subprocess.PIPE) as proc:
+    with subprocess.Popen(
+        cmd,
+        stdin=subprocess.PIPE,
+    ) as proc:
         try:
             host_url = f"127.0.0.1:{port}"
             if _wait_until_api_server_ready(host_url, timeout, popen=proc):
@@ -177,7 +181,7 @@ def run_bento_server_in_docker(
                     f"API server {host_url} failed to start within {timeout} seconds"
                 )
         finally:
-            proc.terminate()
+            kill_subprocess_tree(proc)
     time.sleep(1)
 
 
@@ -218,8 +222,8 @@ def run_bento_server(
         _wait_until_api_server_ready(host_url, timeout=timeout)
         yield host_url
     finally:
-        p.terminate()
-        p.wait()
+        kill_subprocess_tree(p)
+        p.communicate()
 
 
 @contextmanager
@@ -304,8 +308,9 @@ def run_bento_server_distributed(
         yield host_url
     finally:
         for p in processes:
-            p.terminate()
-            p.wait()
+            kill_subprocess_tree(p)
+        for p in processes:
+            p.communicate()
 
 
 @cached_contextmanager("{bento}, {project_path}, {config_file}, {deployment_mode}")

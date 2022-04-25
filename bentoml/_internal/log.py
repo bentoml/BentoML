@@ -5,8 +5,8 @@ import logging.config
 from logging import Filter
 from logging import Formatter
 
-import rich
 import psutil
+import rich.console
 
 from .trace import ServiceContext
 from .configuration import get_debug_mode

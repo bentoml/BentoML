@@ -11,9 +11,20 @@ The log format is as follows:
 
 .. parsed-literal::
 
-    "[%(component)s] %(message)s"
+    [component] ClientIP:ClientPort (scheme,method,path,type,length) (status,type,length) Latency (trace,span,sampled)
 
-Where `component` is the BentoML module which is logging and `message` is the log message itself.
+- `component` is the BentoML module which is logging the message
+- `ClientIP/ClientPort` is the client information who is making the request
+- Request `scheme` is the protocol that the client is using to send the request
+- Request `method` is the type of request that the client is issuing
+- Request `path` is the uri which is being invoked
+- Request `type` is the content type of the incoming call
+- Request `length` is the size of the payload of the incoming request
+- Response `status` is the numeric status being returned to the client
+- Response `type` is the content type of the response being returned
+- Response `length` is content length of the payload being returned
+- `Latency` is the time it took to execute this request
+- `Traces` are the OpenTelemetry specific parameters
 
 OpenTelemetry Compatible
 ------------------------
@@ -37,7 +48,7 @@ Any time an error is thrown, `RichHandler <https://rich.readthedocs.io/en/stable
 Logging Configuration
 ---------------------
 
-Logs can be configured from the bentofile.yaml file for both web requests and model serving requests.
+Logs can be configured by setting the appropriate flags in the bento configuration file for both web requests and model serving requests. Read more about how to use a bento configuration file here in the - :ref:`Configuration Guide <configuration-page>`
 
 Web Service Request Logging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

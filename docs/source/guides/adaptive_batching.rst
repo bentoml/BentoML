@@ -9,6 +9,8 @@ Batching is the term used for combining multiple inputs for submission to proces
     "While serving a TensorFlow model, batching individual model inference requests together can be important for performance. In particular, batching is necessary to unlock the high throughput promised by hardware accelerators such as GPUs."
     -- `TensorFlow documentation <https://github.com/tensorflow/serving/blob/master/tensorflow_serving/batching/README.md>`_
 
+The current batching feature is implemented on the server-side. This is advantageous as opposed to client-side batching because it simplifies the client's logic and it is often times more efficient due to traffic volume.
+
 As an optimization for a real-time service, batching works off of 2 main concepts.
 
 1. Batching Window: The maximum time that a service should wait to build a “batch” before releasing a batch for processing. This is essentially the max latency for processing in a low throughput system. It helps avoid the situation where if very few messages have been submitted (smaller than the max batch size) the batch must wait for a long time to be processed.
@@ -23,7 +25,7 @@ The batching mechanism is located on the model runner. Each model runner receive
 
 .. image:: ../_static/img/batching-diagram.png
 
-The load balancer will distribute the requests to each of the running API services. The API services will in turn distribute the inference requests to the model runners. The distribution of requests to the model runners is random rather than round robin by default. This is because a proper round robin distribution does not optimize for batch processing and will actually be slower in many cases than a random distribution. In the future we plan to have different distribution algorithm options.
+The load balancer will distribute the requests to each of the running API services. The API services will in turn distribute the inference requests to the model runners. The distribution of requests to the model runners uses a random algorithm which provides for slightly more efficient batch sizes as opposed to round robin. Additional dispatch algorithms are planned for the future.
 
 Running with Adaptive Batching
 ------------------------------

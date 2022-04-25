@@ -192,9 +192,14 @@ To delete bentos in the bento store, use  the `delete` CLI command.
 Managing Models and Bentos Remotely with Yatai
 ----------------------------------------------
 
-Yatai is BentoML's end to end deployment and monitoring platform. It also functions as a remote model and bento repository.
+Yatai is BentoML's end to end deployment and monitoring platform. It also functions as a remote model and bento repository. To connect the CLI to a remote `Yatai <yatai-service-page>`, use the `bentoml login` command.
 
-To connect the CLI to a remote `Yatai <yatai-service-page>`, use the `bentoml login YATAI_URL` command.
+.. tabs::
+
+    .. code-tab:: bash
+
+        > bentoml login <YATAI_URL>
+
 
 Once logged in, you'll be able to use the following commands.
 

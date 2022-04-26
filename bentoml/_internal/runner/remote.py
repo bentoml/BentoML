@@ -144,18 +144,18 @@ class RemoteRunnerClient(RunnerImpl):
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._async_req("run", *args, **kwargs)
 
-    async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._async_req("run_batch", *args, **kwargs)
+    # async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    #     return await self._async_req("run_batch", *args, **kwargs)
 
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         import anyio
 
         return anyio.from_thread.run(self.async_run, *args, **kwargs)
 
-    def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        import anyio
-
-        return anyio.from_thread.run(self.async_run_batch, *args, **kwargs)
+    # def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    #     import anyio
+    #
+    #     return anyio.from_thread.run(self.async_run_batch, *args, **kwargs)
 
     def __del__(self) -> None:
         self.shutdown()

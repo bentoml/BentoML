@@ -25,13 +25,12 @@ if TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
 
     from ..runner import Runner
-    from ..runner import SimpleRunner
 
 
 class RunnerAppFactory(BaseAppFactory):
     def __init__(
         self,
-        runner: "t.Union[Runner, SimpleRunner]",
+        runner: "Runner",
         instance_id: t.Optional[int] = None,
     ) -> None:
         self.runner = runner
@@ -43,6 +42,8 @@ class RunnerAppFactory(BaseAppFactory):
 
         TooManyRequests = partial(Response, status_code=429)
 
+        # TODO(Jiang): refactor, each RunnableMethod needs a dispatcher instance here
+        # or support multiple methods in one dispatcher instance
         options = self.runner.batch_options
         if isinstance(self.runner, Runner) and options.enabled:
             options = self.runner.batch_options
@@ -61,13 +62,13 @@ class RunnerAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
-        on_startup.insert(0, self.runner._impl.setup)  # type: ignore[reportPrivateUsage]
+        on_startup.insert(0, self.runner.init_local)
         return on_startup
 
     @property
     def on_shutdown(self) -> t.List[t.Callable[[], None]]:
         on_shutdown = super().on_shutdown
-        on_shutdown.insert(0, self.runner._impl.shutdown)  # type: ignore[reportPrivateUsage]
+        on_shutdown.insert(0, self.runner.destroy_local)
         if self.dispatcher is not None:
             on_shutdown.insert(0, self.dispatcher.shutdown)
         return on_shutdown

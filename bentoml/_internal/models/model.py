@@ -15,13 +15,16 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
-from ..tag import Tag
+from bentoml import Runner
+from bentoml import Runnable
+from bentoml import Tag
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import BentoMLException
+
 from ..store import Store
 from ..store import StoreItem
 from ..utils import validate_labels
 from ..utils import validate_metadata
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
@@ -239,14 +242,51 @@ class Model(StoreItem):
             subpath=subpath,
         )
 
-    def load_runner(self) -> "Runner":
-        raise NotImplementedError
-
     def validate(self):
         return self._fs.isfile(MODEL_YAML_FILENAME)
 
     def __str__(self):
         return f'Model(tag="{self.tag}", path="{self.path}")'
+
+    def to_runner(
+        self,
+        name=None,
+        cpu=None,
+        nvidia_gpu=None,
+        custom_resources=None,
+        max_batch_size=None,
+        max_latency_ms=None,
+        runnable_method_configs=None,
+    ):
+        """
+        TODO: add docstring
+
+        Args:
+            name:
+            cpu:
+            nvidia_gpu:
+            custom_resources:
+            max_batch_size:
+            max_latency_ms:
+            runnable_method_configs:
+
+        Returns:
+
+        """
+        module = __import__(self.info.module)
+        runnable: Runnable = self.runnable or module.get_runnable(self)
+        runner_name = name or self.tag.name
+        return Runner(
+            runnable,
+            name=runner_name,
+            models=[self],
+            cpu=cpu,
+            nvidia_gpu=nvidia_gpu,
+            custom_resources=custom_resources,
+            max_batch_size=max_batch_size,
+            max_latency_ms=max_latency_ms,
+            runnable_method_configs=runnable_method_configs
+        )
 
 
 class ModelStore(Store[Model]):

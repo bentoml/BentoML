@@ -395,7 +395,7 @@ def _additional_models_converter(
     return list(map(Tag.from_taglike, tags))
 
 
-@attr.define(frozen=True)
+@attr.define(frozen=True, on_setattr=None)
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
     provide all the options for building a Bento. All optional build options should be

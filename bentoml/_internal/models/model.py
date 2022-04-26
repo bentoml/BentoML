@@ -36,7 +36,7 @@ MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 
-@attr.define(repr=False)
+@attr.define(repr=False, eq=False)
 class Model(StoreItem):
     _tag: Tag
     __fs: FS
@@ -254,7 +254,7 @@ class ModelStore(Store[Model]):
         super().__init__(base_path, Model)
 
 
-@attr.define(repr=False)
+@attr.define(repr=False, eq=False)
 class ModelInfo:
     tag: Tag
     module: str
@@ -336,7 +336,7 @@ class ModelInfo:
         return self
 
 
-@attr.define(repr=False, frozen=True)  # type: ignore (pyright doesn't allow for a frozen subclass)
+@attr.define(repr=False, eq=False, frozen=True, on_setattr=None)  # type: ignore (pyright doesn't allow for a frozen subclass)
 class FrozenModelInfo(ModelInfo):
     pass
 

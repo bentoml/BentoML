@@ -1,16 +1,15 @@
-import logging
 import os
 import re
 import sys
 import enum
 import typing as t
+import logging
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 import attr
 import psutil
-
 
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
@@ -99,13 +98,12 @@ logger = logging.getLogger(__name__)
 #     output_batch_axis = attr.ib(type=int, default=0)
 
 
-
 class RunnableMethod:
     name: str
     batchable: bool
     batch_dim: int
-    #input_spec: .. # optional
-    #output_spec: .. # optional
+    # input_spec: .. # optional
+    # output_spec: .. # optional
 
 
 class Runnable(ABC):
@@ -184,6 +182,7 @@ my_runner.predict.run( test_input_df )
 
 """
 
+
 class RunnerMethod:
     runner: "Runner"
     runnable_method: RunnableMethod
@@ -196,15 +195,30 @@ class RunnerMethod:
     async def async_run(self, *args, **kwargs):
         return await self.runner._async_run(self.runnable_method.name, *args, **kwargs)
 
+
 class RunnerResourceConfig:
     ...
+
 
 class Runner:
     """
     TODO: add docstring
     """
 
-    def __init__(self, runnable_class, init_params, name, strategy, models, cpu, nvidia_gpu, custom_resources, max_batch_size, max_latency_ms, runnable_method_configs: t.Dict[str, t.Dict[str, str | int]]) -> None:
+    def __init__(
+        self,
+        runnable_class,
+        init_params,
+        name,
+        strategy,
+        models,
+        cpu,
+        nvidia_gpu,
+        custom_resources,
+        max_batch_size,
+        max_latency_ms,
+        runnable_method_configs: t.Dict[str, t.Dict[str, str | int]],
+    ) -> None:
         self._runnable_class = runnable_class
         self._runnable_init_params = init_params
         self._name = name
@@ -223,7 +237,7 @@ class Runner:
                     runnable_method,
                     max_batch_size=method_config.get("max_batch_size", max_batch_size),
                     max_latency_ms=method_config.get("max_batch_size", max_latency_ms),
-                )
+                ),
             )
 
         self._runner_app_client: "RunnerClient" = None
@@ -253,18 +267,24 @@ class Runner:
         if self._runnable:
             return self._runnable[runner_method_name](*args, **kwargs)
 
-        raise BentoMLException("runner not initialized")  # TODO: make this UninitializedRunnerException
+        raise BentoMLException(
+            "runner not initialized"
+        )  # TODO: make this UninitializedRunnerException
 
     async def _async_run(self, runner_method_name, *args, **kwargs):
         if self._runner_app_client:
-            return await self._runner_app_client.async_run(runner_method_name, *args, **kwargs)
+            return await self._runner_app_client.async_run(
+                runner_method_name, *args, **kwargs
+            )
         if self._runnable:
             import anyio
 
             # TODO(jiang): to_thread
-            #return await self._runnable[runner_method_name](*args, **kwargs)
+            # return await self._runnable[runner_method_name](*args, **kwargs)
 
-        raise BentoMLException("runner not initialized")  # TODO: make this UninitializedRunnerException
+        raise BentoMLException(
+            "runner not initialized"
+        )  # TODO: make this UninitializedRunnerException
 
     def init_local(self):
         """
@@ -355,7 +375,6 @@ class Runner:
     # @final
     # def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
     #     return self._impl.run_batch(*args, **kwargs)
-
 
 
 # class RunnableContainer:

@@ -199,14 +199,14 @@ class _XgBoostRunner(BaseModelRunner):
 
     @property
     def num_replica(self) -> int:
-        if self.resource_quota.on_gpu:
-            return len(self.resource_quota.gpus)
+        if self.resource_quota.nvidia_gpu:
+            return self.resource_quota.nvidia_gpu
         return 1
 
     def _setup_booster_params(
         self, booster_params: t.Dict[str, t.Any]
     ) -> t.Dict[str, t.Any]:
-        if self.resource_quota.on_gpu:
+        if self.resource_quota.nvidia_gpu:
             booster_params["predictor"] = "gpu_predictor"
             booster_params["tree_method"] = "gpu_hist"
             # Use the first device reported by CUDA runtime

@@ -10,7 +10,7 @@ from simple_di import Provide
 
 from ..context import trace_context
 from ..context import InferenceApiContext as Context
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -343,7 +343,7 @@ class ServiceAppFactory(BaseAppFactory):
                             output = await run_in_threadpool(api.func, input_data)
 
                 await api.output.finalize_http_response(response, output)
-                finalize_http_response(response)
+                set_content_length(response)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 

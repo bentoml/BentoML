@@ -7,7 +7,7 @@ from starlette.responses import Response
 
 from .base import IOType
 from .base import IODescriptor
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.formparser import populate_multipart_requests
@@ -219,4 +219,4 @@ class Multipart(IODescriptor[MultipartIO]):
             resp = io_.init_http_response()
             res_mapping[k] = await io_.finalize_http_response(resp, data)  # type: ignore[reportGeneralTypeIssue]
         await concat_to_multipart_responses(response, res_mapping)
-        finalize_http_response(response)
+        set_content_length(response)

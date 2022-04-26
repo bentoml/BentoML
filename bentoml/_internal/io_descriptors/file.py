@@ -8,7 +8,7 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from ..types import FileLike
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -118,4 +118,4 @@ class File(IODescriptor[FileLike]):
             obj = FileLike(bytes_=obj)
 
         response.body = t.cast(BytesIO, obj.stream).getvalue()
-        finalize_http_response(response)
+        set_content_length(response)

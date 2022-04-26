@@ -9,7 +9,7 @@ from starlette.responses import Response
 from .base import JSONType
 from .base import IODescriptor
 from ..types import LazyType
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
 
@@ -188,4 +188,4 @@ class JSON(IODescriptor[JSONType]):
         )
 
         response.body = response.render(json_str)
-        finalize_http_response(response)
+        set_content_length(response)

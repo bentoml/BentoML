@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     import starlette.responses
 
 
-def finalize_http_response(response: "starlette.responses.Response"):
+def set_content_length(response: "starlette.responses.Response"):
     body = getattr(response, "body", None)
     if body is not None and not (
         response.status_code < 200

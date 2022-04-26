@@ -12,7 +12,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ..types import LazyType
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import MissingDependencyException
@@ -391,7 +391,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             )
 
         response.body = response.render(resp)
-        finalize_http_response(response)
+        set_content_length(response)
 
     @classmethod
     def from_sample(
@@ -670,4 +670,4 @@ class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
                 f"return object is not of type `pd.Series`, got type {type(obj)} instead"
             )
         response.body = response.render(obj.to_json(orient=self._orient))  # type: ignore[arg-type]
-        finalize_http_response(response)
+        set_content_length(response)

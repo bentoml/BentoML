@@ -9,7 +9,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ..types import LazyType
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import InternalServerError
 
@@ -230,7 +230,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         """
         obj = self._verify_ndarray(obj, InternalServerError)
         response.body = response.render(json.dumps(obj.tolist()))
-        finalize_http_response(response)
+        set_content_length(response)
 
     @classmethod
     def from_sample(

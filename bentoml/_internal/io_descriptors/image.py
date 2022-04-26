@@ -11,7 +11,7 @@ from .base import ImageType
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
@@ -206,4 +206,4 @@ class Image(IODescriptor[ImageType]):
 
         response.headers["content-disposition"] = content_disposition
         response.body = ret.getvalue()
-        finalize_http_response(response)
+        set_content_length(response)

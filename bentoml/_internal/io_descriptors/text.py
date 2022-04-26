@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from ..utils.http import finalize_http_response
+from ..utils.http import set_content_length
 
 MIME_TYPE = "text/plain"
 
@@ -96,4 +96,4 @@ class Text(IODescriptor[str]):
 
     async def finalize_http_response(self, response: Response, obj: str):
         response.body = response.render(obj)
-        finalize_http_response(response)
+        set_content_length(response)

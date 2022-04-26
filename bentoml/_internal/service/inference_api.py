@@ -50,6 +50,10 @@ class InferenceAPI:
         input_type = input_descriptor.input_type()
         self.multi_input = isinstance(input_type, dict)
         sig = inspect.signature(user_defined_callback)
+
+        if len(sig.parameters) == 0:
+            raise ValueError("Expected API function to take parameters.")
+
         if isinstance(input_type, dict):
             # note: in python 3.6 kwarg order was not guaranteed to be preserved,
             #       though it is in practice.

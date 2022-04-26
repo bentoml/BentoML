@@ -152,7 +152,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         return {}
 
     def input_type(self) -> LazyType["ext.NpNDArray"]:
-        return LazyType("numpy", "NdArray")
+        return LazyType("numpy", "ndarray")
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "array", "items": self._items_schema()}

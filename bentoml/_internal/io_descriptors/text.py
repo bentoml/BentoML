@@ -4,6 +4,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
+from ..utils.http import set_content_length
 
 MIME_TYPE = "text/plain"
 
@@ -72,6 +73,9 @@ class Text(IODescriptor[str]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that strings type.
     """
 
+    def input_type(self) -> t.Type[str]:
+        return str
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "string"}
 
@@ -87,5 +91,9 @@ class Text(IODescriptor[str]):
         obj = await request.body()
         return str(obj.decode("utf-8"))
 
-    async def to_http_response(self, obj: str) -> Response:
-        return Response(obj, media_type=MIME_TYPE)
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE)
+
+    async def finalize_http_response(self, response: Response, obj: str):
+        response.body = response.render(obj)
+        set_content_length(response)

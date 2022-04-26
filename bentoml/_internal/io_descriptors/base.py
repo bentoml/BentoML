@@ -8,15 +8,18 @@ from starlette.responses import Response
 
 from ..types import FileLike
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
+    from types import UnionType  # noqa: F401
+
     import numpy as np  # noqa: F401
     import pandas as pd  # noqa: F401
     import pydantic  # noqa: F401
     import PIL.Image  # noqa: F401
 
+    from ..types import LazyType  # noqa: F401
+
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
-
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
@@ -32,7 +35,6 @@ IOType = t.Union[
     "pd.DataFrame",
     "pd.Series[t.Any]",
 ]
-
 
 IOPyObj = t.TypeVar("IOPyObj")
 
@@ -63,6 +65,17 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         return self._init_str
 
     @abstractmethod
+    def input_type(
+        self,
+    ) -> t.Union[
+        "UnionType",
+        t.Type[t.Any],
+        "LazyType[t.Any]",
+        t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]],
+    ]:
+        ...
+
+    @abstractmethod
     def openapi_schema_type(self) -> t.Dict[str, str]:
         ...
 
@@ -79,7 +92,11 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         ...
 
     @abstractmethod
-    async def to_http_response(self, obj: IOPyObj) -> Response:
+    async def init_http_response(self) -> Response:
+        ...
+
+    @abstractmethod
+    async def finalize_http_response(self, response: Response, obj: IOPyObj):
         ...
 
     # TODO: gRPC support

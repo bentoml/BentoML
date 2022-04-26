@@ -9,10 +9,13 @@ from starlette.responses import Response
 from .base import JSONType
 from .base import IODescriptor
 from ..types import LazyType
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
+    from types import UnionType
+
     import pydantic
 
     from .. import external_typing as ext  # noqa
@@ -39,7 +42,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
             return o.item()
         if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(o):
             return o.to_dict()  # type: ignore[attr-defined]
-        if LazyType["ext.PdSeries"]("pandas.Series").isinstance(o):
+        if LazyType["ext.PdSeries[t.Any]"]("pandas.Series").isinstance(o):
             return o.to_dict()  # type: ignore[attr-defined]
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(o):
             obj_dict = o.dict()
@@ -140,6 +143,9 @@ class JSON(IODescriptor[JSONType]):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
+    def input_type(self) -> "UnionType":
+        return JSONType
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if self._pydantic_model is None:
             return {"type": "object"}
@@ -168,7 +174,10 @@ class JSON(IODescriptor[JSONType]):
                 raise BadInput("Invalid JSON Request received")
         return json_obj
 
-    async def to_http_response(self, obj: JSONType) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
+
+    async def finalize_http_response(self, response: Response, obj: JSONType):
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,
@@ -177,4 +186,6 @@ class JSON(IODescriptor[JSONType]):
             indent=None,
             separators=(",", ":"),
         )
-        return Response(json_str, media_type=MIME_TYPE_JSON)
+
+        response.body = response.render(json_str)
+        set_content_length(response)

@@ -15,10 +15,21 @@ from dataclasses import dataclass
 
 from .utils.dataclasses import json_serializer
 
+if sys.version_info < (3, 8):
+    from typing_extensions import get_args
+    from typing_extensions import get_origin
+else:
+    from typing import get_args
+    from typing import get_origin
+
 if sys.version_info < (3, 7):
     from backports.datetime_fromisoformat import MonkeyPatch
 
     MonkeyPatch.patch_fromisoformat()
+
+if TYPE_CHECKING:
+    from types import UnionType
+
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +65,36 @@ MetadataType = t.Union[
 MetadataDict = t.Dict[str, MetadataType]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
+
+
+def is_compatible_type(
+    t1: "t.Union[t.Type[t.Any], UnionType, LazyType[t.Any]]",
+    t2: "t.Union[t.Type[t.Any], UnionType, LazyType[t.Any]]",
+) -> bool:
+    """
+    A very loose check that it is possible for an object to be both an instance of ``t1``
+    and an instance of ``t2``.
+
+    Note: this will resolve ``LazyType``s, so should not be used in any
+    peformance-critical contexts.
+    """
+    if get_origin(t1) is t.Union:
+        return any((is_compatible_type(t2, arg_type) for arg_type in get_args(t1)))
+
+    if get_origin(t2) is t.Union:
+        return any((is_compatible_type(t1, arg_type) for arg_type in get_args(t2)))
+
+    if isinstance(t1, LazyType):
+        t1 = t1.get_class()
+
+    if isinstance(t2, LazyType):
+        t2 = t2.get_class()
+
+    if isinstance(t1, type) and isinstance(t2, type):
+        return issubclass(t1, t2) or issubclass(t2, t1)
+
+    # catchall return true in unsupported cases so we don't error on unsupported types
+    return True
 
 
 T = t.TypeVar("T")

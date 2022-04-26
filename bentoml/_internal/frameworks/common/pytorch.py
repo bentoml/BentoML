@@ -86,7 +86,7 @@ class BasePyTorchRunner(BaseModelRunner, ABC):
 
     @property
     def _on_gpu(self) -> bool:
-        if self.resource_quota.on_gpu:
+        if self.resource_quota.nvidia_gpu:
             if torch.cuda.is_available():
                 return True
             else:

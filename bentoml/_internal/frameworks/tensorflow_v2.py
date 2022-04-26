@@ -433,14 +433,14 @@ class _TensorflowRunner(BaseModelRunner):
 
     @property
     def _num_threads(self) -> int:
-        if is_gpu_available() and self.resource_quota.on_gpu:
+        if is_gpu_available() and self.resource_quota.nvidia_gpu:
             return 1
         return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:
-        if is_gpu_available() and self.resource_quota.on_gpu:
-            return len(self.resource_quota.gpus)
+        if is_gpu_available() and self.resource_quota.nvidia_gpu:
+            return self.resource_quota.nvidia_gpu
         return 1
 
     def _setup(self) -> None:
@@ -502,7 +502,7 @@ def load_runner(
         runner = bentoml.tensorflow.load_runner(tag)
 
         # load a runner on GPU:0
-        runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(gpus=0), device_id="GPU:0")
+        runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(nvidia_gpu=1), device_id="GPU:0")
 
     """
     return _TensorflowRunner(

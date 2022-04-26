@@ -203,8 +203,8 @@ class _EasyOCRRunner(BaseModelRunner):
 
     @property
     def num_replica(self) -> int:
-        if self.resource_quota.on_gpu:
-            return len(self.resource_quota.gpus)
+        if self.resource_quota.nvidia_gpu:
+            return self.resource_quota.nvidia_gpu
         return 1
 
     def _setup(self) -> None:

@@ -211,13 +211,13 @@ class _DetectronRunner(BaseModelRunner):
 
     @property
     def num_replica(self) -> int:
-        if self.resource_quota.on_gpu:
-            return len(self.resource_quota.gpus)
+        if self.resource_quota.nvidia_gpu:
+            return self.resource_quota.nvidia_gpu
         return 1
 
     @property
     def _device(self) -> str:
-        if self.resource_quota.on_gpu:
+        if self.resource_quota.nvidia_gpu:
             return "cuda"
         return "cpu"
 

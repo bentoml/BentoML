@@ -91,7 +91,7 @@ def load(
         tag (``str`` ``|`` :obj:`~bentoml.Tag`):
             The tag of the model to get from the store.
         model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): The parameters for loading the CatBoost model. model_type (``str``): can be one of the following:
-                * ``"classifier"`` (``CatBoostClassifier``) 
+                * ``"classifier"`` (``CatBoostClassifier``)
                 * ``"regressor"`` (``CatBoostRegressor``)
     Returns:
         :obj:`catboost.core.CatBoost` ``|`` :obj:`catboost.core.CatBoostClassifier` ``|`` :obj:`catboost.core.CatBoostRegressor`:
@@ -178,7 +178,6 @@ def save(
             path,
             format=format_,
             export_parameters=model_export_parameters,
-            pool=model_pool,
         )
 
         return _model.tag

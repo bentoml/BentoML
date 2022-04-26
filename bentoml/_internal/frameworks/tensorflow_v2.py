@@ -388,7 +388,7 @@ def save_model(
         return _model.tag
 
 
-def _to_runner(
+def _to_runnable(
     bentomodel: BentoModel,
     tags: t.Optional[t.List[str]] = None,
     load_as_hub_module: t.Optional[bool] = None,

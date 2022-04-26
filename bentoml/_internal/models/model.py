@@ -96,6 +96,7 @@ class Model(StoreItem):
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         context: t.Optional[t.Dict[str, t.Any]] = None,
+        signatures: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> "Model":
         """Create a new Model instance in temporary filesystem used for serializing
         model artifacts and save to model store
@@ -143,6 +144,7 @@ class Model(StoreItem):
                 options=options,
                 metadata=metadata,
                 context=context,
+                signatures=signatures,
             ),
             custom_objects,
         )
@@ -302,7 +304,7 @@ class ModelInfo:
     options: t.Dict[str, t.Any]
     metadata: t.Dict[str, t.Any]
     context: t.Dict[str, t.Any]
-    bentoml_version: str = BENTOML_VERSION
+    signatures: t.Dict[str, t.Any]
     api_version: str = "v1"
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
@@ -317,6 +319,7 @@ class ModelInfo:
             and self.options == other.options
             and self.metadata == other.metadata
             and self.context == other.context
+            and self.signatures == other.signatures
             and self.bentoml_version == other.bentoml_version
             and self.api_version == other.api_version
             and self.creation_time == other.creation_time
@@ -337,6 +340,7 @@ class ModelInfo:
             "labels": self.labels,
             "options": self.options,
             "metadata": self.metadata,
+            "signatures": self.signatures,
         }
 
     def dump(self, stream: t.IO[t.Any]):

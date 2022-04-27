@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 import logging
 from sys import version_info as pyver
@@ -15,9 +17,9 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml import Tag
 from bentoml import Runner
 from bentoml import Runnable
-from bentoml import Tag
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 
@@ -48,6 +50,8 @@ class Model(StoreItem):
     _custom_objects: t.Optional[t.Dict[str, t.Any]] = None
 
     _flushed: bool = False
+
+    _runnable: Runnable | None = None
 
     @staticmethod
     def _export_ext() -> str:
@@ -250,6 +254,7 @@ class Model(StoreItem):
     def __str__(self):
         return f'Model(tag="{self.tag}", path="{self.path}")'
 
+    # TODO(sauyon): add type annotation
     def to_runner(
         self,
         name=None,
@@ -261,7 +266,7 @@ class Model(StoreItem):
         runnable_method_configs=None,
     ):
         """
-        TODO: add docstring
+        TODO(chaoyu): add docstring
 
         Args:
             name:
@@ -275,20 +280,27 @@ class Model(StoreItem):
         Returns:
 
         """
-        module = __import__(self.info.module)
-        runnable: Runnable = self.runnable or module.get_runnable(self)
-        runner_name = name or self.tag.name
         return Runner(
-            runnable,
-            name=runner_name,
+            self.to_runnable(),
+            name=name or self.tag.name,
             models=[self],
             cpu=cpu,
             nvidia_gpu=nvidia_gpu,
             custom_resources=custom_resources,
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
-            runnable_method_configs=runnable_method_configs
+            runnable_method_configs=runnable_method_configs,
         )
+
+    def to_runnable(self):
+        module = __import__(self.info.module)
+        if not self._runnable:
+            self._runnable = module.get_runnable(self)
+        return self._runnable
+
+    def with_options(self, **kwrags) -> Model:
+        # TODO(sauyon): return a new Model instance with updated model options
+        ...
 
 
 class ModelStore(Store[Model]):

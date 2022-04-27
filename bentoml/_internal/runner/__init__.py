@@ -1,4 +1,4 @@
 from .runner import Runner
-from .runner import SimpleRunner
+from .runnable import Runnable
 
-__all__ = ["Runner", "SimpleRunner"]
+__all__ = ["Runner", "Runnable"]

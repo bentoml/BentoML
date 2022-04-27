@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from ..runner.container import Payload
 
 
-
 T = t.TypeVar("T")
 To = t.TypeVar("To")
 
@@ -154,17 +153,17 @@ def mem_converter(mem: t.Union[int, str]) -> int:
     unit_match = re.match("([0-9]+)([A-Za-z]{1,2})", mem)
     mem_multipliers = {
         "k": 1000,
-        "M": 1000 ** 2,
-        "G": 1000 ** 3,
-        "T": 1000 ** 4,
-        "P": 1000 ** 5,
-        "E": 1000 ** 6,
+        "M": 1000**2,
+        "G": 1000**3,
+        "T": 1000**4,
+        "P": 1000**5,
+        "E": 1000**6,
         "Ki": 1024,
-        "Mi": 1024 ** 2,
-        "Gi": 1024 ** 3,
-        "Ti": 1024 ** 4,
-        "Pi": 1024 ** 5,
-        "Ei": 1024 ** 6,
+        "Mi": 1024**2,
+        "Gi": 1024**3,
+        "Ti": 1024**4,
+        "Pi": 1024**5,
+        "Ei": 1024**6,
     }
     if unit_match:
         base = int(unit_match[1])
@@ -241,9 +240,9 @@ def query_cgroup_cpu_count() -> float:
 
 @lru_cache(maxsize=1)
 def query_nvidia_gpu_count() -> int:
-    '''
+    """
     query nvidia gpu count, available on Windows and Linux
-    '''
+    """
     import pynvml.nvml  # type: ignore
     from pynvml.smi import nvidia_smi  # type: ignore
 
@@ -253,7 +252,6 @@ def query_nvidia_gpu_count() -> int:
         return query.get("count", 0)
     except (pynvml.nvml.NVMLError, OSError):
         return 0
-
 
 
 def gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> int:
@@ -277,12 +275,12 @@ def get_gpu_memory(dev: int) -> t.Tuple[float, float]:
     from pynvml.smi import nvidia_smi  # type: ignore
 
     unit_multiplier = {
-            "PiB": 1024.0 * 1024 * 1024,
-            "TiB": 1024.0 * 1024,
-            "GiB": 1024.0,
-            "MiB": 1.0,
-            "KiB": 1.0 / 1024,
-            "B": 1.0 / 1024 / 1024,
+        "PiB": 1024.0 * 1024 * 1024,
+        "TiB": 1024.0 * 1024,
+        "GiB": 1024.0,
+        "MiB": 1.0,
+        "KiB": 1.0 / 1024,
+        "B": 1.0 / 1024 / 1024,
     }
 
     try:

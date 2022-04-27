@@ -17,16 +17,14 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml import Tag
-from bentoml import Runner
-from bentoml import Runnable
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
 from ..utils import validate_labels
 from ..utils import validate_metadata
+from ..runner import Runnable
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
@@ -264,7 +262,7 @@ class Model(StoreItem):
         max_batch_size=None,
         max_latency_ms=None,
         runnable_method_configs=None,
-    ):
+    ) -> Runner:
         """
         TODO(chaoyu): add docstring
 
@@ -292,7 +290,7 @@ class Model(StoreItem):
             runnable_method_configs=runnable_method_configs,
         )
 
-    def to_runnable(self):
+    def to_runnable(self) -> Runnable:
         module = __import__(self.info.module)
         if not self._runnable:
             self._runnable = module.get_runnable(self)

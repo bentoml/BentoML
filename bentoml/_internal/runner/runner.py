@@ -1,6 +1,5 @@
-import os
-import abc
-import math
+from __future__ import annotations
+
 import typing as t
 import logging
 import collections
@@ -11,15 +10,11 @@ import attr
 from bentoml.exceptions import BentoMLException
 
 from .runnable import Runnable
+from .strategy import Strategy
+from .strategy import DefaultStrategy
 
 if TYPE_CHECKING:
-
-    class Model:
-        pass
-
-    class MethodConfig(t.TypedDict):
-        max_batch_size: t.Optional[int]
-        max_latency_ms: t.Optional[int]
+    from ..models import Model
 
 
 logger = logging.getLogger(__name__)
@@ -156,10 +151,6 @@ class RunnerMethod:
         return await self.runner.async_run_method(self.method_name, *args, **kwargs)
 
 
-class RunnerResourceConfig:
-    ...
-
-
 @attr.define(frozen=True)
 class Resource:
     cpu: int = attr.field()
@@ -167,64 +158,56 @@ class Resource:
     custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
 
 
-class Strategy(abc.ABC):
-    @classmethod
-    @abc.abstractmethod
-    def get_worker_count(
-        cls,
-        runnable_class: t.Type[Runnable],
-        resource_request: Resource,
-    ) -> int:
-        ...
-
-    @classmethod
-    @abc.abstractmethod
-    def setup_worker(
-        cls,
-        runnable_class: t.Type[Runnable],
-        resource_request: Resource,
-        worker_index: int,
-    ) -> None:
-        ...
+@attr.define(frozen=True)
+class RunnerMethodConfig:
+    max_batch_size: int = attr.field(default=1000)
+    max_latency_ms: int = attr.field(default=10000)
 
 
-class DefaultStrategy(Strategy):
-    @classmethod
-    @abc.abstractmethod
-    def get_worker_count(
-        cls,
-        runnable_class: t.Type[Runnable],
-        resource_request: Resource,
-    ) -> int:
-        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
-            return math.ceil(resource_request.nvidia_gpu)
+@attr.define
+class RunnerHandle:
+    def init_local(self, runner: Runner):
+        self._runnable = runner.runnable_class()
 
-        if runnable_class.SUPPORT_MULTIPLE_CPU_THREADS:
-            return 1
+    def destroy_local(self):
+        del self._runnable
 
-        return math.ceil(resource_request.cpu)
+    def init_client(self, runner: Runner):
+        from .remote import RemoteRunnerClient
 
-    @classmethod
-    @abc.abstractmethod
-    def setup_worker(
-        cls,
-        runnable_class: t.Type[Runnable],
-        resource_request: Resource,
-        worker_index: int,
-    ) -> None:
-        # use nvidia gpu
-        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index)
-            return
+        self._runner_client = RemoteRunnerClient(runner)
 
-        # use CPU
-        if runnable_class.SUPPORT_MULTIPLE_CPU_THREADS:
-            thread_count = math.ceil(resource_request.cpu)
-            os.environ["OMP_THREADS"] = str(thread_count)
-            return
+    def destroy_client(self):
+        del self._runner_client
 
-        os.environ["OMP_THREADS"] = "1"
-        return
+    def run_method(
+        self,
+        method_name: str,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> t.Any:
+        if self._runnable is not None:
+            return getattr(self._runnable, method_name)(*args, **kwargs)
+        if self._runner_client is not None:
+            return self._runner_client.run_method(method_name, *args, **kwargs)
+
+    async def async_run_method(
+        self,
+        method_name: str,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> t.Any:
+        if self._runnable is not None:
+            import anyio
+
+            method = getattr(self._runnable, method_name)
+            return anyio.to_thread.run_sync(method, *args, **kwargs)
+        if self._runner_client is not None:
+            return await self._runner_client.async_run_method(
+                method_name,
+                *args,
+                **kwargs,
+            )
 
 
 @attr.define(frozen=True)
@@ -234,8 +217,9 @@ class Runner:
     name: str = attr.field()
     strategy: t.Type[Strategy] = attr.field(default=DefaultStrategy)
     models: t.List[Model] = attr.field(factory=list)
-    resource_request: Resource = attr.field()
+    resource_config: Resource = attr.field()
     method_configs = attr.field()
+    runner_handle = attr.field(init=False)
 
     def __init__(
         self,
@@ -246,45 +230,37 @@ class Runner:
         models: t.List[Model],
         cpu: int,
         nvidia_gpu: int,
-        custom_resources: t.Dict[str, t.Dict[str, int | float]],
+        custom_resources: t.Dict[str, int | float],
         max_batch_size: int,
         max_latency_ms: int,
-        method_configs=None,
+        method_configs: t.Dict[str, RunnerMethodConfig] | None,
     ) -> None:
-        self.__attr_init__(
+        self.__attrs_init__(  # type: ignore
             runnable_class,
             init_params,
             name,
             strategy,
             models,
-            resource_request=Resource(
+            resource_config=Resource(
                 cpu=cpu,
                 nvidia_gpu=nvidia_gpu,
                 custom_resources=custom_resources,
             ),
             method_configs=collections.defaultdict(
-                method_configs,
-                default_factory=lambda: {
-                    "max_batch_size": max_batch_size,
-                    "max_latency_ms": max_latency_ms,
-                },
+                lambda: RunnerMethodConfig(
+                    max_batch_size=max_batch_size,
+                    max_latency_ms=max_latency_ms,
+                ),
+                method_configs or {},
             ),
         )
 
-        for (
-            name,
-            runnable_method,
-        ) in runnable_class.get_method_configs().items():
+        for name in runnable_class.get_method_configs().keys():
             setattr(self, name, RunnerMethod(self, name))
 
         self._runner_app_client: "RunnerClient" = None
-        self._runnable: Runnable = None
-
-    @property
-    def resource_config(self):
-        # look up configuration
-        # else return self._resource_config
-        ...
+        self.runner_handle = None
+        self._runnable: Runnable | None = None
 
     def run_method(self, method_name: str, *args, **kwargs) -> t.Any:
         if self._runner_app_client:
@@ -328,11 +304,10 @@ class Runner:
             del self._runnable
             # self._runnable = None # do we need this?
 
-    def _init_remote_client(self, host):
+    def init_remote(self):
         """
         init runner from BentoMLContainer or environment variables
         """
-        ...
 
     # @property
     # def default_name(self) -> str:
@@ -399,34 +374,6 @@ class Runner:
     # def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
     #     return self._impl.run_batch(*args, **kwargs)
 
-
-# class RunnableContainer:
-#     def __init__(self, runnable_class, runnable_init_params):
-#         self._runnable_class = runnable_class
-#         self._runnable_init_params = runnable_init_params
-#         self.
-#
-#     def setup(self) -> None:
-#         pass
-#
-#     def shutdown(self) -> None:
-#         pass
-#
-#     @abstractmethod
-#     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-#         ...
-#
-#     @abstractmethod
-#     async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-#         ...
-#
-#     @abstractmethod
-#     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-#         ...
-#
-#     @abstractmethod
-#     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-#         ...
 
 #
 # def create_runner_impl(runner: BaseRunner) -> RunnerImpl:

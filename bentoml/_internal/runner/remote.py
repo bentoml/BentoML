@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
+import attr
 from simple_di import inject
 from simple_di import Provide
 
-from .runner import RunnerImpl
 from .container import Payload
 from ..utils.uri import uri_to_path
 from ...exceptions import RemoteException
@@ -21,14 +21,18 @@ if TYPE_CHECKING:  # pragma: no cover
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
+    from .runner import Runner
 
-class RemoteRunnerClient(RunnerImpl):
-    _conn: t.Optional["BaseConnector"] = None
-    _client: t.Optional["ClientSession"] = None
-    _loop: t.Optional[asyncio.AbstractEventLoop] = None
-    _addr: t.Optional[str] = None
 
-    def shutdown(self) -> None:
+@attr.define
+class RemoteRunnerClient:
+    _runner: "Runner" = attr.field()
+    _conn: t.Optional["BaseConnector"] = attr.field(init=False, default=None)
+    _client: t.Optional["ClientSession"] = attr.field(init=False, default=None)
+    _loop: t.Optional[asyncio.AbstractEventLoop] = attr.field(init=False, default=None)
+    _addr: t.Optional[str] = attr.field(init=False, default=None)
+
+    def _close_conn(self) -> None:
         if self._conn:
             self._conn.close()
 
@@ -47,7 +51,7 @@ class RemoteRunnerClient(RunnerImpl):
             or self._conn.closed
             or self._loop.is_closed()
         ):
-            self._loop = asyncio.get_event_loop()
+            self._loop = asyncio.get_event_loop()  # get the loop lazily
             bind_uri = remote_runner_mapping[self._runner.name]
             parsed = urlparse(bind_uri)
             if parsed.scheme == "file":
@@ -55,20 +59,16 @@ class RemoteRunnerClient(RunnerImpl):
                 self._conn = aiohttp.UnixConnector(
                     path=path,
                     loop=self._loop,
-                    limit=self._runner.batch_options.max_batch_size * 2,
-                    keepalive_timeout=self._runner.batch_options.max_latency_ms
-                    * 1000
-                    * 10,
+                    limit=800,  # TODO(jiang): make it configurable
+                    keepalive_timeout=1800.0,
                 )
                 self._addr = "http://127.0.0.1:8000"  # addr doesn't matter with UDS
             elif parsed.scheme == "tcp":
                 self._conn = aiohttp.TCPConnector(
                     loop=self._loop,
-                    limit=self._runner.batch_options.max_batch_size * 2,
                     verify_ssl=False,
-                    keepalive_timeout=self._runner.batch_options.max_latency_ms
-                    * 1000
-                    * 10,
+                    limit=800,  # TODO(jiang): make it configurable
+                    keepalive_timeout=1800.0,
                 )
                 self._addr = f"http://{parsed.netloc}"
             else:
@@ -104,7 +104,7 @@ class RemoteRunnerClient(RunnerImpl):
                 trace_configs=[
                     create_trace_config(
                         # Remove all query params from the URL attribute on the span.
-                        url_filter=strip_query_params,
+                        url_filter=strip_query_params,  # type: ignore
                         tracer_provider=DeploymentContainer.tracer_provider.get(),
                     )
                 ],
@@ -141,21 +141,49 @@ class RemoteRunnerClient(RunnerImpl):
 
         return AutoContainer.payload_to_single(payload)
 
-    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._async_req("run", *args, **kwargs)
+    async def async_run_method(
+        self,
+        method_name: str,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> t.Any:
+        from ..runner.container import AutoContainer
 
-    # async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-    #     return await self._async_req("run_batch", *args, **kwargs)
+        params = Params(*args, **kwargs).map(AutoContainer.single_to_payload)
+        multipart = payload_params_to_multipart(params)
+        client = self._get_client()
+        async with client.post(f"{self._addr}/{method_name}", data=multipart) as resp:
+            body = await resp.read()
+        try:
+            meta_header = resp.headers[PAYLOAD_META_HEADER]
+        except KeyError:
+            raise RemoteException(
+                f"Bento payload decode error: {PAYLOAD_META_HEADER} not exist. "
+                "An exception might have occurred in the remote server."
+                f"[{resp.status}] {body.decode()}"
+            ) from None
 
-    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        try:
+            payload = Payload(data=body, meta=json.loads(meta_header))
+        except JSONDecodeError:
+            raise ValueError(f"Bento payload decode error: {meta_header}")
+
+        return AutoContainer.payload_to_single(payload)
+
+    def run_method(
+        self,
+        method_name: str,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> t.Any:
         import anyio
 
-        return anyio.from_thread.run(self.async_run, *args, **kwargs)
-
-    # def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-    #     import anyio
-    #
-    #     return anyio.from_thread.run(self.async_run_batch, *args, **kwargs)
+        return anyio.from_thread.run(
+            self.async_run_method,
+            method_name,
+            *args,
+            **kwargs,
+        )
 
     def __del__(self) -> None:
-        self.shutdown()
+        self._close_conn()

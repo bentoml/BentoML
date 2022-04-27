@@ -22,8 +22,8 @@ RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
 
 def method_decorator(
     meth: WrappedMethod,
-    batchable: bool,
-    batch_dim: BatchDimType,
+    batchable: bool = False,
+    batch_dim: BatchDimType = 0,
     input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
     output_spec: LazyType[t.Any] | None = None,
 ) -> WrappedMethod:

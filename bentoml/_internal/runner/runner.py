@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import os
 import typing as t
 import logging
 import collections
 from typing import TYPE_CHECKING
 
 import attr
+import psutil
 
 from bentoml.exceptions import BentoMLException
 
@@ -19,64 +21,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-# def _get_default_cpu() -> float:
-#     # Default to the total CPU count available in current node or cgroup
-#     if psutil.POSIX:
-#         return query_cgroup_cpu_count()
-#     else:
-#         cpu_count = os.cpu_count()
-#         if cpu_count is not None:
-#             return float(cpu_count)
-#         raise ValueError("CPU count is NoneType")
-#
-#
-# def _get_default_mem() -> int:
-#     # Default to the total memory available
-#     from psutil import virtual_memory
-#
-#     mem: "svmem" = virtual_memory()
-#     return mem.total
-
-
-# @attr.define
-# class ResourceQuota:
-#     cpu: float = attr.field(converter=cpu_converter, factory=_get_default_cpu)
-#     mem: int = attr.field(converter=mem_converter, factory=_get_default_mem)
-#     # Example gpus value: "all", 2, "device=1,2"
-#     # Default to "None", returns all available GPU devices in current environment
-#     gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
-#
-#     @property
-#     def on_gpu(self) -> bool:
-#         if self.gpus is not None:
-#             return len(self.gpus) > 0
-#         return False
-#
-#
-# @attr.s
-# class BatchOptions:
-#     enabled = attr.ib(
-#         type=bool,
-#         default=attr.Factory(
-#             DeploymentContainer.api_server_config.batch_options.enabled.get
-#         ),
-#     )
-#     max_batch_size = attr.ib(
-#         type=int,
-#         default=attr.Factory(
-#             DeploymentContainer.api_server_config.batch_options.max_batch_size.get
-#         ),
-#     )
-#     max_latency_ms = attr.ib(
-#         type=int,
-#         default=attr.Factory(
-#             DeploymentContainer.api_server_config.batch_options.max_latency_ms.get
-#         ),
-#     )
-#     input_batch_axis = attr.ib(type=int, default=0)
-#     output_batch_axis = attr.ib(type=int, default=0)
 
 
 """

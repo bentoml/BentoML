@@ -1,4 +1,6 @@
+import os
 import abc
+import math
 import typing as t
 import logging
 import collections
@@ -12,9 +14,9 @@ from .runnable import Runnable
 from .runnable import get_runnable_methods
 
 if TYPE_CHECKING:
+
     class Model:
         pass
-
 
     class MethodConfig(t.TypedDict):
         max_batch_size: t.Optional[int]
@@ -170,19 +172,60 @@ class Strategy(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def get_worker_count(
-        cls, runnable_class: t.Type[Runnable], resource_request: Resource
+        cls,
+        runnable_class: t.Type[Runnable],
+        resource_request: Resource,
     ) -> int:
         ...
 
     @classmethod
     @abc.abstractmethod
-    def get_worker_enviroment(
+    def setup_worker(
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: Resource,
         worker_index: int,
-    ) -> t.Dict[str, t.Union[str, int, float]]:
+    ) -> None:
         ...
+
+
+class DefaultStrategy(Strategy):
+    @classmethod
+    @abc.abstractmethod
+    def get_worker_count(
+        cls,
+        runnable_class: t.Type[Runnable],
+        resource_request: Resource,
+    ) -> int:
+        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
+            return math.ceil(resource_request.nvidia_gpu)
+
+        if runnable_class.SUPPORT_MULTIPLE_CPU_THREADS:
+            return 1
+
+        return math.ceil(resource_request.cpu)
+
+    @classmethod
+    @abc.abstractmethod
+    def setup_worker(
+        cls,
+        runnable_class: t.Type[Runnable],
+        resource_request: Resource,
+        worker_index: int,
+    ) -> None:
+        # use nvidia gpu
+        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index)
+            return
+
+        # use CPU
+        if runnable_class.SUPPORT_MULTIPLE_CPU_THREADS:
+            thread_count = math.ceil(resource_request.cpu)
+            os.environ["OMP_THREADS"] = str(thread_count)
+            return
+
+        os.environ["OMP_THREADS"] = "1"
+        return
 
 
 @attr.define(frozen=True)
@@ -190,10 +233,10 @@ class Runner:
     runnable_class: t.Type[Runnable] = attr.field()
     init_params: t.Dict[str, t.Any] = attr.field()
     name: str = attr.field()
-    strategy: t.Type[Strategy] = attr.field()
-    models: t.List[Model] = attr.field()
+    strategy: t.Type[Strategy] = attr.field(default=DefaultStrategy)
+    models: t.List[Model] = attr.field(factory=list)
     resource_request: Resource = attr.field()
-    method_configs: t.Dict[str, t.Dict[]]
+    method_configs = attr.field()
 
     def __init__(
         self,
@@ -214,7 +257,7 @@ class Runner:
         self._name = name
         self._strategy = strategy
         self._model = models
-        self._resource_config = RunnerResourceConfig(cpu, nvidia_gpu, custom_resources)
+        self._resource_config = Resource(cpu, nvidia_gpu, custom_resources)
 
         self._method_configs = collections.defaultdict(
             lambda: {"max_batch_size": max_batch_size, "max_latency_ms": max_latency_ms}

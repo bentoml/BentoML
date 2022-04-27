@@ -15,9 +15,9 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml import Tag
 from bentoml import Runner
 from bentoml import Runnable
-from bentoml import Tag
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 
@@ -91,12 +91,12 @@ class Model(StoreItem):
         name: str,
         *,
         module: str = "",
+        signatures: t.Optional[t.Dict[str, t.Any]] = None,
         labels: t.Optional[t.Dict[str, str]] = None,
         options: t.Optional[t.Dict[str, t.Any]] = None,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         context: t.Optional[t.Dict[str, t.Any]] = None,
-        signatures: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> "Model":
         """Create a new Model instance in temporary filesystem used for serializing
         model artifacts and save to model store
@@ -140,11 +140,11 @@ class Model(StoreItem):
             ModelInfo(
                 tag=tag,
                 module=module,
+                signatures=signatures,
                 labels=labels,
                 options=options,
                 metadata=metadata,
                 context=context,
-                signatures=signatures,
             ),
             custom_objects,
         )
@@ -287,7 +287,7 @@ class Model(StoreItem):
             custom_resources=custom_resources,
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
-            runnable_method_configs=runnable_method_configs
+            runnable_method_configs=runnable_method_configs,
         )
 
 
@@ -300,11 +300,11 @@ class ModelStore(Store[Model]):
 class ModelInfo:
     tag: Tag
     module: str
+    signatures: t.Dict[str, t.Any]
     labels: t.Dict[str, str]
     options: t.Dict[str, t.Any]
     metadata: t.Dict[str, t.Any]
-    context: t.Dict[str, t.Any]
-    signatures: t.Dict[str, t.Any]
+    context: t.Dict[str, str]
     api_version: str = "v1"
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
@@ -315,11 +315,11 @@ class ModelInfo:
         return (
             self.tag == other.tag
             and self.module == other.module
+            and self.signatures == other.signatures
             and self.labels == other.labels
             and self.options == other.options
             and self.metadata == other.metadata
             and self.context == other.context
-            and self.signatures == other.signatures
             and self.bentoml_version == other.bentoml_version
             and self.api_version == other.api_version
             and self.creation_time == other.creation_time
@@ -336,11 +336,11 @@ class ModelInfo:
             "creation_time": self.creation_time,
             "api_version": self.api_version,
             "module": self.module,
+            "signatures": self.signatures,
             "context": self.context,
             "labels": self.labels,
             "options": self.options,
             "metadata": self.metadata,
-            "signatures": self.signatures,
         }
 
     def dump(self, stream: t.IO[t.Any]):

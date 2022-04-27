@@ -240,29 +240,36 @@ class Runner:
     def __init__(
         self,
         runnable_class: t.Type[Runnable],
-        init_params,
-        name,
-        strategy,
-        models,
-        cpu,
-        nvidia_gpu,
-        custom_resources,
+        init_params: t.Dict[str, t.Any],
+        name: str,
+        strategy: t.Type[Strategy],
+        models: t.List[Model],
+        cpu: int,
+        nvidia_gpu: int,
+        custom_resources: t.Dict[str, t.Dict[str, int | float]],
         max_batch_size: int,
         max_latency_ms: int,
-        runnable_method_configs=None,
+        method_configs=None,
     ) -> None:
-        self._runnable_class = runnable_class
-        self._runnable_init_params = init_params
-        self._name = name
-        self._strategy = strategy
-        self._model = models
-        self._resource_config = Resource(cpu, nvidia_gpu, custom_resources)
-
-        self._method_configs = collections.defaultdict(
-            lambda: {"max_batch_size": max_batch_size, "max_latency_ms": max_latency_ms}
+        self.__attr_init__(
+            runnable_class,
+            init_params,
+            name,
+            strategy,
+            models,
+            resource_request=Resource(
+                cpu=cpu,
+                nvidia_gpu=nvidia_gpu,
+                custom_resources=custom_resources,
+            ),
+            method_configs=collections.defaultdict(
+                method_configs,
+                default_factory=lambda: {
+                    "max_batch_size": max_batch_size,
+                    "max_latency_ms": max_latency_ms,
+                },
+            ),
         )
-        if runnable_method_configs is not None:
-            self._method_configs.update(runnable_method_configs)
 
         for (
             name,

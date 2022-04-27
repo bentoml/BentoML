@@ -1,40 +1,24 @@
-import os
-import re
-import sys
-import enum
+import abc
 import typing as t
 import logging
-from abc import ABC
-from abc import abstractmethod
+import collections
 from typing import TYPE_CHECKING
 
 import attr
-import psutil
 
-from bentoml import Tag
 from bentoml.exceptions import BentoMLException
 
-from .utils import cpu_converter
-from .utils import gpu_converter
-from .utils import mem_converter
-from .utils import query_cgroup_cpu_count
-from ..utils import cached_property
-from ..configuration.containers import DeploymentContainer
+from .runnable import Runnable
+from .runnable import get_runnable_methods
 
 if TYPE_CHECKING:
-    import platform
+    class Model:
+        pass
 
-    if platform.system() == "Darwin":
-        from psutil._psosx import svmem
-    elif platform.system() == "Linux":
-        from psutil._pslinux import svmem
-    else:
-        from psutil._pswindows import svmem
 
-if sys.version_info >= (3, 8):
-    from typing import final
-else:
-    final = lambda x: x
+    class MethodConfig(t.TypedDict):
+        max_batch_size: t.Optional[int]
+        max_latency_ms: t.Optional[int]
 
 
 logger = logging.getLogger(__name__)
@@ -98,30 +82,6 @@ logger = logging.getLogger(__name__)
 #     output_batch_axis = attr.ib(type=int, default=0)
 
 
-class RunnableMethod:
-    name: str
-    batchable: bool
-    batch_dim: int
-    # input_spec: .. # optional
-    # output_spec: .. # optional
-
-
-class Runnable(ABC):
-    """
-    Runnable base class
-    """
-
-    @classmethod
-    def method(cls, runnable_method):
-        # for definition runnable methods
-        # @bentoml.Runnable.method
-        ...
-
-    @classmethod
-    def get_runnable_methods(cls) -> t.List[RunnableMethod]:
-        ...
-
-
 """
 runners config:
 
@@ -183,31 +143,61 @@ my_runner.predict.run( test_input_df )
 """
 
 
+@attr.define()
 class RunnerMethod:
-    runner: "Runner"
-    runnable_method: RunnableMethod
-    max_batch_size: int
-    max_latency_ms: int
+    runner: "Runner" = attr.field()
+    method_name: str = attr.field()
 
-    def run(self, *args, **kwargs):
-        return self.runner._run(self.runnable_method.name, *args, **kwargs)
+    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return self.runner.run_method(self.method_name, *args, **kwargs)
 
-    async def async_run(self, *args, **kwargs):
-        return await self.runner._async_run(self.runnable_method.name, *args, **kwargs)
+    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return await self.runner.async_run_method(self.method_name, *args, **kwargs)
 
 
 class RunnerResourceConfig:
     ...
 
 
+@attr.define(frozen=True)
+class Resource:
+    cpu: int = attr.field()
+    nvidia_gpu: int = attr.field()
+    custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
+
+
+class Strategy(abc.ABC):
+    @classmethod
+    @abc.abstractmethod
+    def get_worker_count(
+        cls, runnable_class: t.Type[Runnable], resource_request: Resource
+    ) -> int:
+        ...
+
+    @classmethod
+    @abc.abstractmethod
+    def get_worker_enviroment(
+        cls,
+        runnable_class: t.Type[Runnable],
+        resource_request: Resource,
+        worker_index: int,
+    ) -> t.Dict[str, t.Union[str, int, float]]:
+        ...
+
+
+@attr.define(frozen=True)
 class Runner:
-    """
-    TODO: add docstring
-    """
+    runnable_class: t.Type[Runnable] = attr.field()
+    init_params: t.Dict[str, t.Any] = attr.field()
+    name: str = attr.field()
+    strategy: t.Type[Strategy] = attr.field()
+    models: t.List[Model] = attr.field()
+    resource_request: Resource = attr.field()
+    method_configs: t.Dict[str, t.Dict[]]
 
     def __init__(
         self,
-        runnable_class,
+        runnable_class: t.Type[Runnable],
         init_params,
         name,
         strategy,
@@ -215,9 +205,9 @@ class Runner:
         cpu,
         nvidia_gpu,
         custom_resources,
-        max_batch_size,
-        max_latency_ms,
-        runnable_method_configs: t.Dict[str, t.Dict[str, str | int]],
+        max_batch_size: int,
+        max_latency_ms: int,
+        runnable_method_configs=None,
     ) -> None:
         self._runnable_class = runnable_class
         self._runnable_init_params = init_params
@@ -226,17 +216,19 @@ class Runner:
         self._model = models
         self._resource_config = RunnerResourceConfig(cpu, nvidia_gpu, custom_resources)
 
-        runnable_method_configs = runnable_method_configs or {}
-        for runnable_method in self.runnable_class.get_runnable_methods():
-            method_config = runnable_method_configs.get(runnable_method.name, {})
+        self._method_configs = collections.defaultdict(
+            lambda: {"max_batch_size": max_batch_size, "max_latency_ms": max_latency_ms}
+        )
+        if runnable_method_configs is not None:
+            self._method_configs.update(runnable_method_configs)
+
+        for runnable_method in get_runnable_methods(runnable_class):
             setattr(
                 self,
                 runnable_method.name,
                 RunnerMethod(
                     self,
-                    runnable_method,
-                    max_batch_size=method_config.get("max_batch_size", max_batch_size),
-                    max_latency_ms=method_config.get("max_batch_size", max_latency_ms),
+                    runnable_method.name,
                 ),
             )
 
@@ -244,38 +236,24 @@ class Runner:
         self._runnable: Runnable = None
 
     @property
-    def name(self):
-        return self._name
-
-    @property
-    def strategy(self):
-        return self._strategy
-
-    @property
-    def models(self):
-        return self._models
-
-    @property
     def resource_config(self):
         # look up configuration
         # else return self._resource_config
         ...
 
-    def _run(self, runner_method_name, *args, **kwargs):
+    def run_method(self, method_name: str, *args, **kwargs) -> t.Any:
         if self._runner_app_client:
-            return self._runner_app_client.run(runner_method_name, *args, **kwargs)
+            return self._runner_app_client.run(method_name, *args, **kwargs)
         if self._runnable:
-            return self._runnable[runner_method_name](*args, **kwargs)
+            return self._runnable[method_name](*args, **kwargs)
 
         raise BentoMLException(
             "runner not initialized"
         )  # TODO: make this UninitializedRunnerException
 
-    async def _async_run(self, runner_method_name, *args, **kwargs):
+    async def async_run_method(self, method_name: str, *args, **kwargs) -> t.Any:
         if self._runner_app_client:
-            return await self._runner_app_client.async_run(
-                runner_method_name, *args, **kwargs
-            )
+            return await self._runner_app_client.async_run(method_name, *args, **kwargs)
         if self._runnable:
             import anyio
 
@@ -305,7 +283,7 @@ class Runner:
             del self._runnable
             # self._runnable = None # do we need this?
 
-    def _init_remote_handle(self, host):
+    def _init_remote_client(self, host):
         """
         init runner from BentoMLContainer or environment variables
         """

@@ -9,6 +9,7 @@ import attr
 
 from bentoml.exceptions import BentoMLException
 
+from .remote import RemoteRunnerClient
 from .runnable import Runnable
 from .strategy import Strategy
 from .strategy import DefaultStrategy
@@ -166,19 +167,37 @@ class RunnerMethodConfig:
 
 @attr.define
 class RunnerHandle:
+    _runnable: Runnable | None = attr.field(init=False, default=None)
+    _runner_client: RemoteRunnerClient | None = attr.field(init=False, default=None)
+
     def init_local(self, runner: Runner):
+        logger.warning("for debugging and testing only")  # if not called from RunnerApp
+        if self._runner_client:
+            raise BentoMLException("TODO: ..")
+        if self._runnable:
+            logger.warning("re creating runnable")
+
         self._runnable = runner.runnable_class()
 
     def destroy_local(self):
-        del self._runnable
+        if not self._runnable:
+            logger.warning("local runnable not found")
+        else:
+            del self._runnable
 
     def init_client(self, runner: Runner):
-        from .remote import RemoteRunnerClient
+        if self._runner_client:
+            logger.warning("re creating remote runner client")
+        if self._runnable:
+            raise BentoMLException("TODO: ..")
 
         self._runner_client = RemoteRunnerClient(runner)
 
     def destroy_client(self):
-        del self._runner_client
+        if not self._runner_client:
+            logger.warning("remote runner client not found")
+        else:
+            del self._runner_client
 
     def run_method(
         self,
@@ -190,6 +209,9 @@ class RunnerHandle:
             return getattr(self._runnable, method_name)(*args, **kwargs)
         if self._runner_client is not None:
             return self._runner_client.run_method(method_name, *args, **kwargs)
+        raise BentoMLException(
+            "runner not initialized"
+        )  # TODO: make this UninitializedRunnerException
 
     async def async_run_method(
         self,
@@ -208,6 +230,9 @@ class RunnerHandle:
                 *args,
                 **kwargs,
             )
+        raise BentoMLException(
+            "runner not initialized"
+        )  # TODO: make this UninitializedRunnerException
 
 
 @attr.define(frozen=True)
@@ -258,133 +283,36 @@ class Runner:
         for name in runnable_class.get_method_configs().keys():
             setattr(self, name, RunnerMethod(self, name))
 
-        self._runner_app_client: "RunnerClient" = None
-        self.runner_handle = None
-        self._runnable: Runnable | None = None
+    def run_method(
+        self,
+        method_name: str,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> t.Any:
+        return self.runner_handle.run_method(method_name, *args, **kwargs)
 
-    def run_method(self, method_name: str, *args, **kwargs) -> t.Any:
-        if self._runner_app_client:
-            return self._runner_app_client.run(method_name, *args, **kwargs)
-        if self._runnable:
-            return self._runnable[method_name](*args, **kwargs)
-
-        raise BentoMLException(
-            "runner not initialized"
-        )  # TODO: make this UninitializedRunnerException
-
-    async def async_run_method(self, method_name: str, *args, **kwargs) -> t.Any:
-        if self._runner_app_client:
-            return await self._runner_app_client.async_run(method_name, *args, **kwargs)
-        if self._runnable:
-            import anyio
-
-            # TODO(jiang): to_thread
-            # return await self._runnable[runner_method_name](*args, **kwargs)
-
-        raise BentoMLException(
-            "runner not initialized"
-        )  # TODO: make this UninitializedRunnerException
+    async def async_run_method(
+        self,
+        method_name: str,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> t.Any:
+        return await self.runner_handle.async_run_method(method_name, *args, **kwargs)
 
     def init_local(self):
         """
         init local runnable container, for testing and debugging only
         """
-        logger.warning("for debugging and testing only")  # if not called from RunnerApp
-        if self._runner_app_client:
-            raise BentoMLException("TODO: ..")
-        if self._runnable:
-            logger.warning("re creating runnable")
-
-        self._runnable = self._runnable_class(**self._runnable_init_params)
+        self.runner_handle.init_local(self)
 
     def destroy_local(self):
-        if not self._runnable:
-            logger.warning("local runnable not found")
-        else:
-            del self._runnable
-            # self._runnable = None # do we need this?
+        self.runner_handle.destroy_local()
 
-    def init_remote(self):
+    def init_client(self):
         """
         init runner from BentoMLContainer or environment variables
         """
+        self.runner_handle.init_client(self)
 
-    # @property
-    # def default_name(self) -> str:
-    #     """
-    #     Return the default name of the runner. Will be used if no name is provided.
-    #     """
-    #     return type(self).__name__
-    #
-    # @abstractmethod
-    # def _setup(self) -> None:
-    #     ...
-    #
-    # def _shutdown(self) -> None:
-    #     # still a hidden SDK API
-    #     pass
-    #
-    # @property
-    # def num_replica(self) -> int:
-    #     return 1
-    #
-    # @property
-    # def required_models(self) -> t.List[Tag]:
-    #     return []
-    #
-    # @cached_property
-    # @final
-    # def name(self) -> str:
-    #     if self._name is None:
-    #         name = self.default_name
-    #     else:
-    #         name = self._name
-    #     if not name.isidentifier():
-    #         return VARNAME_RE.sub("_", name)
-    #     return name
-    #
-    # @cached_property
-    # @final
-    # def resource_quota(self) -> ResourceQuota:
-    #     return ResourceQuota()
-    #
-    # @cached_property
-    # @final
-    # def batch_options(self) -> BatchOptions:
-    #     return BatchOptions()
-    #
-    # @final
-    # @cached_property
-    # def _impl(self) -> "RunnerImpl":
-    #     return create_runner_impl(self)
-    #
-    # @final
-    # async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-    #     return await self._impl.async_run(*args, **kwargs)
-    #
-    # @final
-    # async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-    #     return await self._impl.async_run_batch(*args, **kwargs)
-    #
-    # @final
-    # def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-    #     return self._impl.run(*args, **kwargs)
-    #
-    # @final
-    # def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-    #     return self._impl.run_batch(*args, **kwargs)
-
-
-#
-# def create_runner_impl(runner: BaseRunner) -> RunnerImpl:
-#     remote_runner_mapping = DeploymentContainer.remote_runner_mapping.get()
-#     if runner.name in remote_runner_mapping:
-#         from .remote import RemoteRunnerClient
-#
-#         impl = RemoteRunnerClient(runner)
-#     else:
-#         from .local import LocalRunner
-#
-#         impl = LocalRunner(runner)
-#
-#     return impl
+    def destroy_client(self):
+        self.runner_handle.destroy_client()

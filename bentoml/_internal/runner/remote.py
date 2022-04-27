@@ -6,8 +6,6 @@ from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
 import attr
-from simple_di import inject
-from simple_di import Provide
 
 from .container import Payload
 from ..utils.uri import uri_to_path
@@ -31,18 +29,16 @@ class RemoteRunnerClient:
     _client: t.Optional["ClientSession"] = attr.field(init=False, default=None)
     _loop: t.Optional[asyncio.AbstractEventLoop] = attr.field(init=False, default=None)
     _addr: t.Optional[str] = attr.field(init=False, default=None)
+    _remote_runner_server_map: t.Dict[str, str] = attr.field(
+        init=False,
+        factory=DeploymentContainer.remote_runner_mapping.get,
+    )
 
     def _close_conn(self) -> None:
         if self._conn:
             self._conn.close()
 
-    @inject
-    def _get_conn(
-        self,
-        remote_runner_mapping: t.Dict[str, str] = Provide[
-            DeploymentContainer.remote_runner_mapping
-        ],
-    ) -> "BaseConnector":
+    def _get_conn(self) -> "BaseConnector":
         import aiohttp
 
         if (
@@ -52,7 +48,7 @@ class RemoteRunnerClient:
             or self._loop.is_closed()
         ):
             self._loop = asyncio.get_event_loop()  # get the loop lazily
-            bind_uri = remote_runner_mapping[self._runner.name]
+            bind_uri = self._remote_runner_server_map[self._runner.name]
             parsed = urlparse(bind_uri)
             if parsed.scheme == "file":
                 path = uri_to_path(bind_uri)
@@ -75,7 +71,6 @@ class RemoteRunnerClient:
                 raise ValueError(f"Unsupported bind scheme: {parsed.scheme}")
         return self._conn
 
-    @inject
     def _get_client(
         self,
         timeout_sec: t.Optional[float] = None,
@@ -147,9 +142,20 @@ class RemoteRunnerClient:
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
+        runnable_method_config = self._runner.runnable_class.get_method_configs()[
+            method_name
+        ]
+
         from ..runner.container import AutoContainer
 
-        params = Params(*args, **kwargs).map(AutoContainer.single_to_payload)
+        if runnable_method_config.batchable:
+            to_payload = AutoContainer.batch_to_payload
+            from_payload = AutoContainer.payload_to_batch
+        else:
+            to_payload = AutoContainer.single_to_payload
+            from_payload = AutoContainer.payload_to_single
+
+        params = Params(*args, **kwargs).map(to_payload)
         multipart = payload_params_to_multipart(params)
         client = self._get_client()
         async with client.post(f"{self._addr}/{method_name}", data=multipart) as resp:
@@ -168,7 +174,7 @@ class RemoteRunnerClient:
         except JSONDecodeError:
             raise ValueError(f"Bento payload decode error: {meta_header}")
 
-        return AutoContainer.payload_to_single(payload)
+        return from_payload(payload)
 
     def run_method(
         self,

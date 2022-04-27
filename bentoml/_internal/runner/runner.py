@@ -11,7 +11,6 @@ import attr
 from bentoml.exceptions import BentoMLException
 
 from .runnable import Runnable
-from .runnable import get_runnable_methods
 
 if TYPE_CHECKING:
 
@@ -265,15 +264,11 @@ class Runner:
         if runnable_method_configs is not None:
             self._method_configs.update(runnable_method_configs)
 
-        for runnable_method in get_runnable_methods(runnable_class):
-            setattr(
-                self,
-                runnable_method.name,
-                RunnerMethod(
-                    self,
-                    runnable_method.name,
-                ),
-            )
+        for (
+            name,
+            runnable_method,
+        ) in runnable_class.get_method_configs().items():
+            setattr(self, name, RunnerMethod(self, name))
 
         self._runner_app_client: "RunnerClient" = None
         self._runnable: Runnable = None

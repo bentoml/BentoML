@@ -210,9 +210,6 @@ def gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> int:
     if isinstance(gpus, str):
         return int(gpus)
 
-    if isinstance(gpus, list):
-        return len(gpus)
-
     return query_nvidia_gpu_count()
 
 

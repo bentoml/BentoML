@@ -161,6 +161,11 @@ class LocalRunner(RunnerHandle):
         return anyio.to_thread.run_sync(method, *args, **kwargs)
 
 
+# TODO: Move these to the default configuration file and allow user override
+GLOBAL_DEFAULT_MAX_BATCH_SIZE = 100
+GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
+
+
 @attr.define(frozen=True)
 class Runner:
     runnable_class: t.Type[Runnable]

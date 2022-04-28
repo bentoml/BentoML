@@ -214,8 +214,8 @@ def _get_default_cpu() -> float:
 
 @attr.define(frozen=True)
 class Resource:
-    cpu: int = attr.field()
-    nvidia_gpu: int = attr.field()
+    cpu: int | None = attr.field()
+    nvidia_gpu: int | None = attr.field()
     custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
 
     def with_config_overrides(self, runner_name: str) -> Resource:

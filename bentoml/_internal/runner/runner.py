@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-import os
 import typing as t
 import logging
 import collections
 from typing import TYPE_CHECKING
 
 import attr
-import psutil
-
-from bentoml.exceptions import BentoMLException
 
 from .remote import RemoteRunnerClient
+from .resource import Resource
 from .runnable import Runnable
+from .runnable import RunnableMethodConfig
 from .strategy import Strategy
 from .strategy import DefaultStrategy
+from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from ..models import Model
@@ -84,29 +83,19 @@ my_runner.predict.run( test_input_df )
 """
 
 
-@attr.define()
+@attr.define(frozen=True)
 class RunnerMethod:
-    runner: "Runner" = attr.field()
+    runner: Runner = attr.field()
     method_name: str = attr.field()
+    runnable_method_config: RunnableMethodConfig
+    max_batch_size: int
+    max_latency_ms: int
 
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self.runner.run_method(self.method_name, *args, **kwargs)
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self.runner.async_run_method(self.method_name, *args, **kwargs)
-
-
-@attr.define(frozen=True)
-class Resource:
-    cpu: int = attr.field()
-    nvidia_gpu: int = attr.field()
-    custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
-
-
-@attr.define(frozen=True)
-class RunnerMethodConfig:
-    max_batch_size: int = attr.field(default=1000)
-    max_latency_ms: int = attr.field(default=10000)
 
 
 @attr.define
@@ -179,53 +168,102 @@ class RunnerHandle:
         )  # TODO: make this UninitializedRunnerException
 
 
+# TODO: Move these to the default configuration file and allow user override
+GLOBAL_DEFAULT_MAX_BATCH_SIZE = 100
+GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
+
+
 @attr.define(frozen=True)
 class Runner:
-    runnable_class: t.Type[Runnable] = attr.field()
-    init_params: t.Dict[str, t.Any] = attr.field()
-    name: str = attr.field()
-    strategy: t.Type[Strategy] = attr.field(default=DefaultStrategy)
-    models: t.List[Model] = attr.field(factory=list)
-    resource_config: Resource = attr.field()
-    method_configs = attr.field()
-    runner_handle = attr.field(init=False)
+    runnable_class: t.Type[Runnable]
+    runnable_init_params: t.Dict[str, t.Any]
+    name: str
+    models: t.List[Model]
+    resource_config: Resource
+    runner_methods: t.List[RunnerMethod]
+    scheduling_strategy: t.Type[Strategy]
+    _runner_handle = attr.field(init=False)
 
     def __init__(
         self,
         runnable_class: t.Type[Runnable],
-        init_params: t.Dict[str, t.Any],
-        name: str,
-        strategy: t.Type[Strategy],
-        models: t.List[Model],
-        cpu: int,
-        nvidia_gpu: int,
-        custom_resources: t.Dict[str, int | float],
-        max_batch_size: int,
-        max_latency_ms: int,
-        method_configs: t.Dict[str, RunnerMethodConfig] | None,
+        *,
+        init_params: t.Dict[str, t.Any] | None = None,
+        name: str | None = None,
+        scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
+        models: t.List[Model] | None = None,
+        cpu: int | None,  # TODO: support str and float type here? e.g "500m" or "0.5"
+        nvidia_gpu: int | None,
+        custom_resources: t.Dict[str, int | float] | None = None,
+        max_batch_size: int | None,
+        max_latency_ms: int | None,
+        method_configs: t.Dict[str, t.Dict[str, int]] | None,
     ) -> None:
+        """
+        TODO: add docstring
+        Args:
+            runnable_class:
+            init_params:
+            name:
+            scheduling_strategy:
+            models:
+            cpu:
+            nvidia_gpu:
+            custom_resources:
+            max_batch_size:
+            max_latency_ms:
+            method_configs:
+        """
+        runner_methods = []
+        method_configs = method_configs or {}
+        runnable_method_config_map = runnable_class.get_method_configs()
+        for method_name, runnable_method_config in runnable_method_config_map.items():
+            method_max_batch_size = max_batch_size or GLOBAL_DEFAULT_MAX_BATCH_SIZE
+            method_max_latency_ms = max_latency_ms or GLOBAL_DEFAULT_MAX_LATENCY_MS
+            if method_name in method_configs:
+                if "max_batch_size" in method_configs[method_name]:
+                    method_max_batch_size = method_configs[method_name][
+                        "max_batch_size"
+                    ]
+                if "max_latency_ms" in method_configs[method_name]:
+                    method_max_latency_ms = method_configs[method_name][
+                        "max_latency_ms"
+                    ]
+                # TODO: apply user runner configs here
+
+            runner_methods.append(
+                RunnerMethod(
+                    runner=self,
+                    method_name=method_name,
+                    runnable_method_config=runnable_method_config,
+                    max_batch_size=method_max_batch_size,
+                    max_latency_ms=method_max_latency_ms,
+                )
+            )
+
+        runner_name = name or runnable_class.__name__
         self.__attrs_init__(  # type: ignore
-            runnable_class,
-            init_params,
-            name,
-            strategy,
-            models,
+            runnable_class=runnable_class,
+            runnable_init_params=init_params or {},
+            name=runner_name,
+            models=models or [],
             resource_config=Resource(
                 cpu=cpu,
                 nvidia_gpu=nvidia_gpu,
                 custom_resources=custom_resources,
-            ),
-            method_configs=collections.defaultdict(
-                lambda: RunnerMethodConfig(
-                    max_batch_size=max_batch_size,
-                    max_latency_ms=max_latency_ms,
-                ),
-                method_configs or {},
-            ),
+            ).with_config_overrides(runner_name),
+            runner_methods=runner_methods,
+            scheduling_strategy=scheduling_strategy,
         )
 
-        for name in runnable_class.get_method_configs().keys():
-            setattr(self, name, RunnerMethod(self, name))
+        for runner_method in self.runner_methods:
+            if runner_method.method_name == "__call__":
+                setattr(self, "run", runner_method.run)
+                setattr(self, "async_run", runner_method.async_run)
+            else:
+                setattr(self, runner_method.method_name, runner_method)
+
+        self._runner_handle = RunnerHandle()
 
     def run_method(
         self,
@@ -233,7 +271,7 @@ class Runner:
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        return self.runner_handle.run_method(method_name, *args, **kwargs)
+        return self._runner_handle.run_method(method_name, *args, **kwargs)
 
     async def async_run_method(
         self,
@@ -241,22 +279,22 @@ class Runner:
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        return await self.runner_handle.async_run_method(method_name, *args, **kwargs)
+        return await self._runner_handle.async_run_method(method_name, *args, **kwargs)
 
     def init_local(self):
         """
-        init local runnable container, for testing and debugging only
+        init local runnable instance, for testing and debugging only
         """
-        self.runner_handle.init_local(self)
+        self._runner_handle.init_local(self)
 
     def destroy_local(self):
-        self.runner_handle.destroy_local()
+        self._runner_handle.destroy_local()
 
     def init_client(self):
         """
-        init runner from BentoMLContainer or environment variables
+        init client for a remote runner instance
         """
-        self.runner_handle.init_client(self)
+        self._runner_handle.init_client(self)
 
     def destroy_client(self):
-        self.runner_handle.destroy_client()
+        self._runner_handle.destroy_client()

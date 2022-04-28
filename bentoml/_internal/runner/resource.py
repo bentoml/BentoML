@@ -10,6 +10,8 @@ import functools
 import attr
 import psutil
 
+from ...exceptions import BentoMLException
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,17 +36,17 @@ def mem_converter(mem: t.Union[int, str]) -> int:
     unit_match = re.match("([0-9]+)([A-Za-z]{1,2})", mem)
     mem_multipliers = {
         "k": 1000,
-        "M": 1000 ** 2,
-        "G": 1000 ** 3,
-        "T": 1000 ** 4,
-        "P": 1000 ** 5,
-        "E": 1000 ** 6,
+        "M": 1000**2,
+        "G": 1000**3,
+        "T": 1000**4,
+        "P": 1000**5,
+        "E": 1000**6,
         "Ki": 1024,
-        "Mi": 1024 ** 2,
-        "Gi": 1024 ** 3,
-        "Ti": 1024 ** 4,
-        "Pi": 1024 ** 5,
-        "Ei": 1024 ** 6,
+        "Mi": 1024**2,
+        "Gi": 1024**3,
+        "Ti": 1024**4,
+        "Pi": 1024**5,
+        "Ei": 1024**6,
     }
     if unit_match:
         base = int(unit_match[1])
@@ -215,3 +217,8 @@ class Resource:
     cpu: int = attr.field()
     nvidia_gpu: int = attr.field()
     custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
+
+    def with_config_overrides(self, runner_name: str) -> Resource:
+        # TODO: Apply runner config from BentoML container by runner name, to override
+        #  current Resource configs
+        ...

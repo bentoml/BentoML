@@ -4,7 +4,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from bentoml import Runner
-from bentoml import SimpleRunner
 from bentoml.io import IODescriptor
 from bentoml.exceptions import BentoMLException
 

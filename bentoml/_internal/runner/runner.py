@@ -250,7 +250,11 @@ class Runner:
         )
 
         for runner_method in self.runner_methods:
-            setattr(self, runner_method.method_name, runner_method)
+            if runner_method.method_name == "__call__":
+                setattr(self, "run", runner_method.run)
+                setattr(self, "async_run", runner_method.async_run)
+            else:
+                setattr(self, runner_method.method_name, runner_method)
 
 
     def run_method(
@@ -271,7 +275,7 @@ class Runner:
 
     def init_local(self):
         """
-        init local runnable container, for testing and debugging only
+        init local runnable instance, for testing and debugging only
         """
         self.runner_handle.init_local(self)
 
@@ -280,7 +284,7 @@ class Runner:
 
     def init_client(self):
         """
-        init runner from BentoMLContainer or environment variables
+        init client for a remote runner instance
         """
         self.runner_handle.init_client(self)
 

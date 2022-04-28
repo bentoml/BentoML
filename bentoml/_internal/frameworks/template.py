@@ -103,7 +103,7 @@ def save_model(
         return bentoml_model.tag
 
 
-def _to_runnable(
+def get_runnable(
     bento_model: bentoml.Model,
 ) -> t.Type[bentoml.Runnable]:
     """

@@ -24,8 +24,11 @@ from bentoml import Runnable
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 
+from bentoml._internal.runner.runnable import BatchDimType
+
 from ..store import Store
 from ..store import StoreItem
+from ..types import AnyType
 from ..types import MetadataDict
 from ..utils import label_validator
 from ..utils import metadata_validator
@@ -38,6 +41,10 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from ..types import PathType
     from ..runner import Runner
+
+    ModelSignatureDict: t.TypeAlias = dict[
+        str, bool | BatchDimType | AnyType | tuple[AnyType] | None
+    ]
 
 logger = logging.getLogger(__name__)
 
@@ -109,12 +116,12 @@ class Model(StoreItem):
         name: str,
         *,
         module: str,
+        signatures: dict[str, t.Any],
         labels: dict[str, str] | None = None,
         options: ModelOptions = ModelOptions(),
         custom_objects: dict[str, t.Any] | None = None,
         metadata: dict[str, t.Any] | None = None,
         context: ModelContext,
-        signatures: dict[str, t.Any],
     ) -> "Model":
         """Create a new Model instance in temporary filesystem used for serializing
         model artifacts and save to model store
@@ -151,11 +158,11 @@ class Model(StoreItem):
             ModelInfo(
                 tag=tag,
                 module=module,
+                signatures=signatures,
                 labels=labels,
                 options=options,
                 metadata=metadata,
                 context=context,
-                signatures=signatures,
             ),
             custom_objects,
         )
@@ -328,13 +335,16 @@ class ModelContext:
 @attr.frozen
 class ModelSignature:
     batchable: bool
+    batch_dim: BatchDimType
+    input_spec: AnyType | tuple[AnyType, ...] | None
+    output_spec: AnyType | None
 
     @staticmethod
-    def from_dict(data: dict[str, bool]) -> ModelSignature:
+    def from_dict(data: ModelSignatureDict) -> ModelSignature:
         return cattrs.structure(data, ModelSignature)
 
     @staticmethod
-    def convert_dict(data: dict[str, dict[str, bool]]) -> dict[str, ModelSignature]:
+    def convert_dict(data: dict[str, ModelSignatureDict]) -> dict[str, ModelSignature]:
         return {
             k: ModelSignature.from_dict(v) if isinstance(v, dict) else v
             for k, v in data.items()
@@ -362,6 +372,7 @@ class ModelInfo:
         return (
             self.tag == other.tag
             and self.module == other.module
+            and self.signatures == other.signatures
             and self.labels == other.labels
             and self.options == other.options
             and self.metadata == other.metadata
@@ -378,11 +389,11 @@ class ModelInfo:
         return ModelInfo(
             tag=self.tag,
             module=self.module,
+            signatures=self.signatures,
             labels=self.labels,
             options=self.options.with_options(**kwargs),
             metadata=self.metadata,
             context=self.context,
-            signatures=self.signatures,
             api_version=self.api_version,
             creation_time=self.creation_time,
         )
@@ -394,11 +405,11 @@ class ModelInfo:
             "creation_time": self.creation_time,
             "api_version": self.api_version,
             "module": self.module,
+            "signatures": self.signatures,
             "context": self.context,
             "labels": self.labels,
             "options": self.options,
             "metadata": self.metadata,
-            "signatures": self.signatures,
         }
 
     def dump(self, stream: t.IO[t.Any]):

@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import attr
 
+from .runner import RunnerHandle
 from .container import Payload
 from ..utils.uri import uri_to_path
 from ...exceptions import RemoteException
@@ -23,7 +24,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 @attr.define
-class RemoteRunnerClient:
+class RemoteRunnerClient(RunnerHandle):
     _runner: "Runner" = attr.field()
     _conn: t.Optional["BaseConnector"] = attr.field(init=False, default=None)
     _client: t.Optional["ClientSession"] = attr.field(init=False, default=None)

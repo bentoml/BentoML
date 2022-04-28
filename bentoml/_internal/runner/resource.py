@@ -15,7 +15,56 @@ from ...exceptions import BentoMLException
 logger = logging.getLogger(__name__)
 
 
+@attr.define(frozen=True)
+class Resource:
+    cpu: float | None = attr.field(default=None)
+    nvidia_gpu: float | None = attr.field(default=None)
+    custom_resources: t.Dict[str, float | None] = attr.field(factory=dict)
+
+    def __or__(self, right: Resource) -> Resource:
+        """
+        Fill in missing values with values from another.
+        """
+        cpu = right.cpu if self.cpu is None else self.cpu
+        nvidia_gpu = right.nvidia_gpu if self.nvidia_gpu is None else self.nvidia_gpu
+        custom_resources = dict(
+            right.custom_resources,
+            **{k: v for k, v in self.custom_resources.items() if v is not None},
+        )
+        return self.__class__(
+            cpu=cpu,
+            nvidia_gpu=nvidia_gpu,
+            custom_resources=custom_resources,
+        )
+
+    @classmethod
+    def from_config(cls) -> Resource:
+        """
+        Create a Resource object from the BentoML config.
+        """
+        # TODO(jiang)
+        return cls()
+
+    @classmethod
+    def from_system(cls) -> Resource:
+        """
+        Get Resource from system.
+        """
+        cpu = query_cpu_count()
+        nvidia_gpu = float(query_nvidia_gpu_count())
+        return cls(cpu=cpu, nvidia_gpu=nvidia_gpu)
+
+
 def cpu_converter(cpu: t.Union[int, float, str]) -> float:
+    """
+    Convert cpu to float.
+
+    cpu can be a float, int or string.
+    - 10m -> 0.01
+    - 1.0 -> 1.0
+    - 1 -> 1.0
+    - "1" -> 1.0
+    """
     assert isinstance(cpu, (int, float, str)), "cpu must be int, float or str"
 
     if isinstance(cpu, (int, float)):
@@ -36,17 +85,17 @@ def mem_converter(mem: t.Union[int, str]) -> int:
     unit_match = re.match("([0-9]+)([A-Za-z]{1,2})", mem)
     mem_multipliers = {
         "k": 1000,
-        "M": 1000**2,
-        "G": 1000**3,
-        "T": 1000**4,
-        "P": 1000**5,
-        "E": 1000**6,
+        "M": 1000 ** 2,
+        "G": 1000 ** 3,
+        "T": 1000 ** 4,
+        "P": 1000 ** 5,
+        "E": 1000 ** 6,
         "Ki": 1024,
-        "Mi": 1024**2,
-        "Gi": 1024**3,
-        "Ti": 1024**4,
-        "Pi": 1024**5,
-        "Ei": 1024**6,
+        "Mi": 1024 ** 2,
+        "Gi": 1024 ** 3,
+        "Ti": 1024 ** 4,
+        "Pi": 1024 ** 5,
+        "Ei": 1024 ** 6,
     }
     if unit_match:
         base = int(unit_match[1])
@@ -121,6 +170,7 @@ def query_cgroup_cpu_count() -> float:
     return float(min(limit_count, os_cpu_count))
 
 
+@functools.lru_cache(maxsize=1)
 def query_os_cpu_count() -> int:
     cpu_count = os.cpu_count()
     if cpu_count is not None:
@@ -129,12 +179,12 @@ def query_os_cpu_count() -> int:
     return 1
 
 
-def query_cpu_count() -> float | int:
+def query_cpu_count() -> float:
     # Default to the total CPU count available in current node or cgroup
     if psutil.POSIX:
         return query_cgroup_cpu_count()
     else:
-        return query_os_cpu_count()
+        return float(query_os_cpu_count())
 
 
 @functools.lru_cache(maxsize=1)
@@ -199,26 +249,3 @@ def get_gpu_memory(dev: int) -> t.Tuple[float, float]:
         raise ValueError(f"Invalid GPU device index {dev}")
     except KeyError:
         raise RuntimeError(f"unexpected nvml query result: {query}")
-
-
-def _get_default_cpu() -> float:
-    # Default to the total CPU count available in current node or cgroup
-    if psutil.POSIX:
-        return query_cgroup_cpu_count()
-    else:
-        cpu_count = os.cpu_count()
-        if cpu_count is not None:
-            return float(cpu_count)
-        raise ValueError("CPU count is NoneType")
-
-
-@attr.define(frozen=True)
-class Resource:
-    cpu: int = attr.field()
-    nvidia_gpu: int = attr.field()
-    custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
-
-    def with_config_overrides(self, runner_name: str) -> Resource:
-        # TODO: Apply runner config from BentoML container by runner name, to override
-        #  current Resource configs
-        ...

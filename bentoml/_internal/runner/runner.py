@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import collections
 from typing import TYPE_CHECKING
 
 import attr
@@ -156,7 +155,12 @@ class RunnerHandle:
             import anyio
 
             method = getattr(self._runnable, method_name)
-            return anyio.to_thread.run_sync(method, *args, **kwargs)
+            return anyio.to_thread.run_sync(
+                method,
+                *args,
+                **kwargs,
+                limiter=anyio.CapacityLimiter(1),
+            )
         if self._runner_client is not None:
             return await self._runner_client.async_run_method(
                 method_name,
@@ -182,7 +186,7 @@ class Runner:
     resource_config: Resource
     runner_methods: t.List[RunnerMethod]
     scheduling_strategy: t.Type[Strategy]
-    _runner_handle = attr.field(init=False)
+    _runner_handle = attr.field(init=False, factory=RunnerHandle)
 
     def __init__(
         self,
@@ -194,7 +198,7 @@ class Runner:
         models: t.List[Model] | None = None,
         cpu: int | None,  # TODO: support str and float type here? e.g "500m" or "0.5"
         nvidia_gpu: int | None,
-        custom_resources: t.Dict[str, int | float] | None = None,
+        custom_resources: t.Dict[str, float | None] | None = None,
         max_batch_size: int | None,
         max_latency_ms: int | None,
         method_configs: t.Dict[str, t.Dict[str, int]] | None,
@@ -214,9 +218,10 @@ class Runner:
             max_latency_ms:
             method_configs:
         """
-        runner_methods = []
+        runner_methods: t.List[RunnerMethod] = []
         method_configs = method_configs or {}
         runnable_method_config_map = runnable_class.get_method_configs()
+
         for method_name, runnable_method_config in runnable_method_config_map.items():
             method_max_batch_size = max_batch_size or GLOBAL_DEFAULT_MAX_BATCH_SIZE
             method_max_latency_ms = max_latency_ms or GLOBAL_DEFAULT_MAX_LATENCY_MS
@@ -242,16 +247,21 @@ class Runner:
             )
 
         runner_name = name or runnable_class.__name__
+        resource = (
+            Resource.from_config()
+            | Resource(
+                cpu=cpu,
+                nvidia_gpu=nvidia_gpu,
+                custom_resources=custom_resources or {},
+            )
+            | Resource.from_system()
+        )
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
             runnable_init_params=init_params or {},
             name=runner_name,
             models=models or [],
-            resource_config=Resource(
-                cpu=cpu,
-                nvidia_gpu=nvidia_gpu,
-                custom_resources=custom_resources,
-            ).with_config_overrides(runner_name),
+            resource_config=resource,
             runner_methods=runner_methods,
             scheduling_strategy=scheduling_strategy,
         )
@@ -262,8 +272,6 @@ class Runner:
                 setattr(self, "async_run", runner_method.async_run)
             else:
                 setattr(self, runner_method.method_name, runner_method)
-
-        self._runner_handle = RunnerHandle()
 
     def run_method(
         self,

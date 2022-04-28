@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-import abc
 import typing as t
 import inspect
 import logging
 import functools
+from abc import ABC
+from abc import abstractmethod
+from typing import overload
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -40,13 +42,40 @@ def method_decorator(
     return meth
 
 
-class Runnable(abc.ABC):
-    SUPPORT_NVIDIA_GPU: bool
-    SUPPORT_MULTIPLE_CPU_THREADS: bool
+class Runnable(ABC):
+    @property
+    @abstractmethod
+    def supports_nvidia_gpu(self) -> bool:
+        ...
+
+    @property
+    @abstractmethod
+    def supports_multi_threading(self) -> bool:
+        ...
+
+    @overload
+    @staticmethod
+    def method(
+        batchable_or_method: WrappedMethod,
+        batch_dim: BatchDimType = 0,
+        input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
+        output_spec: LazyType[t.Any] | None = None,
+    ) -> WrappedMethod:
+        ...
+
+    @overload
+    @staticmethod
+    def method(
+        batchable_or_method: bool,
+        batch_dim: BatchDimType = 0,
+        input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
+        output_spec: LazyType[t.Any] | None = None,
+    ) -> t.Callable[[WrappedMethod], WrappedMethod]:
+        ...
 
     @staticmethod
     def method(
-        batchable_or_method: bool | WrappedMethod = False,
+        batchable_or_method: bool | WrappedMethod = False,  # type: ignore (pyright bug?)
         batch_dim: BatchDimType = 0,
         input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
         output_spec: t.Optional[LazyType[t.Any]] = None,

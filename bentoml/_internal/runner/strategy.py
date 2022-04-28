@@ -55,11 +55,11 @@ class DefaultStrategy(Strategy):
         resource_request: Resource,
     ) -> int:
         # use nvidia gpu
-        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
+        if resource_request.nvidia_gpu > 0 and runnable_class.supports_nvidia_gpu:
             return math.ceil(resource_request.nvidia_gpu)
 
         # use CPU
-        if runnable_class.SUPPORT_MULTIPLE_CPU_THREADS:
+        if runnable_class.supports_multi_threading:
             return 1
 
         return math.ceil(resource_request.cpu)
@@ -73,12 +73,12 @@ class DefaultStrategy(Strategy):
         worker_index: int,
     ) -> None:
         # use nvidia gpu
-        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
+        if resource_request.nvidia_gpu > 0 and runnable_class.supports_nvidia_gpu:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index)
             return
 
         # use CPU
-        if runnable_class.SUPPORT_MULTIPLE_CPU_THREADS:
+        if runnable_class.supports_multi_threading:
             thread_count = math.ceil(resource_request.cpu)
             for thread_env in THREAD_ENVS:
                 os.environ[thread_env] = str(thread_count)

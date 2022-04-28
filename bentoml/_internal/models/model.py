@@ -10,6 +10,7 @@ from datetime import timezone
 import fs
 import attr
 import yaml
+import cattrs
 import fs.errors
 import fs.mirror
 import cloudpickle
@@ -17,11 +18,19 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
-from ..tag import Tag
+from bentoml import Tag
+from bentoml import Runner
+from bentoml import Runnable
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import BentoMLException
+from bentoml._internal.runner.runnable import BatchDimType
+
 from ..store import Store
 from ..store import StoreItem
-from ..utils import validate_labels
-from ..utils import validate_metadata
+from ..types import AnyType
+from ..types import MetadataDict
+from ..utils import label_validator
+from ..utils import metadata_validator
 from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
@@ -32,11 +41,24 @@ if TYPE_CHECKING:
     from ..types import PathType
     from ..runner import Runner
 
+    ModelSignatureDict: t.TypeAlias = dict[
+        str, bool | BatchDimType | AnyType | tuple[AnyType] | None
+    ]
+
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
+
+
+class ModelOptions:
+    @classmethod
+    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
+        if len(kwargs) != 0:
+            for k in kwargs:
+                raise ValueError(f"Option {k} is not supported")
+        return cls()
 
 
 @attr.define(repr=False, eq=False)
@@ -82,8 +104,8 @@ class Model(StoreItem):
 
         return self._custom_objects
 
-    def __eq__(self, other: "Model") -> bool:
-        return self._tag == other._tag
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Model) and self._tag == other._tag
 
     def __hash__(self) -> int:
         return hash(self._tag)
@@ -92,13 +114,13 @@ class Model(StoreItem):
     def create(
         name: str,
         *,
-        module: str = "",
-        labels: t.Optional[t.Dict[str, str]] = None,
-        options: t.Optional[t.Dict[str, t.Any]] = None,
-        custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-        metadata: t.Optional[t.Dict[str, t.Any]] = None,
-        context: t.Optional[t.Dict[str, t.Any]] = None,
-        signatures: t.Optional[t.Dict[str, t.Any]] = None,
+        module: str,
+        signatures: dict[str, t.Any],
+        labels: dict[str, str] | None = None,
+        options: ModelOptions = ModelOptions(),
+        custom_objects: dict[str, t.Any] | None = None,
+        metadata: dict[str, t.Any] | None = None,
+        context: ModelContext,
     ) -> "Model":
         """Create a new Model instance in temporary filesystem used for serializing
         model artifacts and save to model store
@@ -125,14 +147,7 @@ class Model(StoreItem):
         """
         tag = Tag(name).make_new_version()
         labels = {} if labels is None else labels
-        options = {} if options is None else options
         metadata = {} if metadata is None else metadata
-        context = {} if context is None else context
-        context["bentoml_version"] = BENTOML_VERSION
-        context["python_version"] = PYTHON_VERSION
-
-        validate_labels(labels)
-        validate_metadata(metadata)
 
         model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
 
@@ -142,11 +157,11 @@ class Model(StoreItem):
             ModelInfo(
                 tag=tag,
                 module=module,
+                signatures=signatures,
                 labels=labels,
                 options=options,
                 metadata=metadata,
                 context=context,
-                signatures=signatures,
             ),
             custom_objects,
         )
@@ -155,7 +170,7 @@ class Model(StoreItem):
 
     @inject
     def save(
-        self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
+        self, model_store: ModelStore = Provide[BentoMLContainer.model_store]
     ) -> "Model":
         self._save(model_store)
 
@@ -252,16 +267,15 @@ class Model(StoreItem):
     def __str__(self):
         return f'Model(tag="{self.tag}", path="{self.path}")'
 
-    # TODO(sauyon): add type annotation
     def to_runner(
         self,
-        name=None,
-        cpu=None,
-        nvidia_gpu=None,
-        custom_resources=None,
-        max_batch_size=None,
-        max_latency_ms=None,
-        runnable_method_configs=None,
+        name: str = "",
+        cpu: int | None = None,
+        nvidia_gpu: int | None = None,
+        custom_resources: dict[str, int | float] | None = None,
+        max_batch_size: int | None = None,
+        max_latency_ms: int | None = None,
+        method_configs: dict[str, dict[str, int]] | None = None,
     ) -> Runner:
         """
         TODO(chaoyu): add docstring
@@ -280,25 +294,24 @@ class Model(StoreItem):
         """
         return Runner(
             self.to_runnable(),
-            name=name or self.tag.name,
+            name=name if name != "" else self.tag.name,
             models=[self],
             cpu=cpu,
             nvidia_gpu=nvidia_gpu,
             custom_resources=custom_resources,
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
-            runnable_method_configs=runnable_method_configs,
+            method_configs=method_configs,
         )
 
-    def to_runnable(self) -> Runnable:
+    def to_runnable(self) -> t.Type[Runnable]:
         module = __import__(self.info.module)
         if not self._runnable:
             self._runnable = module.get_runnable(self)
         return self._runnable
 
-    def with_options(self, **kwrags) -> Model:
-        # TODO(sauyon): return a new Model instance with updated model options
-        ...
+    def with_options(self, **kwargs: t.Any) -> Model:
+        return Model(self._tag, self._fs, self.info.with_options(**kwargs))
 
 
 class ModelStore(Store[Model]):
@@ -306,31 +319,64 @@ class ModelStore(Store[Model]):
         super().__init__(base_path, Model)
 
 
+@attr.frozen
+class ModelContext:
+    framework_name: str
+    framework_versions: dict[str, str]
+    bentoml_version: str = BENTOML_VERSION
+    python_version: str = PYTHON_VERSION
+
+    @staticmethod
+    def from_dict(data: dict[str, str | dict[str, str]]) -> ModelContext:
+        return cattrs.structure(data, ModelContext)
+
+
+@attr.frozen
+class ModelSignature:
+    batchable: bool
+    batch_dim: BatchDimType
+    input_spec: AnyType | tuple[AnyType, ...] | None
+    output_spec: AnyType | None
+
+    @staticmethod
+    def from_dict(data: ModelSignatureDict) -> ModelSignature:
+        return cattrs.structure(data, ModelSignature)
+
+    @staticmethod
+    def convert_dict(data: dict[str, ModelSignatureDict]) -> dict[str, ModelSignature]:
+        return {
+            k: ModelSignature.from_dict(v) if isinstance(v, dict) else v
+            for k, v in data.items()
+        }
+
+
 @attr.define(repr=False, eq=False)
 class ModelInfo:
     tag: Tag
     module: str
-    labels: t.Dict[str, str]
-    options: t.Dict[str, t.Any]
-    metadata: t.Dict[str, t.Any]
-    context: t.Dict[str, t.Any]
-    signatures: t.Dict[str, t.Any]
+    labels: t.Dict[str, str] = attr.field(validator=label_validator)
+    options: ModelOptions
+    metadata: MetadataDict = attr.field(validator=metadata_validator)
+    context: ModelContext = attr.field(converter=ModelContext.from_dict)
+    signatures: dict[str, ModelSignature] = attr.field(
+        converter=ModelSignature.convert_dict
+    )
     api_version: str = "v1"
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    def __eq__(self, other: "t.Union[ModelInfo, FrozenModelInfo]"):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, (ModelInfo, FrozenModelInfo)):
             return False
 
         return (
             self.tag == other.tag
             and self.module == other.module
+            and self.signatures == other.signatures
             and self.labels == other.labels
             and self.options == other.options
             and self.metadata == other.metadata
             and self.context == other.context
             and self.signatures == other.signatures
-            and self.bentoml_version == other.bentoml_version
             and self.api_version == other.api_version
             and self.creation_time == other.creation_time
         )
@@ -338,19 +384,31 @@ class ModelInfo:
     def __attrs_post_init__(self):
         self.validate()
 
+    def with_options(self, **kwargs: t.Any) -> ModelInfo:
+        return ModelInfo(
+            tag=self.tag,
+            module=self.module,
+            signatures=self.signatures,
+            labels=self.labels,
+            options=self.options.with_options(**kwargs),
+            metadata=self.metadata,
+            context=self.context,
+            api_version=self.api_version,
+            creation_time=self.creation_time,
+        )
+
     def to_dict(self) -> t.Dict[str, t.Any]:
         return {
             "name": self.tag.name,
             "version": self.tag.version,
-            "bentoml_version": self.bentoml_version,
             "creation_time": self.creation_time,
             "api_version": self.api_version,
             "module": self.module,
+            "signatures": self.signatures,
             "context": self.context,
             "labels": self.labels,
             "options": self.options,
             "metadata": self.metadata,
-            "signatures": self.signatures,
         }
 
     def dump(self, stream: t.IO[t.Any]):

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import typing as t
 import logging
+
+
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
@@ -159,11 +161,6 @@ class LocalRunner(RunnerHandle):
         return anyio.to_thread.run_sync(method, *args, **kwargs)
 
 
-# TODO: Move these to the default configuration file and allow user override
-GLOBAL_DEFAULT_MAX_BATCH_SIZE = 100
-GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
-
-
 @attr.define(frozen=True)
 class Runner:
     runnable_class: t.Type[Runnable]
@@ -185,7 +182,7 @@ class Runner:
         models: t.List[Model] | None = None,
         cpu: int | None,  # TODO: support str and float type here? e.g "500m" or "0.5"
         nvidia_gpu: int | None,
-        custom_resources: t.Dict[str, int | float] | None = None,
+        custom_resources: t.Dict[str, float | None] | None = None,
         max_batch_size: int | None,
         max_latency_ms: int | None,
         method_configs: t.Dict[str, t.Dict[str, int]] | None,
@@ -212,6 +209,16 @@ class Runner:
         method_configs = {} if method_configs is None else {}
         custom_resources = {} if custom_resources is None else {}
         runnable_method_config_map = runnable_class.get_method_configs()
+        resource = (
+            Resource.from_config()
+            | Resource(
+                cpu=cpu,
+                nvidia_gpu=nvidia_gpu,
+                custom_resources=custom_resources or {},
+            )
+            | Resource.from_system()
+        )
+
         for method_name, runnable_method_config in runnable_method_config_map.items():
             method_max_batch_size = max_batch_size or GLOBAL_DEFAULT_MAX_BATCH_SIZE
             method_max_latency_ms = max_latency_ms or GLOBAL_DEFAULT_MAX_LATENCY_MS
@@ -235,17 +242,13 @@ class Runner:
                     max_latency_ms=method_max_latency_ms,
                 )
             )
-
+            
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
             runnable_init_params=runner_init_params,
             name=name,
             models=models,
-            resource_config=Resource(
-                cpu=cpu,
-                nvidia_gpu=nvidia_gpu,
-                custom_resources=custom_resources,
-            ).with_config_overrides(name),
+            resource_config=resource,
             runner_methods=runner_methods,
             scheduling_strategy=scheduling_strategy,
         )

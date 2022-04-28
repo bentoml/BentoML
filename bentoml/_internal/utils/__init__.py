@@ -14,6 +14,7 @@ from datetime import datetime
 from datetime import timedelta
 
 import fs
+import attr
 import fs.copy
 
 if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
@@ -188,7 +189,13 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     raise FileNotFoundError(f"file {filepath} not found")
 
 
-def validate_labels(labels: t.Dict[str, str]):
+def label_validator(
+    _: t.Any, _attr: attr.Attribute[dict[str, str]], labels: dict[str, str]
+):
+    validate_labels(labels)
+
+
+def validate_labels(labels: dict[str, str]):
     if not isinstance(labels, dict):
         raise ValueError("labels must be a dict!")
 
@@ -198,6 +205,12 @@ def validate_labels(labels: t.Dict[str, str]):
 
         if not isinstance(val, str):
             raise ValueError("label values must be strings")
+
+
+def metadata_validator(
+    _: t.Any, _attr: attr.Attribute[MetadataDict], metadata: MetadataDict
+):
+    validate_metadata(metadata)
 
 
 def validate_metadata(metadata: MetadataDict):

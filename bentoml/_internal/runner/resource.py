@@ -218,6 +218,7 @@ class Resource:
     nvidia_gpu: int = attr.field()
     custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
 
-    @classmethod
-    def from_dict(cls, init_dict: t.Dict[str, t.Any]) -> Resource:
+    def with_config_overrides(self, runner_name: str) -> Resource:
+        # TODO: Apply runner config from BentoML container by runner name, to override
+        #  current Resource configs
         ...

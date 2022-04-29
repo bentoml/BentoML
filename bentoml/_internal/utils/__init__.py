@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import uuid
@@ -50,6 +52,23 @@ __all__ = [
     "validate_or_create_dir",
     "display_path_under_home",
 ]
+
+
+@t.overload
+def first_not_none(*args: T | None, default: T) -> T:
+    ...
+
+
+@t.overload
+def first_not_none(*args: T | None) -> T | None:
+    ...
+
+
+def first_not_none(*args: T | None, default: None | T = None) -> T | None:
+    """
+    Returns the first argument that is not None.
+    """
+    return next((arg for arg in args if arg is not None), default)
 
 
 def randomize_runner_name(module_name: str):

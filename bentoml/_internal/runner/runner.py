@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import attr
 
+from ..tag import Tag
 from .remote import RemoteRunnerClient
 from .resource import Resource
 from .runnable import Runnable
@@ -247,7 +248,7 @@ class Runner:
                     max_latency_ms=method_max_latency_ms,
                 )
             )
-            
+
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
             runnable_init_params=runner_init_params,

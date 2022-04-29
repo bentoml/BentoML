@@ -231,7 +231,6 @@ def build(
     description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
     exclude: t.Optional[t.List[str]] = None,
-    additional_models: t.Optional[t.List[t.Union[str, Tag]]] = None,
     docker: t.Optional[t.Dict[str, t.Any]] = None,
     python: t.Optional[t.Dict[str, t.Any]] = None,
     conda: t.Optional[t.Dict[str, t.Any]] = None,
@@ -255,9 +254,6 @@ def build(
             default is all files under build_ctx, beside the ones excluded from the
             exclude parameter or a :code:`.bentoignore` file for a given directory
         exclude: list of file paths and patterns to exclude from the final Bento archive
-        additional_models: list of model tags to pack in Bento, in addition to the
-            models that are required by service's runners. These models must be
-            found in the given _model_store
         docker: dictionary for configuring Bento's containerization process, see details
             in :class:`bentoml._internal.bento.build_config.DockerOptions`
         python: dictionary for configuring Bento's python dependencies, see details in
@@ -279,7 +275,6 @@ def build(
         labels=labels,
         include=include,
         exclude=exclude,
-        additional_models=additional_models,
         docker=docker,
         python=python,
         conda=conda,
@@ -289,7 +284,6 @@ def build(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
-        model_store=_model_store,
     ).save(_bento_store)
     logger.info(
         """
@@ -339,7 +333,6 @@ def build_bentofile(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
-        model_store=_model_store,
     ).save(_bento_store)
     logger.info(
         """

@@ -18,13 +18,8 @@ from fs.base import FS
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml import Tag
-from bentoml import Runner
-from bentoml import Runnable
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-from bentoml._internal.runner.runnable import BatchDimType
-
+from ..tag import Tag
+from ..runner.runnable import BatchDimType
 from ..store import Store
 from ..store import StoreItem
 from ..types import AnyType

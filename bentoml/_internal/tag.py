@@ -40,7 +40,7 @@ def validate_tag_str(value: str):
         raise InvalidArgument(f"{value} is not a valid tag: " + ", and ".join(errors))
 
 
-@attr.define
+@attr.define(frozen=True)
 class Tag:
     name: str
     version: t.Optional[str]

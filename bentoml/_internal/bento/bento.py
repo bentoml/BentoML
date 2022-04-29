@@ -30,6 +30,7 @@ from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..runner.resource import Resource
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -38,7 +39,6 @@ if TYPE_CHECKING:
 
     from ..models import Model
     from ..service import Service
-    from ..runner.runner import SimpleRunner
     from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ class Bento(StoreItem):
     def _export_ext() -> str:
         return "bento"
 
-    @__fs.validator  # type:ignore (attrs validators not supported by pyright)
+    @__fs.validator  # type:ignore # attrs validators not supported by pyright
     def check_fs(self, _attr: t.Any, new_fs: "FS"):
         try:
             new_fs.makedir("models", recreate=True)
@@ -136,7 +136,6 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         from ..service.loader import import_service
 
@@ -166,23 +165,14 @@ class Bento(StoreItem):
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
 
-        model_tags = build_config.additional_models
-        # Add Runner required models to models list
-        for runner in svc.runners.values():
-            model_tags += runner.required_models
-
-        models: "t.List[Model]" = []
-        seen_model_tags: t.Set[Tag] = set()
-        for model_tag in model_tags:
-            try:
-                model_info = model_store.get(model_tag)
-                if model_info.tag not in seen_model_tags:
-                    seen_model_tags.add(model_info.tag)
-                    models.append(model_info)
-            except FileNotFoundError:
-                raise BentoMLException(
-                    f"Model {model_tag} not found in local model store"
-                )
+        models: t.Set[Model] = set()
+        # Add all models required by the service
+        for model in svc.models:
+            models.add(model)
+        # Add all models required by service runners
+        for runner in svc.runners:
+            for model in runner.models:
+                models.add(model)
 
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
@@ -265,7 +255,7 @@ class Bento(StoreItem):
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 labels=build_config.labels,
                 models=[BentoModelInfo.from_bento_model(m) for m in models],
-                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners.values()],
+                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners],
                 apis=[
                     BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
                 ],
@@ -350,14 +340,18 @@ class BentoStore(Store[Bento]):
 @attr.define
 class BentoRunnerInfo:
     name: str
-    runner_type: str
+    runnable_type: str
+    models: t.List[str]
+    default_resource_config: Resource
 
     @classmethod
-    def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "BentoRunnerInfo":
+    def from_runner(cls, r: Runner) -> "BentoRunnerInfo":
         # Add runner default resource quota and batching config here
         return cls(
             name=r.name,  # type: ignore
-            runner_type=r.__class__.__name__,
+            runnable_type=r.runnable_class.__name__,  # type: ignore
+            models=[str(model.tag) for model in r.models],  # type: ignore
+            default_resource_config=r.resource_config,  # type: ignore
         )
 
 
@@ -370,9 +364,9 @@ class BentoApiInfo:
     @classmethod
     def from_inference_api(cls, api: "InferenceAPI") -> "BentoApiInfo":
         return cls(
-            name=api.name,
-            input_type=api.input.__class__.__name__,
-            output_type=api.output.__class__.__name__,
+            name=api.name,  # type: ignore
+            input_type=api.input.__class__.__name__,  # type: ignore
+            output_type=api.output.__class__.__name__,  # type: ignore
         )
 
 

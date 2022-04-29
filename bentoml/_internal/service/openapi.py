@@ -42,7 +42,6 @@ def _generate_responses_schema(
 
 
 def get_service_openapi_doc(svc: "Service"):
-    # TODO: add licensing options for service swagger?
     info = {
         "title": svc.name,
         "description": "A Prediction Service built with BentoML",

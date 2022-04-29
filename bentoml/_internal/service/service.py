@@ -1,28 +1,81 @@
-import sys
+from __future__ import annotations
+
 import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-from bentoml import Runner
-from bentoml.io import IODescriptor
+import attr
+
 from bentoml.exceptions import BentoMLException
 
+from ..io_descriptors import IODescriptor
+from ..runner import Runner
 from ..tag import Tag
 from ..bento.bento import get_default_bento_readme
+from ..models import Model
 from .inference_api import InferenceAPI
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
     from ..bento import Bento
 
-
-WSGI_APP = t.Callable[
-    [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
-]
+    WSGI_APP = t.Callable[
+        [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
+    ]
 
 logger = logging.getLogger(__name__)
 
 
+def add_inference_api(
+    svc: Service,
+    func: t.Callable[..., t.Any],
+    input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
+    output: IODescriptor[t.Any],
+    name: t.Optional[str],
+    doc: t.Optional[str],
+    route: t.Optional[str],
+) -> None:
+    api = InferenceAPI(
+        name=name,
+        user_defined_callback=func,
+        input_descriptor=input,
+        output_descriptor=output,
+        doc=doc,
+        route=route,
+    )
+
+    if api.name in svc.apis:
+        raise BentoMLException(
+            f"API {api.name} is already defined in Service {svc.name}"
+        )
+
+    from ..io_descriptors import Multipart
+
+    if isinstance(output, Multipart):
+        logger.warning(
+            f"Found Multipart as the output of API `{api.name}`. "
+            "Multipart response is rarely used in the real world,"
+            " less clients/browsers support it. "
+            "Make sure you know what you are doing."
+        )
+
+    svc.apis[api.name] = api
+
+
+def get_valid_service_name(user_provided_svc_name: str) -> str:
+    lower_name = user_provided_svc_name.lower()
+
+    if user_provided_svc_name != lower_name:
+        logger.warning(
+            f"converting {user_provided_svc_name} to lowercase: {lower_name}"
+        )
+
+    # Service name must be a valid Tag name; create a dummy tag to use its validation
+    Tag(lower_name)
+    return lower_name
+
+
+@attr.define(frozen=True)
 class Service:
     """The service definition is the manifestation of the Service Oriented Architecture
     and the core building block in BentoML where users define the service runtime
@@ -34,67 +87,69 @@ class Service:
     the `api` decorator.
     """
 
-    apis: t.Dict[str, InferenceAPI] = {}
-
-    # Name of the service, it is a required parameter for __init__
     name: str
-    # Tag/Bento/Version are only applicable if the service was load from a bento
-    tag: t.Optional[Tag] = None
-    bento: t.Optional["Bento"] = None
-    version: t.Optional[str] = None
-    # Working dir of the service, set when the service was load from a bento
-    _working_dir: t.Optional[str] = None
-    # Import path set by .loader.import_service method
-    _import_str: t.Optional[str] = None
-    # For docs property
-    _doc: t.Optional[str] = None
+    runners: t.List[Runner]
+    models: t.List[Model]
+
+    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
+        init=False, factory=list
+    )
+    middlewares: t.List[
+        t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
+    ] = attr.field(init=False, factory=list)
+
+    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+
+    # Tag/Bento are only set when the service was loaded from a bento
+    tag: Tag | None = attr.field(init=False, default=None)
+    bento: Bento | None = attr.field(init=False, default=None)
+
+    # Working dir and Import path of the service, set when the service was imported
+    _working_dir: str | None = attr.field(init=False, default=None)
+    _import_str: str | None = attr.field(init=False, default=None)
 
     def __init__(
         self,
         name: str,
-        runners: "t.Optional[t.List[t.Union[Runner, SimpleRunner]]]" = None,
+        *,
+        runners: t.List[Runner] | None = None,
+        models: t.List[Model] | None = None,
     ):
-        lower_name = name.lower()
+        """
 
-        if name != lower_name:
-            logger.warning(f"converting {name} to lowercase: {lower_name}")
+        Args:
+            name:
+            runners:
+            models:
+        """
+        name = get_valid_service_name(name)
 
-        # Service name must be a valid Tag name; create a dummy tag to use its validation
-        Tag(lower_name)
-        self.name = lower_name
-
+        # validate runners list contains Runner instances and runner names are unique
         if runners is not None:
-            self.runners = {}
+            runner_names: t.Set[str] = set()
             for r in runners:
-                if r.name in self.runners:
+                assert isinstance(
+                    r, Runner
+                ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
+
+                if r.name in runner_names:
                     raise ValueError(
                         f"Found duplicate name `{r.name}` in service runners."
                     )
+                runner_names.add(r.name)
+
+        # validate models list contains Model instances
+        if models is not None:
+            for model in models:
                 assert isinstance(
-                    r, (Runner, SimpleRunner)
-                ), "Service runners list must only contain runner instances"
-                self.runners[r.name] = r
-        else:
-            self.runners: t.Dict[str, "t.Union[Runner, SimpleRunner]"] = {}
+                    model, Model
+                ), f'Service models list can only contain bentoml.Model instances, type "{type(model)}" found.'
 
-        self.mount_apps: t.List[t.Tuple["ext.ASGIApp", str, str]] = []
-        self.middlewares: t.List[
-            t.Tuple[t.Type["ext.AsgiMiddleware"], t.Dict[str, t.Any]]
-        ] = []
-
-    def on_asgi_app_startup(self) -> None:
-        # TODO: initialize Local Runner instances or Runner Clients here
-        # TODO(P1): add `@svc.on_startup` decorator for adding user-defined hook
-        pass
-
-    def on_asgi_app_shutdown(self) -> None:
-        # TODO(P1): add `@svc.on_shutdown` decorator for adding user-defined hook
-        pass
-
-    def __del__(self):
-        # working dir was added to sys.path in the .loader.import_service function
-        if self._working_dir and sys.path:
-            sys.path.remove(self._working_dir)
+        self.__attrs_init__(  # type: ignore
+            name=name,
+            runners=[] if runners is None else runners,
+            models=[] if models is None else models,
+        )
 
     def api(
         self,
@@ -109,43 +164,46 @@ class Service:
         D = t.TypeVar("D", bound=t.Callable[..., t.Any])
 
         def decorator(func: D) -> D:
-            from ..io_descriptors import Multipart
-
-            if isinstance(output, Multipart):
-                logger.warning(
-                    f"Found Multipart as the output of API `{name or func.__name__}`. "
-                    "Multipart response is rarely used in the real world,"
-                    " less clients/browsers support it. "
-                    "Make sure you know what you are doing."
-                )
-            self._add_inference_api(func, input, output, name, doc, route)
+            add_inference_api(self, func, input, output, name, doc, route)
             return func
 
         return decorator
 
-    def _add_inference_api(
-        self,
-        func: t.Callable[..., t.Any],
-        input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
-        output: IODescriptor[t.Any],
-        name: t.Optional[str],
-        doc: t.Optional[str],
-        route: t.Optional[str],
-    ) -> None:
-        api = InferenceAPI(
-            name=name,
-            user_defined_callback=func,
-            input_descriptor=input,
-            output_descriptor=output,
-            doc=doc,
-            route=route,
-        )
-
-        if api.name in self.apis:
-            raise BentoMLException(
-                f"API {api.name} is already defined in Service {self.name}"
+    def __str__(self):
+        if self.bento:
+            return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
+        elif self._import_str and self._working_dir:
+            return (
+                f'bentoml.Service(name="{self.name}", '
+                f'import_str="{self._import_str}", '
+                f'working_dir="{self._working_dir}")'
             )
-        self.apis[api.name] = api
+        else:
+            return (
+                f'bentoml.Service(name="{self.name}", '
+                f'runners=[{",".join([r.name for r in self.runners])}])'
+            )
+
+    def __repr__(self):
+        return self.__str__()
+
+    @property
+    def doc(self) -> str:
+        if self.bento is not None:
+            return self.bento.doc
+
+        return get_default_bento_readme(self)
+
+    def openapi_doc(self):
+        from .openapi import get_service_openapi_doc
+
+        return get_service_openapi_doc(self)
+
+    def on_asgi_app_startup(self) -> None:
+        pass
+
+    def on_asgi_app_shutdown(self) -> None:
+        pass
 
     @property
     def asgi_app(self) -> "ext.ASGIApp":
@@ -161,6 +219,7 @@ class Service:
     def mount_wsgi_app(
         self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
     ) -> None:
+        # TODO: Migrate to a2wsgi
         from starlette.middleware.wsgi import WSGIMiddleware
 
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
@@ -170,32 +229,12 @@ class Service:
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
-    def openapi_doc(self):
-        from .openapi import get_service_openapi_doc
 
-        return get_service_openapi_doc(self)
+def on_load_bento(svc: Service, bento: Bento):
+    setattr(svc, "bento", bento)
+    setattr(svc, "tag", bento.info.tag)
 
-    def __str__(self):
-        if self.bento:
-            return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
-        elif self._import_str and self._working_dir:
-            return (
-                f'bentoml.Service(name="{self.name}", '
-                f'import_str="{self._import_str}", '
-                f'working_dir="{self._working_dir}")'
-            )
-        else:
-            return (
-                f'bentoml.Service(name="{self.name}", '
-                f'runners=[{",".join(self.runners.keys())}])'
-            )
 
-    def __repr__(self):
-        return self.__str__()
-
-    @property
-    def doc(self) -> str:
-        if self.bento is not None:
-            return self.bento.doc
-
-        return get_default_bento_readme(self)
+def on_import_svc(svc: Service, working_dir: str, import_str: str):
+    setattr(svc, "_working_dir", working_dir)
+    setattr(svc, "_import_str", import_str)

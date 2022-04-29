@@ -39,7 +39,6 @@ bentoml.build(
     description=open("README.md").read(),
     include=['*'],
     exclude=[], # files to exclude can also be specified with a .bentoignore file
-    additional_models=["iris_model:latest"], # models to pack in Bento, in addition to the models required by service's runners 
     labels={
         "foo": "bar",
         "team": "abc"
@@ -83,8 +82,6 @@ include:
 - "*.json"
 exclude: 
 - "*.pyc"
-additional_models:
-- "iris_model:latest"
 docker:
   distro: debian
   gpu: True

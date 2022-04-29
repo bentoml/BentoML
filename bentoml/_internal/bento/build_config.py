@@ -11,7 +11,6 @@ import fs.copy
 from fs.base import FS
 from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 
-from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
@@ -386,15 +385,6 @@ def _dict_arg_converter(  # type: ignore
     return _converter  # type: ignore
 
 
-def _additional_models_converter(
-    tags: t.Optional[t.List[t.Union[str, Tag]]]
-) -> t.Optional[t.List[Tag]]:
-    if tags is None:
-        return tags
-
-    return list(map(Tag.from_taglike, tags))
-
-
 @attr.define(frozen=True, on_setattr=None)
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
@@ -410,10 +400,6 @@ class BentoBuildConfig:
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
     exclude: t.Optional[t.List[str]] = None
-    additional_models: t.Optional[t.List[Tag]] = attr.field(
-        converter=_additional_models_converter,
-        default=None,
-    )
     docker: t.Optional[DockerOptions] = attr.field(
         default=None,
         converter=_dict_arg_converter(DockerOptions),
@@ -441,7 +427,6 @@ class BentoBuildConfig:
             {} if self.labels is None else self.labels,
             ["*"] if self.include is None else self.include,
             [] if self.exclude is None else self.exclude,
-            [] if self.additional_models is None else self.additional_models,
             (DockerOptions() if self.docker is None else self.docker).with_defaults(),
             (PythonOptions() if self.python is None else self.python).with_defaults(),
             (CondaOptions() if self.conda is None else self.conda).with_defaults(),
@@ -467,7 +452,7 @@ class BentoBuildConfig:
             else:
                 raise
 
-    def to_yaml(self, stream: t.TextIO):
+    def to_yaml(self, stream: t.TextIO) -> None:
         # TODO: Save BentoBuildOptions to a yaml file
         # This is reserved for building interactive build file creation CLI
         raise NotImplementedError
@@ -479,7 +464,6 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     labels: t.Dict[str, t.Any]
     include: t.List[str]
     exclude: t.List[str]
-    additional_models: t.List[Tag]
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions

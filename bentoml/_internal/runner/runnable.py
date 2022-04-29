@@ -5,7 +5,6 @@ import inspect
 import logging
 import functools
 from abc import ABC
-from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,15 +22,8 @@ RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
 
 
 class Runnable(ABC):
-    @property
-    @abstractmethod
-    def supports_nvidia_gpu(self) -> bool:
-        ...
-
-    @property
-    @abstractmethod
-    def supports_multi_threading(self) -> bool:
-        ...
+    SUPPORT_NVIDIA_GPU: bool
+    SUPPORT_CPU_MULTI_THREADING: bool
 
     @classmethod
     def add_method(

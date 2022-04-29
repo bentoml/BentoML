@@ -2,21 +2,20 @@ from __future__ import annotations
 
 import typing as t
 import logging
-
-
-from abc import ABC
-from abc import abstractmethod
 from typing import TYPE_CHECKING
+from functools import cached_property
 
 import attr
 
-from .remote import RemoteRunnerClient
+from ..utils import first_not_none
 from .resource import Resource
 from .runnable import Runnable
 from .runnable import RunnableMethodConfig
 from .strategy import Strategy
 from .strategy import DefaultStrategy
-from ...exceptions import BentoMLException
+from ...exceptions import StateException
+from .runner_handle import RunnerHandle
+from .runner_handle import DummyRunnerHandle
 
 if TYPE_CHECKING:
     from ..models import Model
@@ -40,9 +39,8 @@ runners:
       - name: "predict"
 		max_batch_size: 10
 		max_latency_ms: 500
-"""
 
-"""
+
 Runner API usage:
 
 my_runner = bentoml.Runner(
@@ -69,9 +67,9 @@ my_runner = bentoml.Runner(
 		}
 	],
 )
-"""
 
-"""
+
+
 Testing Runner script:
 
 my_runner = benotml.pytorch.get(tag).to_runner(..)
@@ -88,77 +86,29 @@ my_runner.predict.run( test_input_df )
 
 @attr.define(frozen=True)
 class RunnerMethod:
-    runner: Runner = attr.field()
-    method_name: str = attr.field()
-    runnable_method_config: RunnableMethodConfig
+    runner: Runner
+    method_name: str
     max_batch_size: int
     max_latency_ms: int
 
+    @cached_property
+    def runnable_method_config(self) -> RunnableMethodConfig:
+        configs = self.runner.runnable_class.get_method_configs()
+        return configs[self.method_name]
+
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self.runner.run_method(self.method_name, *args, **kwargs)
+        return self.runner._runner_handle.run_method(  # type: ignore
+            self.method_name,
+            *args,
+            **kwargs,
+        )
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self.runner.async_run_method(self.method_name, *args, **kwargs)
-
-
-@attr.define
-class RunnerHandle(ABC):
-    _runnable: Runnable | None = attr.field(init=False, default=None)
-    _runner_client: RemoteRunnerClient | None = attr.field(init=False, default=None)
-
-    def init_local(self, runner: Runner):
-        logger.warning("for debugging and testing only")  # if not called from RunnerApp
-        if self._runner_client:
-            raise BentoMLException("TODO: ..")
-        if self._runnable:
-            logger.warning("re creating runnable")
-
-        self._runnable = runner.runnable_class()
-
-    def init_client(self, runner: Runner):
-        if self._runner_client:
-            logger.warning("re creating remote runner client")
-        if self._runnable:
-            raise BentoMLException("TODO: ..")
-
-        self._runner_client = RemoteRunnerClient(runner)
-
-    @abstractmethod
-    def run_method(
-        self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
-        ...
-
-    @abstractmethod
-    async def async_run_method(
-        self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
-        ...
-
-
-# TODO: replace local.py runner
-class LocalRunner(RunnerHandle):
-    _runnable: Runnable
-
-    def __init__(self, runnable: t.Type[Runnable]):
-        self._runnable = runnable()
-
-    def run_method(self, method_name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return getattr(self._runnable, method_name)(*args, **kwargs)
-
-    async def async_run_method(
-        self, method_name: str, *args: t.Any, **kwargs: t.Any
-    ) -> t.Any:
-        import anyio
-
-        method = getattr(self._runnable, method_name)
-        return anyio.to_thread.run_sync(method, *args, **kwargs)
+        return await self.runner._runner_handle.async_run_method(  # type: ignore
+            self.method_name,
+            *args,
+            **kwargs,
+        )
 
 
 # TODO: Move these to the default configuration file and allow user override
@@ -175,7 +125,8 @@ class Runner:
     resource_config: Resource
     runner_methods: t.List[RunnerMethod]
     scheduling_strategy: t.Type[Strategy]
-    _runner_handle: RunnerHandle | None = attr.field(init=False, default=None)
+
+    _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
     def __init__(
         self,
@@ -193,27 +144,26 @@ class Runner:
         method_configs: t.Dict[str, t.Dict[str, int]] | None,
     ) -> None:
         """
-        TODO: add docstring
         Args:
-            runnable_class:
-            init_params:
-            name:
-            scheduling_strategy:
-            models:
-            cpu:
-            nvidia_gpu:
-            custom_resources:
-            max_batch_size:
-            max_latency_ms:
-            method_configs:
+            runnable_class: runnable class
+            init_params: runnable init params
+            name: runner name
+            scheduling_strategy: scheduling strategy
+            models: list of required bento models
+            cpu: cpu resource
+            nvidia_gpu: nvidia gpu resource
+            custom_resources: custom resources
+            max_batch_size: max batch size config for micro batching
+            max_latency_ms: max latency config for micro batching
+            method_configs: per method configs
         """
+
         name = runnable_class.__name__ if name is None else name
         models = [] if models is None else models
-        runner_methods: list[RunnerMethod] = []
+        runner_method_map: dict[str, RunnerMethod] = {}
         runner_init_params = {} if init_params is None else init_params
         method_configs = {} if method_configs is None else {}
         custom_resources = {} if custom_resources is None else {}
-        runnable_method_config_map = runnable_class.get_method_configs()
         resource = (
             Resource.from_config()
             | Resource(
@@ -224,96 +174,79 @@ class Runner:
             | Resource.from_system()
         )
 
-        for method_name, runnable_method_config in runnable_method_config_map.items():
-            method_max_batch_size = max_batch_size or GLOBAL_DEFAULT_MAX_BATCH_SIZE
-            method_max_latency_ms = max_latency_ms or GLOBAL_DEFAULT_MAX_LATENCY_MS
-            if method_name in method_configs:
-                if "max_batch_size" in method_configs[method_name]:
-                    method_max_batch_size = method_configs[method_name][
-                        "max_batch_size"
-                    ]
-                if "max_latency_ms" in method_configs[method_name]:
-                    method_max_latency_ms = method_configs[method_name][
-                        "max_latency_ms"
-                    ]
-                # TODO: apply user runner configs here
-
-            runner_methods.append(
-                RunnerMethod(
-                    runner=self,
-                    method_name=method_name,
-                    runnable_method_config=runnable_method_config,
-                    max_batch_size=method_max_batch_size,
-                    max_latency_ms=method_max_latency_ms,
-                )
+        for method_name in runnable_class.get_method_configs():
+            method_max_batch_size = method_configs.get(method_name, {}).get(
+                "max_batch_size"
             )
-            
+            method_max_latency_ms = method_configs.get(method_name, {}).get(
+                "max_latency_ms"
+            )
+
+            runner_method_map[method_name] = RunnerMethod(
+                runner=self,
+                method_name=method_name,
+                max_batch_size=first_not_none(
+                    method_max_batch_size,
+                    max_batch_size,
+                    default=GLOBAL_DEFAULT_MAX_BATCH_SIZE,
+                ),
+                max_latency_ms=first_not_none(
+                    method_max_latency_ms,
+                    max_latency_ms,
+                    default=GLOBAL_DEFAULT_MAX_LATENCY_MS,
+                ),
+            )
+
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
             runnable_init_params=runner_init_params,
             name=name,
             models=models,
             resource_config=resource,
-            runner_methods=runner_methods,
+            runner_methods=list(runner_method_map.values()),
             scheduling_strategy=scheduling_strategy,
         )
 
+        # pick the default method
+        if len(runner_method_map) == 1:
+            default_method = next(iter(runner_method_map.values()))
+        elif "__call__" in runner_method_map:
+            default_method = runner_method_map["__call__"]
+        else:
+            default_method = None
+            # TODO(jiang): shall we notify user that there is no default method?
+        if default_method is not None:
+            setattr(self, "run", default_method.run)
+            setattr(self, "async_run", default_method.async_run)
+
         for runner_method in self.runner_methods:
-            if runner_method.method_name == "__call__":
-                setattr(self, "run", runner_method.run)
-                setattr(self, "async_run", runner_method.async_run)
-            else:
-                setattr(self, runner_method.method_name, runner_method)
+            setattr(self, runner_method.method_name, runner_method)
 
-    def run_method(
-        self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
-        if self._runner_handle is None:
-            raise BentoMLException(
-                "Runner is not initialized"
-            )  # TODO: better exception type (UninitializedRunnerException?)
-        return self._runner_handle.run_method(method_name, *args, **kwargs)
+    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
+        if not isinstance(self._runner_handle, DummyRunnerHandle):
+            raise StateException("Runner already initialized")
 
-    async def async_run_method(
-        self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
-        if self._runner_handle is None:
-            raise BentoMLException(
-                "Runner is not initialized"
-            )  # TODO: better exception type (UninitializedRunnerException?)
-        return await self._runner_handle.async_run_method(method_name, *args, **kwargs)
+        runner_handle = handle_class(self)
+        object.__setattr__(self, "_runner_handle", runner_handle)
 
-    def _set_runner_handle(self, runner_handle: RunnerHandle):
-        object.__setattr__(self, "runner_handle", runner_handle)
-
-    def init_local(self):
+    def init_local(self, quiet: bool = False) -> None:
         """
         init local runnable instance, for testing and debugging only
         """
-        logger.warning("for debugging and testing only")  # if not called from RunnerApp
-        if self._runner_handle is not None:
-            raise BentoMLException(
-                "Runner already initialized"
-            )  # TODO: better exception type (InitializedRunnerException?)
+        if quiet:
+            logger.warning("for debugging and testing only")
 
-        self._set_runner_handle(LocalRunner(self.runnable_class))
+        from .runner_handle.local import LocalRunnerRef
+
+        self._init(LocalRunnerRef)
 
     def init_client(self):
         """
         init client for a remote runner instance
         """
-        if self._runner_handle is not None:
-            raise BentoMLException(
-                "Runner already initialized"
-            )  # TODO: better exception type (InitializedRunnerException?)
+        from .runner_handle.remote import RemoteRunnerClient
 
-        self._set_runner_handle(RemoteRunnerClient(self))
+        self._init(RemoteRunnerClient)
 
     def destroy(self):
-        object.__setattr__(self, "_runner_handle", None)
+        object.__setattr__(self, "_runner_handle", DummyRunnerHandle())

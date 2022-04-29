@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import pickle
 import typing as t
@@ -125,7 +127,7 @@ class NdarrayContainer(
     def single_to_payload(  # pylint: disable=arguments-differ
         cls,
         single: "ext.NpNDArray",
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
@@ -143,7 +145,7 @@ class NdarrayContainer(
     def payload_to_single(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> "ext.NpNDArray":
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
@@ -199,7 +201,7 @@ class PandasDataFrameContainer(
     def single_to_payload(  # pylint: disable=arguments-differ
         cls,
         single: "t.Union[ext.PdDataFrame, ext.PdSeries]",
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
@@ -217,7 +219,7 @@ class PandasDataFrameContainer(
     def payload_to_single(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ):
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from http import HTTPStatus
 
 
@@ -14,12 +16,20 @@ class BentoMLException(Exception):
         super().__init__(message)
 
 
+class StateException(Exception):
+    """
+    Raise when the state of an object is not valid
+    """
+
+    error_code: int = HTTPStatus.BAD_REQUEST
+
+
 class RemoteException(BentoMLException):
     """
     Raise when known exceptions happened in remote process
     """
 
-    def __init__(self, message: str, payload: BentoMLException = None):
+    def __init__(self, message: str, payload: BentoMLException | None = None):
         self.payload = payload
         super().__init__(message)
 

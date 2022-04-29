@@ -25,4 +25,6 @@ class LocalRunnerRef(RunnerHandle):
         import anyio
 
         method = getattr(self._runnable, method_name)
-        return anyio.to_thread.run_sync(method, *args, **kwargs)
+        return await anyio.to_thread.run_sync(
+            method, *args, **kwargs, limiter=anyio.CapacityLimiter(1)
+        )

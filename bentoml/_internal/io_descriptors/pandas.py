@@ -12,6 +12,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ..types import LazyType
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import MissingDependencyException
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # Check for parquet support
 @functools.lru_cache(maxsize=1)
-def get_parquet_engine():
+def get_parquet_engine() -> str:
     if importlib.util.find_spec("pyarrow") is not None:
         return "pyarrow"
     elif importlib.util.find_spec("fastparquet") is not None:
@@ -44,7 +45,9 @@ def get_parquet_engine():
         logger.warning(
             "Neither pyarrow nor fastparquet packages found. Parquet de/serialization will not be available."
         )
-        return None
+        raise MissingDependencyException(
+            "Parquet serialization is not available. Try installing pyarrow or fastparquet first."
+        )
 
 
 def _infer_type(item: str) -> str:  # pragma: no cover
@@ -257,6 +260,11 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         self._default_format = SerializationFormat[default_format.upper()]
         _validate_serialization_format(self._default_format)
 
+    def input_type(
+        self,
+    ) -> LazyType["ext.PdDataFrame"]:
+        return LazyType("pandas", "DataFrame")
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._dtype)
 
@@ -344,7 +352,14 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def to_http_response(self, obj: "pd.DataFrame") -> Response:
+    async def init_http_response(self) -> Response:
+        # For the response it doesn't make sense to enforce the same serialization format as specified
+        # by the request's headers['content-type']. Instead we simply use the _default_format.
+        serialization_format = self._default_format
+
+        return Response(None, media_type=serialization_format.mime_type)
+
+    async def finalize_http_response(self, response: Response, obj: "pd.DataFrame"):
         """
         Process given objects and convert it to HTTP response.
 
@@ -359,7 +374,6 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         # For the response it doesn't make sense to enforce the same serialization format as specified
         # by the request's headers['content-type']. Instead we simply use the _default_format.
         serialization_format = self._default_format
-        _validate_serialization_format(serialization_format)
 
         if not LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
             raise InvalidArgument(
@@ -376,7 +390,8 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 f"Unknown serialization format ({serialization_format})."
             )
 
-        return Response(resp, media_type=serialization_format.mime_type)
+        response.body = response.render(resp)
+        set_content_length(response)
 
     @classmethod
     def from_sample(
@@ -449,7 +464,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         )
 
 
-class PandasSeries(IODescriptor["ext.PdSeries"]):
+class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -576,6 +591,11 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         self._enforce_shape = enforce_shape
         self._mime_type = "application/json"
 
+    def input_type(
+        self,
+    ) -> LazyType["ext.PdSeries[t.Any]"]:
+        return LazyType("pandas", "Series")
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._dtype)
 
@@ -587,7 +607,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         """Returns OpenAPI schema for outgoing responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> "ext.PdSeries":
+    async def from_http_request(self, request: Request) -> "ext.PdSeries[t.Any]":
         """
         Process incoming requests and convert incoming
          objects to `pd.Series`
@@ -629,7 +649,12 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def to_http_response(self, obj: t.Union[t.Any, "ext.PdSeries"]) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
+
+    async def finalize_http_response(
+        self, response: Response, obj: t.Union[t.Any, "ext.PdSeries[t.Any]"]
+    ):
         """
         Process given objects and convert it to HTTP response.
 
@@ -640,9 +665,9 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if not LazyType["ext.PdSeries"](pd.Series).isinstance(obj):
+        if not LazyType["ext.PdSeries[t.Any]"](pd.Series).isinstance(obj):
             raise InvalidArgument(
                 f"return object is not of type `pd.Series`, got type {type(obj)} instead"
             )
-        resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
-        return Response(resp, media_type=MIME_TYPE_JSON)
+        response.body = response.render(obj.to_json(orient=self._orient))  # type: ignore[arg-type]
+        set_content_length(response)

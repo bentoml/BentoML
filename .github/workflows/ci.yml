@@ -282,8 +282,11 @@ jobs:
           pip install .
           pip install -r requirements/tests-requirements.txt
 
+      - name: Export Action Envvar
+        run: export GITHUB_ACTION=true
+
       - name: Run tests and generate coverage report
-        run: make tests-general_features
+        run: ./scripts/ci/run_tests.sh general_features -x -s
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2

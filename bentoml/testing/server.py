@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name # pragma: no cover
 import os
 import sys
+import json
 import time
 import socket
 import typing as t
@@ -16,6 +17,7 @@ from contextlib import contextmanager
 from .._internal.tag import Tag
 from .._internal.utils import reserve_free_port
 from .._internal.utils import cached_contextmanager
+from .._internal.utils.platform import kill_subprocess_tree
 
 logger = logging.getLogger("bentoml.tests")
 
@@ -69,7 +71,7 @@ def _wait_until_api_server_ready(
     host_url: str,
     timeout: float,
     check_interval: float = 1,
-    popen: t.Optional["subprocess.Popen[bytes]"] = None,
+    popen: t.Optional["subprocess.Popen[t.Any]"] = None,
 ) -> bool:
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
@@ -132,7 +134,7 @@ def bentoml_containerize(
 
 
 @cached_contextmanager("{image_tag}, {config_file}")
-def run_api_server_in_docker(
+def run_bento_server_in_docker(
     image_tag: str,
     config_file: t.Optional[str] = None,
     timeout: float = 40,
@@ -166,7 +168,11 @@ def run_api_server_in_docker(
     cmd.append(image_tag)
 
     logger.info(f"Running API server docker image: {cmd}")
-    with subprocess.Popen(cmd, stdin=subprocess.PIPE) as proc:
+    with subprocess.Popen(
+        cmd,
+        stdin=subprocess.PIPE,
+        encoding="utf-8",
+    ) as proc:
         try:
             host_url = f"127.0.0.1:{port}"
             if _wait_until_api_server_ready(host_url, timeout, popen=proc):
@@ -176,12 +182,12 @@ def run_api_server_in_docker(
                     f"API server {host_url} failed to start within {timeout} seconds"
                 )
         finally:
-            proc.terminate()
+            subprocess.call(["docker", "stop", container_name])
     time.sleep(1)
 
 
 @contextmanager
-def run_api_server(
+def run_bento_server(
     bento: str,
     workdir: t.Optional[str] = None,
     config_file: t.Optional[str] = None,
@@ -193,6 +199,9 @@ def run_api_server(
     """
     workdir = workdir if workdir is not None else "./"
     my_env = os.environ.copy()
+    if config_file is not None:
+        my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
+
     with reserve_free_port() as port:
         cmd = [sys.executable, "-m", "bentoml", "serve"]
         if not dev_server:
@@ -203,30 +212,117 @@ def run_api_server(
         cmd += ["--working-dir", workdir]
 
     logger.info(f"Running command: `{cmd}`")
-    if config_file is not None:
-        my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
     p = subprocess.Popen(
         cmd,
         stderr=subprocess.STDOUT,
         env=my_env,
+        encoding="utf-8",
     )
     try:
         host_url = f"127.0.0.1:{port}"
         _wait_until_api_server_ready(host_url, timeout=timeout)
         yield host_url
     finally:
-        p.terminate()
-        p.wait()
+        kill_subprocess_tree(p)
+        p.communicate()
 
 
-@cached_contextmanager("{bento}, {project_path}, {config_file}, {docker}, {dev_server}")
+@contextmanager
+def run_bento_server_distributed(
+    bento_tag: t.Union[str, "Tag"],
+    config_file: t.Optional[str] = None,
+    timeout: float = 90,
+):
+    """
+    Launch a bentoml service directly by the bentoml CLI, yields the host URL.
+    """
+    my_env = os.environ.copy()
+    if config_file is not None:
+        my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
+
+    import yaml
+
+    import bentoml
+
+    bento_service = bentoml.bentos.get(bento_tag)
+
+    path = bento_service.path
+
+    with open(os.path.join(path, "bento.yaml"), "r", encoding="utf-8") as f:
+        bentofile = yaml.safe_load(f)
+
+    runner_map = {}
+    processes: t.List[subprocess.Popen[str]] = []
+
+    for runner in bentofile["runners"]:
+        with reserve_free_port() as port:
+            bind = f"tcp://127.0.0.1:{port}"
+            runner_map[runner["name"]] = bind
+            cmd = [
+                sys.executable,
+                "-m",
+                "bentoml._internal.server.cli.runner",
+                str(bento_tag),
+                "--bind",
+                bind,
+                "--working-dir",
+                path,
+                "--runner-name",
+                runner["name"],
+            ]
+
+            logger.info(f"Running command: `{cmd}`")
+
+        processes.append(
+            subprocess.Popen(
+                cmd,
+                encoding="utf-8",
+                stderr=subprocess.STDOUT,
+                env=my_env,
+            )
+        )
+
+    with reserve_free_port() as server_port:
+        bind = f"tcp://127.0.0.1:{server_port}"
+        my_env["RUNNER_MAP"] = json.dumps(runner_map)
+        cmd = [
+            sys.executable,
+            "-m",
+            "bentoml._internal.server.cli.api_server",
+            str(bento_tag),
+            "--bind",
+            bind,
+            "--working-dir",
+            path,
+        ]
+        logger.info(f"Running command: `{cmd}`")
+
+    processes.append(
+        subprocess.Popen(
+            cmd,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+            env=my_env,
+        )
+    )
+    try:
+        host_url = f"127.0.0.1:{server_port}"
+        _wait_until_api_server_ready(host_url, timeout=timeout)
+        yield host_url
+    finally:
+        for p in processes:
+            kill_subprocess_tree(p)
+        for p in processes:
+            p.communicate()
+
+
+@cached_contextmanager("{bento}, {project_path}, {config_file}, {deployment_mode}")
 def host_bento(
     bento: t.Union[str, Tag, None] = None,
     project_path: str = ".",
     config_file: str = "bentoml_config.yml",
-    docker: bool = False,
-    dev_server: bool = False,
+    deployment_mode: str = "standalone",
 ) -> t.Generator[str, None, None]:
     """
     Host a bentoml service, yields the host URL.
@@ -235,8 +331,7 @@ def host_bento(
         bento: a beoto tag or `module_path:service`
         project_path: the path to the project directory
         config_file: the path to the config file
-        docker: whether to use docker to host the service
-        dev_server: whether to use the dev server to host the service
+        deployment_mode: the deployment mode, one of `standalone`, `docker` or `distributed`
     """
 
     if not os.path.exists(config_file):
@@ -251,34 +346,34 @@ def host_bento(
         else:
             bento_tag = bentoml.get(bento).tag
 
-        if docker:
+        if deployment_mode == "docker":
             image_tag = clean_context.enter_context(bentoml_containerize(bento_tag))
             host = clean_context.enter_context(
-                run_api_server_in_docker(
+                run_bento_server_in_docker(
                     image_tag,
                     config_file,
                 )
             )
             yield host
-        elif dev_server:
+        elif deployment_mode == "standalone":
             host = clean_context.enter_context(
-                run_api_server(
+                run_bento_server(
                     str(bento_tag),
                     config_file=config_file,
                     workdir=project_path,
-                    dev_server=True,
+                )
+            )
+            yield host
+        elif deployment_mode == "distributed":
+            host = clean_context.enter_context(
+                run_bento_server_distributed(
+                    str(bento_tag),
+                    config_file=config_file,
                 )
             )
             yield host
         else:
-            host = clean_context.enter_context(
-                run_api_server(
-                    str(bento_tag),
-                    config_file=config_file,
-                    workdir=project_path,
-                )
-            )
-            yield host
+            raise ValueError(f"Unknown deployment mode: {deployment_mode}")
     finally:
         logger.info("Cleaning up...")
         clean_context.close()

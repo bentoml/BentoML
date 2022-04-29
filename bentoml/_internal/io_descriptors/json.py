@@ -9,13 +9,16 @@ from starlette.responses import Response
 from .base import JSONType
 from .base import IODescriptor
 from ..types import LazyType
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
+    from types import UnionType
+
     import pydantic
 
-    from .. import external_typing as ext  # noqa
+    from .. import external_typing as ext
 
     _SerializableObj = t.Union[
         "ext.NpNDArray",
@@ -38,9 +41,9 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if LazyType["ext.NpGeneric"]("numpy.generic").isinstance(o):
             return o.item()
         if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(o):
-            return o.to_dict()  # type: ignore[attr-defined]
+            return o.to_dict()  # type: ignore
         if LazyType["ext.PdSeries"]("pandas.Series").isinstance(o):
-            return o.to_dict()  # type: ignore[attr-defined]
+            return o.to_dict()  # type: ignore
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(o):
             obj_dict = o.dict()
             if "__root__" in obj_dict:
@@ -140,6 +143,9 @@ class JSON(IODescriptor[JSONType]):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
+    def input_type(self) -> "UnionType":
+        return JSONType
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if self._pydantic_model is None:
             return {"type": "object"}
@@ -154,21 +160,28 @@ class JSON(IODescriptor[JSONType]):
         return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> JSONType:
-        json_obj = await request.json()
+        json_str = await request.body()
         if self._pydantic_model is not None and self._validate_json:
             try:
                 import pydantic
             except ImportError:
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"
-                )
+                ) from None
             try:
-                return self._pydantic_model.parse_obj(json_obj)
-            except pydantic.ValidationError:
-                raise BadInput("Invalid JSON Request received")
-        return json_obj
+                return self._pydantic_model.parse_raw(json_str)
+            except pydantic.ValidationError as e:
+                raise BadInput(f"Json validation error: {e}") from None
+        else:
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                raise BadInput(f"Json validation error: {e}") from None
 
-    async def to_http_response(self, obj: JSONType) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
+
+    async def finalize_http_response(self, response: Response, obj: JSONType):
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,
@@ -177,4 +190,6 @@ class JSON(IODescriptor[JSONType]):
             indent=None,
             separators=(",", ":"),
         )
-        return Response(json_str, media_type=MIME_TYPE_JSON)
+
+        response.body = response.render(json_str)
+        set_content_length(response)

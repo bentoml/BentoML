@@ -10,7 +10,7 @@ from datetime import timezone
 from functools import wraps
 from functools import lru_cache
 
-import attrs
+import attr
 import requests
 from simple_di import inject
 from simple_di import Provide
@@ -68,7 +68,7 @@ def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
     return wrapper
 
 
-@attrs.define
+@attr.define
 class ServeInfo:
     serve_id: str
     serve_started_timestamp: datetime

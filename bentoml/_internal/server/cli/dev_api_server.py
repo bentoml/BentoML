@@ -3,6 +3,7 @@ import typing as t
 from urllib.parse import urlparse
 
 import click
+import psutil
 
 from bentoml import load
 
@@ -46,6 +47,11 @@ def main(
             "log_config": LOGGING_CONFIG,
             "workers": 1,
         }
+        if psutil.WINDOWS:
+            uvicorn_options["loop"] = "asyncio"
+            import asyncio
+
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
         if reload:
             # When reload=True, the app parameter in uvicorn.run(app) must be the import str

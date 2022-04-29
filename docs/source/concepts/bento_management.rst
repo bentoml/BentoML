@@ -3,17 +3,11 @@
 Model and Bento Management
 **************************
 
-BentoML provides easy to use local and centralized stores for managing models and bentos. This article 
-focuses on the use of local file system based model and bento stores. To learn more about the centralized 
-store solution, see BentoML Yatai. To connect the CLI to a remote `Yatai <yatai-service-page>`, 
-use the `bentoml login` command.
+BentoML allows you to store models and bentos in local as well as remote repositories. Tools are also provided to easily
+manage the lifecycle of these artifacts. This documentation details the cli tools for both local and remote scenarios
 
-.. todo::
-
-    Link to BentoML Yatai documentation.
-
-Managing Models
----------------
+Managing Models Locally
+-----------------------
 
 Creating Models
 ^^^^^^^^^^^^^^^
@@ -36,7 +30,8 @@ is imported from the MLFlow Model Registry.
     bentoml.mlflow.import_from_uri("mlflow_model", uri=mlflow_registry_uri)
 
 Saved and imported models are added to the local file system based model store located in the 
-`$HOME/bentoml/models` directory by default.
+`$HOME/bentoml/models` directory by default. In order to see what types of model creation is supported per framework, please
+visit our :ref:`Frameworks <frameworks-page>` section.
 
 Listing Models
 ^^^^^^^^^^^^^^
@@ -159,45 +154,8 @@ module or the `models delete` CLI command.
 
         > bentoml models delete iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
 
-Pushing Models
-^^^^^^^^^^^^^^
-
-Once you are happy with a model and ready to share with other collaborators, you can upload it to a 
-remote `Yatai <yatai-service-page>` model store with the `push()` function under the `bentoml.models` 
-module or the `models push` CLI command.
-
-.. tabs::
-
-    .. code-tab:: python 
-
-        import bentoml.models
-
-        bentoml.models.push("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", skip_confirm=True)
-    
-    .. code-tab:: bash
-
-        > bentoml models push iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
-
-Pulling Models
-^^^^^^^^^^^^^^
-
-Previously pushed models can be downloaded from `Yatai <yatai-service-page>` and saved local model 
-store with the `pull()` function under the `bentoml.models` module or the `models pull` CLI command.
-
-.. tabs::
-
-    .. code-tab:: python 
-
-        import bentoml.models
-
-        bentoml.modles.pull("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", url=yatai_url)
-    
-    .. code-tab:: bash
-
-        > bentoml models pull iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
-
-Managing Bentos
----------------
+Managing Bentos Locally
+-----------------------
 
 Creating Bentos
 ^^^^^^^^^^^^^^^
@@ -231,25 +189,77 @@ To delete bentos in the bento store, use  the `delete` CLI command.
     
     > bentoml delete iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare
 
+Managing Models and Bentos Remotely with Yatai
+----------------------------------------------
+
+Yatai is BentoML's end to end deployment and monitoring platform. It also functions as a remote model and bento repository. To connect the CLI to a remote `Yatai <yatai-service-page>`, use the `bentoml login` command.
+
+.. tabs::
+
+    .. code-tab:: bash
+
+        > bentoml login <YATAI_URL>
+
+
+Once logged in, you'll be able to use the following commands.
+
+Pushing Models
+^^^^^^^^^^^^^^
+
+Once you are happy with a model and ready to share with other collaborators, you can upload it to a
+remote `Yatai <yatai-service-page>` model store with the `push()` function under the `bentoml.models`
+module or the `models push` CLI command.
+
+.. tabs::
+
+    .. code-tab:: python
+
+        import bentoml.models
+
+        bentoml.models.push("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", skip_confirm=True)
+
+    .. code-tab:: bash
+
+        > bentoml models push iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
+
+Pulling Models
+^^^^^^^^^^^^^^
+
+Previously pushed models can be downloaded from `Yatai <yatai-service-page>` and saved local model
+store with the `pull()` function under the `bentoml.models` module or the `models pull` CLI command.
+
+.. tabs::
+
+    .. code-tab:: python
+
+        import bentoml.models
+
+        bentoml.modles.pull("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", url=yatai_url)
+
+    .. code-tab:: bash
+
+        > bentoml models pull iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
+
 Pushing Bentos
 ^^^^^^^^^^^^^^
 
-To upload bento in the local file system store to a remote `Yatai <yatai-service-page>` bento store 
+To upload bento in the local file system store to a remote `Yatai <yatai-service-page>` bento store
 for collaboration and deployment, use the `push` CLI command.
 
 .. code-block:: bash
-    
+
     > bentoml push iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare
 
 Pulling Bentos
 ^^^^^^^^^^^^^^
 
-To download a bento from a remote `Yatai <yatai-service-page>` bento store to the local file system 
+To download a bento from a remote `Yatai <yatai-service-page>` bento store to the local file system
 bento store for troubleshooting, use the `pull` CLI command.
 
 .. code-block:: bash
 
     > bentoml pull iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare
+
 
 Further Reading
 ---------------

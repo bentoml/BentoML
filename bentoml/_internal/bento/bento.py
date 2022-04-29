@@ -391,7 +391,7 @@ class BentoModelInfo:
         )
 
 
-@attr.define(repr=False, frozen=True)
+@attr.define(repr=False, frozen=True, on_setattr=None)
 class BentoInfo:
     tag: Tag
     service: str = attr.field(

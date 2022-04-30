@@ -5,35 +5,35 @@ from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
-import attr
-
-from .runner import RunnerHandle
-from .container import Payload
-from ..utils.uri import uri_to_path
-from ...exceptions import RemoteException
-from ..runner.utils import Params
-from ..runner.utils import PAYLOAD_META_HEADER
-from ..runner.utils import payload_params_to_multipart
-from ..configuration.containers import DeploymentContainer
+from . import RunnerHandle
+from ..container import Payload
+from ...utils.uri import uri_to_path
+from ....exceptions import RemoteException
+from ...runner.utils import Params
+from ...runner.utils import PAYLOAD_META_HEADER
+from ...runner.utils import payload_params_to_multipart
+from ...configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:  # pragma: no cover
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
-    from .runner import Runner
+    from ..runner import Runner
 
 
-@attr.define
 class RemoteRunnerClient(RunnerHandle):
-    _runner: "Runner" = attr.field()
-    _conn: t.Optional["BaseConnector"] = attr.field(init=False, default=None)
-    _client: t.Optional["ClientSession"] = attr.field(init=False, default=None)
-    _loop: t.Optional[asyncio.AbstractEventLoop] = attr.field(init=False, default=None)
-    _addr: t.Optional[str] = attr.field(init=False, default=None)
-    _remote_runner_server_map: t.Dict[str, str] = attr.field(
-        init=False,
-        factory=DeploymentContainer.remote_runner_mapping.get,
-    )
+    def __init__(  # pylint: disable=super-init-not-called
+        self, runner: "Runner"
+    ) -> None:
+        self._runner = runner
+        self._conn: t.Optional["BaseConnector"] = None
+        self._client: t.Optional["ClientSession"] = None
+        self._loop: t.Optional[asyncio.AbstractEventLoop] = None
+        self._addr: t.Optional[str] = None
+
+    @property
+    def _remote_runner_server_map(self) -> t.Dict[str, str]:
+        return DeploymentContainer.remote_runner_mapping.get()
 
     def _close_conn(self) -> None:
         if self._conn:
@@ -113,30 +113,6 @@ class RemoteRunnerClient(RunnerHandle):
             )
         return self._client
 
-    async def _async_req(self, path: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        from ..runner.container import AutoContainer
-
-        params = Params(*args, **kwargs).map(AutoContainer.single_to_payload)
-        multipart = payload_params_to_multipart(params)
-        client = self._get_client()
-        async with client.post(f"{self._addr}/{path}", data=multipart) as resp:
-            body = await resp.read()
-        try:
-            meta_header = resp.headers[PAYLOAD_META_HEADER]
-        except KeyError:
-            raise RemoteException(
-                f"Bento payload decode error: {PAYLOAD_META_HEADER} not exist. "
-                "An exception might have occurred in the upstream server."
-                f"[{resp.status}] {body.decode()}"
-            ) from None
-
-        try:
-            payload = Payload(data=body, meta=json.loads(meta_header))
-        except JSONDecodeError:
-            raise ValueError(f"Bento payload decode error: {meta_header}")
-
-        return AutoContainer.payload_to_single(payload)
-
     async def async_run_method(
         self,
         method_name: str,
@@ -147,7 +123,7 @@ class RemoteRunnerClient(RunnerHandle):
             method_name
         ]
 
-        from ..runner.container import AutoContainer
+        from ...runner.container import AutoContainer
 
         if runnable_method_config.batchable:
             to_payload = AutoContainer.batch_to_payload

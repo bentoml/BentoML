@@ -111,8 +111,8 @@ def get_runnable(
     """
 
     class FrameworkRunnable(bentoml.Runnable):
-        supports_nvidia_gpu = True  # type: ignore
-        supports_multi_threading = True  # type: ignore
+        SUPPORT_NVIDIA_GPU = True  # type: ignore
+        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
 
         def __init__(self):
             super().__init__()

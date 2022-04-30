@@ -165,7 +165,11 @@ def import_service(
             instance, Service
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
-        on_import_svc(svc=instance, working_dir=working_dir, import_str="{module_name}:{attrs_str}")
+        on_import_svc(
+            svc=instance,
+            working_dir=working_dir,
+            import_str="{module_name}:{attrs_str}",
+        )
         return instance
     except ImportServiceError:
         if prev_cwd and change_global_cwd:

@@ -22,6 +22,7 @@ from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
 from ..types import MetadataDict
+from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..runner import Runnable
@@ -29,13 +30,12 @@ from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..utils import bentoml_cattr
 
 if TYPE_CHECKING:
+    from ..types import AnyType
     from ..types import PathType
     from ..runner import Runner
     from ..runner.runnable import BatchDimType
-    from ..types import AnyType
 
     ModelSignatureDict: t.TypeAlias = dict[
         str, bool | BatchDimType | AnyType | tuple[AnyType] | None
@@ -421,10 +421,12 @@ class ModelInfo:
         if not isinstance(yaml_content, dict):
             raise BentoMLException(f"malformed {MODEL_YAML_FILENAME}")
 
-        yaml_content["tag"] = str(Tag(
-            yaml_content["name"],  # type: ignore
-            yaml_content["version"],  # type: ignore
-        ))
+        yaml_content["tag"] = str(
+            Tag(
+                yaml_content["name"],  # type: ignore
+                yaml_content["version"],  # type: ignore
+            )
+        )
         del yaml_content["name"]
         del yaml_content["version"]
 
@@ -434,7 +436,7 @@ class ModelInfo:
             yaml_content["signatures"] = {}
 
         try:
-            model_info =  bentoml_cattr.structure(yaml_content, FrozenModelInfo)
+            model_info = bentoml_cattr.structure(yaml_content, FrozenModelInfo)
         except TypeError:  # pragma: no cover - simple error handling
             raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}")
         return model_info

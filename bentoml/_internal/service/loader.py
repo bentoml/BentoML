@@ -13,16 +13,17 @@ from simple_di import Provide
 
 from ..bento import Bento
 from ..models import ModelStore
-from ...exceptions import NotFound, ImportServiceError
+from .service import on_import_svc
+from .service import on_load_bento
+from ...exceptions import NotFound
 from ...exceptions import BentoMLException
+from ...exceptions import ImportServiceError
 from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
 from ..configuration import BENTOML_VERSION
 from ..bento.build_config import BentoBuildConfig
 from ..configuration.containers import BentoMLContainer
-from .service import on_import_svc
-from .service import on_load_bento
 
 if TYPE_CHECKING:
     from ..bento import BentoStore

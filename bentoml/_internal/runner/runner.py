@@ -7,7 +7,6 @@ from functools import cached_property
 
 import attr
 
-
 from ..utils import first_not_none
 from .resource import Resource
 from .runnable import Runnable

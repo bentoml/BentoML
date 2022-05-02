@@ -27,17 +27,16 @@ from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
+from ..runner import Runner
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
-from ..configuration.containers import BentoMLContainer
 from ..runner.resource import Resource
-from ..runner import Runner
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from fs.base import FS
-
 
     from ..models import Model
     from ..service import Service

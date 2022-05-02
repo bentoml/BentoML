@@ -8,12 +8,12 @@ import attr
 
 from bentoml.exceptions import BentoMLException
 
-from ..io_descriptors import IODescriptor
-from ..runner import Runner
 from ..tag import Tag
-from ..bento.bento import get_default_bento_readme
 from ..models import Model
+from ..runner import Runner
+from ..bento.bento import get_default_bento_readme
 from .inference_api import InferenceAPI
+from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
     from .. import external_typing as ext

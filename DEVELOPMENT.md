@@ -188,7 +188,7 @@ Flags:
   -v, --verbose         set verbose scripts
 
 
-If pytest_additional_arguments is given, the additional arguments will be passed to all of the tests run by the tests script.
+If 'pytest_additional_arguments' is given, the additional arguments will be passed to all of the tests run by the tests script.
 
 Example:
   $ ./scripts/ci/run_tests.sh pytorch --gpus --capture=tee-sys
@@ -387,17 +387,6 @@ BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bent
 BentoML also provides git hooks that developers can install with:
 ```bash
 make hooks
-```
-## Stubs
-Refer to [Installation](https://github.com/microsoft/pyright#installation) to install pyright correctly.
-
-In order for pyright to function correctly you must also run the following scripts alongside the stubs provided in the main repository.
-
-You can also clone a [copy](https://github.com/bentoml/stubs) of all the dependencies stubs used by BentoML to `typings/` via:
-```bash
-# Assuming at $GIT_ROOT
-git clone git@github.com:bentoml/stubs.git
-\rm -rf typings/.git* typings/*.{sh,toml,txt,cfg,py,md}
 ```
 
 ## Creating Pull Requests on GitHub

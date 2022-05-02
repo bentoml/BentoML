@@ -104,6 +104,12 @@ the same directory. It will also automatically infer all PyPI packages
 that are required by the service code, and pin down the version used
 in current environment.
 
+The version of the bento to be built can be specified by the ``--version`` keyword argument. If not explicitly
+specified, the version is automatically generated based on the timestamp of the build combined with random bytes.
+
+By default the ``bentofile.yaml`` is used as the build configuration, but you may also specify a custom bentofile
+using the ``--bentofile`` parameter.
+
 
 Bento Format
 ============
@@ -136,12 +142,6 @@ not be built properly. BentoML uses this convention to find the service, inspect
 packed into the bento.
 
 `<Your Service .py file>:<Variable Name of Service in .py file>`
-
-Version
--------
-
-The version of the bento to be built can be specified by the `bento` keyword argument. If not explicitly
-specified, the version is automatically generated based on the timestamp of the build combined with random bytes.
 
 Description
 -----------

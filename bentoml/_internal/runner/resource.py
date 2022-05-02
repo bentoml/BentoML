@@ -38,7 +38,7 @@ class Resource:
         )
 
     @classmethod
-    def from_config(cls) -> Resource:
+    def from_config(cls, runner_name: str) -> Resource:
         """
         Create a Resource object from the BentoML config.
         """

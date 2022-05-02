@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import typing as t
 import logging
@@ -31,11 +33,11 @@ from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..runner.resource import Resource
+from ..runner import Runner
 
 if TYPE_CHECKING:
     from fs.base import FS
 
-    from bentoml import Runner
 
     from ..models import Model
     from ..service import Service
@@ -337,12 +339,12 @@ class BentoStore(Store[Bento]):
         super().__init__(base_path, Bento)
 
 
-@attr.define
+@attr.define(frozen=True, on_setattr=None)
 class BentoRunnerInfo:
     name: str
     runnable_type: str
-    models: t.List[str]
-    default_resource_config: Resource
+    models: t.List[str] = attr.field(factory=list)
+    resource_config: Resource | None = attr.field(default=None)
 
     @classmethod
     def from_runner(cls, r: Runner) -> "BentoRunnerInfo":
@@ -351,11 +353,11 @@ class BentoRunnerInfo:
             name=r.name,  # type: ignore
             runnable_type=r.runnable_class.__name__,  # type: ignore
             models=[str(model.tag) for model in r.models],  # type: ignore
-            default_resource_config=r.resource_config,  # type: ignore
+            resource_config=r.resource_config,  # type: ignore
         )
 
 
-@attr.define
+@attr.define(frozen=True, on_setattr=None)
 class BentoApiInfo:
     name: str
     input_type: str
@@ -370,7 +372,7 @@ class BentoApiInfo:
         )
 
 
-@attr.define
+@attr.define(frozen=True, on_setattr=None)
 class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
     module: str
@@ -428,6 +430,14 @@ class BentoInfo:
         del yaml_content["name"]
         del yaml_content["version"]
 
+        # For backwards compatibility for bentos created prior to version 1.0.0rc1
+        if "runners" in yaml_content:
+            runners = yaml_content["runners"]
+            for r in runners:
+                if "runner_type" in r:
+                    r["runnable_type"] = r["runner_type"]
+                    del r["runner_type"]
+
         if "models" in yaml_content:
             # For backwards compatibility for bentos created prior to version 1.0.0a7
             models = yaml_content["models"]
@@ -444,6 +454,7 @@ class BentoInfo:
                 )
         try:
             # type: ignore[attr-defined]
+            print("####", yaml_content, cls)
             return bentoml_cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")

@@ -166,7 +166,7 @@ class Runner:
         method_configs = {} if method_configs is None else {}
         custom_resources = {} if custom_resources is None else {}
         resource = (
-            Resource.from_config()
+            Resource.from_config(name)
             | Resource(
                 cpu=cpu,
                 nvidia_gpu=nvidia_gpu,

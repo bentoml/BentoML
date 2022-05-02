@@ -1,4 +1,4 @@
-.. _bento-format-page:
+.. _building-bentos-page:
 
 Building Bentos
 ===============
@@ -29,6 +29,18 @@ process from the `quickstart guide (https://github.com/bentoml/gallery/tree/main
 The service field is the python module that holds the bentoml.Service
 instance.
 
+Built bentos are added the local bento store and can be managed with both Python APIs and CLI.
+
+.. code-block:: bash
+
+    > bentoml list # list all bentos in the store
+    > bentoml get iris_classifer:latest # get the description of the bento
+
+The build options by default work for the most common cases but can be further customized by calling
+the `set_build_options()` function on the service. Let's explore the available options. See documentation
+for in-depth details of build options.
+
+
 Configuring files to include
 ----------------------------
 
@@ -47,24 +59,37 @@ You can also include other wildcard and directory matching.
       - "config/*.json"
 
 If the include field is not specified, BentoML, by default, will include
-every file in the working directory.
+every file in the working directory. Try to limit the amount of files that
+are included in your bento. For example, if unspecified, or if * is
+specified, all git versioning in the directory could be included in the
+bento by accident.
+
+Configuring files to exclude
+----------------------------
 
 If the user needs to include a lot of files, another approach is to
 only specify which files to be ignored.
 
-In this situation, the user can use a ``.bentoignore`` file by placing it
-in the working directory and all the files specified there will be ignored
-when building the Bento.
+The `exclude` keyword argument specifies the pathspecs (similar to the
+.gitignore files) of the Python modules or data files to be excluded in the
+build. The pathspecs are relative the current working directory. Users can
+also opt to place a `.bentoignore` file in the directory where `bentoml build`
+is run to achieve the same file exclusion during build. If not explicitly
+specified, nothing is excluded from the build. Exclude is applied after
+include.
 
 This is what a ``.bentoignore`` file would look like.
 
-.. note::
+.. code:: bash
 
    __pycache__/
    *.py[cod]
    *$py.class
    .ipynb_checkpoints/
    training_data/
+
+Build your Bento
+----------------
 
 To build a Bento, simply run the following command from your project
 directory that contains your ``bentofile.yaml``:
@@ -78,6 +103,13 @@ directory, besides the files specified in the ``.bentoignore`` file in
 the same directory. It will also automatically infer all PyPI packages
 that are required by the service code, and pin down the version used
 in current environment.
+
+The version of the bento to be built can be specified by the ``--version`` keyword argument. If not explicitly
+specified, the version is automatically generated based on the timestamp of the build combined with random bytes.
+
+By default the ``bentofile.yaml`` is used as the build configuration, but you may also specify a custom bentofile
+using the ``--bentofile`` parameter.
+
 
 Bento Format
 ============
@@ -100,6 +132,38 @@ configurations, data/model files, and dependencies.
       packages:
          - scikit-learn
          - pandas
+
+Service
+-------
+
+The `service` parameter is a required field which must specify where the service code is located and under what variable
+name the service is instantiated in the code itself, separated by a colon. If either parameters is incorrect, the bento will
+not be built properly. BentoML uses this convention to find the service, inspect it and then determine which models should be
+packed into the bento.
+
+`<Your Service .py file>:<Variable Name of Service in .py file>`
+
+Description
+-----------
+
+The keyword argument sets the `description` of the Bento service. The contents will be used to create the
+`README.md` file in the bento archive. If not explicitly specified, the build to first look for the
+presence of a `README.md` in the current working directory and set the contents of the file as the
+description.
+
+Labels
+------
+The `labels` argument is a key value mapping which sets labels on the bento so that you can add your own custom descriptors to the bento
+
+Additional Models
+-----------------
+
+The build automatically identifies the models and their versions to be built into the bento based on the
+:ref:`service definition <service-definition-page>`. The service definition loads runners through
+the framework specific `load_runner()` function, the build will identify the model through the tag
+provided in the arguments. Use the `additional_models`` keyword argument to include models tags that
+are used in customer `runners`.
+
 
 Python Packages
 ===============
@@ -148,6 +212,31 @@ Additionally, there are more fields that can help manage larger projects.
      wheels:
         - "./libs/my_package.whl"
 
++-------------------+------------------------------------------------------------------------------------+
+| Field             | Description                                                                        |
++===================+====================================================================================+
+| requirements_txt  | The path to a custom requirements.txt file                                         |
++-------------------+------------------------------------------------------------------------------------+
+| packages          | Packages to include in this bento                                                  |
++-------------------+------------------------------------------------------------------------------------+
+| lock_packages     | Whether to lock the packages or not                                                |
++-------------------+------------------------------------------------------------------------------------+
+| index_url         | Inputs for the `--index-url` pip argument                                          |
++-------------------+------------------------------------------------------------------------------------+
+| no_index          | Whether to include the `--no-index` pip argument                                   |
++-------------------+------------------------------------------------------------------------------------+
+| trusted_host      | List of trusted hosts used as inputs using the `--trusted-host` pip argument       |
++-------------------+------------------------------------------------------------------------------------+
+| find_links        | List of links to find as inputs using the `--find-links` pip argument              |
++-------------------+------------------------------------------------------------------------------------+
+| extra_index_url   | List of extra index urls as inputs using the `≈` pip argument                      |
++-------------------+------------------------------------------------------------------------------------+
+| pip_args          | Any additional pip arguments that you would like to add when installing a package  |
++-------------------+------------------------------------------------------------------------------------+
+| wheels            | List of paths to wheels to include in the bento                                    |
++-------------------+------------------------------------------------------------------------------------+
+
+
 Package Locking
 ---------------
 
@@ -194,6 +283,22 @@ field.
    conda:
      environment_yml: "environment.yml"
 
+Conda Fields
+^^^^^^^^^^^^
++------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| Field            | Description                                                                                                                      |
++==================+==================================================================================================================================+
+| environment_yml  | Path to a conda environment file to copy into the bento. If specified, this file will overwrite any additional option specified  |
++------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| channels         | Custom conda channels to use. If not specified will use "defaults"                                                               |
++------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| dependencies     | Custom conda dependencies to include in the environment                                                                          |
++------------------+----------------------------------------------------------------------------------------------------------------------------------+
+| pip              | The specific "pip" conda dependencies to include                                                                                 |
++------------------+----------------------------------------------------------------------------------------------------------------------------------+
+
+
+
 Docker Options
 --------------
 
@@ -231,6 +336,25 @@ For example, with NLP projects you can preinstall NLTK data with:
 .. code:: shell
    # ``setup.sh``
    python -m nltk.downloader all
+
+Docker Fields
+^^^^^^^^^^^^
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+| Field           | Description                                                                                                        |
++=================+====================================================================================================================+
+| distro          | Configure the particular os distribution on the Docker image ["debian", "amazonlinux2", "alpine", "ubi8", "ubi7"]  |
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+| python_version  | Specify which python to include on the Docker image ["3.7", "3.8", "3.9"]                                          |
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+| gpu             | Determine if your container will have a gpu. This is not compatible with certain distros                           |
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+| devel           | If you want to use the latest main branch from the BentoML repo in your bento                                      |
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+| setup_script    | Is a python or shell script that executes during docker build time                                                 |
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+| base_image      | Is a user-provided custom docker base image. This will override all other custom attributes of the image           |
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+
 
 Conclusion
 ----------

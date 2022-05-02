@@ -87,25 +87,25 @@ my_runner.predict.run( test_input_df )
 @attr.define(frozen=True)
 class RunnerMethod:
     runner: Runner
-    method_name: str
+    name: str
     max_batch_size: int
     max_latency_ms: int
 
     @cached_property
     def runnable_method_config(self) -> RunnableMethodConfig:
         configs = self.runner.runnable_class.get_method_configs()
-        return configs[self.method_name]
+        return configs[self.name]
 
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self.runner._runner_handle.run_method(  # type: ignore
-            self.method_name,
+            self.name,
             *args,
             **kwargs,
         )
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self.runner._runner_handle.async_run_method(  # type: ignore
-            self.method_name,
+            self.name,
             *args,
             **kwargs,
         )
@@ -184,7 +184,7 @@ class Runner:
 
             runner_method_map[method_name] = RunnerMethod(
                 runner=self,
-                method_name=method_name,
+                name=method_name,
                 max_batch_size=first_not_none(
                     method_max_batch_size,
                     max_batch_size,
@@ -221,7 +221,7 @@ class Runner:
             setattr(self, "async_run", default_method.async_run)
 
         for runner_method in self.runner_methods:
-            setattr(self, runner_method.method_name, runner_method)
+            setattr(self, runner_method.name, runner_method)
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):

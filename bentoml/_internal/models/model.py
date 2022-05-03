@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 import logging
+import importlib
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
 from datetime import datetime
@@ -27,6 +28,7 @@ from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
+from ..runner import Runner
 from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
@@ -38,7 +40,6 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
-    from ..runner import Runner
 
     ModelSignatureDict: t.TypeAlias = dict[
         str, bool | BatchDimType | AnyType | tuple[AnyType] | None
@@ -311,7 +312,7 @@ class Model(StoreItem):
         )
 
     def to_runnable(self) -> t.Type[Runnable]:
-        module = __import__(self.info.module)
+        module = importlib.import_module(self.info.module)
         if not self._runnable:
             self._runnable = module.get_runnable(self)
         return self._runnable
@@ -338,6 +339,7 @@ class ModelContext:
             return data
         return bentoml_cattr.structure(data, ModelContext)
 
+
 attr.resolve_types(ModelContext, globals(), locals())
 
 
@@ -354,13 +356,17 @@ class ModelSignature:
         return bentoml_cattr.structure(data, ModelSignature)
 
     @staticmethod
-    def convert_dict(data: dict[str, ModelSignatureDict]) -> dict[str, ModelSignature]:
+    def convert_signatures_dict(
+        data: dict[str, ModelSignatureDict]
+    ) -> dict[str, ModelSignature]:
         return {
             k: ModelSignature.from_dict(v) if isinstance(v, dict) else v
             for k, v in data.items()
         }
 
+
 attr.resolve_types(ModelSignature, globals(), locals())
+
 
 def model_signature_encoder(model_signature: ModelSignature):
     encoded = {
@@ -388,9 +394,9 @@ class ModelInfo:
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
     options: ModelOptions = attr.field(converter=ModelOptions)
     metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
-    # context: ModelContext = attr.field()
+    context: ModelContext = attr.field()
     signatures: t.Dict[str, ModelSignature] = attr.field(
-        converter=ModelSignature.convert_dict
+        converter=ModelSignature.convert_signatures_dict
     )
     api_version: str = attr.field(default="v1")
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
@@ -464,9 +470,6 @@ class ModelInfo:
             yaml_content["signatures"] = {}
 
         try:
-            print(yaml_content)
-            # print("tag:", bentoml_cattr.structure("sdfs:fasdf", Tag))
-
             model_info = bentoml_cattr.structure(yaml_content, FrozenModelInfo)
         except TypeError:  # pragma: no cover - simple error handling
             raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}")
@@ -485,6 +488,7 @@ class ModelInfo:
 @attr.define(repr=False, eq=False, frozen=True, on_setattr=None)  # type: ignore (pyright doesn't allow for a frozen subclass)
 class FrozenModelInfo(ModelInfo):
     pass
+
 
 attr.resolve_types(ModelInfo, globals(), locals())
 attr.resolve_types(FrozenModelInfo, globals(), locals())

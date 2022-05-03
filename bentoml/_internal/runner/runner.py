@@ -197,6 +197,25 @@ class Runner:
                 ),
             )
 
+        # pick the default method
+        if len(runner_method_map) == 1:
+            default_method = next(iter(runner_method_map.values()))
+            logger.info(f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`")
+
+        elif "__call__" in runner_method_map:
+            logger.info("Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`")
+            default_method = runner_method_map["__call__"]
+        else:
+            logger.info(f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`')
+            default_method = None
+
+        if default_method is not None:
+            self.run = default_method.run
+            self.async_run = default_method.async_run
+
+        for runner_method in self.runner_methods:
+            self[runner_method.method_name] = runner_method
+
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
             runnable_init_params=runner_init_params,
@@ -207,21 +226,6 @@ class Runner:
             scheduling_strategy=scheduling_strategy,
         )
 
-        # pick the default method
-        if len(runner_method_map) == 1:
-            default_method = next(iter(runner_method_map.values()))
-        elif "__call__" in runner_method_map:
-            default_method = runner_method_map["__call__"]
-        else:
-            default_method = None
-            # TODO(jiang): shall we notify user that there is no default method?
-
-        if default_method is not None:
-            setattr(self, "run", default_method.run)
-            setattr(self, "async_run", default_method.async_run)
-
-        for runner_method in self.runner_methods:
-            setattr(self, runner_method.method_name, runner_method)
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):

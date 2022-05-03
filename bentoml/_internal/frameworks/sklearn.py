@@ -27,7 +27,9 @@ if TYPE_CHECKING:
     from sklearn.pipeline import Pipeline
 
     from .. import external_typing as ext
-    from ..models import ModelStore
+
+    SklearnModel = BaseEstimator | Pipeline
+
 
 try:
     import joblib
@@ -49,11 +51,19 @@ MODULE_NAME = "bentoml.sklearn"
 logger = logging.getLogger(__name__)
 
 
+def get(tag_like: str | Tag) -> Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    return model
+
+
 @inject
 def load_model(
     tag: t.Union[str, Tag],
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["BaseEstimator", "Pipeline"]:
+) -> SklearnModel:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -74,7 +84,7 @@ def load_model(
 
         sklearn = bentoml.sklearn.load_model('my_model:latest')
     """
-    model = model_store.get(tag)
+    model = get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
@@ -86,7 +96,7 @@ def load_model(
 
 def save_model(
     name: str,
-    model: BaseEstimator | Pipeline,
+    model: SklearnModel,
     *,
     signatures: dict[str, ModelSignature] | None = None,
     labels: t.Dict[str, str] | None = None,
@@ -142,6 +152,7 @@ def save_model(
         framework_name="sklearn",
         framework_versions={"scikit-learn": get_pkg_version("scikit-learn")},
     )
+
     if signatures is None:
         logger.info(
             'Using default model signature `{"predict": {"batchable": False}}` for sklearn model'
@@ -163,14 +174,32 @@ def save_model(
         return _model.tag
 
 
-def get(tag_like: str | Tag) -> Model:
-    model = bentoml.models.get(tag_like)
-    if model.info.module != MODULE_NAME:
-        raise NotFound(
-            f'Model "{tag_like}" saved with module "{MODULE_NAME}" is not found'
+def get_runnable(bento_model: Model):
+    """
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
+    """
+
+    class SklearnRunnable(bentoml.Runnable):
+        SUPPORT_NVIDIA_GPU = False  # type: ignore
+        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
+
+        def __init__(self):
+            super().__init__()
+            self.model = load_model(bento_model)
+
+    for method_name, options in bento_model.info.signatures.items():
+
+        def _run(self, input_data: ext.NpNDArray | ext.PdDataFrame) -> ext.NpNDArray:
+            with parallel_backend(backend="loky"):
+                return self.model[method_name](input_data)
+
+        SklearnRunnable.add_method(
+            _run,
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
         )
-    return model
 
-
-def get_runnable(model: Model):
-    ...
+    return SklearnRunnable

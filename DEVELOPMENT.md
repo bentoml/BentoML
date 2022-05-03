@@ -188,7 +188,7 @@ Flags:
   -v, --verbose         set verbose scripts
 
 
-If 'pytest_additional_arguments' is given, the additional arguments will be passed to all of the tests run by the tests script.
+If `pytest_additional_arguments` is given, the additional arguments will be passed to all of the tests run by the tests script.
 
 Example:
   $ ./scripts/ci/run_tests.sh pytorch --gpus --capture=tee-sys

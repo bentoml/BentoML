@@ -199,8 +199,8 @@ class Model(StoreItem):
         logger.info(f"Successfully saved {self}")
         return self
 
-    @classmethod
-    def from_fs(cls, item_fs: FS) -> "Model":
+    @staticmethod
+    def from_fs(item_fs: FS) -> "Model":
         try:
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
@@ -209,7 +209,7 @@ class Model(StoreItem):
                 f"Failed to load bento model because it does not contain a '{MODEL_YAML_FILENAME}'"
             )
 
-        res = cls(tag=info.tag, Model__fs=item_fs, info=info)
+        res = Model(tag=info.tag, Model__fs=item_fs, info=info)
         if not res.validate():
             raise BentoMLException(
                 f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"

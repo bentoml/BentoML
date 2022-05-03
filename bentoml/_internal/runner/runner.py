@@ -84,7 +84,7 @@ my_runner.predict.run( test_input_df )
 """
 
 
-@attr.define(frozen=True)
+@attr.define(slots=False) #(frozen=True)
 class RunnerMethod:
     runner: Runner
     name: str
@@ -197,25 +197,6 @@ class Runner:
                 ),
             )
 
-        # pick the default method
-        if len(runner_method_map) == 1:
-            default_method = next(iter(runner_method_map.values()))
-            logger.info(f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`")
-
-        elif "__call__" in runner_method_map:
-            logger.info("Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`")
-            default_method = runner_method_map["__call__"]
-        else:
-            logger.info(f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`')
-            default_method = None
-
-        if default_method is not None:
-            self.run = default_method.run
-            self.async_run = default_method.async_run
-
-        for runner_method in self.runner_methods:
-            self[runner_method.method_name] = runner_method
-
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
             runnable_init_params=runner_init_params,
@@ -225,6 +206,75 @@ class Runner:
             runner_methods=list(runner_method_map.values()),
             scheduling_strategy=scheduling_strategy,
         )
+
+        # Choose the default method:
+        #  1. if there's only one method, it will be set as default
+        #  2. if there's a method named "__call__", it will be set as default
+        #  3. otherwise, there's no default method
+        if len(runner_method_map) == 1:
+            default_method = next(iter(runner_method_map.values()))
+            logger.info(
+                f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`"
+            )
+        elif "__call__" in runner_method_map:
+            default_method = runner_method_map["__call__"]
+            logger.info(
+                "Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`"
+            )
+        else:
+            default_method = None
+            logger.info(
+                f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`'
+            )
+
+        if default_method is None:
+            InnerRunnerClass = type("InnerRunnerClass", (Runner,), runner_method_map)
+        else:
+            InnerRunnerClass = type("InnerRunnerClass", (Runner,), {
+                "run": default_method.run,
+                "async_run": default_method.async_run,
+                **runner_method_map
+            })
+        object.__setattr__(self, "__class__", InnerRunnerClass)
+
+
+        # # set default run method entrypoint
+        # if default_method is not None:
+        #     object.__setattr__(self, "run", default_method.run)
+        #     object.__setattr__(self, "async_run", default_method.async_run)
+        #
+        # # set all run method entrypoint
+        # for runner_method in self.runner_methods:
+        #     object.__setattr__(self, runner_method.name, runner_method)
+
+    # def __attrs_post_init__(self):
+    #     # pick the default method
+    #     if len(self.runner_methods) == 1:
+    #         default_method = self.runner_methods[0]
+    #         logger.info(
+    #             f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`"
+    #         )
+    #     else:
+    #         call_method = next(filter(lambda m: m.name == "__call__", self.runner_methods), None)
+    #         if call_method is not None:
+    #             default_method = call_method
+    #             logger.info(
+    #                 "Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`"
+    #             )
+    #         else:
+    #             default_method = None
+    #             logger.info(
+    #                 f'No default method found for Runner "{self.name}", all method access needs to be in the form of `runner.{{method}}.run`'
+    #             )
+    #
+    #     # set default run method entrypoint
+    #     if default_method is not None:
+    #         object.__setattr__(self, "run", default_method.run)
+    #         object.__setattr__(self, "async_run", default_method.async_run)
+    #
+    #     # set all run method entrypoint
+    #     for runner_method in self.runner_methods:
+    #         object.__setattr__(self, runner_method.name, runner_method)
 
 
 

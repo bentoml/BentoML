@@ -1,8 +1,23 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 import cattr
+from attr import fields
+from cattr import override
+from cattr.gen import AttributeOverride
 
 bentoml_cattr = cattr.Converter()
+
+# bentoml_cattr = cattr.Converter(prefer_attrib_converters=True)
+
+
+def omit_if_init_false(cls) -> dict[str, AttributeOverride]:
+    return {f.name: override(omit=True) for f in fields(cls) if not f.init}
+
+
+def omit_if_default(cls) -> dict[str, AttributeOverride]:
+    return {f.name: override(omit_if_default=True) for f in fields(cls)}
 
 
 def datetime_decoder(dt_like, _):

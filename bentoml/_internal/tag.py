@@ -40,6 +40,7 @@ def validate_tag_str(value: str):
         raise InvalidArgument(f"{value} is not a valid tag: " + ", and ".join(errors))
 
 
+@attr.define(slots=True)
 class Tag:
     name: str
     version: t.Optional[str]
@@ -130,3 +131,4 @@ class Tag:
 
 bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
 bentoml_cattr.register_unstructure_hook(Tag, lambda tag: str(tag))
+attr.resolve_types(Tag, globals(), locals())

@@ -165,7 +165,7 @@ class Runner:
         method_configs = {} if method_configs is None else {}
         custom_resources = {} if custom_resources is None else {}
         resource = (
-            Resource.from_config()
+            Resource.from_config(name)
             | Resource(
                 cpu=cpu,
                 nvidia_gpu=nvidia_gpu,
@@ -215,6 +215,7 @@ class Runner:
         else:
             default_method = None
             # TODO(jiang): shall we notify user that there is no default method?
+
         if default_method is not None:
             setattr(self, "run", default_method.run)
             setattr(self, "async_run", default_method.async_run)

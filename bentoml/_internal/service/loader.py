@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import typing as t
@@ -11,8 +13,11 @@ from simple_di import Provide
 
 from ..bento import Bento
 from ..models import ModelStore
+from .service import on_import_svc
+from .service import on_load_bento
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
+from ...exceptions import ImportServiceError
 from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
@@ -27,18 +32,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ImportServiceError(BentoMLException):
-    pass
-
-
 @inject
 def import_service(
     svc_import_path: str,
     *,
     working_dir: t.Optional[str] = None,
     change_global_cwd: bool = False,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "Service":
+    model_store: ModelStore = Provide[BentoMLContainer.model_store],
+) -> Service:
     """Import a Service instance from source code, by providing the svc_import_path
     which represents the module where the Service instance is created and optionally
     what attribute can be used to access this Service instance in that module
@@ -108,7 +109,7 @@ def import_service(
                 )
 
             # move up until no longer in a python package or in the working dir
-            module_name_parts = []
+            module_name_parts: t.List[str] = []
             path = file_name
             while True:
                 path, name = os.path.split(path)
@@ -164,8 +165,12 @@ def import_service(
         assert isinstance(
             instance, Service
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
-        instance._working_dir = working_dir  # type: ignore
-        instance._import_str = f"{module_name}:{attrs_str}"  # type: ignore
+
+        on_import_svc(
+            svc=instance,
+            working_dir=working_dir,
+            import_str="{module_name}:{attrs_str}",
+        )
         return instance
     except ImportServiceError:
         if prev_cwd and change_global_cwd:
@@ -233,9 +238,7 @@ def _load_bento(bento: Bento, change_global_cwd: bool) -> "Service":
         change_global_cwd=change_global_cwd,
         model_store=model_store,
     )
-    svc.version = bento.info.tag.version
-    svc.tag = bento.info.tag
-    svc.bento = bento
+    on_load_bento(svc, bento)
     return svc
 
 

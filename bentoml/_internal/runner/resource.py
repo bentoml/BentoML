@@ -38,7 +38,7 @@ class Resource:
         )
 
     @classmethod
-    def from_config(cls) -> Resource:
+    def from_config(cls, runner_name: str) -> Resource:
         """
         Create a Resource object from the BentoML config.
         """
@@ -85,17 +85,17 @@ def mem_converter(mem: t.Union[int, str]) -> int:
     unit_match = re.match("([0-9]+)([A-Za-z]{1,2})", mem)
     mem_multipliers = {
         "k": 1000,
-        "M": 1000 ** 2,
-        "G": 1000 ** 3,
-        "T": 1000 ** 4,
-        "P": 1000 ** 5,
-        "E": 1000 ** 6,
+        "M": 1000**2,
+        "G": 1000**3,
+        "T": 1000**4,
+        "P": 1000**5,
+        "E": 1000**6,
         "Ki": 1024,
-        "Mi": 1024 ** 2,
-        "Gi": 1024 ** 3,
-        "Ti": 1024 ** 4,
-        "Pi": 1024 ** 5,
-        "Ei": 1024 ** 6,
+        "Mi": 1024**2,
+        "Gi": 1024**3,
+        "Ti": 1024**4,
+        "Pi": 1024**5,
+        "Ei": 1024**6,
     }
     if unit_match:
         base = int(unit_match[1])

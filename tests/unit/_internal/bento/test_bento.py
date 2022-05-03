@@ -81,10 +81,9 @@ apis: []
         assert bentoinfo_b_from_yaml == bentoinfo_b
 
 
-def build_test_bento(model_store: "ModelStore") -> Bento:
+def build_test_bento() -> Bento:
     bento_cfg = BentoBuildConfig(
         "simplebento.py:svc",
-        additional_models=[],
         include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
         exclude=[
             "*.storage",
@@ -107,7 +106,6 @@ def build_test_bento(model_store: "ModelStore") -> Bento:
         bento_cfg,
         version="1.0",
         build_ctx="./simplebento",
-        model_store=model_store,
     )
 
 

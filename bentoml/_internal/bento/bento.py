@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import typing as t
 import logging
@@ -25,20 +27,19 @@ from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
+from ..runner import Runner
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
+from ..runner.resource import Resource
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from fs.base import FS
 
-    from bentoml import Runner
-
     from ..models import Model
     from ..service import Service
-    from ..runner.runner import SimpleRunner
     from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,7 @@ class Bento(StoreItem):
     def _export_ext() -> str:
         return "bento"
 
-    @__fs.validator  # type:ignore (attrs validators not supported by pyright)
+    @__fs.validator  # type:ignore # attrs validators not supported by pyright
     def check_fs(self, _attr: t.Any, new_fs: "FS"):
         try:
             new_fs.makedir("models", recreate=True)
@@ -136,7 +137,6 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         from ..service.loader import import_service
 
@@ -166,23 +166,14 @@ class Bento(StoreItem):
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
 
-        model_tags = build_config.additional_models
-        # Add Runner required models to models list
-        for runner in svc.runners.values():
-            model_tags += runner.required_models
-
-        models: "t.List[Model]" = []
-        seen_model_tags: t.Set[Tag] = set()
-        for model_tag in model_tags:
-            try:
-                model_info = model_store.get(model_tag)
-                if model_info.tag not in seen_model_tags:
-                    seen_model_tags.add(model_info.tag)
-                    models.append(model_info)
-            except FileNotFoundError:
-                raise BentoMLException(
-                    f"Model {model_tag} not found in local model store"
-                )
+        models: t.Set[Model] = set()
+        # Add all models required by the service
+        for model in svc.models:
+            models.add(model)
+        # Add all models required by service runners
+        for runner in svc.runners:
+            for model in runner.models:
+                models.add(model)
 
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
@@ -265,7 +256,7 @@ class Bento(StoreItem):
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 labels=build_config.labels,
                 models=[BentoModelInfo.from_bento_model(m) for m in models],
-                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners.values()],
+                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners],
                 apis=[
                     BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
                 ],
@@ -347,21 +338,25 @@ class BentoStore(Store[Bento]):
         super().__init__(base_path, Bento)
 
 
-@attr.define
+@attr.define(frozen=True, on_setattr=None)
 class BentoRunnerInfo:
     name: str
-    runner_type: str
+    runnable_type: str
+    models: t.List[str] = attr.field(factory=list)
+    resource_config: Resource | None = attr.field(default=None)
 
     @classmethod
-    def from_runner(cls, r: "t.Union[Runner, SimpleRunner]") -> "BentoRunnerInfo":
+    def from_runner(cls, r: Runner) -> "BentoRunnerInfo":
         # Add runner default resource quota and batching config here
         return cls(
             name=r.name,  # type: ignore
-            runner_type=r.__class__.__name__,
+            runnable_type=r.runnable_class.__name__,  # type: ignore
+            models=[str(model.tag) for model in r.models],  # type: ignore
+            resource_config=r.resource_config,  # type: ignore
         )
 
 
-@attr.define
+@attr.define(frozen=True, on_setattr=None)
 class BentoApiInfo:
     name: str
     input_type: str
@@ -370,13 +365,13 @@ class BentoApiInfo:
     @classmethod
     def from_inference_api(cls, api: "InferenceAPI") -> "BentoApiInfo":
         return cls(
-            name=api.name,
-            input_type=api.input.__class__.__name__,
-            output_type=api.output.__class__.__name__,
+            name=api.name,  # type: ignore
+            input_type=api.input.__class__.__name__,  # type: ignore
+            output_type=api.output.__class__.__name__,  # type: ignore
         )
 
 
-@attr.define
+@attr.define(frozen=True, on_setattr=None)
 class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
     module: str
@@ -434,6 +429,14 @@ class BentoInfo:
         del yaml_content["name"]
         del yaml_content["version"]
 
+        # For backwards compatibility for bentos created prior to version 1.0.0rc1
+        if "runners" in yaml_content:
+            runners = yaml_content["runners"]
+            for r in runners:
+                if "runner_type" in r:
+                    r["runnable_type"] = r["runner_type"]
+                    del r["runner_type"]
+
         if "models" in yaml_content:
             # For backwards compatibility for bentos created prior to version 1.0.0a7
             models = yaml_content["models"]
@@ -450,6 +453,7 @@ class BentoInfo:
                 )
         try:
             # type: ignore[attr-defined]
+            print("####", yaml_content, cls)
             return bentoml_cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")

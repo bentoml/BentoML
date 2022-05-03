@@ -100,3 +100,7 @@ class CLIException(BentoMLException):
 
 class YataiRESTApiClientError(BentoMLException):
     pass
+
+
+class ImportServiceError(BentoMLException):
+    pass

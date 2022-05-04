@@ -18,7 +18,7 @@ SUPPORTED_RUNTIME_DISTROS: t.List[str] = [
     "debian",
     "ubi7",
     "ubi8",
-    "ami2",
+    "amazonlinux2",
     "alpine3.14",
 ]
 

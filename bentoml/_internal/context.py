@@ -107,7 +107,6 @@ class InferenceApiContext:
             None,
         ]
         delete_cookie: t.Callable[[str, str, str], None]
-        response_code: int = 200
 
         def __init__(
             self,

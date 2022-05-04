@@ -36,7 +36,7 @@ def add_inference_api(
     route: t.Optional[str],
 ) -> None:
     api = InferenceAPI(
-        name=name,
+        name=name if name is not None else func.__name__,
         user_defined_callback=func,
         input_descriptor=input,
         output_descriptor=output,
@@ -53,10 +53,7 @@ def add_inference_api(
 
     if isinstance(output, Multipart):
         logger.warning(
-            f"Found Multipart as the output of API `{api.name}`. "
-            "Multipart response is rarely used in the real world,"
-            " less clients/browsers support it. "
-            "Make sure you know what you are doing."
+            f"Found Multipart as the output of API '{api.name}'. Multipart responses are rarely used in the real world, and few clients/browsers support it. Make sure you know what you are doing."
         )
 
     svc.apis[api.name] = api

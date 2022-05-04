@@ -26,7 +26,7 @@ PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.7", "3.8", "3.9"]
 DOCKER_SUPPORTED_DISTROS: t.List[str] = [
     "debian",
     "amazonlinux2",
-    "alpine",
+    "alpine3.14",
     "ubi8",
     "ubi7",
 ]

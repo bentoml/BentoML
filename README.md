@@ -70,9 +70,17 @@ Or by setting environment variable `BENTOML_DO_NOT_TRACK=True`:
 export BENTOML_DO_NOT_TRACK=True
 ```
 
+---
+### Contributors! ###
+
+Thanks to all of our amazing contributors!
+
+<a href="https://github.com/bentoml/BentoML/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=bentoml/BentoML" />
+</a>
 
 ### License ###
 
 [Apache License 2.0](https://github.com/bentoml/BentoML/blob/main/LICENSE)
 
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_large)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fbentoml%2FBentoML.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fbentoml%2FBentoML?ref=badge_small)

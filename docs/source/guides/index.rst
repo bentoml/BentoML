@@ -15,7 +15,7 @@ read through the core concept section before diving into these guides.
   adaptive_batching
   configuration
   gpu
-  bento_format
+  building_bentos
   batch_inference
   logging
   ci

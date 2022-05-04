@@ -10,10 +10,10 @@ from platform import platform
 from platform import python_version
 from functools import lru_cache
 
+import attr
 import yaml
-import attrs
 import psutil
-import attrs.converters
+import attr.converters
 from simple_di import inject
 from simple_di import Provide
 
@@ -38,7 +38,7 @@ def get_python_version() -> str:
     return python_version()
 
 
-@attrs.define
+@attr.define
 class ClientInfo:
     id: str
     creation_timestamp: datetime
@@ -63,7 +63,7 @@ def get_client_info(
         )
         # write client info to ~/bentoml/client_id
         with open(CLIENT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
-            yaml.dump(attrs.asdict(new_client_info), stream=f)
+            yaml.dump(attr.asdict(new_client_info), stream=f)
 
         return new_client_info
 
@@ -95,25 +95,25 @@ def in_notebook() -> bool:
     return True
 
 
-@attrs.define
+@attr.define
 class CommonProperties:
     # when the event is triggered
-    timestamp: datetime = attrs.field(factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
     # environment related
-    platform: str = attrs.field(factory=get_platform)
-    bentoml_version: str = attrs.field(default=BENTOML_VERSION)
-    python_version: str = attrs.field(factory=get_python_version)
-    is_interactive: bool = attrs.field(factory=is_interactive)
-    in_notebook: bool = attrs.field(factory=in_notebook)
+    platform: str = attr.field(factory=get_platform)
+    bentoml_version: str = attr.field(default=BENTOML_VERSION)
+    python_version: str = attr.field(factory=get_python_version)
+    is_interactive: bool = attr.field(factory=is_interactive)
+    in_notebook: bool = attr.field(factory=in_notebook)
 
     # resource related
-    memory_usage_percent: float = attrs.field(init=False)
-    total_memory_in_mb: float = attrs.field(init=False)
+    memory_usage_percent: float = attr.field(init=False)
+    total_memory_in_mb: float = attr.field(init=False)
 
     # client related
-    client: ClientInfo = attrs.field(factory=get_client_info)
-    yatai_user_email: t.Optional[str] = attrs.field(factory=get_yatai_user_email)
+    client: ClientInfo = attr.field(factory=get_client_info)
+    yatai_user_email: t.Optional[str] = attr.field(factory=get_yatai_user_email)
 
     def __attrs_post_init__(self):
         self.total_memory_in_mb = int(psutil.virtual_memory().total / 1024.0 / 1024.0)
@@ -134,56 +134,56 @@ class EventMeta(ABC):
         return event_name
 
 
-@attrs.define
+@attr.define
 class CliEvent(EventMeta):
     cmd_group: str
     cmd_name: str
-    duration_in_ms: float = attrs.field(default=0)
-    error_type: t.Optional[str] = attrs.field(default=None)
-    return_code: t.Optional[int] = attrs.field(default=None)
+    duration_in_ms: float = attr.field(default=0)
+    error_type: t.Optional[str] = attr.field(default=None)
+    return_code: t.Optional[int] = attr.field(default=None)
 
 
-@attrs.define
+@attr.define
 class BentoBuildEvent(CliEvent):
-    bento_creation_timestamp: t.Optional[datetime] = attrs.field(default=None)
-    bento_size_in_kb: float = attrs.field(default=0)
-    model_size_in_kb: float = attrs.field(default=0)
+    bento_creation_timestamp: t.Optional[datetime] = attr.field(default=None)
+    bento_size_in_kb: float = attr.field(default=0)
+    model_size_in_kb: float = attr.field(default=0)
 
-    num_of_models: int = attrs.field(default=0)
-    num_of_runners: int = attrs.field(default=0)
-    model_types: t.List[str] = attrs.field(factory=list)
-    runner_types: t.List[str] = attrs.field(factory=list)
+    num_of_models: int = attr.field(default=0)
+    num_of_runners: int = attr.field(default=0)
+    model_types: t.List[str] = attr.field(factory=list)
+    runner_types: t.List[str] = attr.field(factory=list)
 
 
-@attrs.define
+@attr.define
 class ModelSaveEvent(EventMeta):
     module: str
     model_size_in_kb: float
 
 
-@attrs.define
+@attr.define
 class ServeInitEvent(EventMeta):
     serve_id: str
     production: bool
     serve_from_bento: bool
 
     bento_creation_timestamp: t.Optional[datetime]
-    num_of_models: int = attrs.field(default=0)
-    num_of_runners: int = attrs.field(default=0)
-    num_of_apis: int = attrs.field(default=0)
-    model_types: t.List[str] = attrs.field(factory=list)
-    runner_types: t.List[str] = attrs.field(factory=list)
-    api_input_types: t.List[str] = attrs.field(factory=list)
-    api_output_types: t.List[str] = attrs.field(factory=list)
+    num_of_models: int = attr.field(default=0)
+    num_of_runners: int = attr.field(default=0)
+    num_of_apis: int = attr.field(default=0)
+    model_types: t.List[str] = attr.field(factory=list)
+    runner_types: t.List[str] = attr.field(factory=list)
+    api_input_types: t.List[str] = attr.field(factory=list)
+    api_output_types: t.List[str] = attr.field(factory=list)
 
 
-@attrs.define
+@attr.define
 class ServeUpdateEvent(EventMeta):
     serve_id: str
     production: bool
     triggered_at: datetime
     duration_in_seconds: int
-    metrics: t.List[str] = attrs.field(factory=list)
+    metrics: t.List[str] = attr.field(factory=list)
 
 
 ALL_EVENT_TYPES = t.Union[
@@ -195,7 +195,7 @@ ALL_EVENT_TYPES = t.Union[
 ]
 
 
-@attrs.define
+@attr.define
 class TrackingPayload:
     session_id: str
     event_properties: ALL_EVENT_TYPES

@@ -169,11 +169,10 @@ def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
 
 
 async def concat_to_multipart_responses(
-    responses: t.Mapping[str, Response]
-) -> Response:
+    http_response: Response, responses: t.Mapping[str, Response]
+):
     boundary = uuid.uuid4().hex
-    headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
-
+    http_response.headers["content-type"] = f"multipart/form-data; boundary={boundary}"
     boundary_bytes = boundary.encode("latin1")
 
     writer = io.BytesIO()
@@ -205,4 +204,4 @@ async def concat_to_multipart_responses(
 
     writer.write(b"--%b--\r\n" % boundary_bytes)
 
-    return Response(writer.getvalue(), headers=headers)
+    http_response.body = writer.getvalue()

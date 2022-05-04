@@ -10,6 +10,7 @@ from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
 from ..types import FileLike
+from ..utils.http import set_content_length
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,9 @@ class File(IODescriptor["FileType"]):
         res._mime_type = mime_type
         return res
 
+    def input_type(self) -> t.Type[t.Any]:
+        return FileLike
+
     def openapi_schema_type(self) -> t.Dict[str, str]:
         return {"type": "string", "format": "binary"}
 
@@ -141,3 +145,15 @@ class BytesIOFile(File):
         raise BentoMLException(
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )
+
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=self._mime_type)
+
+    async def finalize_http_response(
+        self, response: Response, obj: t.Union[FileLike, bytes]
+    ):
+        if isinstance(obj, bytes):
+            obj = FileLike(bytes_=obj)
+
+        response.body = t.cast(BytesIO, obj.stream).getvalue()
+        set_content_length(response)

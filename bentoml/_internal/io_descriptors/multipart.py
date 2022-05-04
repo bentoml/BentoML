@@ -7,17 +7,21 @@ from starlette.responses import Response
 
 from .base import IOType
 from .base import IODescriptor
+from ..utils.http import set_content_length
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_responses
 
 if TYPE_CHECKING:
+    from types import UnionType
+
     from .file import File
     from .json import JSON
     from .text import Text
     from .image import Image
     from .numpy import NumpyNdarray
+    from ..types import LazyType
     from .pandas import PandasSeries
     from .pandas import PandasDataFrame
 
@@ -159,11 +163,25 @@ class Multipart(IODescriptor[MultipartIO]):
             ],
         ] = inputs
 
+    def input_type(
+        self,
+    ) -> t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]]:
+        res: t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]] = {}
+        for (k, v) in self._inputs.items():
+            inp_type = v.input_type()
+            if isinstance(inp_type, dict):
+                raise TypeError(
+                    "A multipart descriptor cannot take a multi-valued I/O descriptor as input"
+                )
+            res[k] = inp_type
+
+        return res
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {
             "type": "object",
             "properties": {
-                k: io.openapi_schema_type() for k, io in self._inputs.items()
+                k: io.openapi_schema_type() for (k, io) in self._inputs.items()
             },
         }
 
@@ -191,10 +209,14 @@ class Multipart(IODescriptor[MultipartIO]):
             res[k] = v
         return res
 
-    async def to_http_response(self, obj: MultipartIO) -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None)
+
+    async def finalize_http_response(self, response: Response, obj: MultipartIO):
         res_mapping: t.Dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]
-            # TODO(aarnphm): fix with stubs
-            res_mapping[k] = await io_.to_http_response(data)  # type: ignore[reportGeneralTypeIssue]
-        return await concat_to_multipart_responses(res_mapping)
+            resp = io_.init_http_response()
+            res_mapping[k] = await io_.finalize_http_response(resp, data)  # type: ignore[reportGeneralTypeIssue]
+        await concat_to_multipart_responses(response, res_mapping)
+        set_content_length(response)

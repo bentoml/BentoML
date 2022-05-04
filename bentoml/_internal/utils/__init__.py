@@ -8,6 +8,10 @@ import functools
 import contextlib
 from typing import TYPE_CHECKING
 from pathlib import Path
+from datetime import date
+from datetime import time
+from datetime import datetime
+from datetime import timedelta
 
 import fs
 import fs.copy
@@ -18,7 +22,10 @@ else:
     from backports.cached_property import cached_property
 
 from .cattr import bentoml_cattr
+from ..types import LazyType
 from ..types import PathType
+from ..types import MetadataDict
+from ..types import MetadataType
 from .lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
@@ -179,6 +186,76 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
             return os.path.realpath(_path)
 
     raise FileNotFoundError(f"file {filepath} not found")
+
+
+def validate_labels(labels: t.Dict[str, str]):
+    if not isinstance(labels, dict):
+        raise ValueError("labels must be a dict!")
+
+    for key, val in labels.items():
+        if not isinstance(key, str):
+            raise ValueError("label keys must be strings")
+
+        if not isinstance(val, str):
+            raise ValueError("label values must be strings")
+
+
+def validate_metadata(metadata: MetadataDict):
+    if not isinstance(metadata, dict):
+        raise ValueError("metadata must be a dict!")
+
+    for key, val in metadata.items():
+        if not isinstance(key, (str, int, float)):
+            raise ValueError("metadata keys must be strings")
+
+        metadata[key] = _validate_metadata_entry(val)
+
+
+def _validate_metadata_entry(entry: MetadataType) -> MetadataType:
+    if isinstance(entry, dict):
+        validate_metadata(entry)
+    elif isinstance(entry, list):
+        for i, val in enumerate(entry):
+            entry[i] = _validate_metadata_entry(val)
+    elif isinstance(entry, tuple):
+        entry = tuple((_validate_metadata_entry(x) for x in entry))
+
+    elif LazyType("numpy", "ndarray").isinstance(entry):
+        entry = entry.tolist()  # type: ignore (LazyType)
+        _validate_metadata_entry(entry)
+    elif LazyType("numpy", "generic").isinstance(entry):
+        entry = entry.item()  # type: ignore (LazyType)
+        _validate_metadata_entry(entry)
+    elif LazyType("scipy.sparse", "spmatrix").isinstance(entry):
+        raise ValueError(
+            "SciPy sparse matrices are currently not supported as metadata items; consider using a dictionary instead"
+        )
+    elif LazyType("pandas", "Series").isinstance(entry):
+        entry = {entry.name: entry.to_dict()}
+        _validate_metadata_entry(entry)
+    elif LazyType("pandas.api.extensions", "ExtensionArray").isinstance(entry):
+        entry = entry.to_numpy().tolist()  # type: ignore (LazyType)
+        _validate_metadata_entry(entry)
+    elif LazyType("pandas", "DataFrame").isinstance(entry):
+        entry = entry.to_dict()  # type: ignore (LazyType)
+        validate_metadata(entry)  # type: ignore (LazyType)
+    elif LazyType("pandas", "Timestamp").isinstance(entry):
+        entry = entry.to_pydatetime()  # type: ignore (LazyType)
+    elif LazyType("pandas", "Timedelta").isinstance(entry):
+        entry = entry.to_pytimedelta()  # type: ignore (LazyType)
+    elif LazyType("pandas", "Period").isinstance(entry):
+        entry = entry.to_timestamp().to_pydatetime()  # type: ignore (LazyType)
+    elif LazyType("pandas", "Interval").isinstance(entry):
+        entry = (entry.left, entry.right)  # type: ignore (LazyType)
+        _validate_metadata_entry(entry)
+    elif not isinstance(
+        entry, (str, bytes, bool, int, float, complex, datetime, date, time, timedelta)
+    ):
+        raise ValueError(
+            f"metadata entries must be basic python types like 'str', 'int', or 'complex', got '{type(entry).__name__}'"
+        )
+
+    return entry
 
 
 VT = t.TypeVar("VT")

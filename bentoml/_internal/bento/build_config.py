@@ -27,7 +27,7 @@ PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.7", "3.8", "3.9"]
 DOCKER_SUPPORTED_DISTROS: t.List[str] = [
     "debian",
     "amazonlinux2",
-    "alpine",
+    "alpine3.14",
     "ubi8",
     "ubi7",
 ]
@@ -395,7 +395,7 @@ def _additional_models_converter(
     return list(map(Tag.from_taglike, tags))
 
 
-@attr.define(frozen=True)
+@attr.define(frozen=True, on_setattr=None)
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
     provide all the options for building a Bento. All optional build options should be

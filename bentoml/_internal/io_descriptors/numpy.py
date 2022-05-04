@@ -8,6 +8,8 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
+from ..types import LazyType
+from ..utils.http import set_content_length
 from ...exceptions import BadInput
 from ...exceptions import InternalServerError
 
@@ -149,6 +151,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return {"type": self._infer_types()}
         return {}
 
+    def input_type(self) -> LazyType["ext.NpNDArray"]:
+        return LazyType("numpy", "ndarray")
+
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "array", "items": self._items_schema()}
 
@@ -209,7 +214,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         res = self._verify_ndarray(res, BadInput)
         return res
 
-    async def to_http_response(self, obj: "ext.NpNDArray") -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
+
+    async def finalize_http_response(self, response: Response, obj: "ext.NpNDArray"):
         """
         Process given objects and convert it to HTTP response.
 
@@ -221,7 +229,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
              be accessed via cURL or any external web traffic.
         """
         obj = self._verify_ndarray(obj, InternalServerError)
-        return Response(content=json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
+        response.body = response.render(json.dumps(obj.tolist()))
+        set_content_length(response)
 
     @classmethod
     def from_sample(

@@ -485,7 +485,6 @@ bentoml_cattr.register_unstructure_hook(
 
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
-    print(info.to_dict())
     return dumper.represent_dict(info.to_dict())
 
 

@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     WrappedMethod = t.TypeVar("WrappedMethod", bound=t.Callable[..., t.Any])
-    BatchDimType: t.TypeAlias = t.Tuple[t.List[int] | int, t.List[int] | int] | int
     from bentoml._internal.types import AnyType
 
 import attr
@@ -19,6 +18,10 @@ from bentoml._internal.types import LazyType
 logger = logging.getLogger(__name__)
 
 RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
+# BatchDimType: t.TypeAlias = t.Tuple[t.List[int] | int, t.List[int] | int] | int
+BatchDimType: t.TypeAlias = t.Union[
+    t.Tuple[t.Union[t.List[int], int], t.Union[t.List[int], int]], int
+]
 
 
 class Runnable(ABC):

@@ -1,26 +1,30 @@
-import typing as t
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
-from simple_di import inject
-from simple_di import Provide
+import typing as t
+import logging
+from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
+from bentoml.models import Model
+from bentoml.models import ModelContext
+from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
-from .common.model_runner import BaseModelRunner
-from ..configuration.containers import BentoMLContainer
+from ..models.model import ModelSignature
 
 if TYPE_CHECKING:
     from sklearn.base import BaseEstimator
     from sklearn.pipeline import Pipeline
 
     from .. import external_typing as ext
-    from ..models import ModelStore
+
+    SklearnModel = BaseEstimator | Pipeline
+
 
 try:
     import joblib
@@ -39,12 +43,21 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.sklearn"
 
+logger = logging.getLogger(__name__)
 
-@inject
-def load(
+
+def get(tag_like: str | Tag) -> Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    return model
+
+
+def load_model(
     tag: t.Union[str, Tag],
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["BaseEstimator", "Pipeline"]:
+) -> SklearnModel:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -63,9 +76,9 @@ def load(
 
         import bentoml
 
-        sklearn = bentoml.sklearn.load('my_model:latest')
+        sklearn = bentoml.sklearn.load_model('my_model:latest')
     """
-    model = model_store.get(tag)
+    model = get(tag)
     if model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
             f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
@@ -75,13 +88,14 @@ def load(
     return joblib.load(model_file)
 
 
-def save(
+def save_model(
     name: str,
-    model: t.Union["BaseEstimator", "Pipeline"],
+    model: SklearnModel,
     *,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    signatures: dict[str, ModelSignature] | None = None,
+    labels: t.Dict[str, str] | None = None,
+    custom_objects: t.Dict[str, t.Any] | None = None,
+    metadata: t.Dict[str, t.Any] | None = None,
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -91,18 +105,20 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (:code:`Union[BaseEstimator, Pipeline]`):
             Instance of model to be saved.
+        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
+            Methods to expose for running inference on the target model. Signatures are
+             used for creating Runner instances when serving model with bentoml.Service
         labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
             user-defined labels for managing models, e.g. team=nlp, stage=dev
         custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
             user-defined additional python objects to be saved alongside the model,
-            e.g. a tokenizer instance, preprocessor function, model configuration json
+             e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
+        the user-defined model's name, and a generated `version`.
 
     Examples:
 
@@ -119,17 +135,23 @@ def save(
         Y = iris.target
         model.fit(X, Y)
 
-        tag = bentoml.sklearn.save('kneighbors', model)
+        tag = bentoml.sklearn.save_model('kneighbors', model)
 
         # load the model back:
-        loaded = bentoml.sklearn.load("kneighbors:latest")
+        loaded = bentoml.sklearn.load_model("kneighbors:latest")
         # or:
-        loaded = bentoml.sklearn.load(tag)
+        loaded = bentoml.sklearn.load_model(tag)
     """  # noqa
-    context = {
-        "framework_name": "sklearn",
-        "pip_dependencies": [f"scikit-learn=={get_pkg_version('scikit-learn')}"],
-    }
+    context = ModelContext(
+        framework_name="sklearn",
+        framework_versions={"scikit-learn": get_pkg_version("scikit-learn")},
+    )
+
+    if signatures is None:
+        logger.info(
+            'Using default model signature `{"predict": {"batchable": False}}` for sklearn model'
+        )
+        signatures = {"predict": ModelSignature(batchable=False)}
 
     with bentoml.models.create(
         name,
@@ -138,6 +160,7 @@ def save(
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
+        signatures=signatures,
     ) as _model:
 
         joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
@@ -145,68 +168,33 @@ def save(
         return _model.tag
 
 
-class _SklearnRunner(BaseModelRunner):
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        function_name: str,
-        name: t.Optional[str] = None,
-    ):
-        super().__init__(tag, name=name)
-        self._backend = "loky"
-        self._function_name = function_name
-
-    @property
-    def _num_threads(self) -> int:
-        return max(round(self.resource_quota.cpu), 1)
-
-    @property
-    def num_replica(self) -> int:
-        return 1
-
-    def _setup(self) -> None:
-        self._model = load(self._tag, model_store=self.model_store)
-        self._infer_func = getattr(self._model, self._function_name)
-
-    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
-        self,
-        inputs: t.Union["ext.NpNDArray", "ext.PdDataFrame"],
-    ) -> "ext.NpNDArray":
-        with parallel_backend(self._backend, n_jobs=self._num_threads):
-            return self._infer_func(inputs)
-
-
-def load_runner(
-    tag: t.Union[str, Tag],
-    function_name: str = "predict",
-    *,
-    name: t.Optional[str] = None,
-) -> "_SklearnRunner":
+def get_runnable(bento_model: Model):
     """
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. :func:`bentoml.sklearn.load_runner` implements a Runner class that
-    wrap around a Sklearn joblib model, which optimize it for the BentoML runtime.
-
-    Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore..
-        function_name (:code:`str`, `optional`, default to :code:`predict`):
-            Predict function used by a given sklearn model.
-
-    Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for the target :mod:`bentoml.sklearn` model
-
-    Examples:
-
-    .. code-block:: python
-
-        import bentoml
-
-        runner = bentoml.sklearn.load_runner("my_model:latest")
-        runner.run([[1,2,3,4]])
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    return _SklearnRunner(
-        tag=tag,
-        function_name=function_name,
-        name=name,
-    )
+
+    class SklearnRunnable(bentoml.Runnable):
+        SUPPORT_NVIDIA_GPU = False  # type: ignore
+        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
+
+        def __init__(self):
+            super().__init__()
+            self.model = load_model(bento_model)
+
+    for method_name, options in bento_model.info.signatures.items():
+
+        def _run(self, input_data: ext.NpNDArray | ext.PdDataFrame) -> ext.NpNDArray:
+            # TODO: set inner_max_num_threads and n_jobs param here base on strategy env vars
+            with parallel_backend(backend="loky"):
+                return self.model[method_name](input_data)
+
+        SklearnRunnable.add_method(
+            _run,
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
+        )
+
+    return SklearnRunnable

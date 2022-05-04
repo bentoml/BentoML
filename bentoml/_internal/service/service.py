@@ -231,10 +231,10 @@ class Service:
 
 
 def on_load_bento(svc: Service, bento: Bento):
-    setattr(svc, "bento", bento)
-    setattr(svc, "tag", bento.info.tag)
+    object.__setattr__(svc, "bento", bento)
+    object.__setattr__(svc, "tag", bento.info.tag)
 
 
 def on_import_svc(svc: Service, working_dir: str, import_str: str):
-    setattr(svc, "_working_dir", working_dir)
-    setattr(svc, "_import_str", import_str)
+    object.__setattr__(svc, "_working_dir", working_dir)
+    object.__setattr__(svc, "_import_str", import_str)

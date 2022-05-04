@@ -2,19 +2,22 @@ from __future__ import annotations
 
 import typing as t
 import logging
+import importlib
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
+from collections import UserDict
 
 import fs
 import attr
 import yaml
-import cattrs
 import fs.errors
 import fs.mirror
 import cloudpickle
 from fs.base import FS
+from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
@@ -25,17 +28,17 @@ from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
+from ..runner import Runner
 from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
+from ..runner.runnable import BatchDimType
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
-    from ..runner import Runner
-    from ..runner.runnable import BatchDimType
 
     ModelSignatureDict: t.TypeAlias = dict[
         str, bool | BatchDimType | AnyType | tuple[AnyType] | None
@@ -48,7 +51,7 @@ MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 
-class ModelOptions:
+class ModelOptions(UserDict):
     @classmethod
     def with_options(cls, **kwargs: t.Any) -> ModelOptions:
         if len(kwargs) != 0:
@@ -57,12 +60,18 @@ class ModelOptions:
         return cls()
 
 
+bentoml_cattr.register_structure_hook_func(
+    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls(**d)
+)
+bentoml_cattr.register_unstructure_hook(ModelOptions, lambda d: dict(d))
+
+
 @attr.define(repr=False, eq=False)
 class Model(StoreItem):
     _tag: Tag
     __fs: FS
 
-    _info: "ModelInfo"
+    _info: ModelInfo
     _custom_objects: t.Optional[t.Dict[str, t.Any]] = None
 
     _flushed: bool = False
@@ -90,9 +99,9 @@ class Model(StoreItem):
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
-                    self._custom_objects: "t.Optional[t.Dict[str, t.Any]]" = (
-                        cloudpickle.load(cofile)
-                    )
+                    self._custom_objects: t.Optional[
+                        t.Dict[str, t.Any]
+                    ] = cloudpickle.load(cofile)
                     if not isinstance(self._custom_objects, dict):
                         raise ValueError("Invalid custom objects found.")
             else:
@@ -113,11 +122,11 @@ class Model(StoreItem):
         module: str,
         signatures: dict[str, t.Any],
         labels: dict[str, str] | None = None,
-        options: ModelOptions = ModelOptions(),
+        options: ModelOptions | dict[str, t.Any] | None = None,
         custom_objects: dict[str, t.Any] | None = None,
         metadata: dict[str, t.Any] | None = None,
         context: ModelContext,
-    ) -> "Model":
+    ) -> Model:
         """Create a new Model instance in temporary filesystem used for serializing
         model artifacts and save to model store
 
@@ -144,6 +153,7 @@ class Model(StoreItem):
         tag = Tag(name).make_new_version()
         labels = {} if labels is None else labels
         metadata = {} if metadata is None else metadata
+        options = ModelOptions() if options is None else options
 
         model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
 
@@ -188,8 +198,8 @@ class Model(StoreItem):
         logger.info(f"Successfully saved {self}")
         return self
 
-    @classmethod
-    def from_fs(cls, item_fs: FS) -> "Model":
+    @staticmethod
+    def from_fs(item_fs: FS) -> "Model":
         try:
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
@@ -198,7 +208,7 @@ class Model(StoreItem):
                 f"Failed to load bento model because it does not contain a '{MODEL_YAML_FILENAME}'"
             )
 
-        res = cls(info.tag, item_fs, info)
+        res = Model(tag=info.tag, Model__fs=item_fs, info=info)
         if not res.validate():
             raise BentoMLException(
                 f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"
@@ -301,7 +311,7 @@ class Model(StoreItem):
         )
 
     def to_runnable(self) -> t.Type[Runnable]:
-        module = __import__(self.info.module)
+        module = importlib.import_module(self.info.module)
         if not self._runnable:
             self._runnable = module.get_runnable(self)
         return self._runnable
@@ -318,46 +328,78 @@ class ModelStore(Store[Model]):
 @attr.frozen
 class ModelContext:
     framework_name: str
-    framework_versions: dict[str, str]
-    bentoml_version: str = BENTOML_VERSION
-    python_version: str = PYTHON_VERSION
+    framework_versions: t.Dict[str, str]
+    bentoml_version: str = attr.field(default=BENTOML_VERSION)
+    python_version: str = attr.field(default=PYTHON_VERSION)
 
     @staticmethod
-    def from_dict(data: dict[str, str | dict[str, str]]) -> ModelContext:
-        return cattrs.structure(data, ModelContext)
+    def from_dict(data: dict[str, str | dict[str, str]] | ModelContext) -> ModelContext:
+        if isinstance(data, ModelContext):
+            return data
+        return bentoml_cattr.structure(data, ModelContext)
+
+
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(ModelContext, globals(), locals())
 
 
 @attr.frozen
 class ModelSignature:
-    batchable: bool
-    batch_dim: BatchDimType
-    input_spec: AnyType | tuple[AnyType, ...] | None
-    output_spec: AnyType | None
+    batchable: bool = False
+    batch_dim: BatchDimType = 0
+    # TODO: define input/output spec struct
+    input_spec: t.Any = None
+    output_spec: t.Any = None
 
     @staticmethod
-    def from_dict(data: ModelSignatureDict) -> ModelSignature:
-        return cattrs.structure(data, ModelSignature)
+    def from_dict(data: t.Dict[str, t.Any]) -> ModelSignature:
+        return bentoml_cattr.structure(data, ModelSignature)
 
     @staticmethod
-    def convert_dict(data: dict[str, ModelSignatureDict]) -> dict[str, ModelSignature]:
+    def convert_signatures_dict(
+        data: dict[str, ModelSignatureDict]
+    ) -> dict[str, ModelSignature]:
         return {
             k: ModelSignature.from_dict(v) if isinstance(v, dict) else v
             for k, v in data.items()
         }
 
 
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(ModelSignature, globals(), locals())
+
+
+def model_signature_encoder(model_signature: ModelSignature):
+    encoded = {
+        "batchable": model_signature.batchable,
+    }
+    # ignore batch_dim if batchable is False
+    if model_signature.batchable:
+        encoded["batch_dim"] = model_signature.batch_dim
+    if model_signature.input_spec is not None:
+        encoded["input_spec"] = model_signature.input_spec
+    if model_signature.output_spec is not None:
+        encoded["output_spec"] = model_signature.output_spec
+    return encoded
+
+
+bentoml_cattr.register_unstructure_hook(ModelSignature, model_signature_encoder)
+
+
 @attr.define(repr=False, eq=False)
 class ModelInfo:
     tag: Tag
+    name: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
+    version: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
-    options: ModelOptions
-    metadata: MetadataDict = attr.field(validator=metadata_validator)
-    context: ModelContext = attr.field(converter=ModelContext.from_dict)
-    signatures: dict[str, ModelSignature] = attr.field(
-        converter=ModelSignature.convert_dict
+    options: ModelOptions = attr.field(converter=ModelOptions)
+    metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
+    context: ModelContext = attr.field()
+    signatures: t.Dict[str, ModelSignature] = attr.field(
+        converter=ModelSignature.convert_signatures_dict
     )
-    api_version: str = "v1"
+    api_version: str = attr.field(default="v1")
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
     def __eq__(self, other: object) -> bool:
@@ -378,6 +420,9 @@ class ModelInfo:
         )
 
     def __attrs_post_init__(self):
+        object.__setattr__(self, "name", self.tag.name)
+        object.__setattr__(self, "version", self.tag.version)
+
         self.validate()
 
     def with_options(self, **kwargs: t.Any) -> ModelInfo:
@@ -394,21 +439,10 @@ class ModelInfo:
         )
 
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return {
-            "name": self.tag.name,
-            "version": self.tag.version,
-            "creation_time": self.creation_time,
-            "api_version": self.api_version,
-            "module": self.module,
-            "signatures": self.signatures,
-            "context": self.context,
-            "labels": self.labels,
-            "options": self.options,
-            "metadata": self.metadata,
-        }
+        return bentoml_cattr.unstructure(self)
 
     def dump(self, stream: t.IO[t.Any]):
-        return yaml.dump(self, stream, sort_keys=False)
+        return yaml.dump(self.to_dict(), stream, sort_keys=False)
 
     @staticmethod
     def from_yaml_file(stream: t.IO[t.Any]):
@@ -431,7 +465,8 @@ class ModelInfo:
         del yaml_content["version"]
 
         # For backwards compatibility for bentos created prior to version 1.0.0rc1
-        del yaml_content["bentoml_version"]
+        if "bentoml_version" in yaml_content:
+            del yaml_content["bentoml_version"]
         if "signatures" not in yaml_content:
             yaml_content["signatures"] = {}
 
@@ -454,6 +489,17 @@ class ModelInfo:
 @attr.define(repr=False, eq=False, frozen=True, on_setattr=None)  # type: ignore (pyright doesn't allow for a frozen subclass)
 class FrozenModelInfo(ModelInfo):
     pass
+
+
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(ModelInfo, globals(), locals())
+attr.resolve_types(FrozenModelInfo, globals(), locals())
+
+bentoml_cattr.register_unstructure_hook_func(
+    lambda cls: issubclass(cls, ModelInfo),  # for both ModelInfo and FrozenModelInfo
+    # Ignore tag, tag is saved via the name and version field
+    make_dict_unstructure_fn(ModelInfo, bentoml_cattr, tag=override(omit=True)),
+)
 
 
 def copy_model(

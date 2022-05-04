@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 @attr.define(frozen=True)
 class Resource:
-    cpu: float | None = attr.field(default=None)
-    nvidia_gpu: float | None = attr.field(default=None)
-    custom_resources: t.Dict[str, float | None] = attr.field(factory=dict)
+    cpu: t.Optional[float] = attr.field(default=None)
+    nvidia_gpu: t.Optional[float] = attr.field(default=None)
+    custom_resources: t.Dict[str, float] = attr.field(factory=dict)
 
     def __or__(self, right: Resource) -> Resource:
         """
@@ -53,6 +53,10 @@ class Resource:
         cpu = query_cpu_count()
         nvidia_gpu = float(query_nvidia_gpu_count())
         return cls(cpu=cpu, nvidia_gpu=nvidia_gpu)
+
+
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(Resource, globals(), locals())
 
 
 def cpu_converter(cpu: t.Union[int, float, str]) -> float:

@@ -19,6 +19,15 @@ if TYPE_CHECKING:
 MODULE_NAME = "bentoml.MY_MODULE"
 
 
+def get(tag_like: str | Tag) -> Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    return model
+
+
 @attr.define(frozen=True)
 class FrameworkOptions(ModelOptions):
     pass
@@ -46,7 +55,7 @@ def load_model(
         <LOAD EXAMPLE>
     """  # noqa
     if not isinstance(bento_model, bentoml.Model):
-        bento_model = bentoml.models.get(bento_model)
+        bento_model = get(bento_model)
 
     ...
 
@@ -103,6 +112,15 @@ def save_model(
         return bentoml_model.tag
 
 
+def get(tag_like: str | Tag) -> Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module != MODULE_NAME:
+        raise NotFound(
+            f'Model "{tag_like}" saved with module "{MODULE_NAME}" is not found'
+        )
+    return model
+
+
 def get_runnable(
     bento_model: bentoml.Model,
 ) -> t.Type[bentoml.Runnable]:
@@ -124,7 +142,7 @@ def get_runnable(
 
     for method_name, options in bento_model.info.signatures.items():
 
-        def _run(input_data) -> output_data:
+        def _run(self, input_data) -> output_data:
             ...
 
         FrameworkRunnable.add_method(

@@ -283,7 +283,7 @@ flags:
   picklable_model:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/picklable_model.py
+      - bentoml/_internal/frameworks/picklable.py
   pycaret:
     carryforward: true
     paths:

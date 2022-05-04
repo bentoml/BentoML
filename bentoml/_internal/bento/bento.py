@@ -343,7 +343,7 @@ class BentoRunnerInfo:
     name: str
     runnable_type: str
     models: t.List[str] = attr.field(factory=list)
-    resource_config: Resource | None = attr.field(default=None)
+    resource_config: t.Optional[Resource] = attr.field(default=None)
 
     @classmethod
     def from_runner(cls, r: Runner) -> "BentoRunnerInfo":
@@ -354,6 +354,10 @@ class BentoRunnerInfo:
             models=[str(model.tag) for model in r.models],  # type: ignore
             resource_config=r.resource_config,  # type: ignore
         )
+
+
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(BentoRunnerInfo, globals(), locals())
 
 
 @attr.define(frozen=True, on_setattr=None)
@@ -371,6 +375,10 @@ class BentoApiInfo:
         )
 
 
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(BentoApiInfo, globals(), locals())
+
+
 @attr.define(frozen=True, on_setattr=None)
 class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
@@ -384,6 +392,10 @@ class BentoModelInfo:
             module=bento_model.info.module,
             creation_time=bento_model.info.creation_time,
         )
+
+
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(BentoModelInfo, globals(), locals())
 
 
 @attr.define(repr=False, frozen=True, on_setattr=None)
@@ -453,7 +465,6 @@ class BentoInfo:
                 )
         try:
             # type: ignore[attr-defined]
-            print("####", yaml_content, cls)
             return bentoml_cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")
@@ -463,10 +474,13 @@ class BentoInfo:
         ...
 
 
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(BentoInfo, globals(), locals())
+
 bentoml_cattr.register_unstructure_hook(
     BentoInfo,
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),
+    make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),  # type: ignore
 )
 
 

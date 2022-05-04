@@ -116,7 +116,7 @@ GLOBAL_DEFAULT_MAX_BATCH_SIZE = 100
 GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
 
 
-@attr.define(frozen=True)
+@attr.define(slots=False, frozen=True)
 class Runner:
     runnable_class: t.Type[Runnable]
     runnable_init_params: t.Dict[str, t.Any]
@@ -207,21 +207,34 @@ class Runner:
             scheduling_strategy=scheduling_strategy,
         )
 
-        # pick the default method
+        # Choose the default method:
+        #  1. if there's only one method, it will be set as default
+        #  2. if there's a method named "__call__", it will be set as default
+        #  3. otherwise, there's no default method
         if len(runner_method_map) == 1:
             default_method = next(iter(runner_method_map.values()))
+            logger.info(
+                f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`"
+            )
         elif "__call__" in runner_method_map:
             default_method = runner_method_map["__call__"]
+            logger.info(
+                "Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`"
+            )
         else:
             default_method = None
-            # TODO(jiang): shall we notify user that there is no default method?
+            logger.info(
+                f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`'
+            )
 
+        # set default run method entrypoint
         if default_method is not None:
-            setattr(self, "run", default_method.run)
-            setattr(self, "async_run", default_method.async_run)
+            object.__setattr__(self, "run", default_method.run)
+            object.__setattr__(self, "async_run", default_method.async_run)
 
+        # set all run method entrypoint
         for runner_method in self.runner_methods:
-            setattr(self, runner_method.name, runner_method)
+            object.__setattr__(self, runner_method.name, runner_method)
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):

@@ -109,13 +109,19 @@ class File(IODescriptor["FileType"]):
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def to_http_response(self, obj: "FileType") -> Response:
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=self._mime_type)
+
+    async def finalize_http_response(
+        self, response: Response, obj: t.Union[FileLike, bytes]
+    ):
         if isinstance(obj, bytes):
             body = obj
         else:
             body = obj.read()
 
-        return Response(body, media_type=self._mime_type)
+        response.body = body
+        set_content_length(response)
 
 
 class BytesIOFile(File):
@@ -145,15 +151,3 @@ class BytesIOFile(File):
         raise BentoMLException(
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )
-
-    async def init_http_response(self) -> Response:
-        return Response(None, media_type=self._mime_type)
-
-    async def finalize_http_response(
-        self, response: Response, obj: t.Union[FileLike, bytes]
-    ):
-        if isinstance(obj, bytes):
-            obj = FileLike(bytes_=obj)
-
-        response.body = t.cast(BytesIO, obj.stream).getvalue()
-        set_content_length(response)

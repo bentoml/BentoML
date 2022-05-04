@@ -4,14 +4,10 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-from simple_di import inject
-from simple_di import Provide
-
 import bentoml
 from bentoml import Tag
 from bentoml.models import Model
 from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
@@ -20,7 +16,6 @@ from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ..models.model import ModelSignature
-from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from sklearn.base import BaseEstimator
@@ -60,7 +55,6 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
-@inject
 def load_model(
     tag: t.Union[str, Tag],
 ) -> SklearnModel:
@@ -190,6 +184,7 @@ def get_runnable(bento_model: Model):
     for method_name, options in bento_model.info.signatures.items():
 
         def _run(self, input_data: ext.NpNDArray | ext.PdDataFrame) -> ext.NpNDArray:
+            # TODO: set inner_max_num_threads and n_jobs param here base on strategy env vars
             with parallel_backend(backend="loky"):
                 return self.model[method_name](input_data)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from datetime import datetime
 
 import cattr
@@ -7,9 +8,20 @@ from attr import fields
 from cattr import override
 from cattr.gen import AttributeOverride
 
+# TODO: migrate to cattr.GenConverter for better performance
 bentoml_cattr = cattr.Converter()
 
-# bentoml_cattr = cattr.Converter(prefer_attrib_converters=True)
+# Resolve any forward references during (de)serialization
+# bentoml_cattr.register_unstructure_hook_func(
+#     lambda cls: cls.__class__ is typing.ForwardRef,
+#     lambda obj, cls=None: bentoml_cattr.unstructure(
+#         obj, cls.__forward_value__ if cls else None
+#     ),
+# )
+# bentoml_cattr.register_structure_hook_func(
+#     lambda cls: cls.__class__ is typing.ForwardRef,
+#     lambda obj, cls: bentoml_cattr.structure(obj, cls.__forward_value__),
+# )
 
 
 def omit_if_init_false(cls) -> dict[str, AttributeOverride]:

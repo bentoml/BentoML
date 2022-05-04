@@ -32,7 +32,6 @@ from ..runner import Runner
 from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
-from ..utils.cattr import omit_if_default
 from ..configuration import BENTOML_VERSION
 from ..runner.runnable import BatchDimType
 from ..configuration.containers import BentoMLContainer
@@ -340,6 +339,7 @@ class ModelContext:
         return bentoml_cattr.structure(data, ModelContext)
 
 
+# Remove after attrs support ForwardRef natively
 attr.resolve_types(ModelContext, globals(), locals())
 
 
@@ -365,6 +365,7 @@ class ModelSignature:
         }
 
 
+# Remove after attrs support ForwardRef natively
 attr.resolve_types(ModelSignature, globals(), locals())
 
 
@@ -490,6 +491,7 @@ class FrozenModelInfo(ModelInfo):
     pass
 
 
+# Remove after attrs support ForwardRef natively
 attr.resolve_types(ModelInfo, globals(), locals())
 attr.resolve_types(FrozenModelInfo, globals(), locals())
 

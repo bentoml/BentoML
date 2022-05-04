@@ -169,7 +169,7 @@ def import_service(
         on_import_svc(
             svc=instance,
             working_dir=working_dir,
-            import_str="{module_name}:{attrs_str}",
+            import_str=f"{module_name}:{attrs_str}",
         )
         return instance
     except ImportServiceError:

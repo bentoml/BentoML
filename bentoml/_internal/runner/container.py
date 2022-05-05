@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import pickle
 import typing as t
+import itertools
 from typing import TYPE_CHECKING
 
 from simple_di import inject
@@ -13,7 +14,6 @@ from ..configuration.containers import DeploymentContainer
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
-
 IndexType = t.Union[None, int]
 
 if TYPE_CHECKING:
@@ -36,54 +36,41 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
     @classmethod
     @abc.abstractmethod
-    def singles_to_batch(
-        cls, singles: t.Sequence[SingleType], batch_axis: int = 0
-    ) -> BatchType:
+    def to_payload(cls, single: SingleType) -> Payload:
         ...
 
     @classmethod
     @abc.abstractmethod
-    def batch_to_singles(
-        cls, batch: BatchType, batch_axis: int = 0
-    ) -> t.List[SingleType]:
+    def from_payload(cls, payload: Payload) -> SingleType:
         ...
 
     @classmethod
     @abc.abstractmethod
-    def single_to_payload(cls, single: SingleType) -> Payload:
+    def batches_to_batch(
+        cls, batches: t.Sequence[BatchType], batch_dim: int
+    ) -> t.Tuple[BatchType, t.List[int]]:
         ...
 
     @classmethod
     @abc.abstractmethod
-    def payload_to_single(cls, payload: Payload) -> SingleType:
+    def batch_to_batches(
+        cls, batch: BatchType, indices: t.List[int], batch_dim: int
+    ) -> t.List[BatchType]:
         ...
 
     @classmethod
     @abc.abstractmethod
-    def payload_to_batch(cls, payload: Payload) -> BatchType:
-        ...
-
-    @classmethod
-    @abc.abstractmethod
-    def batch_to_payload(cls, batch: BatchType) -> Payload:
-        ...
-
-    @classmethod
-    def payloads_to_batch(
-        cls, payload_list: t.Sequence[Payload], batch_axis: int = 0
-    ) -> BatchType:
-        return cls.singles_to_batch(
-            [cls.payload_to_single(i) for i in payload_list], batch_axis=batch_axis
-        )
-
-    @classmethod
     def batch_to_payloads(
-        cls, batch: BatchType, batch_axis: int = 0
+        cls, batch: BatchType, indices: list[int], batch_dim: int
     ) -> t.List[Payload]:
-        return [
-            cls.single_to_payload(i)
-            for i in cls.batch_to_singles(batch, batch_axis=batch_axis)
-        ]
+        ...
+
+    @classmethod
+    @abc.abstractmethod
+    def from_batch_payloads(
+        cls, payloads: t.List[Payload], batch_dim: int
+    ) -> t.Tuple[BatchType, t.List[int]]:
+        ...
 
 
 class NdarrayContainer(
@@ -93,38 +80,38 @@ class NdarrayContainer(
     ]
 ):
     @classmethod
-    def singles_to_batch(
+    def batches_to_batch(
         cls,
-        singles: t.Sequence["ext.NpNDArray"],
-        batch_axis: int = 0,
-    ) -> "ext.NpNDArray":
+        batches: t.Sequence["ext.NpNDArray"],
+        batch_dim: int = 0,
+    ) -> t.Tuple["ext.NpNDArray", t.List[int]]:
         import numpy as np
 
-        return np.stack(  # type: ignore[reportGeneralTypeIssues]
-            singles,
-            axis=batch_axis,
+        # numpy.concatenate may consume lots of memory, need optimization later
+        batch = np.concatenate(  # type: ignore[reportGeneralTypeIssues]
+            batches,
+            axis=batch_dim,
         )
+        indices = list(
+            itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
+        )
+        indices.pop()
+        return batch, indices
 
     @classmethod
-    def batch_to_singles(
+    def batch_to_batches(
         cls,
         batch: "ext.NpNDArray",
-        batch_axis: int = 0,
+        indices: t.List[int],
+        batch_dim: int = 0,
     ) -> t.List["ext.NpNDArray"]:
         import numpy as np
 
-        return [
-            np.squeeze(arr, axis=batch_axis)  # type: ignore
-            for arr in np.split(  # type: ignore[list-item]
-                batch,
-                batch.shape[batch_axis],
-                axis=batch_axis,
-            )
-        ]
+        return np.split(batch, indices, axis=batch_dim)
 
     @classmethod
     @inject
-    def single_to_payload(  # pylint: disable=arguments-differ
+    def to_payload(  # pylint: disable=arguments-differ
         cls,
         single: "ext.NpNDArray",
         plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
@@ -142,7 +129,7 @@ class NdarrayContainer(
 
     @classmethod
     @inject
-    def payload_to_single(  # pylint: disable=arguments-differ
+    def from_payload(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
         plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
@@ -155,8 +142,30 @@ class NdarrayContainer(
 
         return pickle.loads(payload.data)
 
-    batch_to_payload = single_to_payload  # type: ignore[assignment]
-    payload_to_batch = payload_to_single
+    @classmethod
+    @inject
+    def batch_to_payloads(  # pylint: disable=arguments-differ
+        cls,
+        batch: "ext.NpNDArray",
+        indices: t.List[int],
+        batch_dim: int = 0,
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+    ) -> t.List[Payload]:
+
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+        payloads = [cls.to_payload(subbatch, plasma_db) for subbatch in batches]
+        return payloads
+
+    @classmethod
+    @inject
+    def from_batch_payloads(  # pylint: disable=arguments-differ
+        cls,
+        payloads: t.List[Payload],
+        batch_dim: int = 0,
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+    ) -> t.Tuple["ext.NpNDArray", t.List[int]]:
+        batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
 
 
 class PandasDataFrameContainer(

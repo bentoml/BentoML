@@ -1,11 +1,10 @@
 from __future__ import annotations
-
+import functools
+import logging
+import math
 import os
 import re
-import math
 import typing as t
-import logging
-import functools
 
 import attr
 import psutil
@@ -196,15 +195,19 @@ def query_nvidia_gpu_count() -> int:
     """
     query nvidia gpu count, available on Windows and Linux
     """
-    import pynvml.nvml  # type: ignore
-    from pynvml.smi import nvidia_smi  # type: ignore
+    import pynvml  # type: ignore
 
     try:
-        inst = nvidia_smi.getInstance()
-        query: t.Dict[str, int] = inst.DeviceQuery("count")  # type: ignore
-        return query.get("count", 0)
+        pynvml.nvmlInit()
+        device_count = pynvml.nvmlDeviceGetCount()
+        return device_count
     except (pynvml.nvml.NVMLError, OSError):
         return 0
+    finally:
+        try:
+            pynvml.nvmlShutdown()
+        except Exception:  # pylint: disable=broad-except
+            pass
 
 
 def gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> int:

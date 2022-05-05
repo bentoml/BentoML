@@ -77,7 +77,7 @@ class MetricsMiddleware:
             return
 
         service_version = (
-            self.bento_service.version if self.bento_service.version is not None else ""
+            self.bento_service.tag.version if self.bento_service.tag is not None else ""
         )
         endpoint = scope["path"]
         START_TIME_VAR.set(default_timer())

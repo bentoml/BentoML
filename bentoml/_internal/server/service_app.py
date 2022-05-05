@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import typing as t
@@ -92,7 +94,7 @@ DEFAULT_INDEX_HTML = """\
 """
 
 
-def log_exception(request: "Request", exc_info: t.Any) -> None:
+def log_exception(request: Request, exc_info: t.Any) -> None:
     """
     Logs an exception.  This is called by :meth:`handle_exception`
     if debugging is disabled and right before the handler is called.
@@ -120,7 +122,7 @@ class ServiceAppFactory(BaseAppFactory):
         enable_access_control: bool = Provide[
             DeploymentContainer.api_server_config.cors.enabled
         ],
-        access_control_options: t.Dict[str, t.Union[t.List[str], int]] = Provide[
+        access_control_options: dict[str, list[str] | int] = Provide[
             DeploymentContainer.access_control_options
         ],
         enable_metrics: bool = Provide[
@@ -136,7 +138,7 @@ class ServiceAppFactory(BaseAppFactory):
     def name(self) -> str:
         return self.bento_service.name
 
-    async def index_view_func(self, _: "Request") -> "Response":
+    async def index_view_func(self, _: Request) -> Response:
         """
         The default index view for BentoML API server. This includes the readme
         generated from docstring and swagger UI
@@ -149,14 +151,14 @@ class ServiceAppFactory(BaseAppFactory):
             media_type="text/html",
         )
 
-    async def docs_view_func(self, _: "Request") -> "Response":
+    async def docs_view_func(self, _: Request) -> Response:
         from starlette.responses import JSONResponse
 
         docs = self.bento_service.openapi_doc()
         return JSONResponse(docs)
 
     @property
-    def routes(self) -> t.List["BaseRoute"]:
+    def routes(self) -> list[BaseRoute]:
         """
         Setup routes for bento model server, including:
 
@@ -210,7 +212,7 @@ class ServiceAppFactory(BaseAppFactory):
         return routes
 
     @property
-    def middlewares(self) -> t.List["Middleware"]:
+    def middlewares(self) -> list[Middleware]:
         middlewares = super().middlewares
 
         from starlette.middleware import Middleware
@@ -243,11 +245,11 @@ class ServiceAppFactory(BaseAppFactory):
         # otel middleware
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore
 
-        def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span, _scope: dict[str, t.Any]) -> None:
             if span is not None:
-                trace_context.request_id = span.context.span_id  # type: ignore
+                trace_context.request_id = span.context.span_id
 
-        def client_response_hook(span: "Span", _message: t.Any) -> None:
+        def client_response_hook(span: Span, _message: t.Any) -> None:
             if span is not None:
                 del trace_context.request_id
 
@@ -280,18 +282,26 @@ class ServiceAppFactory(BaseAppFactory):
         return middlewares
 
     @property
-    def on_startup(self) -> t.List[t.Callable[[], None]]:
-        on_startup = super().on_startup
-        on_startup.insert(0, self.bento_service.on_asgi_app_startup)
+    def on_startup(self) -> list[t.Callable[[], None]]:
+        on_startup = [self.bento_service.on_asgi_app_startup]
+        if DeploymentContainer.api_server_config.development_mode.get():
+            for runner in self.bento_service.runners:
+                on_startup.append(runner._init_local)  # type: ignore
+        else:
+            for runner in self.bento_service.runners:
+                on_startup.append(runner.init_client)
+        on_startup.extend(super().on_startup)
         return on_startup
 
     @property
-    def on_shutdown(self) -> t.List[t.Callable[[], None]]:
-        on_shutdown = super().on_shutdown
-        on_shutdown.insert(0, self.bento_service.on_asgi_app_shutdown)
+    def on_shutdown(self) -> list[t.Callable[[], None]]:
+        on_shutdown = [self.bento_service.on_asgi_app_shutdown]
+        for runner in self.bento_service.runners:
+            on_shutdown.append(runner.destroy)
+        on_shutdown.extend(super().on_shutdown)
         return on_shutdown
 
-    def __call__(self) -> "Starlette":
+    def __call__(self) -> Starlette:
         app = super().__call__()
         for mount_app, path, name in self.bento_service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)
@@ -299,18 +309,16 @@ class ServiceAppFactory(BaseAppFactory):
 
     @staticmethod
     def _create_api_endpoint(
-        api: "InferenceAPI",
-    ) -> t.Callable[["Request"], t.Coroutine[t.Any, t.Any, "Response"]]:
+        api: InferenceAPI,
+    ) -> t.Callable[[Request], t.Coroutine[t.Any, t.Any, Response]]:
         """
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
         from starlette.responses import JSONResponse
-        from starlette.concurrency import run_in_threadpool
+        from starlette.concurrency import run_in_threadpool  # type: ignore
 
-        async def api_func(
-            request: "Request",
-        ) -> "Response":
+        async def api_func(request: Request) -> Response:
             # handle_request may raise 4xx or 5xx exception.
             try:
                 input_data = await api.input.from_http_request(request)

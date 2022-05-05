@@ -88,7 +88,8 @@ def main(
     ServiceContext.component_name_var.set(runner_name)
 
     svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
-    runner = svc.runners[runner_name]
+    runner = next(filter(lambda r: r.name == runner_name, svc.runners))
+
     app = t.cast("ASGI3Application", RunnerAppFactory(runner)())
 
     parsed = urlparse(bind)

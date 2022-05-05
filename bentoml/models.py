@@ -7,6 +7,8 @@ from contextlib import contextmanager
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml._internal.models.model import ModelSignature
+
 from ._internal.tag import Tag
 from ._internal.utils import calc_dir_size
 from ._internal.models import Model
@@ -224,7 +226,7 @@ def create(
     name: str,
     *,
     module: str = "",
-    signatures: dict[str, dict[str, bool]],
+    signatures: dict[str, dict[str, bool]] | dict[str, ModelSignature],
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 import logging
 import itertools
@@ -21,18 +23,23 @@ CUDA_SUCCESS = 0
 
 
 class Params(t.Generic[T]):
-    def __init__(self, *args: T, **kwargs: T):
-        self.args: t.Tuple[T, ...] = args
-        self.kwargs: t.Dict[str, T] = kwargs
+    args: tuple[T, ...]
+    kwargs: dict[str, T]
 
-    def map(self, function: t.Callable[[T], To]) -> "Params[To]":
+    def __init__(
+        self,
+        *args: T,
+        **kwargs: T,
+    ):
+        self.args = args
+        self.kwargs = kwargs
+
+    def map(self, function: t.Callable[[T], To]) -> Params[To]:
         args = tuple(function(a) for a in self.args)
         kwargs = {k: function(v) for k, v in self.kwargs.items()}
         return Params[To](*args, **kwargs)
 
-    def imap(
-        self, function: t.Callable[[T], t.Iterable[To]]
-    ) -> "t.Iterator[Params[To]]":
+    def imap(self, function: t.Callable[[T], t.Iterable[To]]) -> t.Iterator[Params[To]]:
         args_iter = tuple(iter(function(a)) for a in self.args)
         kwargs_iter = {k: iter(function(v)) for k, v in self.kwargs.items()}
 
@@ -50,11 +57,11 @@ class Params(t.Generic[T]):
     @classmethod
     def agg(
         cls,
-        params_list: t.Sequence["Params[T]"],
-        agg_func: t.Callable[[t.Sequence[T]], To] = lambda i: i,
-    ) -> "Params[To]":
+        params_list: t.Sequence[Params[T]],
+        agg_func: t.Callable[[t.Sequence[T], int], To] = lambda b, _: b,
+    ) -> Params[To]:
         if not params_list:
-            return t.cast(Params[To], [])
+            return Params()
 
         args: t.List[To] = []
         kwargs: t.Dict[str, To] = {}
@@ -63,12 +70,12 @@ class Params(t.Generic[T]):
             arg: t.List[T] = []
             for params in params_list:
                 arg.append(params.args[j])
-            args.append(agg_func(arg))
+            args.append(agg_func(arg, j))
         for k in params_list[0].kwargs:
             kwarg: t.List[T] = []
             for params in params_list:
                 kwarg.append(params.kwargs[k])
-            kwargs[k] = agg_func(kwarg)
+            kwargs[k] = agg_func(kwarg, -1)
         return Params(*tuple(args), **kwargs)
 
     @property
@@ -81,7 +88,7 @@ class Params(t.Generic[T]):
 PAYLOAD_META_HEADER = "Bento-Payload-Meta"
 
 
-def payload_params_to_multipart(params: Params["Payload"]) -> "MultipartWriter":
+def payload_params_to_multipart(params: Params[Payload]) -> MultipartWriter:
     import json
 
     from multidict import CIMultiDict
@@ -94,6 +101,7 @@ def payload_params_to_multipart(params: Params["Payload"]) -> "MultipartWriter":
             headers=CIMultiDict(
                 (
                     (PAYLOAD_META_HEADER, json.dumps(payload.meta)),
+                    ("Content-Type", f"application/vnd+bentoml.{payload.container}"),
                     ("Content-Disposition", f'form-data; name="{key}"'),
                 )
             ),
@@ -101,7 +109,7 @@ def payload_params_to_multipart(params: Params["Payload"]) -> "MultipartWriter":
     return multipart
 
 
-async def multipart_to_payload_params(request: "Request") -> Params["Payload"]:
+async def multipart_to_payload_params(request: Request) -> Params[Payload]:
     import json
 
     from bentoml._internal.runner.container import Payload
@@ -115,6 +123,7 @@ async def multipart_to_payload_params(request: "Request") -> Params["Payload"]:
         payload = Payload(
             data=await req.body(),
             meta=json.loads(req.headers[PAYLOAD_META_HEADER]),
+            container=req.headers["Content-Type"].strip("application/vnd+bentoml."),
         )
         if field_name.isdigit():
             arg_index = int(field_name)

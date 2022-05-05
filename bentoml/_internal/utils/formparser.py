@@ -140,17 +140,17 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     content_type_header = request.headers.get("Content-Type")
     content_type, _ = multipart.parse_options_header(content_type_header)
     assert content_type in (b"multipart/form-data", b"multipart/mixed")
-    stream = t.cast(t.AsyncGenerator[bytes, None], request.stream())
+    stream = request.stream()
     multipart_parser = MultiPartParser(request.headers, stream)
     try:
         form = await multipart_parser.parse()
     except multipart.MultipartParseError:
         raise BentoMLException("Invalid multipart requests")
 
-    reqs = dict()  # type: t.Dict[str, Request]
+    reqs: dict[str, Request] = dict()
     for field_name, headers, data in form:
         scope = dict(request.scope)
-        ori_headers = dict(scope.get("headers", list()))
+        ori_headers = dict(scope.get("headers", dict()))
         ori_headers = t.cast(t.Dict[bytes, bytes], ori_headers)
         ori_headers.update(dict(headers))
         scope["headers"] = list(ori_headers.items())

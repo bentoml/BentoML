@@ -149,29 +149,29 @@ def serve_production(
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
-        for runner_name, runner in svc.runners.items():
+        for runner in svc.runners:
             sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
             assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
-            runner_bind_map[runner_name] = path_to_uri(sockets_path)
-            circus_socket_map[runner_name] = CircusSocket(
-                name=runner_name,
+            runner_bind_map[runner.name] = path_to_uri(sockets_path)
+            circus_socket_map[runner.name] = CircusSocket(
+                name=runner.name,
                 path=sockets_path,
                 backlog=backlog,
             )
 
             watchers.append(
                 Watcher(
-                    name=f"runner_{runner_name}",
+                    name=f"runner_{runner.name}",
                     cmd=sys.executable,
                     args=[
                         "-m",
                         SCRIPT_RUNNER,
                         bento_identifier,
                         "--runner-name",
-                        runner_name,
+                        runner.name,
                         "--bind",
-                        f"fd://$(circus.sockets.{runner_name})",
+                        f"fd://$(circus.sockets.{runner.name})",
                         "--working-dir",
                         working_dir,
                         "--as-worker",
@@ -180,20 +180,22 @@ def serve_production(
                     stop_children=True,
                     working_dir=working_dir,
                     use_sockets=True,
-                    numprocesses=runner.num_replica,
+                    numprocesses=runner.scheduling_strategy.get_worker_count(
+                        runner.runnable_class, runner.resource_config
+                    ),
                 )
             )
 
     elif psutil.WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
-            for runner_name, runner in svc.runners.items():
+            for runner in svc.runners:
                 runner_port = port_stack.enter_context(reserve_free_port())
                 runner_host = "127.0.0.1"
 
-                runner_bind_map[runner_name] = f"tcp://{runner_host}:{runner_port}"
-                circus_socket_map[runner_name] = CircusSocket(
-                    name=runner_name,
+                runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
+                circus_socket_map[runner.name] = CircusSocket(
+                    name=runner.name,
                     host=runner_host,
                     port=runner_port,
                     backlog=backlog,
@@ -201,16 +203,16 @@ def serve_production(
 
                 watchers.append(
                     Watcher(
-                        name=f"runner_{runner_name}",
+                        name=f"runner_{runner.name}",
                         cmd=sys.executable,
                         args=[
                             "-m",
                             SCRIPT_RUNNER,
                             bento_identifier,
                             "--runner-name",
-                            runner_name,
+                            runner.name,
                             "--bind",
-                            f"fd://$(circus.sockets.{runner_name})",
+                            f"fd://$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
                             "--as-worker",
@@ -219,7 +221,9 @@ def serve_production(
                         stop_children=True,
                         use_sockets=True,
                         working_dir=working_dir,
-                        numprocesses=runner.num_replica,
+                        numprocesses=runner.scheduling_strategy.get_worker_count(
+                            runner.runnable_class, runner.resource_config
+                        ),
                     )
                 )
             port_stack.enter_context(

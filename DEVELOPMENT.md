@@ -87,9 +87,11 @@
 7. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
 	  1. Open any python file in the directory.
 	  2. Select the interpreter selector on the blue status bar at the bottom of the editor.
-    <img src="/docs/source/_static/img/vscode-status-bar.png" alt="VS Code Status Bar"></img>
+		![vscode-status-bar](https://user-images.githubusercontent.com/489344/166984038-75f1f4bd-c896-43ee-a7ee-1b57fda359a3.png)
+
+    
 	  3. Switch to the path that includes .venv from the dropdown at the top.
-    <img src="/docs/source/_static/img/vscode-select-venv.png" alt="VS Code Interpreter Selection Menu"></img>
+	  	![vscode-select-venv](https://user-images.githubusercontent.com/489344/166984060-170d25f5-a91f-41d3-96f4-4db3c21df7c8.png)
 
 8. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
    ```

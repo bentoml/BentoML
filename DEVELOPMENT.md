@@ -47,6 +47,7 @@
    or in a Python session:
 
    ```python
+   import bentoml
    print(bentoml.__version__)
    ```
 
@@ -165,6 +166,39 @@
 
 </details>
 
+
+## Run BentoML with verbose/debug logging
+
+To view internal debug loggings for development, set the `BENTOML_DEBUG` environment variable to `TRUE`:
+```bash
+export BENTOML_DEBUG=TRUE
+```
+
+And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:
+```bash
+bentoml get IrisClassifier --verbose
+```
+
+## Style check, auto-formatting, type-checking
+
+formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort)
+
+linter: [pylint](https://pylint.org/)
+
+type checker: [pyright](https://github.com/microsoft/pyright)
+
+Run linter/format script:
+```bash
+make format
+
+make lint
+```
+
+Run type checker:
+```bash
+make type
+```
+	
 ## Testing
 
 Make sure to install all test dependencies:
@@ -172,7 +206,42 @@ Make sure to install all test dependencies:
 pip install -r requirements/tests-requirements.txt
 ```
 
-If you are adding new frameworks it is recommended that you also add tests for our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
+### Unit tests
+
+You can run unit tests in two ways:
+
+Run all unit tests directly with pytest:
+```bash
+# GIT_ROOT=$(git rev-parse --show-toplevel)
+pytest tests/unit --cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg
+```
+
+Run all unit tests via `./scripts/ci/run_tests.sh`:
+```bash
+./scripts/ci/run_tests.sh unit
+
+# Or on UNIX-based system
+make tests-unit
+```
+
+### Integration tests
+
+Run given tests after defining a target under `scripts/ci/config.yml` with `run_tests.sh`:
+```bash
+# example: run Keras TF1 integration tests
+./scripts/ci/run_tests.sh keras_tf1
+```
+
+### E2E tests
+
+```bash
+# example: run e2e tests to check for general features
+./scripts/ci/run_tests.sh general_features
+```
+
+### Adding new test suite
+	
+If you are adding new ML framework support, it is recommended that you also add a separate test suite in our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
 
 We recommend using [`nektos/act`](https://github.com/nektos/act) to run and test Actions locally.
 
@@ -244,78 +313,6 @@ pytorch_lightning:
 
 Refer to [config.yml](./scripts/ci/config.yml) for more examples.
 
-### Unit tests
-
-You can do this in two ways:
-
-Run all unit tests directly with pytest:
-```bash
-# GIT_ROOT=$(git rev-parse --show-toplevel)
-pytest tests/unit --cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg
-```
-
-Run all unit tests via `./scripts/ci/run_tests.sh`:
-```bash
-./scripts/ci/run_tests.sh unit
-
-# on UNIX-based system
-make tests-unit
-```
-
-### Integration tests
-
-Run given tests after defining a target under `scripts/ci/config.yml` with `run_tests.sh`:
-```bash
-# example: run Keras TF1 integration tests
-./scripts/ci/run_tests.sh keras_tf1
-```
-
-### E2E tests
-
-```bash
-# example: run e2e tests to check for general features
-./scripts/ci/run_tests.sh general_features
-```
-
-
-## Run BentoML with verbose/debug logging
-
-Add the following lines to the Python code that invokes BentoML:
-
-```python
-from bentoml.configuration import set_debug_mode
-set_debug_mode(True)
-```
-
-And/or set the `BENTOML_DEBUG` environment variable to `TRUE`:
-```bash
-export BENTOML_DEBUG=TRUE
-```
-
-And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:
-```bash
-bentoml get IrisClassifier --verbose
-```
-
-## Style check, auto-formatting, type-checking
-
-formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort)
-
-linter: [pylint](https://pylint.org/)
-
-type checker: [pyright](https://github.com/microsoft/pyright)
-
-Run linter/format script:
-```bash
-make format
-
-make lint
-```
-
-Run type checker:
-```bash
-make type
-```
 
 ## Documentations
 

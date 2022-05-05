@@ -1,5 +1,11 @@
 # Developer Guide
 
+Before getting started, check out the `#bentoml-contributors` channel in the [BentoML community slack](https://l.linklyhq.com/l/ktOh).
+
+If you are interested in contributing to existing issues and feature requets, check out the [good-first-issue](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Agood-first-issue) and [help-wanted](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Ahelp-wanted) issues list.
+
+If you are interested in proposing a new feature, make sure to create a new feature request ticket [here](https://github.com/bentoml/BentoML/issues/new/choose) and share your proposal in the `#bentoml-contributors` slack channel for feedback.
+
 ## Start Developing
 
 <details><summary><h3>with the Command Line</h3></summary>

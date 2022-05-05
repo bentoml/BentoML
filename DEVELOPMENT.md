@@ -198,6 +198,43 @@ Run type checker:
 ```bash
 make type
 ```
+
+## Deploy with your changes
+
+Test test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
+
+1. Install custom BentoML in editable mode. e.g.:
+   * git clone your bentoml fork
+   * `pip install -e PATH_TO_THE_FORK`
+2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True`
+   * make sure you have the latest setuptools installed:  `pip install -U setuptools`
+3. Build a new Bento with `bentoml build` in your project directory
+4. The new Bento will include a wheel file built from the BentoML source, and 
+`bentoml containrize` will install it to override the default BentoML installation in base image
+
+
+### Distribute a custom BentoML release for your team
+
+If you want other team members to easily use your custom BentoML distribution, you may publish your
+branch to your fork of BentoML, and have your users install it this way:
+
+```bash
+pip install git+https://github.com/{YOUR_GITHUB_USERNAME}/bentoml@{YOUR_REVISION}
+```
+
+And in your BentoML projects' `bentofile.yaml`, force the Bento to install this distribution, e.g.:
+
+```yaml
+service: "service:svc"
+description: "file: ./README.md"
+include:
+   - "*.py"
+python:
+   packages:
+      - pandas
+      - git+https://github.com/{YOUR_GITHUB_USERNAME}/bentoml@{YOUR_REVISION}
+```
+
 	
 ## Testing
 

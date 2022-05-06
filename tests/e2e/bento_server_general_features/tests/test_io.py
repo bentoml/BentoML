@@ -4,9 +4,9 @@
 import io
 import sys
 
+import aiohttp
 import numpy as np
 import pytest
-import aiohttp
 
 from bentoml.io import PandasDataFrame
 from bentoml.testing.utils import async_request
@@ -96,18 +96,9 @@ async def test_pandas(host):
 
     df = pd.DataFrame([[101]], columns=["col1"])
 
-    status, headers, data = await async_request(
-        "POST",
-        f"http://{host}/predict_dataframe1",
-        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
-        data=df.to_json(orient="records"),
-    )
-    assert status == 200
-    assert data == b"[202]"
-
     await async_request(
         "POST",
-        f"http://{host}/predict_dataframe2",
+        f"http://{host}/predict_dataframe",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
         data=df.to_json(orient="records"),
         assert_status=200,
@@ -118,7 +109,7 @@ async def test_pandas(host):
     if sys.version_info >= (3, 7):
         await async_request(
             "POST",
-            f"http://{host}/predict_dataframe2",
+            f"http://{host}/predict_dataframe",
             headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
             data=df.to_parquet(),
             assert_status=200,
@@ -127,7 +118,7 @@ async def test_pandas(host):
 
     await async_request(
         "POST",
-        f"http://{host}/predict_dataframe2",
+        f"http://{host}/predict_dataframe",
         headers=(("Content-Type", "text/csv"), ("Origin", ORIGIN)),
         data=df.to_csv(),
         assert_status=200,

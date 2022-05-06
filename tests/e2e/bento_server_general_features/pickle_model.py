@@ -9,7 +9,7 @@ from bentoml._internal.types import JSONSerializable
 
 class PickleModel:
     @staticmethod
-    def predict_file(input_files: t.List[FileLike]) -> t.List[bytes]:
+    def predict_file(input_files: t.List[FileLike[bytes]]) -> t.List[bytes]:
         return [f.read() for f in input_files]
 
     @staticmethod

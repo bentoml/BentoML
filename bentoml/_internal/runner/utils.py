@@ -101,7 +101,7 @@ def payload_params_to_multipart(params: Params[Payload]) -> MultipartWriter:
             headers=CIMultiDict(
                 (
                     (PAYLOAD_META_HEADER, json.dumps(payload.meta)),
-                    ("Content-Type", f"application/vnd+bentoml.{payload.container}"),
+                    ("Content-Type", f"application/vnd.bentoml.{payload.container}"),
                     ("Content-Disposition", f'form-data; name="{key}"'),
                 )
             ),
@@ -123,7 +123,7 @@ async def multipart_to_payload_params(request: Request) -> Params[Payload]:
         payload = Payload(
             data=await req.body(),
             meta=json.loads(req.headers[PAYLOAD_META_HEADER]),
-            container=req.headers["Content-Type"].strip("application/vnd+bentoml."),
+            container=req.headers["Content-Type"].strip("application/vnd.bentoml."),
         )
         if field_name.isdigit():
             arg_index = int(field_name)

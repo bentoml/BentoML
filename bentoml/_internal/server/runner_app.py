@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from functools import partial
 
 from ..trace import ServiceContext
-from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
@@ -228,6 +227,7 @@ class RunnerAppFactory(BaseAppFactory):
                     payload.data,
                     headers={
                         PAYLOAD_META_HEADER: json.dumps(payload.meta),
+                        "Content-Type": f"application/vnd.bentoml.{payload.container}",
                         "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.instance_id}",
                     },
                 )
@@ -254,6 +254,7 @@ class RunnerAppFactory(BaseAppFactory):
                 payload.data,
                 headers={
                     PAYLOAD_META_HEADER: json.dumps(payload.meta),
+                    "Content-Type": f"application/vnd.bentoml.{payload.container}",
                     "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.instance_id}",
                 },
             )

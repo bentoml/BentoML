@@ -124,14 +124,14 @@ class RemoteRunnerClient(RunnerHandle):
 
         signature = inspect.signature(runnable_method)
         # binding self parameter to None as we don't want to instantiate the runner
-        bound_args = signature.bind(None, args, **kwargs)
+        bound_args = signature.bind(None, *args, **kwargs)
         bound_args.apply_defaults()
 
         from ...runner.container import AutoContainer
 
         for name, value in bound_args.arguments.items():
             bound_args.arguments[name] = AutoContainer.to_payload(value)
-        params = Params(*bound_args.args, **bound_args.kwargs)
+        params = Params(*bound_args.args[1:], **bound_args.kwargs)
         multipart = payload_params_to_multipart(params)
         client = self._get_client()
         async with client.post(f"{self._addr}/{method_name}", data=multipart) as resp:
@@ -152,7 +152,7 @@ class RemoteRunnerClient(RunnerHandle):
             ) from None
 
         try:
-            content_type = resp.headers["content-type"]
+            content_type = resp.headers["Content-Type"]
         except KeyError:
             raise RemoteException(
                 f"Bento payload decode error: Content-Type header not set. "
@@ -160,12 +160,12 @@ class RemoteRunnerClient(RunnerHandle):
                 f"[{resp.status}] {body.decode()}"
             ) from None
 
-        if not content_type.lower().startswith("application/vnd+bentoml"):
+        if not content_type.lower().startswith("application/vnd.bentoml."):
             raise RemoteException(
                 f"Bento payload decode error: invalid Content-Type '{content_type}'."
             )
 
-        container = content_type.strip("application/vnd+bentoml+")
+        container = content_type.strip("application/vnd.bentoml.")
 
         try:
             payload = Payload(

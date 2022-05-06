@@ -69,7 +69,9 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @classmethod
     @abc.abstractmethod
     def from_batch_payloads(
-        cls, payloads: t.Sequence[Payload], batch_dim: int
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int,
     ) -> tuple[BatchType, list[int]]:
         ...
 

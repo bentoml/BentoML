@@ -4,6 +4,7 @@ import json
 import typing as t
 import asyncio
 import logging
+import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
@@ -37,10 +38,10 @@ class RunnerAppFactory(BaseAppFactory):
     def __init__(
         self,
         runner: Runner,
-        instance_id: int | None = None,
+        worker_index: int = 0,
     ) -> None:
         self.runner = runner
-        self.instance_id = instance_id
+        self.worker_index = worker_index
 
         from starlette.responses import Response
 
@@ -63,7 +64,16 @@ class RunnerAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
-        on_startup.insert(0, self.runner._init_local)  # type: ignore
+        on_startup.insert(0, functools.partial(self.runner.init_local, quiet=True))
+        on_startup.insert(
+            0,
+            functools.partial(
+                self.runner.scheduling_strategy.setup_worker,
+                runnable_class=self.runner.runnable_class,
+                resource_request=self.runner.resource_config,
+                worker_index=self.worker_index,
+            ),
+        )
         return on_startup
 
     @property
@@ -228,7 +238,7 @@ class RunnerAppFactory(BaseAppFactory):
                     headers={
                         PAYLOAD_META_HEADER: json.dumps(payload.meta),
                         "Content-Type": f"application/vnd.bentoml.{payload.container}",
-                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.instance_id}",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
                     },
                 )
                 for payload in payloads
@@ -255,7 +265,7 @@ class RunnerAppFactory(BaseAppFactory):
                 headers={
                     PAYLOAD_META_HEADER: json.dumps(payload.meta),
                     "Content-Type": f"application/vnd.bentoml.{payload.container}",
-                    "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.instance_id}",
+                    "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
                 },
             )
 

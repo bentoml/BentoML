@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import math
 import shutil
 import typing as t
 import logging
@@ -16,6 +17,7 @@ from bentoml import load
 from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
+from ..runner.resource import query_cpu_count
 from ..utils.analytics import track_serve
 from ..configuration.containers import DeploymentContainer
 
@@ -70,7 +72,6 @@ def serve_development(
                     SCRIPT_NGROK,
                 ],
                 copy_env=True,
-                numprocesses=1,
                 stop_children=True,
                 working_dir=working_dir,
             )
@@ -101,7 +102,6 @@ def serve_development(
             ]
             + (["--reload", "--reload-delay", f"{reload_delay}"] if reload else []),
             copy_env=True,
-            numprocesses=1,
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,
@@ -259,7 +259,7 @@ def serve_production(
                 "--as-worker",
             ],
             copy_env=True,
-            numprocesses=app_workers or 1,
+            numprocesses=app_workers or math.ceil(query_cpu_count()),
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,

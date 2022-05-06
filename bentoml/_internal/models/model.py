@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         str, bool | BatchDimType | AnyType | tuple[AnyType] | None
     ]
 
+
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
@@ -51,7 +52,13 @@ MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 
-class ModelOptions(UserDict):
+if TYPE_CHECKING:
+    ModelOptionsSuper = UserDict[str, t.Any]
+else:
+    ModelOptionsSuper = UserDict
+
+
+class ModelOptions(ModelOptionsSuper):
     @classmethod
     def with_options(cls, **kwargs: t.Any) -> ModelOptions:
         if len(kwargs) != 0:
@@ -87,11 +94,11 @@ class Model(StoreItem):
         return self._tag
 
     @property
-    def _fs(self) -> "FS":
+    def _fs(self) -> FS:
         return self.__fs
 
     @property
-    def info(self) -> "ModelInfo":
+    def info(self) -> ModelInfo:
         return self._info
 
     @property
@@ -278,7 +285,7 @@ class Model(StoreItem):
         name: str = "",
         cpu: int | None = None,
         nvidia_gpu: int | None = None,
-        custom_resources: dict[str, int | float] | None = None,
+        custom_resources: dict[str, float] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,

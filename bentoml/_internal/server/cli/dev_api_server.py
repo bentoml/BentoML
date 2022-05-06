@@ -29,6 +29,9 @@ def main(
     import uvicorn  # type: ignore
 
     from ...configuration import get_debug_mode
+    from ...configuration.containers import DeploymentContainer
+
+    DeploymentContainer.api_server_config.development_mode.set(True)
 
     ServiceContext.component_name_var.set("dev_api_server")
 

@@ -64,6 +64,10 @@ def main(
         If True, start the server as a bare worker. Else, start a standalone server
         with a supervisor process.
     """
+    from ...configuration.containers import DeploymentContainer
+
+    DeploymentContainer.api_server_config.development_mode.set(False)
+
     if not as_worker:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
@@ -99,8 +103,6 @@ def main(
 
     log_level = "info"
     if runner_map is not None:
-        from ...configuration.containers import DeploymentContainer
-
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))
     svc = bentoml.load(
         bento_identifier, working_dir=working_dir, change_global_cwd=True

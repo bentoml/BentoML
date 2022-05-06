@@ -84,12 +84,13 @@ my_runner.predict.run( test_input_df )
 """
 
 
-@attr.define(frozen=True)
+@attr.frozen(slots=False)
 class RunnerMethod:
     runner: Runner
     name: str
     max_batch_size: int
     max_latency_ms: int
+    args: dict[str, int]
 
     @cached_property
     def runnable_method_config(self) -> RunnableMethodConfig:
@@ -138,7 +139,7 @@ class Runner:
         models: t.List[Model] | None = None,
         cpu: int | None,  # TODO: support str and float type here? e.g "500m" or "0.5"
         nvidia_gpu: int | None,
-        custom_resources: t.Dict[str, float | None] | None = None,
+        custom_resources: t.Dict[str, float] | None = None,
         max_batch_size: int | None,
         max_latency_ms: int | None,
         method_configs: t.Dict[str, t.Dict[str, int]] | None,
@@ -174,7 +175,7 @@ class Runner:
             | Resource.from_system()
         )
 
-        for method_name in runnable_class.get_method_configs():
+        for method_name, config in runnable_class.get_method_configs().items():
             method_max_batch_size = method_configs.get(method_name, {}).get(
                 "max_batch_size"
             )
@@ -185,6 +186,7 @@ class Runner:
             runner_method_map[method_name] = RunnerMethod(
                 runner=self,
                 name=method_name,
+                args=method_name,
                 max_batch_size=first_not_none(
                     method_max_batch_size,
                     max_batch_size,
@@ -243,16 +245,19 @@ class Runner:
         runner_handle = handle_class(self)
         object.__setattr__(self, "_runner_handle", runner_handle)
 
+    def _init_local(self) -> None:
+        from .runner_handle.local import LocalRunnerRef
+
+        self._init(LocalRunnerRef)
+
     def init_local(self, quiet: bool = False) -> None:
         """
         init local runnable instance, for testing and debugging only
         """
-        if quiet:
-            logger.warning("for debugging and testing only")
+        if not quiet:
+            logger.warning("'Runner.init_local' is for debugging and testing only")
 
-        from .runner_handle.local import LocalRunnerRef
-
-        self._init(LocalRunnerRef)
+        self._init_local()
 
     def init_client(self):
         """

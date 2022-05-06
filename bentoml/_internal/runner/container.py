@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 
 class Payload(t.NamedTuple):
     data: bytes
-    meta: t.Dict[str, t.Union[bool, int, float, str]]
+    meta: dict[str, bool | int | float | str]
+    container: str
 
 
 class DataContainer(t.Generic[SingleType, BatchType]):
@@ -32,7 +33,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         data: bytes,
         meta: t.Optional[t.Dict[str, t.Union[bool, int, float, str]]] = None,
     ) -> Payload:
-        return Payload(data, dict(meta or dict(), container=cls.__name__))
+        return Payload(data, meta or {}, container=cls.__name__)
 
     @classmethod
     @abc.abstractmethod
@@ -61,15 +62,14 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @classmethod
     @abc.abstractmethod
     def batch_to_payloads(
-        cls, batch: BatchType, indices: list[int], batch_dim: int
+        cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int
     ) -> t.List[Payload]:
         ...
 
     @classmethod
     @abc.abstractmethod
     def from_batch_payloads(
-        cls, payloads: t.List[Payload], batch_dim: int
-    ) -> t.Tuple[BatchType, t.List[int]]:
+        cls, payloads: t.Sequence[Payload], batch_dim: int
         ...
 
 
@@ -160,7 +160,7 @@ class NdarrayContainer(
     @inject
     def from_batch_payloads(  # pylint: disable=arguments-differ
         cls,
-        payloads: t.List[Payload],
+        payloads: t.Sequence[Payload],
         batch_dim: int = 0,
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ) -> t.Tuple["ext.NpNDArray", t.List[int]]:
@@ -351,55 +351,42 @@ register_builtin_containers()
 
 class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
-    def singles_to_batch(cls, singles: t.Any, batch_axis: int = 0):
-        container_cls = DataContainerRegistry.find_by_single_type(type(singles[0]))
-        return container_cls.singles_to_batch(singles, batch_axis=batch_axis)
-
-    @classmethod
-    def batch_to_singles(cls, batch: t.Any, batch_axis: int = 0) -> t.List[t.Any]:
-        container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        return container_cls.batch_to_singles(batch, batch_axis=batch_axis)
-
-    @classmethod
-    def single_to_payload(cls, single: SingleType) -> Payload:  # type: ignore[override]
+    def to_payload(cls, single: t.Any) -> Payload:
         container_cls = DataContainerRegistry.find_by_single_type(type(single))
-        return container_cls.single_to_payload(single)
+        return container_cls.to_payload(single)
 
     @classmethod
-    def payload_to_single(
-        cls,
-        payload: Payload,
-    ) -> SingleType:  # type: ignore[override]
-        container_cls = DataContainerRegistry.find_by_name(
-            str(payload.meta.get("container"))
-        )
-        return container_cls.payload_to_single(payload)
+    def from_payload(cls, payload: Payload) -> tuple[t.Any, list[int]]:
+        container_cls = DataContainerRegistry.find_by_name(payload.container)
+        return container_cls.from_payload(payload)
 
     @classmethod
-    def payload_to_batch(cls, payload: Payload) -> BatchType:  # type: ignore[override]
-        container_cls = DataContainerRegistry.find_by_name(
-            str(payload.meta.get("container"))
-        )
-        return container_cls.payload_to_batch(payload)
+    def batches_to_batch(
+        cls, batches: t.Sequence[BatchType], batch_dim: int = 0
+    ) -> tuple[BatchType, list[int]]:
+        container_cls = DataContainerRegistry.find_by_batch_type(type(batches[0]))
+        return container_cls.batches_to_batch(batches, batch_dim)
 
     @classmethod
-    @abc.abstractmethod
-    def batch_to_payload(cls, batch: BatchType) -> Payload:  # type: ignore[override]
+    def batch_to_batches(
+        cls, batch: BatchType, indices: list[int], batch_dim: int = 0
+    ) -> list[BatchType]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        return container_cls.batch_to_payload(batch)
-
-    @classmethod
-    def payloads_to_batch(cls, payload_list: t.Sequence[Payload], batch_axis: int = 0):
-        container_cls = DataContainerRegistry.find_by_name(
-            str(payload_list[0].meta.get("container"))
-        )
-        return container_cls.payloads_to_batch(payload_list, batch_axis=batch_axis)
+        return container_cls.batch_to_batches(batch, indices, batch_dim)
 
     @classmethod
     def batch_to_payloads(
         cls,
-        batch: BatchType,  # type: ignore[override]
-        batch_axis: int = 0,
+        batch: t.Any,
+        indices: list[int],
+        batch_dim: int = 0,
     ) -> t.List[Payload]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batch))
-        return container_cls.batch_to_payloads(batch, batch_axis=batch_axis)
+        return container_cls.batch_to_payloads(batch, indices, batch_dim)
+
+    @classmethod
+    def from_batch_payloads(
+        cls, payloads: list[Payload], batch_dim: int = 0
+    ) -> tuple[t.Any, list[int]]:
+        container_cls = DataContainerRegistry.find_by_name(payloads[0].container)
+        return container_cls.from_batch_payloads(payloads, batch_dim)

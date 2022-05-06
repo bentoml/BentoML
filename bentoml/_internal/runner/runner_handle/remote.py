@@ -1,6 +1,7 @@
 import json
 import typing as t
 import asyncio
+import inspect
 from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
@@ -119,39 +120,61 @@ class RemoteRunnerClient(RunnerHandle):
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        runnable_method_config = self._runner.runnable_class.get_method_configs()[
-            method_name
-        ]
+        runnable_method = getattr(self._runner.runnable_class, method_name)
+
+        signature = inspect.signature(runnable_method)
+        # binding self parameter to None as we don't want to instantiate the runner
+        bound_args = signature.bind(None, args, **kwargs)
+        bound_args.apply_defaults()
 
         from ...runner.container import AutoContainer
 
-        if runnable_method_config.batchable:
-            to_payload = AutoContainer.batch_to_payload
-            from_payload = AutoContainer.payload_to_batch
-        else:
-            to_payload = AutoContainer.single_to_payload
-            from_payload = AutoContainer.payload_to_single
-
-        params = Params(*args, **kwargs).map(to_payload)
+        for name, value in bound_args.arguments.items():
+            bound_args.arguments[name] = AutoContainer.to_payload(value)
+        params = Params(*bound_args.args, **bound_args.kwargs)
         multipart = payload_params_to_multipart(params)
         client = self._get_client()
         async with client.post(f"{self._addr}/{method_name}", data=multipart) as resp:
             body = await resp.read()
+
+        if resp.status != 200:
+            raise RemoteException(
+                f"An exception occurred in remote runner {self._runner.name}: [{resp.status}] {body.decode()}"
+            )
+
         try:
             meta_header = resp.headers[PAYLOAD_META_HEADER]
         except KeyError:
             raise RemoteException(
-                f"Bento payload decode error: {PAYLOAD_META_HEADER} not exist. "
+                f"Bento payload decode error: {PAYLOAD_META_HEADER} header not set. "
                 "An exception might have occurred in the remote server."
                 f"[{resp.status}] {body.decode()}"
             ) from None
 
         try:
-            payload = Payload(data=body, meta=json.loads(meta_header))
+            content_type = resp.headers["content-type"]
+        except KeyError:
+            raise RemoteException(
+                f"Bento payload decode error: Content-Type header not set. "
+                "An exception might have occurred in the remote server."
+                f"[{resp.status}] {body.decode()}"
+            ) from None
+
+        if not content_type.lower().startswith("application/vnd+bentoml"):
+            raise RemoteException(
+                f"Bento payload decode error: invalid Content-Type '{content_type}'."
+            )
+
+        container = content_type.strip("application/vnd+bentoml+")
+
+        try:
+            payload = Payload(
+                data=body, meta=json.loads(meta_header), container=container
+            )
         except JSONDecodeError:
             raise ValueError(f"Bento payload decode error: {meta_header}")
 
-        return from_payload(payload)
+        return AutoContainer.from_payload(payload)
 
     def run_method(
         self,

@@ -56,34 +56,32 @@ def get(tag_like: str | Tag) -> Model:
 
 
 def load_model(
-    tag: t.Union[str, Tag],
+    bento_model: str | Tag | Model,
 ) -> SklearnModel:
     """
-    Load a model from BentoML local modelstore with given name.
+    Load the scikit-learn model with the given tag from the local BentoML model store.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
-
+        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
+            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
+            instance to load the model from.
+        ...
     Returns:
-        :obj:`Union[BaseEstimator, Pipeline]`: an instance of :obj:`sklearn` model from BentoML modelstore.
-
-    Examples:
-
+        ``BaseEstimator`` ``|`` ``Pipeline``:
+            The scikit-learn model loaded from the model store or BentoML :obj:`~bentoml.Model`.
+    Example:
     .. code-block:: python
-
         import bentoml
-
         sklearn = bentoml.sklearn.load_model('my_model:latest')
-    """
-    model = get(tag)
-    if model.info.module not in (MODULE_NAME, __name__):
+    """  # noqa
+    if not isinstance(bento_model, Model):
+        bento_model = get(bento_model)
+
+    if bento_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
-    model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
+    model_file = bento_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     return joblib.load(model_file)
 
@@ -183,10 +181,12 @@ def get_runnable(bento_model: Model):
 
     for method_name, options in bento_model.info.signatures.items():
 
-        def _run(self, input_data: ext.NpNDArray | ext.PdDataFrame) -> ext.NpNDArray:
+        def _run(
+            self: SklearnRunnable, input_data: ext.NpNDArray | ext.PdDataFrame
+        ) -> ext.NpNDArray:
             # TODO: set inner_max_num_threads and n_jobs param here base on strategy env vars
             with parallel_backend(backend="loky"):
-                return self.model[method_name](input_data)
+                return getattr(self.model, method_name)(input_data)
 
         SklearnRunnable.add_method(
             _run,

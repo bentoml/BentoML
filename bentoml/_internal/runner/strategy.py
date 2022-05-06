@@ -6,16 +6,10 @@ import logging
 
 import attr
 
+from .resource import Resource
 from .runnable import Runnable
 
 logger = logging.getLogger(__name__)
-
-
-@attr.define(frozen=True)
-class Resource:
-    cpu: int = attr.field()
-    nvidia_gpu: int = attr.field()
-    custom_resources: t.Dict[str, t.Union[float, int]] = attr.field(factory=dict)
 
 
 class Strategy(abc.ABC):

@@ -4,8 +4,6 @@ import math
 import typing as t
 import logging
 
-import attr
-
 from .resource import Resource
 from .runnable import Runnable
 
@@ -37,7 +35,7 @@ THREAD_ENVS = [
     "OMP_NUM_THREADS",
     "TF_NUM_INTEROP_THREADS",
     "TF_NUM_INTRAOP_THREADS",
-]
+]  # TODO(jiang): make it configurable?
 
 
 class DefaultStrategy(Strategy):
@@ -49,14 +47,23 @@ class DefaultStrategy(Strategy):
         resource_request: Resource,
     ) -> int:
         # use nvidia gpu
-        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
+        if (
+            resource_request.nvidia_gpu is not None
+            and resource_request.nvidia_gpu > 0
+            and runnable_class.SUPPORT_NVIDIA_GPU
+        ):
             return math.ceil(resource_request.nvidia_gpu)
 
         # use CPU
-        if runnable_class.SUPPORT_CPU_MULTI_THREADING:
-            return 1
+        if resource_request.cpu is not None and resource_request.cpu > 0:
+            if runnable_class.SUPPORT_CPU_MULTI_THREADING:
+                return 1
 
-        return math.ceil(resource_request.cpu)
+            return math.ceil(resource_request.cpu)
+
+        # this would not be reached by user since we always read system resource as default
+        logger.warning("No resource request found, always use single worker")
+        return 1
 
     @classmethod
     @abc.abstractmethod
@@ -67,17 +74,22 @@ class DefaultStrategy(Strategy):
         worker_index: int,
     ) -> None:
         # use nvidia gpu
-        if resource_request.nvidia_gpu > 0 and runnable_class.SUPPORT_NVIDIA_GPU:
+        if (
+            resource_request.nvidia_gpu is not None
+            and resource_request.nvidia_gpu > 0
+            and runnable_class.SUPPORT_NVIDIA_GPU
+        ):
             os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index)
             return
 
         # use CPU
-        if runnable_class.SUPPORT_CPU_MULTI_THREADING:
-            thread_count = math.ceil(resource_request.cpu)
-            for thread_env in THREAD_ENVS:
-                os.environ[thread_env] = str(thread_count)
-            return
-
-        for thread_env in THREAD_ENVS:
-            os.environ[thread_env] = "1"
-        return
+        if resource_request.cpu is not None and resource_request.cpu > 0:
+            if runnable_class.SUPPORT_CPU_MULTI_THREADING:
+                thread_count = math.ceil(resource_request.cpu)
+                for thread_env in THREAD_ENVS:
+                    os.environ[thread_env] = str(thread_count)
+                return
+            else:
+                for thread_env in THREAD_ENVS:
+                    os.environ[thread_env] = "1"
+                return

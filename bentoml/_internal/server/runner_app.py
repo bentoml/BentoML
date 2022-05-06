@@ -37,10 +37,10 @@ class RunnerAppFactory(BaseAppFactory):
     def __init__(
         self,
         runner: Runner,
-        instance_id: int | None = None,
+        worker_index: int = 0,
     ) -> None:
         self.runner = runner
-        self.instance_id = instance_id
+        self.worker_index = worker_index
 
         from starlette.responses import Response
 
@@ -228,7 +228,7 @@ class RunnerAppFactory(BaseAppFactory):
                     headers={
                         PAYLOAD_META_HEADER: json.dumps(payload.meta),
                         "Content-Type": f"application/vnd.bentoml.{payload.container}",
-                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.instance_id}",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
                     },
                 )
                 for payload in payloads
@@ -255,7 +255,7 @@ class RunnerAppFactory(BaseAppFactory):
                 headers={
                     PAYLOAD_META_HEADER: json.dumps(payload.meta),
                     "Content-Type": f"application/vnd.bentoml.{payload.container}",
-                    "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.instance_id}",
+                    "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
                 },
             )
 

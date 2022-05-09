@@ -75,6 +75,17 @@ def get_yatai_user_email() -> t.Optional[str]:
 
 
 @lru_cache(maxsize=1)
+def get_yatai_user_org_uid() -> t.Optional[str]:
+    if os.path.exists(get_config_path()):
+        return get_current_context().org_uid
+
+
+@lru_cache(maxsize=1)
+def get_yatai_version() -> t.Optional[str]:
+    if os.path.exists(get_config_path()):
+        return get_current_context().version
+
+@lru_cache(maxsize=1)
 def is_interactive() -> bool:
     import __main__ as main
 
@@ -114,6 +125,8 @@ class CommonProperties:
     # client related
     client: ClientInfo = attr.field(factory=get_client_info)
     yatai_user_email: t.Optional[str] = attr.field(factory=get_yatai_user_email)
+    yatai_user_org_uid: t.Optional[str] = attr.field(factory=get_yatai_user_org_uid)
+    yatai_version: t.Optional[str] = attr.field(factory=get_yatai_version)
 
     def __attrs_post_init__(self):
         self.total_memory_in_mb = int(psutil.virtual_memory().total / 1024.0 / 1024.0)

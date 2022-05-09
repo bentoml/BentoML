@@ -42,11 +42,16 @@ def add_login_command(cli: click.Group) -> None:
         if org is None:
             raise CLIException("current organization is not found")
 
+        version = yatai_rest_client.get_version()
+        if org is None:
+            raise CLIException("version is not found")
+
         ctx = YataiClientContext(
             name=default_context_name,
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,
+            version=version
         )
 
         add_context(ctx)

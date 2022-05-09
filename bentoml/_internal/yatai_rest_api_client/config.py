@@ -22,12 +22,18 @@ def get_config_path() -> Path:
     return Path(BENTOML_HOME) / ".yatai.yaml"
 
 
+def get_yatai_env(env_name: str) -> Optional[str]:
+    return os.environ.get(env_name, None)
+
+
 @attr.define
 class YataiClientContext:
     name: str
     endpoint: str
     api_token: str
     email: Optional[str] = attr.field(default=None)
+    version: Optional[str] = attr.field(default=None)
+    org_uid: Optional[str] = attr.field(default=get_yatai_env("YATAI_ORG_UID"))
 
     def get_yatai_rest_api_client(self) -> YataiRESTApiClient:
         return YataiRESTApiClient(self.endpoint, self.api_token)

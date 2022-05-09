@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from .schemas import UserSchema, YataiVersionSchema
+from .schemas import UserSchema
 from .schemas import BentoSchema
 from .schemas import ModelSchema
 from .schemas import schema_to_json
@@ -13,6 +13,7 @@ from .schemas import CreateBentoSchema
 from .schemas import CreateModelSchema
 from .schemas import UpdateBentoSchema
 from .schemas import OrganizationSchema
+from .schemas import YataiVersionSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
 from .schemas import FinishUploadBentoSchema

@@ -51,7 +51,7 @@ def add_login_command(cli: click.Group) -> None:
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,
-            version=version
+            version=version,
         )
 
         add_context(ctx)

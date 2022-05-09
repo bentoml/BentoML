@@ -85,6 +85,7 @@ def get_yatai_version() -> t.Optional[str]:
     if os.path.exists(get_config_path()):
         return get_current_context().version
 
+
 @lru_cache(maxsize=1)
 def is_interactive() -> bool:
     import __main__ as main

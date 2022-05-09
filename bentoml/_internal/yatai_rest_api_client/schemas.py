@@ -265,9 +265,9 @@ class FinishUploadModelSchema:
     status: Optional[ModelUploadStatus]
     reason: Optional[str]
 
+
 @attr.define
 class YataiVersionSchema:
     version: str
     git_commit: str
     build_date: str
-

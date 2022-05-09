@@ -24,7 +24,7 @@ def _cli_bentoml_build_event(
             num_of_models=len(bento.info.models),
             num_of_runners=len(bento.info.runners),
             model_types=[m.module for m in bento.info.models],
-            runner_types=[r.runnable_type for r in bento.info.runners],
+            runnable_types=[r.runnable_type for r in bento.info.runners],
         )
     else:
         return BentoBuildEvent(

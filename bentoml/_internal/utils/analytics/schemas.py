@@ -152,7 +152,7 @@ class BentoBuildEvent(CliEvent):
     num_of_models: int = attr.field(default=0)
     num_of_runners: int = attr.field(default=0)
     model_types: t.List[str] = attr.field(factory=list)
-    runner_types: t.List[str] = attr.field(factory=list)
+    runnable_types: t.List[str] = attr.field(factory=list)
 
 
 @attr.define
@@ -172,7 +172,7 @@ class ServeInitEvent(EventMeta):
     num_of_runners: int = attr.field(default=0)
     num_of_apis: int = attr.field(default=0)
     model_types: t.List[str] = attr.field(factory=list)
-    runner_types: t.List[str] = attr.field(factory=list)
+    runnable_types: t.List[str] = attr.field(factory=list)
     api_input_types: t.List[str] = attr.field(factory=list)
     api_output_types: t.List[str] = attr.field(factory=list)
 

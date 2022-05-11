@@ -75,7 +75,6 @@ def get_client_info(
         return new_client_info
 
 
-@lru_cache(maxsize=1)
 def get_yatai_env(env_name: str) -> t.Optional[str]:
     return os.environ.get(env_name, None)
 

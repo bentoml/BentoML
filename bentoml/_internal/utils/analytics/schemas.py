@@ -75,10 +75,6 @@ def get_client_info(
         return new_client_info
 
 
-def get_yatai_env(env_name: str) -> t.Optional[str]:
-    return os.environ.get(env_name, None)
-
-
 @lru_cache(maxsize=1)
 def get_yatai_user_email() -> t.Optional[str]:
     if os.path.exists(get_config_path()):
@@ -126,16 +122,16 @@ class CommonProperties:
     client: ClientInfo = attr.field(factory=get_client_info)
     yatai_user_email: t.Optional[str] = attr.field(factory=get_yatai_user_email)
     yatai_version: t.Optional[str] = attr.field(
-        factory=partial(get_yatai_env, ENV_YATAI_VERSION)
+        default=os.environ.get(ENV_YATAI_VERSION, None)
     )
     yatai_org_uid: t.Optional[str] = attr.field(
-        factory=partial(get_yatai_env, ENV_YATAI_ORG_UID)
+        default=os.environ.get(ENV_YATAI_ORG_UID, None)
     )
     yatai_cluster_uid: t.Optional[str] = attr.field(
-        factory=partial(get_yatai_env, ENV_YATAI_CLUSTER_UID)
+        default=os.environ.get(ENV_YATAI_CLUSTER_UID, None)
     )
     yatai_deployment_uid: t.Optional[str] = attr.field(
-        factory=partial(get_yatai_env, ENV_YATAI_DEPLOYMENT_UID)
+        default=os.environ.get(ENV_YATAI_DEPLOYMENT_UID, None)
     )
 
     def __attrs_post_init__(self):

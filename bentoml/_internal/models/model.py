@@ -14,10 +14,10 @@ import attr
 import yaml
 import fs.errors
 import fs.mirror
-import cloudpickle
+import cloudpickle  # type: ignore (no cloudpickle types)
 from fs.base import FS
-from cattr.gen import override
-from cattr.gen import make_dict_unstructure_fn
+from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 from simple_di import inject
 from simple_di import Provide
 
@@ -45,6 +45,8 @@ if TYPE_CHECKING:
     ]
 
 
+T = t.TypeVar("T")
+
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
@@ -66,24 +68,55 @@ class ModelOptions(ModelOptionsSuper):
                 raise ValueError(f"Option {k} is not supported")
         return cls()
 
+    @staticmethod
+    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
+        return dict(options)
+
 
 bentoml_cattr.register_structure_hook_func(
     lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls(**d)
 )
-bentoml_cattr.register_unstructure_hook(ModelOptions, lambda d: dict(d))
+bentoml_cattr.register_unstructure_hook(ModelOptions, ModelOptions.to_dict)
 
 
-@attr.define(repr=False, eq=False)
+@attr.define(repr=False, eq=False, init=False)
 class Model(StoreItem):
     _tag: Tag
     __fs: FS
 
     _info: ModelInfo
-    _custom_objects: t.Optional[t.Dict[str, t.Any]] = None
-
-    _flushed: bool = False
+    _custom_objects: dict[str, t.Any] | None = None
 
     _runnable: Runnable | None = None
+
+    def __init__(
+        self,
+        tag: Tag,
+        fs: FS,
+        info: ModelInfo,
+        custom_objects: dict[str, t.Any] | None = None,
+        runnable: Runnable | None = None,
+        *,
+        _internal: bool = False,
+    ):
+        if not _internal:
+            raise BentoMLException(
+                "Model cannot be instantiated directly directly; use bentoml.<framework>.save or bentoml.models.get instead"
+            )
+
+        self.__attrs_init__(tag, fs, info, custom_objects)
+
+    # for type checking purposes
+    def __attrs_init__(
+        self,
+        tag: Tag,
+        fs: FS,
+        info: ModelInfo,
+        custom_objects: dict[str, t.Any] | None = None,
+        flushed: bool = False,
+        runnable: Runnable | None = None,
+    ):
+        ...
 
     @staticmethod
     def _export_ext() -> str:
@@ -112,7 +145,7 @@ class Model(StoreItem):
                     if not isinstance(self._custom_objects, dict):
                         raise ValueError("Invalid custom objects found.")
             else:
-                self._custom_objects: "t.Optional[t.Dict[str, t.Any]]" = {}
+                self._custom_objects: dict[str, t.Any] | None = {}
 
         return self._custom_objects
 
@@ -129,7 +162,7 @@ class Model(StoreItem):
         module: str,
         signatures: dict[str, t.Any],
         labels: dict[str, str] | None = None,
-        options: ModelOptions | dict[str, t.Any] | None = None,
+        options: ModelOptions | None = None,
         custom_objects: dict[str, t.Any] | None = None,
         metadata: dict[str, t.Any] | None = None,
         context: ModelContext,
@@ -176,7 +209,8 @@ class Model(StoreItem):
                 metadata=metadata,
                 context=context,
             ),
-            custom_objects,
+            custom_objects=custom_objects,
+            _internal=True,
         )
 
         return res
@@ -184,14 +218,12 @@ class Model(StoreItem):
     @inject
     def save(
         self, model_store: ModelStore = Provide[BentoMLContainer.model_store]
-    ) -> "Model":
+    ) -> Model:
         self._save(model_store)
 
         return self
 
-    def _save(self, model_store: "ModelStore") -> "Model":
-        self.flush()
-
+    def _save(self, model_store: ModelStore) -> Model:
         if not self.validate():
             logger.warning(f"Failed to create Model for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Model because it was invalid")
@@ -205,8 +237,8 @@ class Model(StoreItem):
         logger.info(f"Successfully saved {self}")
         return self
 
-    @staticmethod
-    def from_fs(item_fs: FS) -> "Model":
+    @classmethod
+    def from_fs(cls: t.Type[Model], item_fs: FS) -> Model:
         try:
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
@@ -215,13 +247,12 @@ class Model(StoreItem):
                 f"Failed to load bento model because it does not contain a '{MODEL_YAML_FILENAME}'"
             )
 
-        res = Model(tag=info.tag, Model__fs=item_fs, info=info)
+        res = Model(tag=info.tag, fs=item_fs, info=info, _internal=True)
         if not res.validate():
             raise BentoMLException(
                 f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"
             )
 
-        res._flushed = True
         return res
 
     @property
@@ -232,20 +263,18 @@ class Model(StoreItem):
         return self._fs.getsyspath(item)
 
     def flush(self):
-        if not self._flushed:
-            self._flush_info()
-            self._flush_custom_objects()
-        self._flushed = True
+        self._write_info()
+        self._write_custom_objects()
 
-    def _flush_info(self):
+    def _write_info(self):
         with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
             self.info.dump(model_yaml)
 
-    def _flush_custom_objects(self):
+    def _write_custom_objects(self):
         # pickle custom_objects if it is not None and not empty
         if self.custom_objects:
             with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
-                cloudpickle.dump(self.custom_objects, cofile)
+                cloudpickle.dump(self.custom_objects, cofile)  # type: ignore (incomplete cloudpickle types)
 
     @property
     def creation_time(self) -> datetime:
@@ -262,8 +291,6 @@ class Model(StoreItem):
         params: t.Optional[t.Dict[str, str]] = None,
         subpath: t.Optional[str] = None,
     ) -> str:
-        self.flush()
-
         return super().export(
             path,
             output_format,
@@ -324,7 +351,20 @@ class Model(StoreItem):
         return self._runnable
 
     def with_options(self, **kwargs: t.Any) -> Model:
-        return Model(self._tag, self._fs, self.info.with_options(**kwargs))
+        res = Model(
+            self._tag,
+            self._fs,
+            self.info.with_options(**kwargs),
+            self._custom_objects,
+            _internal=True,
+        )
+        res.__attrs_init__(
+            self._tag,
+            self._fs,
+            self.info.with_options(**kwargs),
+            self._custom_objects,
+        )
+        return res
 
 
 class ModelStore(Store[Model]):
@@ -352,6 +392,36 @@ attr.resolve_types(ModelContext, globals(), locals())
 
 @attr.frozen
 class ModelSignature:
+    """
+    A model signature represents a method on a model object that can be called.
+
+    Note that anywhere a ``ModelSignature`` is used, a ``dict`` with keys corresponding to the fields
+    can be used instead. For example, instead of ``{"predict": ModelSignature(batchable=True)}``, one
+    can pass ``{"predict": {"batchable": True}}``.
+
+    Fields:
+        batchable:
+            Whether the method should support batching. Note that batching must also
+            be explicitly enabled at runtime in the ``Model.to_runner`` or ``bentoml.runner`` call.
+        batch_dim:
+            The dimension(s) that contain multiple data. For example, if when passing two input arrays
+            ``[1, 2]`` and ``[5, 6]``, if the input array is ``[[1, 2], [3, 4]]``, then the batch dimension
+            would be ``0``. If the input array is ``[[1, 3], [2, 4]]``, then the batch dimension would be ``1``.
+
+            Expert API:
+
+            The batch dimension can also be a tuple of (input batch dimension, output batch dimension). In this
+            case, the input batch dimension can be an array which contains the batch dimension for each argument.
+            For example, if the predict method takes three arguments ``predict(x, y, z)``, the batch dimension could be
+            ``([0, 1, 2], 0)``, meaning ``x`` would be batched along the zeroth dimension, ``y`` along the first,
+            ``z`` along the second, and the output along the zeroth axis.
+
+            Partial argument arrays are not supported; if the input takes n arguments, the batch dimension array must
+            have length n.
+        input_spec: Reserved for future use.
+        output_spec: Reserved for future use.
+    """
+
     batchable: bool = False
     batch_dim: BatchDimType = 0
     # TODO: define input/output spec struct
@@ -364,7 +434,7 @@ class ModelSignature:
 
     @staticmethod
     def convert_signatures_dict(
-        data: dict[str, ModelSignatureDict]
+        data: dict[str, ModelSignatureDict | ModelSignature]
     ) -> dict[str, ModelSignature]:
         return {
             k: ModelSignature.from_dict(v) if isinstance(v, dict) else v
@@ -376,8 +446,8 @@ class ModelSignature:
 attr.resolve_types(ModelSignature, globals(), locals())
 
 
-def model_signature_encoder(model_signature: ModelSignature):
-    encoded = {
+def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]:
+    encoded: dict[str, t.Any] = {
         "batchable": model_signature.batchable,
     }
     # ignore batch_dim if batchable is False
@@ -400,7 +470,7 @@ class ModelInfo:
     version: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
-    options: ModelOptions = attr.field(converter=ModelOptions)
+    options: ModelOptions
     metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
     context: ModelContext = attr.field()
     signatures: t.Dict[str, ModelSignature] = attr.field(
@@ -408,6 +478,12 @@ class ModelInfo:
     )
     api_version: str = attr.field(default="v1")
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+
+    def __attrs_post_init__(self):
+        object.__setattr__(self, "name", self.tag.name)
+        object.__setattr__(self, "version", self.tag.version)
+
+        self.validate()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, (ModelInfo, FrozenModelInfo)):
@@ -426,12 +502,6 @@ class ModelInfo:
             and self.creation_time == other.creation_time
         )
 
-    def __attrs_post_init__(self):
-        object.__setattr__(self, "name", self.tag.name)
-        object.__setattr__(self, "version", self.tag.version)
-
-        self.validate()
-
     def with_options(self, **kwargs: t.Any) -> ModelInfo:
         return ModelInfo(
             tag=self.tag,
@@ -446,7 +516,7 @@ class ModelInfo:
         )
 
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return bentoml_cattr.unstructure(self)
+        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self.to_dict(), stream, sort_keys=False)
@@ -505,7 +575,7 @@ attr.resolve_types(FrozenModelInfo, globals(), locals())
 bentoml_cattr.register_unstructure_hook_func(
     lambda cls: issubclass(cls, ModelInfo),  # for both ModelInfo and FrozenModelInfo
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(ModelInfo, bentoml_cattr, tag=override(omit=True)),
+    make_dict_unstructure_fn(ModelInfo, bentoml_cattr, tag=override(omit=True)),  # type: ignore (incomplete types)
 )
 
 
@@ -532,5 +602,5 @@ def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:
     return dumper.represent_dict(info.to_dict())
 
 
-yaml.add_representer(ModelInfo, _ModelInfo_dumper)
-yaml.add_representer(FrozenModelInfo, _ModelInfo_dumper)
+yaml.add_representer(ModelInfo, _ModelInfo_dumper)  # type: ignore (incomplete yaml types)
+yaml.add_representer(FrozenModelInfo, _ModelInfo_dumper)  # type: ignore (incomplete yaml types)

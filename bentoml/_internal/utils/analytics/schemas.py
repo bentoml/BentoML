@@ -8,6 +8,7 @@ from datetime import datetime
 from datetime import timezone
 from platform import platform
 from platform import python_version
+from functools import partial
 from functools import lru_cache
 
 import attr
@@ -26,6 +27,12 @@ from ...yatai_rest_api_client.config import get_current_context
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
     GenericFunction = t.Callable[P, t.Any]
+
+# Refers to bentoml/yatai-deployment-operator/common/consts/consts.go
+ENV_YATAI_VERSION = "YATAI_T_VERSION"
+ENV_YATAI_ORG_UID = "YATAI_T_ORG_UID"
+ENV_YATAI_DEPLOYMENT_UID = "YATAI_T_DEPLOYMENT_UID"
+ENV_YATAI_CLUSTER_UID = "YATAI_T_CLUSTER_UID"
 
 
 @lru_cache(maxsize=1)
@@ -69,21 +76,14 @@ def get_client_info(
 
 
 @lru_cache(maxsize=1)
+def get_yatai_env(env_name: str) -> t.Optional[str]:
+    return os.environ.get(env_name, None)
+
+
+@lru_cache(maxsize=1)
 def get_yatai_user_email() -> t.Optional[str]:
     if os.path.exists(get_config_path()):
         return get_current_context().email
-
-
-@lru_cache(maxsize=1)
-def get_yatai_user_org_uid() -> t.Optional[str]:
-    if os.path.exists(get_config_path()):
-        return get_current_context().org_uid
-
-
-@lru_cache(maxsize=1)
-def get_yatai_version() -> t.Optional[str]:
-    if os.path.exists(get_config_path()):
-        return get_current_context().version
 
 
 @lru_cache(maxsize=1)
@@ -126,8 +126,18 @@ class CommonProperties:
     # client related
     client: ClientInfo = attr.field(factory=get_client_info)
     yatai_user_email: t.Optional[str] = attr.field(factory=get_yatai_user_email)
-    yatai_user_org_uid: t.Optional[str] = attr.field(factory=get_yatai_user_org_uid)
-    yatai_version: t.Optional[str] = attr.field(factory=get_yatai_version)
+    yatai_version: t.Optional[str] = attr.field(
+        factory=partial(get_yatai_env, ENV_YATAI_VERSION)
+    )
+    yatai_org_uid: t.Optional[str] = attr.field(
+        factory=partial(get_yatai_env, ENV_YATAI_ORG_UID)
+    )
+    yatai_cluster_uid: t.Optional[str] = attr.field(
+        factory=partial(get_yatai_env, ENV_YATAI_CLUSTER_UID)
+    )
+    yatai_deployment_uid: t.Optional[str] = attr.field(
+        factory=partial(get_yatai_env, ENV_YATAI_DEPLOYMENT_UID)
+    )
 
     def __attrs_post_init__(self):
         self.total_memory_in_mb = int(psutil.virtual_memory().total / 1024.0 / 1024.0)
@@ -206,6 +216,7 @@ ALL_EVENT_TYPES = t.Union[
     BentoBuildEvent,
     ServeInitEvent,
     ServeUpdateEvent,
+    EventMeta,
 ]
 
 

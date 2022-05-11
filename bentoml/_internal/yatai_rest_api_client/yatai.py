@@ -13,7 +13,6 @@ from .schemas import CreateBentoSchema
 from .schemas import CreateModelSchema
 from .schemas import UpdateBentoSchema
 from .schemas import OrganizationSchema
-from .schemas import YataiVersionSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
 from .schemas import FinishUploadBentoSchema
@@ -61,14 +60,6 @@ class YataiRESTApiClient:
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, OrganizationSchema)
-
-    def get_current_version(self) -> Optional[YataiVersionSchema]:
-        url = urljoin(self.endpoint, "/api/v1/version")
-        resp = self.session.get(url)
-        if self._is_not_found(resp):
-            return None
-        self._check_resp(resp)
-        return schema_from_json(resp.text, YataiVersionSchema)
 
     def get_bento_repository(
         self, bento_repository_name: str

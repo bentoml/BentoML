@@ -1,15 +1,10 @@
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-import requests
 from schema import Or
 from schema import And
 from schema import Schema
 
 import bentoml._internal.utils.analytics as analytics_lib
-
-if TYPE_CHECKING:
-    from _pytest.monkeypatch import MonkeyPatch
 
 SCHEMA = Schema(
     {
@@ -22,6 +17,10 @@ SCHEMA = Schema(
             "python_version": str,
             "total_memory_in_mb": int,
             "yatai_user_email": Or(str, None),
+            "yatai_version": Or(str, None),
+            "yatai_org_uid": Or(str, None),
+            "yatai_cluster_uid": Or(str, None),
+            "yatai_deployment_uid": Or(str, None),
             "is_interactive": bool,
             "in_notebook": bool,
         },

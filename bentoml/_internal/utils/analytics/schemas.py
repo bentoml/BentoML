@@ -8,7 +8,6 @@ from datetime import datetime
 from datetime import timezone
 from platform import platform
 from platform import python_version
-from functools import partial
 from functools import lru_cache
 
 import attr

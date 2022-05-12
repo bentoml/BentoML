@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import typing as t
 import datetime
@@ -35,11 +37,6 @@ class StoreItem(Exportable):
     @property
     def _export_name(self) -> str:
         return f"{self.tag.name}-{self.tag.version}"
-
-    @classmethod
-    @abstractmethod
-    def from_fs(cls: t.Type[T], item_fs: FS) -> T:
-        raise NotImplementedError
 
     @property
     @abstractmethod

@@ -7,19 +7,19 @@ from contextlib import contextmanager
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml._internal.models.model import ModelSignature
-
 from ._internal.tag import Tag
 from ._internal.utils import calc_dir_size
 from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
+from ._internal.models.model import ModelSignature
 from ._internal.utils.analytics import track
 from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.models import ModelStore
+    from ._internal.models.model import ModelSignatureDict
 
 
 @inject
@@ -226,7 +226,7 @@ def create(
     name: str,
     *,
     module: str = "",
-    signatures: dict[str, dict[str, bool]] | dict[str, ModelSignature],
+    signatures: dict[str, ModelSignatureDict] | dict[str, ModelSignature],
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,
@@ -249,6 +249,7 @@ def create(
         yield res
     finally:
         res.info.freeze()
+        res.flush()
         res.save(_model_store)
 
         track(

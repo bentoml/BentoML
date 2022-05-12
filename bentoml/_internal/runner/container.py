@@ -55,7 +55,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @classmethod
     @abc.abstractmethod
     def batch_to_batches(
-        cls, batch: BatchType, indices: t.List[int], batch_dim: int
+        cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int
     ) -> t.List[BatchType]:
         ...
 
@@ -98,19 +98,19 @@ class NdarrayContainer(
         indices = list(
             itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
         )
-        indices.pop()
+        indices = [0] + indices
         return batch, indices
 
     @classmethod
     def batch_to_batches(
         cls,
         batch: "ext.NpNDArray",
-        indices: t.List[int],
+        indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> t.List["ext.NpNDArray"]:
         import numpy as np
 
-        return np.split(batch, indices, axis=batch_dim)
+        return np.split(batch, indices[1:-1], axis=batch_dim)
 
     @classmethod
     @inject
@@ -150,13 +150,19 @@ class NdarrayContainer(
     def batch_to_payloads(  # pylint: disable=arguments-differ
         cls,
         batch: "ext.NpNDArray",
-        indices: t.List[int],
+        indices: t.Sequence[int],
         batch_dim: int = 0,
         plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
     ) -> t.List[Payload]:
 
         batches = cls.batch_to_batches(batch, indices, batch_dim)
-        payloads = [cls.to_payload(subbatch, plasma_db) for subbatch in batches]
+
+        def to_payload(subbatch: "ext.NpNDArray"):
+            payload = cls.to_payload(subbatch, plasma_db)
+            payload.meta["batch_size"] = subbatch.shape[batch_dim]
+            return payload
+
+        payloads = [to_payload(subbatch) for subbatch in batches]
         return payloads
 
     @classmethod
@@ -175,42 +181,39 @@ class PandasDataFrameContainer(
     DataContainer[t.Union["ext.PdDataFrame", "ext.PdSeries"], "ext.PdDataFrame"]
 ):
     @classmethod
-    def singles_to_batch(
+    def batches_to_batch(
         cls,
-        singles: t.Sequence[t.Union["ext.PdDataFrame", "ext.PdSeries"]],
-        batch_axis: int = 0,
-    ) -> "ext.PdDataFrame":
+        batches: t.Sequence["ext.PdDataFrame"],
+        batch_dim: int = 0,
+    ) -> t.Tuple["ext.PdDataFrame", t.List[int]]:
         import pandas as pd  # type: ignore[import]
 
-        assert batch_axis == 0, "PandasDataFrameContainer requires batch_axis = 0"
-
-        # here we assume each member of singles has the same type/shape
-        head = singles[0]
-        if LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(head):
-            # DataFrame single type should only have one row
-            assert (
-                len(head) == 1
-            ), "SingleType of PandasDataFrameContainer should have only one row"
-            return pd.concat(singles)  # type: ignore[call-arg]
-
-        # pd.Series
-        return pd.concat(singles, axis=1).T  # type: ignore[arg-type]
+        assert (
+            batch_dim == 0
+        ), "PandasDataFrameContainer does not support batch_dim other than 0"
+        indices = [subbatch.shape[batch_dim] for subbatch in batches]
+        indices = [0] + indices
+        return pd.concat(batches), indices
 
     @classmethod
-    def batch_to_singles(  # type: ignore[override]
+    def batch_to_batches(  # type: ignore[override]
         cls,
         batch: "ext.PdDataFrame",
-        batch_axis: int = 0,
-    ) -> t.List["ext.PdSeries"]:
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+    ) -> t.List["ext.PdDataFrame"]:
 
-        assert batch_axis == 0, "PandasDataFrameContainer requires batch_axis = 0"
+        assert (
+            batch_dim == 0
+        ), "PandasDataFrameContainer does not support batch_dim other than 0"
 
-        sers = [row for _, row in batch.iterrows()]
-        return sers
+        return [
+            batch.iloc[indices[i] : indices[i + 1]] for i in range(len(indices) - 1)
+        ]
 
     @classmethod
     @inject
-    def single_to_payload(  # pylint: disable=arguments-differ
+    def to_payload(  # pylint: disable=arguments-differ
         cls,
         single: "t.Union[ext.PdDataFrame, ext.PdSeries]",
         plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
@@ -228,7 +231,7 @@ class PandasDataFrameContainer(
 
     @classmethod
     @inject
-    def payload_to_single(  # pylint: disable=arguments-differ
+    def from_payload(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
         plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
@@ -241,42 +244,101 @@ class PandasDataFrameContainer(
 
         return pickle.loads(payload.data)
 
-    batch_to_payload = single_to_payload  # type: ignore[assignment]
-    payload_to_batch = payload_to_single
+    @classmethod
+    @inject
+    def batch_to_payloads(  # pylint: disable=arguments-differ
+        cls,
+        batch: "ext.PdDataFrame",
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+    ) -> t.List[Payload]:
+
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+
+        def to_payload(subbatch: "ext.PdDataFrame"):
+            payload = cls.to_payload(subbatch, plasma_db)
+            payload.meta["batch_size"] = subbatch.shape[batch_dim]
+            return payload
+
+        payloads = [to_payload(subbatch) for subbatch in batches]
+        return payloads
+
+    @classmethod
+    @inject
+    def from_batch_payloads(  # pylint: disable=arguments-differ
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int = 0,
+        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+    ) -> t.Tuple["ext.PdDataFrame", t.List[int]]:
+        batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
 
 
 class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @classmethod
-    def singles_to_batch(
-        cls, singles: t.Sequence[t.Any], batch_axis: int = 0
-    ) -> t.List[t.Any]:
+    def batches_to_batch(
+        cls, batches: t.Sequence[t.List[t.Any]], batch_dim: int = 0
+    ) -> t.Tuple[t.List[t.Any], t.List[int]]:
         assert (
-            batch_axis == 0
-        ), "Default Runner DataContainer does not support batch_axies other than 0"
-        return list(singles)
+            batch_dim == 0
+        ), "Default Runner DataContainer does not support batch_dim other than 0"
+        batch = []
+        for subbatch in batches:
+            batch.extend(subbatch)
+        indices = list(itertools.accumulate(len(subbatch) for subbatch in batches))
+        indices = [0] + indices
+        return batch, indices  # type: ignore[reportUnknowVariableType]
 
     @classmethod
-    def batch_to_singles(
-        cls, batch: t.List[t.Any], batch_axis: int = 0
-    ) -> t.List[t.Any]:
+    def batch_to_batches(
+        cls, batch: t.List[t.Any], indices: t.Sequence[int], batch_dim: int = 0
+    ) -> t.List[t.List[t.Any]]:
         assert (
-            batch_axis == 0
-        ), "Default Runner DataContainer does not support batch_axies other than 0"
-        return batch
+            batch_dim == 0
+        ), "Default Runner DataContainer does not support batch_dim other than 0"
+        return [batch[indices[i] : indices[i + 1]] for i in range(len(indices) - 1)]
 
     @classmethod
-    def single_to_payload(cls, single: t.Any) -> Payload:
+    def to_payload(cls, single: t.Any) -> Payload:
         if isinstance(single, t.Generator):  # Generators can't be pickled
             single = list(single)  # type: ignore
         return cls.create_payload(pickle.dumps(single))
 
     @classmethod
     @inject
-    def payload_to_single(cls, payload: Payload):
+    def from_payload(cls, payload: Payload):
         return pickle.loads(payload.data)
 
-    batch_to_payload = single_to_payload  # type: ignore[assignment]
-    payload_to_batch = payload_to_single
+    @classmethod
+    @inject
+    def batch_to_payloads(
+        cls,
+        batch: t.List[t.Any],
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+    ) -> t.List[Payload]:
+
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+
+        def to_payload(subbatch: t.List[t.Any]):
+            payload = cls.to_payload(subbatch)
+            payload.meta["batch_size"] = len(subbatch)
+            return payload
+
+        payloads = [to_payload(subbatch) for subbatch in batches]
+        return payloads
+
+    @classmethod
+    @inject
+    def from_batch_payloads(
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int = 0,
+    ) -> t.Tuple[t.List[t.Any], t.List[int]]:
+        batches = [cls.from_payload(payload) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
 
 
 class DataContainerRegistry:

@@ -84,8 +84,7 @@ def add_model_management_commands(
             info = json.dumps(model.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            info = yaml.dump(model.info, indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(model.info.dump(), "yaml"))
 
     @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)

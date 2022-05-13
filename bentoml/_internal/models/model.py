@@ -44,7 +44,6 @@ if TYPE_CHECKING:
         str, bool | BatchDimType | AnyType | tuple[AnyType] | None
     ]
 
-
 T = t.TypeVar("T")
 
 logger = logging.getLogger(__name__)
@@ -87,7 +86,7 @@ class Model(StoreItem):
     _info: ModelInfo
     _custom_objects: dict[str, t.Any] | None = None
 
-    _runnable: Runnable | None = None
+    _runnable: Runnable | None = attr.field(init=False, default=None)
 
     def __init__(
         self,
@@ -95,7 +94,6 @@ class Model(StoreItem):
         fs: FS,
         info: ModelInfo,
         custom_objects: dict[str, t.Any] | None = None,
-        runnable: Runnable | None = None,
         *,
         _internal: bool = False,
     ):
@@ -114,7 +112,6 @@ class Model(StoreItem):
         info: ModelInfo,
         custom_objects: dict[str, t.Any] | None = None,
         flushed: bool = False,
-        runnable: Runnable | None = None,
     ):
         ...
 
@@ -345,9 +342,9 @@ class Model(StoreItem):
         )
 
     def to_runnable(self) -> t.Type[Runnable]:
-        module = importlib.import_module(self.info.module)
-        if not self._runnable:
-            self._runnable = module.get_runnable(self)
+        if self._runnable is None:
+            module = importlib.import_module(self.info.module)
+            self._runnable: t.Type[Runnable] = module.get_runnable(self)
         return self._runnable
 
     def with_options(self, **kwargs: t.Any) -> Model:
@@ -384,6 +381,9 @@ class ModelContext:
         if isinstance(data, ModelContext):
             return data
         return bentoml_cattr.structure(data, ModelContext)
+
+    def to_dict(self: ModelContext) -> dict[str, str | dict[str, str]]:
+        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
 
 # Remove after attrs support ForwardRef natively
@@ -429,7 +429,7 @@ class ModelSignature:
     output_spec: t.Any = None
 
     @staticmethod
-    def from_dict(data: t.Dict[str, t.Any]) -> ModelSignature:
+    def from_dict(data: ModelSignatureDict) -> ModelSignature:
         return bentoml_cattr.structure(data, ModelSignature)
 
     @staticmethod
@@ -518,8 +518,8 @@ class ModelInfo:
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
-    def dump(self, stream: t.IO[t.Any]):
-        return yaml.dump(self.to_dict(), stream, sort_keys=False)
+    def dump(self, stream: t.IO[t.Any] | None = None):
+        return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore
 
     @staticmethod
     def from_yaml_file(stream: t.IO[t.Any]):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from typing import TYPE_CHECKING
 from datetime import datetime
@@ -8,18 +10,20 @@ import pytest
 
 from bentoml import Tag
 from bentoml._internal.bento import Bento
+from bentoml._internal.models import ModelStore
 from bentoml._internal.bento.bento import BentoInfo
+from bentoml._internal.bento.bento import BentoApiInfo
 from bentoml._internal.bento.bento import BentoModelInfo
+from bentoml._internal.bento.bento import BentoRunnerInfo
 from bentoml._internal.configuration import BENTOML_VERSION
+from bentoml._internal.runner.resource import Resource
 from bentoml._internal.bento.build_config import BentoBuildConfig
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from bentoml._internal.models import ModelStore
 
-
-def test_bento_info(tmpdir: "Path"):
+def test_bento_info(tmpdir: Path):
     start = datetime.now(timezone.utc)
     bentoinfo_a = BentoInfo(tag=Tag("tag"), service="service")
     end = datetime.now(timezone.utc)
@@ -43,7 +47,28 @@ def test_bento_info(tmpdir: "Path"):
         creation_time=model_creation_time,
     )
     models = [model_a, model_b]
-    bentoinfo_b = BentoInfo(tag=tag, service=service, labels=labels, models=models)
+    runner_a = BentoRunnerInfo(
+        name="runner_a",
+        runnable_type="test_runnable_a",
+        models=["runner_a_model"],
+        resource_config=Resource(cpu=2),
+    )
+    runners = [runner_a]
+    api_predict = BentoApiInfo(
+        name="predict",
+        input_type="NumpyNdarray",
+        output_type="NumpyNdarray",
+    )
+    apis = [api_predict]
+
+    bentoinfo_b = BentoInfo(
+        tag=tag,
+        service=service,
+        labels=labels,
+        runners=runners,
+        models=models,
+        apis=apis,
+    )
 
     bento_yaml_b_filename = os.path.join(tmpdir, "b_dump.yml")
     with open(bento_yaml_b_filename, "w", encoding="utf-8") as bento_yaml_b:
@@ -64,8 +89,17 @@ models:
 - tag: model_b:v3
   module: model_b_module
   creation_time: '{model_creation_time}'
-runners: []
-apis: []
+runners:
+- name: runner_a
+  runnable_type: test_runnable_a
+  models:
+  - runner_a_model
+  resource_config:
+    cpu: 2
+apis:
+- name: predict
+  input_type: NumpyNdarray
+  output_type: NumpyNdarray
 """
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:
@@ -81,7 +115,7 @@ apis: []
         assert bentoinfo_b_from_yaml == bentoinfo_b
 
 
-def build_test_bento() -> Bento:
+def build_test_bento(model_store: ModelStore) -> Bento:
     bento_cfg = BentoBuildConfig(
         "simplebento.py:svc",
         include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
@@ -102,11 +136,7 @@ def build_test_bento() -> Bento:
         },
     )
 
-    return Bento.create(
-        bento_cfg,
-        version="1.0",
-        build_ctx="./simplebento",
-    )
+    return Bento.create(bento_cfg, version="1.0", build_ctx="./simplebento")
 
 
 def fs_identical(fs1: fs.base.FS, fs2: fs.base.FS):
@@ -123,16 +153,16 @@ def test_bento_export(tmpdir: "Path", dummy_model_store: "ModelStore"):
     working_dir = os.getcwd()
 
     testbento = build_test_bento(dummy_model_store)
-
+    # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
     cfg = BentoBuildConfig("bentoa.py:svc")
     bentoa = Bento.create(cfg, build_ctx="./bentoa")
-
+    # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
     bentoa1 = Bento.create(cfg, build_ctx="./bentoa1")
-
+    # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
     cfg = BentoBuildConfig("bentob.py:svc")
@@ -260,7 +290,7 @@ def test_bento_export(tmpdir: "Path", dummy_model_store: "ModelStore"):
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_bento(dummy_model_store: "ModelStore"):
+def test_bento(dummy_model_store: ModelStore):
     start = datetime.now(timezone.utc)
     bento = build_test_bento(dummy_model_store)
     end = datetime.now(timezone.utc)

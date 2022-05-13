@@ -22,11 +22,6 @@ else:
     from typing import get_args
     from typing import get_origin
 
-if sys.version_info < (3, 7):
-    from backports.datetime_fromisoformat import MonkeyPatch
-
-    MonkeyPatch.patch_fromisoformat()
-
 logger = logging.getLogger(__name__)
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"

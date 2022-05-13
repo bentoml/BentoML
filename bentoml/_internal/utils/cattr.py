@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import typing
 from datetime import datetime
+from collections import Set
 
 import cattr
 from attr import fields
 from cattr import override
 from cattr.gen import AttributeOverride
 
-# TODO: migrate to cattr.GenConverter for better performance
+# TODO: migrate to cattr.GenConverter for better performance, e.g.:
+# bentoml_cattr = cattr.GenConverter(
+#     unstruct_collection_overrides={tuple: list, Set: list},
+#     omit_if_default=True,
+# )
 bentoml_cattr = cattr.Converter()
 
 # Resolve any forward references during (de)serialization

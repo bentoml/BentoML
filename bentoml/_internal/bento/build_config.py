@@ -220,8 +220,11 @@ class CondaOptions:
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
-        if self.channels is None:
-            update_defaults["channels"] = ["defaults"]
+        if not self.environment_yml:
+            if self.dependencies is None:
+                update_defaults["dependencies"] = []
+            if self.channels is None:
+                update_defaults["channels"] = ["defaults"]
 
         return attr.evolve(self, **update_defaults)
 

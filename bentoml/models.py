@@ -226,7 +226,7 @@ def create(
     name: str,
     *,
     module: str = "",
-    signatures: dict[str, ModelSignatureDict] | dict[str, ModelSignature],
+    signatures: dict[str, ModelSignatureDict | ModelSignature],
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,

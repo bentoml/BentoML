@@ -141,7 +141,9 @@ class Model(StoreItem):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
                     self._custom_objects: t.Optional[
                         t.Dict[str, t.Any]
-                    ] = cloudpickle.load(cofile)
+                    ] = cloudpickle.load(
+                        cofile
+                    )  # type: ignore (incomplete cloudpickle types)
                     if not isinstance(self._custom_objects, dict):
                         raise ValueError("Invalid custom objects found.")
             else:
@@ -395,29 +397,56 @@ class ModelSignature:
     """
     A model signature represents a method on a model object that can be called.
 
-    Note that anywhere a ``ModelSignature`` is used, a ``dict`` with keys corresponding to the fields
-    can be used instead. For example, instead of ``{"predict": ModelSignature(batchable=True)}``, one
-    can pass ``{"predict": {"batchable": True}}``.
+    This information is used when creating BentoML runners for this model.
+
+    Note that anywhere a ``ModelSignature`` is used, a ``dict`` with keys corresponding to the
+    fields can be used instead. For example, instead of ``{"predict":
+    ModelSignature(batchable=True)}``, one can pass ``{"predict": {"batchable": True}}``.
 
     Fields:
         batchable:
-            Whether the method should support batching. Note that batching must also
-            be explicitly enabled at runtime in the ``Model.to_runner`` or ``bentoml.runner`` call.
+            Whether multiple API calls to this predict method should be batched by the BentoML
+            runner.
         batch_dim:
-            The dimension(s) that contain multiple data. For example, if when passing two input arrays
-            ``[1, 2]`` and ``[5, 6]``, if the input array is ``[[1, 2], [3, 4]]``, then the batch dimension
-            would be ``0``. If the input array is ``[[1, 3], [2, 4]]``, then the batch dimension would be ``1``.
+            The dimension(s) that contain multiple data when passing to this prediction method.
+
+            For example, if you have two inputs you want to run prediction on, ``[1, 2]`` and
+            ``[3, 4]``, if the array you would pass to the predict method would be
+            ``[[1, 2], [3, 4]]``, then the batch dimension would be ``0``. If the array you would
+            pass to the predict method would be ``[[1, 3], [2, 4]]``, then the batch dimension would
+            be ``1``.
+
+            If there are multiple arguments to the predict method and there is only one batch
+            dimension supplied, all arguments will use that batch dimension.
+
+            Example:
+            .. code-block:: python
+                # create a runner from 'my_bento_model' which batches on the dimension 0
+                runner0 = my_bento_model.to_runner(signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                # create a runner from 'my_bento_model' which batches on the dimension 1
+                runner1 = my_bento_model.to_runner(signatures={"predict": {"batchable": True, "batch_dim": 0}})
+
+                # if the following calls are batched, the input to the actual predict method on the
+                # runner would be [[1, 2], [3, 4], [5, 6]]
+                runner0.run(np.array([[1, 2], [3, 4]]))
+                runner0.run(np.array([[5, 6]]))
+
+                # if the following calls are batched, the input to the actual predict method on the
+                # runner would be [[1, 2, 5], [3, 4, 6]]
+                runner1.run(np.array([[1, 2], [3, 4]]))
+                runner1.run(np.array([[5], [6]]))
 
             Expert API:
 
-            The batch dimension can also be a tuple of (input batch dimension, output batch dimension). In this
-            case, the input batch dimension can be an array which contains the batch dimension for each argument.
-            For example, if the predict method takes three arguments ``predict(x, y, z)``, the batch dimension could be
-            ``([0, 1, 2], 0)``, meaning ``x`` would be batched along the zeroth dimension, ``y`` along the first,
-            ``z`` along the second, and the output along the zeroth axis.
+            The batch dimension can also be a tuple of (input batch dimension, output batch
+            dimension). In this case, the input batch dimension can be an array which contains the
+            batch dimension for each argument. For example, if the predict method takes three
+            arguments ``predict(x, y, z)``, the batch dimension could be ``([0, 1, 2], 0)``, meaning
+            ``x`` would be batched along the zeroth dimension, ``y`` along the first, ``z`` along
+            the second, and the output along the zeroth axis.
 
-            Partial argument arrays are not supported; if the input takes n arguments, the batch dimension array must
-            have length n.
+            Partial argument arrays are not supported; if the input takes n arguments, the batch
+            dimension array must have length n.
         input_spec: Reserved for future use.
         output_spec: Reserved for future use.
     """

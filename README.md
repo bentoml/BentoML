@@ -31,7 +31,7 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
 - Automatically setup CUDA and cuDNN for serving models with GPU
 
-🐍 Python-first scales with powerful optimizations
+🐍 Python-first, scales with powerful optimizations
 - Business logic and feature extraction scale separately than model inference workers
 - Adaptive batching dynamically groups inference requests for optimal performance
 - Complex inference graphs automatically orchestrated with Yatai on Kubernetes
@@ -59,15 +59,15 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 
 import bentoml
 bentoml.pytorch.save_model(
-    "demo_mnist",
-    trained_model,
-    signatures={
+    "demo_mnist",  # model name in the local model store
+    trained_model,  # model instance being saved
+    signatures={   # model signatures for running inference
       "predict": {
         "batchable": True,
         "batch_dim": 0,
       }
     },
-    metadata={
+    metadata={   # user-defined additional metadata
         "acc": acc,
         "cv_stats": cv_stats,
     },
@@ -101,10 +101,10 @@ async def predict_image(f: PILImage):
     return output_tensor.numpy()
 ```
 
-Saved model can be converted into a `Runner`, which in BentoML, represents a unit of computation that can be scaled separately. In local deployment mode, this means the model will be running in its own processes.
+Saved model can be converted into a `Runner`, which in BentoML, represents a unit of computation that can be scaled separately. In local deployment mode, this means the model will be running in its own worker processes.
 Since the model is saved with a `batchable: True` signature, BentoML applies dynamic batching to all the `mnist_runner.predict.run` calls under the hood for optimal performance.
 
-Start a HTTP server locally to test out the serving endpoint:
+Start an HTTP server locally to test out the serving endpoint:
 
 ```bash
 bentoml serve service.py:svc --reload
@@ -118,9 +118,6 @@ Define a `bentofile.yaml` build file for your project:
 
 ```yaml
 service: "service:svc"
-labels:
-  owner: bentoml-team
-  stage: demo
 include:
 - "*.py"
 exclude:

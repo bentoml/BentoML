@@ -44,7 +44,7 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 ## Getting Started ##
 
 - [Getting Started](https://docs.bentoml.org/) - Overview of the BentoML documentation and related resources
-- [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
+- [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
 - [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
 - [Examples](https://github.com/bentoml/gallery) - Gallery of sample projects using BentoML
 - [ML Framework Guide](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
@@ -88,12 +88,12 @@ import bentoml
 from bentoml.io import NumpyNdarray, Image
 from PIL.Image import Image as PILImage
 
-mnist_runner = bentoml.pytorch.get("demo_mnist").to_runner(cpu=4)
+mnist_runner = bentoml.pytorch.get("demo_mnist").to_runner(gpu=1)  # assign the first available GPU to this Runner
 
 svc = bentoml.Service("pytorch_mnist", runners=[mnist_runner])
 
-@svc.api(input=Image(), output=NumpyNdarray(dtype="int64"))
-async def predict_image(f: PILImage):
+@svc.api(input=Image(), output=NumpyNdarray(dtype="int64"))  # define service API endpoint and its input/output type
+def predict_image(f: PILImage):
     arr = np.array(f)/255.0
     assert arr.shape == (28, 28)
     arr = np.expand_dims(arr, 0).astype("float32")
@@ -159,10 +159,10 @@ Generate a docker image from the Bento and run a docker container locally for se
 
 INFO [cli] Successfully built docker image "pytorch_mnist:4mymorgurocxjuqj"
 
-> docker run -p 3000:3000 pytorch_mnist:4mymorgurocxjuqj
+> docker run --gpus all -p 3000:3000 pytorch_mnist:4mymorgurocxjuqj
 ```
 
-Learn about other [deployment options]().
+Learn more about other [deployment options](https://docs.bentoml.org/en/latest/deployment/index.html).
 
 
 ## Community ##

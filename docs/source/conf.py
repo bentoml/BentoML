@@ -8,13 +8,13 @@ import bentoml
 # -- Project information -----------------------------------------------------
 
 project = "BentoML"
-copyright = f"2020-{datetime.now().year}, bentoml.org"
-author = "bentoml.org"
+copyright = f"2022-{datetime.now().year}, bentoml.com"
+author = "bentoml.com"
 version = bentoml.__version__
 
 # -- General configuration ---------------------------------------------------
 
-source_suffix = [".rst", ".md"]
+# source_suffix = [".rst", ".md"]
 
 # See https://github.com/readthedocs/readthedocs.org/issues/2149
 master_doc = "index"
@@ -23,8 +23,10 @@ master_doc = "index"
 extensions = [
     "sphinx_tabs.tabs",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
     "sphinx_click.ext",
     "sphinx_copybutton",
     "recommonmark",

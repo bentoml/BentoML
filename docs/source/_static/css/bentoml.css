@@ -45,7 +45,7 @@
     font-family: 'IBM Plex Mono';
 }
 
-/* The one with code block fonts */ 
+/* The one with code block fonts */
 .rst-content .linenodiv pre, .rst-content div[class^=highlight] pre, .rst-content pre.literal-block {
     font-family: "IBM Plex Mono",Menlo,Monaco,Consolas,monospace;
     font-size: 14px;

@@ -1,76 +1,80 @@
-.. BentoML documentation main file, created by
-   sphinx-quickstart on Fri Jun 14 11:20:19 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-
-.. image:: _static/img/bentoml-readme-header.jpeg
-    :alt: BentoML
-    :target: https://github.com/bentoml/BentoML
-
-
-Unified Model Serving Framework
-===============================
+Getting Started
+===============
 
 |pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
 
-BentoML is an open platform that simplifies ML model deployment and enables you to serve your models at production scale in minutes
+This page is an overview of the BentoML documentation and related resources.
 
-👉 `Pop into our Slack community! <https://l.linklyhq.com/l/ktOX>`_ We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
+BentoML is an open-source framework that simplifies ML model deployment and serves your models at production scale in minutes
+
 
 The BentoML version 1.0 is around the corner. For stable release version 0.13, see
-the `0.13-LTS branch <https://github.com/bentoml/BentoML/tree/0.13-LTS>`_. Version 1.0 is
+the `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/S>`_. Version 1.0 is
 under active development, you can be of great help by testing out the preview release,
 reporting issues, contribute to the documentation and create sample gallery projects.
 
-Why BentoML
+
+Try BentoML
 -----------
 
-- The easiest way to turn your ML models into production-ready API endpoints.
-- High performance model serving, all in Python.
-- Standardlize model packaging and ML service definition to streamline deployment.
-- Support all major machine-learning training :ref:`frameworks <frameworks-page>`.
-- Deploy and operate ML serving workload at scale on Kubernetes via `Yatai <https://github.com/bentoml/yatai>`_.
+:ref:`Tutorial: Intro to BentoML <tutorial-page>`
+will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
+
+quickstart guide
+
+notebook
+
+Learn BentoML
+-------------
+
+:ref:`Main Concepts <concepts-page>` will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
 
 
-Getting Started
----------------
-- :ref:`Quickstart guide <getting-started-page>` will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
-- :ref:`Main concepts <concepts-page>` will give a comprehensive tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
-- :ref:`ML frameworks <frameworks-page>` lays out best practices and example usages by the ML framework used for training models.
-- :ref:`Advanced guides <guides-page>` showcases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
-- Check out other projects from the `BentoML team <https://github.com/bentoml>`_:
-  - `🦄️ Yatai <https://github.com/bentoml/yatai>`_: Run BentoML workflow at scale on Kubernetes
-  - `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_: Fast model deployment with BentoML on cloud platforms
-
-Community
----------
-- To report a bug or suggest a feature request, use `GitHub Issues <https://github.com/bentoml/BentoML/issues/new/choose>`_.
-- For other discussions, use `Github Discussions <https://github.com/bentoml/BentoML/discussions>`_.
-- To receive release announcements, please join us on `Slack <https://join.slack.bentoml.org>`_.
-
-Contributing
-------------
-There are many ways to contribute to the project:
-
-- If you have any feedback on the project, share it with the community in `Github Discussions <https://github.com/bentoml/BentoML/discussions>`_ of this project.
-- Report issues you're facing and "Thumbs up" on issues and feature requests that are relevant to you.
-- Investigate bugs and reviewing other developer's pull requests.
-- Contributing code or documentation to the project by submitting a Github pull request. See the `development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_.
-- See more in the `contributing guide <ttps://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md>`_.
+:ref:`ML frameworks <frameworks-page>` lays out best practices and example usages by the ML framework used for training models.
 
 
-License
--------
-`Apache License 2.0 <https://github.com/bentoml/BentoML/blob/main/LICENSE>`_
+:ref:`Advanced Topics <guides-page>` showcases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+
+
+
+`🦄️ Yatai <https://github.com/bentoml/yatai>`_: Run BentoML workflow at scale on Kubernetes
+`🚀 bentoctl <https://github.com/bentoml/bentoctl>`_: Fast model deployment with BentoML on cloud platforms
+
+
+
+
+
+Staying Informed
+----------------
+
+The `BentoML Blog <http://modelserving.com>`_ is the official source for updates from the BentoML team. Anything important,
+including major releases and announcements, will be posted there. We also frequently share tutorials, case studies, and
+community updates there.
+
+You can also follow `@bentomlai <http://twitter.com/bentomlai>`_ on Twitter.
+
+To receive release notification, star & watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_. For release
+notes and detailed changelog, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
+
+
+Something Missing?
+------------------
+
+If something is missing in the documentation or if you found some part confusing, please file an issue
+`here <https://github.com/bentoml/BentoML/issues/new/choose>`_ with your suggestions for improvement, or tweet at
+the `@bentomlai <http://twitter.com/bentomlai>`_ account. We love hearing from you!
+
+
 
 .. toctree::
    :hidden:
 
-   quickstart
+   tutorial
    concepts/index
    frameworks/index
-   guides/index
+   advanced/index
+   yatai/index
+   bentoctl/index
    api/index
    cli
 

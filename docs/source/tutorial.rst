@@ -1,28 +1,23 @@
-.. _getting-started-page:
+.. _tutorial-page:
 
-Getting Started
-===============
+Tutorial: Intro to BentoML
+==========================
 
+Before We Started
+-----------------
+
+
+What Are We Building
+--------------------
 In this guide we will show you how to create a local web service for your machine learning model(s). 
 Then we will package that web service into a self contained package (Bento) which is ready for production deployment. 
-The source code of this guide is avaialble in the `gallery <https://github.com/bentoml/gallery/tree/main/quickstart>`_ project.
+The source code of this guide is available in the `gallery/quickstart <https://github.com/bentoml/gallery/tree/main/quickstart>`_ project.
 
-There are three parts to the BentoML workflow.
-
-#. :ref:`Save your Model <save-models-section>`
-    Once model training is complete, use one of our tool specific frameworks to save your model in BentoML's standard format.
-#. :ref:`Define your Service <define-and-debug-service-section>`
-    Now that we've stored your model in our standard format, we will define the webservice which will host the model. In this definition, you can easily add Pre/Post processing code along with your model inference.
-#. :ref:`Build and Deploy your Bento <build-and-deploy-bentos>`
-    Finally, let BentoML build your deployable container (your bento) and assist you in deploying to your cloud service of choice
-
-
-.. _save-models-section:
 
 Installation
 ------------
 
-BentoML is distributed as a Python package and can be installed from PyPI:
+Install BentoML python package:
 
 .. code-block:: bash
 
@@ -30,14 +25,20 @@ BentoML is distributed as a Python package and can be installed from PyPI:
 
 ** The :code:`--pre` flag is required as BentoML 1.0 is still a preview release
 
-Save Models
------------
+Overview
+--------
+
+
+
+
+
+.. _save-models-section:
+
+Save Model
+----------
 
 We begin by saving a trained model instance to BentoML's local
-:ref:`model store <bento-management-page>`. The local model store is used to version your models as well as control which models are packaged with your bento.
-
-If the models you wish to use are already saved to disk or available in a cloud repository, they can also be added to BentoML with the
-:ref:`import APIs <bento-management-page>`.
+:ref:`model store <bento-management-page>`. The local model store is used for managing your trained models as well as accessing them for serving.
 
 .. code-block:: python
 
@@ -46,25 +47,29 @@ If the models you wish to use are already saved to disk or available in a cloud 
     from sklearn import svm
     from sklearn import datasets
 
-    # Load predefined training set to build an example model
+    # Load training data set
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
 
-    # Model Training
+    # Train the model
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
-    # Call to bentoml.<FRAMEWORK>.save(<MODEL_NAME>, model)
-    # In order to save to BentoML's standard format in a local model store
-    bentoml.sklearn.save("iris_clf", clf)
+    # Save model to the BentoML local model store
+    bentoml.sklearn.save_model"iris_clf", clf)
 
-    # [08:34:16 AM] INFO     Successfully saved Model(tag="iris_clf:svcryrt5xgafweb5",
-    #                        path="/home/user/bentoml/models/iris_clf/svcryrt5xgafweb5/")
-    # Tag(name='iris_clf', version='svcryrt5xgafweb5')
+    # INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for sklearn model
+    # INFO  [cli] Successfully saved Model(tag="iris_clf:7drxqvwsu6zq5uqj", path="~/bentoml/models/iris_clf/7drxqvwsu6zq5uqj/")
 
 
-:code:`bentoml.sklearn.save()`, will save the Iris Classifier to a local model store managed by BentoML.
-See :ref:`ML framework specific API <frameworks-page>` for all supported modeling libraries.
+The model is now saved under name :code:`iris_clf` with an automatically generated version.
+
+
+
+:code:`bentoml.sklearn.save_model` is built specifically for the Scikit-Learn framework and uses its native saved model format under the hood for best compatibility and performance.
+This goes the same for other ML framework, see :ref:`ML framework specific API <frameworks-page>` for other supported ML frameworks.
+
+
 
 You can then load the the model to be run inline using the :code:`bentoml.<FRAMEWORK>.load(<TAG>)`
 

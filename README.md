@@ -20,23 +20,26 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 
 ## Feature Highlights ##
 
-- ✨ Model Serving the way you need it 
-  - Online model serving via REST API or gRPC
-  - Offline scoring on batch datasets with Apache Spark, or Dask.
-  - Stream serving with Kafka, Beam, and Flink
-- 🍱 Easy transition from model development to model serving in production
-  - 27 ML Frameworks natively supported and counting! - Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more
-  - Integrate with any training pipeline or experimentation management platform
-  - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
-  - Automatically setup CUDA and cuDNN for serving models with GPU
-- 🐍 Python-first scales with powerful optimizations
-  - Business logic and feature extraction scale separately than model inference workers
-  - Adaptive batching dynamically groups inference requests for optimal performance
-  - Complex inference graphs automatically orchestrated with Yatai on Kubernetes
-- Deployment workflow made for production
-  - 🐳 Automatically generate docker images for production deployment
-  - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
-  - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
+✨ Model Serving the way you need it 
+- Online model serving via REST API or gRPC
+- Offline scoring on batch datasets with Apache Spark, or Dask.
+- Stream serving with Kafka, Beam, and Flink
+
+🍱 Easy transition from model development to model serving in production
+- 27 ML Frameworks natively supported and counting! - Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more
+- Integrate with any training pipeline or experimentation management platform
+- Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
+- Automatically setup CUDA and cuDNN for serving models with GPU
+
+🐍 Python-first scales with powerful optimizations
+- Business logic and feature extraction scale separately than model inference workers
+- Adaptive batching dynamically groups inference requests for optimal performance
+- Complex inference graphs automatically orchestrated with Yatai on Kubernetes
+
+🚢 Deployment workflow made for production
+- 🐳 Automatically generate docker images for production deployment
+- [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
+- [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
 
 ## Getting Started ##
 

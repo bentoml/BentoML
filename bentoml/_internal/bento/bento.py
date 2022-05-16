@@ -15,8 +15,8 @@ import pathspec
 import fs.errors
 import fs.mirror
 from fs.copy import copy_file
-from cattr.gen import override
-from cattr.gen import make_dict_unstructure_fn
+from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 from simple_di import inject
 from simple_di import Provide
 
@@ -422,7 +422,7 @@ class BentoInfo:
         self.validate()
 
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return bentoml_cattr.unstructure(self)
+        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
@@ -488,4 +488,4 @@ def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
     return dumper.represent_dict(info.to_dict())
 
 
-yaml.add_representer(BentoInfo, _BentoInfo_dumper)
+yaml.add_representer(BentoInfo, _BentoInfo_dumper)  # type: ignore (incomplete yaml types)

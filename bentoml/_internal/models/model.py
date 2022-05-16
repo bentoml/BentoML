@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import typing as t
 import logging
 import importlib
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 from collections import UserDict
+from typing import overload
 
 import fs
 import attr
@@ -43,6 +45,7 @@ if TYPE_CHECKING:
     ModelSignatureDict: t.TypeAlias = dict[
         str, bool | BatchDimType | AnyType | tuple[AnyType] | None
     ]
+
 
 T = t.TypeVar("T")
 
@@ -86,12 +89,12 @@ class Model(StoreItem):
     _info: ModelInfo
     _custom_objects: dict[str, t.Any] | None = None
 
-    _runnable: Runnable | None = attr.field(init=False, default=None)
+    _runnable: t.Type[Runnable] | None = attr.field(init=False, default=None)
 
     def __init__(
         self,
         tag: Tag,
-        fs: FS,
+        model_fs: FS,
         info: ModelInfo,
         custom_objects: dict[str, t.Any] | None = None,
         *,
@@ -102,18 +105,7 @@ class Model(StoreItem):
                 "Model cannot be instantiated directly directly; use bentoml.<framework>.save or bentoml.models.get instead"
             )
 
-        self.__attrs_init__(tag, fs, info, custom_objects)
-
-    # for type checking purposes
-    def __attrs_init__(
-        self,
-        tag: Tag,
-        fs: FS,
-        info: ModelInfo,
-        custom_objects: dict[str, t.Any] | None = None,
-        flushed: bool = False,
-    ):
-        ...
+        self.__attrs_init__(tag, model_fs, info, custom_objects)  # type: ignore (no types for attrs init)
 
     @staticmethod
     def _export_ext() -> str:
@@ -135,12 +127,12 @@ class Model(StoreItem):
     def custom_objects(self) -> t.Dict[str, t.Any]:
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
-                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
+                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "r") as cofile:
                     self._custom_objects: t.Optional[
                         t.Dict[str, t.Any]
-                    ] = cloudpickle.load(
+                    ] = cloudpickle.load(  # type: ignore (incomplete cloudpickle types)
                         cofile
-                    )  # type: ignore (incomplete cloudpickle types)
+                    )
                     if not isinstance(self._custom_objects, dict):
                         raise ValueError("Invalid custom objects found.")
             else:
@@ -159,7 +151,7 @@ class Model(StoreItem):
         name: str,
         *,
         module: str,
-        signatures: dict[str, ModelSignatureDict | ModelSignature],
+        signatures: ModelSignaturesType,
         labels: dict[str, str] | None = None,
         options: ModelOptions | None = None,
         custom_objects: dict[str, t.Any] | None = None,
@@ -246,7 +238,7 @@ class Model(StoreItem):
                 f"Failed to load bento model because it does not contain a '{MODEL_YAML_FILENAME}'"
             )
 
-        res = Model(tag=info.tag, fs=item_fs, info=info, _internal=True)
+        res = Model(tag=info.tag, model_fs=item_fs, info=info, _internal=True)
         if not res.validate():
             raise BentoMLException(
                 f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"
@@ -266,8 +258,8 @@ class Model(StoreItem):
         self._write_custom_objects()
 
     def _write_info(self):
-        with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
-            self.info.dump(model_yaml)
+        with self._fs.open(MODEL_YAML_FILENAME, "w", encoding="utf-8") as model_yaml:
+            self.info.dump(model_yaml)  # type: ignore (python IO types are not compatible)
 
     def _write_custom_objects(self):
         # pickle custom_objects if it is not None and not empty
@@ -278,27 +270,6 @@ class Model(StoreItem):
     @property
     def creation_time(self) -> datetime:
         return self.info.creation_time
-
-    def export(
-        self,
-        path: str,
-        output_format: t.Optional[str] = None,
-        *,
-        protocol: t.Optional[str] = None,
-        user: t.Optional[str] = None,
-        passwd: t.Optional[str] = None,
-        params: t.Optional[t.Dict[str, str]] = None,
-        subpath: t.Optional[str] = None,
-    ) -> str:
-        return super().export(
-            path,
-            output_format,
-            protocol=protocol,
-            user=user,
-            passwd=passwd,
-            params=params,
-            subpath=subpath,
-        )
 
     def validate(self):
         return self._fs.isfile(MODEL_YAML_FILENAME)
@@ -346,7 +317,7 @@ class Model(StoreItem):
     def to_runnable(self) -> t.Type[Runnable]:
         if self._runnable is None:
             module = importlib.import_module(self.info.module)
-            self._runnable: t.Type[Runnable] = module.get_runnable(self)
+            self._runnable = module.get_runnable(self)
         return self._runnable
 
     def with_options(self, **kwargs: t.Any) -> Model:
@@ -356,12 +327,6 @@ class Model(StoreItem):
             self.info.with_options(**kwargs),
             self._custom_objects,
             _internal=True,
-        )
-        res.__attrs_init__(
-            self._tag,
-            self._fs,
-            self.info.with_options(**kwargs),
-            self._custom_objects,
         )
         return res
 
@@ -478,6 +443,12 @@ class ModelSignature:
 attr.resolve_types(ModelSignature, globals(), locals())
 
 
+if TYPE_CHECKING:
+    ModelSignaturesType: t.TypeAlias = (
+        dict[str, ModelSignatureDict] | dict[str, ModelSignature]
+    )
+
+
 def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]:
     encoded: dict[str, t.Any] = {
         "batchable": model_signature.batchable,
@@ -495,7 +466,7 @@ def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]
 bentoml_cattr.register_unstructure_hook(ModelSignature, model_signature_encoder)
 
 
-@attr.define(repr=False, eq=False)
+@attr.define(repr=False, eq=False, init=True)
 class ModelInfo:
     tag: Tag
     name: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
@@ -510,6 +481,22 @@ class ModelInfo:
     )
     api_version: str = attr.field(default="v1")
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+
+    # for type checking
+    def __init__(
+        # pylint: disable=unused-argument
+        self,
+        tag: Tag,
+        module: str,
+        labels: dict[str, str],
+        options: ModelOptions,
+        metadata: dict[str, t.Any],
+        context: ModelContext,
+        signatures: ModelSignaturesType,
+        api_version: str | None = None,
+        creation_time: datetime | None = None,
+    ):
+        ...
 
     def __attrs_post_init__(self):
         object.__setattr__(self, "name", self.tag.name)
@@ -550,8 +537,16 @@ class ModelInfo:
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
-    def dump(self, stream: t.IO[t.Any] | None = None):
-        return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore
+    @overload
+    def dump(self, stream: io.StringIO) -> io.BytesIO:
+        ...
+
+    @overload
+    def dump(self, stream: None = None) -> None:
+        ...
+
+    def dump(self, stream: io.StringIO | None = None) -> io.BytesIO | None:
+        return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore (bad yaml types)
 
     @staticmethod
     def from_yaml_file(stream: t.IO[t.Any]):

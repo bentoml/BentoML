@@ -26,11 +26,13 @@ BatchDimType: t.TypeAlias = t.Union[t.Tuple[t.Union[t.List[int], int], int], int
 
 
 def batch_dim_structure_hook(
-    batch_dim_encoded: int | list[list[int] | int], _
+    batch_dim_encoded: int | list[list[int] | int], _: t.Any
 ) -> BatchDimType:
     if isinstance(batch_dim_encoded, int):
         return batch_dim_encoded
-    return tuple(batch_dim_encoded)
+    out_dim = batch_dim_encoded[1]
+    assert isinstance(out_dim, int)
+    return (batch_dim_encoded[0], out_dim)
 
 
 bentoml_cattr.register_structure_hook(BatchDimType, batch_dim_structure_hook)
@@ -105,7 +107,7 @@ class Runnable(ABC):
 
 
 if TYPE_CHECKING:
-    BatchDimSuper = Mapping[str | int, int]
+    BatchDimSuper: t.TypeAlias = Mapping[str | int, int]
 else:
     BatchDimSuper = Mapping
 

@@ -107,9 +107,11 @@ def save_model(
             Metadata is intended for display in model management UI and therefore must be a default
             Python type, such as ``str`` or ``int``.
     Returns:
-        :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model
-        store.
-    Example:
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the
+        user-defined model's name, and a generated `version` by BentoML.
+
+    Examples:
+
     .. code-block:: python
         import xgboost as xgb
         import bentoml

@@ -159,7 +159,7 @@ class Model(StoreItem):
         name: str,
         *,
         module: str,
-        signatures: dict[str, t.Any],
+        signatures: dict[str, ModelSignatureDict | ModelSignature],
         labels: dict[str, str] | None = None,
         options: ModelOptions | None = None,
         custom_objects: dict[str, t.Any] | None = None,

@@ -15,15 +15,17 @@ from bentoml.exceptions import MissingDependencyException
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
-from ..models.model import ModelSignature
 
 if TYPE_CHECKING:
     from sklearn.base import BaseEstimator
     from sklearn.pipeline import Pipeline
 
+    from bentoml.types import ModelSignatureDict
+    from bentoml.types import ModelSignature
+
     from .. import external_typing as ext
 
-    SklearnModel = BaseEstimator | Pipeline
+    SklearnModel: t.TypeAlias = BaseEstimator | Pipeline
 
 
 try:
@@ -42,6 +44,7 @@ except ImportError:  # pragma: no cover
         )
 
 MODULE_NAME = "bentoml.sklearn"
+MODEL_FILENAME = "saved_model.pkl"
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +84,7 @@ def load_model(
         raise BentoMLException(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
-    model_file = bento_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
+    model_file = bento_model.path_of(MODEL_FILENAME)
 
     return joblib.load(model_file)
 
@@ -90,7 +93,7 @@ def save_model(
     name: str,
     model: SklearnModel,
     *,
-    signatures: dict[str, ModelSignature] | None = None,
+    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
@@ -146,10 +149,10 @@ def save_model(
     )
 
     if signatures is None:
+        signatures = {"predict": {"batchable": False}}
         logger.info(
-            'Using default model signature `{"predict": {"batchable": False}}` for sklearn model'
+            f"Using the default model signature for sklearn ({signatures}) for model {name}."
         )
-        signatures = {"predict": ModelSignature(batchable=False)}
 
     with bentoml.models.create(
         name,
@@ -159,11 +162,11 @@ def save_model(
         metadata=metadata,
         context=context,
         signatures=signatures,
-    ) as _model:
+    ) as bento_model:
 
-        joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
+        joblib.dump(model, bento_model.path_of(MODEL_FILENAME))
 
-        return _model.tag
+        return bento_model.tag
 
 
 def get_runnable(bento_model: Model):

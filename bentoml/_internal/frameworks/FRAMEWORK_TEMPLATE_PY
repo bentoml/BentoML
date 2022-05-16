@@ -1,4 +1,6 @@
 from __future__ import annotations
+import logging
+import os
 
 import typing as t
 from typing import TYPE_CHECKING
@@ -7,19 +9,23 @@ import attr
 
 import bentoml
 from bentoml import Tag
-from bentoml import __version__ as BENTOML_VERSION
+from bentoml._internal.models.model import MODEL_YAML_FILENAME
+from bentoml.exceptions import NotFound
 from bentoml.models import ModelContext
 from bentoml.models import ModelOptions
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignatureDict
-
-    ModelType = ...
-
-MODULE_NAME = "bentoml.MY_MODULE"
+    from bentoml.types import ModelSignature
 
 
-def get(tag_like: str | Tag) -> Model:
+MODULE_NAME = "MY_PKG.MY_MODULE"
+MODEL_FILENAME = "saved_model.EXT"
+
+logger = logging.getLogger(__name__)
+
+
+def get(tag_like: str | Tag) -> bentoml.Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -35,8 +41,8 @@ class FrameworkOptions(ModelOptions):
 
 def load_model(
     bento_model: str | Tag | bentoml.Model,
-    *,
-    ...
+    # *,
+    # ...
 ) -> FrameworkModelType:
     """
     Load the <FRAMEWORK> model with the given tag from the local BentoML model store.
@@ -57,18 +63,19 @@ def load_model(
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
-    ...
+
+    FRAMEWORK_PY.load(bento_model.path_of(MODEL_FILENAME))
 
 
 def save_model(
     name: str,
     model: FrameworkModelType,
     *,
-    signatures: dict[str, ModelSignatureDict] | None,
+    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
-    ...
+    # ...
 ) -> Tag:
     """
     Save a <FRAMEWORK> model instance to the BentoML model store.
@@ -79,12 +86,32 @@ def save_model(
             :obj:`~bentoml.Tag` name.
         model (<MODELTYPE>):
             The <FRAMEWORK> model to be saved.
+        signatures (``dict[str, ModelSignatureDict]``, optional):
+            Signatures of predict methods to be used. If not provided, the signatures default to 
+            <DEFAULT HERE>. See :obj:`~bentoml.types.ModelSignature` for more details.
+        labels (``dict[str, str]``, optional):
+            A default set of management labels to be associated with the model. An example is
+            ``{"training-set": "data-1"}``.
+        custom_objects (``dict[str, Any]``, optional):
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``.
+
+            Custom objects are currently serialized with cloudpickle, but this implementation is
+            subject to change.
+        metadata (``dict[str, Any]``, optional):
+            Metadata to be associated with the model. An example is ``{"bias": 4}``.
+
+            Metadata is intended for display in a model management UI and therefore must be a
+            default Python type, such as ``str`` or ``int``.
+
+        ...
     Returns:
-        :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model store.
+        :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model
+        store.
     Example:
     .. code-block:: python
         <SAVE EXAMPLE>
-    """  # noqa: LN001
+    """
     context = ModelContext(
         framework_name="FRAMEWORK_PY",
         framework_versions={"FRAMEWORK_PY": FRAMEWORK_PY.__version__},
@@ -94,6 +121,9 @@ def save_model(
         signatures = {
             DEFAULT_MODEL_METHOD: {"batchable": False},
         }
+        logger.info(
+            f"Using the default model signature for <FRAMEWORK> ({signatures}) for model {name}."
+        )
 
     options = FrameworkOptions()
 
@@ -106,19 +136,11 @@ def save_model(
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
-    ) as bentoml_model:
-        ...
-
-        return bentoml_model.tag
+    ) as bento_model:
+        model.save(bento_model.path_of(MODEL_FILENAME))
 
 
-def get(tag_like: str | Tag) -> Model:
-    model = bentoml.models.get(tag_like)
-    if model.info.module != MODULE_NAME:
-        raise NotFound(
-            f'Model "{tag_like}" saved with module "{MODULE_NAME}" is not found'
-        )
-    return model
+        return bento_model.tag
 
 
 def get_runnable(
@@ -139,10 +161,21 @@ def get_runnable(
                 bento_model,
                 # bento_model.info.options.*
             )
+            
+            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
+            if available_gpus is not None and available_gpus != "":
+                # assign GPU resources
+                ...
+            else:
+                # assign CPU resources
+                ...
+
+            self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
+            for method_name in bento_model.info.signatures:
+                self.predict_fns[method_name] = getattr(self.model, method_name)
 
     for method_name, options in bento_model.info.signatures.items():
-
-        def _run(self, input_data) -> output_data:
+        def _run(self, input_data) -> OutputType:
             ...
 
         FrameworkRunnable.add_method(

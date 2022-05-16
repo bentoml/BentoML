@@ -25,14 +25,14 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 - Offline scoring on batch datasets with Apache Spark, or Dask.
 - Stream serving with Kafka, Beam, and Flink
 
-🍱 Easy transition from model development to model serving in production
+🍱 Easily go from training to model serving in production
 - 27 ML Frameworks natively supported and counting! - Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more
-- Integrate with any training pipeline or experimentation management platform
 - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
 - Automatically setup CUDA and cuDNN for serving models with GPU
+- Designed to work with any training pipeline or experimentation platform
 
 🐍 Python-first, scales with powerful optimizations
-- Business logic and feature extraction scale separately than model inference workers
+- Standalone Model inference workers that scale separately from business logic and feature extraction code
 - Adaptive batching dynamically groups inference requests for optimal performance
 - Complex inference graphs automatically orchestrated with Yatai on Kubernetes
 
@@ -88,12 +88,12 @@ import bentoml
 from bentoml.io import NumpyNdarray, Image
 from PIL.Image import Image as PILImage
 
-mnist_runner = bentoml.pytorch.get("demo_mnist").to_runner(gpu=1)  # assign the first available GPU to this Runner
+mnist_runner = bentoml.pytorch.get("demo_mnist:latest").to_runner(gpu=1)  # assign the first available GPU to this Runner
 
 svc = bentoml.Service("pytorch_mnist", runners=[mnist_runner])
 
 @svc.api(input=Image(), output=NumpyNdarray(dtype="int64"))  # define service API endpoint and its input/output type
-def predict_image(f: PILImage):
+def predict(f: PILImage):
     arr = np.array(f)/255.0
     assert arr.shape == (28, 28)
     arr = np.expand_dims(arr, 0).astype("float32")
@@ -104,13 +104,18 @@ def predict_image(f: PILImage):
 Saved model can be converted into a `Runner`, which in BentoML, represents a unit of computation that can be scaled separately. In local deployment mode, this means the model will be running in its own worker processes.
 Since the model is saved with a `batchable: True` signature, BentoML applies dynamic batching to all the `mnist_runner.predict.run` calls under the hood for optimal performance.
 
-Start an HTTP server locally to test out the serving endpoint:
+Start an HTTP server locally:
 
 ```bash
-bentoml serve service.py:svc --reload
+bentoml serve service.py:svc
 ```
 
-Visit http://localhost:3000 and send test requests from the web UI.
+And sent test requests to it, e.g.:
+```bash
+curl -F 'image=@samples/1.png' http://127.0.0.1:3000/predict_image
+```
+
+You can also visit http://127.0.0.1:3000 in browser and debug the endpoint from its web UI.
 
 **Step 3:** Build a Bento for deployment:
 
@@ -149,7 +154,9 @@ INFO [cli]
 
 INFO [cli] Successfully built Bento(tag="pytorch_mnist:4mymorgurocxjuqj") at "~/bentoml/bentos/pytorch_mnist/4mymorgurocxjuqj/"
 ```
-The `Bento(tag="pytorch_mnist:4mymorgurocxjuqj")` is now created in the local `Bento` store. It is an archive containing all the source code, model files, and dependency specs - anything that is required for reproducing the model in an identical environment for serving in production.
+The Bento with `tag="pytorch_mnist:4mymorgurocxjuqj"` is now created in the local `Bento` store. It is an archive containing all the source code, model files, and dependency specs - anything that is required for reproducing the model in an identical environment for serving in production.
+
+Note that even it uses `demo_mnist:latest` in the code, it can be resolved with local model store to the model version `demo_mnist:7drxqvwsu6zq5uqj` during `bentoml build` process. This model version is now packaged together with the Bento, where ever it is being deployed to.
 
 **Step 4:** Deploying the `Bento`
 

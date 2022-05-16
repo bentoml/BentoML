@@ -133,7 +133,7 @@ def save_model(
 
     if signatures is None:
         logger.info(
-            'Using default model signature `{"predict": {"batchable": False}}` for sklearn model'
+            'Using default model signature `{"predict": {"batchable": False}}` for XGBoost model'
         )
         signatures = {
             "predict": {"batchable": False},

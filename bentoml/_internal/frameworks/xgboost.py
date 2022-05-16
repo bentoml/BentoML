@@ -1,24 +1,24 @@
+from __future__ import annotations
+import logging
+
+import os
 import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import inject
-from simple_di import Provide
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import NotFound
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.models.model import ModelContext
 
-from ..models import JSON_EXT
-from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
-from .common.model_runner import BaseModelRunner
-from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from bentoml.types import ModelSignatureDict
+
     from .. import external_typing as ext
-    from ..models import ModelStore
 
 try:
     import xgboost as xgb
@@ -31,123 +31,86 @@ except ImportError:  # pragma: no cover
     )
 
 MODULE_NAME = "bentoml.xgboost"
+MODEL_FILENAME = "saved_model.ubj"
 
-# TODO: support xgb.DMatrix runner io container
-# from bentoml.runner import RunnerIOContainer, register_io_container
-# class DMatrixContainer(RunnerIOContainer):
-#     batch_type = xgb.DMatrix
-#     item_type = xgb.DMatrix
-#
-#     def flatten(self):
-#         pass
-#
-#     def squeeze(self):
-#         pass
-#
-#     def serialize(self):
-#         pass
-#
-#     def deserialize(self):
-#         pass
-#
-# register_io_container(DMatrixContainer)
+logger = logging.getLogger(__name__)
 
 
-def _get_model_info(
-    tag: Tag,
-    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-    model_store: "ModelStore",
-) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
-    model = model_store.get(tag)
+def get(tag_like: str | Tag) -> bentoml.Model:
+    model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
-    model_file = model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}")
-    _booster_params = dict() if not booster_params else booster_params
-    for key, value in model.info.options.items():
-        if key not in _booster_params:
-            _booster_params[key] = value  # pragma: no cover
-    if "nthread" not in _booster_params:
-        _booster_params["nthread"] = -1  # apply default nthread parameter
-
-    return model, model_file, _booster_params
+    return model
 
 
-@inject
-def load(
-    tag: t.Union[str, Tag],
-    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "xgb.core.Booster":
+def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.core.Booster:
     """
-    Load a model from BentoML local modelstore with given name.
+    Load the XGBoost model with the given tag from the local BentoML model store.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        booster_params (`t.Dict[str, t.Union[str, int]]`):
-            Params for xgb.core.Booster initialization
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
-
+        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
+            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
+            instance to load the model from.
     Returns:
-        :obj:`xgboost.core.Booster`: an instance of `xgboost.core.Booster` from BentoML modelstore.
-
-    Examples:
-
+        :obj:`~xgboost.Booster`: The loaded model.
+            The XGBoost model loaded from the model store or BentoML :obj:`~bentoml.Model`.
+    Example:
     .. code-block:: python
-
         import bentoml
+        booster = bentoml.xgboost.load_model('booster_tree')
+    """  # noqa: LN001
+    if not isinstance(bento_model, bentoml.Model):
+        bento_model = get(bento_model)
+        assert isinstance(bento_model, bentoml.Model)
 
-        # `load` the booster back in memory:
-        booster = bentoml.xgboost.load('booster_tree', booster_params=dict(gpu_id=0))
-
-    """  # noqa
-    _, _model_file, _booster_params = _get_model_info(tag, booster_params, model_store)
-
-    return xgb.core.Booster(
-        params=_booster_params,
-        model_file=_model_file,
-    )
+    model_file = bento_model.path_of(MODEL_FILENAME)
+    booster = xgb.core.Booster(model_file=model_file)
+    return booster
 
 
-def save(
+def save_model(
     name: str,
-    model: "xgb.core.Booster",
+    model: xgb.core.Booster,
     *,
-    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    signatures: dict[str, ModelSignatureDict] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> Tag:
     """
-    Save a model instance to BentoML modelstore.
+    Save an XGBoost model instance to the BentoML model store.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        model (`xgboost.core.Booster`):
-            Instance of model to be saved
-        booster_params (:code:`Dict[str, Union[str, int]]`, `optional`, default to :code:`None`):
-            Params for booster initialization
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
-            user-defined additional python objects to be saved alongside the model,
-            e.g. a tokenizer instance, preprocessor function, model configuration json
-        metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        name (``str``):
+            The name to give to the model in the BentoML store. This must be a valid
+            :obj:`~bentoml.Tag` name.
+        model (:obj:`~xgboost.core.Booster`):
+            The XGBoost model to be saved.
+        signatures (``dict[str, ModelSignatureDict]``, optional):
+            Signatures of predict methods to be used. If not provided, the signatures default to 
+            ``{"predict": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more
+            details.
+        labels (``dict[str, str]``, optional):
+            A default set of management labels to be associated with the model. An example is
+            ``{"training-set": "data-1"}``.
+        custom_objects (``dict[str, Any]``, optional):
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``.
 
+            Custom objects are currently serialized with cloudpickle, but this implementation is
+            subject to change.
+        metadata (``dict[str, Any]``, optional):
+            Metadata to be associated with the model. An example is ``{"max_depth": 2}``.
+
+            Metadata is intended for display in model management UI and therefore must be a default
+            Python type, such as ``str`` or ``int``.
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
-
-    Examples:
-
+        :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model
+        store.
+    Example:
     .. code-block:: python
-
         import xgboost as xgb
         import bentoml
 
@@ -162,120 +125,84 @@ def save(
 
         # `save` the booster to BentoML modelstore:
         tag = bentoml.xgboost.save("my_xgboost_model", bst, booster_params=param)
-    """  # noqa
-    context: t.Dict[str, t.Any] = {
-        "framework_name": "xgboost",
-        "pip_dependencies": [f"xgboost=={get_pkg_version('xgboost')}"],
-    }
+    """  # noqa: LN001
+    context: ModelContext = ModelContext(
+        framework_name="xgboost",
+        framework_versions={"xgboost": get_pkg_version("xgboost")},
+    )
+
+    if signatures is None:
+        logger.info(
+            'Using default model signature `{"predict": {"batchable": False}}` for XGBoost model'
+        )
+        signatures = {
+            "predict": {"batchable": False},
+        }
 
     with bentoml.models.create(
         name,
-        module=__name__,
-        options=booster_params,
-        context=context,
+        module=MODULE_NAME,
+        signatures=signatures,
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    ) as _model:
+        context=context,
+    ) as bento_model:
+        model.save_model(bento_model.path_of(MODEL_FILENAME))  # type: ignore (incomplete XGBoost types)
 
-        model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}"))
-
-        return _model.tag
+        return bento_model.tag
 
 
-class _XgBoostRunner(BaseModelRunner):
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-        name: t.Optional[str] = None,
-    ):
-        super().__init__(tag=tag, name=name)
+def get_runnable(
+    bento_model: bentoml.Model,
+) -> t.Type[bentoml.Runnable]:
+    """
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
+    """
 
-        self._predict_fn_name = predict_fn_name
-        booster_params = dict() if booster_params is None else booster_params
-        self._booster_params = self._setup_booster_params(booster_params)
+    class XGBoostRunnable(bentoml.Runnable):
+        SUPPORT_NVIDIA_GPU = True
+        SUPPORT_CPU_MULTI_THREADING = True
 
-    @property
-    def num_replica(self) -> int:
-        if self.resource_quota.nvidia_gpu:
-            return self.resource_quota.nvidia_gpu
-        return 1
+        def __init__(self):
+            super().__init__()
+            self.model = load_model(bento_model)
 
-    def _setup_booster_params(
-        self, booster_params: t.Dict[str, t.Any]
-    ) -> t.Dict[str, t.Any]:
-        if self.resource_quota.nvidia_gpu:
-            booster_params["predictor"] = "gpu_predictor"
-            booster_params["tree_method"] = "gpu_hist"
-            # Use the first device reported by CUDA runtime
-            booster_params["gpu_id"] = 0
-            booster_params["nthread"] = 1
-        else:
-            booster_params["predictor"] = "cpu_predictor"
-            booster_params["nthread"] = max(round(self.resource_quota.cpu), 1)
+            # check for resources
+            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
+            if available_gpus is not None and available_gpus != "":
+                self.model.set_param({"predictor": "gpu_predictor", "gpu_id": 0})  # type: ignore (incomplete XGBoost types)
+            else:
+                nthreads = os.getenv("OMP_NUM_THREADS")
+                if nthreads is not None and nthreads != "":
+                    nthreads = max(int(nthreads), 1)
+                else:
+                    nthreads = 1
+                self.model.set_param({"predictor": "cpu_predictor", "nthread": nthreads})  # type: ignore (incomplete XGBoost types)
 
-        return booster_params
+            self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
+            for method_name in bento_model.info.signatures:
+                self.predict_fns[method_name] = getattr(self.model, method_name)
 
-    def _setup(self) -> None:
-        self._model = load(
-            self._tag,
-            booster_params=self._booster_params,
-            model_store=self.model_store,
+    for method_name, options in bento_model.info.signatures.items():
+
+        def _run(
+            self: XGBoostRunnable,
+            input_data: ext.NpNDArray | ext.PdDataFrame | xgb.DMatrix,
+        ) -> ext.NpNDArray:
+            if not isinstance(input_data, xgb.DMatrix):
+                input_data = xgb.DMatrix(input_data)
+
+            res = self.predict_fns[method_name](input_data)
+            return np.asarray(res)  # type: ignore (incomplete np types)
+
+        XGBoostRunnable.add_method(
+            _run,
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
         )
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(  # type: ignore
-        self,
-        input_data: t.Union["ext.NpNDArray", "ext.PdDataFrame", xgb.DMatrix],
-    ) -> "ext.NpNDArray":
-        if not isinstance(input_data, xgb.DMatrix):
-            input_data = xgb.DMatrix(input_data)
-        res = self._predict_fn(input_data)
-        return np.asarray(res)
-
-
-def load_runner(
-    tag: t.Union[str, Tag],
-    predict_fn_name: str = "predict",
-    *,
-    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
-    name: t.Optional[str] = None,
-) -> "_XgBoostRunner":
-    """
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
-
-    Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (:code:`str`, default to :code:`predict`):
-            Options for inference functions. If you want to use `run`
-            or `run_batch` in a thread context then use `inplace_predict`.
-            Otherwise, `predict` are the de facto functions.
-        booster_params (:code:`t.Dict[str, t.Union[str, int]]`, default to :code:`None`):
-            Parameters for boosters. Refers to `Parameters docs <https://xgboost.readthedocs.io/en/latest/parameter.html>`_ for more information.
-
-    Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.xgboost` model
-
-    Examples:
-
-    .. code-block:: python
-
-        import xgboost as xgb
-        import bentoml.xgboost
-        import pandas as pd
-
-        input_data = pd.from_csv("/path/to/csv")
-        runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
-        runner.run(xgb.DMatrix(input_data))
-    """
-    return _XgBoostRunner(
-        tag=tag,
-        predict_fn_name=predict_fn_name,
-        booster_params=booster_params,
-        name=name,
-    )
+    return XGBoostRunnable

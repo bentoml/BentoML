@@ -57,13 +57,12 @@ Install all Python packages required for this tutorial:
 How does BentoML work?
 ----------------------
 
-BentoML is a python-first, efficient and flexible framework for building production-grade
-machine learning services.
+BentoML is a python-first, efficient and flexible framework for building
+production-grade machine learning services.
+
 
 It lets you save and version your trained models in a local model store, and defines a
 standard interface for retrieving and running the saved models.
-
-
 
 
 
@@ -71,7 +70,8 @@ Save Model
 ----------
 
 We begin by saving a trained model instance to BentoML's local
-:ref:`model store <bento-management-page>`. The local model store is used for managing your trained models as well as accessing them for serving.
+:ref:`model store <bento-management-page>`. The local model store is used for managing
+your trained models as well as accessing them for serving.
 
 .. code-block:: python
    :emphasize-lines: 14,15
@@ -96,7 +96,8 @@ We begin by saving a trained model instance to BentoML's local
     # INFO  [cli] Successfully saved Model(tag="iris_clf:7drxqvwsu6zq5uqj", path="~/bentoml/models/iris_clf/7drxqvwsu6zq5uqj/")
 
 
-The model is now saved under name :code:`iris_clf` with an automatically generated version.
+The model is now saved under name :code:`iris_clf` with an automatically generated
+version.
 
 
 :code:`bentoml.sklearn.save_model` is built specifically for the Scikit-Learn framework and uses its native saved model format under the hood for best compatibility and performance.

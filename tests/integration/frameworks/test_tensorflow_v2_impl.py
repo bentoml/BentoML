@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pytest
 import tensorflow as tf
-import tensorflow_hub as hub
 
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
@@ -60,7 +59,7 @@ def test_tensorflow_v2_save_load(
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = bentoml.tensorflow.save(
+    tag = bentoml.tensorflow.save_model(
         MODEL_NAME, mcls, labels=labels, custom_objects={"func": custom_f}
     )
     bentomodel = bentoml.models.get(tag)
@@ -69,7 +68,7 @@ def test_tensorflow_v2_save_load(
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
-    model = bentoml.tensorflow.load(MODEL_NAME)
+    model = bentoml.tensorflow.load_model(MODEL_NAME)
     output = predict_fn(model, tensor)
     if is_ragged:
         assert all(output.numpy() == np.array([[15.0]] * 3))
@@ -79,100 +78,35 @@ def test_tensorflow_v2_save_load(
 
 def test_tensorflow_v2_setup_run_batch():
     model_class = NativeModel()
-    tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
-    runner = bentoml.tensorflow.load_runner(tag)
+    tag = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
+    runner = bentoml.tensorflow.get(tag).to_runner()
 
-    assert tag in runner.required_models
-    assert runner.num_replica == 1
-    assert runner.run_batch(native_data) == np.array([[15.0]])
+    assert tag in [model.tag for model in runner.models]
+    runner.init_local()
+    assert runner.run(native_data) == np.array([[15.0]])
 
 
 @pytest.mark.gpus
 def test_tensorflow_v2_setup_on_gpu():
     model_class = NativeModel()
-    tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
-    runner = bentoml.tensorflow.load_runner(tag)
-
-    assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
-    assert runner.run_batch(native_tensor) == np.array([[15.0]])
-
-
-def test_tensorflow_v2_multi_args():
-    model_class = MultiInputModel()
-    tag = bentoml.tensorflow.save(MODEL_NAME, model_class)
-    runner1 = bentoml.tensorflow.load_runner(
-        tag,
-        partial_kwargs=dict(factor=tf.constant(3.0, dtype=tf.float64)),
-    )
-    runner2 = bentoml.tensorflow.load_runner(
-        tag,
-        partial_kwargs=dict(factor=tf.constant(2.0, dtype=tf.float64)),
-    )
-
-    assert runner1.run_batch(native_data, native_data) == np.array([[60.0]])
-    assert runner2.run_batch(native_data, native_data) == np.array([[45.0]])
+    tag = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
+    runner = bentoml.tensorflow.get(tag).to_runner(nvidia_gpu=1)
+    runner.init_local()
+    # assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
+    assert runner.run(native_tensor) == np.array([[15.0]])
 
 
-def _plus_one_model_tf2():
-    obj = tf.train.Checkpoint()
+# def test_tensorflow_v2_multi_args():
+#     model_class = MultiInputModel()
+#     tag = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
+#     runner1 = bentoml.tensorflow.load_runner(
+#         tag,
+#         partial_kwargs=dict(factor=tf.constant(3.0, dtype=tf.float64)),
+#     )
+#     runner2 = bentoml.tensorflow.load_runner(
+#         tag,
+#         partial_kwargs=dict(factor=tf.constant(2.0, dtype=tf.float64)),
+#     )
 
-    @tf.function(input_signature=[tf.TensorSpec(None, dtype=tf.float32)])
-    def plus_one(x):
-        return x + 1
-
-    obj.__call__ = plus_one
-    return obj
-
-
-def _plus_one_model_tf1():
-    def plus_one():
-        x = tf.compat.v1.placeholder(dtype=tf.float32, name="x")
-        y = x + 1
-        hub.add_signature(inputs=x, outputs=y)
-
-    spec = hub.create_module_spec(plus_one)
-    with tf.compat.v1.get_default_graph().as_default():
-        module = hub.Module(spec, trainable=True)
-        return module
-
-
-@pytest.mark.parametrize(
-    "identifier, name, tags, is_module_v1, wrapped",
-    [
-        (_plus_one_model_tf1(), "module_hub_tf1", [], True, False),
-        (_plus_one_model_tf2(), "saved_model_tf2", ["serve"], False, False),
-        (
-            "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
-            None,
-            None,
-            False,
-            True,
-        ),
-    ],
-)
-def test_import_from_tfhub(
-    identifier: Union[Callable[[], Union["hub.Module", "hub.KerasLayer"]], str],
-    name: Optional[str],
-    tags: Optional[List[Any]],
-    is_module_v1: bool,
-    wrapped: bool,
-):
-    if isinstance(identifier, str):
-        import tensorflow_text as text  # noqa # pylint: disable
-
-    labels = {"stage": "dev"}
-
-    def custom_f(x: int) -> int:
-        return x + 1
-
-    tag = bentoml.tensorflow.import_from_tfhub(
-        identifier, name, labels=labels, custom_objects={"func": custom_f}
-    )
-    bentomodel = bentoml.models.get(tag)
-    assert bentomodel.info.context["import_from_tfhub"]
-    for k in labels.keys():
-        assert labels[k] == bentomodel.info.labels[k]
-    assert bentomodel.custom_objects["func"](3) == custom_f(3)
-
-    module = bentoml.tensorflow.load(tag, tags=tags, load_as_hub_module=wrapped)
-    assert module._is_hub_module_v1 == is_module_v1  # pylint: disable
+#     assert runner1.run_batch(native_data, native_data) == np.array([[60.0]])
+#     assert runner2.run_batch(native_data, native_data) == np.array([[45.0]])

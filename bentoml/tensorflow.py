@@ -1,6 +1,6 @@
-from ._internal.frameworks.tensorflow_v2 import load
-from ._internal.frameworks.tensorflow_v2 import save
-from ._internal.frameworks.tensorflow_v2 import load_runner
-from ._internal.frameworks.tensorflow_v2 import import_from_tfhub
+from ._internal.frameworks.tensorflow_v2 import get
+from ._internal.frameworks.tensorflow_v2 import load_model
+from ._internal.frameworks.tensorflow_v2 import save_model
+from ._internal.frameworks.tensorflow_v2 import get_runnable
 
-__all__ = ["load", "load_runner", "save", "import_from_tfhub"]
+__all__ = ["get", "load_model", "save_model", "get_runnable"]

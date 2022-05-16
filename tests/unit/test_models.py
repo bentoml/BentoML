@@ -14,6 +14,7 @@ import pytest
 import bentoml
 from bentoml.exceptions import NotFound
 from bentoml._internal.models import ModelStore
+from bentoml._internal.models import ModelContext
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -30,19 +31,30 @@ def createfile(filepath: str) -> str:
     return content
 
 
+TEST_MODEL_CONTEXT = ModelContext(
+    framework_name="testing", framework_versions={"testing": "v1"}
+)
+
+
 def test_models(tmpdir: "Path"):
     os.makedirs(os.path.join(tmpdir, "models"))
     store = ModelStore(os.path.join(tmpdir, "models"))
 
-    with bentoml.models.create("testmodel", _model_store=store) as testmodel:
+    with bentoml.models.create(
+        "testmodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+    ) as testmodel:
         testmodel1tag = testmodel.tag
 
-    with bentoml.models.create("testmodel", _model_store=store) as testmodel:
+    with bentoml.models.create(
+        "testmodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+    ) as testmodel:
         testmodel2tag = testmodel.tag
         testmodel_file_content = createfile(testmodel.path_of("file"))
         testmodel_infolder_content = createfile(testmodel.path_of("folder/file"))
 
-    with bentoml.models.create("anothermodel", _model_store=store) as anothermodel:
+    with bentoml.models.create(
+        "anothermodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+    ) as anothermodel:
         anothermodeltag = anothermodel.tag
         anothermodel_file_content = createfile(anothermodel.path_of("file"))
         anothermodel_infolder_content = createfile(anothermodel.path_of("folder/file"))
@@ -72,9 +84,6 @@ def test_models(tmpdir: "Path"):
     with open(anothermodel.path_of("folder/file"), encoding="utf-8") as f:
         assert f.read() == anothermodel_infolder_content
 
-    with pytest.raises(NotImplementedError):
-        bentoml.models.load_runner(testmodel2tag, _model_store=store)
-
     export_path = os.path.join(tmpdir, "testmodel2.bentomodel")
     bentoml.models.export_model(testmodel2tag, export_path, _model_store=store)
     bentoml.models.delete(testmodel2tag, _model_store=store)
@@ -89,8 +98,16 @@ def test_models(tmpdir: "Path"):
 
     retrieved_testmodel1 = bentoml.models.get("testmodel", _model_store=store)
     assert retrieved_testmodel1.tag == testmodel1tag
-    assert retrieved_testmodel1.info.context["python_version"] == PYTHON_VERSION
-    assert retrieved_testmodel1.info.context["bentoml_version"] == BENTOML_VERSION
+    assert retrieved_testmodel1.info.context.python_version == PYTHON_VERSION
+    assert retrieved_testmodel1.info.context.bentoml_version == BENTOML_VERSION
+    assert (
+        retrieved_testmodel1.info.context.framework_name
+        == TEST_MODEL_CONTEXT.framework_name
+    )
+    assert (
+        retrieved_testmodel1.info.context.framework_versions
+        == TEST_MODEL_CONTEXT.framework_versions
+    )
 
     bentoml.models.import_model(export_path, _model_store=store)
 

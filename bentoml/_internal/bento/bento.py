@@ -137,7 +137,7 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
-    ) -> "Bento":
+    ) -> Bento:
         from ..service.loader import import_service
 
         build_ctx = (

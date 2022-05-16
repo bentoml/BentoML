@@ -10,11 +10,12 @@ from collections.abc import Mapping
 
 if TYPE_CHECKING:
     WrappedMethod = t.TypeVar("WrappedMethod", bound=t.Callable[..., t.Any])
-    from bentoml._internal.types import AnyType
+    from ..types import AnyType
 
 import attr
 
-from bentoml._internal.types import LazyType
+from ..types import LazyType
+from ..utils import bentoml_cattr
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,17 @@ RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
 # not usable because attrs is unable to resolve the type at runtime
 # BatchDimType: t.TypeAlias = tuple[list[int] | int, list[int] | int] | int
 BatchDimType: t.TypeAlias = t.Union[t.Tuple[t.Union[t.List[int], int], int], int]
+
+
+def batch_dim_structure_hook(
+    batch_dim_encoded: int | list[list[int] | int], _
+) -> BatchDimType:
+    if isinstance(batch_dim_encoded, int):
+        return batch_dim_encoded
+    return tuple(batch_dim_encoded)
+
+
+bentoml_cattr.register_structure_hook(BatchDimType, batch_dim_structure_hook)
 
 
 class Runnable(ABC):

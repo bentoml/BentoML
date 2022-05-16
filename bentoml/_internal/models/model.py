@@ -44,7 +44,6 @@ if TYPE_CHECKING:
         str, bool | BatchDimType | AnyType | tuple[AnyType] | None
     ]
 
-
 T = t.TypeVar("T")
 
 logger = logging.getLogger(__name__)
@@ -87,7 +86,7 @@ class Model(StoreItem):
     _info: ModelInfo
     _custom_objects: dict[str, t.Any] | None = None
 
-    _runnable: Runnable | None = None
+    _runnable: Runnable | None = attr.field(init=False, default=None)
 
     def __init__(
         self,
@@ -95,7 +94,6 @@ class Model(StoreItem):
         fs: FS,
         info: ModelInfo,
         custom_objects: dict[str, t.Any] | None = None,
-        runnable: Runnable | None = None,
         *,
         _internal: bool = False,
     ):
@@ -114,7 +112,6 @@ class Model(StoreItem):
         info: ModelInfo,
         custom_objects: dict[str, t.Any] | None = None,
         flushed: bool = False,
-        runnable: Runnable | None = None,
     ):
         ...
 
@@ -141,7 +138,9 @@ class Model(StoreItem):
                 with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
                     self._custom_objects: t.Optional[
                         t.Dict[str, t.Any]
-                    ] = cloudpickle.load(cofile)
+                    ] = cloudpickle.load(
+                        cofile
+                    )  # type: ignore (incomplete cloudpickle types)
                     if not isinstance(self._custom_objects, dict):
                         raise ValueError("Invalid custom objects found.")
             else:
@@ -345,9 +344,9 @@ class Model(StoreItem):
         )
 
     def to_runnable(self) -> t.Type[Runnable]:
-        module = importlib.import_module(self.info.module)
-        if not self._runnable:
-            self._runnable = module.get_runnable(self)
+        if self._runnable is None:
+            module = importlib.import_module(self.info.module)
+            self._runnable: t.Type[Runnable] = module.get_runnable(self)
         return self._runnable
 
     def with_options(self, **kwargs: t.Any) -> Model:
@@ -385,6 +384,9 @@ class ModelContext:
             return data
         return bentoml_cattr.structure(data, ModelContext)
 
+    def to_dict(self: ModelContext) -> dict[str, str | dict[str, str]]:
+        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
+
 
 # Remove after attrs support ForwardRef natively
 attr.resolve_types(ModelContext, globals(), locals())
@@ -395,29 +397,59 @@ class ModelSignature:
     """
     A model signature represents a method on a model object that can be called.
 
-    Note that anywhere a ``ModelSignature`` is used, a ``dict`` with keys corresponding to the fields
-    can be used instead. For example, instead of ``{"predict": ModelSignature(batchable=True)}``, one
-    can pass ``{"predict": {"batchable": True}}``.
+    This information is used when creating BentoML runners for this model.
+
+    Note that anywhere a ``ModelSignature`` is used, a ``dict`` with keys corresponding to the
+    fields can be used instead. For example, instead of ``{"predict":
+    ModelSignature(batchable=True)}``, one can pass ``{"predict": {"batchable": True}}``.
 
     Fields:
         batchable:
-            Whether the method should support batching. Note that batching must also
-            be explicitly enabled at runtime in the ``Model.to_runner`` or ``bentoml.runner`` call.
+            Whether multiple API calls to this predict method should be batched by the BentoML
+            runner.
         batch_dim:
-            The dimension(s) that contain multiple data. For example, if when passing two input arrays
-            ``[1, 2]`` and ``[5, 6]``, if the input array is ``[[1, 2], [3, 4]]``, then the batch dimension
-            would be ``0``. If the input array is ``[[1, 3], [2, 4]]``, then the batch dimension would be ``1``.
+            The dimension(s) that contain multiple data when passing to this prediction method.
+
+            For example, if you have two inputs you want to run prediction on, ``[1, 2]`` and
+            ``[3, 4]``, if the array you would pass to the predict method would be
+            ``[[1, 2], [3, 4]]``, then the batch dimension would be ``0``. If the array you would
+            pass to the predict method would be ``[[1, 3], [2, 4]]``, then the batch dimension would
+            be ``1``.
+
+            If there are multiple arguments to the predict method and there is only one batch
+            dimension supplied, all arguments will use that batch dimension.
+
+            Example:
+            .. code-block:: python
+                # Save two models with `predict` method that supports taking input batches on the dimension 0 and the other on dimension 1:
+                bentoml.pytorch.save_model("demo0", model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable": True, "batch_dim": 1}})
+
+                # if the following calls are batched, the input to the actual predict method on the
+                # model.predict method would be [[1, 2], [3, 4], [5, 6]]
+                runner0 = bentoml.pytorch.get("demo0:latest").to_runner()
+                runner0.init_local()
+                runner0.predict.run(np.array([[1, 2], [3, 4]]))
+                runner0.predict.run(np.array([[5, 6]]))
+
+                # if the following calls are batched, the input to the actual predict method on the
+                # model.predict would be [[1, 2, 5], [3, 4, 6]]
+                runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
+                runner1.init_local()
+                runner1.predict.run(np.array([[1, 2], [3, 4]]))
+                runner1.predict.run(np.array([[5], [6]]))
 
             Expert API:
 
-            The batch dimension can also be a tuple of (input batch dimension, output batch dimension). In this
-            case, the input batch dimension can be an array which contains the batch dimension for each argument.
-            For example, if the predict method takes three arguments ``predict(x, y, z)``, the batch dimension could be
-            ``([0, 1, 2], 0)``, meaning ``x`` would be batched along the zeroth dimension, ``y`` along the first,
-            ``z`` along the second, and the output along the zeroth axis.
+            The batch dimension can also be a tuple of (input batch dimension, output batch
+            dimension). In this case, the input batch dimension can be an array which contains the
+            batch dimension for each argument. For example, if the predict method takes three
+            arguments ``predict(x, y, z)``, the batch dimension could be ``([0, 1, 2], 0)``, meaning
+            ``x`` would be batched along the zeroth dimension, ``y`` along the first, ``z`` along
+            the second, and the output along the zeroth axis.
 
-            Partial argument arrays are not supported; if the input takes n arguments, the batch dimension array must
-            have length n.
+            Partial argument arrays are not supported; if the input takes n arguments, the batch
+            dimension array must have length n.
         input_spec: Reserved for future use.
         output_spec: Reserved for future use.
     """
@@ -429,7 +461,7 @@ class ModelSignature:
     output_spec: t.Any = None
 
     @staticmethod
-    def from_dict(data: t.Dict[str, t.Any]) -> ModelSignature:
+    def from_dict(data: ModelSignatureDict) -> ModelSignature:
         return bentoml_cattr.structure(data, ModelSignature)
 
     @staticmethod
@@ -518,8 +550,8 @@ class ModelInfo:
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
-    def dump(self, stream: t.IO[t.Any]):
-        return yaml.dump(self.to_dict(), stream, sort_keys=False)
+    def dump(self, stream: t.IO[t.Any] | None = None):
+        return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore
 
     @staticmethod
     def from_yaml_file(stream: t.IO[t.Any]):

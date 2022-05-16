@@ -233,7 +233,7 @@ def create(
     metadata: dict[str, t.Any] | None = None,
     context: ModelContext,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
-) -> t.Iterator[Model]:
+) -> t.Generator[Model, None, None]:
     options = ModelOptions() if options is None else options
     res = Model.create(
         name,

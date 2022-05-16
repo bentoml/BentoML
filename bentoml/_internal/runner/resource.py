@@ -9,7 +9,10 @@ import functools
 
 import attr
 import psutil
+from cattrs.gen import override
+from cattrs.gen import make_dict_unstructure_fn
 
+from ..utils import bentoml_cattr
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -57,6 +60,17 @@ class Resource:
 
 # Remove after attrs support ForwardRef natively
 attr.resolve_types(Resource, globals(), locals())
+
+bentoml_cattr.register_unstructure_hook(
+    Resource,
+    make_dict_unstructure_fn(
+        Resource,
+        bentoml_cattr,
+        cpu=override(omit_if_default=True),
+        nvidia_gpu=override(omit_if_default=True),
+        custom_resources=override(omit_if_default=True),
+    ),
+)
 
 
 def cpu_converter(cpu: t.Union[int, float, str]) -> float:

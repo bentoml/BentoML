@@ -48,12 +48,14 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 - [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
 - [Examples](https://github.com/bentoml/gallery) - Gallery of sample projects using BentoML
 - [ML Framework Guide](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
+- [Deployment Guide](https://docs.bentoml.org/en/latest/deployment/index.html) - Understand different types of model deployment solutions and what may best fit your use cases
 - [Advanced Topics](https://docs.bentoml.org/en/latest/advanced/index.html) - Learn about BentoML's internals, architecture and advanced features
 
 
 ## Quick Tour ##
 
 **Step 1:** At the end of your model training pipeline, save your trained model instance with BentoML:
+
 ```python
 # Model Training ...
 
@@ -110,19 +112,19 @@ Start an HTTP server locally:
 bentoml serve service.py:svc
 ```
 
-And sent test requests to it, e.g.:
+And sent a test request to it:
 ```bash
 curl -F 'image=@samples/1.png' http://127.0.0.1:3000/predict_image
 ```
 
-You can also visit http://127.0.0.1:3000 in browser and debug the endpoint from its web UI.
+You can also visit http://127.0.0.1:3000 in browser and debug the endpoint from the web UI.
 
 **Step 3:** Build a Bento for deployment:
 
-Define a `bentofile.yaml` build file for your project:
+Define a `bentofile.yaml` build file for your ML project:
 
 ```yaml
-service: "service:svc"
+service: "service:svc"  # where the bentoml.Service instance is defined
 include:
 - "*.py"
 exclude:
@@ -156,7 +158,7 @@ INFO [cli] Successfully built Bento(tag="pytorch_mnist:4mymorgurocxjuqj") at "~/
 ```
 The Bento with `tag="pytorch_mnist:4mymorgurocxjuqj"` is now created in the local `Bento` store. It is an archive containing all the source code, model files, and dependency specs - anything that is required for reproducing the model in an identical environment for serving in production.
 
-Note that even it uses `demo_mnist:latest` in the code, it can be resolved with local model store to the model version `demo_mnist:7drxqvwsu6zq5uqj` during `bentoml build` process. This model version is now packaged together with the Bento, where ever it is being deployed to.
+Note that even it uses `demo_mnist:latest` in the code, it can be resolved with local model store to the exact model version `demo_mnist:7drxqvwsu6zq5uqj` during `bentoml build` process. This model version is now bundled together with the Bento, no matter where it is being deployed to.
 
 **Step 4:** Deploying the `Bento`
 

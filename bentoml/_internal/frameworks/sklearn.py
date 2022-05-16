@@ -20,8 +20,8 @@ if TYPE_CHECKING:
     from sklearn.base import BaseEstimator
     from sklearn.pipeline import Pipeline
 
-    from bentoml.types import ModelSignatureDict
     from bentoml.types import ModelSignature
+    from bentoml.types import ModelSignatureDict
 
     from .. import external_typing as ext
 
@@ -182,8 +182,7 @@ def get_runnable(bento_model: Model):
             super().__init__()
             self.model = load_model(bento_model)
 
-    for method_name, options in bento_model.info.signatures.items():
-
+    def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
             self: SklearnRunnable, input_data: ext.NpNDArray | ext.PdDataFrame
         ) -> ext.NpNDArray:
@@ -199,5 +198,8 @@ def get_runnable(bento_model: Model):
             input_spec=options.input_spec,
             output_spec=options.output_spec,
         )
+
+    for method_name, options in bento_model.info.signatures.items():
+        add_runnable_method(method_name, options)
 
     return SklearnRunnable

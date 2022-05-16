@@ -56,18 +56,11 @@ BentoML has a thriving open source community where hundreds of ML practitioners 
 `👉 Join us on slack today! <https://l.linklyhq.com/l/ktOX>`_
 
 
-Something Missing?
-------------------
-
-If something is missing in the documentation or if you found some part confusing, please file an issue
-`here <https://github.com/bentoml/BentoML/issues/new/choose>`_ with your suggestions for improvement, or tweet at
-the `@bentomlai <http://twitter.com/bentomlai>`_ account. We love hearing from you!
-
-
 
 .. toctree::
    :hidden:
 
+   installation
    tutorial
    concepts/index
    frameworks/index
@@ -76,6 +69,7 @@ the `@bentomlai <http://twitter.com/bentomlai>`_ account. We love hearing from y
    bentoctl/index
    api/index
    cli
+   faq
 
 .. spelling::
 

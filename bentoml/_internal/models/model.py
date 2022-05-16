@@ -421,20 +421,23 @@ class ModelSignature:
 
             Example:
             .. code-block:: python
-                # create a runner from 'my_bento_model' which batches on the dimension 0
-                runner0 = my_bento_model.to_runner(signatures={"predict": {"batchable": True, "batch_dim": 0}})
-                # create a runner from 'my_bento_model' which batches on the dimension 1
-                runner1 = my_bento_model.to_runner(signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                # Save two models with `predict` method that supports taking input batches on the dimension 0 and the other on dimension 1:
+                bentoml.pytorch.save_model("demo0", model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable": True, "batch_dim": 1}})
 
                 # if the following calls are batched, the input to the actual predict method on the
-                # runner would be [[1, 2], [3, 4], [5, 6]]
-                runner0.run(np.array([[1, 2], [3, 4]]))
-                runner0.run(np.array([[5, 6]]))
+                # model.predict method would be [[1, 2], [3, 4], [5, 6]]
+                runner0 = bentoml.pytorch.get("demo0:latest").to_runner()
+                runner0.init_local()
+                runner0.predict.run(np.array([[1, 2], [3, 4]]))
+                runner0.predict.run(np.array([[5, 6]]))
 
                 # if the following calls are batched, the input to the actual predict method on the
-                # runner would be [[1, 2, 5], [3, 4, 6]]
-                runner1.run(np.array([[1, 2], [3, 4]]))
-                runner1.run(np.array([[5], [6]]))
+                # model.predict would be [[1, 2, 5], [3, 4, 6]]
+                runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
+                runner1.init_local()
+                runner1.predict.run(np.array([[1, 2], [3, 4]]))
+                runner1.predict.run(np.array([[5], [6]]))
 
             Expert API:
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
-import logging
 
 import os
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -16,6 +16,7 @@ from bentoml._internal.models.model import ModelContext
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
+    from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
     from .. import external_typing as ext
@@ -89,7 +90,7 @@ def save_model(
         model (:obj:`~xgboost.core.Booster`):
             The XGBoost model to be saved.
         signatures (``dict[str, ModelSignatureDict]``, optional):
-            Signatures of predict methods to be used. If not provided, the signatures default to 
+            Signatures of predict methods to be used. If not provided, the signatures default to
             ``{"predict": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more
             details.
         labels (``dict[str, str]``, optional):
@@ -186,8 +187,7 @@ def get_runnable(
             for method_name in bento_model.info.signatures:
                 self.predict_fns[method_name] = getattr(self.model, method_name)
 
-    for method_name, options in bento_model.info.signatures.items():
-
+    def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
             self: XGBoostRunnable,
             input_data: ext.NpNDArray | ext.PdDataFrame | xgb.DMatrix,
@@ -206,5 +206,8 @@ def get_runnable(
             input_spec=options.input_spec,
             output_spec=options.output_spec,
         )
+
+    for method_name, options in bento_model.info.signatures.items():
+        add_runnable_method(method_name, options)
 
     return XGBoostRunnable

@@ -11,19 +11,16 @@
 
 BentoML simplifies ML model deployment and serves your models at production scale.
 
-👉 [Pop into our Slack community!](https://l.linklyhq.com/l/ktOh) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
-
-__The BentoML version 1.0 is in pre-view release!__ You can be of great help by testing out the preview release, 
-reporting issues, contribute to the documentation and create sample gallery projects.
-
-For our most recent stable release, see the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS).
+👉 [Join us in our Slack community](https://l.linklyhq.com/l/ktOh) where hundreds of ML 
+practitioners are contributing to the project, helping other users, and discuss all 
+things MLOps.
 
 ## Feature Highlights ##
 
 ✨ Model Serving the way you need it 
-- Online model serving via REST API or gRPC
-- Offline scoring on batch datasets with Apache Spark, or Dask.
-- Stream serving with Kafka, Beam, and Flink
+- **Online serving** via REST API or gRPC
+- **Offline scoring** on batch datasets with Apache Spark, or Dask.
+- **Stream serving** with Kafka, Beam, and Flink
 
 🍱 Easily go from training to model serving in production
 - 27 ML Frameworks natively supported and counting! - Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more
@@ -32,7 +29,7 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 - Designed to work with any training pipeline or experimentation platform
 
 🐍 Python-first, scales with powerful optimizations
-- Standalone Model inference workers that scale separately from business logic and feature extraction code
+- Scale Model inference workers separately from business logic and feature processing code
 - Adaptive batching dynamically groups inference requests for optimal performance
 - Complex inference graphs automatically orchestrated with Yatai on Kubernetes
 
@@ -42,6 +39,10 @@ For our most recent stable release, see the [0.13-LTS branch](https://github.com
 - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
 
 ## Getting Started ##
+
+__The BentoML version 1.0 is in pre-view release.__ You can be of great help by testing out the preview release, 
+reporting issues, contribute to the documentation and create sample gallery projects.  For our most recent stable release, see the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS).
+
 
 - [Getting Started](https://docs.bentoml.org/) - Overview of the BentoML documentation and related resources
 - [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.

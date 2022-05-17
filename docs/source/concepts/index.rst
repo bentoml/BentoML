@@ -1,14 +1,15 @@
 .. _concepts-page:
 
-Core Concepts
+Main Concepts
 *************
 
-.. todo::
+* Preparing Models
+* Service and APIs
+* Building Bento
+* Using Runners
+* Adaptive Batching
+* Deploying Bento
 
-   Add introduction to the Core Concepts section.
-
-This section is an understanding-oriented documentation that focuses on explaining the 
-different core concepts, which is the most useful when learning BentoML.
 
 .. toctree::
    :maxdepth: 1

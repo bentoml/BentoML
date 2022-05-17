@@ -31,7 +31,7 @@ You can also run the code in this tutorial from your web browser: `Intro to Bent
 :ref:`ML Frameworks Guide <frameworks-page>` lays out best practices and example usages by the ML framework used for training models.
 
 
-:ref:`Advanced Topics <advanced-page>` dives into BentoML's internals, architecture and advanced features, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+:ref:`Advanced Guides <guides-page>` dives into BentoML's internals, architecture and advanced features, including GPU support, inference graph, monitoring, and customizing docker environment etc.
 
 
 `Gallery Projects <https://github.com/bentoml/gallery>`_ provides example projects that demonstrate BentoML usage in a variety of different scenarios.
@@ -59,8 +59,8 @@ BentoML has a thriving open source community where hundreds of ML practitioners 
 `👉 Join us on slack today! <https://l.linklyhq.com/l/ktOX>`_
 
 
-Why BentoML?
-------------
+Why are we building BentoML?
+----------------------------
 
 Model deployment is one of the last and most important stages in the machine learning
 life cycle: only by putting a machine learning model into a production environment and
@@ -92,7 +92,8 @@ logic is changing and that production service is stable.
    tutorial
    concepts/index
    frameworks/index
-   advanced/index
+   guides/index
+   deployment/index
    yatai/index
    bentoctl/index
    api/index

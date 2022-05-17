@@ -17,7 +17,6 @@ ignore:
   - "bentoml/build_utils.py"
   - "bentoml/io.py"
   - "tests/**/*"
-  - "docker/**/*"
   - "typings/**/*"
 
 coverage:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 import typing as t
@@ -20,60 +22,67 @@ from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mo
 
 logger = logging.getLogger(__name__)
 
-PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
-PYTHON_MINOR_VERSION: str = f"{pyver.major}.{pyver.minor}"
-PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.7", "3.8", "3.9"]
-DOCKER_SUPPORTED_DISTROS: t.List[str] = [
+PYTHON_VERSION = f"{pyver.major}.{pyver.minor}"
+PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
+# supported python and CUDA versions
+PYTHON_SUPPORTED_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
+
+# https://github.com/NVIDIA/cuda-repo-management/issues/4
+CUDA_SUPPORTED_VERSIONS = [11.6, 10.2]
+DOCKER_SUPPORTED_DISTROS = [
     "debian",
-    "amazonlinux2",
-    "alpine3.14",
+    "alpine",
+    "amazonlinux",
     "ubi8",
-    "ubi7",
+    "debian-miniconda",
+    "alpine-miniconda",
 ]
 DOCKER_DEFAULT_DISTRO = "debian"
 
-if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
+
+if PYTHON_VERSION not in PYTHON_SUPPORTED_VERSIONS:
     logger.warning(
-        "BentoML may not work well with current python version %s, supported python versions are: %s",
-        PYTHON_MINOR_VERSION,
-        ",".join(PYTHON_SUPPORTED_VERSIONS),
+        f"BentoML may not work well with current python version: {PYTHON_VERSION}, supported python versions are: {','.join(PYTHON_SUPPORTED_VERSIONS)}"
     )
 
 
-def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
-    if py_version is None:
-        return None
-
-    match = re.match(r"^(\d+).(\d+)", py_version)
-    if match is None:
-        raise InvalidArgument(
-            f'Invalid build option: docker.python_version="{py_version}", python '
-            f"version must follow standard python semver format, e.g. 3.7.10 ",
-        )
-    major, minor = match.groups()
-    return f"{major}.{minor}"
+def pyver_converter(py_version: str | None) -> str | None:
+    if py_version is not None:
+        match = re.match(r"^(\d+).(\d+)", py_version)
+        if match is None:
+            raise InvalidArgument(
+                f'Invalid build option: docker.python_version="{py_version}", python '
+                f"version must follow standard python semver format, e.g: 3.7.10, 3.8.9, etc.",
+            )
+        major, minor = match.groups()
+        return f"{major}.{minor}"
 
 
 @attr.frozen
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
-    distro: str = attr.field(
+    distro: t.Optional[str] = attr.field(
+        default=None,
         validator=attr.validators.optional(
             attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
         ),
-        default=None,
     )
     python_version: t.Optional[str] = attr.field(
-        converter=_convert_python_version,
+        converter=pyver_converter,
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(PYTHON_SUPPORTED_VERSIONS)
         ),
     )
-    gpu: t.Optional[bool] = None
-    devel: t.Optional[bool] = None
+    cuda_version: t.Optional[str] = attr.field(
+        default=None,
+        validator=attr.validators.optional(
+            attr.validators.in_(CUDA_SUPPORTED_VERSIONS)
+        ),
+    )
+    system_packages: t.List[str] = attr.field(factory=list)
 
-    # A python or shell script that executes during docker build time
+    # A python or sh script that executes during docker build time
     setup_script: t.Optional[str] = None
 
     # A user-provided custom docker image
@@ -83,24 +92,23 @@ class DockerOptions:
         if self.base_image is not None:
             if self.distro is not None:
                 logger.warning(
-                    "docker base_image %s is used, 'distro=%s' option is ignored",
-                    self.base_image,
-                    self.distro,
+                    f"docker base_image {self.base_image} is used, 'distro={self.distro}' option is ignored",
                 )
             if self.python_version is not None:
                 logger.warning(
-                    "docker base_image %s is used, 'python=%s' option is ignored",
-                    self.base_image,
-                    self.python_version,
+                    f"docker base_image {self.base_image} is used, 'python={self.python_version}' option is ignored",
                 )
-            if self.gpu is not None:
+            if self.cuda_version is not None:
                 logger.warning(
-                    "docker base_image %s is used, 'gpu=%s' option is ignored",
-                    self.base_image,
-                    self.gpu,
+                    f"docker base_image {self.base_image} is used, 'cuda_version={self.cuda_version}' option is ignored",
+                )
+            if self.system_packages is not None:
+                logger.warning(
+                    f"docker base_image {self.base_image} is used, 'system_packages={self.system_packages}' option is ignored",
                 )
 
-    def with_defaults(self) -> "DockerOptions":
+
+    def with_defaults(self) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 

@@ -11,7 +11,7 @@ from ..utils.tempdir import TempDirectory
 logger = logging.getLogger(__name__)
 
 
-def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
+def build_bentoml_whl_to_target_if_in_editable_mode(target_path: str) -> None:
     """This is for BentoML developers to create Bentos that contains their local bentoml
     build base on their development branch. To enable this behavior, the developer must
     set env var BENTOML_BUNDLE_LOCAL_BUILD=True before building a Bento.

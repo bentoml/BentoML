@@ -41,7 +41,6 @@ jobs:
               - *related
               - "bentoml/**"
               - "tests/**"
-              - "docker/**"
             docs:
               - *related
               - requirements/docs-requirements.txt

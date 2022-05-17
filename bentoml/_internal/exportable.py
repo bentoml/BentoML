@@ -10,9 +10,11 @@ from abc import abstractmethod
 
 import fs
 import fs.copy
+import fs.errors
 import fs.mirror
 import fs.opener
 import fs.tempfs
+from fs import open_fs
 from fs.base import FS
 
 T = t.TypeVar("T", bound="Exportable")
@@ -138,7 +140,7 @@ class Exportable(ABC):
                 # if subpath is specified, we need to create our own temp fs and mirror that subpath
                 path = rsc_dir.getsyspath(subpath)
                 res = cls._from_compressed(path, input_format)
-            except fs.errors.CreateFailed:  # type: ignore (incomplete FS types)
+            except fs.errors.CreateFailed:
                 raise ValueError("Directory does not exist")
         else:
             userblock = ""
@@ -252,7 +254,7 @@ class Exportable(ABC):
         elif isOSPath:
             try:
                 dirfs = fs.open_fs(path)
-            except fs.errors.CreateFailed:  # type: ignore (incomplete FS types)
+            except fs.errors.CreateFailed:
                 pass
             else:
                 if subpath is None or dirfs.isdir(subpath):
@@ -286,7 +288,7 @@ class Exportable(ABC):
                 rsc_dir = fs.open_fs(f"{protocol}://{resource}")
                 path = rsc_dir.getsyspath(subpath)
                 self._compress(path, output_format)
-            except fs.errors.CreateFailed:  # type: ignore (incomplete FS types)
+            except fs.errors.CreateFailed:
                 raise ValueError(
                     f"Output directory '{protocol}://{resource}' does not exist."
                 )
@@ -332,43 +334,43 @@ class Exportable(ABC):
 
     def _compress(self, path: str, output_format: str):
         if output_format in ["gz", "xz", "bz2", "tar", self._export_ext()]:
-            import fs.tarfs
+            from fs.tarfs import WriteTarFS
 
             compression = output_format
             if compression == "tar":
                 compression = None
             if compression == self._export_ext():
                 compression = "xz"
-            out_fs = fs.tarfs.WriteTarFS(path, compression)
+            out_fs = WriteTarFS(path, compression)
         elif output_format == "zip":
-            import fs.zipfs
+            from fs.zipfs import WriteZipFS
 
-            out_fs = fs.zipfs.WriteZipFS(path)
+            out_fs = WriteZipFS(path)
         elif output_format == "folder":
-            out_fs: FS = fs.open_fs(path, writeable=True, create=True)  # type: ignore (incomplete FS types)
+            out_fs: FS = open_fs(path, writeable=True, create=True)
         else:
             raise ValueError(f"Unsupported format {output_format}")
 
-        fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)  # type: ignore (incomplete FS types)
+        fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
         out_fs.close()
 
     @classmethod
     def _from_compressed(cls: t.Type[T], path: str, input_format: str) -> T:
         if input_format in ["gz", "xz", "bz2", "tar", cls._export_ext()]:
-            import fs.tarfs
+            from fs.tarfs import ReadTarFS
 
             compression = input_format
             if compression == "tar":
                 compression = None
             if compression == cls._export_ext():
                 compression = "xz"
-            ret_fs = fs.tarfs.ReadTarFS(path, compression)  # type: ignore (incomplete FS types)
+            ret_fs = ReadTarFS(path)
         elif input_format == "zip":
-            import fs.zipfs
+            from fs.zipfs import ReadZipFS
 
-            ret_fs = fs.zipfs.ReadZipFS(path)
+            ret_fs = ReadZipFS(path)
         elif input_format == "folder":
-            ret_fs: FS = fs.open_fs(path)  # type: ignore (incomplete FS types)
+            ret_fs: FS = open_fs(path)
         else:
             raise ValueError(f"Unsupported format {input_format}")
 

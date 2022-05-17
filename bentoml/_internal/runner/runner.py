@@ -3,11 +3,11 @@ from __future__ import annotations
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from functools import cached_property
 
 import attr
 
 from ..utils import first_not_none
+from ..utils import cached_property
 from .resource import Resource
 from .runnable import Runnable
 from .runnable import RunnableMethodConfig

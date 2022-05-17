@@ -217,7 +217,7 @@ def add_bento_management_commands(
         bentoml export FraudDetector:latest s3://mybucket/bentos/my_bento.bento
         """
         bento = bento_store.get(bento_tag)
-        bento.export(out_path)
+        out_path = bento.export(out_path)
         logger.info(f"{bento} exported to {out_path}")
 
     @cli.command(name="import")

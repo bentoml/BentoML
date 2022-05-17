@@ -220,7 +220,7 @@ def add_model_management_commands(
         bentoml models export FraudDetector:20210709_DE14C9 s3://mybucket/models/my_model.bentomodel
         """
         bentomodel = model_store.get(model_tag)
-        bentomodel.export(out_path)
+        out_path = bentomodel.export(out_path)
         logger.info(f"{bentomodel} exported to {out_path}")
 
     @model_cli.command(name="import")

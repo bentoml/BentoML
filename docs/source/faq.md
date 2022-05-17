@@ -1,8 +1,8 @@
-Frequently Asked Questions
-==========================
+FAQ
+===
+Frequently asked questions from the [BentoML slack community](https://l.linklyhq.com/l/ktOX).
 
-
-#### Does BentoML support horizontal auto-scaling?
+## Does BentoML support horizontal auto-scaling?
 
 Yes! The recommended way of running large scale BentoML workloads, is to do it with 
 Yatai on Kubernetes. Yatai can create deployment of BentoML Service with powerful 
@@ -13,7 +13,7 @@ Many other deployment options that BentoML provide also comes with certain level
 auto-scaling capability. For example, you can use `bentoctl` to deploy Bentos to AWS EC2
 with an auto-scaling group automatically setup for your deployment.
 
-#### How does BentoML compare to Tensorflow-serving or Triton inference server?
+## How does BentoML compare to Tensorflow-serving or Triton inference server?
 
 Model-server projects like Tensorflow-serving, TorchServe, and Triton typically turns a 
 saved model file into a Tensor based endpoint for running model inference. BentoML 
@@ -26,7 +26,7 @@ are building a Runner adapter which allow users to utilize Triton and Onnx-runti
 a drop-in replacement for the BentoML Runner, for running the model inference part of
 your serving pipeline.
 
-#### How does BentoML compare to AWS SageMaker?
+## How does BentoML compare to AWS SageMaker?
 
 BentoML makes deploying models to SageMaker easier! Try deploying your model with 
 BentoML and bentoctl to SageMaker: https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html
@@ -35,7 +35,7 @@ Flask/FastAPI and containerize the flask app by themselves, when not using the b
 algorithms. BentoML provides a high-performance API server for users without the need 
 for lower-level web server development.
 
-#### How does BentoML model store compare to MLFlow model registry?
+## How does BentoML model store compare to MLFlow model registry?
 
 MLFlow model registry is designed for capturing models created from experimentation 
 stage, comparing models trained with different parameters or architectures. It is meant 
@@ -51,7 +51,7 @@ model registry to BentoML models store for model serving, using the
 `bentoml.mlflow.import_from_uri` API.
 
 
-#### Does BentoML provide model monitoring and drift detection?
+## Does BentoML provide model monitoring and drift detection?
 
 BentoML does not provide a built-in model monitoring solution, but it is quite easy to
 setup BentoML with a model monitoring solution provider, in the service definition code.
@@ -68,7 +68,7 @@ async def predict(input_series: np.ndarray) -> np.ndarray:
     return result
 ```
 
-#### Does BentoML support Kubeflow?
+## Does BentoML support Kubeflow?
 
 Yes, BentoML is designed to be cloud-native and integrate nicely with other tools in the
 ecosystem. Refer to the [Kubeflow doc](https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/)
@@ -76,7 +76,7 @@ on model serving with BentoML for more details. Note that this doc was written f
 BentoML version 0.13, an update is coming soon for BentoML 1.0 version.
 
 
-#### Who is behind this project?
+## Who is behind this project?
 
 We are a startup company(bentoml.com) based in San Francisco, California.
 Similar to many other open source companies in the enterprise infrastructure space(

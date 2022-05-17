@@ -24,8 +24,8 @@ Model Store
 .. autofunction:: bentoml.models.load_runner
 
 
-Yatai Store API
----------------
+Yatai API
+---------
 
 .. autofunction:: bentoml.push
 .. autofunction:: bentoml.pull

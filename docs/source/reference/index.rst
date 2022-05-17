@@ -13,5 +13,6 @@ learning about advanced features or debugging issues.
   core
   stores
   api_io_descriptors
+  cli
 
 

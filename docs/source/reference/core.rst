@@ -1,5 +1,5 @@
-Core APIs
-=========
+Core Components
+===============
 
 BentoService
 ------------
@@ -20,7 +20,7 @@ Runner
 
 .. autoclass:: bentoml.Runner
 
-.. autoclass:: bentoml.SimpleRunner
+.. autoclass:: bentoml.Runnable
 
 
 Tag

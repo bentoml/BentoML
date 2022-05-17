@@ -119,10 +119,13 @@ copybutton_prompt_is_regexp = True
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    "collapse_navigation": False,
+    "collapse_navigation": True,
     "logo_only": False,
     "display_version": True,
-    "navigation_depth": -1,
+    "navigation_depth": 2,
+    'prev_next_buttons_location': 'bottom',
+    'sticky_navigation': False,
+    'includehidden': True,
 }
 
 # Static folder path

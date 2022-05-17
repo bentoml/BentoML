@@ -87,6 +87,7 @@ logic is changing and that production service is stable.
 
 .. toctree::
    :hidden:
+   :maxdepth: 0
 
    installation
    tutorial
@@ -96,8 +97,7 @@ logic is changing and that production service is stable.
    deployment/index
    yatai/index
    bentoctl/index
-   api/index
-   cli
+   reference/index
    faq
 
 .. spelling::

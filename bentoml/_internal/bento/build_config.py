@@ -17,6 +17,9 @@ from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
 from .docker import ImageProvider
+from .docker import CUDA_SUPPORTED_VERSIONS
+from .docker import DOCKER_SUPPORTED_DISTROS
+from .docker import PYTHON_SUPPORTED_VERSIONS
 from ...exceptions import InvalidArgument
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
@@ -24,19 +27,7 @@ logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = f"{pyver.major}.{pyver.minor}"
 PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
-# supported python and CUDA versions
-PYTHON_SUPPORTED_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 
-# https://github.com/NVIDIA/cuda-repo-management/issues/4
-CUDA_SUPPORTED_VERSIONS = [11.6, 10.2]
-DOCKER_SUPPORTED_DISTROS = [
-    "debian",
-    "alpine",
-    "amazonlinux",
-    "ubi8",
-    "debian-miniconda",
-    "alpine-miniconda",
-]
 DOCKER_DEFAULT_DISTRO = "debian"
 
 
@@ -46,19 +37,21 @@ if PYTHON_VERSION not in PYTHON_SUPPORTED_VERSIONS:
     )
 
 
-def pyver_converter(py_version: str | None) -> str | None:
-    if py_version is not None:
-        match = re.match(r"^(\d+).(\d+)", py_version)
-        if match is None:
-            raise InvalidArgument(
-                f'Invalid build option: docker.python_version="{py_version}", python '
-                f"version must follow standard python semver format, e.g: 3.7.10, 3.8.9, etc.",
-            )
-        major, minor = match.groups()
-        return f"{major}.{minor}"
+def semver_converter(options: str) -> t.Callable[[str], str | None]:
+    def _converter(version: str | None) -> str | None:
+        if version is not None:
+            match = re.match(r"^(\d+).(\d+)", version)
+            if match is None:
+                raise InvalidArgument(
+                    f'Invalid build option: `docker.{options}="{version}"`, version must follow standard semver format, e.g: 3.7.10, 3.8.9, 11.5.0',
+                )
+            major, minor = match.groups()
+            return f"{major}.{minor}"
+
+    return _converter
 
 
-@attr.frozen
+@attr.define(frozen=True, on_setattr=None)
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
     distro: t.Optional[str] = attr.field(
@@ -68,7 +61,7 @@ class DockerOptions:
         ),
     )
     python_version: t.Optional[str] = attr.field(
-        converter=pyver_converter,
+        converter=semver_converter("python_version"),
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(PYTHON_SUPPORTED_VERSIONS)
@@ -76,6 +69,7 @@ class DockerOptions:
     )
     cuda_version: t.Optional[str] = attr.field(
         default=None,
+        converter=semver_converter("cuda_version"),
         validator=attr.validators.optional(
             attr.validators.in_(CUDA_SUPPORTED_VERSIONS)
         ),
@@ -107,7 +101,6 @@ class DockerOptions:
                     f"docker base_image {self.base_image} is used, 'system_packages={self.system_packages}' option is ignored",
                 )
 
-
     def with_defaults(self) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
@@ -116,13 +109,13 @@ class DockerOptions:
             if self.distro is None:
                 update_defaults["distro"] = DOCKER_DEFAULT_DISTRO
             if self.python_version is None:
-                update_defaults["python_version"] = PYTHON_MINOR_VERSION
-            if self.gpu is None:
-                update_defaults["gpu"] = False
+                update_defaults["python_version"] = PYTHON_VERSION
+            if self.cuda_version is None:
+                update_defaults["cuda_version"] = ""
 
         return attr.evolve(self, **update_defaults)
 
-    def get_base_image_tag(self):
+    def get_base_image_tag(self) -> str:
         if self.base_image is None:
             if self.distro is None:
                 raise KeyError("distro not set, can't get base image tag")
@@ -224,7 +217,7 @@ class CondaOptions:
         with bento_fs.open(fs.path.join(conda_folder, "environment_yml"), "w") as f:
             yaml.dump(yaml_content, f)
 
-    def with_defaults(self) -> "CondaOptions":
+    def with_defaults(self) -> CondaOptions:
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
@@ -358,7 +351,7 @@ class PythonOptions:
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
                 )
 
-    def with_defaults(self) -> "PythonOptions":
+    def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
@@ -424,9 +417,10 @@ class BentoBuildConfig:
         converter=_dict_arg_converter(CondaOptions),
     )
 
-    def with_defaults(self) -> "FilledBentoBuildConfig":
-        """Convert from user provided options to actual build options will defaults
-        values filled in
+    def with_defaults(self) -> FilledBentoBuildConfig:
+        """
+        Convert from user provided options to actual build options will defaults
+        values filled in.
 
         Returns:
             BentoBuildConfig: a new copy of self, with default values filled
@@ -444,7 +438,7 @@ class BentoBuildConfig:
         )
 
     @classmethod
-    def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
+    def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

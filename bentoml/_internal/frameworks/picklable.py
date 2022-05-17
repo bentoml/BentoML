@@ -1,15 +1,17 @@
 from __future__ import annotations
-import logging
+
 import typing as t
+import logging
+import functools
 from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
+from bentoml.models import Model
+from bentoml.models import ModelContext
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
-from bentoml.models import Model
-from bentoml.models import ModelContext
 
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
@@ -75,6 +77,7 @@ def load_model(bento_model: str | Tag | Model) -> ModelType:
         # The protocol version used is detected automatically, so we do not
         # have to specify it.
         return cloudpickle.load(f)
+
 
 def save_model(
     name: str,
@@ -161,15 +164,16 @@ def get_runnable(bento_model: Model):
             super().__init__()
             self.model = load_model(bento_model)
 
+    def _run(
+        self: PicklableRunnable,
+        input_data: ext.NpNDArray | ext.PdDataFrame,
+        method_name: str,
+    ) -> ext.NpNDArray:
+        return getattr(self.model, method_name)(input_data)
+
     for method_name, options in bento_model.info.signatures.items():
-
-        def _run(
-            self: PicklableRunnable, input_data: ext.NpNDArray | ext.PdDataFrame
-        ) -> ext.NpNDArray:
-            return getattr(self.model, method_name)(input_data)
-
         PicklableRunnable.add_method(
-            _run,
+            functools.partial(_run, method_name=method_name),
             name=method_name,
             batchable=options.batchable,
             batch_dim=options.batch_dim,

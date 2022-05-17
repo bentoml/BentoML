@@ -1,13 +1,15 @@
 # Docs dependencies
 -r tests-requirements.txt
-sphinx>=4.1.0
-recommonmark
+sphinx==4.5.0
+myst-parser
 sphinx-click>=3.0.2
 sphinx_rtd_theme
-sphinx-tabs
+sphinx-inline-tabs
 sphinxcontrib-fulltoc
 sphinxcontrib-spelling
 sphinx-copybutton
+sphinx-issues
+sphinx-panels
 pyenchant
 mock
 Jinja2<3.1

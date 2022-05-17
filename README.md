@@ -44,7 +44,7 @@ __The BentoML version 1.0 is in pre-view release.__ You can be of great help by 
 reporting issues, contribute to the documentation and create sample gallery projects.  For our most recent stable release, see the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS).
 
 
-- [Getting Started](https://docs.bentoml.org/) - Overview of the BentoML documentation and related resources
+- [Documentation](https://docs.bentoml.org/) - Overview of the BentoML docs and related resources
 - [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
 - [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
 - [Examples](https://github.com/bentoml/gallery) - Gallery of sample projects using BentoML
@@ -52,6 +52,12 @@ reporting issues, contribute to the documentation and create sample gallery proj
 - [Deployment Guide](https://docs.bentoml.org/en/latest/deployment/index.html) - Understand different types of model deployment solutions and what may best fit your use cases
 - [Advanced Topics](https://docs.bentoml.org/en/latest/advanced/index.html) - Learn about BentoML's internals, architecture and advanced features
 
+
+## Installation ##
+
+```bash
+pip install bentoml
+```
 
 ## Quick Tour ##
 

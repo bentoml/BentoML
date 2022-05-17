@@ -1,7 +1,3 @@
-.. image:: _static/img/bentoml-readme-header.jpeg
-    :alt: BentoML
-
-
 Unified Model Serving Framework
 ===============================
 
@@ -87,7 +83,6 @@ logic is changing and that production service is stable.
 
 .. toctree::
    :hidden:
-   :maxdepth: 0
 
    installation
    tutorial

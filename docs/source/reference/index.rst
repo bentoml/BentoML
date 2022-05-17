@@ -1,6 +1,6 @@
 .. _api-reference-page:
 
-
+=============
 API Reference
 =============
 
@@ -9,6 +9,7 @@ source code. This is best use for digging deeper into BentoML implementation whe
 learning about advanced features or debugging issues.
 
 .. toctree::
+  :maxdepth: 2
 
   core
   stores

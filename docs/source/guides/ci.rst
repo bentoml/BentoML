@@ -1,6 +1,5 @@
-.. _ci-page:
-
-CI/CD workflow
-==============
+=====================================
+Training Pipeline Integration (CI/CD)
+=====================================
 
 TODO

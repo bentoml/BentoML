@@ -5,34 +5,37 @@ Tutorial: Intro to BentoML
 
 What Are We Building
 --------------------
-We will build a prediction service with BentoML, using an Iris classification model trained with Scikit-Learn.
-By the end of this tutorial, we will have an HTTP endpoint for receiving inference requests and a docker container image
-for deploying the model server.
+We will build a prediction service with BentoML, using an Iris classification model
+trained with Scikit-Learn. By the end of this tutorial, we will have an HTTP endpoint
+for receiving inference requests and a docker container image for deployment.
 
 .. note::
     You might be tempted to skip this tutorial because you are not using scikit-learn,
-    but give it a chance. The concepts you will learn in the tutorial are fundamental to model serving
-    with any ML framework using BentoML, and mastering it will give you a deep understanding of BentoML.
+    but give it a chance. The concepts you will learn in the tutorial are fundamental to
+    model serving with any ML framework using BentoML, and mastering it will give you a
+    deep understanding of BentoML.
 
 
 Setup for the tutorial
 ----------------------
 
-There are two ways to complete this tutorial: you can either run the code in browser with Google Colab,
-or you can set up a local development environment on your computer.
+There are two ways to complete this tutorial: you can either run the code in browser
+with Google Colab, or you can set up a local development environment on your computer.
 
 #. Run with Google Colab
     👉 `Open Tutorial Notebook on Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/quickstart/iris_classifier.ipynb>`_
-    side by side with this guide. As you go through this guide, you can simply run the sample
-    code from the Colab Notebook.
+    side by side with this guide. As you go through this guide, you can simply run the
+    sample code from the Colab Notebook.
 
     You will be able to try out most of the content in the tutorial on Colab besides
-    the docker container part towards the end. This is because Google Colab currently does not support docker.
+    the docker container part towards the end. This is because Google Colab currently
+    does not support docker.
 
 #. Local Development Environment
-    BentoML supports Linux, Windows and MacOS. Make sure you have Python 3.7 or above installed.
-    We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_ to create an isolated
-    local environment for installing the Python dependencies required for the tutorial. However this is not required.
+    BentoML supports Linux, Windows and MacOS. Make sure you have Python 3.7 or above
+    installed. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
+    to create an isolated local environment for installing the Python dependencies
+    required for the tutorial. However this is not required.
 
     You may download the source code of this tutorial from `bentoml/Gallery <https://github.com/bentoml/gallery/>`_:
 
@@ -59,7 +62,6 @@ How does BentoML work?
 
 BentoML is a python-first, efficient and flexible framework for building
 production-grade machine learning services.
-
 
 It lets you save and version your trained models in a local model store, and defines a
 standard interface for retrieving and running the saved models.
@@ -99,9 +101,14 @@ your trained models as well as accessing them for serving.
 The model is now saved under name :code:`iris_clf` with an automatically generated
 version.
 
+The :code:`bentoml.sklearn.save_model` API is built specifically for the Scikit-Learn
+framework and uses its native saved model format under the hood for best compatibility
+and performance. This goes the same for other ML framework, see
+:ref:`ML framework specific guide <frameworks-page>` for other supported ML frameworks.
 
-:code:`bentoml.sklearn.save_model` is built specifically for the Scikit-Learn framework and uses its native saved model format under the hood for best compatibility and performance.
-This goes the same for other ML framework, see :ref:`ML framework specific API <frameworks-page>` for other supported ML frameworks.
+
+
+
 
 You can then load the the model to be run inline using the :code:`bentoml.<FRAMEWORK>.load(<TAG>)`
 
@@ -175,23 +182,26 @@ without restarting:
 
 We can then send requests to the newly started service with any HTTP client:
 
-.. tabs::
 
-    .. code-tab:: python
+.. tab:: Python
 
-        import requests
-        requests.post(
-            "http://127.0.0.1:3000/classify",
-            headers={"content-type": "application/json"},
-            data="[5,4,3,2]").text
+   .. code-block:: python
 
-    .. code-tab:: bash
+      import requests
+      requests.post(
+         "http://127.0.0.1:3000/classify",
+         headers={"content-type": "application/json"},
+         data="[5,4,3,2]").text
 
-        > curl \
-          -X POST \
-          -H "content-type: application/json" \
-          --data "[5,4,3,2]" \
-          http://127.0.0.1:3000/classify
+.. tab:: Bash
+
+   .. code-block:: bash
+
+      curl \
+        -X POST \
+        -H "content-type: application/json" \
+        --data "[5,4,3,2]" \
+        http://127.0.0.1:3000/classify
 
 
 BentoML optimizes your service in a number of ways for example we use two of the fastest Python web framework `Starlette <https://www.starlette.io/>`_ and `Uvicorn <https://www.uvicorn.org>`_, in order to serve your model efficiently at scale.

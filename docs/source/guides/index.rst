@@ -1,33 +1,22 @@
-.. _guides-page:
-
-Advanced Guide
-**************
-
-* Configuring BentoML
-* Set up CI/CD
-* Batch Scoring Job
-* Streaming Serving
-* Serving with GPU
-* Serving multiple models
-* Logging
-* Tracing
-* Customizing BentoServer
-* Custom Runnable
-* Custom Models
-* Benchmark
+===============
+Advanced Guides
+===============
 
 
 .. toctree::
   :maxdepth: 1
+  :titlesonly:
 
   configuration
-  gpu
-  building_bentos
-  batch_inference
-  logging
+  batching
+  server
   ci
-  custom_framework
-  tracing
-  custom_endpoints
+  gpu
+  securing_endpoints
+  batch_scoring
+  streaming
   multi_models
+  tracing
+  logging
+  custom_framework
   benchmark

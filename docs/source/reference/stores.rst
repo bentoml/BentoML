@@ -1,5 +1,6 @@
-Storage API
-===========
+================
+Bento Store APIs
+================
 
 
 Bento Store

@@ -14,32 +14,82 @@ version = bentoml.__version__
 
 # -- General configuration ---------------------------------------------------
 
-# source_suffix = [".rst", ".md"]
+source_suffix = [".rst", ".md"]
 
 # See https://github.com/readthedocs/readthedocs.org/issues/2149
 master_doc = "index"
 
 # Sphinx extensions
 extensions = [
-    "sphinx_tabs.tabs",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
+    "sphinx.ext.ifconfig",
     "sphinx_click.ext",
     "sphinx_copybutton",
-    "recommonmark",
+    "sphinx_panels",
+    "sphinx_issues",
     "sphinxcontrib.spelling",
+    "myst_parser",
+    "sphinx_inline_tabs",
 ]
 
+# Plugin Configurations:
 napoleon_include_private_with_doc = False
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
-todo_include_todos = True
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 2
 
-sphinx_tabs_disable_css_loading = True
+issues_default_group_project = "bentoml/bentoml"
+
+todo_include_todos = False  # Hide Todo items from the generated doc
+
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
+
+# Add any paths that contain templates here, relative to this directory.
+templates_path = ["_templates"]
+
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "zenburn"
+
+# Remove the prompt when copying examples
+copybutton_prompt_text = r">>> |\.\.\.|» |$ |% "
+copybutton_prompt_is_regexp = True
+
+# -- Options for HTML output -------------------------------------------------
+html_theme = "furo"
+html_theme_options = {
+    "light_css_variables": {
+        # #c9378a
+        # #44a4c6
+        "color-brand-primary": "#44a4c6 ",
+        "color-brand-content": "#44a4c6 ",
+        "font-stack": "Arial, sans-serif",
+        "font-stack--monospace": "Courier, monospace",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#c9378a ",
+        "color-brand-content": "#c9378a ",
+        "font-stack": "Arial, sans-serif",
+        "font-stack--monospace": "Courier, monospace",
+    },
+    "source_repository": "https://github.com/bentoml/bentoml/",
+    "source_branch": "main",
+    "source_directory": "docs/source/",
+}
+
+html_title = "BentoML"
+html_logo = "_static/img/logo.svg"
+html_static_path = ["_static"]
+html_css_files = ["css/custom.css"]
+
+# Private dictionary for spell checker
+spelling_word_list_filename = ["bentoml_wordlist.txt"]
 
 # mock any heavy imports, eg: imports from frameworks library
 autodoc_mock_imports = [
@@ -103,38 +153,6 @@ autodoc_mock_imports = [
     "xgboost",
 ]
 
-autodoc_typehints = "description"
-autodoc_typehints_description_target = "documented"
-
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "zenburn"
-
-# Remove the prompt when copying examples
-copybutton_prompt_text = r">>> |\.\.\.|» |$ |% "
-copybutton_prompt_is_regexp = True
-
-# -- Options for HTML output -------------------------------------------------
-html_theme = "sphinx_rtd_theme"
-html_theme_options = {
-    "collapse_navigation": True,
-    "logo_only": False,
-    "display_version": True,
-    "navigation_depth": 2,
-    'prev_next_buttons_location': 'bottom',
-    'sticky_navigation': False,
-    'includehidden': True,
-}
-
-# Static folder path
-html_static_path = ["_static"]
-
-# Private dictionary for spell checker
-spelling_word_list_filename = ["bentoml_wordlist.txt"]
-
-
 # -- Custom lexers
 class TensorflowV1Lexer(PythonLexer):
     name = "Tensorflow V1"
@@ -155,18 +173,7 @@ class KerasTensorflowV2Lexer(PythonLexer):
     name = "Keras (Tensorflow V2 backend)"
     aliases = ["keras_v2"]
 
-
 def setup(app):
-    # css files
-    app.add_css_file("css/typeface/typeface.css", priority=500)
-    app.add_css_file("css/common.css", priority=500)
-    app.add_css_file("css/tabs.css", priority=500)
-    app.add_css_file("css/nav_patch.css", priority=500)
-    app.add_css_file("css/bentoml.css", priority=500)
-
-    # js files
-    app.add_js_file("js/bentoml.js")
-
     # Adding lexers for rendering different code version
     app.add_lexer("keras_v1", KerasTensorflowV1Lexer)
     app.add_lexer("keras_v2", KerasTensorflowV2Lexer)

@@ -102,6 +102,56 @@ class BaseRunner:
 
     def __init__(self, name: t.Optional[str]) -> None:
         self._name = name
+        self._pre_run_hooks = dict()
+        self._post_run_hooks = dict()
+
+    @final
+    def add_pre_run_hook(self, name: str, hook: t.Callable) -> None:
+        """
+        Add a pre-run hook.
+
+        The hook will be called before any run method is called.
+
+        :param name: The name of the hook.
+        :param hook: The hook function.
+        """
+
+        self._pre_run_hooks[name] = hook
+
+    @final
+    def add_post_run_hook(self, name: str, hook: t.Callable) -> None:
+        """
+        Add a post-run hook.
+
+        The hook will be called after any run method is called.
+
+        :param name: The name of the hook.
+        :param hook: The hook function.
+        """
+
+        self._post_run_hooks[name] = hook
+
+    @final
+    def remove_pre_run_hook(self, name: str) -> t.Optional[t.Callable]:
+        """
+        Remove a pre-run hook.
+
+        :param name: The name of the hook.
+        :return: The removed hook function if exists, None otherwise.
+        """
+
+        return self._pre_run_hooks.pop(name, None)
+
+    @final
+    def remove_post_run_hook(self, name: str) -> t.Optional[t.Callable]:
+        """
+        Remove a post-run hook.
+
+        :param name: The name of the hook.
+        :return: The removed hook function if exists, None otherwise.
+        """
+
+        return self._post_run_hooks.pop(name, None)
 
     @property
     def default_name(self) -> str:
@@ -153,20 +203,69 @@ class BaseRunner:
         return create_runner_impl(self)
 
     @final
+    def _execute_pre_run_hooks(self, *args, **kwargs) -> None:
+        """
+        Execute all pre-run hooks.
+        """
+
+        for hook in self._pre_run_hooks.values():
+            hook(*args, **kwargs)
+
+    @final
+    def _execute_post_run_hooks(self, *args, **kwargs) -> None:
+        """
+        Execute all post-run hooks.
+        """
+
+        for hook in self._post_run_hooks.values():
+            hook(*args, **kwargs)
+
+    @final
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._impl.async_run(*args, **kwargs)
+
+        self._execute_pre_run_hooks(*args, **kwargs)
+
+        result = await self._impl.async_run(*args, **kwargs)
+
+        self._execute_post_run_hooks(result)
+
+        return result
 
     @final
     async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._impl.async_run_batch(*args, **kwargs)
+
+        self._execute_pre_run_hooks(*args, **kwargs)
+
+        # Run the actual runner
+        result = await self._impl.async_run_batch(*args, **kwargs)
+
+        self._execute_post_run_hooks(result)
+
+        return result
 
     @final
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self._impl.run(*args, **kwargs)
+
+        self._execute_pre_run_hooks(*args, **kwargs)
+
+        # Run the actual runner
+        result = self._impl.run(*args, **kwargs)
+
+        self._execute_post_run_hooks(result)
+
+        return result
 
     @final
     def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self._impl.run_batch(*args, **kwargs)
+
+        self._execute_pre_run_hooks(*args, **kwargs)
+
+        # Run the actual runner
+        result = self._impl.run_batch(*args, **kwargs)
+
+        self._execute_post_run_hooks(result)
+
+        return result
 
 
 class Runner(BaseRunner, ABC):

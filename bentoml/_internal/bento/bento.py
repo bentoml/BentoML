@@ -445,9 +445,11 @@ class BentoInfo:
         if "runners" in yaml_content:
             runners = yaml_content["runners"]
             for r in runners:
-                if "runner_type" in r:
+                if "runner_type" in r:  # BentoRunnerInfo prior to 1.0.0rc1 release
                     r["runnable_type"] = r["runner_type"]
                     del r["runner_type"]
+                    if "model_runner_module" in r:
+                        del r["model_runner_module"]
 
         if "models" in yaml_content:
             # For backwards compatibility for bentos created prior to version 1.0.0a7
@@ -463,6 +465,7 @@ class BentoInfo:
                         models,
                     )
                 )
+
         try:
             # type: ignore[attr-defined]
             return bentoml_cattr.structure(yaml_content, cls)

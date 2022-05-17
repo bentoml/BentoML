@@ -5,11 +5,11 @@ import typing as t
 import logging
 import importlib
 from sys import version_info as pyver
+from typing import overload
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 from collections import UserDict
-from typing import overload
 
 import fs
 import attr
@@ -573,11 +573,14 @@ class ModelInfo:
             del yaml_content["bentoml_version"]
         if "signatures" not in yaml_content:
             yaml_content["signatures"] = {}
+        if "context" in yaml_content and "pip_dependencies" in yaml_content["context"]:
+            del yaml_content["context"]["pip_dependencies"]
+            yaml_content["context"]["framework_versions"] = {}
 
         try:
             model_info = bentoml_cattr.structure(yaml_content, FrozenModelInfo)
-        except TypeError:  # pragma: no cover - simple error handling
-            raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}")
+        except TypeError as e:  # pragma: no cover - simple error handling
+            raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}: {e}")
         return model_info
 
     def validate(self):

@@ -135,7 +135,9 @@ class BatchDimMapping(BatchDimSuper):
 
         self.args = []
         self.kwargs = {}
-        for i, (name, param) in enumerate(params.items()):
+        # drop self parameter from params
+        param_items = list(params.items())[1:]
+        for i, (name, param) in enumerate(param_items):
             if param.kind in [
                 inspect.Parameter.POSITIONAL_ONLY,
                 inspect.Parameter.POSITIONAL_OR_KEYWORD,

@@ -186,7 +186,7 @@ class RunnerAppFactory(BaseAppFactory):
 
             i = 0
             batch_args: list[t.Any] = []
-            while i in batch_dim.args:
+            while i < len(batch_dim.args):
                 args = [param.args[i] for param in params_list]
                 batched_arg, indices = AutoContainer.from_batch_payloads(
                     args, batch_dim=batch_dim[i]
@@ -194,34 +194,41 @@ class RunnerAppFactory(BaseAppFactory):
                 batch_args.append(batched_arg)
                 i += 1
 
-            found = True
-            while found:
-                found = False
+            max_arg_len = max([len(param.args) for param in params_list])
+
+            # iterate over any remaining vararg parameters, appending None if there is no corresponding argument
+            while i < max_arg_len:
                 args: list[t.Any] = []
                 for params in params_list:
-                    if len(params.args) > i:
+                    if i < len(params.args):
+                        args.append(params.args[i])
+                    else:
                         args.append(None)
                         continue
-                    else:
-                        found = True
-                        args.append(params.args[i])
-                if found:
-                    batched_arg, indices = AutoContainer.from_batch_payloads(
-                        args, batch_dim=batch_dim[i]
-                    )
-                    batch_args.append(batched_arg)
-                    i += 1
+                batched_arg, indices = AutoContainer.from_batch_payloads(
+                    args, batch_dim=batch_dim[i]
+                )
+                batch_args.append(batched_arg)
+                i += 1
 
+            # construct a dict of lists of kwargs, appending None if there is no corresponding keyword argument
             kwargs: dict[str, list[Payload | None]] = {}
             for i, params in enumerate(params_list):
+                for kwarg in kwargs:
+                    if kwarg in params.kwargs:
+                        kwargs[kwarg].append(params.kwargs[kwarg])
+                    else:
+                        kwargs[kwarg].append(None)
+
                 for kwarg in params.kwargs:
-                    kwarg_list: list[Payload | None] = kwargs.get(kwarg, [None] * i)
-                    kwarg_list.append(params.kwargs[kwarg])
-                    kwargs[kwarg] = kwarg_list
+                    if kwarg not in kwargs:
+                        kwarg_list: list[Payload | None] = [None] * i
+                        kwarg_list.append(params.kwargs[kwarg])
+                        kwargs[kwarg] = kwarg_list
 
             batch_kwargs = {}
             for kwarg, payloads in kwargs.items():
-                batch_kwargs[kwargs], indices = AutoContainer.from_batch_payloads(
+                batch_kwargs[kwarg], indices = AutoContainer.from_batch_payloads(
                     payloads, batch_dim=batch_dim[kwarg]
                 )
 

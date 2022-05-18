@@ -1,5 +1,3 @@
-.. _concepts-page:
-
 =============
 Main Concepts
 =============

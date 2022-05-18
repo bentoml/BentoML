@@ -4,7 +4,9 @@ Integrations
 
 
 * MLFlow
+* Feast
 * Flyte
 * Kubeflow
 * Knative
-* Kubernetes
+* Ray
+* Triton

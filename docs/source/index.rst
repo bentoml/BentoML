@@ -4,6 +4,8 @@ Unified Model Serving Framework
 
 |pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
 
+----
+
 What is BentoML?
 ----------------
 BentoML is an open-source framework that simplifies Machine-Learning model deployment
@@ -17,6 +19,7 @@ and serves your models at production scale.
 
 Learn BentoML
 -------------
+
 
 .. panels::
 
@@ -38,12 +41,24 @@ Learn BentoML
     ---
     :doc:`💪 Advanced Guides <guides/index>`
 
-    Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and customizing docker environment etc.
+    Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and performance optimization.
     ---
     `💬 BentoML Community <https://l.linklyhq.com/l/ktOX>`_
 
     Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
 
+
+For MLOps engineers:
+
+.. panels::
+
+    `🦄️ Yatai <https://github.com/bentoml/Yatai>`_
+
+    Model Deployment at scale on Kubernetes.
+    ---
+    `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_
+
+    Fast model deployment on any cloud platform.
 
 
 Staying Informed
@@ -56,6 +71,8 @@ share tutorials, case studies, and community updates there.
 
 To receive release notification, star & watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_. For release
 notes and detailed changelog, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
+
+----
 
 Why are we building BentoML?
 ----------------------------
@@ -83,13 +100,14 @@ With BentoML, data scientists can focus primarily on creating and improving thei
 models, while giving deployment engineers peace of mind that nothing in the deployment
 logic is changing and that production service is stable.
 
+----
+
 Getting Involved
 ----------------
 
 BentoML has a thriving open source community where hundreds of ML practitioners are
 contributing to the project, helping other users and discuss all things MLOps.
 `👉 Join us on slack today! <https://l.linklyhq.com/l/ktOX>`_
-
 
 
 .. toctree::
@@ -118,4 +136,4 @@ contributing to the project, helping other users and discuss all things MLOps.
 .. |documentation_status| image:: https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square
    :target: https://docs.bentoml.org/
 .. |join_slack| image:: https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square
-   :target: https://join.slack.bentoml.org
+   :target: https://l.linklyhq.com/l/ktOX

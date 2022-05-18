@@ -1,7 +1,6 @@
-.. _gpu-page:
-
-Serving on GPU
-==============
+================
+Serving with GPU
+================
 
 It is widely recognized within the academia world and industry that GPUs have superior benefits over CPU-based platform due to its speed and efficiency advantages for both training and inference
 tasks, as shown `by NVIDIA <https://www.nvidia.com/content/tegra/embedded-systems/pdf/jetson_tx1_whitepaper.pdf>`_.

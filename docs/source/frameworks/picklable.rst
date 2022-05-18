@@ -1,5 +1,6 @@
+===============
 Picklable Model
----------------
+===============
 
 Users can now save any given python method or object as a loadable model in BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner`:
 

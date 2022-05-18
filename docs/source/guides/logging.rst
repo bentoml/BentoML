@@ -1,7 +1,6 @@
-.. _logging-page:
-
-Logging
-=======
+=================
+Customize Logging
+=================
 
 BentoML provides a powerful and detailed logging pattern out of the box. Request logs for webservices are logged along with requests to each of the model runner services. We use `RichHandler <https://rich.readthedocs.io/en/stable/logging.html>`_ to provide appropriate color coding to the logs in order to make them more easily read.
 

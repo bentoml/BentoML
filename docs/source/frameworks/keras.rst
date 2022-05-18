@@ -1,5 +1,6 @@
+=====
 Keras
------
+=====
 
 Users can now use Keras (with Tensorflow v1 and v2 backend) with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 

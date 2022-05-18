@@ -1,0 +1,14 @@
+.sidebar-logo-container {
+    margin: 23px 0 14px;
+}
+
+.sidebar-logo-container img.sidebar-logo {
+    max-width: 100px;
+}
+
+
+@media screen and (max-width: 600px) {
+    .sidebar-logo-container img.sidebar-logo {
+        display: none;
+    }
+}

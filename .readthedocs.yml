@@ -11,11 +11,13 @@ sphinx:
 
 # Optionally set the version of Python and requirements required to build your docs
 python:
-  version: 3.8
+  version: 3.9
   install:
     - requirements: requirements/docs-requirements.txt
     - method: setuptools
       path: .
   system_packages: true
 
-formats: []
+formats:
+  - epub
+  - pdf

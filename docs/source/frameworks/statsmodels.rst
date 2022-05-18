@@ -1,5 +1,6 @@
+===========
 Statsmodels
------------
+===========
 
 Users can now use statsmodels with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 

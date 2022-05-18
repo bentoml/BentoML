@@ -42,7 +42,6 @@ napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
 autosectionlabel_prefix_document = True
-autosectionlabel_maxdepth = 2
 
 issues_default_group_project = "bentoml/bentoml"
 

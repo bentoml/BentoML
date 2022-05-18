@@ -1,5 +1,6 @@
+======
 MLFlow
-------
+======
 
 Users can now use MLFlow with BentoML with the following API: :code:`load`, and :code:`load_runner` as follow:
 

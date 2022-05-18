@@ -1,5 +1,6 @@
+==========
 Detectron2
-----------
+==========
 
 Users can now use Detectron2 with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 

@@ -26,6 +26,7 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
+from ..types import MetadataType  # noqa # pylint: disable
 from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator

@@ -65,22 +65,22 @@ else:
 
 
 class ModelOptions(ModelOptionsSuper):
+    def __init__(self, **kwargs):
+        super().__init__(kwargs)
+
     @classmethod
     def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        if len(kwargs) != 0:
-            for k in kwargs:
-                raise ValueError(f"Option {k} is not supported")
-        return cls()
+        return cls(**kwargs)
 
     @staticmethod
     def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return dict(options)
+        return options.data
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls(**d)
+    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)
 )
-bentoml_cattr.register_unstructure_hook(ModelOptions, ModelOptions.to_dict)
+bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))
 
 
 @attr.define(repr=False, eq=False, init=False)
@@ -538,6 +538,9 @@ class ModelInfo:
 
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
+
+    def parse_options(self, options_class: type[ModelOptions]) -> None:
+        object.__setattr__(self, "options", options_class(**self.options.data))
 
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:

@@ -53,6 +53,20 @@ repository.
     :ref:`frameworks/xgboost:XGBoost`
 
 
+Support for the following frameworks are on our roadmap:
+
+- EvalML
+- FastText
+- FastAI
+- Flax
+- Jax
+- Neuropod
+- PyTorch ignite
+- Spark MLlib
+- SnapML
+
+
+
 .. toctree::
   :hidden:
 
@@ -79,12 +93,3 @@ repository.
   transformers
   xgboost
 
-
-
-Support for the following libraries are coming soon:
-
-- Spark MLlib
-- FastText
-- FastAI
-- Flax
-- EvalML

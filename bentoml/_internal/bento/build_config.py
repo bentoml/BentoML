@@ -16,10 +16,9 @@ from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
-from .docker import ImageProvider
-from .docker import CUDA_SUPPORTED_VERSIONS
+from .docker import SUPPORTED_CUDA_VERSIONS
 from .docker import DOCKER_SUPPORTED_DISTROS
-from .docker import PYTHON_SUPPORTED_VERSIONS
+from .docker import SUPPORTED_PYTHON_VERSIONS
 from ...exceptions import InvalidArgument
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
@@ -31,9 +30,9 @@ PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 DOCKER_DEFAULT_DISTRO = "debian"
 
 
-if PYTHON_VERSION not in PYTHON_SUPPORTED_VERSIONS:
+if PYTHON_VERSION not in SUPPORTED_PYTHON_VERSIONS:
     logger.warning(
-        f"BentoML may not work well with current python version: {PYTHON_VERSION}, supported python versions are: {','.join(PYTHON_SUPPORTED_VERSIONS)}"
+        f"BentoML may not work well with current python version: {PYTHON_VERSION}, supported python versions are: {','.join(SUPPORTED_PYTHON_VERSIONS)}"
     )
 
 
@@ -64,14 +63,14 @@ class DockerOptions:
         converter=semver_converter("python_version"),
         default=None,
         validator=attr.validators.optional(
-            attr.validators.in_(PYTHON_SUPPORTED_VERSIONS)
+            attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
         ),
     )
     cuda_version: t.Optional[str] = attr.field(
         default=None,
         converter=semver_converter("cuda_version"),
         validator=attr.validators.optional(
-            attr.validators.in_(CUDA_SUPPORTED_VERSIONS)
+            attr.validators.in_(SUPPORTED_CUDA_VERSIONS)
         ),
     )
     system_packages: t.List[str] = attr.field(factory=list)
@@ -119,9 +118,7 @@ class DockerOptions:
         if self.base_image is None:
             if self.distro is None:
                 raise KeyError("distro not set, can't get base image tag")
-            base_image = repr(
-                ImageProvider(self.distro, self.python_version, self.gpu, self.devel)
-            )
+            base_image = ""
             return base_image
         else:
             return self.base_image

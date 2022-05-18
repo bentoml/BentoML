@@ -12,25 +12,33 @@ and serves your models at production scale.
 .. note::
     The BentoML version 1.0 is currently under beta preview release. For our most recent
     stable release, see the
-    `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/S>`_.
+    `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/>`_.
 
 
 Learn BentoML
 -------------
 
-:doc:`Tutorial: Intro to BentoML <tutorial>` will show you a simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
+.. panels::
 
+    :doc:`💻 Tutorial: Intro to BentoML <tutorial>`
 
-:doc:`Main Concepts <concepts/index>` gives a step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
+    A simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
+    ---
+    :doc:`📖 Main Concepts <concepts/index>`
 
+    A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
+    ---
+    :doc:`🧮 ML Frameworks Guide <frameworks/index>`
 
-:doc:`ML Frameworks Guide <frameworks/index>` lays out best practices and example usages by the ML framework used for training models.
+    Best practices and example usages by the ML framework used for training models.
+    ---
+    `🎨 Gallery Projects <https://github.com/bentoml/gallery>`_
 
+    Example projects demonstrating BentoML usage in a variety of different scenarios.
+    ---
+    :doc:`💪 Advanced Guides <guides/index>`
 
-:doc:`Advanced Guides <guides/index>` dives into BentoML's internals, architecture and advanced features, including GPU support, inference graph, monitoring, and customizing docker environment etc.
-
-
-`Gallery Projects <https://github.com/bentoml/gallery>`_ provides example projects that demonstrate BentoML usage in a variety of different scenarios.
+    Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and customizing docker environment etc.
 
 
 

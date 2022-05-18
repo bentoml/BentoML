@@ -164,16 +164,20 @@ def get_runnable(bento_model: Model):
             super().__init__()
             self.model = load_model(bento_model)
 
-    def _run(
-        self: PicklableRunnable,
-        input_data: ext.NpNDArray | ext.PdDataFrame,
-        method_name: str,
-    ) -> ext.NpNDArray:
-        return getattr(self.model, method_name)(input_data)
+    def _get_run(method_name: str):
+        def _run(
+            self: PicklableRunnable,
+            input_data: ext.NpNDArray | ext.PdDataFrame,
+        ) -> ext.NpNDArray:
+            assert isinstance(method_name, str), repr(method_name)
+            return getattr(self.model, method_name)(input_data)
+
+        return _run
 
     for method_name, options in bento_model.info.signatures.items():
+        assert isinstance(method_name, str), repr(method_name)
         PicklableRunnable.add_method(
-            functools.partial(_run, method_name=method_name),
+            _get_run(method_name),
             name=method_name,
             batchable=options.batchable,
             batch_dim=options.batch_dim,

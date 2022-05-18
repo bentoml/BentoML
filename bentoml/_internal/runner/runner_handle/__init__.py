@@ -23,7 +23,7 @@ class RunnerHandle(ABC):
     @abstractmethod
     def run_method(
         self,
-        method_name: str,
+        __bentoml_method_name: str,
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
@@ -32,7 +32,7 @@ class RunnerHandle(ABC):
     @abstractmethod
     async def async_run_method(
         self,
-        method_name: str,
+        __bentoml_method_name: str,
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
@@ -47,7 +47,7 @@ class DummyRunnerHandle(RunnerHandle):
 
     def run_method(
         self,
-        method_name: str,
+        __bentoml_method_name: str,
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
@@ -55,7 +55,7 @@ class DummyRunnerHandle(RunnerHandle):
 
     async def async_run_method(
         self,
-        method_name: str,
+        __bentoml_method_name: str,
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:

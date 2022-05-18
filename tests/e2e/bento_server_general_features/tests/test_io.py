@@ -4,9 +4,9 @@
 import io
 import sys
 
-import aiohttp
 import numpy as np
 import pytest
+import aiohttp
 
 from bentoml.io import PandasDataFrame
 from bentoml.testing.utils import async_request
@@ -39,7 +39,7 @@ async def test_numpy(host):
         headers={"Content-Type": "application/json"},
         data="[[1,2],[3,4]]",
         assert_status=200,
-        assert_data=b"[[2, 4, 6, 8]]",
+        assert_data=b"[[2, 4], [6, 8]]",
     )
     await async_request(
         "POST",
@@ -73,9 +73,9 @@ async def test_json(host):
         "POST",
         f"http://{host}/echo_json",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
-        data='["hi"]',
+        data='"hi"',
         assert_status=200,
-        assert_data=b'["hi"]',
+        assert_data=b'"hi"',
     )
 
     await async_request(

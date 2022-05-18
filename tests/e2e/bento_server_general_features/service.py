@@ -1,14 +1,13 @@
 import typing as t
 
-from PIL.Image import Image as PILImage
-from PIL.Image import fromarray
 import numpy as np
 import pandas as pd
 import pydantic
+from PIL.Image import Image as PILImage
+from PIL.Image import fromarray
 
 import bentoml
-from bentoml._internal.types import FileLike
-from bentoml._internal.types import JSONSerializable
+import bentoml.picklable_model
 from bentoml.io import File
 from bentoml.io import JSON
 from bentoml.io import Image
@@ -16,12 +15,14 @@ from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
 from bentoml.io import PandasSeries
 from bentoml.io import PandasDataFrame
-import bentoml.picklable_model
+from bentoml._internal.types import FileLike
+from bentoml._internal.types import JSONSerializable
 
 
 class _Schema(pydantic.BaseModel):
     name: str
     endpoints: t.List[str]
+
 
 py_model = bentoml.picklable_model.get("py_model").to_runner()
 
@@ -34,7 +35,8 @@ svc = bentoml.Service(
 
 @svc.api(input=JSON(), output=JSON())
 async def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
-    return await py_model.echo_json.async_run(json_obj)
+    batch_ret = await py_model.echo_json.async_run([json_obj])
+    return batch_ret[0]
 
 
 @svc.api(
@@ -42,12 +44,13 @@ async def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
     output=JSON(),
 )
 async def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
-    return await py_model.echo_json.async_run(json_obj)
+    batch_ret = await py_model.echo_json.async_run([json_obj])
+    return batch_ret[0]
 
 
 @svc.api(
     input=NumpyNdarray(shape=(2, 2), enforce_shape=True),
-    output=NumpyNdarray(shape=(1, 4)),
+    output=NumpyNdarray(shape=(2, 2)),
 )
 async def predict_ndarray_enforce_shape(
     inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
@@ -67,7 +70,6 @@ async def predict_ndarray_enforce_dtype(
     return await py_model.predict_ndarray.async_run(inp)
 
 
-
 @svc.api(
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasDataFrame(),
@@ -83,7 +85,8 @@ async def predict_dataframe(df: "pd.DataFrame") -> "pd.DataFrame":
 
 @svc.api(input=File(), output=File())
 async def predict_file(f: FileLike[bytes]) -> bytes:
-    return await py_model.predict_file.async_run([f])
+    batch_ret = await py_model.predict_file.async_run([f])
+    return batch_ret[0]
 
 
 @svc.api(input=Image(), output=Image(mime_type="image/bmp"))

@@ -33,8 +33,6 @@ You can also run the code in this tutorial from your web browser: `Intro to Bent
 `Gallery Projects <https://github.com/bentoml/gallery>`_ provides example projects that demonstrate BentoML usage in a variety of different scenarios.
 
 
-:ref:`Deployment Guide <deployment-page>` helps to understand different types of model deployment solutions and what may best fit your use cases
-
 
 Staying Informed
 ----------------
@@ -89,7 +87,7 @@ logic is changing and that production service is stable.
    concepts/index
    frameworks/index
    guides/index
-   deployment/index
+   integrations/index
    yatai/index
    bentoctl/index
    reference/index

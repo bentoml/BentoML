@@ -15,8 +15,8 @@ class PickleModel:
     def echo_json(cls, input_datas: JSONSerializable) -> JSONSerializable:
         return input_datas
 
-    @staticmethod
     def echo_multi_ndarray(
+        self,
         *input_arr: "np.ndarray[t.Any, np.dtype[t.Any]]",
     ) -> t.Tuple["np.ndarray[t.Any, np.dtype[t.Any]]", ...]:
         return input_arr

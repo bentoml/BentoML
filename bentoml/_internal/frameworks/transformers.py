@@ -1,25 +1,29 @@
 from __future__ import annotations
 
+import os
 import typing as t
 import logging
 import importlib.util
-import pydantic
-import os
 from typing import TYPE_CHECKING
+
+import pydantic
 
 import bentoml
 from bentoml import Tag
-from bentoml.models import Model, ModelContext, ModelOptions
+from bentoml.models import Model
+from bentoml.models import ModelContext
+from bentoml.models import ModelOptions
+from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
-from bentoml.exceptions import NotFound
 
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
-    from bentoml.types import ModelSignatureDict
     from bentoml.types import ModelSignature
+    from bentoml.types import ModelSignatureDict
+
     from ..external_typing import transformers as ext
 
 
@@ -60,6 +64,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
                 "refers to https://github.com/google/flax#quick-install"
             )
 
+
 try:
     import transformers
 
@@ -73,8 +78,6 @@ except ImportError:  # pragma: no cover
     )
 
 
-
-
 class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
@@ -86,9 +89,7 @@ class TransformersOptions(ModelOptions):
         try:
             _Schema(**kwargs)
         except pydantic.ValidationError:
-            raise BentoMLException(
-                f"Model options {kwargs} is not valid."
-            )
+            raise BentoMLException(f"Model options {kwargs} is not valid.")
 
         super().__init__(**kwargs)
 
@@ -116,16 +117,16 @@ def load_model(
             instance to load the model from.
         kwargs (:code:`Any`):
             Additional keyword arguments to pass to the model.
-    
+
     Returns:
         ``Pipeline``:
             The Transformers pipeline loaded from the model store.
-        
+
     Example:
     .. code-block:: python
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
-    """ # noqa
+    """  # noqa
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
@@ -135,9 +136,8 @@ def load_model(
         )
 
     return transformers.pipeline(
-        bento_model.info.options["task"],
-        bento_model.path,
-        **kwargs)
+        bento_model.info.options["task"], bento_model.path, **kwargs
+    )
 
 
 def save_model(
@@ -163,19 +163,19 @@ def save_model(
             user-defined labels for managing models, e.g. team=nlp, stage=dev
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
-    
+
     Returns:
         :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
         the user-defined model's name, and a generated `version`.
-    
+
     Examples:
 
     .. code-block:: python
-    
+
         import bentoml
 
         from transformers import pipeline
-        
+
         generator = pipeline(task="text-generation")
         tag = bentoml.transformers.save_model("text-generation-pipeline", generator)
 
@@ -183,7 +183,7 @@ def save_model(
         loaded = bentoml.transformers.load_model("text-generation-pipeline:latest")
         # or:
         loaded = bentoml.transformers.load_model(tag)
-    """ # noqa
+    """  # noqa
     if not LazyType["ext.TransformersPipeline"](
         "transformers.pipelines.base.Pipeline"
     ).isinstance(pipeline):
@@ -218,6 +218,7 @@ def save_model(
 
         return bento_model.tag
 
+
 def get_runnable(
     bento_model: bentoml.Model,
 ) -> t.Type[bentoml.Runnable]:
@@ -238,7 +239,7 @@ def get_runnable(
                 raise BentoMLException(
                     f"{e}, as `{task}` is not recognized by transformers."
                 )
-            
+
             available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
             if available_gpus is not None and available_gpus != "":
                 # assign GPU resources
@@ -247,7 +248,7 @@ def get_runnable(
                 }
             else:
                 # assign CPU resources
-                kwargs = {} 
+                kwargs = {}
 
             self.pipeline = load_model(bento_model, **kwargs)
 
@@ -256,6 +257,7 @@ def get_runnable(
                 self.predict_fns[method_name] = getattr(self.pipeline, method_name)
 
     for method_name, options in bento_model.info.signatures.items():
+
         def _run(self: TransformersRunnable, *args: t.Any, **kwargs: t.Any) -> t.Any:
             return getattr(self.pipeline, method_name)(*args, **kwargs)
 

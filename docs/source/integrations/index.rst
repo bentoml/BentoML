@@ -3,10 +3,15 @@ Integrations
 ============
 
 
-* MLFlow
-* Feast
-* Flyte
-* Kubeflow
-* Knative
-* Ray
-* Triton
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   feast
+   flyte
+   knative
+   kubeflow
+   mlflow
+   ray
+   triton

@@ -1,0 +1,38 @@
+%YAML 1.2
+---
+# https://gitlab.com/nvidia/container-images/cuda/-/blob/master/manifests/cuda.yaml#L3635
+requires: >
+  cuda>=10.2
+  brand=tesla,driver>=396,driver<397
+  brand=tesla,driver>=410,driver<411
+  brand=tesla,driver>=418,driver<419
+  brand=tesla,driver>=440,driver<441
+
+components:
+  cudart:
+    version: 10.2.89-1
+  nvml_dev:
+    version: 10.2.89-1
+  command_line_tools:
+    version: 10.2.89-1
+  libcusparse:
+    version: 10.2.89-1
+  libnpp:
+    version: 10.2.89-1
+  libraries:
+    version: 10.2.89-1
+  minimal_build:
+    version: 10.2.89-1
+  nvtx:
+    version: 10.2.89-1
+  nvprof:
+    version: 10.2.89-1
+  nvcc:
+    version: 10.2.89-1
+  libcublas:
+    version: 10.2.2.89-1
+  libnccl2:
+    version: 2.12.10-1
+  cudnn8:
+    version: 8.4.0.27-1
+

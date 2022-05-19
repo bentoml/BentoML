@@ -22,6 +22,11 @@ else:
     from typing import get_args
     from typing import get_origin
 
+if sys.version_info < (3, 10):
+    from typing_extensions import TypeAlias
+else:
+    from typing import TypeAlias
+
 logger = logging.getLogger(__name__)
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
@@ -37,7 +42,7 @@ if TYPE_CHECKING:
 else:
     PathType = t.Union[str, os.PathLike]
 
-MetadataType = t.Union[
+MetadataType: TypeAlias = t.Union[
     str,
     bytes,
     bool,

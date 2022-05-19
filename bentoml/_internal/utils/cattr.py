@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import typing
+import typing as t
 from datetime import datetime
-from collections.abc import Set
 
 import cattr
 from attr import fields
-from cattr import override
+from cattr import override  # type: ignore
 from cattr.gen import AttributeOverride
+
+# from collections import Set
+
 
 # TODO: migrate to cattr.GenConverter for better performance, e.g.:
 # bentoml_cattr = cattr.GenConverter(
@@ -29,15 +31,15 @@ bentoml_cattr = cattr.Converter()
 # )
 
 
-def omit_if_init_false(cls) -> dict[str, AttributeOverride]:
+def omit_if_init_false(cls: t.Any) -> dict[str, AttributeOverride]:
     return {f.name: override(omit=True) for f in fields(cls) if not f.init}
 
 
-def omit_if_default(cls) -> dict[str, AttributeOverride]:
+def omit_if_default(cls: t.Any) -> dict[str, AttributeOverride]:
     return {f.name: override(omit_if_default=True) for f in fields(cls)}
 
 
-def datetime_decoder(dt_like, _):
+def datetime_decoder(dt_like: str | datetime, _: t.Any) -> datetime:
     if isinstance(dt_like, str):
         return datetime.fromisoformat(dt_like)
     elif isinstance(dt_like, datetime):

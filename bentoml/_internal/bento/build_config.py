@@ -5,6 +5,7 @@ import re
 import typing as t
 import logging
 from sys import version_info as pyver
+from typing import TYPE_CHECKING
 
 import fs
 import attr
@@ -16,38 +17,79 @@ from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
-from .docker import SUPPORTED_CUDA_VERSIONS
-from .docker import DOCKER_SUPPORTED_DISTROS
-from .docker import SUPPORTED_PYTHON_VERSIONS
+from .docker import make_distro_cls
+from .docker import generate_dockerfile
+from .docker import DOCKER_SUPPORTED_DISTRO
+from .docker import DOCKER_DEFAULT_CUDA_VERSION
+from .docker import DOCKER_DEFAULT_DOCKER_DISTRO
+from .docker import DOCKER_SUPPORTED_PYTHON_VERSION
 from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
+
+if TYPE_CHECKING:
+    from attr import Attribute
+    from attr import _ValidatorType as ValidatorType
 
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = f"{pyver.major}.{pyver.minor}"
 PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 
-DOCKER_DEFAULT_DISTRO = "debian"
 
-
-if PYTHON_VERSION not in SUPPORTED_PYTHON_VERSIONS:
+if PYTHON_VERSION not in DOCKER_SUPPORTED_PYTHON_VERSION:
     logger.warning(
-        f"BentoML may not work well with current python version: {PYTHON_VERSION}, supported python versions are: {','.join(SUPPORTED_PYTHON_VERSIONS)}"
+        f"BentoML may not work well with current python version: {PYTHON_VERSION}, supported python versions are: {','.join(DOCKER_SUPPORTED_PYTHON_VERSION)}"
     )
 
 
-def semver_converter(options: str) -> t.Callable[[str], str | None]:
-    def _converter(version: str | None) -> str | None:
-        if version is not None:
-            match = re.match(r"^(\d+).(\d+)", version)
-            if match is None:
-                raise InvalidArgument(
-                    f'Invalid build option: `docker.{options}="{version}"`, version must follow standard semver format, e.g: 3.7.10, 3.8.9, 11.5.0',
-                )
-            major, minor = match.groups()
-            return f"{major}.{minor}"
+def _convert_python_version(py_version: str | None) -> str | None:
+    if py_version is None:
+        return None
 
-    return _converter
+    match = re.match(r"^(\d+).(\d+)", py_version)
+    if match is None:
+        raise InvalidArgument(
+            f'Invalid build option: docker.python_version="{py_version}", python '
+            f"version must follow standard python semver format, e.g. 3.7.10 ",
+        )
+    major, minor = match.groups()
+    return f"{major}.{minor}"
+
+
+def _convert_cuda_version(cuda_version: str | None) -> str | None:
+    if cuda_version is None:
+        return None
+    if cuda_version == "default":
+        cuda_version = DOCKER_DEFAULT_CUDA_VERSION
+
+    return cuda_version
+
+
+@attr.attrs(repr=False, slots=True, hash=True)
+class _DockerSpecSupportedValidator(object):
+    spec_version = attr.attrib(type=str)
+
+    def __call__(self, inst: t.Any, attr: Attribute[str], value: str) -> None:
+        if isinstance(inst, DockerOptions):
+            _distro_spec = make_distro_cls(inst.distro)
+            if _distro_spec is not None:
+                supported = getattr(_distro_spec, f"supported_{self.spec_version}")
+                if value not in supported:
+                    raise BentoMLException(
+                        f"docker.{self.spec_version}={value} is not supported for "
+                        f"{inst.distro}. Supported {self.spec_version.replace('_',' ')} "
+                        f"for {inst.distro} are: {','.join(supported)}."
+                    )
+
+    def __repr__(self):
+        return "<docker_spec_supported validator for {type!r}>".format(
+            type=self.spec_version
+        )
+
+
+def spec_supported_validator(spec_version: str) -> ValidatorType[str | None]:
+    return _DockerSpecSupportedValidator(spec_version)  # type: ignore
 
 
 @attr.define(frozen=True, on_setattr=None)
@@ -56,24 +98,25 @@ class DockerOptions:
     distro: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(
-            attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
+            attr.validators.in_(DOCKER_SUPPORTED_DISTRO)
         ),
     )
+
     python_version: t.Optional[str] = attr.field(
-        converter=semver_converter("python_version"),
+        converter=_convert_python_version,
         default=None,
-        validator=attr.validators.optional(
-            attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
-        ),
+        validator=attr.validators.optional(spec_supported_validator("python_version")),
     )
-    cuda_version: t.Optional[str] = attr.field(
+
+    cuda_version: t.Optional[t.Union[str, t.Literal["default"]]] = attr.field(
         default=None,
-        converter=semver_converter("cuda_version"),
-        validator=attr.validators.optional(
-            attr.validators.in_(SUPPORTED_CUDA_VERSIONS)
-        ),
+        converter=_convert_cuda_version,
+        validator=attr.validators.optional(spec_supported_validator("cuda_version")),
     )
-    system_packages: t.List[str] = attr.field(factory=list)
+
+    env: t.Optional[t.Dict[str, t.Any]] = None
+
+    system_packages: t.Optional[t.List[str]] = None
 
     # A python or sh script that executes during docker build time
     setup_script: t.Optional[str] = None
@@ -106,37 +149,21 @@ class DockerOptions:
 
         if self.base_image is None:
             if self.distro is None:
-                update_defaults["distro"] = DOCKER_DEFAULT_DISTRO
+                update_defaults["distro"] = DOCKER_DEFAULT_DOCKER_DISTRO
             if self.python_version is None:
                 update_defaults["python_version"] = PYTHON_VERSION
             if self.cuda_version is None:
-                update_defaults["cuda_version"] = ""
+                update_defaults["cuda_version"] = None
 
         return attr.evolve(self, **update_defaults)
 
-    def get_base_image_tag(self) -> str:
-        if self.base_image is None:
-            if self.distro is None:
-                raise KeyError("distro not set, can't get base image tag")
-            base_image = ""
-            return base_image
-        else:
-            return self.base_image
-
     def write_to_bento(self, bento_fs: FS, build_ctx: str):
-        docker_folder = fs.path.join("env", "docker")
+        docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
-        dockerfile = fs.path.join(docker_folder, "Dockerfile")
-        template_file = os.path.join(
-            os.path.dirname(__file__), "docker", "Dockerfile.template"
-        )
-        with open(template_file, "r", encoding="utf-8") as f:
-            dockerfile_template = f.read()
+        dockerfile = fs.path.combine(docker_folder, "Dockerfile")
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
-            dockerfile.write(
-                dockerfile_template.format(base_image=self.get_base_image_tag())
-            )
+            dockerfile.write(generate_dockerfile(self))
 
         for filename in ["init.sh", "entrypoint.sh"]:
             copy_file_to_fs_folder(
@@ -259,7 +286,7 @@ class PythonOptions:
 
         # Save the python version of current build environment
         with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:
-            f.write(PYTHON_VERSION)
+            f.write(PYTHON_FULL_VERSION)
 
         # Move over required wheel files
         # Note: although wheel files outside of build_ctx will also work, we should

@@ -277,7 +277,7 @@ def serve_production(
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
-                    f'Starting production BentoServer from "bento_identifier" '
+                    f'Starting production BentoServer from "{bento_identifier}" '
                     f"running on http://{host}:{port} (Press CTRL+C to quit)"
                 ),
             )

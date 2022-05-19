@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name # pragma: no cover
 import os
+import re
 import sys
 import json
 import time
@@ -106,13 +107,17 @@ def bentoml_build(project_path: str) -> t.Generator["Tag", None, None]:
     """
     Build a BentoML project.
     """
-    import bentoml
-
     logger.info(f"Building bento: {project_path}")
-    bento = bentoml.bentos.build_bentofile(build_ctx=project_path)
-    yield bento.tag
-    logger.info(f"Deleting bento: {bento.tag}")
-    subprocess.call(["bentoml", "delete", "-y", str(bento.tag)])
+    output = subprocess.check_output(["bentoml", "build", project_path])
+    match = re.search(
+        r'Successfully\ built\ Bento\(tag="(\w+:[a-z0-9]+)"\)',
+        output.decode(),
+    )
+    assert match, f"Build failed. The details:\n {output.decode()}"
+    tag = Tag.from_taglike(match[1])
+    yield tag
+    logger.info(f"Deleting bento: {tag}")
+    subprocess.call(["bentoml", "delete", "-y", str(tag)])
 
 
 @cached_contextmanager("{bento_tag}, {image_tag}")

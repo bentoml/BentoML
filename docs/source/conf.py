@@ -152,30 +152,3 @@ autodoc_mock_imports = [
     "transformers.file_utils",
     "xgboost",
 ]
-
-# -- Custom lexers
-class TensorflowV1Lexer(PythonLexer):
-    name = "Tensorflow V1"
-    aliases = ["tensorflow_v1"]
-
-
-class TensorflowV2Lexer(PythonLexer):
-    name = "Tensorflow V2"
-    aliases = ["tensorflow_v2"]
-
-
-class KerasTensorflowV1Lexer(PythonLexer):
-    name = "Keras (Tensorflow V1 backend)"
-    aliases = ["keras_v1"]
-
-
-class KerasTensorflowV2Lexer(PythonLexer):
-    name = "Keras (Tensorflow V2 backend)"
-    aliases = ["keras_v2"]
-
-def setup(app):
-    # Adding lexers for rendering different code version
-    app.add_lexer("keras_v1", KerasTensorflowV1Lexer)
-    app.add_lexer("keras_v2", KerasTensorflowV2Lexer)
-    app.add_lexer("tensorflow_v1", TensorflowV1Lexer)
-    app.add_lexer("tensorflow_v2", TensorflowV2Lexer)

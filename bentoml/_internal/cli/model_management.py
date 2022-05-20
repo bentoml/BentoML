@@ -167,13 +167,12 @@ def add_model_management_commands(
     ) -> None:
         """Delete Model in local model store.
 
-        Specify target Models to remove:
-
         \b
-        * Delete single model by "name:version", e.g: `bentoml models delete iris_clf:v1`
-        * Bulk delete all models with a specific name, e.g.: `bentoml models delete iris_clf`
-        * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete iris_clf:v1,iris_clf:v2`
-        * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
+        Examples:
+            * Delete single model by "name:version", e.g: `bentoml models delete iris_clf:v1`
+            * Bulk delete all models with a specific name, e.g.: `bentoml models delete iris_clf`
+            * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete iris_clf:v1,iris_clf:v2`
+            * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
         """  # noqa
 
         def delete_target(target: str) -> None:
@@ -201,7 +200,7 @@ def add_model_management_commands(
     @click.argument("model_tag", type=click.STRING)
     @click.argument("out_path", type=click.STRING, default="", required=False)
     def export(model_tag: str, out_path: str) -> None:
-        """Export Model files to an archive file
+        """Export a Model to an external archive file
 
         arguments:
 

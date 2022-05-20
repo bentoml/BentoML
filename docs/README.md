@@ -5,51 +5,176 @@ http://docs.bentoml.org/ to read the full documentation.
 
 ---
 
-**NOTE**:
-All of the below `make` commands should be used under `bentoml` root directory. Only MacOS and Linux (UNIX-based system only) are supported at the moment for live reloading of the documentation
+## Build Docs
 
-To generate the documentation, make sure to install all dependencies (mainly `sphinx` and its extension):
-
-```bash
-» make install-docs-deps
-```
-
-Once you have `sphinx` installed, you can build the documentation and enable watch on changes:
-```bash
-» make watch-docs
-```
-
-For Apple Silicon (M1), follow the latest suggested installation method for [PyEnchant](https://pyenchant.github.io/pyenchant/install.html)
-As of this writing there is no compatible arm64 version of pyenchant and the best way to install is the following commands:
+If you haven't already, clone the BentoML Github repo to a local directory:
 
 ```bash
-» arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-» arch -x86_64 /usr/local/bin/brew install enchant
+git clone https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
-Make sure that PYENCHANT_LIBRARY_PATH is set to the location of libenchant. For MacOS make sure it has the dylib extension, otherwise the .so for Linux based systems.
+Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
-## Documentation specification
-
-`bentoml/BentoML` follows [Google's docstring style](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings),
-mostly written in [ReStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html)
-
-### Writing source documentation
-
-Value should either put around ``` ``double backticks`` ```, or put into a ``` :code:`codeblock` ``` or using the object syntax ``` :obj:`class` ```.
-When mentioning a `class` it is recommended to use the ``` :class:`syntax` ``` as mentioned class will be linked by Sphinx:
-  ```markdown
-  :class:`~bentoml.BentoService`
-  ```
-When mentioning a `function`, it is recommended to use the ``` :func:`syntax` ``` as mentioned function will be linked by Sphinx:
-```markdown
-:func:`~bentoml.yatai.client.func`
+```bash
+pip install -r requirements/docs-requirements.txt
 ```
-When mentioning a method, it is recommended to use the ``` :meth:`syntax` ``` as mentioned method will be linked by Sphinx:
-```markdown
-:meth:`~bentoml.BentoService.method`
+
+Build the sphinx docs:
+
+```bash
+make clean html -C ./docs
 ```
-  
+
+The docs HTML files are now generated under `docs/build/html` directory, you can preview
+it locally with the following command:
+
+```bash
+python -m http.server 8000 -d docs/build/html
+```
+
+And open your browser at http://0.0.0.0:8000/ to view the generated docs.
+
+
+##### Watch Docs
+
+On MacOS and Linux (UNIX-based system only), it is possible to watch documentation 
+source changes and automatically rebuild the docs and refreshes the page in your 
+browser.
+
+Simply run the following command from BentoML project's root directory: 
+
+```bash
+make watch-docs
+```
+
+_Note: Accessing this feature requires `make` command_ 
+
+> For Apple Silicon (M1), follow the latest suggested installation method for [PyEnchant](https://pyenchant.github.io/pyenchant/install.html). As of this writing there is no compatible arm64 version of pyenchant and the best way to install is the following commands:
+>
+> ```bash
+> arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+> arch -x86_64 /usr/local/bin/brew install enchant
+> ```
+> Make sure that PYENCHANT_LIBRARY_PATH is set to the location of libenchant. For MacOS make sure it has the dylib extension, otherwise the .so for Linux based systems.
+
+
+
+## Writing Documentation
+
+
+### Writing .rst (ReStructuredText) in BentoML docs
+
+BentoML docs is built with Sphinx, which natively supports [ReStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html).
+
+#### Adding Reference Links
+
+When writing documentation, it is common to mention or link to other parts of the docs.
+
+If you need to refer to a specific documentation page, use `:doc:` plus path to the 
+target documentation file under the `docs/source/`. e.g.:
+
+```rst
+:doc:`tutorial`
+:doc:`/frameworks/pytorch`
+```
+
+By default, this will show the title of the target document and link to it. You may also
+change the title shown on current page:
+
+```rst
+:doc:`📖 Main Concepts <concepts/index>`
+```
+
+It is also possible to refer to a specific section of other document pages. We use the
+[autosectionlabel sphinx plugin](https://www.sphinx-doc.org/en/master/usage/extensions/autosectionlabel.html)
+to generate labels for every section in the documentation.
+
+For example:
+```rst
+:ref:`frameworks/pytorch:Section Title
+```
+
+#### Admonitions
+
+A `note` section can be created with the following syntax:
+```rst
+.. note:: This is what the most basic admonitions look like.
+
+
+.. note::
+   It is *possible* to have multiple paragraphs in the same admonition.
+
+   If you really want, you can even have lists, or code, or tables.
+```
+
+There are other admonition types such as `caution`, `danger`, `hint`, `important`, 
+`seealso`, and `tip`. Learn more about it [here](https://pradyunsg.me/furo/reference/admonitions/).
+
+#### Code Blocks
+
+```rst
+Code blocks in reStructuredText can be created in various ways::
+
+    Indenting content by 4 spaces, after a line ends with "::".
+    This will have default syntax highlighting (highlighting a few words and "strings").
+
+.. code::
+
+    You can also use the code directive, or an alias: code-block, sourcecode.
+    This will have default syntax highlighting (highlighting a few words and "strings").
+
+.. code:: python
+
+    print("And with the directive syntax, you can have syntax highlighting.")
+
+.. code:: none
+
+    print("Or disable all syntax highlighting.")
+```
+
+There's a lot more forms of "blocks" in reStructuredText that can be used, as
+seen in https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#literal-blocks.
+
+
+#### Tabs
+
+For most scenarios in BentoML docs, use the `tabbed` syntax provided by `sphinx-panels` 
+plugin: https://sphinx-panels.readthedocs.io/en/latest/#tabbed-content to create tabs.
+
+For syncronized tabs, use the `sphinx-inline-tabs`: https://sphinx-inline-tabs.readthedocs.io/en/latest/usage.html
+Syncronized tabs means it will sync all tab panels in a docs page to the same tab based
+on the tab title. This is good for pages that demonstrating a feature in a few different
+programming language. For example, when user click on the first tab group to choose 
+`python`, it's likely the user will view `python` tab for the other tab groups.
+
+
+### Documenting Source Code
+
+BentoML docs relies heavily on the Python docstrings defined together with the source
+code. We ask our contributors to document every public facing APIs and CLIs, including
+their signatures, options, and example usage. Sphinx can then use these inline docs to
+generate API References pages.
+
+Our `.rst` documents can also create reference to the inline docstrings. For example, a
+`.rst` document can create a section made from a Python Class's docstring, using the
+following syntax:
+
+```rst
+:class:`~bentoml.Service`
+```
+
+Similarly for functions and method:
+
+```rst
+:func:`~bentoml.models.list`
+```
+```rst
+:meth:`~bentoml.Service.api`
+```
+
+BentoML codebase follows the [Google's docstring style](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
+for writing inline docstring. Below are some examples.
+
 #### Define arguments in a method
 
 Arguments should be defined with ``Args:`` prefix, followed by a line with indentation. Each argument should be followed by
@@ -100,56 +225,4 @@ should be the type of the return, followed by a line return. An example for a re
 ```markdown
     Returns:
         :obj:`Dict[str,str]` with keys are :class:`~bentoml.BentoService` nametag following with saved bundle path.
-```
-
-### ```Model``` docstring specification
-
-When adding a new integration with a deep learning framework, make sure to document the Model class correctly following the below template:
-
-```python
-    from bentoml._internal.models import Model
-
-
-class FooBarArtifact(Model):
-    """
-    Model class for saving/loading :obj:`mlflow` models
-
-    Args:
-        model (:code:`mlflow.models.Model`):
-            All mlflow models are of type :obj:`mlflow.models.Model`
-        metadata (:code:`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to :code:`None`):
-            Class metadata
-        ... # Custom parameters
-
-    Raises:
-        MissingDependencyException:
-            :obj:`mlflow` is required by MLflowModel
-        ArtifactLoadingException:
-            given `loader_module` is not supported by :obj:`mlflow`
-
-    Example usage under :code:`train.py`::
-
-        TODO:
-
-    One then can define :code:`service.py`::
-
-        TODO:
-
-    Containerize a bento with :code:`bento_packer.py`::
-
-        TODO:
-    """  # noqa: E501
-
-```
-
-#### Tips and Tricks
-
-Header level hierarchy in rst:
-
-```text
-1 -
-2 ~
-3 ^
-4 =
-5 "
 ```

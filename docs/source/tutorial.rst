@@ -18,7 +18,7 @@ What are we building
 
 In this tutorial, we will focus on online model serving with BentoML, using a
 classification model trained with Scikit-Learn and the Iris dataset. By the end of this
-tutorial, we will have an HTTP endpoint for receiving inference requests and a docker
+tutorial, we will have an HTTP endpoint for handling inference requests and a docker
 container image for deployment.
 
 
@@ -127,7 +127,7 @@ Managing models
 Saved models can be managed via the :code:`bentoml models` CLI command. Try
 :code:`bentoml models --help`. to learn more.
 
-.. tab:: List
+.. tabbed:: List
 
    .. code-block:: bash
 
@@ -137,7 +137,7 @@ Saved models can be managed via the :code:`bentoml models` CLI command. Try
       iris_clf:2uo5fkgxj27exuqj  bentoml.sklearn  5.81 KiB    2022-05-19 08:36:52  ~/bentoml/models/iris_clf/2uo5fkgxj27exuqj
       iris_clf:nb5vrfgwfgtjruqj  bentoml.sklearn  5.80 KiB    2022-05-17 21:36:27  ~/bentoml/models/iris_clf/nb5vrfgwfgtjruqj
 
-.. tab:: Get
+.. tabbed:: Get
 
    .. code-block:: bash
 
@@ -161,7 +161,7 @@ Saved models can be managed via the :code:`bentoml models` CLI command. Try
       api_version: v1
       creation_time: '2022-05-19T08:36:52.456990+00:00'
 
-.. tab:: Import / Export
+.. tabbed:: Import / Export
 
    .. code-block:: bash
 
@@ -178,9 +178,13 @@ Saved models can be managed via the :code:`bentoml models` CLI command. Try
    .. note::
 
       Model can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
-      example: :code:`bentoml models export iris_clf:latest s3://my_bucket/my_prefix/`
+      example:
 
-.. tab:: Push / Pull
+      .. code-block:: bash
+
+         bentoml models export iris_clf:latest s3://my_bucket/my_prefix/
+
+.. tabbed:: Push / Pull
 
    If your team has `Yatai <https://github.com/bentoml/Yatai>`_ setup, you can also
    push local Models to Yatai, it provides APIs and Web UI for managing all Models
@@ -202,7 +206,7 @@ Saved models can be managed via the :code:`bentoml models` CLI command. Try
    .. image:: _static/img/yatai-model-detail.png
      :alt: Yatai Model Details UI
 
-.. tab:: Delete
+.. tabbed:: Delete
 
    .. code-block:: bash
 
@@ -210,7 +214,7 @@ Saved models can be managed via the :code:`bentoml models` CLI command. Try
 
       INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") deleted
 
-.. note::
+.. tip::
 
    If you have existing model saved to file on disk, you will need to load the model
    in a python session and then use BentoML's framework specific :code:`save_model`
@@ -232,7 +236,6 @@ a file :code:`service.py` with:
 
 .. code-block:: python
 
-    # service.py
     import numpy as np
     import bentoml
     from bentoml.io import NumpyNdarray
@@ -249,7 +252,7 @@ a file :code:`service.py` with:
 
 Run it live:
 
-.. code-block:: bash
+.. code-block::
 
     > bentoml serve ./service.py:svc --reload
 
@@ -259,6 +262,10 @@ Run it live:
     INFO [dev_api_server] Started server process [25915]
     INFO [dev_api_server] Waiting for application startup.
     INFO [dev_api_server] Application startup complete.                                                                                                                          on.py:59
+
+.. note::
+
+
 
 Send prediction requests with an HTTP client:
 
@@ -432,7 +439,7 @@ Bentos are the unit of deployment in BentoML, one of the most important artifact
 track of for your model deployment workflow. Similar to Models, Bentos built can be
 managed via the :code:`bentoml` CLI command:
 
-.. tab:: List
+.. tabbed:: List
 
    .. code-block:: bash
 
@@ -442,7 +449,7 @@ managed via the :code:`bentoml` CLI command:
       iris_classifier:nvjtj7wwfgsafuqj  16.99 KiB   2022-05-17 21:36:36  ~/bentoml/bentos/iris_classifier/nvjtj7wwfgsafuqj
       iris_classifier:jxcnbhfv6w6kvuqj  19.68 KiB   2022-04-06 22:02:52  ~/bentoml/bentos/iris_classifier/jxcnbhfv6w6kvuqj
 
-.. tab:: Get
+.. tabbed:: Get
 
    .. code-block:: bash
 
@@ -473,7 +480,7 @@ managed via the :code:`bentoml` CLI command:
         input_type: NumpyNdarray
         output_type: NumpyNdarray
 
-.. tab:: Import / Export
+.. tabbed:: Import / Export
 
    .. code-block:: bash
 
@@ -492,7 +499,7 @@ managed via the :code:`bentoml` CLI command:
       Bentos can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
       example: :code:`bentoml export iris_classifier:latest s3://my_bucket/my_prefix/`
 
-.. tab:: Push / Pull
+.. tabbed:: Push / Pull
 
    If your team has `Yatai <https://github.com/bentoml/Yatai>`_ setup, you can also
    push local Bentos to Yatai, it provides APIs and Web UI for managing all Bentos
@@ -514,7 +521,7 @@ managed via the :code:`bentoml` CLI command:
    .. image:: _static/img/yatai-bento-repos.png
      :alt: Yatai Bento Repo UI
 
-.. tab:: Delete
+.. tabbed:: Delete
 
    .. code-block:: bash
 

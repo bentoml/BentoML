@@ -12,6 +12,7 @@ Advanced Guides
   server
   ci
   gpu
+  monitoring
   securing_endpoints
   batch_scoring
   streaming

@@ -8,10 +8,10 @@ Unified Model Serving Framework
 
 What is BentoML?
 ----------------
-BentoML is an open-source framework that simplifies Machine-Learning model deployment
-and serves your models at production scale.
+`BentoML <https://github.com/bentoml/BentoML>`_ is an open-source framework that
+simplifies Machine-Learning model deployment and serves your models at production scale.
 
-.. note::
+.. caution::
     The BentoML version 1.0 is currently under beta preview release. For our most recent
     stable release, see the
     `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/>`_.
@@ -124,6 +124,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    reference/index
    faq
    Community <https://l.linklyhq.com/l/ktOX>
+   Github <https://github.com/bentoml/BentoML>
 
 .. spelling::
 

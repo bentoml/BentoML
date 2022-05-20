@@ -6,51 +6,52 @@ Here are the all of the supported ML frameworks for BentoML. You can find the of
 BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__
 repository.
 
+
 .. panels::
 
-    :ref:`frameworks/catboost:CatBoost`
+    :doc:`/frameworks/catboost`
     ---
-    :ref:`frameworks/detectron:Detectron2`
+    :doc:`/frameworks/detectron`
     ---
-    :ref:`frameworks/easyocr:EasyOCR`
+    :doc:`/frameworks/easyocr`
     ---
-    :ref:`frameworks/gluon:MXNet Gluon`
+    :doc:`/frameworks/gluon`
     ---
-    :ref:`frameworks/h2o:H2O`
+    :doc:`/frameworks/h2o`
     ---
-    :ref:`frameworks/keras:Keras`
+    :doc:`/frameworks/keras`
     ---
-    :ref:`frameworks/lightgbm:LightGBM`
+    :doc:`/frameworks/lightgbm`
     ---
-    :ref:`frameworks/mlflow:MLFlow`
+    :doc:`/frameworks/mlflow`
     ---
-    :ref:`frameworks/onnx:ONNX`
+    :doc:`/frameworks/onnx`
     ---
-    :ref:`frameworks/onnxmlir:ONNX-MLIR`
+    :doc:`/frameworks/onnxmlir`
     ---
-    :ref:`frameworks/paddle:PaddlePaddle`
+    :doc:`/frameworks/paddle`
     ---
-    :ref:`frameworks/picklable:Picklable Model`
+    :doc:`/frameworks/picklable`
     ---
-    :ref:`frameworks/pycaret:pycaret`
+    :doc:`/frameworks/pycaret`
     ---
-    :ref:`frameworks/pytorch:PyTorch`
+    :doc:`/frameworks/pytorch`
     ---
-    :ref:`frameworks/pytorch_lightning:Pytorch Lightning`
+    :doc:`/frameworks/pytorch_lightning`
     ---
-    :ref:`frameworks/sklearn:Scikit-Learn`
+    :doc:`/frameworks/sklearn`
     ---
-    :ref:`frameworks/spacy:SpaCy`
+    :doc:`/frameworks/spacy:SpaCy`
     ---
-    :ref:`frameworks/statsmodels:Statsmodels`
+    :doc:`/frameworks/statsmodels`
     ---
-    :ref:`frameworks/tensorflow:Tensorflow`
+    :doc:`/frameworks/tensorflow`
     ---
-    :ref:`frameworks/tensorflow_v1:Tensorflow V1`
+    :doc:`/frameworks/tensorflow_v1`
     ---
-    :ref:`frameworks/transformers:Huggingface Transformers`
+    :doc:`/frameworks/transformers`
     ---
-    :ref:`frameworks/xgboost:XGBoost`
+    :doc:`/frameworks/xgboost`
 
 
 Support for the following frameworks are on our roadmap:

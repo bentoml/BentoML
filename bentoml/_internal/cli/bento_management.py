@@ -199,7 +199,7 @@ def add_bento_management_commands(
         required=False,
     )
     def export(bento_tag: str, out_path: str) -> None:
-        """Export Bento files to an archive file
+        """Export a Bento to an external file archive
 
         \b
         Arguments:

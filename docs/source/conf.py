@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from pygments.lexers import PythonLexer
-
 # Adding BentoML source directory for accessing BentoML version
 import bentoml
 
@@ -55,6 +53,8 @@ templates_path = ["_templates"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "zenburn"
+pygments_dark_style = "monokai"
+
 
 # Remove the prompt when copying examples
 copybutton_prompt_text = r">>> |\.\.\.|» |$ |% "
@@ -64,18 +64,12 @@ copybutton_prompt_is_regexp = True
 html_theme = "furo"
 html_theme_options = {
     "light_css_variables": {
-        # #c9378a
-        # #44a4c6
         "color-brand-primary": "#44a4c6 ",
         "color-brand-content": "#44a4c6 ",
-        "font-stack": "Arial, sans-serif",
-        "font-stack--monospace": "Courier, monospace",
     },
     "dark_css_variables": {
         "color-brand-primary": "#c9378a ",
         "color-brand-content": "#c9378a ",
-        "font-stack": "Arial, sans-serif",
-        "font-stack--monospace": "Courier, monospace",
     },
     "source_repository": "https://github.com/bentoml/bentoml/",
     "source_branch": "main",

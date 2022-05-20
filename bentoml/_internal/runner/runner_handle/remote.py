@@ -116,11 +116,14 @@ class RemoteRunnerClient(RunnerHandle):
 
     async def async_run_method(
         self,
-        method_name: str,
+        __bentoml_method_name: str,
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        runnable_method = getattr(self._runner.runnable_class, method_name)
+        runnable_method = getattr(
+            self._runner.runnable_class,
+            __bentoml_method_name,
+        )
 
         signature = inspect.signature(runnable_method)
         # binding self parameter to None as we don't want to instantiate the runner
@@ -134,7 +137,10 @@ class RemoteRunnerClient(RunnerHandle):
         params = Params(*bound_args.args[1:], **bound_args.kwargs)
         multipart = payload_params_to_multipart(params)
         client = self._get_client()
-        async with client.post(f"{self._addr}/{method_name}", data=multipart) as resp:
+        async with client.post(
+            f"{self._addr}/{__bentoml_method_name}",
+            data=multipart,
+        ) as resp:
             body = await resp.read()
 
         if resp.status != 200:
@@ -178,7 +184,7 @@ class RemoteRunnerClient(RunnerHandle):
 
     def run_method(
         self,
-        method_name: str,
+        __bentoml_method_name: str,
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
@@ -186,7 +192,7 @@ class RemoteRunnerClient(RunnerHandle):
 
         return anyio.from_thread.run(
             self.async_run_method,
-            method_name,
+            __bentoml_method_name,
             *args,
             **kwargs,
         )

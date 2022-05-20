@@ -39,7 +39,7 @@ async def test_numpy(host):
         headers={"Content-Type": "application/json"},
         data="[[1,2],[3,4]]",
         assert_status=200,
-        assert_data=b"[[2, 4, 6, 8]]",
+        assert_data=b"[[2, 4], [6, 8]]",
     )
     await async_request(
         "POST",
@@ -73,9 +73,9 @@ async def test_json(host):
         "POST",
         f"http://{host}/echo_json",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
-        data='["hi"]',
+        data='"hi"',
         assert_status=200,
-        assert_data=b'["hi"]',
+        assert_data=b'"hi"',
     )
 
     await async_request(
@@ -96,18 +96,9 @@ async def test_pandas(host):
 
     df = pd.DataFrame([[101]], columns=["col1"])
 
-    status, headers, data = await async_request(
-        "POST",
-        f"http://{host}/predict_dataframe1",
-        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
-        data=df.to_json(orient="records"),
-    )
-    assert status == 200
-    assert data == b"[202]"
-
     await async_request(
         "POST",
-        f"http://{host}/predict_dataframe2",
+        f"http://{host}/predict_dataframe",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
         data=df.to_json(orient="records"),
         assert_status=200,
@@ -118,7 +109,7 @@ async def test_pandas(host):
     if sys.version_info >= (3, 7):
         await async_request(
             "POST",
-            f"http://{host}/predict_dataframe2",
+            f"http://{host}/predict_dataframe",
             headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
             data=df.to_parquet(),
             assert_status=200,
@@ -127,7 +118,7 @@ async def test_pandas(host):
 
     await async_request(
         "POST",
-        f"http://{host}/predict_dataframe2",
+        f"http://{host}/predict_dataframe",
         headers=(("Content-Type", "text/csv"), ("Origin", ORIGIN)),
         data=df.to_csv(),
         assert_status=200,

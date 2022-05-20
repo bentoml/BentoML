@@ -32,7 +32,7 @@ class LocalRunnerRef(RunnerHandle):
 
         method = getattr(self._runnable, __bentoml_method_name)
         args_list = list(args)
-        args_list.insert(0, self._runnable)
+        # args_list.insert(0, self._runnable)
         args = tuple(args_list)
         return await anyio.to_thread.run_sync(
             functools.partial(method, **kwargs), *args, limiter=anyio.CapacityLimiter(1)

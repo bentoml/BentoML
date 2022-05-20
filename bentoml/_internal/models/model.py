@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 from collections import UserDict
+from typing import overload
 
 import fs
 import attr

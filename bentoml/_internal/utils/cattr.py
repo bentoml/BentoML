@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 from datetime import datetime
-from collections import Set
+from collections.abc import Set
 
 import cattr
 from attr import fields

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import pickle
 import typing as t
 import logging
 import functools
+import itertools
 from typing import TYPE_CHECKING
 
 import bentoml
@@ -16,6 +18,9 @@ from bentoml.exceptions import MissingDependencyException
 from ..types import LazyType
 from ..models.model import ModelSignature
 from ..runner.utils import Params
+from ..runner.container import Payload
+from ..runner.container import DataContainer
+from ..runner.container import DataContainerRegistry
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import hook_loaded_model
 
@@ -167,7 +172,7 @@ def save_model(
     # will add signatures inference from tf_signatures later
     if signatures is None:
         logger.info(
-            'Using default model signature `{"__call__": {"batchable": False}}` for tensorflow v2 model'
+            "Using the default model signature for TensorFlow v2 ({signatures}) for model {name}."
         )
         signatures = {
             "__call__": ModelSignature(
@@ -273,3 +278,76 @@ def get_runnable(
         add_run_method(method_name, options)
 
     return TensorflowRunnable
+
+
+class TensorflowTensorContainer(DataContainer[tf.Tensor, tf.Tensor]):
+    @classmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence["tf_ext.Tensor"], batch_dim: int = 0
+    ) -> t.Tuple["tf_ext.Tensor", list[int]]:
+        batch: "tf_ext.Tensor" = tf.concat(batches, axis=batch_dim)
+        # TODO: fix typing mismatch @larme
+        indices: list[int] = list(
+            itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
+        )  # type: ignore
+        indices = [0] + indices
+        return batch, indices
+
+    @classmethod
+    def batch_to_batches(
+        cls, batch: "tf_ext.Tensor", indices: t.Sequence[int], batch_dim: int = 0
+    ) -> t.List["tf_ext.Tensor"]:
+        size_splits = [indices[i + 1] - indices[i] for i in range(len(indices) - 1)]
+        return tf.split(batch, size_splits)  # type: ignore
+
+    @classmethod
+    def to_payload(
+        cls,
+        single: "tf_ext.Tensor",
+    ) -> Payload:
+
+        return cls.create_payload(
+            pickle.dumps(single),
+        )
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: Payload,
+    ) -> "tf_ext.Tensor":
+
+        return pickle.loads(payload.data)
+
+    @classmethod
+    def batch_to_payloads(
+        cls,
+        batch: "tf_ext.Tensor",
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+    ) -> t.List[Payload]:
+
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+
+        def to_payload(subbatch: "tf_ext.Tensor"):
+            payload = cls.to_payload(subbatch)
+            payload.meta["batch_size"] = subbatch.shape[batch_dim]
+            return payload
+
+        payloads = [to_payload(subbatch) for subbatch in batches]
+        return payloads
+
+    @classmethod
+    def from_batch_payloads(
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int = 0,
+    ) -> t.Tuple["tf_ext.Tensor", t.List[int]]:
+        batches = [cls.from_payload(payload) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
+
+
+DataContainerRegistry.register_container(
+    LazyType("tf", "Tensor"),
+    LazyType("tf", "Tensor"),
+    TensorflowTensorContainer,
+)

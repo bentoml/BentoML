@@ -9,7 +9,7 @@ well as related configurations, data/model files, and dependencies.
 
 A Bento can be built with the ``bentoml build`` command with the
 ``bentofile.yaml`` configuration file. Here's an example of that
-process from the :ref:`Tutorial: Intro to BentoML <tutorial-page>`:
+process from the :doc:`Tutorial: Intro to BentoML <tutorial>`:
 
 .. code:: yaml
 

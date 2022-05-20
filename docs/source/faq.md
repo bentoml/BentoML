@@ -1,5 +1,6 @@
 FAQ
 ===
+
 Frequently asked questions from the [BentoML slack community](https://l.linklyhq.com/l/ktOX).
 
 ## Does BentoML support horizontal auto-scaling?

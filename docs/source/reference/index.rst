@@ -1,12 +1,9 @@
-.. _api-reference-page:
-
 =============
 API Reference
 =============
 
-This page contains detailed API specification generated from docstring in BentoML
-source code. This is best use for digging deeper into BentoML implementation when
-learning about advanced features or debugging issues.
+This page contains detailed API specifications. This is best use for digging deeper into
+BentoML APIs and learn about all the options they provide.
 
 .. toctree::
   :maxdepth: 2

@@ -31,9 +31,9 @@ Learn BentoML
 
     A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
     ---
-    :doc:`🧮 ML Frameworks Guide <frameworks/index>`
+    :doc:`🧮 ML Framework Specific Guide <frameworks/index>`
 
-    Best practices and example usages by the ML framework used for training models.
+    Best practices and example usages by the ML framework used for model training.
     ---
     `🎨 Gallery Projects <https://github.com/bentoml/gallery>`_
 

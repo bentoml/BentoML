@@ -4,6 +4,8 @@ Customize BentoServer
 
 TODO
 
+ middleware, custom endpoint
+
 
 .. _custom-endpoints-page:
 

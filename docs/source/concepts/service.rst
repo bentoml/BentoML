@@ -1,5 +1,3 @@
-.. _service-definition-page:
-
 ================
 Service and APIs
 ================
@@ -278,7 +276,4 @@ descriptor can be customized with independent schema and validation logic.
         ...
 
 .. todo::
-
-Further Reading
----------------
-- :ref:`API Reference for IO descriptors <api-io-descriptors>`
+    TODO: Open API

@@ -2,6 +2,25 @@
 Deploying Bento
 ===============
 
+Manage bentos
+Export, import
+
+Deployment Options - link
+* Docker
+* yatai
+* bentoctl
+
+Containerize/Docker
+* buildx requirement
+* bentoml containerize command
+* env var
+* platform
+* build args
+
+
+
+
+
 BentoML allows you to store models and bentos in local as well as remote repositories. Tools are also provided to easily
 manage the lifecycle of these artifacts. This documentation details the cli tools for both local and remote scenarios
 

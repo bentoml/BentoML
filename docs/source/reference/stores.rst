@@ -3,8 +3,8 @@ Bento Store APIs
 ================
 
 
-Bento Store
------------
+Managing Bentos
+---------------
 
 .. autofunction:: bentoml.list
 .. autofunction:: bentoml.get
@@ -13,9 +13,8 @@ Bento Store
 .. autofunction:: bentoml.import_bento
 
 
-
-Model Store
------------
+Managing Models
+---------------
 
 .. autofunction:: bentoml.models.list
 .. autofunction:: bentoml.models.get
@@ -25,8 +24,8 @@ Model Store
 .. autofunction:: bentoml.models.load_runner
 
 
-Yatai API
----------
+Working with Yatai
+------------------
 
 .. autofunction:: bentoml.push
 .. autofunction:: bentoml.pull

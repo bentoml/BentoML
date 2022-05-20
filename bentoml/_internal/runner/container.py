@@ -14,7 +14,7 @@ from ..configuration.containers import DeploymentContainer
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
-BatchIndicesType = list[int]
+BatchIndicesType = t.List[int]
 
 if TYPE_CHECKING:
     from .. import external_typing as ext

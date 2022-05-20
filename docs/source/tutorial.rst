@@ -432,6 +432,9 @@ command. Using the :code:`--production` option will serve the bento in productio
     INFO [iris_clf] Application startup complete. 
 
 
+Note that even it uses `demo_mnist:latest` in the code, it can be resolved with local model store to the exact model version `demo_mnist:7drxqvwsu6zq5uqj` during `bentoml build` process. This model version is now bundled together with the Bento, no matter where it is being deployed to.
+
+
 Managing Bentos
 ~~~~~~~~~~~~~~~
 

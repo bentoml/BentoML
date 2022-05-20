@@ -43,15 +43,13 @@ things MLOps.
 __The BentoML version 1.0 is in pre-view release.__ You can be of great help by testing out the preview release, 
 reporting issues, contribute to the documentation and create sample gallery projects.  For our most recent stable release, see the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS).
 
-
 - [Documentation](https://docs.bentoml.org/) - Overview of the BentoML docs and related resources
 - [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
 - [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
 - [Examples](https://github.com/bentoml/gallery) - Gallery of sample projects using BentoML
-- [ML Framework Guide](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
-- [Deployment Guide](https://docs.bentoml.org/en/latest/deployment/index.html) - Understand different types of model deployment solutions and what may best fit your use cases
-- [Advanced Topics](https://docs.bentoml.org/en/latest/advanced/index.html) - Learn about BentoML's internals, architecture and advanced features
-
+- [ML Framework Sepecific Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
+- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) - Learn about BentoML's internals, architecture and advanced features
+- [Integrations](https://docs.bentoml.org/en/latest/integrations/index.html) - Integrate BentoML with your training pipeline, existing infrastructure or monitoring tools
 
 ## Installation ##
 
@@ -64,9 +62,24 @@ pip install bentoml
 **Step 1:** At the end of your model training pipeline, save your trained model instance with BentoML:
 
 ```python
-# Model Training ...
-
 import bentoml
+
+model = train(...)
+
+bentoml.pytorch.save_model("fraud_detect", model)
+
+# INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for pytorch model
+# INFO  [cli] Successfully saved Model(tag="fraud_detect:3qee3zd7lc4avuqj", path="~/bentoml/models/fraud_detect/3qee3zd7lc4avuqj/")
+```
+
+BentoML saves the model artifact files in a local model store, a long with necessary metadata. 
+A new version tag is automatically generated for the model.
+
+Optionally, you may provide the `signatures` of your model for running inference with
+dynamic batching enabled, and attach labels, metadata, or `custom_objects` to be saved 
+together with your model, e.g.:
+
+```python
 bentoml.pytorch.save_model(
     "demo_mnist",  # model name in the local model store
     trained_model,  # model instance being saved
@@ -81,37 +94,29 @@ bentoml.pytorch.save_model(
         "cv_stats": cv_stats,
     },
 )
-
-# INFO  [cli] Successfully saved Model(tag="demo_mnist:bz3ljxgsosuffuqj", path="~/bentoml/models/demo_mnist/bz3ljxgsosuffuqj/")
 ```
 
-BentoML saves the model artifact files in a local model store, a long with necessary metadata. 
-A new version tag is automatically generated for the model.
 
 **Step 2:** Create a prediction service with the saved model:
 
+Create a `service.py` file with:
 ```python
-# service.py
 import numpy as np
 import bentoml
 from bentoml.io import NumpyNdarray, Image
 from PIL.Image import Image as PILImage
 
-mnist_runner = bentoml.pytorch.get("demo_mnist:latest").to_runner(gpu=1)  # assign the first available GPU to this Runner
+mnist_runner = bentoml.pytorch.get("demo_mnist:latest").to_runner()
 
 svc = bentoml.Service("pytorch_mnist", runners=[mnist_runner])
 
-@svc.api(input=Image(), output=NumpyNdarray(dtype="int64"))  # define service API endpoint and its input/output type
-def predict(f: PILImage):
-    arr = np.array(f)/255.0
-    assert arr.shape == (28, 28)
-    arr = np.expand_dims(arr, 0).astype("float32")
-    output_tensor = mnist_runner.predict.run(arr)
+@svc.api(input=Image(), output=NumpyNdarray(dtype="int64"))
+def predict(input_img: PILImage):
+    img_arr = np.array(input_img)/255.0
+    input_arr = np.expand_dims(img_arr, 0).astype("float32")
+    output_tensor = mnist_runner.predict.run(input_arr)
     return output_tensor.numpy()
 ```
-
-Saved model can be converted into a `Runner`, which in BentoML, represents a unit of computation that can be scaled separately. In local deployment mode, this means the model will be running in its own worker processes.
-Since the model is saved with a `batchable: True` signature, BentoML applies dynamic batching to all the `mnist_runner.predict.run` calls under the hood for optimal performance.
 
 Start an HTTP server locally:
 
@@ -124,7 +129,15 @@ And sent a test request to it:
 curl -F 'image=@samples/1.png' http://127.0.0.1:3000/predict_image
 ```
 
-You can also visit http://127.0.0.1:3000 in browser and debug the endpoint from the web UI.
+You can also open http://127.0.0.1:3000 in a browser and debug the endpoint by sending
+requests directly from the web UI.
+
+Note that saved model is converted into a `Runner`, which in BentoML, represents a unit 
+of computation that can be scaled separately. In local deployment mode, this means the 
+model will be running in its own worker processes. Since the model is saved with a 
+`batchable: True` signature, BentoML applies dynamic batching to all the 
+`mnist_runner.predict.run` calls under the hood for optimal performance.
+
 
 **Step 3:** Build a Bento for deployment:
 
@@ -143,7 +156,7 @@ python:
     - Pillow
 docker:
   distro: debian
-  gpu: True
+  cuda_version: 11.6.2
 ```
 
 Build a `Bento` using the `bentofile.yaml` specification from current directory: 
@@ -165,7 +178,6 @@ INFO [cli] Successfully built Bento(tag="pytorch_mnist:4mymorgurocxjuqj") at "~/
 ```
 The Bento with `tag="pytorch_mnist:4mymorgurocxjuqj"` is now created in the local `Bento` store. It is an archive containing all the source code, model files, and dependency specs - anything that is required for reproducing the model in an identical environment for serving in production.
 
-Note that even it uses `demo_mnist:latest` in the code, it can be resolved with local model store to the exact model version `demo_mnist:7drxqvwsu6zq5uqj` during `bentoml build` process. This model version is now bundled together with the Bento, no matter where it is being deployed to.
 
 **Step 4:** Deploying the `Bento`
 
@@ -178,7 +190,7 @@ INFO [cli] Successfully built docker image "pytorch_mnist:4mymorgurocxjuqj"
 > docker run --gpus all -p 3000:3000 pytorch_mnist:4mymorgurocxjuqj
 ```
 
-Learn more about other [deployment options](https://docs.bentoml.org/en/latest/deployment/index.html).
+Learn more about other deployment options [here](https://docs.bentoml.org/en/latest/concepts/deploy.html).
 
 
 ## Community ##

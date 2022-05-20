@@ -92,8 +92,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     >>> # Save BentoService
     >>> svc.save()
     """
-
-    def __init__(self, name, backend="onnxruntime"):
+    def __init__(self, name, backend="onnxruntime", providers=None):
         super().__init__(name)
         if backend not in SUPPORTED_ONNX_BACKEND:
             raise BentoMLException(
@@ -101,6 +100,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
             )
         self.backend = backend
         self._inference_session = None
+        self._provider = providers
         self._onnx_model_path = None
         self._model_proto = None
 
@@ -169,7 +169,9 @@ class OnnxModelArtifact(BentoServiceArtifact):
                     "Initializing onnxruntime InferenceSession from onnx file:"
                     f"'{self._onnx_model_path}'"
                 )
-                return onnxruntime.InferenceSession(self._onnx_model_path)
+                return onnxruntime.InferenceSession(
+                    self._onnx_model_path, providers=self._provider
+                )
             else:
                 raise BentoMLException("OnnxModelArtifact in bad state")
         else:

@@ -150,8 +150,8 @@ def add_containerize_command(cli: click.Group) -> None:
     def containerize(  # type: ignore
         bento_tag: str,
         docker_image_tag: str,
-        add_host: t.List[str],
-        allow: t.List[str],
+        add_host: t.Iterable[str],
+        allow: t.Iterable[str],
         build_arg: t.List[str],
         build_context: t.List[str],
         builder: str,
@@ -212,6 +212,10 @@ def add_containerize_command(cli: click.Group) -> None:
                 host_name, ip = host.split(":")
                 add_hosts[host_name] = ip
 
+        allow_ = []
+        if allow:
+            allow_ = list(allow)
+
         build_args = {}
         if build_arg:
             for build_arg_str in build_arg:
@@ -230,8 +234,8 @@ def add_containerize_command(cli: click.Group) -> None:
                 key, value = label_str.split("=")
                 labels[key] = value
 
-        output_ = {}
         if output:
+            output_ = {}
             for arg in output:
                 if "," in arg:
                     for val in arg.split(","):
@@ -239,17 +243,19 @@ def add_containerize_command(cli: click.Group) -> None:
                         output_[k] = v
                 key, value = arg.split("=")
                 output_[key] = value
+        else:
+            output_ = None
 
         exit_code = not containerize_bento(
             bento_tag,
             docker_image_tag=docker_image_tag,
             add_host=add_hosts,
-            allow=allow,
+            allow=allow_,
             build_args=build_args,
             build_context=build_context_,
             builder=builder,
-            cache_from=cache_from,
-            cache_to=cache_to,
+            cache_from=list(cache_from),
+            cache_to=list(cache_to),
             cgroup_parent=cgroup_parent,
             iidfile=iidfile,
             labels=labels,
@@ -257,14 +263,14 @@ def add_containerize_command(cli: click.Group) -> None:
             metadata_file=metadata_file,
             network=network,
             no_cache=no_cache,
-            no_cache_filter=no_cache_filter,
-            output=output_,
+            no_cache_filter=list(no_cache_filter),
+            output=output_,  # type: ignore
             platform=platform,
             progress=progress,
             pull=pull,
             push=push,
             quiet=logging.getLogger("bentoml").getEffectiveLevel() == logging.ERROR,
-            secrets=secret,
+            secrets=list(secret),
             shm_size=shm_size,
             ssh=ssh,
             target=target,

@@ -2,37 +2,20 @@ from __future__ import annotations
 
 import os
 import typing as t
+import logging
 import functools
 import subprocess
-from queue import Queue
 from typing import TYPE_CHECKING
-from functools import wraps
-from threading import Thread
 
 from ..types import PathType
 from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-    from io import BytesIO
 
+logger = logging.getLogger(__name__)
 
 DOCKER_BUILDX_CMD = ["docker", "buildx"]
-
-
-def postprocess_logs(func: t.Callable[P, t.Iterator[str]]):
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
-        iterator = func(*args, **kwargs)
-        while True:
-            try:
-                print(next(iterator), end="")
-            except subprocess.CalledProcessError as e:
-                raise e
-            except StopIteration:
-                break
-
-    return wrapper
 
 
 @functools.lru_cache(maxsize=1)
@@ -66,18 +49,16 @@ def list_builders() -> list[str]:
     return [s.split(" ")[0] for s in output]
 
 
-@postprocess_logs
-def use(builder: str, default: bool = False, global_: bool = False) -> t.Iterator[str]:
+def use(builder: str, default: bool = False, global_: bool = False) -> None:
     cmds = DOCKER_BUILDX_CMD + ["use"]
     if default:
         cmds.append("--default")
     if global_:
         cmds.append("--global")
     cmds.append(builder)
-    return stream_buildx_logs(cmds)
+    run_docker_cmd(cmds)
 
 
-@postprocess_logs
 def create(
     subprocess_env: dict[str, str] | None = None,
     cwd: PathType | None = None,
@@ -90,7 +71,7 @@ def create(
     name: str | None = None,
     platform: list[str] | None = None,
     use: bool = False,
-) -> t.Iterator[str]:
+) -> None:
     """
     Create a new buildx instance.
 
@@ -137,10 +118,9 @@ def create(
     if context_or_endpoints is not None:
         cmds.append(context_or_endpoints)
 
-    return stream_buildx_logs(cmds, env=subprocess_env, cwd=cwd)
+    run_docker_cmd(cmds, env=subprocess_env, cwd=cwd)
 
 
-@postprocess_logs
 def build(
     subprocess_env: dict[str, str] | None,
     cwd: PathType | None,
@@ -175,7 +155,7 @@ def build(
     tags: str | list[str] | None,
     target: str | None,
     ulimit: str | None,
-) -> t.Iterator[str]:
+) -> None:
     cmds = DOCKER_BUILDX_CMD + ["build"]
 
     cmds += ["--progress", progress]
@@ -303,56 +283,21 @@ def build(
 
     cmds.append(str(context_path))
 
-    return stream_buildx_logs(cmds, env=subprocess_env, cwd=cwd)
+    logger.debug("docker buildx build cmd: %s", cmds)
+
+    run_docker_cmd(cmds, env=subprocess_env, cwd=cwd)
 
 
-def stream_stdout_stderr(
-    process: subprocess.Popen[t.Any],
-) -> t.Iterable[tuple[str, bytes]]:
-    q: Queue[t.Any] = Queue()
-    stderr = b""  # error message
-
-    def reader(pipe: BytesIO, pipe_name: str, q: Queue[t.Any]):
-        try:
-            with pipe:
-                for line in iter(pipe.readline, b""):
-                    q.put((pipe_name, line))
-        finally:
-            q.put(None)  # type: ignore
-
-    # daemon threads to avoid hanging with Ctrl-C
-    thread = Thread(target=reader, args=[process.stdout, "stdout", q], daemon=True)
-    thread.start()
-    thread = Thread(target=reader, args=[process.stderr, "stderr", q], daemon=True)
-    thread.start()
-    for _ in range(2):
-        for s, l in iter(q.get, None):
-            yield s, l
-            if s == "stderr":
-                stderr += l
-    exit_code = process.wait()
-    if exit_code != 0:
-        raise subprocess.CalledProcessError(exit_code, process.args, stderr)
-
-
-def stream_buildx_logs(
+def run_docker_cmd(
     cmds: list[str],
     *,
     env: dict[str, str] | None = None,
     cwd: PathType | None = None,
-) -> t.Iterator[str]:
+) -> None:
     subprocess_env = os.environ.copy()
     if env is not None:
         subprocess_env.update(env)
 
     full_cmd = list(map(str, cmds))
-    process = subprocess.Popen(
-        full_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=subprocess_env,
-        cwd=cwd,
-    )
 
-    for _, value in stream_stdout_stderr(process):
-        yield value.decode("utf-8")
+    subprocess.check_output(full_cmd, env=subprocess_env, cwd=cwd)

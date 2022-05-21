@@ -17,12 +17,11 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
-    from .docker import _CUDASpec10Wrapper
-    from .docker import _CUDASpec11Wrapper
+    from .docker import _CUDASpec11Type, _CUDASpec10Type
     from .docker import _DistroSpecWrapper
     from .build_config import DockerOptions
 
-    CUDAType: t.TypeAlias = _CUDASpec10Wrapper | _CUDASpec11Wrapper | None
+    CUDAType: t.TypeAlias = _CUDASpec10Type | _CUDASpec11Type | None
     DistroType: t.TypeAlias = _DistroSpecWrapper | None
 
 

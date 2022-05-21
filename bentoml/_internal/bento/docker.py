@@ -105,73 +105,7 @@ class CUDAVersion:
         return cls(*match.groups(), version_str)  # type: ignore
 
 
-@attr.define(frozen=True)
-class _CUDASpec11Wrapper:
-    requires: str
-    cudart: NVIDIALibrary
-    libcublas: NVIDIALibrary
-    libcuparse: NVIDIALibrary
-    libnpp: NVIDIALibrary
-    nvml_dev: NVIDIALibrary
-    nvprof: NVIDIALibrary
-    nvtx: NVIDIALibrary
-    libnccl2: NVIDIALibrary
-    cudnn8: NVIDIALibrary
-    version: CUDAVersion
-
-
-@attr.define(frozen=True)
-class _CUDASpec10Wrapper:
-    requires: str
-    cudart: NVIDIALibrary
-    nvml_dev: NVIDIALibrary
-    command_line_tools: NVIDIALibrary
-    libcusparse: NVIDIALibrary
-    libnpp: NVIDIALibrary
-    libraries: NVIDIALibrary
-    minimal_build: NVIDIALibrary
-    nvtx: NVIDIALibrary
-    nvprof: NVIDIALibrary
-    nvcc: NVIDIALibrary
-    libcublas: NVIDIALibrary
-    libnccl2: NVIDIALibrary
-    cudnn8: NVIDIALibrary
-    version: CUDAVersion
-
-
-def _cuda_spec_structure_hook(
-    spec_cls: t.Union[t.Type[_CUDASpec10Wrapper], t.Type[_CUDASpec11Wrapper]],
-    value: str,
-) -> t.Callable[
-    [t.Any, t.Type[t.Any]], t.Union[_CUDASpec10Wrapper, _CUDASpec11Wrapper]
-]:
-    def hook(
-        d: t.Any, _: t.Type[t.Any]
-    ) -> t.Union[_CUDASpec10Wrapper, _CUDASpec11Wrapper]:
-        update_spec = {}
-        requires = d.pop("requires")
-        components = d.pop("components")
-        update_spec = {
-            lib: NVIDIALibrary(version=lib_spec["version"])
-            for lib, lib_spec in components.items()
-        }
-
-        return spec_cls(
-            requires=requires, **update_spec, version=CUDAVersion.from_str(value)
-        )
-
-    return hook
-
-
-bentoml_cattr.register_structure_hook(
-    _CUDASpec10Wrapper, _cuda_spec_structure_hook(_CUDASpec10Wrapper, "10.2")
-)
-bentoml_cattr.register_structure_hook(
-    _CUDASpec11Wrapper, _cuda_spec_structure_hook(_CUDASpec11Wrapper, "11.6.2")
-)
-
-
-def make_cuda_cls(value: str | None) -> _CUDASpec10Wrapper | _CUDASpec11Wrapper | None:
+def make_cuda_cls(value: str | None) -> _CUDASpec10Type | _CUDASpec11Type | None:
     if value is None:
         return
 
@@ -179,10 +113,6 @@ def make_cuda_cls(value: str | None) -> _CUDASpec10Wrapper | _CUDASpec11Wrapper 
         raise BentoMLException(
             f"CUDA version {value} is not supported. Supported versions: {', '.join(DOCKER_SUPPORTED_CUDA_VERSION)}"
         )
-    if value.startswith("10"):
-        cls = _CUDASpec10Wrapper
-    else:
-        cls = _CUDASpec11Wrapper
 
     cuda_folder = fs.path.join(os.path.dirname(__file__), "docker", "cuda")
     cuda_file = fs.path.combine(cuda_folder, f"v{value}.yaml")
@@ -190,6 +120,10 @@ def make_cuda_cls(value: str | None) -> _CUDASpec10Wrapper | _CUDASpec11Wrapper 
     try:
         with open(cuda_file, "r", encoding="utf-8") as f:
             cuda_spec = yaml.safe_load(f.read())
+    except FileNotFoundError as fs_exc:
+        raise BentoMLException(
+            f"{value} is defined in DOCKER_SUPPORTED_CUDA_VERSION but {cuda_file} is not found."
+        ) from fs_exc
     except yaml.YAMLError as exc:
         logger.error(exc)
         raise
@@ -200,6 +134,33 @@ def make_cuda_cls(value: str | None) -> _CUDASpec10Wrapper | _CUDASpec11Wrapper 
             "Most likely this is an internal mistake when defining "
             f"supported CUDA versions under {cuda_folder}"
         )
+
+    cls = attr.make_class(
+        "_CUDASpecWrapper",
+        {
+            "requires": attr.attrib(type=str),
+            **{lib: attr.attrib(type=NVIDIALibrary) for lib in cuda_spec["components"]},
+            "version": attr.attrib(type=CUDAVersion),
+        },
+        slots=True,
+        frozen=True,
+        init=True,
+    )
+
+    def _cuda_spec_structure_hook(
+        d: t.Any, _: t.Type[t.Any]
+    ) -> t.Union[_CUDASpec10Type, _CUDASpec11Type]:
+        update_spec = {}
+        if "components" in d:
+            components = d.pop("components")
+            update_spec = {
+                lib: NVIDIALibrary(version=lib_spec["version"])
+                for lib, lib_spec in components.items()
+            }
+
+        return cls(**d, **update_spec, version=CUDAVersion.from_str(value))
+
+    bentoml_cattr.register_structure_hook(cls, _cuda_spec_structure_hook)
 
     return bentoml_cattr.structure(cuda_spec, cls)
 
@@ -239,3 +200,36 @@ def make_distro_cls(value: str | None) -> _DistroSpecWrapper | None:
         )
 
     return _DistroSpecWrapper(*DOCKER_SUPPORTED_DISTRO[value])
+
+
+if TYPE_CHECKING:
+
+    class _CUDASpec11Type:
+        requires: str
+        cudart: NVIDIALibrary
+        libcublas: NVIDIALibrary
+        libcuparse: NVIDIALibrary
+        libnpp: NVIDIALibrary
+        nvml_dev: NVIDIALibrary
+        nvprof: NVIDIALibrary
+        nvtx: NVIDIALibrary
+        libnccl2: NVIDIALibrary
+        cudnn8: NVIDIALibrary
+        version: CUDAVersion
+
+    class _CUDASpec10Type:
+        requires: str
+        cudart: NVIDIALibrary
+        nvml_dev: NVIDIALibrary
+        command_line_tools: NVIDIALibrary
+        libcusparse: NVIDIALibrary
+        libnpp: NVIDIALibrary
+        libraries: NVIDIALibrary
+        minimal_build: NVIDIALibrary
+        nvtx: NVIDIALibrary
+        nvprof: NVIDIALibrary
+        nvcc: NVIDIALibrary
+        libcublas: NVIDIALibrary
+        libnccl2: NVIDIALibrary
+        cudnn8: NVIDIALibrary
+        version: CUDAVersion

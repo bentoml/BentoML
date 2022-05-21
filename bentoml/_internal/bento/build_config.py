@@ -62,7 +62,7 @@ def _convert_cuda_version(cuda_version: str | None) -> str | None:
     return cuda_version
 
 
-@attr.define(frozen=True, on_setattr=None)
+@attr.frozen
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
     distro: str = attr.field(
@@ -392,19 +392,22 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]):
 bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
-def _dict_arg_converter(  # type: ignore
+def _dict_arg_converter(
     options_type: t.Type[t.Union[DockerOptions, CondaOptions, PythonOptions]]
-):
+) -> t.Callable[
+    [PythonOptions | DockerOptions | CondaOptions | t.Dict[str, t.Any]], t.Any
+]:
     def _converter(
-        value: t.Optional[
-            t.Union[DockerOptions, CondaOptions, PythonOptions, t.Dict[str, t.Any]]
-        ]
-    ) -> t.Optional[options_type]:
+        value: DockerOptions | CondaOptions | PythonOptions | t.Dict[str, t.Any] | None
+    ) -> options_type | None:
+        if value is None:
+            return
+
         if isinstance(value, dict):
             return options_type(**value)
         return value
 
-    return _converter  # type: ignore
+    return _converter
 
 
 @attr.define(frozen=True, on_setattr=None)

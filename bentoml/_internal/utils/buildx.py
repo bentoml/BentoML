@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import typing as t
-import logging
+import functools
 import subprocess
 from queue import Queue
 from typing import TYPE_CHECKING
@@ -11,8 +11,6 @@ from threading import Thread
 
 from ..types import PathType
 from ...exceptions import BentoMLException
-
-logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -37,6 +35,7 @@ def postprocess_logs(func: t.Callable[P, t.Iterator[str]]):
     return wrapper
 
 
+@functools.lru_cache(maxsize=1)
 def health() -> None:
     """
     Check whether buildx is available in given system.
@@ -152,8 +151,8 @@ def build(
     build_args: dict[str, str] | None,
     build_context: dict[str, str] | None,
     builder: str | None,
-    cache_from: str | dict[str, str] | None,
-    cache_to: str | dict[str, str] | None,
+    cache_from: str | list[str] | dict[str, str] | None,
+    cache_to: str | list[str] | dict[str, str] | None,
     cgroup_parent: str | None,
     file: PathType | None,
     iidfile: PathType | None,
@@ -170,12 +169,12 @@ def build(
     push: bool,
     quiet: bool,
     secrets: str | list[str] | None,
-    shm_size: int | None,
+    shm_size: str | int | None,
     rm: bool,
     ssh: str | None,
     tags: str | list[str] | None,
     target: str | None,
-    ulimit: dict[str, str] | None,
+    ulimit: str | None,
 ) -> t.Iterator[str]:
     cmds = DOCKER_BUILDX_CMD + ["build"]
 
@@ -212,6 +211,9 @@ def build(
     if cache_from is not None:
         if isinstance(cache_from, str):
             cmds.extend(["--cache-from", cache_from])
+        elif isinstance(cache_from, list):
+            for arg in cache_from:
+                cmds.extend(["--cache-from", arg])
         else:
             args = [f"{k}={v}" for k, v in cache_from.items()]
             cmds.extend(["--cache-from", ",".join(args)])
@@ -219,6 +221,9 @@ def build(
     if cache_to is not None:
         if isinstance(cache_to, str):
             cmds.extend(["--cache-to", cache_to])
+        elif isinstance(cache_to, list):
+            for arg in cache_to:
+                cmds.extend(["--cache-to", arg])
         else:
             args = [f"{k}={v}" for k, v in cache_to.items()]
             cmds.extend(["--cache-to", ",".join(args)])
@@ -294,10 +299,7 @@ def build(
         cmds.extend(["--target", target])
 
     if ulimit is not None:
-        if len(ulimit) > 1:
-            raise ValueError("ulimit must be a dict with one key value for nofile.")
-        args = [f"{k}={v}" for k, v in ulimit.items()]
-        cmds.extend(["--ulimit", args[0]])
+        cmds.extend(["--ulimit", ulimit])
 
     cmds.append(str(context_path))
 

@@ -28,6 +28,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+BENTOML_FIGLET = """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
+
 
 @inject
 def list(  # pylint: disable=redefined-builtin
@@ -289,16 +298,7 @@ def build(
         version=version,
         build_ctx=build_ctx,
     ).save(_bento_store)
-    logger.info(
-        """
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-"""
-    )
+    logger.info(BENTOML_FIGLET)
     logger.info('Successfully built %s at "%s"', bento, bento.path)
     return bento
 
@@ -338,16 +338,7 @@ def build_bentofile(
         version=version,
         build_ctx=build_ctx,
     ).save(_bento_store)
-    logger.info(
-        """
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-"""
-    )
+    logger.info(BENTOML_FIGLET)
     logger.info('Successfully built %s at "%s"', bento, bento.path)
     return bento
 
@@ -361,8 +352,9 @@ def containerize(
     allow: t.List[str] | None = None,
     build_args: dict[str, str] | None = None,
     build_context: dict[str, str] | None = None,
-    cache_from: str | dict[str, str] | None = None,
-    cache_to: str | dict[str, str] | None = None,
+    builder: str = "bentoml-builder",
+    cache_from: str | t.List[str] | dict[str, str] | None = None,
+    cache_to: str | t.List[str] | dict[str, str] | None = None,
     cgroup_parent: str | None = None,
     iidfile: PathType | None = None,
     labels: dict[str, str] | None = None,
@@ -378,32 +370,31 @@ def containerize(
     push: bool = False,
     quiet: bool = False,
     secrets: str | t.List[str] | None = None,
-    shm_size: int | None = None,
+    shm_size: str | int | None = None,
     rm: bool = False,
     ssh: str | None = None,
     target: str | None = None,
-    ulimit: dict[str, str] | None = None,
+    ulimit: str | None = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> bool:
 
     from bentoml._internal.utils import buildx
 
     env = {"DOCKER_BUILDKIT": "1", "DOCKER_SCAN_SUGGEST": "false"}
-    builder_name = "bentoml-builder"
 
     # run health check whether buildx is install locally
     buildx.health()
 
     # create a bentoml builder if not exists
-    if builder_name not in buildx.list_builders():
+    if builder not in buildx.list_builders():
         buildx.create(
             env,
             driver_opt={"image": "moby/buildkit:master"},
             use=True,
-            name=builder_name,
+            name=builder,
         )
     else:
-        buildx.use(builder_name)
+        buildx.use(builder)
 
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
@@ -422,7 +413,7 @@ def containerize(
             allow=allow,
             build_args=build_args,
             build_context=build_context,
-            builder=builder_name,
+            builder=builder,
             cache_from=cache_from,
             cache_to=cache_to,
             cgroup_parent=cgroup_parent,

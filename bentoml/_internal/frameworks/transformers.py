@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
+import importlib
 import importlib.util
 from typing import TYPE_CHECKING
 
@@ -107,7 +108,7 @@ def get(tag_like: str | Tag) -> Model:
 def load_model(
     bento_model: str | Tag | Model,
     **kwargs: t.Any,
-) -> "ext.TransformersPipeline":
+) -> ext.TransformersPipeline:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
@@ -135,14 +136,18 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    return transformers.pipeline(
-        bento_model.info.options["task"], bento_model.path, **kwargs
-    )
+    task = bento_model.info.options["task"]
+    try:
+        transformers.pipelines.check_task(task)  # type: ignore
+    except KeyError as e:
+        raise BentoMLException(f"{e}, as `{task}` is not recognized by transformers.")
+
+    return transformers.pipeline(task, bento_model.path, **kwargs)
 
 
 def save_model(
     name: str,
-    pipeline: "ext.TransformersPipeline",
+    pipeline: ext.TransformersPipeline,
     *,
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
@@ -154,7 +159,7 @@ def save_model(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`Pipeline`):
+        pipeline (:code:`Pipeline`):
             Instance of the Transformers pipeline to be saved.
         signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
             Methods to expose for running inference on the target model. Signatures are
@@ -188,7 +193,24 @@ def save_model(
         "transformers.pipelines.base.Pipeline"
     ).isinstance(pipeline):
         raise BentoMLException(
-            "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`"
+            "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
+            "To save other Transformers types like models, tokenizers, configs, feature "
+            "extractors, construct a pipeline with the model, tokenizer, config, or feature "
+            "extractor specified as arguments, then call save_model with the pipeline. "
+            "Refer to https://huggingface.co/docs/transformers/main_classes/pipelines "
+            "for more information on pipelines."
+            """
+            ```python
+            import bentoml
+            from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+
+            tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
+            model = AutoModelForCausalLM.from_pretrained("distilgpt2")
+            generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
+
+            bentoml.transformers.save_model("text-generation-pipeline", generator)
+            ```
+            """
         )
 
     context = ModelContext(

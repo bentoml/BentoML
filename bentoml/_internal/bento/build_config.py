@@ -4,7 +4,6 @@ import re
 import typing as t
 import logging
 from sys import version_info as pyver
-from typing import TYPE_CHECKING
 
 import fs
 import attr
@@ -16,19 +15,16 @@ from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
-from .docker import make_distro_cls
 from .docker import DOCKER_SUPPORTED_DISTRO
 from .docker import DOCKER_DEFAULT_CUDA_VERSION
 from .docker import DOCKER_DEFAULT_DOCKER_DISTRO
+from .docker import DOCKER_SUPPORTED_CUDA_DISTRO
+from .docker import DOCKER_SUPPORTED_CUDA_VERSION
 from .docker import DOCKER_SUPPORTED_PYTHON_VERSION
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ._gen_dockerfile import generate_dockerfile
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
-
-if TYPE_CHECKING:
-    from attr import Attribute
-    from attr import _ValidatorType as ValidatorType  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +34,8 @@ PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 
 if PYTHON_VERSION not in DOCKER_SUPPORTED_PYTHON_VERSION:
     logger.warning(
-        f"BentoML may not work well with current python version: {PYTHON_VERSION}, supported python versions are: {','.join(DOCKER_SUPPORTED_PYTHON_VERSION)}"
+        f"BentoML may not work well with current python version: {PYTHON_VERSION}, "
+        f"supported python versions are: {','.join(DOCKER_SUPPORTED_PYTHON_VERSION)}"
     )
 
 
@@ -65,43 +62,10 @@ def _convert_cuda_version(cuda_version: str | None) -> str | None:
     return cuda_version
 
 
-@attr.attrs(repr=False, slots=True, hash=True)
-class _DockerSpecSupportedValidator(object):
-    spec_version = attr.attrib(type=str)
-
-    def __call__(self, inst: t.Any, attr: Attribute[str], value: str) -> None:
-        if isinstance(inst, DockerOptions):
-            _distro_spec = make_distro_cls(inst.distro)
-            if _distro_spec is not None:
-                supported = getattr(_distro_spec, f"supported_{self.spec_version}")
-                if supported is None:
-                    raise BentoMLException(
-                        f"No {self.spec_version} is not supported for distro {inst.distro}, "
-                        f"but docker.{self.spec_version} is set to {value}. Remove this "
-                        "option and try again."
-                    )
-                else:
-                    if value not in supported:
-                        raise BentoMLException(
-                            f"docker.{self.spec_version}={value} is not supported for "
-                            f"{inst.distro}. Supported {self.spec_version.replace('_',' ')} "
-                            f"for {inst.distro} are: {','.join(supported)}."
-                        )
-
-    def __repr__(self):
-        return "<docker_spec_supported validator for {type!r}>".format(
-            type=self.spec_version
-        )
-
-
-def spec_supported_validator(spec_version: str) -> ValidatorType[str | None]:
-    return _DockerSpecSupportedValidator(spec_version)  # type: ignore
-
-
 @attr.define(frozen=True, on_setattr=None)
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
-    distro: t.Optional[str] = attr.field(
+    distro: str = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(DOCKER_SUPPORTED_DISTRO)
@@ -111,13 +75,17 @@ class DockerOptions:
     python_version: t.Optional[str] = attr.field(
         converter=_convert_python_version,
         default=None,
-        validator=attr.validators.optional(spec_supported_validator("python_version")),
+        validator=attr.validators.optional(
+            attr.validators.in_(DOCKER_SUPPORTED_PYTHON_VERSION)
+        ),
     )
 
     cuda_version: t.Optional[t.Union[str, t.Literal["default"]]] = attr.field(
         default=None,
         converter=_convert_cuda_version,
-        validator=attr.validators.optional(spec_supported_validator("cuda_version")),
+        validator=attr.validators.optional(
+            attr.validators.in_(DOCKER_SUPPORTED_CUDA_VERSION)
+        ),
     )
 
     # A user-provided environment variable to be passed to a given bento
@@ -137,19 +105,43 @@ class DockerOptions:
         if self.base_image is not None:
             if self.distro is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'distro={self.distro}' option is ignored",
+                    f"docker base_image {self.base_image} is used, "
+                    f"'distro={self.distro}' option is ignored.",
                 )
             if self.python_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'python={self.python_version}' option is ignored",
+                    f"docker base_image {self.base_image} is used, "
+                    f"'python={self.python_version}' option is ignored.",
                 )
             if self.cuda_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'cuda_version={self.cuda_version}' option is ignored",
+                    f"docker base_image {self.base_image} is used, "
+                    f"'cuda_version={self.cuda_version}' option is ignored.",
                 )
             if self.system_packages is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'system_packages={self.system_packages}' option is ignored",
+                    f"docker base_image {self.base_image} is used, "
+                    f"'system_packages={self.system_packages}' option is ignored.",
+                )
+
+        supported_python, supported_cuda, _, _ = DOCKER_SUPPORTED_DISTRO[self.distro]
+        if self.python_version not in supported_python:
+            raise BentoMLException(
+                f"{self.python_version} is not supported for {self.distro}. "
+                f"Supported python versions are: {','.join(supported_python)}."
+            )
+        if self.cuda_version is not None:
+            if supported_cuda is None:
+                raise BentoMLException(
+                    f"{self.distro} does not support CUDA. "
+                    f"Supported distros that have CUDA supports are: {','.join(DOCKER_SUPPORTED_CUDA_DISTRO)}."
+                )
+            if self.cuda_version != "default" and (
+                self.cuda_version not in supported_cuda
+            ):
+                raise BentoMLException(
+                    f"{self.cuda_version} is not supported for "
+                    f"{self.distro}. Supported cuda versions are: {','.join(supported_cuda)}."
                 )
 
     def with_defaults(self) -> DockerOptions:

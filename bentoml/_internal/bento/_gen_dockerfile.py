@@ -5,24 +5,24 @@ import logging
 from typing import TYPE_CHECKING
 
 import fs
-
 from jinja2 import Environment
 
+from ..utils import bentoml_cattr
 from .docker import make_cuda_cls
 from .docker import make_distro_cls
 from ...exceptions import BentoMLException
-from ..utils import bentoml_cattr
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
-    from .docker import _CUDAType
+    from .docker import _CUDASpec10Wrapper
+    from .docker import _CUDASpec11Wrapper
     from .docker import _DistroSpecWrapper
     from .build_config import DockerOptions
 
-    CUDAType: t.TypeAlias = _CUDAType | None
+    CUDAType: t.TypeAlias = _CUDASpec10Wrapper | _CUDASpec11Wrapper | None
     DistroType: t.TypeAlias = _DistroSpecWrapper | None
 
 

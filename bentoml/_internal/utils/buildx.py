@@ -33,21 +33,19 @@ def postprocess_logs(func: t.Callable[P, t.Iterator[str]]):
                 raise e
             except StopIteration:
                 break
-            except Exception:
-                raise
 
     return wrapper
 
 
-@postprocess_logs
-def health() -> t.Iterator[str]:
+def health() -> None:
     """
     Check whether buildx is available in given system.
     """
+    cmds = DOCKER_BUILDX_CMD + ["--help"]
     try:
-        cmds = DOCKER_BUILDX_CMD + ["--help"]
-        return stream_buildx_logs(cmds)
-    except subprocess.CalledProcessError:
+        output = subprocess.check_output(cmds)
+        assert "buildx" in output.decode("utf-8")
+    except (subprocess.CalledProcessError, AssertionError):
         raise BentoMLException(
             "BentoML requires Docker Buildx to be installed to support multi-arch builds. "
             "Buildx comes with Docker Desktop, but one can also install it manually by following "
@@ -55,8 +53,35 @@ def health() -> t.Iterator[str]:
         )
 
 
+def list_builders() -> list[str]:
+    cmds = DOCKER_BUILDX_CMD + ["ls"]
+    proc = subprocess.run(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stream = proc.stdout.decode("utf-8")
+
+    if len(stream) != 0 and stream[-1] == "\n":
+        stream = stream[:-1]
+
+    output = stream.splitlines()[1:]  # first line is a header
+    # lines starting with a blank space are builders metadata, not builder name
+    output = list(filter(lambda x: not x.startswith(" "), output))
+    return [s.split(" ")[0] for s in output]
+
+
+@postprocess_logs
+def use(builder: str, default: bool = False, global_: bool = False) -> t.Iterator[str]:
+    cmds = DOCKER_BUILDX_CMD + ["use"]
+    if default:
+        cmds.append("--default")
+    if global_:
+        cmds.append("--global")
+    cmds.append(builder)
+    return stream_buildx_logs(cmds)
+
+
 @postprocess_logs
 def create(
+    subprocess_env: dict[str, str] | None = None,
+    cwd: PathType | None = None,
     *,
     context_or_endpoints: str | None = None,
     buildkitd_flags: str | None = None,
@@ -113,42 +138,44 @@ def create(
     if context_or_endpoints is not None:
         cmds.append(context_or_endpoints)
 
-    return stream_buildx_logs(cmds)
+    return stream_buildx_logs(cmds, env=subprocess_env, cwd=cwd)
 
 
 @postprocess_logs
 def build(
+    subprocess_env: dict[str, str] | None,
+    cwd: PathType | None,
     *,
     context_path: PathType = ".",
-    add_host: dict[str, str] | None = None,
-    allow: list[str] | None = None,
-    build_args: dict[str, str] | None = None,
-    build_context: dict[str, str] | None = None,
-    builder: str | None = None,
-    cache_from: str | dict[str, str] | None = None,
-    cache_to: str | dict[str, str] | None = None,
-    cgroup_parent: str | None = None,
-    file: PathType | None = None,
-    iidfile: PathType | None = None,
-    labels: dict[str, str] | None = None,
-    load: bool = False,
-    metadata_file: PathType | None = None,
-    network: str | None = None,
-    no_cache: bool = False,
-    no_cache_filter: list[str] | None = None,
-    output: str | dict[str, str] | None = None,
-    platforms: list[str] | None = None,
-    progress: t.Literal["auto", "tty", "plain"] = "auto",
-    pull: bool = False,
-    push: bool = False,
-    quiet: bool = False,
-    secrets: str | list[str] | None = None,
-    shm_size: int | None = None,
-    rm: bool = False,
-    ssh: str | None = None,
-    tags: str | list[str] | None = None,
-    target: str | None = None,
-    ulimit: dict[str, str] | None = None,
+    add_host: dict[str, str] | None,
+    allow: list[str] | None,
+    build_args: dict[str, str] | None,
+    build_context: dict[str, str] | None,
+    builder: str | None,
+    cache_from: str | dict[str, str] | None,
+    cache_to: str | dict[str, str] | None,
+    cgroup_parent: str | None,
+    file: PathType | None,
+    iidfile: PathType | None,
+    labels: dict[str, str] | None,
+    load: bool,
+    metadata_file: PathType | None,
+    network: str | None,
+    no_cache: bool,
+    no_cache_filter: list[str] | None,
+    output: str | dict[str, str] | None,
+    platform: str | list[str] | None,
+    progress: t.Literal["auto", "tty", "plain"],
+    pull: bool,
+    push: bool,
+    quiet: bool,
+    secrets: str | list[str] | None,
+    shm_size: int | None,
+    rm: bool,
+    ssh: str | None,
+    tags: str | list[str] | None,
+    target: str | None,
+    ulimit: dict[str, str] | None,
 ) -> t.Iterator[str]:
     cmds = DOCKER_BUILDX_CMD + ["build"]
 
@@ -233,8 +260,10 @@ def build(
             args = [f"{k}={v}" for k, v in output.items()]
             cmds += ["--output", ",".join(args)]
 
-    if platforms is not None:
-        cmds += ["--platform", ",".join(platforms)]
+    if platform is not None:
+        if isinstance(platform, str):
+            platform = [platform]
+        cmds += ["--platform", ",".join(platform)]
 
     if pull:
         cmds.append("--pull")
@@ -272,7 +301,7 @@ def build(
 
     cmds.append(str(context_path))
 
-    return stream_buildx_logs(cmds)
+    return stream_buildx_logs(cmds, env=subprocess_env, cwd=cwd)
 
 
 def stream_stdout_stderr(
@@ -305,17 +334,22 @@ def stream_stdout_stderr(
 
 
 def stream_buildx_logs(
-    cmds: list[str], env: dict[str, str] | None = None
+    cmds: list[str],
+    *,
+    env: dict[str, str] | None = None,
+    cwd: PathType | None = None,
 ) -> t.Iterator[str]:
     subprocess_env = os.environ.copy()
-    subprocess_env["DOCKER_BUILDKIT"] = "1"
-    subprocess_env["DOCKER_SCAN_SUGGEST"] = "false"
     if env is not None:
         subprocess_env.update(env)
 
     full_cmd = list(map(str, cmds))
     process = subprocess.Popen(
-        full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=subprocess_env
+        full_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=subprocess_env,
+        cwd=cwd,
     )
 
     for _, value in stream_stdout_stderr(process):

@@ -1,6 +1,9 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
+
+from __future__ import annotations
+
 import os
 import typing as t
 import logging
@@ -20,6 +23,7 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.bento import BentoStore
+    from ._internal.types import PathType
     from ._internal.models import ModelStore
 
 logger = logging.getLogger(__name__)
@@ -275,9 +279,9 @@ def build(
         labels=labels,
         include=include,
         exclude=exclude,
-        docker=docker,
-        python=python,
-        conda=conda,
+        docker=docker,  # type: ignore
+        python=python,  # type: ignore
+        conda=conda,  # type: ignore
     )
 
     bento = Bento.create(
@@ -350,17 +354,56 @@ def build_bentofile(
 
 @inject
 def containerize(
-    tag: t.Union[Tag, str],
-    docker_image_tag: t.Optional[str] = None,
+    tag: Tag | str,
+    docker_image_tag: str | None = None,
     *,
-    build_args: t.Optional[t.Dict[str, str]] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
+    add_host: dict[str, str] | None = None,
+    allow: t.List[str] | None = None,
+    build_args: dict[str, str] | None = None,
+    build_context: dict[str, str] | None = None,
+    cache_from: str | dict[str, str] | None = None,
+    cache_to: str | dict[str, str] | None = None,
+    cgroup_parent: str | None = None,
+    iidfile: PathType | None = None,
+    labels: dict[str, str] | None = None,
+    load: bool = True,
+    metadata_file: PathType | None = None,
+    network: str | None = None,
     no_cache: bool = False,
-    platform: t.Optional[str] = None,
+    no_cache_filter: t.List[str] | None = None,
+    output: str | dict[str, str] | None = None,
+    platform: str | t.List[str] | None = None,
+    progress: t.Literal["auto", "tty", "plain"] = "auto",
+    pull: bool = False,
+    push: bool = False,
+    quiet: bool = False,
+    secrets: str | t.List[str] | None = None,
+    shm_size: int | None = None,
+    rm: bool = False,
+    ssh: str | None = None,
+    target: str | None = None,
+    ulimit: dict[str, str] | None = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> bool:
 
     from bentoml._internal.utils import buildx
+
+    env = {"DOCKER_BUILDKIT": "1", "DOCKER_SCAN_SUGGEST": "false"}
+    builder_name = "bentoml-builder"
+
+    # run health check whether buildx is install locally
+    buildx.health()
+
+    # create a bentoml builder if not exists
+    if builder_name not in buildx.list_builders():
+        buildx.create(
+            env,
+            driver_opt={"image": "moby/buildkit:master"},
+            use=True,
+            name=builder_name,
+        )
+    else:
+        buildx.use(builder_name)
 
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
@@ -368,29 +411,41 @@ def containerize(
 
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")
 
-    docker_build_cmd = ["docker", "build", "."]
-    docker_build_cmd += ["-f", dockerfile_path]
-    docker_build_cmd += ["-t", docker_image_tag]
-
-    if no_cache:
-        docker_build_cmd.append("--no-cache")
-
-    if build_args:
-        for key, value in build_args.items():
-            docker_build_cmd += ["--build-arg", f"{key}={value}"]
-
-    if labels:
-        for key, value in labels.items():
-            docker_build_cmd += ["--label", f"{key}={value}"]
-
-    if platform:
-        docker_build_cmd += ["--platform", platform]
-
-    env = os.environ.copy()
-    env["DOCKER_SCAN_SUGGEST"] = "false"
     logger.info(f"Building docker image for {bento}...")
     try:
-        subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
+        buildx.build(
+            subprocess_env=env,
+            cwd=bento.path,
+            file=dockerfile_path,
+            tags=docker_image_tag,
+            add_host=add_host,
+            allow=allow,
+            build_args=build_args,
+            build_context=build_context,
+            builder=builder_name,
+            cache_from=cache_from,
+            cache_to=cache_to,
+            cgroup_parent=cgroup_parent,
+            iidfile=iidfile,
+            labels=labels,
+            load=load,
+            metadata_file=metadata_file,
+            network=network,
+            no_cache=no_cache,
+            no_cache_filter=no_cache_filter,
+            output=output,
+            platform=platform,
+            progress=progress,
+            pull=pull,
+            push=push,
+            quiet=quiet,
+            secrets=secrets,
+            shm_size=shm_size,
+            rm=rm,
+            ssh=ssh,
+            target=target,
+            ulimit=ulimit,
+        )
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
         return False

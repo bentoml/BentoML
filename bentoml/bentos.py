@@ -359,12 +359,16 @@ def containerize(
     platform: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> bool:
+
+    from bentoml._internal.utils import buildx
+
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
 
-    docker_build_cmd = ["docker", "build", "."]
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")
+
+    docker_build_cmd = ["docker", "build", "."]
     docker_build_cmd += ["-f", dockerfile_path]
     docker_build_cmd += ["-t", docker_image_tag]
 

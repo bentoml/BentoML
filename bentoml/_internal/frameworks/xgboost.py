@@ -132,7 +132,7 @@ def save_model(
     Example:
 
     .. code-block:: python
-    
+
         import xgboost as xgb
         import bentoml
 

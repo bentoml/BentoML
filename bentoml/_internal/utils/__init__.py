@@ -125,11 +125,9 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._fallback = fallback
         self._raises = raises
 
-    def __call__(
-        self, func: "t.Callable[P, _T_co]"
-    ) -> "t.Callable[P, t.Optional[_T_co]]":
+    def __call__(self, func: t.Callable[P, _T_co]) -> t.Callable[P, t.Optional[_T_co]]:
         @functools.wraps(func)
-        def _(*args: "P.args", **kwargs: "P.kwargs") -> t.Optional[_T_co]:
+        def _(*args: P.args, **kwargs: P.kwargs) -> t.Optional[_T_co]:
             try:
                 return func(*args, **kwargs)
             except self._catch_exc:
@@ -174,7 +172,7 @@ def reserve_free_port(
 
 def copy_file_to_fs_folder(
     src_path: str,
-    dst_fs: "FS",
+    dst_fs: FS,
     dst_folder_path: str = ".",
     dst_filename: t.Optional[str] = None,
 ):

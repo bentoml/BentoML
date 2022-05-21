@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 import typing as t
 import logging
@@ -18,18 +17,18 @@ from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
 from .docker import make_distro_cls
-from .docker import generate_dockerfile
 from .docker import DOCKER_SUPPORTED_DISTRO
 from .docker import DOCKER_DEFAULT_CUDA_VERSION
 from .docker import DOCKER_DEFAULT_DOCKER_DISTRO
 from .docker import DOCKER_SUPPORTED_PYTHON_VERSION
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ._gen_dockerfile import generate_dockerfile
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
 if TYPE_CHECKING:
     from attr import Attribute
-    from attr import _ValidatorType as ValidatorType
+    from attr import _ValidatorType as ValidatorType  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +74,19 @@ class _DockerSpecSupportedValidator(object):
             _distro_spec = make_distro_cls(inst.distro)
             if _distro_spec is not None:
                 supported = getattr(_distro_spec, f"supported_{self.spec_version}")
-                if value not in supported:
+                if supported is None:
                     raise BentoMLException(
-                        f"docker.{self.spec_version}={value} is not supported for "
-                        f"{inst.distro}. Supported {self.spec_version.replace('_',' ')} "
-                        f"for {inst.distro} are: {','.join(supported)}."
+                        f"No {self.spec_version} is not supported for distro {inst.distro}, "
+                        f"but docker.{self.spec_version} is set to {value}. Remove this "
+                        "option and try again."
                     )
+                else:
+                    if value not in supported:
+                        raise BentoMLException(
+                            f"docker.{self.spec_version}={value} is not supported for "
+                            f"{inst.distro}. Supported {self.spec_version.replace('_',' ')} "
+                            f"for {inst.distro} are: {','.join(supported)}."
+                        )
 
     def __repr__(self):
         return "<docker_spec_supported validator for {type!r}>".format(
@@ -114,8 +120,11 @@ class DockerOptions:
         validator=attr.validators.optional(spec_supported_validator("cuda_version")),
     )
 
+    # A user-provided environment variable to be passed to a given bento
     env: t.Optional[t.Dict[str, t.Any]] = None
 
+    # A user-provided system packages that can be installed for a given bento
+    # using distro package manager.
     system_packages: t.Optional[t.List[str]] = None
 
     # A python or sh script that executes during docker build time
@@ -164,13 +173,6 @@ class DockerOptions:
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(generate_dockerfile(self))
-
-        for filename in ["init.sh", "entrypoint.sh"]:
-            copy_file_to_fs_folder(
-                os.path.join(os.path.dirname(__file__), "docker", filename),
-                bento_fs,
-                docker_folder,
-            )
 
         if self.setup_script:
             try:

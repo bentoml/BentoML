@@ -5,72 +5,138 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
+import re
+
 import fs
 import attr
 import yaml
 
 from ..utils import bentoml_cattr
-from ...exceptions import BentoMLException
+from ...exceptions import BentoMLException, InvalidArgument
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-    from .build_config import DockerOptions
 
 
 logger = logging.getLogger(__name__)
-
 
 # Python supported versions
 DOCKER_SUPPORTED_PYTHON_VERSION = ["3.7", "3.8", "3.9", "3.10"]
 # CUDA supported versions
 DOCKER_SUPPORTED_CUDA_VERSION = ["11.6.2", "10.2", "10.1"]
-# Docker default distros
-DOCKER_DEFAULT_DOCKER_DISTRO = "debian"
+# Supported architectures
+DOCKER_SUPPORTED_ARCHITECTURE = ["amd64", "arm64", "ppc64le", "s390x"]
+
+
+# Docker defaults
 DOCKER_DEFAULT_CUDA_VERSION = "11.6.2"
+DOCKER_DEFAULT_DOCKER_DISTRO = "debian"
+
+# BentoML supported distros mapping spec with
+# keys represents distros, and value is a tuple of list for supported python
+# versions and list of supported CUDA versions.
+DOCKER_SUPPORTED_DISTRO: t.Dict[
+    str, t.Tuple[t.List[str], t.List[str] | None, t.List[str], str]
+] = {
+    "amazonlinux": (
+        ["3.8"],
+        DOCKER_SUPPORTED_CUDA_VERSION,
+        ["amd64", "arm64"],
+        "amazonlinux:2",
+    ),
+    "ubi8": (
+        ["3.8", "3.9"],
+        DOCKER_SUPPORTED_CUDA_VERSION,
+        ["amd64", "arm64"],
+        "registry.access.redhat.com/ubi8/python-{python_version}:1",
+    ),
+    "debian": (
+        DOCKER_SUPPORTED_PYTHON_VERSION,
+        DOCKER_SUPPORTED_CUDA_VERSION,
+        DOCKER_SUPPORTED_ARCHITECTURE,
+        "python:{python_version}-slim",
+    ),
+    "debian-miniconda": (
+        DOCKER_SUPPORTED_PYTHON_VERSION,
+        DOCKER_SUPPORTED_CUDA_VERSION,
+        ["amd64", "arm64", "ppc64le"],
+        "mambaorg/micromamba:latest",
+    ),
+    "alpine": (
+        DOCKER_SUPPORTED_PYTHON_VERSION,
+        None,
+        DOCKER_SUPPORTED_ARCHITECTURE,
+        "python:{python_version}-alpine",
+    ),
+    "alpine-miniconda": (
+        DOCKER_SUPPORTED_PYTHON_VERSION,
+        None,
+        ["amd64"],
+        "continuumio/miniconda3:4.10.3p0-alpine",
+    ),
+}
 
 
-@attr.define
-class NvidiaLibrary:
+class _CUDASpec11Type:
+    requires: str
+    cudart: NVIDIALibrary
+    libcublas: NVIDIALibrary
+    libcuparse: NVIDIALibrary
+    libnpp: NVIDIALibrary
+    nvml_dev: NVIDIALibrary
+    nvprof: NVIDIALibrary
+    nvtx: NVIDIALibrary
+    libnccl2: NVIDIALibrary
+    cudnn8: NVIDIALibrary
+    version: CUDAVersion
+
+
+class _CUDASpec10Type:
+    requires: str
+    cudart: NVIDIALibrary
+    nvml_dev: NVIDIALibrary
+    command_line_tools: NVIDIALibrary
+    libcusparse: NVIDIALibrary
+    libnpp: NVIDIALibrary
+    libraries: NVIDIALibrary
+    minimal_build: NVIDIALibrary
+    nvtx: NVIDIALibrary
+    nvprof: NVIDIALibrary
+    nvcc: NVIDIALibrary
+    libcublas: NVIDIALibrary
+    libnccl2: NVIDIALibrary
+    cudnn8: NVIDIALibrary
+    version: CUDAVersion
+
+
+_CUDAType: t.TypeAlias = t.Union[_CUDASpec11Type, _CUDASpec10Type]
+
+
+@attr.define(frozen=True)
+class NVIDIALibrary:
     version: str
     major_version: str = attr.field(
         default=attr.Factory(lambda self: self.version.split(".")[0], takes_self=True)
     )
 
 
-# BentoML supported distros mapping spec with
-# keys represents distros, and value is a tuple of list for supported python
-# versions and list of supported CUDA versions.
-DOCKER_SUPPORTED_DISTRO: t.Dict[str, t.Tuple[t.List[str], t.List[str] | None, str]] = {
-    "amazonlinux": (["3.8"], DOCKER_SUPPORTED_CUDA_VERSION, "amazonlinux:2"),
-    "ubi8": (
-        ["3.8", "3.9"],
-        DOCKER_SUPPORTED_CUDA_VERSION,
-        "registry.access.redhat.com/ubi8/python-{python_version}:1",
-    ),
-    "debian": (
-        DOCKER_SUPPORTED_PYTHON_VERSION,
-        DOCKER_SUPPORTED_CUDA_VERSION,
-        "python:{python_version}-slim",
-    ),
-    "debian-miniconda": (
-        DOCKER_SUPPORTED_PYTHON_VERSION,
-        DOCKER_SUPPORTED_CUDA_VERSION,
-        "mambaorg/micromamba:latest",
-    ),
-    "alpine": (
-        DOCKER_SUPPORTED_PYTHON_VERSION,
-        None,
-        "python:{python_version}-alpine",
-    ),
-    "alpine-miniconda": (
-        DOCKER_SUPPORTED_PYTHON_VERSION,
-        None,
-        "continuumio/miniconda3:4.10.3p0-alpine",
-    ),
-}
+@attr.define(frozen=True)
+class CUDAVersion:
+    major: str
+    minor: str
+    full: str
+
+    @classmethod
+    def from_str(cls, version_str: str) -> CUDAVersion:
+        match = re.match(r"^(\d+)\.(\d+)$", version_str)
+        if match is None:
+            raise InvalidArgument(
+                f"Invalid CUDA version string: {version_str}. Should follow correct semver format."
+            )
+        return cls(*match.groups(), version_str)  # type: ignore
 
 
-def make_cuda_cls(value: str | None) -> type | None:
+def make_cuda_cls(value: str | None) -> _CUDAType | None:
     if value is None:
         return
 
@@ -100,35 +166,60 @@ def make_cuda_cls(value: str | None) -> type | None:
             f"supported CUDA versions under {cuda_folder}"
         )
 
-    cls: type = attr.make_class(
-        f"_CudaSpecWrapper",
+    cls = attr.make_class(
+        f"_CUDASpecWrapper",
         {
             "requires": attr.attrib(type=str),
-            **{lib: attr.attrib(type=NvidiaLibrary) for lib in cuda_spec["components"]},
-            "version": attr.attrib(default=value),
+            **{lib: attr.attrib(type=NVIDIALibrary) for lib in cuda_spec["components"]},
+            "version": attr.attrib(type=CUDAVersion),
         },
         slots=True,
         frozen=True,
         init=True,
     )
 
-    def _cuda_spec_structure_hook(d: t.Any, _: t.Type[object]) -> t.Any:
-        update_defaults = {}
+    def _cuda_spec_structure_hook(d: t.Any, _: t.Type[_CUDAType]) -> _CUDAType:
+        update_spec = {}
         if "components" in d:
             components = d.pop("components")
-            update_defaults = {
-                lib: NvidiaLibrary(version=lib_spec["version"])
+            update_spec = {
+                lib: NVIDIALibrary(version=lib_spec["version"])
                 for lib, lib_spec in components.items()
             }
 
-        return cls(**d, **update_defaults)
+        return cls(**d, **update_spec, version=CUDAVersion.from_str(value))
 
     bentoml_cattr.register_structure_hook(cls, _cuda_spec_structure_hook)
 
     return bentoml_cattr.structure(cuda_spec, cls)
 
 
-def make_distro_cls(value: str | None) -> type | None:
+@attr.define(frozen=True, slots=True, on_setattr=None)
+class _DistroSpecWrapper:
+    supported_python_version: t.List[str] = attr.field(
+        validator=attr.validators.deep_iterable(
+            lambda _, __, value: value in DOCKER_SUPPORTED_PYTHON_VERSION,
+            iterable_validator=attr.validators.instance_of(list),
+        ),
+    )
+    supported_cuda_version: t.Optional[t.List[str]] = attr.field(
+        validator=attr.validators.optional(
+            attr.validators.deep_iterable(
+                lambda _, __, value: value in DOCKER_SUPPORTED_CUDA_VERSION
+            )
+        ),
+    )
+    supported_architecture: t.List[str] = attr.field(
+        validator=attr.validators.deep_iterable(
+            lambda _, __, value: value in DOCKER_SUPPORTED_ARCHITECTURE,
+            iterable_validator=attr.validators.instance_of(list),
+        ),
+    )
+
+    base_image: str
+
+
+def make_distro_cls(value: str | None) -> _DistroSpecWrapper | None:
     if value is None:
         return
 
@@ -137,44 +228,4 @@ def make_distro_cls(value: str | None) -> type | None:
             f"{value} is not supported. Supported distros are: {', '.join(DOCKER_SUPPORTED_DISTRO.keys())}"
         )
 
-    return attr.make_class(
-        "_DistroSpecWrapper",
-        {
-            "supported_python_version": attr.attrib(
-                type=t.List[str],
-                validator=attr.validators.deep_iterable(
-                    lambda _, __, value: value in DOCKER_SUPPORTED_PYTHON_VERSION,
-                    iterable_validator=attr.validators.instance_of(list),
-                ),
-            ),
-            "supported_cuda_version": attr.attrib(
-                type=t.Optional[t.List[str]],
-                validator=attr.validators.optional(
-                    attr.validators.deep_iterable(
-                        lambda _, __, value: value in DOCKER_SUPPORTED_CUDA_VERSION
-                    )
-                ),
-            ),
-            "base_image": attr.attrib(type=str),
-        },
-        init=True,
-        slots=True,
-        frozen=True,
-    )(*DOCKER_SUPPORTED_DISTRO[value])
-
-
-def generate_dockerfile(docker_options: DockerOptions) -> str:
-    if docker_options.distro == "debian":
-        return generate_debian_dockerfile(docker_options)
-    elif docker_options.distro == "alpine":
-        return generate_alpine_dockerfile(docker_options)
-    elif docker_options.distro == "amazonlinux":
-        return generate_amazonlinux_dockerfile(docker_options)
-    elif docker_options.distro == "ubi8":
-        return generate_ubi8_dockerfile(docker_options)
-    elif docker_options.distro == "debian-miniconda":
-        return generate_debian_miniconda_dockerfile(docker_options)
-    elif docker_options.distro == "alpine-miniconda":
-        return generate_alpine_miniconda_dockerfile(docker_options)
-    else:
-        raise BentoMLException(f"Unsupported distro: {docker_options.distro}")
+    return _DistroSpecWrapper(*DOCKER_SUPPORTED_DISTRO[value])

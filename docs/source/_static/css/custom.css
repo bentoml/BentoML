@@ -1,14 +1,19 @@
+/* adjust logo image position in sidebar */
 .sidebar-logo-container {
     margin: 23px 0 14px;
 }
-
 .sidebar-logo-container img.sidebar-logo {
-    max-width: 100px;
+    max-width: 80px;
 }
 
-
-@media screen and (max-width: 600px) {
+/* minimize logo image on mobile view */
+@media screen and (max-width: 1070px) {
     .sidebar-logo-container img.sidebar-logo {
-        display: none;
+        max-width: 30px;
     }
+}
+
+/* change the color of inactive labels in a :tabbed: view */
+:root {
+    --tabs-color-label-inactive: rgb(149 149 149);
 }

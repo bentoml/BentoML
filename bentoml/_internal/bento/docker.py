@@ -10,7 +10,6 @@ import fs
 import attr
 import yaml
 
-from ..utils import bentoml_cattr
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 
@@ -135,7 +134,7 @@ def make_cuda_cls(value: str | None) -> _CUDASpec10Type | _CUDASpec11Type | None
             f"supported CUDA versions under {cuda_folder}"
         )
 
-    cls = attr.make_class(
+    return attr.make_class(
         "_CUDASpecWrapper",
         {
             "requires": attr.attrib(type=str),
@@ -145,24 +144,14 @@ def make_cuda_cls(value: str | None) -> _CUDASpec10Type | _CUDASpec11Type | None
         slots=True,
         frozen=True,
         init=True,
+    )(
+        requires=cuda_spec["requires"],
+        **{
+            lib: NVIDIALibrary(version=lib_spec["version"])
+            for lib, lib_spec in cuda_spec["components"].items()
+        },
+        version=CUDAVersion.from_str(value),
     )
-
-    def _cuda_spec_structure_hook(
-        d: t.Any, _: t.Type[t.Any]
-    ) -> t.Union[_CUDASpec10Type, _CUDASpec11Type]:
-        update_spec = {}
-        if "components" in d:
-            components = d.pop("components")
-            update_spec = {
-                lib: NVIDIALibrary(version=lib_spec["version"])
-                for lib, lib_spec in components.items()
-            }
-
-        return cls(**d, **update_spec, version=CUDAVersion.from_str(value))
-
-    bentoml_cattr.register_structure_hook(cls, _cuda_spec_structure_hook)
-
-    return bentoml_cattr.structure(cuda_spec, cls)
 
 
 @attr.define(frozen=True, slots=True, on_setattr=None)
@@ -176,7 +165,7 @@ class _DistroSpecWrapper:
     supported_cuda_version: t.Optional[t.List[str]] = attr.field(
         validator=attr.validators.optional(
             attr.validators.deep_iterable(
-                lambda _, __, value: value in DOCKER_SUPPORTED_CUDA_VERSION
+                lambda _, __, value: value in DOCKER_SUPPORTED_CUDA_VERSION,
             )
         ),
     )

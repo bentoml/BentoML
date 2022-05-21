@@ -47,13 +47,17 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV LANG=C.UTF-8
 
 ENV LC_ALL=C.UTF-8
+{% if docker_options.env is not none %}
 {% for key, value in docker_options.env.items() %}
 
 ENV {{ key }}={{ value }}
 {% endfor %}
+{% endif %}
+{% if docker_options.system_packages is not none %}
 
 # Install user-defined system package
 RUN --mount=type=cache,from=cached,target=/var/cache/apk xx-apk add --update {{ docker_options.system_packages|join(" ") }}
+{% endif %}
 
 # Setup UID/GID
 {{ setup_uid_gid }}

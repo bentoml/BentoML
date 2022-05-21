@@ -11,19 +11,22 @@ from ..utils import bentoml_cattr
 from .docker import make_cuda_cls
 from .docker import make_distro_cls
 from ...exceptions import BentoMLException
+from ..configuration import BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
-    from .docker import _CUDASpec11Type, _CUDASpec10Type
+    from .docker import _CUDASpec10Type
+    from .docker import _CUDASpec11Type
     from .docker import _DistroSpecWrapper
     from .build_config import DockerOptions
 
     CUDAType: t.TypeAlias = _CUDASpec10Type | _CUDASpec11Type | None
     DistroType: t.TypeAlias = _DistroSpecWrapper | None
 
+bentoml_version = BENTOML_VERSION.rsplit(".", maxsplit=2)[0]
 
 HEADERS_TEMPLATE = """\
 # syntax = docker/dockerfile:1.4-labs
@@ -189,6 +192,12 @@ def generate_debian_miniconda_dockerfile(
     """
 
 
+def get_docker_py_format(docker_options: DockerOptions) -> str:
+    if docker_options.distro == "ubi8":
+        return docker_options.python_version.replace(".", "")
+    return docker_options.python_version
+
+
 def generate_dockerfile(docker_options: DockerOptions) -> str:
     docker_dir = fs.path.combine(fs.path.dirname(__file__), "docker")
     j2_template = fs.path.combine(docker_dir, f"Dockerfile-{docker_options.distro}.j2")
@@ -238,10 +247,13 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
         content = {}
 
     template_context = {
-        "base_image": base_image,
+        "base_image": base_image.format(
+            python_version=get_docker_py_format(docker_options)
+        ),
         "docker_options": bentoml_cattr.unstructure(docker_options),
         "distro_spec": bentoml_cattr.unstructure(distro_spec),
         "cuda_spec": bentoml_cattr.unstructure(cuda_spec),
+        "bentoml_version": bentoml_version,  # ensure that we don't have a dirty version.
         **content,
     }
 

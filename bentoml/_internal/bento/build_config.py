@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 import typing as t
 import logging
@@ -39,7 +37,7 @@ if PYTHON_VERSION not in DOCKER_SUPPORTED_PYTHON_VERSION:
     )
 
 
-def _convert_python_version(py_version: str | None) -> str | None:
+def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if py_version is None:
         return None
 
@@ -53,7 +51,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
     return f"{major}.{minor}"
 
 
-def _convert_cuda_version(cuda_version: str | None) -> str | None:
+def _convert_cuda_version(cuda_version: t.Optional[str]) -> t.Optional[str]:
     if cuda_version is None:
         return None
     if cuda_version == "default":
@@ -72,7 +70,7 @@ class DockerOptions:
         ),
     )
 
-    python_version: t.Optional[str] = attr.field(
+    python_version: str = attr.field(
         converter=_convert_python_version,
         default=None,
         validator=attr.validators.optional(
@@ -80,7 +78,7 @@ class DockerOptions:
         ),
     )
 
-    cuda_version: t.Optional[t.Union[str, t.Literal["default"]]] = attr.field(
+    cuda_version: t.Union[str, t.Literal["default"]] = attr.field(
         default=None,
         converter=_convert_cuda_version,
         validator=attr.validators.optional(
@@ -124,6 +122,20 @@ class DockerOptions:
                     f"'system_packages={self.system_packages}' option is ignored.",
                 )
 
+    def with_defaults(self) -> "DockerOptions":
+        # Convert from user provided options to actual build options with default values
+        update_defaults = {}
+
+        if self.base_image is None:
+            if self.distro is None:
+                update_defaults["distro"] = DOCKER_DEFAULT_DOCKER_DISTRO
+            if self.python_version is None:
+                update_defaults["python_version"] = PYTHON_VERSION
+            if self.cuda_version is None:
+                update_defaults["cuda_version"] = None
+
+        self = attr.evolve(self, **update_defaults)
+
         supported_python, supported_cuda, _, _ = DOCKER_SUPPORTED_DISTRO[self.distro]
         if self.python_version not in supported_python:
             raise BentoMLException(
@@ -143,20 +155,7 @@ class DockerOptions:
                     f"{self.cuda_version} is not supported for "
                     f"{self.distro}. Supported cuda versions are: {','.join(supported_cuda)}."
                 )
-
-    def with_defaults(self) -> DockerOptions:
-        # Convert from user provided options to actual build options with default values
-        update_defaults = {}
-
-        if self.base_image is None:
-            if self.distro is None:
-                update_defaults["distro"] = DOCKER_DEFAULT_DOCKER_DISTRO
-            if self.python_version is None:
-                update_defaults["python_version"] = PYTHON_VERSION
-            if self.cuda_version is None:
-                update_defaults["cuda_version"] = None
-
-        return attr.evolve(self, **update_defaults)
+        return self
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str):
         docker_folder = fs.path.combine("env", "docker")
@@ -235,7 +234,7 @@ class CondaOptions:
         with bento_fs.open(fs.path.join(conda_folder, "environment_yml"), "w") as f:
             yaml.dump(yaml_content, f)
 
-    def with_defaults(self) -> CondaOptions:
+    def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
@@ -369,7 +368,7 @@ class PythonOptions:
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
                 )
 
-    def with_defaults(self) -> PythonOptions:
+    def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
@@ -395,11 +394,13 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 def _dict_arg_converter(
     options_type: t.Type[t.Union[DockerOptions, CondaOptions, PythonOptions]]
 ) -> t.Callable[
-    [PythonOptions | DockerOptions | CondaOptions | t.Dict[str, t.Any]], t.Any
+    [t.Union[PythonOptions, DockerOptions, CondaOptions, t.Dict[str, t.Any]]], t.Any
 ]:
     def _converter(
-        value: DockerOptions | CondaOptions | PythonOptions | t.Dict[str, t.Any] | None
-    ) -> options_type | None:
+        value: t.Optional[
+            t.Union[DockerOptions, CondaOptions, PythonOptions, t.Dict[str, t.Any]]
+        ]
+    ) -> t.Optional[options_type]:
         if value is None:
             return
 
@@ -438,7 +439,7 @@ class BentoBuildConfig:
         converter=_dict_arg_converter(CondaOptions),
     )
 
-    def with_defaults(self) -> FilledBentoBuildConfig:
+    def with_defaults(self) -> "FilledBentoBuildConfig":
         """
         Convert from user provided options to actual build options will defaults
         values filled in.
@@ -459,7 +460,7 @@ class BentoBuildConfig:
         )
 
     @classmethod
-    def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:
+    def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

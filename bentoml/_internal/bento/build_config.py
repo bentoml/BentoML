@@ -16,8 +16,9 @@ from ..utils import copy_file_to_fs_folder
 from .docker import DOCKER_SUPPORTED_DISTRO
 from .docker import DOCKER_DEFAULT_CUDA_VERSION
 from .docker import DOCKER_DEFAULT_DOCKER_DISTRO
-from .docker import DOCKER_SUPPORTED_CUDA_DISTRO
+from .docker import DOCKER_SUPPORTED_CUDA_DISTROS
 from .docker import DOCKER_SUPPORTED_CUDA_VERSION
+from .docker import DOCKER_SUPPORTED_CONDA_DISTROS
 from .docker import DOCKER_SUPPORTED_PYTHON_VERSION
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
@@ -116,11 +117,6 @@ class DockerOptions:
                     f"docker base_image {self.base_image} is used, "
                     f"'cuda_version={self.cuda_version}' option is ignored.",
                 )
-            if self.system_packages is not None:
-                logger.warning(
-                    f"docker base_image {self.base_image} is used, "
-                    f"'system_packages={self.system_packages}' option is ignored.",
-                )
 
     def with_defaults(self) -> "DockerOptions":
         # Convert from user provided options to actual build options with default values
@@ -146,7 +142,7 @@ class DockerOptions:
             if supported_cuda is None:
                 raise BentoMLException(
                     f"{self.distro} does not support CUDA. "
-                    f"Supported distros that have CUDA supports are: {','.join(DOCKER_SUPPORTED_CUDA_DISTRO)}."
+                    f"Supported distros that have CUDA supports are: {','.join(DOCKER_SUPPORTED_CUDA_DISTROS)}."
                 )
             if self.cuda_version != "default" and (
                 self.cuda_version not in supported_cuda
@@ -466,6 +462,27 @@ class BentoBuildConfig:
         except yaml.YAMLError as exc:
             logger.error(exc)
             raise
+        if "docker" in yaml_content:
+            if "distro" in yaml_content["docker"]:
+                distro = yaml_content["docker"]["distro"]
+                if (
+                    distro in ["alpine", "alpine-miniconda"]
+                    and "scikit-learn" in yaml_content["python"]["packages"]
+                ):
+                    logger.warning(
+                        "In order to support scikit-learn on alpine-based images, "
+                        "make sure to include the following packages under `docker.system_packages`: "
+                        "libquadmath, musl, lapack, libgomp, libstdc++, lapack, lapack-dev, openblas-dev."
+                    )
+                if (
+                    "conda" in yaml_content
+                    and distro not in DOCKER_SUPPORTED_CONDA_DISTROS
+                ):
+                    raise BentoMLException(
+                        f"{distro} does not supports conda. Since 1.0.0a7, BentoML will "
+                        f"only support conda with the following distros: {', '.join(DOCKER_SUPPORTED_CONDA_DISTROS)}. "
+                        "Switch to either of the aforementioned distros and try again."
+                    )
 
         try:
             return bentoml_cattr.structure(yaml_content, cls)

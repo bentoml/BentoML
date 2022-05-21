@@ -41,7 +41,10 @@ ENV PATH /usr/local/bin:$PATH
 
 ENV ENV /root/.bashrc
 
-RUN --mount=type=cache,from=cached,target=/var/cache/apk xx-apk add --update bash gcc libc-dev shadow
+# Install helpers
+RUN --mount=type=cache,from=cached,target=/var/cache/apk \
+	xx-apk add --update bash gcc libc-dev shadow musl-dev build-base \
+	linux-headers g++
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
@@ -65,16 +68,14 @@ RUN --mount=type=cache,from=cached,target=/var/cache/apk xx-apk add --update {{ 
 # Setup UID/GID
 {{ setup_uid_gid }}
 
-# Install helpers
-RUN --mount=type=cache,from=cached,target=/var/cache/apk \
-	xx-apk add --update musl-dev build-base linux-headers g++
-
 # Install bentoml
 ENV BENTOML_VERSION={{ bentoml_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 	pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 
 {{ setup_bento_env }}
+
+{{ install_python_with_conda }}
 
 {{ setup_python_package }}
 

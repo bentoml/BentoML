@@ -54,7 +54,9 @@ WORKDIR $BENTO_PATH
 
 # init related components
 COPY --chown=bentoml:bentoml ./env ./env
+"""
 
+SETUP_PYTHON_PACKAGE_TEMPLATE = """\
 # install python package with wheels
 # BentoML by default generates two requirment files:
 #  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
@@ -80,6 +82,9 @@ EOF
 
 # copy over all remaining bento files
 COPY --chown=bentoml:bentoml . ./
+    """
+
+SETUP_ENTRYPOINT_TEMPLATE = """\
 
 # Default port for BentoServer
 EXPOSE 3000
@@ -123,73 +128,78 @@ USER bentoml
 ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
 
 CMD ["bentoml", "serve", ".", "--production"]
+"""
+
+
+INSTALL_PYTHON_WITH_CONDA_TEMPLATE = """\
+RUN bash <<EOF
+SAVED_PYTHON_VERSION=$(cat ./env/python/version.txt)
+PYTHON_VERSION=${PYTHON_VERSION%.*}
+
+echo "Installing Python $PYTHON_VERSION with conda.."
+conda install -y -n base pkgs/main::python=$PYTHON_VERSION pip
+
+if [ -f ./env/conda/environment.yml ]; then
+  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # pip-installed packages to satisfy dependencies.
+  echo "Updating conda base environment with environment.yml"
+  conda config --set pip_interop_enabled True || true
+  conda env update -n base -f ./env/conda/environment.yml
+  conda clean --all
+fi
+EOF
         """
 
 
-def architecture_definition(cuda_spec: CUDAType) -> str:
-    if cuda_spec is None:
-        # No CUDA support
-        return ""
-    else:
-        if cuda_spec.version.major == "10":
-            return ""
-        else:
-            return ""
-
-
-def generate_alpine_dockerfile(
-    docker_options: DockerOptions, cuda_spec: CUDAType, distro_spec: DistroType
-) -> t.Dict[str, t.Any]:
+def alpine_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Alpine image.
     """
     return {
-        "header": HEADERS_TEMPLATE,
         "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
-        "setup_bento_env": SETUP_BENTO_ENV_TEMPLATE,
     }
 
 
-def generate_alpine_miniconda_dockerfile(
-    docker_options: DockerOptions, cuda_spec: CUDAType, distro_spec: DistroType
+def alpine_miniconda_template_context(
+    docker_options: DockerOptions,
 ) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Alpine miniconda image.
     """
+    return {
+        "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
+        "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
+    }
 
 
-def generate_ubi8_dockerfile(
-    docker_options: DockerOptions, cuda_spec: CUDAType, distro_spec: DistroType
-) -> t.Dict[str, t.Any]:
-    """
-    Generate a Dockerfile for the UBI8 image.
-    """
-    print(cuda_spec)
-    return ""
-
-
-def generate_debian_dockerfile(
-    docker_options: DockerOptions, cuda_spec: CUDAType, distro_spec: DistroType
-) -> t.Dict[str, t.Any]:
+def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Debian image.
     """
+    raise NotImplementedError
 
 
-def generate_amazonlinux_dockerfile(
-    docker_options: DockerOptions, cuda_spec: CUDAType, distro_spec: DistroType
-) -> t.Dict[str, t.Any]:
-    """
-    Generate a Dockerfile for the Amazon Linux image.
-    """
-
-
-def generate_debian_miniconda_dockerfile(
-    docker_options: DockerOptions, cuda_spec: CUDAType, distro_spec: DistroType
+def debian_miniconda_template_context(
+    docker_options: DockerOptions,
 ) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Debian MinConda image.
     """
+    raise NotImplementedError
+
+
+def amazonlinux_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
+    """
+    Generate a Dockerfile for the Amazon Linux image.
+    """
+    raise NotImplementedError
+
+
+def ubi8_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
+    """
+    Generate a Dockerfile for the UBI8 image.
+    """
+    raise NotImplementedError
 
 
 def get_docker_py_format(docker_options: DockerOptions) -> str:
@@ -214,47 +224,39 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
             "Something went wrong in distros validation for DockerOptions."
         )
 
+    user_defined_image = False
     if docker_options.base_image is None:
-        base_image = distro_spec.base_image
+        base_image = distro_spec.base_image.format(
+            python_version=get_docker_py_format(docker_options)
+        )
     else:
         base_image = docker_options.base_image
+        user_defined_image = True
 
-    if docker_options.distro == "debian":
-        content = generate_debian_dockerfile(
-            docker_options, cuda_spec=cuda_spec, distro_spec=distro_spec
-        )
-    elif docker_options.distro == "alpine":
-        content = generate_alpine_dockerfile(
-            docker_options, cuda_spec=cuda_spec, distro_spec=distro_spec
-        )
-    elif docker_options.distro == "amazonlinux":
-        content = generate_amazonlinux_dockerfile(
-            docker_options, cuda_spec=cuda_spec, distro_spec=distro_spec
-        )
-    elif docker_options.distro == "ubi8":
-        content = generate_ubi8_dockerfile(
-            docker_options, cuda_spec=cuda_spec, distro_spec=distro_spec
-        )
-    elif docker_options.distro == "debian-miniconda":
-        content = generate_debian_miniconda_dockerfile(
-            docker_options, cuda_spec=cuda_spec, distro_spec=distro_spec
-        )
-    elif docker_options.distro == "alpine-miniconda":
-        content = generate_alpine_miniconda_dockerfile(
-            docker_options, cuda_spec=cuda_spec, distro_spec=distro_spec
-        )
-    else:
-        content = {}
+    if user_defined_image:
+        logger.warning(f"Make sure to have Python installed for {base_image}.")
+
+    context_mapping = {
+        "alpine": alpine_template_context,
+        "alpine-miniconda": alpine_miniconda_template_context,
+        "debian": debian_template_context,
+        "debian-miniconda": debian_miniconda_template_context,
+        "amazonlinux": amazonlinux_template_context,
+        "ubi8": ubi8_template_context,
+    }
 
     template_context = {
-        "base_image": base_image.format(
-            python_version=get_docker_py_format(docker_options)
-        ),
+        "base_image": base_image,
         "docker_options": bentoml_cattr.unstructure(docker_options),
         "distro_spec": bentoml_cattr.unstructure(distro_spec),
         "cuda_spec": bentoml_cattr.unstructure(cuda_spec),
         "bentoml_version": bentoml_version,  # ensure that we don't have a dirty version.
-        **content,
+        "user_defined_image": user_defined_image,
+        "header": HEADERS_TEMPLATE,
+        "setup_bento_env": SETUP_BENTO_ENV_TEMPLATE,
+        "setup_python_package": SETUP_PYTHON_PACKAGE_TEMPLATE,
+        "setup_entrypoint": SETUP_ENTRYPOINT_TEMPLATE,
+        **context_mapping[docker_options.distro](docker_options),
     }
 
     with open(j2_template, "r", encoding="utf-8") as f:

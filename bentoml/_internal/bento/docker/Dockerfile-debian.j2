@@ -6,10 +6,12 @@ ARG XX_VERSION=master
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 {% if user_defined_image != true %}
+{% if use_cuda == true %}
+{{ setup_cuda }}
+{% else %}
 FROM {{ base_image }} as cached
 
 FROM {{ base_image }} as base
-
 {% for key in distro_spec.supported_architecture if key not in cached -%}
 {% if 'arm64' in key %}
 
@@ -27,6 +29,7 @@ FROM base as base-{{ key }}
 {% endfor %}
 
 FROM base-${TARGETARCH}
+{% endif %}
 {% else %}
 FROM {{ base_image }} as cached
 
@@ -35,29 +38,15 @@ FROM {{ base_image }}
 
 {{ base_env }}
 
-ENV PATH /usr/local/bin:$PATH
+ENV DEBIAN_FRONTEND=noninteractive
 
-ENV ENV /root/.bashrc
-
-# Install helpers
-RUN --mount=type=cache,from=cached,target=/var/cache/apk \
-	xx-apk add --update bash gcc libc-dev shadow musl-dev build-base \
-	linux-headers g++
-
-{% if docker_options.env is not none %}
-{% for key, value in docker_options.env.items() %}
-
-ENV {{ key }}={{ value }}
-{% endfor %}
-{% endif %}
-{% if docker_options.system_packages is not none %}
-
-# Install user-defined system package
-RUN --mount=type=cache,from=cached,target=/var/cache/apk xx-apk add --update {{ docker_options.system_packages|join(" ") }}
-{% endif %}
-
-# Setup UID/GID
-{{ setup_uid_gid }}
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
+	--mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
+	xx-apt-get install -q -y --no-install-recommends --allow-remove-essential \
+	bash build-essential \
+	&& xx-apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
 
 {{ setup_bento_env }}
 
@@ -67,5 +56,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 	pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 
 {{ setup_python_package }}
+
+RUN rm -rf /var/lib/{apt,dpkg,cache,log}
 
 {{ setup_entrypoint }}

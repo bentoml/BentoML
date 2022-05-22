@@ -16,6 +16,7 @@ from ...exceptions import BentoMLException
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
+    from attr import Attribute
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +84,12 @@ DOCKER_SUPPORTED_CONDA_DISTROS = [i for i in DOCKER_SUPPORTED_DISTRO if "conda" 
 
 @attr.define(frozen=True)
 class NVIDIALibrary:
-    version: str
+    version: str = attr.field(converter=lambda d: "" if d is None else d)
     major_version: str = attr.field(
-        default=attr.Factory(lambda self: self.version.split(".")[0], takes_self=True)
+        default=attr.Factory(
+            lambda self: self.version.split(".")[0] if self.version is not None else "",
+            takes_self=True,
+        )
     )
 
 
@@ -97,7 +101,7 @@ class CUDAVersion:
 
     @classmethod
     def from_str(cls, version_str: str) -> CUDAVersion:
-        match = re.match(r"^(\d+)\.(\d+)$", version_str)
+        match = re.match(r"^(\d+)\.(\d+)", version_str)
         if match is None:
             raise InvalidArgument(
                 f"Invalid CUDA version string: {version_str}. Should follow correct semver format."
@@ -105,7 +109,21 @@ class CUDAVersion:
         return cls(*match.groups(), version_str)  # type: ignore
 
 
-def make_cuda_cls(value: str | None) -> _CUDASpec10Type | _CUDASpec11Type | None:
+def transformer(_: t.Any, fields: list[Attribute[t.Any]]) -> list[Attribute[t.Any]]:
+    results: list[Attribute[t.Any]] = []
+    for field in fields:
+        if field.converter is not None:
+            results.append(field)
+            continue
+        if field.type in {str, "str"}:
+            converter = lambda d: d.strip("\n") if isinstance(d, str) else d  # type: ignore
+        else:
+            converter = None
+        results.append(field.evolve(converter=converter))
+    return results
+
+
+def make_cuda_cls(value: str | None) -> t.Dict[str, CUDA10x | CUDA11x] | None:
     if value is None:
         return
 
@@ -128,35 +146,41 @@ def make_cuda_cls(value: str | None) -> _CUDASpec10Type | _CUDASpec11Type | None
         logger.error(exc)
         raise
 
-    if "requires" not in cuda_spec:
-        raise BentoMLException(
-            "Missing 'requires' key in given CUDA version definition. "
-            "Most likely this is an internal mistake when defining "
-            f"supported CUDA versions under {cuda_folder}"
-        )
+    architectures = cuda_spec["architectures"]
 
-    return attr.make_class(
-        "_CUDASpecWrapper",
-        {
-            "requires": attr.attrib(type=str),
-            **{lib: attr.attrib(type=NVIDIALibrary) for lib in cuda_spec["components"]},
-            "version": attr.attrib(type=CUDAVersion),
-        },
-        slots=True,
-        frozen=True,
-        init=True,
-    )(
-        requires=cuda_spec["requires"],
-        **{
-            lib: NVIDIALibrary(version=lib_spec["version"])
-            for lib, lib_spec in cuda_spec["components"].items()
-        },
-        version=CUDAVersion.from_str(value),
-    )
+    return {
+        arch: attr.make_class(
+            "_CUDASpecWrapper",
+            {
+                "requires": attr.attrib(type=str),
+                **{
+                    lib: attr.attrib(type=NVIDIALibrary)
+                    for lib in cuda_spec[f"components_{arch}"]
+                },
+                "version": attr.attrib(type=CUDAVersion),
+                "repository": attr.attrib(type=str),
+                "architecture": attr.attrib(type=str),
+            },
+            slots=True,
+            frozen=True,
+            init=True,
+            field_transformer=transformer,
+        )(
+            requires=cuda_spec[f"requires_{arch}"],
+            **{
+                lib: NVIDIALibrary(version=lib_spec["version"])
+                for lib, lib_spec in cuda_spec[f"components_{arch}"].items()
+            },
+            version=CUDAVersion.from_str(value),
+            repository=cuda_spec["repository"],
+            architecture=arch,
+        )
+        for arch in architectures
+    }
 
 
 @attr.define(frozen=True, slots=True, on_setattr=None)
-class _DistroSpecWrapper:
+class DistroSpecWrapper:
     supported_python_version: t.List[str] = attr.field(
         validator=attr.validators.deep_iterable(
             lambda _, __, value: value in DOCKER_SUPPORTED_PYTHON_VERSION,
@@ -180,46 +204,38 @@ class _DistroSpecWrapper:
     base_image: str
 
 
-def make_distro_cls(value: str | None) -> _DistroSpecWrapper | None:
-    if value is None:
-        return
-
+def make_distro_cls(value: str) -> DistroSpecWrapper:
     if value not in DOCKER_SUPPORTED_DISTRO:
         raise BentoMLException(
             f"{value} is not supported. Supported distros are: {', '.join(DOCKER_SUPPORTED_DISTRO.keys())}"
         )
 
-    return _DistroSpecWrapper(*DOCKER_SUPPORTED_DISTRO[value])
+    return DistroSpecWrapper(*DOCKER_SUPPORTED_DISTRO[value])
 
 
 if TYPE_CHECKING:
 
-    class _CUDASpec11Type:
-        requires: str
+    class _CUDASpecBase:
+        repository: str
+        architecture: str
+        version: CUDAVersion
         cudart: NVIDIALibrary
         libcublas: NVIDIALibrary
+        libnccl2: NVIDIALibrary
         libcuparse: NVIDIALibrary
         libnpp: NVIDIALibrary
         nvml_dev: NVIDIALibrary
-        nvprof: NVIDIALibrary
         nvtx: NVIDIALibrary
-        libnccl2: NVIDIALibrary
+        nvprof: NVIDIALibrary
         cudnn8: NVIDIALibrary
-        version: CUDAVersion
 
-    class _CUDASpec10Type:
-        requires: str
-        cudart: NVIDIALibrary
-        nvml_dev: NVIDIALibrary
+    class CUDA11x(_CUDASpecBase):
+        """CUDA 11.x spec"""
+
+    class CUDA10x(_CUDASpecBase):
+        """CUDA 10.x spec"""
+
         command_line_tools: NVIDIALibrary
-        libcusparse: NVIDIALibrary
-        libnpp: NVIDIALibrary
         libraries: NVIDIALibrary
         minimal_build: NVIDIALibrary
-        nvtx: NVIDIALibrary
-        nvprof: NVIDIALibrary
         nvcc: NVIDIALibrary
-        libcublas: NVIDIALibrary
-        libnccl2: NVIDIALibrary
-        cudnn8: NVIDIALibrary
-        version: CUDAVersion

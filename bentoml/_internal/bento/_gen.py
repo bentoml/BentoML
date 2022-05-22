@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -18,17 +19,50 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
-    from .docker import _CUDASpec10Type
-    from .docker import _CUDASpec11Type
-    from .docker import _DistroSpecWrapper
+    from .docker import CUDA10x
+    from .docker import CUDA11x
+    from .docker import DistroSpecWrapper
     from .build_config import DockerOptions
 
-    CUDAType: t.TypeAlias = _CUDASpec10Type | _CUDASpec11Type | None
-    DistroType: t.TypeAlias = _DistroSpecWrapper | None
+    CUDAType: t.TypeAlias = CUDA10x | CUDA11x | None
+    DistroType: t.TypeAlias = DistroSpecWrapper | None
 
-bentoml_version = BENTOML_VERSION.rsplit(".", maxsplit=2)[0]
 
-HEADERS_TEMPLATE = """\
+def clean_bentoml_version() -> str:
+    post_version = BENTOML_VERSION.split("+")[0]
+    match = re.match(r"^(\d+).(\d+).(\d+)(?:a\d)", post_version)
+    if match is None:
+        raise BentoMLException("Errors while parsing BentoML version.")
+    return match.group()
+
+
+DOCKERFILE_COMPONENTS = [
+    "base_env",
+    "header",
+    "setup_bento_env",
+    "setup_uid_gid",
+    "setup_python_package",
+    "setup_entrypoint",
+    "install_python_with_conda",
+]
+
+BASE_ENV_TEMPLATE = """\
+COPY --from=xx / /
+
+ARG TARGETARCH
+
+ARG TARGETPLATFORM
+
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ENV PYTHONDONTWRITEBYTECODE=1
+
+ENV LANG=C.UTF-8
+
+ENV LC_ALL=C.UTF-8
+"""
+
+HEADER_TEMPLATE = """\
 # syntax = docker/dockerfile:1.4-labs
 #
 # ===========================================
@@ -151,13 +185,30 @@ EOF
         """
 
 
+def generate_cuda_instructions(cuda_version: str) -> str:
+    """
+    Generate instructions for cuda installation.
+    """
+    cuda_spec = make_cuda_cls(cuda_version)
+    if cuda_version.startswith("11"):
+        # return instruction set for CUDA 11.x
+        return f"""\
+
+                """
+    elif cuda_version.startswith("10"):
+        # return instruction set for CUDA 10.x
+        raise NotImplementedError
+    else:
+        raise BentoMLException(
+            f"Unsupported CUDA version: {cuda_version}. Supported versions: 11.x, 10.x"
+        )
+
+
 def alpine_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Alpine image.
     """
-    return {
-        "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
-    }
+    return {}
 
 
 def alpine_miniconda_template_context(
@@ -166,17 +217,20 @@ def alpine_miniconda_template_context(
     """
     Generate a Dockerfile for the Alpine miniconda image.
     """
-    return {
-        "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
-        "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
-    }
+    return {}
 
 
 def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Debian image.
     """
-    raise NotImplementedError
+    base_context = {"setup_uid_gid": SETUP_UID_GID_TEMPLATE}
+    if docker_options.cuda_version is not None:
+        # cuda version is set, return instruction sets for cuda.
+        base_context["setup_cuda"] = generate_cuda_instructions(
+            docker_options.cuda_version
+        )
+    return base_context
 
 
 def debian_miniconda_template_context(
@@ -185,7 +239,18 @@ def debian_miniconda_template_context(
     """
     Generate a Dockerfile for the Debian MinConda image.
     """
-    raise NotImplementedError
+    SETUP_UID_GID_MICROMAMBA_TEMPLATE = """\
+            """
+    base_context = {
+        "setup_uid_gid": SETUP_UID_GID_MICROMAMBA_TEMPLATE,
+        "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
+    }
+    if docker_options.cuda_version is not None:
+        # cuda version is set, return instruction sets for cuda.
+        base_context["setup_cuda"] = generate_cuda_instructions(
+            docker_options.cuda_version
+        )
+    return base_context
 
 
 def amazonlinux_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
@@ -217,7 +282,6 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
         lstrip_blocks=True,
     )
 
-    cuda_spec = make_cuda_cls(docker_options.cuda_version)
     distro_spec = make_distro_cls(docker_options.distro)
     if distro_spec is None:
         raise BentoMLException(
@@ -247,12 +311,13 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
 
     template_context = {
         "base_image": base_image,
-        "docker_options": bentoml_cattr.unstructure(docker_options),
-        "distro_spec": bentoml_cattr.unstructure(distro_spec),
-        "cuda_spec": bentoml_cattr.unstructure(cuda_spec),
-        "bentoml_version": bentoml_version,  # ensure that we don't have a dirty version.
         "user_defined_image": user_defined_image,
-        "header": HEADERS_TEMPLATE,
+        "bentoml_version": clean_bentoml_version(),  # ensure that we don't have a dirty version.
+        "docker_options": bentoml_cattr.unstructure(docker_options),  # type: ignore
+        "distro_spec": bentoml_cattr.unstructure(distro_spec),  # type: ignore
+        "use_cuda": docker_options.cuda_version is not None,
+        "header": HEADER_TEMPLATE,
+        "base_env": BASE_ENV_TEMPLATE,
         "setup_bento_env": SETUP_BENTO_ENV_TEMPLATE,
         "setup_python_package": SETUP_PYTHON_PACKAGE_TEMPLATE,
         "setup_entrypoint": SETUP_ENTRYPOINT_TEMPLATE,

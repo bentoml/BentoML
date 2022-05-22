@@ -1,7 +1,14 @@
 %YAML 1.2
 ---
 # https://gitlab.com/nvidia/container-images/cuda/-/blob/master/manifests/cuda.yaml#L740
-requires: >
+
+repository: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004
+
+architectures:
+  - x86_64
+  - sbsa
+
+requires_x86_64: >
   cuda>=11.6
   brand=tesla,driver>=418,driver<419
   brand=tesla,driver>=440,driver<441
@@ -13,7 +20,9 @@ requires: >
   brand=nvidiartx,driver>=470,driver<471
   brand=quadrortx,driver>=470,driver<471
 
-components:
+requires_sbsa: cuda>=11.6
+
+components_x86_64:
   cudart:
     version: 11.6.55-1
   libcublas:
@@ -21,7 +30,6 @@ components:
   libcusparse:
     version: 11.7.2.124-1
   libnpp:
-    version: 11.6.3.124-1
     version: 11.6.3.124-1
   nvml_dev:
     version: 11.6.55-1
@@ -34,4 +42,22 @@ components:
   cudnn8:
     version: 8.4.0.27-1
 
-
+components_sbsa:
+  cudart:
+    version: 11.6.55-1
+  libcublas:
+    version: 11.9.2.110-1
+  libcusparse:
+    version: 11.7.2.124-1
+  libnpp:
+    version: 11.6.3.124-1
+  nvml_dev:
+    version: 11.6.55-1
+  nvprof:
+    version: 11.6.124-1
+  nvtx:
+    version: 11.6.124-1
+  libnccl2:
+    version: 2.12.10-1
+  cudnn8:
+    version: 8.4.0.27-1

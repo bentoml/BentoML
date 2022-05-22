@@ -22,7 +22,7 @@ from .docker import DOCKER_SUPPORTED_CONDA_DISTROS
 from .docker import DOCKER_SUPPORTED_PYTHON_VERSION
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from ._gen_dockerfile import generate_dockerfile
+from ._gen import generate_dockerfile
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
 logger = logging.getLogger(__name__)

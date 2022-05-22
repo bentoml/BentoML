@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
+    from .docker import CUDA
     from .build_config import DockerOptions
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
@@ -219,11 +220,11 @@ SETUP_DEBIAN_ENV_TEMPLATE = """\
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
-    xx-apt-get install -q -y --no-install-recommends --allow-remove-essential \
-    bash build-essential \
-    && xx-apt-get clean \
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \\
+    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \\
+    xx-apt-get install -q -y --no-install-recommends --allow-remove-essential \\
+    bash build-essential \\
+    && xx-apt-get clean \\
     && rm -rf /var/lib/apt/lists/*
 """
 
@@ -231,20 +232,48 @@ CLEANUP_DEBIAN_TEMPLATE = """\
 RUN rm -rf /var/lib/{apt,dpkg,cache,log}
         """
 
+SETUP_CUDA_DEBIAN_TEMPLATE = """\
+RUN xx-apt-get install -y --no-install-recommends \\
+        gnupg2 curl ca-certificates \\
+        && curl -fsSLO {repository}/{distros}/${NVARCH}/cuda-keyring_1.0-1_all.deb \\
+        && dpkg -i cuda-keyring_1.0-1_all.deb \\
+        && rm cuda-keyring_1.0-1_all.deb \\
+        && xx-apt-get install -y --no-install-recommends \\
+           cuda-cudart-{cuda_major_version}-{cuda_minor_version}=${NVIDIA_CUDA_CUDART_VERSION} \\
+             ${NVIDIA_CUDA_COMPAT_PACKAGE} \\
+        && ln -s cuda-{cuda_major_version}.{cuda_minor_version} /usr/local/cuda \\
+        && xx-apt-get purge --autoremove -y curl \\
+        && rm -rf /var/lib/apt/lists/*
+        """
+
 
 def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Debian image.
     """
-    cuda_debian_setup = None
-    if docker_options.cuda_version is not None:
-        cuda_debian_setup = """\
-                """
+    cuda_version = docker_options.cuda_version
+    if cuda_version is not None:
+        cuda: CUDA = make_cuda_cls(docker_options.cuda_version)  # type: ignore
+        if "debian" in docker_options.distro:
+            if docker_options.cuda_version.startswith("10"):
+                distros = "ubuntu1804"
+            else:
+                distros = "ubuntu2004"
+        else:
+            distros = "rhel8"
+        cuda_debian_setup = SETUP_CUDA_DEBIAN_TEMPLATE.format(
+            repository=cuda.repository,
+            distros=distros,
+            cuda_major_version=cuda.version.major,
+            cuda_minor_version=cuda.version.minor,
+        )
+    else:
+        cuda_debian_setup = ""
     return {
         "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
         "setup_distro_env": SETUP_DEBIAN_ENV_TEMPLATE,
         "cleanup": CLEANUP_DEBIAN_TEMPLATE,
-        "setup_cuda": cuda_debian_setup or "",
+        "setup_cuda": cuda_debian_setup,
     }
 
 
@@ -257,16 +286,30 @@ def debian_miniconda_template_context(
     SETUP_UID_GID_MICROMAMBA_TEMPLATE = """\
             """
 
-    cuda_debian_setup = None
-    if docker_options.cuda_version is not None:
-        cuda_debian_setup = """\
-                """
+    cuda_version = docker_options.cuda_version
+    if cuda_version is not None:
+        cuda: CUDA = make_cuda_cls(docker_options.cuda_version)  # type: ignore
+        if "debian" in docker_options.distro:
+            if docker_options.cuda_version.startswith("10"):
+                distros = "ubuntu1804"
+            else:
+                distros = "ubuntu2004"
+        else:
+            distros = "rhel8"
+        cuda_debian_setup = SETUP_CUDA_DEBIAN_TEMPLATE.format(
+            repository=cuda.repository,
+            distros=distros,
+            cuda_major_version=cuda.version.major,
+            cuda_minor_version=cuda.version.minor,
+        )
+    else:
+        cuda_debian_setup = ""
     return {
         "setup_uid_gid": SETUP_UID_GID_MICROMAMBA_TEMPLATE,
         "setup_distro_env": SETUP_DEBIAN_ENV_TEMPLATE,
         "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
         "cleanup": CLEANUP_DEBIAN_TEMPLATE,
-        "setup_cuda": cuda_debian_setup or "",
+        "setup_cuda": cuda_debian_setup,
     }
 
 
@@ -335,7 +378,7 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
 
     template_context = {
         "base_image": base_image,
-        "user_defined_image": docker_options._user_defined_image,
+        "user_defined_image": docker_options._user_defined_image,  # type: ignore
         "bentoml_version": clean_bentoml_version(),  # ensure that we don't have a dirty version.
         "docker_options": bentoml_cattr.unstructure(docker_options),  # type: ignore
         "distro_spec": bentoml_cattr.unstructure(distro_spec),  # type: ignore

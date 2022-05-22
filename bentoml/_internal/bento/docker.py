@@ -160,7 +160,6 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
                     lib: attr.attrib(type=NVIDIALibrary)
                     for lib in cuda_spec[f"components_{arch}"]
                 },
-                "repository": attr.attrib(type=str),
             },
             slots=True,
             frozen=True,
@@ -186,6 +185,7 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
                 arch: attr.attrib(type=_make_architecture_cuda_cls(arch))
                 for arch in architectures
             },
+            "repository": attr.attrib(type=str),
         },
         slots=True,
         frozen=True,
@@ -203,6 +203,7 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
 
     return cuda_cls(
         version=CUDAVersion.from_str(value),
+        repository=f"{cuda_spec['repository']}",
         **{
             arch: _make_architecture_cuda_cls(arch)(
                 requires=cuda_spec[f"requires_{arch}"],
@@ -210,7 +211,6 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
                     lib: NVIDIALibrary.from_str(lib_spec["version"])
                     for lib, lib_spec in cuda_spec[f"components_{arch}"].items()
                 },
-                repository=f"{cuda_spec['repository']}",
             )
             for arch in architectures
         },
@@ -267,7 +267,6 @@ def make_distro_cls(value: str) -> Distro:
 if TYPE_CHECKING:
 
     class __cuda_arch_wrapper:
-        repository: str
         requires: str
         cudart: NVIDIALibrary
         libcublas: NVIDIALibrary
@@ -291,6 +290,7 @@ if TYPE_CHECKING:
         nvcc: NVIDIALibrary
 
     class CUDA:
+        repository: str
         version: CUDAVersion
         x86_64: CUDA10x | CUDA11x
         sbsa: CUDA10x | CUDA11x

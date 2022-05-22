@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING
 import fs
 import attr
 import yaml
+from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 
+from ..utils import bentoml_cattr
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 
@@ -23,7 +26,7 @@ logger = logging.getLogger(__name__)
 # Python supported versions
 DOCKER_SUPPORTED_PYTHON_VERSION = ["3.7", "3.8", "3.9", "3.10"]
 # CUDA supported versions
-DOCKER_SUPPORTED_CUDA_VERSION = ["11.6.2", "10.2"]
+DOCKER_SUPPORTED_CUDA_VERSION = ["11.6.2", "10.2.89"]
 # Supported architectures
 DOCKER_SUPPORTED_ARCHITECTURE = ["amd64", "arm64", "ppc64le", "s390x"]
 
@@ -82,18 +85,22 @@ DOCKER_SUPPORTED_CUDA_DISTROS = [
 DOCKER_SUPPORTED_CONDA_DISTROS = [i for i in DOCKER_SUPPORTED_DISTRO if "conda" in i]
 
 
-@attr.define(frozen=True)
+@attr.frozen
 class NVIDIALibrary:
     version: str = attr.field(converter=lambda d: "" if d is None else d)
-    major_version: str = attr.field(
+    major: str = attr.field(
         default=attr.Factory(
             lambda self: self.version.split(".")[0] if self.version is not None else "",
             takes_self=True,
         )
     )
 
+    @classmethod
+    def from_str(cls, version_str: str) -> NVIDIALibrary:
+        return cls(version=version_str)
 
-@attr.define(frozen=True)
+
+@attr.frozen
 class CUDAVersion:
     major: str
     minor: str
@@ -123,7 +130,7 @@ def transformer(_: t.Any, fields: list[Attribute[t.Any]]) -> list[Attribute[t.An
     return results
 
 
-def make_cuda_cls(value: str | None) -> t.Dict[str, CUDA10x | CUDA11x] | None:
+def make_cuda_cls(value: str | None) -> CUDA | None:
     if value is None:
         return
 
@@ -144,77 +151,124 @@ def make_cuda_cls(value: str | None) -> t.Dict[str, CUDA10x | CUDA11x] | None:
 
     architectures = cuda_spec["architectures"]
 
-    return {
-        arch: attr.make_class(
-            "_CUDASpecWrapper",
+    def _make_architecture_cuda_cls(arch: str) -> type:
+        cls_ = attr.make_class(
+            "___cuda_arch_wrapper",
             {
                 "requires": attr.attrib(type=str),
                 **{
                     lib: attr.attrib(type=NVIDIALibrary)
                     for lib in cuda_spec[f"components_{arch}"]
                 },
-                "version": attr.attrib(type=CUDAVersion),
                 "repository": attr.attrib(type=str),
-                "architecture": attr.attrib(type=str),
             },
             slots=True,
             frozen=True,
             init=True,
             field_transformer=transformer,
-        )(
-            requires=cuda_spec[f"requires_{arch}"],
-            **{
-                lib: NVIDIALibrary(version=lib_spec["version"])
-                for lib, lib_spec in cuda_spec[f"components_{arch}"].items()
-            },
-            version=CUDAVersion.from_str(value),
-            repository=cuda_spec["repository"],
-            architecture=arch,
         )
-        for arch in architectures
-    }
 
+        bentoml_cattr.register_unstructure_hook(
+            cls_,
+            make_dict_unstructure_fn(  # type: ignore
+                cls_,
+                bentoml_cattr,
+                tag=override(omit=True),
+            ),
+        )
+        return cls_
 
-@attr.define(frozen=True, slots=True, on_setattr=None)
-class DistroSpecWrapper:
-    supported_python_version: t.List[str] = attr.field(
-        validator=attr.validators.deep_iterable(
-            lambda _, __, value: value in DOCKER_SUPPORTED_PYTHON_VERSION,
-            iterable_validator=attr.validators.instance_of(list),
+    cuda_cls = attr.make_class(
+        "CUDA",
+        {
+            "version": attr.attrib(type=CUDAVersion),
+            **{
+                arch: attr.attrib(type=_make_architecture_cuda_cls(arch))
+                for arch in architectures
+            },
+        },
+        slots=True,
+        frozen=True,
+        init=True,
+    )
+
+    bentoml_cattr.register_unstructure_hook(
+        cuda_cls,
+        make_dict_unstructure_fn(  # type: ignore
+            cuda_cls,
+            bentoml_cattr,
+            tag=override(omit=True),
         ),
     )
-    supported_cuda_version: t.Optional[t.List[str]] = attr.field(
-        validator=attr.validators.optional(
-            attr.validators.deep_iterable(
-                lambda _, __, value: value in DOCKER_SUPPORTED_CUDA_VERSION,
+
+    return cuda_cls(
+        version=CUDAVersion.from_str(value),
+        **{
+            arch: _make_architecture_cuda_cls(arch)(
+                requires=cuda_spec[f"requires_{arch}"],
+                **{
+                    lib: NVIDIALibrary.from_str(lib_spec["version"])
+                    for lib, lib_spec in cuda_spec[f"components_{arch}"].items()
+                },
+                repository=f"{cuda_spec['repository']}",
             )
-        ),
-    )
-    supported_architecture: t.List[str] = attr.field(
-        validator=attr.validators.deep_iterable(
-            lambda _, __, value: value in DOCKER_SUPPORTED_ARCHITECTURE,
-            iterable_validator=attr.validators.instance_of(list),
-        ),
+            for arch in architectures
+        },
     )
 
-    base_image: str
 
-
-def make_distro_cls(value: str) -> DistroSpecWrapper:
+def make_distro_cls(value: str) -> Distro:
     if value not in DOCKER_SUPPORTED_DISTRO:
         raise BentoMLException(
-            f"{value} is not supported. Supported distros are: {', '.join(DOCKER_SUPPORTED_DISTRO.keys())}"
+            f"{value} is not supported. "
+            f"Supported distros are: {', '.join(DOCKER_SUPPORTED_DISTRO.keys())}."
         )
+    cls = attr.make_class(
+        "Distro",
+        {
+            "supported_python_version": attr.attrib(
+                type=t.List[str],
+                validator=attr.validators.deep_iterable(
+                    lambda _, __, value: value in DOCKER_SUPPORTED_PYTHON_VERSION,
+                    iterable_validator=attr.validators.instance_of(list),
+                ),
+            ),
+            "supported_cuda_version": attr.attrib(
+                type=t.Optional[t.List[str]],
+                validator=attr.validators.optional(
+                    attr.validators.deep_iterable(
+                        lambda _, __, value: value in DOCKER_SUPPORTED_CUDA_VERSION,
+                    )
+                ),
+            ),
+            "supported_architecture": attr.attrib(
+                type=t.List[str],
+                validator=attr.validators.deep_iterable(
+                    lambda _, __, value: value in DOCKER_SUPPORTED_ARCHITECTURE,
+                    iterable_validator=attr.validators.instance_of(list),
+                ),
+            ),
+            "base_image": attr.attrib(type=str),
+        },
+        slots=True,
+        frozen=True,
+        init=True,
+    )
 
-    return DistroSpecWrapper(*DOCKER_SUPPORTED_DISTRO[value])
+    setattr(
+        cls,
+        "from_distro",
+        classmethod(lambda cls, value: cls(*DOCKER_SUPPORTED_DISTRO[value])),
+    )
+
+    return cls.from_distro(value)  # type: ignore
 
 
 if TYPE_CHECKING:
 
-    class _CUDASpecBase:
+    class __cuda_arch_wrapper:
         repository: str
-        architecture: str
-        version: CUDAVersion
+        requires: str
         cudart: NVIDIALibrary
         libcublas: NVIDIALibrary
         libnccl2: NVIDIALibrary
@@ -225,13 +279,29 @@ if TYPE_CHECKING:
         nvprof: NVIDIALibrary
         cudnn8: NVIDIALibrary
 
-    class CUDA11x(_CUDASpecBase):
+    class CUDA11x(__cuda_arch_wrapper):
         """CUDA 11.x spec"""
 
-    class CUDA10x(_CUDASpecBase):
+    class CUDA10x(__cuda_arch_wrapper):
         """CUDA 10.x spec"""
 
         command_line_tools: NVIDIALibrary
         libraries: NVIDIALibrary
         minimal_build: NVIDIALibrary
         nvcc: NVIDIALibrary
+
+    class CUDA:
+        version: CUDAVersion
+        x86_64: CUDA10x | CUDA11x
+        sbsa: CUDA10x | CUDA11x
+        ppc64le: CUDA10x | CUDA11x
+
+    class Distro:
+        supported_python_version: t.List[str]
+        supported_cuda_version: t.Optional[t.List[str]]
+        supported_architecture: t.List[str]
+        base_image: str
+
+        @classmethod
+        def from_distro(cls, value: str) -> Distro:
+            ...

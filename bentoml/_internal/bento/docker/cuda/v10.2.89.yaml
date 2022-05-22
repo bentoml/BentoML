@@ -37,6 +37,8 @@ components_x86_64:
     version: 10.2.2.89-1
   libnccl2:
     version: 2.12.10-1
+  libnccl2_dev:
+    version: 2.12.10-1
   cudnn8:
     version: 8.4.0.27-1
 
@@ -64,6 +66,8 @@ components_ppc64le:
   libcublas:
     version: 10.2.2.89-1
   libnccl2:
+    version: 2.11.4-1
+  libnccl2_dev:
     version: 2.11.4-1
   cudnn8:
     version:

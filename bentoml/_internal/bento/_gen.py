@@ -1,10 +1,10 @@
 from __future__ import annotations
-from functools import wraps
 
 import re
 import typing as t
 import logging
 from typing import TYPE_CHECKING
+from functools import wraps
 
 import fs
 from jinja2 import Environment
@@ -20,19 +20,11 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
-    from .docker import CUDA10x
-    from .docker import CUDA11x
-    from .docker import DistroSpecWrapper
     from .build_config import DockerOptions
-
-    CUDAType: t.TypeAlias = CUDA10x | CUDA11x | None
-    DistroType: t.TypeAlias = DistroSpecWrapper | None
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
 
 NEED_SETUP_COMPONENTS = ["setup_distro_env", "setup_uid_gid", "cleanup"]
-
-CONDA_SETUP_COMPONENTS = ["install_python_with_conda"]
 
 
 def clean_bentoml_version() -> str:
@@ -43,11 +35,17 @@ def clean_bentoml_version() -> str:
     return match.group()
 
 
-def ensure_components(_func: TemplateFunc | None = None, *, conda: bool = False):
+def ensure_components(
+    _func: TemplateFunc | None = None,
+    *,
+    conda: bool = False,
+    cuda: bool = False,
+    require_setup: t.List[str] = NEED_SETUP_COMPONENTS,
+):
     if conda:
-        require_setup = NEED_SETUP_COMPONENTS + CONDA_SETUP_COMPONENTS
-    else:
-        require_setup = NEED_SETUP_COMPONENTS
+        require_setup += ["install_python_with_conda"]
+    if cuda:
+        require_setup += ["setup_cuda"]
 
     def decorator(func: TemplateFunc) -> TemplateFunc:
         @wraps(func)
@@ -176,37 +174,14 @@ EOF
         """
 
 
-def generate_cuda_instructions(docker_options: DockerOptions) -> str:
-    """
-    Generate instructions for cuda installation.
-    """
-    cuda_version = docker_options.cuda_version
-    cuda_spec = make_cuda_cls(cuda_version)
-    # if cuda_spec. is None:
-    #     return ""
-
-    if cuda_version.startswith("11"):
-        # return instruction set for CUDA 11.x
-        return f"""\
-
-                """
-    elif cuda_version.startswith("10"):
-        # return instruction set for CUDA 10.x
-        raise NotImplementedError
-    else:
-        raise BentoMLException(
-            f"Unsupported CUDA version: {cuda_version}. Supported versions: 11.x, 10.x"
-        )
-
-
 SETUP_ALPINE_ENV_TEMPLATE = """\
 ENV PATH /usr/local/bin:$PATH
 
 ENV ENV /root/.bashrc
 
 # Install helpers
-RUN --mount=type=cache,from=cached,target=/var/cache/apk \
-    xx-apk add --update bash gcc libc-dev shadow musl-dev build-base \
+RUN --mount=type=cache,from=cached,target=/var/cache/apk \\
+    xx-apk add --update bash gcc libc-dev shadow musl-dev build-base \\
     linux-headers g++
 """
 
@@ -222,7 +197,7 @@ def alpine_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]
     return {
         "setup_distro_env": SETUP_ALPINE_ENV_TEMPLATE,
         "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
-        "cleanup": "",
+        "cleanup": CLEANUP_ALPINE_TEMPLATE,
     }
 
 
@@ -235,7 +210,7 @@ def alpine_miniconda_template_context(
     return {
         "setup_distro_env": SETUP_ALPINE_ENV_TEMPLATE,
         "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
-        "cleanup": "",
+        "cleanup": CLEANUP_ALPINE_TEMPLATE,
         "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
     }
 
@@ -261,11 +236,15 @@ def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]
     """
     Generate a Dockerfile for the Debian image.
     """
+    cuda_debian_setup = None
+    if docker_options.cuda_version is not None:
+        cuda_debian_setup = """\
+                """
     return {
         "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
         "setup_distro_env": SETUP_DEBIAN_ENV_TEMPLATE,
         "cleanup": CLEANUP_DEBIAN_TEMPLATE,
-        "setup_cuda": generate_cuda_instructions(docker_options),
+        "setup_cuda": cuda_debian_setup or "",
     }
 
 
@@ -277,12 +256,17 @@ def debian_miniconda_template_context(
     """
     SETUP_UID_GID_MICROMAMBA_TEMPLATE = """\
             """
+
+    cuda_debian_setup = None
+    if docker_options.cuda_version is not None:
+        cuda_debian_setup = """\
+                """
     return {
         "setup_uid_gid": SETUP_UID_GID_MICROMAMBA_TEMPLATE,
         "setup_distro_env": SETUP_DEBIAN_ENV_TEMPLATE,
         "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
         "cleanup": CLEANUP_DEBIAN_TEMPLATE,
-        "setup_cuda": generate_cuda_instructions(docker_options),
+        "setup_cuda": cuda_debian_setup or "",
     }
 
 
@@ -320,7 +304,11 @@ TEMPLATE_MAP = {
 
 def generate_dockerfile(docker_options: DockerOptions) -> str:
     distro = docker_options.distro
+    cuda_version = docker_options.cuda_version
+    python_version = docker_options.python_version
+
     distro_spec = make_distro_cls(distro)
+    cuda_spec = make_cuda_cls(cuda_version)
 
     docker_dir = fs.path.combine(fs.path.dirname(__file__), "docker")
     j2_template = fs.path.combine(docker_dir, f"Dockerfile.j2")
@@ -332,23 +320,26 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
 
     if docker_options.base_image is None:
         if docker_options.distro == "ubi8":
-            python_version = docker_options.python_version.replace(".", "")
+            python_version = python_version.replace(".", "")
         else:
-            python_version = docker_options.python_version
+            python_version = python_version
         base_image = distro_spec.base_image.format(python_version=python_version)
     else:
         base_image = docker_options.base_image
         logger.warning(f"Make sure to have Python installed for {base_image}.")
 
     context_mapping: dict[str, TemplateFunc] = {  # type: ignore
-        k: ensure_components(v, conda="conda" in k) for k, v in TEMPLATE_MAP.items()
+        k: ensure_components(v, conda="conda" in k, cuda=cuda_version is not None)
+        for k, v in TEMPLATE_MAP.items()
     }
 
     template_context = {
         "base_image": base_image,
+        "user_defined_image": docker_options._user_defined_image,
         "bentoml_version": clean_bentoml_version(),  # ensure that we don't have a dirty version.
         "docker_options": bentoml_cattr.unstructure(docker_options),  # type: ignore
         "distro_spec": bentoml_cattr.unstructure(distro_spec),  # type: ignore
+        "cuda_spec": bentoml_cattr.unstructure(cuda_spec),  # type: ignore
         **DOCKERFILE_COMPONENTS,
         **context_mapping[distro](docker_options),
     }

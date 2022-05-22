@@ -101,6 +101,10 @@ class DockerOptions:
     # A user-provided custom docker image
     base_image: t.Optional[str] = None
 
+    @property
+    def _user_defined_image(self) -> bool:
+        return self.base_image is not None
+
     def __attrs_post_init__(self):
         if self.base_image is not None:
             if self.distro is not None:

@@ -2,7 +2,7 @@
 ---
 # https://gitlab.com/nvidia/container-images/cuda/-/blob/master/manifests/cuda.yaml#L740
 
-repository: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004
+repository: https://developer.download.nvidia.com/compute/cuda/repos
 
 architectures:
   - x86_64
@@ -39,6 +39,8 @@ components_x86_64:
     version: 11.6.124-1
   libnccl2:
     version: 2.12.10-1
+  libnccl2_dev:
+    version: 2.12.10-1
   cudnn8:
     version: 8.4.0.27-1
 
@@ -58,6 +60,8 @@ components_sbsa:
   nvtx:
     version: 11.6.124-1
   libnccl2:
+    version: 2.12.10-1
+  libnccl2_dev:
     version: 2.12.10-1
   cudnn8:
     version: 8.4.0.27-1

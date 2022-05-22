@@ -1,17 +1,17 @@
 import io
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from multipart.multipart import parse_options_header
-from starlette.datastructures import UploadFile
 from starlette.requests import Request
+from multipart.multipart import parse_options_header
 from starlette.responses import Response
+from starlette.datastructures import UploadFile
 
-from ...exceptions import BentoMLException
+from .base import IODescriptor
 from ..types import FileLike
 from ..utils.http import set_content_length
-from .base import IODescriptor
+from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 

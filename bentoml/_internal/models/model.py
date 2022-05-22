@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 from collections import UserDict
-from typing import overload
 
 import fs
 import attr
@@ -27,8 +26,8 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import MetadataType  # noqa # pylint: disable
 from ..types import MetadataDict
+from ..types import MetadataType  # noqa # pylint: disable
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator

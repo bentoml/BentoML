@@ -172,6 +172,7 @@ class KerasTensorflowV2Lexer(PythonLexer):
     name = "Keras (Tensorflow V2 backend)"
     aliases = ["keras_v2"]
 
+
 def setup(app):
     # Adding lexers for rendering different code version
     app.add_lexer("keras_v1", KerasTensorflowV1Lexer)

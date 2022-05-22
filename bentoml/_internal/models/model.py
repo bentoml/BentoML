@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 from collections import UserDict
-from typing import overload
 
 import fs
 import attr
@@ -65,22 +64,19 @@ else:
 
 
 class ModelOptions(ModelOptionsSuper):
-    def __init__(self, **kwargs):
-        super().__init__(kwargs)
-
     @classmethod
     def with_options(cls, **kwargs: t.Any) -> ModelOptions:
         return cls(**kwargs)
 
     @staticmethod
     def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return options.data
+        return dict(options)
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)
+    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)  # type: ignore
 )
-bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))
+bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore
 
 
 @attr.define(repr=False, eq=False, init=False)
@@ -540,7 +536,9 @@ class ModelInfo:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
     def parse_options(self, options_class: type[ModelOptions]) -> None:
-        object.__setattr__(self, "options", options_class(**self.options.data))
+        object.__setattr__(
+            self, "options", options_class.with_options(**self.options.data)
+        )
 
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:

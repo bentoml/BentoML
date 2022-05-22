@@ -7,7 +7,8 @@ import importlib
 import importlib.util
 from typing import TYPE_CHECKING
 
-import pydantic
+import attr
+import attrs
 
 import bentoml
 from bentoml import Tag
@@ -79,20 +80,27 @@ except ImportError:  # pragma: no cover
     )
 
 
+@attr.define
 class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
-    def __init__(self, **kwargs):
-        class _Schema(pydantic.BaseModel):
-            task: str
-            pipeline: bool = True
+    task: str = attr.field(
+        validator=[
+            attr.validators.instance_of(str),
+            lambda instance, attribute, value: transformers.pipelines.check_task(value),  # type: ignore
+        ]
+    )
+    pipeline: bool = attr.field(
+        default=True, validator=attr.validators.instance_of(bool)
+    )
 
-        try:
-            _Schema(**kwargs)
-        except pydantic.ValidationError:
-            raise BentoMLException(f"Model options {kwargs} is not valid.")
+    @classmethod
+    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
+        return cls(**kwargs)
 
-        super().__init__(**kwargs)
+    @staticmethod
+    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
+        return attrs.asdict(options)
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -101,7 +109,6 @@ def get(tag_like: str | Tag) -> Model:
         raise NotFound(
             f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
         )
-    model.info.parse_options(TransformersOptions)
     return model
 
 
@@ -136,13 +143,8 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    task = bento_model.info.options["task"]
-    try:
-        transformers.pipelines.check_task(task)  # type: ignore
-    except KeyError as e:
-        raise BentoMLException(f"{e}, as `{task}` is not recognized by transformers.")
-
-    return transformers.pipeline(task, bento_model.path, **kwargs)
+    bento_model.info.parse_options(TransformersOptions)
+    return transformers.pipeline(bento_model.info.options.task, bento_model.path, **kwargs)  # type: ignore
 
 
 def save_model(
@@ -179,9 +181,11 @@ def save_model(
 
         import bentoml
 
-        from transformers import pipeline
+        from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 
-        generator = pipeline(task="text-generation")
+        tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
+        model = AutoModelForCausalLM.from_pretrained("distilgpt2")
+        generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
         tag = bentoml.transformers.save_model("text-generation-pipeline", generator)
 
         # load the model back:
@@ -254,13 +258,6 @@ def get_runnable(
 
         def __init__(self):
             super().__init__()
-            task = bento_model.info.options["task"]
-            try:
-                transformers.pipelines.check_task(task)  # type: ignore
-            except KeyError as e:
-                raise BentoMLException(
-                    f"{e}, as `{task}` is not recognized by transformers."
-                )
 
             available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
             if available_gpus is not None and available_gpus != "":
@@ -278,8 +275,7 @@ def get_runnable(
             for method_name in bento_model.info.signatures:
                 self.predict_fns[method_name] = getattr(self.pipeline, method_name)
 
-    for method_name, options in bento_model.info.signatures.items():
-
+    def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(self: TransformersRunnable, *args: t.Any, **kwargs: t.Any) -> t.Any:
             return getattr(self.pipeline, method_name)(*args, **kwargs)
 
@@ -291,5 +287,8 @@ def get_runnable(
             input_spec=options.input_spec,
             output_spec=options.output_spec,
         )
+
+    for method_name, options in bento_model.info.signatures.items():
+        add_runnable_method(method_name, options)
 
     return TransformersRunnable

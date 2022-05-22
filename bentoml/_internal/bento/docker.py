@@ -138,10 +138,6 @@ def make_cuda_cls(value: str | None) -> t.Dict[str, CUDA10x | CUDA11x] | None:
     try:
         with open(cuda_file, "r", encoding="utf-8") as f:
             cuda_spec = yaml.safe_load(f.read())
-    except FileNotFoundError as fs_exc:
-        raise BentoMLException(
-            f"{value} is defined in DOCKER_SUPPORTED_CUDA_VERSION but {cuda_file} is not found."
-        ) from fs_exc
     except yaml.YAMLError as exc:
         logger.error(exc)
         raise

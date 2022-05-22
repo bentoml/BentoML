@@ -1,3 +1,4 @@
+import os
 import re
 import typing as t
 import logging
@@ -10,6 +11,7 @@ import fs.copy
 from fs.base import FS
 from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 
+from ._gen import generate_dockerfile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
@@ -22,7 +24,6 @@ from .docker import DOCKER_SUPPORTED_CONDA_DISTROS
 from .docker import DOCKER_SUPPORTED_PYTHON_VERSION
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from ._gen import generate_dockerfile
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 
 logger = logging.getLogger(__name__)
@@ -160,6 +161,14 @@ class DockerOptions:
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(generate_dockerfile(self))
+
+        # copy over init.sh for bentoctl
+        # TODO:
+        copy_file_to_fs_folder(
+            fs.path.join(os.path.dirname(__file__), "docker", "entrypoint.sh"),
+            bento_fs,
+            docker_folder,
+        )
 
         if self.setup_script:
             try:

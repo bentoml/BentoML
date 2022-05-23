@@ -148,7 +148,7 @@ class ServiceTraceContext:
 
     @property
     def trace_id(self) -> t.Optional[int]:
-        from opentelemetry import trace  # type: ignore
+        from opentelemetry import trace
 
         span = trace.get_current_span()
         if span is None:

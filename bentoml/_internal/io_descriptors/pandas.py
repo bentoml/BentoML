@@ -471,7 +471,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         )
 
 
-class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
+class PandasSeries(IODescriptor["ext.PdSeries"]):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -600,7 +600,7 @@ class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
 
     def input_type(
         self,
-    ) -> LazyType["ext.PdSeries[t.Any]"]:
+    ) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
@@ -614,7 +614,7 @@ class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
         """Returns OpenAPI schema for outgoing responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> "ext.PdSeries[t.Any]":
+    async def from_http_request(self, request: Request) -> ext.PdSeries:
         """
         Process incoming requests and convert incoming
          objects to `pd.Series`
@@ -672,7 +672,7 @@ class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if not LazyType["ext.PdSeries[t.Any]"](pd.Series).isinstance(obj):
+        if not LazyType["ext.PdSeries"](pd.Series).isinstance(obj):
             raise InvalidArgument(
                 f"return object is not of type `pd.Series`, got type {type(obj)} instead"
             )

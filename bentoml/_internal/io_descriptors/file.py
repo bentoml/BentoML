@@ -85,9 +85,9 @@ class File(IODescriptor[FileType]):
 
     _mime_type: str
 
-    def __new__(
+    def __new__(  # pylint: disable=arguments-differ # returning subclass from new
         cls, kind: FileKind = "binaryio", mime_type: str | None = None
-    ) -> "File":
+    ) -> File:
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
 
         if kind == "binaryio":

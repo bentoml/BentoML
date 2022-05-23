@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ..types import FileLike
-
 if TYPE_CHECKING:
     from types import UnionType
 

@@ -40,15 +40,15 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 
-        if LazyType[ext.NpNDArray]("numpy.ndarray").isinstance(o):
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(o):
             return o.tolist()
-        if LazyType[ext.NpGeneric]("numpy.generic").isinstance(o):
+        if LazyType["ext.NpGeneric"]("numpy.generic").isinstance(o):
             return o.item()
-        if LazyType[ext.PdDataFrame]("pandas.DataFrame").isinstance(o):
+        if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(o):
             return o.to_dict()  # type: ignore
-        if LazyType[ext.PdSeries[t.Any]]("pandas.Series").isinstance(o):
+        if LazyType["ext.PdSeries"]("pandas.Series").isinstance(o):
             return o.to_dict()  # type: ignore
-        if LazyType[pydantic.BaseModel]("pydantic.BaseModel").isinstance(o):
+        if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(o):
             obj_dict = o.dict()
             if "__root__" in obj_dict:
                 obj_dict = obj_dict.get("__root__")

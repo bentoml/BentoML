@@ -189,7 +189,7 @@ class Image(IODescriptor[ImageType]):
     async def to_http_response(
         self, obj: ImageType, ctx: Context | None = None
     ) -> Response:
-        if LazyType[ext.NpNDArray]("numpy.ndarray").isinstance(obj):
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
         elif LazyType[PIL.Image.Image]("PIL.Image.Image").isinstance(obj):
             image = obj

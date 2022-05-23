@@ -128,10 +128,8 @@ class Model(StoreItem):
     def custom_objects(self) -> t.Dict[str, t.Any]:
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
-                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "r") as cofile:
-                    self._custom_objects: t.Optional[
-                        t.Dict[str, t.Any]
-                    ] = cloudpickle.load(  # type: ignore (incomplete cloudpickle types)
+                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
+                    self._custom_objects: dict[str, t.Any] | None = cloudpickle.load(
                         cofile
                     )
                     if not isinstance(self._custom_objects, dict):

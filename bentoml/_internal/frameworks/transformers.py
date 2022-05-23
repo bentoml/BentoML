@@ -8,7 +8,6 @@ import importlib.util
 from typing import TYPE_CHECKING
 
 import attr
-import attrs
 
 import bentoml
 from bentoml import Tag
@@ -100,7 +99,7 @@ class TransformersOptions(ModelOptions):
 
     @staticmethod
     def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return attrs.asdict(options)
+        return attr.asdict(options)
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -202,7 +201,8 @@ def save_model(
             "extractors, construct a pipeline with the model, tokenizer, config, or feature "
             "extractor specified as arguments, then call save_model with the pipeline. "
             "Refer to https://huggingface.co/docs/transformers/main_classes/pipelines "
-            "for more information on pipelines."
+            "for more information on pipelines. If transformers doesn't provide a task you "
+            "need, refers to the custom pipeline section to create your own pipelines."
             """
             ```python
             import bentoml

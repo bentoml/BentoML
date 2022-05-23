@@ -186,6 +186,8 @@ ENV PATH /usr/local/bin:$PATH
 RUN --mount=type=cache,from=cached,target=/var/cache/apk \\
     xx-apk add --update bash gcc libc-dev shadow musl-dev build-base \\
     linux-headers g++
+
+ENV ENV /root/.bashrc
 """
 
 CLEANUP_ALPINE_TEMPLATE = """\

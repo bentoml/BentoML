@@ -372,47 +372,42 @@ class ModelSignature:
         batch_dim:
             The dimension(s) that contain multiple data when passing to this prediction method.
 
-            For example, if you have two inputs you want to run prediction on, ``[1, 2]`` and
-            ``[3, 4]``, if the array you would pass to the predict method would be
-            ``[[1, 2], [3, 4]]``, then the batch dimension would be ``0``. If the array you would
-            pass to the predict method would be ``[[1, 3], [2, 4]]``, then the batch dimension would
-            be ``1``.
+            For example, if you have two inputs you want to run prediction on, ``[1, 2]`` and ``[3,
+            4]``, if the array you would pass to the predict method would be ``[[1, 2], [3, 4]]``,
+            then the batch dimension would be ``0``. If the array you would pass to the predict
+            method would be ``[[1, 3], [2, 4]]``, then the batch dimension would be ``1``.
 
             If there are multiple arguments to the predict method and there is only one batch
             dimension supplied, all arguments will use that batch dimension.
 
-            Example:
-            .. code-block:: python
-                # Save two models with `predict` method that supports taking input batches on the dimension 0 and the other on dimension 1:
-                bentoml.pytorch.save_model("demo0", model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
-                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable": True, "batch_dim": 1}})
+            Example: .. code-block:: python
+                # Save two models with `predict` method that supports taking input batches on the
+                dimension 0 and the other on dimension 1: bentoml.pytorch.save_model("demo0",
+                model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable":
+                True, "batch_dim": 1}})
 
                 # if the following calls are batched, the input to the actual predict method on the
-                # model.predict method would be [[1, 2], [3, 4], [5, 6]]
-                runner0 = bentoml.pytorch.get("demo0:latest").to_runner()
-                runner0.init_local()
-                runner0.predict.run(np.array([[1, 2], [3, 4]]))
-                runner0.predict.run(np.array([[5, 6]]))
+                # model.predict method would be [[1, 2], [3, 4], [5, 6]] runner0 =
+                bentoml.pytorch.get("demo0:latest").to_runner() runner0.init_local()
+                runner0.predict.run(np.array([[1, 2], [3, 4]])) runner0.predict.run(np.array([[5,
+                6]]))
 
                 # if the following calls are batched, the input to the actual predict method on the
-                # model.predict would be [[1, 2, 5], [3, 4, 6]]
-                runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
-                runner1.init_local()
-                runner1.predict.run(np.array([[1, 2], [3, 4]]))
-                runner1.predict.run(np.array([[5], [6]]))
+                # model.predict would be [[1, 2, 5], [3, 4, 6]] runner1 =
+                bentoml.pytorch.get("demo1:latest").to_runner() runner1.init_local()
+                runner1.predict.run(np.array([[1, 2], [3, 4]])) runner1.predict.run(np.array([[5],
+                [6]]))
 
             Expert API:
 
             The batch dimension can also be a tuple of (input batch dimension, output batch
-            dimension). In this case, the input batch dimension can be an array which contains the
-            batch dimension for each argument. For example, if the predict method takes three
-            arguments ``predict(x, y, z)``, the batch dimension could be ``([0, 1, 2], 0)``, meaning
-            ``x`` would be batched along the zeroth dimension, ``y`` along the first, ``z`` along
-            the second, and the output along the zeroth axis.
+            dimension). For example, if the predict method should have its input batched along the
+            first axis and its output batched along the zeroth axis, ``batch_dim`` can be set to
+            ``(1, 0)``.
 
-            Partial argument arrays are not supported; if the input takes n arguments, the batch
-            dimension array must have length n.
         input_spec: Reserved for future use.
+
         output_spec: Reserved for future use.
     """
 

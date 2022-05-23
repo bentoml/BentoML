@@ -27,7 +27,6 @@ from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
 from ..types import MetadataDict
-from ..types import MetadataType  # noqa # pylint: disable
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
@@ -36,16 +35,17 @@ from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
-from ..runner.runnable import BatchDimType
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
 
-    ModelSignatureDict: t.TypeAlias = dict[
-        str, bool | BatchDimType | AnyType | tuple[AnyType] | None
-    ]
+    class ModelSignatureDict(t.TypedDict):
+        batch_dim: tuple[int, int]
+        batchable: bool
+        input_spec: tuple[AnyType] | AnyType | None
+        output_spec: AnyType | None
 
 
 T = t.TypeVar("T")
@@ -421,7 +421,7 @@ class ModelSignature:
     """
 
     batchable: bool = False
-    batch_dim: BatchDimType = 0
+    batch_dim: t.Tuple[int, int] = (0, 0)
     # TODO: define input/output spec struct
     input_spec: t.Any = None
     output_spec: t.Any = None

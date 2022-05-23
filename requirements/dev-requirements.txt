@@ -13,3 +13,4 @@ types-filelock
 types-PyYAML
 types-setuptools
 wheel
+backports.cached_property

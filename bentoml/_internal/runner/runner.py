@@ -90,7 +90,6 @@ class RunnerMethod:
     name: str
     max_batch_size: int
     max_latency_ms: int
-    args: dict[str, int]
 
     @cached_property
     def runnable_method_config(self) -> RunnableMethodConfig:
@@ -175,7 +174,7 @@ class Runner:
             | Resource.from_system()
         )
 
-        for method_name, config in runnable_class.get_method_configs().items():
+        for method_name, _ in runnable_class.get_method_configs().items():
             method_max_batch_size = method_configs.get(method_name, {}).get(
                 "max_batch_size"
             )
@@ -186,7 +185,6 @@ class Runner:
             runner_method_map[method_name] = RunnerMethod(
                 runner=self,
                 name=method_name,
-                args=method_name,
                 max_batch_size=first_not_none(
                     method_max_batch_size,
                     max_batch_size,

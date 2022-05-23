@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import functools
 from typing import TYPE_CHECKING
 
 import bentoml
@@ -96,7 +95,7 @@ def save_model(
             Name for given model instance. This should pass Python identifier check.
         model (:code:`Union[BaseEstimator, Pipeline]`):
             Instance of model to be saved.
-        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
+        signatures (:code: `Dict[str, ModelSignatureDict]`)
             Methods to expose for running inference on the target model. Signatures are
              used for creating Runner instances when serving model with bentoml.Service
         labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):

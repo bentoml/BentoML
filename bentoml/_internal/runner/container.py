@@ -14,7 +14,6 @@ from ..configuration.containers import DeploymentContainer
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
-BatchIndicesType = t.List[int]
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
@@ -49,7 +48,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @abc.abstractmethod
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int
-    ) -> t.Tuple[BatchType, BatchIndicesType]:
+    ) -> t.Tuple[BatchType, list[int]]:
         ...
 
     @classmethod
@@ -72,7 +71,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int,
-    ) -> tuple[BatchType, BatchIndicesType]:
+    ) -> tuple[BatchType, list[int]]:
         ...
 
 
@@ -87,7 +86,7 @@ class NdarrayContainer(
         cls,
         batches: t.Sequence["ext.NpNDArray"],
         batch_dim: int = 0,
-    ) -> t.Tuple["ext.NpNDArray", BatchIndicesType]:
+    ) -> t.Tuple["ext.NpNDArray", list[int]]:
         import numpy as np
 
         # numpy.concatenate may consume lots of memory, need optimization later
@@ -152,7 +151,7 @@ class NdarrayContainer(
         batch: "ext.NpNDArray",
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> t.List[Payload]:
 
         batches = cls.batch_to_batches(batch, indices, batch_dim)
@@ -171,8 +170,8 @@ class NdarrayContainer(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
-    ) -> t.Tuple["ext.NpNDArray", BatchIndicesType]:
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+    ) -> t.Tuple["ext.NpNDArray", list[int]]:
         batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 
@@ -185,7 +184,7 @@ class PandasDataFrameContainer(
         cls,
         batches: t.Sequence["ext.PdDataFrame"],
         batch_dim: int = 0,
-    ) -> t.Tuple["ext.PdDataFrame", BatchIndicesType]:
+    ) -> t.Tuple["ext.PdDataFrame", list[int]]:
         import pandas as pd  # type: ignore[import]
 
         assert (
@@ -254,7 +253,7 @@ class PandasDataFrameContainer(
         batch: "ext.PdDataFrame",
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> t.List[Payload]:
 
         batches = cls.batch_to_batches(batch, indices, batch_dim)
@@ -273,8 +272,8 @@ class PandasDataFrameContainer(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" = Provide[DeploymentContainer.plasma_db],
-    ) -> t.Tuple["ext.PdDataFrame", BatchIndicesType]:
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+    ) -> t.Tuple["ext.PdDataFrame", list[int]]:
         batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 
@@ -283,7 +282,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @classmethod
     def batches_to_batch(
         cls, batches: t.Sequence[t.List[t.Any]], batch_dim: int = 0
-    ) -> t.Tuple[t.List[t.Any], BatchIndicesType]:
+    ) -> t.Tuple[t.List[t.Any], list[int]]:
         assert (
             batch_dim == 0
         ), "Default Runner DataContainer does not support batch_dim other than 0"
@@ -339,7 +338,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-    ) -> t.Tuple[t.List[t.Any], BatchIndicesType]:
+    ) -> t.Tuple[t.List[t.Any], list[int]]:
         batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 
@@ -431,7 +430,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int = 0
-    ) -> tuple[BatchType, BatchIndicesType]:
+    ) -> tuple[BatchType, list[int]]:
         container_cls = DataContainerRegistry.find_by_batch_type(type(batches[0]))
         return container_cls.batches_to_batch(batches, batch_dim)
 
@@ -455,6 +454,6 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def from_batch_payloads(
         cls, payloads: t.Sequence[Payload], batch_dim: int = 0
-    ) -> tuple[t.Any, BatchIndicesType]:
+    ) -> tuple[t.Any, list[int]]:
         container_cls = DataContainerRegistry.find_by_name(payloads[0].container)
         return container_cls.from_batch_payloads(payloads, batch_dim)

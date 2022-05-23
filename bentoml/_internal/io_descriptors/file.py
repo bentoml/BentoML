@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import typing as t
 import logging
@@ -10,18 +12,19 @@ from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
 from ..types import FileLike
-from ..utils.http import set_content_length
+from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    FileKind = t.Literal["binaryio", "textio"]
+    from ..context import InferenceApiContext as Context
 
-    FileType = t.Union[io.IOBase, t.BinaryIO, FileLike[bytes]]
+    FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
+FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
-class File(IODescriptor["FileType"]):
+class File(IODescriptor[FileType]):
     """
     :code:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -83,7 +86,7 @@ class File(IODescriptor["FileType"]):
     _mime_type: str
 
     def __new__(
-        cls, kind: "FileKind" = "binaryio", mime_type: t.Optional[str] = None
+        cls, kind: FileKind = "binaryio", mime_type: str | None = None
     ) -> "File":
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
 
@@ -96,32 +99,39 @@ class File(IODescriptor["FileType"]):
         return res
 
     def input_type(self) -> t.Type[t.Any]:
-        return FileLike
+        return FileLike[bytes]
 
-    def openapi_schema_type(self) -> t.Dict[str, str]:
+    def openapi_schema_type(self) -> dict[str, str]:
         return {"type": "string", "format": "binary"}
 
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_request_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_responses_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def init_http_response(self) -> Response:
-        return Response(None, media_type=self._mime_type)
-
-    async def finalize_http_response(
-        self, response: Response, obj: t.Union[FileLike, bytes]
+    async def to_http_response(
+        self,
+        obj: FileType,
+        ctx: Context | None = None,
     ):
         if isinstance(obj, bytes):
             body = obj
         else:
             body = obj.read()
 
-        response.body = body
-        set_content_length(response)
+        if ctx is not None:
+            res = Response(
+                body,
+                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
+            set_cookies(res, ctx.response.cookies)
+        else:
+            res = Response(body)
+        return res
 
 
 class BytesIOFile(File):
@@ -133,9 +143,9 @@ class BytesIOFile(File):
             val: t.Union[str, UploadFile]
             for val in form.values():  # type: ignore
                 if isinstance(val, UploadFile):
-                    found_mimes.append(val.content_type)  # type: ignore
-                    if val.content_type == self._mime_type:
-                        res = FileLike[bytes](val.file, val.filename)
+                    found_mimes.append(val.content_type)  # type: ignore (bad starlette types)
+                    if val.content_type == self._mime_type:  # type: ignore (bad starlette types)
+                        res = FileLike[bytes](val.file, val.filename)  # type: ignore (bad starlette types)
                         break
             else:
                 if len(found_mimes) == 0:

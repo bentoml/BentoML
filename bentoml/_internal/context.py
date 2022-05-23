@@ -1,15 +1,22 @@
+from __future__ import annotations
+
 import typing as t
 import contextvars
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+import attr
+import starlette.datastructures
+
+from .utils.http import Cookie
+
 if TYPE_CHECKING:
     import starlette.requests
     import starlette.responses
 
 
-class Metadata(ABC):
+class Metadata(t.Mapping[str, str], ABC):
     @abstractmethod
     def __setitem__(self, key: str, value: str) -> None:
         """
@@ -24,22 +31,15 @@ class Metadata(ABC):
         """
 
     @abstractmethod
-    def __ior__(self, other: t.Mapping[t.Any, t.Any]) -> "Metadata":
+    def __ior__(self, other: t.Mapping[t.Any, t.Any]) -> Metadata:
         """
         Updates this metadata with the contents of ``other``
         """
 
     @abstractmethod
-    def __or__(self, other: t.Mapping[t.Any, t.Any]) -> "Metadata":
+    def __or__(self, other: t.Mapping[t.Any, t.Any]) -> Metadata:
         """
         Returns a new metadata object with the contents of this metadata object updated with the contents of ``other``
-        """
-
-    @abstractmethod
-    def setdefault(self, key: str, value: str) -> str:
-        """
-        If the header ``key`` does not exist, then set it to ``value``.
-        Returns the header value.
         """
 
     @abstractmethod
@@ -52,12 +52,26 @@ class Metadata(ABC):
         """
 
     @abstractmethod
+    def setdefault(self, key: str, value: str) -> str:
+        """
+        If the header ``key`` does not exist, then set it to ``value``.
+        Returns the header value.
+        """
+
+    @abstractmethod
     def append(self, key: str, value: str) -> None:
         """
         Append a header, preserving any duplicate entries.
         """
 
+    @abstractmethod
+    def mutablecopy(self) -> Metadata:
+        """
+        Returns a copy of this metadata object.
+        """
 
+
+@attr.define
 class InferenceApiContext:
     request: "RequestContext"
     response: "ResponseContext"
@@ -67,14 +81,13 @@ class InferenceApiContext:
         self.response = response
 
     @staticmethod
-    def from_http(
-        request: "starlette.requests.Request", response: "starlette.responses.Response"
-    ) -> "InferenceApiContext":
+    def from_http(request: "starlette.requests.Request") -> "InferenceApiContext":
         request_ctx = InferenceApiContext.RequestContext.from_http(request)
-        response_ctx = InferenceApiContext.ResponseContext.from_http(response)
+        response_ctx = InferenceApiContext.ResponseContext()
 
         return InferenceApiContext(request_ctx, response_ctx)
 
+    @attr.define
     class RequestContext:
         metadata: Metadata
         headers: Metadata
@@ -89,67 +102,41 @@ class InferenceApiContext:
         ) -> "InferenceApiContext.RequestContext":
             return InferenceApiContext.RequestContext(request.headers)  # type: ignore (coercing Starlette headers to Metadata)
 
+    @attr.define
     class ResponseContext:
-        _raw_response: "starlette.responses.Response"
         metadata: Metadata
+        cookies: list[Cookie]
         headers: Metadata
-        set_cookie: t.Callable[
-            [
-                str,
-                str,
-                int,
-                int,
-                str,
-                str,
-                bool,
-                bool,
-            ],
-            None,
-        ]
-        delete_cookie: t.Callable[[str, str, str], None]
+        status_code: int = 200
 
-        def __init__(
+        def __init__(self):
+            self.metadata = starlette.datastructures.MutableHeaders()  # type: ignore (coercing Starlette headers to Metadata)
+            self.headers = self.metadata  # type: ignore (coercing Starlette headers to Metadata)
+
+        def set_cookie(
             self,
-            raw: "starlette.responses.Response",
-            metadata: Metadata,
-            set_cookie: t.Callable[
-                [
-                    str,
-                    str,
-                    int,
-                    int,
-                    str,
-                    str,
-                    bool,
-                    bool,
-                ],
-                None,
-            ],
-            delete_cookie: t.Callable[[str, str, str], None],
+            key: str,
+            value: str,
+            max_age: int | None = None,
+            expires: int | None = None,
+            path: str = "/",
+            domain: str | None = None,
+            secure: bool = False,
+            httponly: bool = False,
+            samesite: str = "lax",
         ):
-            self._raw_response = raw
-            self.metadata = metadata
-            self.headers = metadata
-            self.set_cookie = set_cookie
-            self.delete_cookie = delete_cookie
-
-        @property
-        def status_code(self) -> int:
-            return self._raw_response.status_code
-
-        @status_code.setter
-        def status_code(self, code: int) -> None:
-            self._raw_response.status_code = code
-
-        @staticmethod
-        def from_http(
-            response: "starlette.responses.Response",
-        ) -> "InferenceApiContext.ResponseContext":
-            return InferenceApiContext.ResponseContext(
-                response,
-                response.headers,  # type: ignore (coercing starlette Headers to Metadata)
-                response.set_cookie,
-                response.delete_cookie,
+            self.cookies.append(
+                Cookie(
+                    key,
+                    value,
+                    max_age,
+                    expires,
+                    path,
+                    domain,
+                    secure,
+                    httponly,
+                    samesite,
+                )
             )
 
 

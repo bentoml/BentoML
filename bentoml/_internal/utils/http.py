@@ -1,36 +1,36 @@
-import typing as t
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
+import attr
 
 if TYPE_CHECKING:
     import starlette.responses
 
 
-def set_content_length(response: "starlette.responses.Response"):
-    body = getattr(response, "body", None)
-    if body is not None and not (
-        response.status_code < 200
-        or response.status_code in (204, 304)  # type:ignore (starlette)
-    ):
-        found_indexes: t.List[int] = []
-        update = True
-        for idx, (item_key, item_value) in enumerate(response.raw_headers):
-            if item_key == b"content-length":
-                if item_value == b"0":
-                    found_indexes.append(idx)
-                else:
-                    update = False
+@attr.define
+class Cookie:
+    key: str
+    value: str
+    max_age: int | None
+    expires: int | None
+    path: str
+    domain: str | None
+    secure: bool
+    httponly: bool
+    samesite: str
 
-        if update:
-            for idx in reversed(found_indexes[1:]):
-                del response.raw_headers[idx]
 
-            new_context_len = str(len(body)).encode("latin-1")
-
-            if found_indexes:
-                idx = found_indexes[0]
-                response.raw_headers[idx] = (b"content-length", new_context_len)
-            else:
-                response.raw_headers.append((b"content-length", new_context_len))
-        else:
-            for idx in reversed(found_indexes):
-                del response.raw_headers[idx]
+def set_cookies(response: starlette.responses.Response, cookies: list[Cookie]):
+    for cookie in cookies:
+        response.set_cookie(
+            cookie.key,
+            cookie.value,
+            max_age=cookie.max_age,  # type: ignore (bad starlette types)
+            expires=cookie.expires,  # type: ignore (bad starlette types)
+            path=cookie.path,
+            domain=cookie.domain,  # type: ignore (bad starlette types)
+            secure=cookie.secure,
+            httponly=cookie.httponly,
+            samesite=cookie.samesite,
+        )

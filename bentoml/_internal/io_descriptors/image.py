@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import typing as t
 from typing import TYPE_CHECKING
@@ -7,11 +9,10 @@ from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from .base import ImageType
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
-from ..utils.http import set_content_length
+from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
@@ -21,7 +22,8 @@ if TYPE_CHECKING:
 
     import PIL.Image
 
-    from .. import external_typing as ext  # noqa
+    from .. import external_typing as ext
+    from ..context import InferenceApiContext as Context
 
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
@@ -37,6 +39,10 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
+# NOTES: we will keep type in quotation to avoid backward compatibility
+#  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
+#  that enable a new way to type hint an ndarray.
+ImageType: t.TypeAlias = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 
 DEFAULT_PIL_MODE = "RGB"
 
@@ -121,7 +127,7 @@ class Image(IODescriptor[ImageType]):
 
     def __init__(
         self,
-        pilmode: t.Optional["_Mode"] = DEFAULT_PIL_MODE,
+        pilmode: _Mode | None = DEFAULT_PIL_MODE,
         mime_type: str = "image/jpeg",
     ):
         try:
@@ -145,20 +151,20 @@ class Image(IODescriptor[ImageType]):
             )
 
         self._mime_type = mime_type.lower()
-        self._pilmode: t.Optional["_Mode"] = pilmode
+        self._pilmode: _Mode | None = pilmode
         self._format = self.MIME_EXT_MAPPING[mime_type]
 
-    def input_type(self) -> "UnionType":
+    def input_type(self) -> UnionType:
         return ImageType
 
-    def openapi_schema_type(self) -> t.Dict[str, str]:
+    def openapi_schema_type(self) -> dict[str, str]:
         return {"type": "string", "format": "binary"}
 
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_request_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_responses_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
@@ -180,10 +186,12 @@ class Image(IODescriptor[ImageType]):
     async def init_http_response(self) -> Response:
         return Response(None, media_type=self._mime_type)
 
-    async def finalize_http_response(self, response: Response, obj: ImageType):
-        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
+    async def to_http_response(
+        self, obj: ImageType, ctx: Context | None = None
+    ) -> Response:
+        if LazyType[ext.NpNDArray]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
-        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
+        elif LazyType[PIL.Image.Image]("PIL.Image.Image").isinstance(obj):
             image = obj
         else:
             raise InternalServerError(
@@ -204,6 +212,20 @@ class Image(IODescriptor[ImageType]):
         else:
             content_disposition = f'attachment; filename="{filename}"'
 
-        response.headers["content-disposition"] = content_disposition
-        response.body = ret.getvalue()
-        set_content_length(response)
+        if ctx is not None:
+            if "content-disposition" not in ctx.response.headers:
+                ctx.response.headers["content-disposition"] = content_disposition
+            res = Response(
+                ret.getvalue(),
+                media_type=self._mime_type,
+                headers=ctx.response.headers,  # type: ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
+            set_cookies(res, ctx.response.cookies)
+            return res
+        else:
+            return Response(
+                ret.getvalue(),
+                media_type=self._mime_type,
+                headers={"content-disposition": content_disposition},
+            )

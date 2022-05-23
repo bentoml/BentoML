@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import typing as t
 import logging
@@ -12,7 +14,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ..types import LazyType
-from ..utils.http import set_content_length
+from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import MissingDependencyException
@@ -22,6 +24,7 @@ if TYPE_CHECKING:
     import pandas as pd  # type: ignore[import]
 
     from .. import external_typing as ext
+    from ..context import InferenceApiContext as Context
 
 else:
     pd = LazyLoader(
@@ -64,7 +67,7 @@ def _infer_type(item: str) -> str:  # pragma: no cover
 
 
 def _schema_type(
-    dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]]
+    dtype: bool | t.Dict[str, t.Any] | None
 ) -> t.Dict[str, t.Any]:  # pragma: no cover
     if isinstance(dtype, dict):
         return {
@@ -241,14 +244,14 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
     def __init__(
         self,
-        orient: "ext.DataFrameOrient" = "records",
+        orient: ext.DataFrameOrient = "records",
         apply_column_names: bool = False,
-        columns: t.Optional[t.List[str]] = None,
-        dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
+        columns: list[str] | None = None,
+        dtype: bool | dict[str, t.Any] | None = None,
         enforce_dtype: bool = False,
-        shape: t.Optional[t.Tuple[int, ...]] = None,
+        shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
-        default_format: "t.Literal['json', 'parquet', 'csv']" = "json",
+        default_format: t.Literal["json", "parquet", "csv"] = "json",
     ):
         self._orient = orient
         self._columns = columns
@@ -262,21 +265,21 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
     def input_type(
         self,
-    ) -> LazyType["ext.PdDataFrame"]:
+    ) -> LazyType[ext.PdDataFrame]:
         return LazyType("pandas", "DataFrame")
 
-    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+    def openapi_schema_type(self) -> dict[str, t.Any]:
         return _schema_type(self._dtype)
 
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_request_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
         return {self._default_format.mime_type: {"schema": self.openapi_schema_type()}}
 
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_responses_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
         return {self._default_format.mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> "ext.PdDataFrame":
+    async def from_http_request(self, request: Request) -> ext.PdDataFrame:
         """
         Process incoming requests and convert incoming
         objects to `pd.DataFrame`
@@ -308,7 +311,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         if serialization_format is SerializationFormat.JSON:
             res = pd.read_json(  # type: ignore[arg-type]
                 io.BytesIO(obj),
-                dtype=self._dtype,  # type: ignore[arg-type]
+                dtype=self._dtype,
                 orient=self._orient,
             )
         elif serialization_format is SerializationFormat.PARQUET:
@@ -317,7 +320,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 engine=get_parquet_engine(),
             )
         elif serialization_format is SerializationFormat.CSV:
-            res = pd.read_csv(  # type: ignore[arg-type]
+            res: ext.PdDataFrame = pd.read_csv(  # type: ignore[arg-type]
                 io.BytesIO(obj),
                 dtype=self._dtype,  # type: ignore[arg-type]
             )
@@ -347,19 +350,14 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             else:
                 assert all(
                     left == right
-                    for left, right in zip(self._shape, res.shape)
+                    for left, right in zip(self._shape, res.shape)  # type: ignore (shape type)
                     if left != -1 and right != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def init_http_response(self) -> Response:
-        # For the response it doesn't make sense to enforce the same serialization format as specified
-        # by the request's headers['content-type']. Instead we simply use the _default_format.
-        serialization_format = self._default_format
-
-        return Response(None, media_type=serialization_format.mime_type)
-
-    async def finalize_http_response(self, response: Response, obj: "pd.DataFrame"):
+    async def to_http_response(
+        self, obj: ext.PdDataFrame, ctx: Context | None = None
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -382,16 +380,25 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         if serialization_format is SerializationFormat.JSON:
             resp = obj.to_json(orient=self._orient)  # type: ignore[arg-type]
         elif serialization_format is SerializationFormat.PARQUET:
-            resp = obj.to_parquet(engine=get_parquet_engine())
+            resp = obj.to_parquet(engine=get_parquet_engine())  # type: ignore
         elif serialization_format is SerializationFormat.CSV:
-            resp = obj.to_csv()
+            resp = obj.to_csv()  # type: ignore
         else:
             raise InvalidArgument(
                 f"Unknown serialization format ({serialization_format})."
             )
 
-        response.body = response.render(resp)
-        set_content_length(response)
+        if ctx is not None:
+            res = Response(
+                resp,
+                media_type=serialization_format.mime_type,
+                headers=ctx.response.headers,  # type:ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
+            set_cookies(res, ctx.response.cookies)
+            return res
+        else:
+            return Response(resp, media_type=serialization_format.mime_type)
 
     @classmethod
     def from_sample(
@@ -627,8 +634,8 @@ class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
                 )
 
         # TODO(jiang): check dtypes when enforce_dtype is set
-        res = pd.read_json(  # type: ignore[arg-type]
-            obj,
+        res: ext.PdDataFrame = pd.read_json(  # type: ignore[arg-type]
+            obj,  # type: ignore[arg-type]
             typ="series",
             orient=self._orient,
             dtype=self._dtype,  # type: ignore[arg-type]
@@ -652,9 +659,9 @@ class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
     async def init_http_response(self) -> Response:
         return Response(None, media_type=MIME_TYPE_JSON)
 
-    async def finalize_http_response(
-        self, response: Response, obj: t.Union[t.Any, "ext.PdSeries[t.Any]"]
-    ):
+    async def to_http_response(
+        self, obj: t.Any, ctx: Context | None = None
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -669,5 +676,18 @@ class PandasSeries(IODescriptor["ext.PdSeries[t.Any]"]):
             raise InvalidArgument(
                 f"return object is not of type `pd.Series`, got type {type(obj)} instead"
             )
-        response.body = response.render(obj.to_json(orient=self._orient))  # type: ignore[arg-type]
-        set_content_length(response)
+
+        if ctx is not None:
+            res = Response(
+                obj.to_json(orient=self._orient),  # type: ignore[arg-type]
+                media_type=MIME_TYPE_JSON,
+                headers=ctx.response.headers,  # type: ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
+            set_cookies(res, ctx.response.cookies)
+            return res
+        else:
+            return Response(
+                obj.to_json(orient=self._orient),  # type: ignore[arg-type]
+                media_type=MIME_TYPE_JSON,
+            )

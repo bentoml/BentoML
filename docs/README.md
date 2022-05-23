@@ -1,7 +1,21 @@
 # BentoML Documentation
 
-This directory contains the sphinx source text for BentoML docs, visit
+## A guide for docs contributors
+
+The `docs` directory contains the sphinx source text for BentoML docs, visit
 http://docs.bentoml.org/ to read the full documentation.
+
+This guide is made for anyone who's interested in running BentoML documentation locally,
+making changes to it and make contributions. BentoML is made by the thriving community
+behind it, and you're always welcome to make contributions to the project and the 
+documentation. 
+
+Before starting to make a contribution to the docs, make sure to check the 
+[issues page](https://github.com/bentoml/BentoML/issues) and the `#bentoml-contributors` 
+channel in the [community slack](https://l.linklyhq.com/l/ktOX), to make sure no one 
+else is working on the same thing and to get feedback from the community for larger 
+proposals.
+
 
 ---
 
@@ -168,7 +182,7 @@ following syntax:
 :class:`~bentoml.Service`
 ```
 
-Similarly for functions and method:
+Similarly, for functions and method:
 
 ```rst
 :func:`~bentoml.models.list`

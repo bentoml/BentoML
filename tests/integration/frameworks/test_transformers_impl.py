@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 import requests
+import transformers
 import transformers.pipelines
 from transformers.trainer_utils import set_seed
+from PIL import Image
 
 import bentoml
 
@@ -12,96 +14,47 @@ if TYPE_CHECKING:
     from bentoml._internal.external_typing import transformers as ext
 
 
-set_seed(123)
-
-MODEL_ID = "julien-c/dummy-unknown"
-
-REVISION_ID_INVALID = "e10"
-
-model_name = "gpt2"
-test_sentence = {"text": "A Bento box is a "}
-batched_sentence = [
-    "I love you and I want to spend my whole life with you",
-    "I hate you, Lyon, you broke my heart.",
-]
-result = (
-    "A Bento box is a urn that is used to store the contents of a Bento box. "
-    + "It is usually used to store the contents of a Bento box in a storage container."
-    + "\n\nThe Bento box is a small, rectangular"
-)
-
-
-def generate_from_text(
-    model: "ext.TransformersModelType",
-    tokenizer: "ext.TransformersTokenizerType",
-    jsons: t.Dict[str, str],
-    return_tensors: str = "pt",
-) -> str:
-    text = jsons.get("text")
-    input_ids = tokenizer.encode(text, return_tensors=return_tensors)
-    output = model.generate(
-        input_ids, max_length=50, pad_token_id=tokenizer.eos_token_id
-    )
-    return tokenizer.decode(output[0], skip_special_tokens=True)
+set_seed(124)
 
 
 @pytest.mark.parametrize(
-    "kwargs, framework, tensors_type",
+    "name, pipeline, model_options, input_data",
     [
-        ({"from_tf": False}, "pt", "pt"),
-        ({}, "tf", "tf"),
+        (
+            "text-generation",
+            transformers.pipeline(task="text-generation"), # type: ignore
+            {"pipeline": True, "task": "text-generation"},
+            "A Bento box is a ",
+        ),
+        (
+            "image-classification",
+            transformers.pipeline("image-classification"), # type: ignore
+            {"pipeline": True, "task": "image-classification"},
+            Image.open(requests.get("http://images.cocodataset.org/val2017/000000039769.jpg", stream=True).raw)
+        ),
+        (
+            "text-classification",
+            transformers.pipeline("text-classification"), # type: ignore
+            {"pipeline": True, "task": "text-classification"},
+            "BentoML is an awesome library for machine learning.",
+        ),
     ],
 )
-def test_transformers_save_load(
-    framework: str,
-    tensors_type: str,
-    kwargs: t.Dict[str, t.Any],
+def test_transformers(
+    name: str,
+    pipeline: "ext.TransformersPipelineType", # type: ignore
+    model_options: t.Dict[str, t.Any],
+    input_data: t.Any,
 ):
-    if "tf" in framework:
-        loader = transformers.TFAutoModelForCausalLM
-    else:
-        loader = transformers.AutoModelForCausalLM
-    model = loader.from_pretrained(model_name, **kwargs)
-    tokenizer = transformers.AutoTokenizer.from_pretrained(model_name, **kwargs)
-    tag = bentoml.transformers.save(model_name, model, tokenizer=tokenizer)
-    _, lmodel, ltokenizer = bentoml.transformers.load(tag, from_tf="tf" in framework)
-    res = generate_from_text(
-        lmodel, ltokenizer, test_sentence, return_tensors=tensors_type
-    )
-    assert res == result
+    tag: bentoml.Tag = bentoml.transformers.save_model(name, pipeline)
+    assert tag is not None
+    assert tag.name == name
 
+    bento_model: bentoml.Model = bentoml.transformers.get(tag)
+    assert bento_model.tag == tag
+    assert bento_model.info.context.framework_name == "transformers"
+    assert dict(bento_model.info.options) == model_options
 
-def test_transformers_save_load_pipeline():
-    from PIL import Image
-
-    pipe = transformers.pipeline("image-classification")
-    tag = bentoml.transformers.save("vit-image-classification", pipe)
-    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-    image = Image.open(requests.get(url, stream=True).raw)
-    pipeline = bentoml.transformers.load(tag)
-    res = pipeline(image)
-    assert res[0]["label"] == "Egyptian cat"
-
-
-def test_transformers_runner_setup_run_batch():
-    pipeline = transformers.pipeline("text-classification")
-    tag = bentoml.transformers.save("text-classification-pipeline", pipeline)
-    runner = bentoml.transformers.load_runner(tag, tasks="text-classification")
-    assert tag in runner.required_models
-    assert runner.num_replica == 1
-
-    res = runner.run_batch(batched_sentence)
-    assert all(i["score"] >= 0.4 for i in res)
-    assert isinstance(runner._pipeline, transformers.pipelines.Pipeline)
-
-
-def test_transformers_runner_pipelines_kwargs():
-    from PIL import Image
-
-    pipeline = transformers.pipeline("image-classification")
-    tag = bentoml.transformers.save("vit-image-classification", pipeline)
-    runner = bentoml.transformers.load_runner(tag, tasks="image-classification")
-    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-    image = Image.open(requests.get(url, stream=True).raw)
-    res = runner.run_batch(image)
-    assert res[0]["label"] == "Egyptian cat"
+    runnable: bentoml.Runnable = bentoml.transformers.get_runnable(bento_model)()
+    output_data = runnable(input_data) # type: ignore
+    assert output_data is not None

@@ -228,9 +228,10 @@ transformers:
     - "jax==0.2.19"
     - "jaxlib==0.1.70"
     - "flax==0.3.4"
-    - "tensorflow==2.5.0"
+    - "tensorflow==2.8.0"
     - "importlib_metadata"
     - "Pillow==8.4.0"
+    - "typing_extensions==4.2.0"
   external_scripts: |
     python -m pip install "typing_extensions>=3.10"
 

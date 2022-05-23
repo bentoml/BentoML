@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 from functools import partial
 
 from ..trace import ServiceContext
+from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
-from ..runner.container import Payload
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
 from ..configuration.containers import DeploymentContainer
@@ -175,68 +175,27 @@ class RunnerAppFactory(BaseAppFactory):
 
         async def _run(requests: t.Iterable[Request]) -> list[Response]:
             assert self._is_ready
-
+            if not requests:
+                return []
             params_list = await asyncio.gather(
                 *tuple(multipart_to_payload_params(r) for r in requests)
             )
 
             batch_dim = runner_method.runnable_method_config.batch_dim
-
-            indices: list[int] = []
-
-            i = 0
-            batch_args: list[t.Any] = []
-            while i < len(batch_dim.args):
-                args = [param.args[i] for param in params_list]
-                batched_arg, indices = AutoContainer.from_batch_payloads(
-                    args, batch_dim=batch_dim[i]
-                )
-                batch_args.append(batched_arg)
-                i += 1
-
-            max_arg_len = max([len(param.args) for param in params_list])
-
-            # iterate over any remaining vararg parameters, appending None if there is no corresponding argument
-            while i < max_arg_len:
-                args: list[t.Any] = []
-                for params in params_list:
-                    if i < len(params.args):
-                        args.append(params.args[i])
-                    else:
-                        args.append(None)
-                        continue
-                batched_arg, indices = AutoContainer.from_batch_payloads(
-                    args, batch_dim=batch_dim[i]
-                )
-                batch_args.append(batched_arg)
-                i += 1
-
-            # construct a dict of lists of kwargs, appending None if there is no corresponding keyword argument
-            kwargs: dict[str, list[Payload | None]] = {}
-            for i, params in enumerate(params_list):
-                for kwarg in kwargs:
-                    if kwarg in params.kwargs:
-                        kwargs[kwarg].append(params.kwargs[kwarg])
-                    else:
-                        kwargs[kwarg].append(None)
-
-                for kwarg in params.kwargs:
-                    if kwarg not in kwargs:
-                        kwarg_list: list[Payload | None] = [None] * i
-                        kwarg_list.append(params.kwargs[kwarg])
-                        kwargs[kwarg] = kwarg_list
-
-            batch_kwargs = {}
-            for kwarg, payloads in kwargs.items():
-                batch_kwargs[kwarg], indices = AutoContainer.from_batch_payloads(
-                    payloads, batch_dim=batch_dim[kwarg]
-                )
-
-            batch_ret = await runner_method.async_run(*batch_args, **batch_kwargs)
-
+            mix_params = Params.agg(
+                params_list=params_list,
+                agg_func=lambda i: AutoContainer.from_batch_payloads(
+                    i, batch_dim=batch_dim[0]
+                ),
+            )
+            batched_params, indices_params = mix_params.vsplit(lambda i: (i[0], i[1]))
+            batch_ret = await runner_method.async_run(
+                *batched_params.args,
+                **batched_params.kwargs,
+            )
             payloads = AutoContainer.batch_to_payloads(
                 batch_ret,
-                indices,
+                indices_params.sample,
                 batch_dim=batch_dim[-1],
             )
             return [

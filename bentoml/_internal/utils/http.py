@@ -26,7 +26,7 @@ def set_content_length(response: "starlette.responses.Response"):
 
             new_context_len = str(len(body)).encode("latin-1")
 
-            if found_indexes is not None:
+            if found_indexes:
                 idx = found_indexes[0]
                 response.raw_headers[idx] = (b"content-length", new_context_len)
             else:

@@ -17,6 +17,16 @@ logger = logging.getLogger(__name__)
 
 DOCKER_BUILDX_CMD = ["docker", "buildx"]
 
+# https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
+UNAME_M_TO_PLATFORM_MAPPING = {
+    "x86_64": "linux/amd64",
+    "arm64": "linux/arm64/v8",
+    "ppc64le": "linux/ppc64le",
+    "s390x": "linux/s390x",
+    "riscv64": "linux/riscv64",
+    "mips64": "linux/mips64le",
+}
+
 
 @functools.lru_cache(maxsize=1)
 def health() -> None:
@@ -25,7 +35,7 @@ def health() -> None:
     """
     cmds = DOCKER_BUILDX_CMD + ["--help"]
     try:
-        output = subprocess.check_output(cmds)
+        output = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
         assert "buildx" in output.decode("utf-8")
     except (subprocess.CalledProcessError, AssertionError):
         raise BentoMLException(
@@ -100,17 +110,6 @@ def create(
 
     if name is not None:
         cmds.extend(["--name", name])
-
-    if not platform:
-        platform = [
-            "linux/amd64",
-            "linux/arm64/v8",
-            "linux/ppc64le",
-            "linux/s390x",
-            "linux/riscv64",
-            "linux/mips64le",
-        ]
-    cmds.extend(["--platform", ",".join(platform)])
 
     if use:
         cmds.append("--use")
@@ -298,6 +297,4 @@ def run_docker_cmd(
     if env is not None:
         subprocess_env.update(env)
 
-    full_cmd = list(map(str, cmds))
-
-    subprocess.check_output(full_cmd, env=subprocess_env, cwd=cwd)
+    subprocess.check_output(list(map(str, cmds)), env=subprocess_env, cwd=cwd)

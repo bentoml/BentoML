@@ -15,6 +15,7 @@ from ._gen import generate_dockerfile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
+from .docker import CUDAVersion
 from .docker import DOCKER_SUPPORTED_DISTRO
 from .docker import DOCKER_DEFAULT_CUDA_VERSION
 from .docker import DOCKER_DEFAULT_DOCKER_DISTRO
@@ -30,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = f"{pyver.major}.{pyver.minor}"
 PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
+CUDA_VERSION_MAJOR_MAPPING = {
+    CUDAVersion.from_str(v).major: v for v in DOCKER_SUPPORTED_CUDA_VERSION
+}
 
 
 if PYTHON_VERSION not in DOCKER_SUPPORTED_PYTHON_VERSION:
@@ -56,8 +60,19 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
 def _convert_cuda_version(cuda_version: t.Optional[str]) -> t.Optional[str]:
     if cuda_version is None:
         return None
+
+    if isinstance(cuda_version, int):
+        cuda_version = str(cuda_version)
+
     if cuda_version == "default":
         cuda_version = DOCKER_DEFAULT_CUDA_VERSION
+
+    match = re.match(r"^(\d+)", cuda_version)
+    if match is not None:
+        try:
+            cuda_version = CUDA_VERSION_MAJOR_MAPPING[cuda_version]
+        except KeyError:
+            logger.debug(f"{cuda_version} doesn't have a matching alias. Skipping...")
 
     return cuda_version
 
@@ -138,23 +153,24 @@ class DockerOptions:
         self = attr.evolve(self, **update_defaults)
 
         supported_python, supported_cuda, _, _ = DOCKER_SUPPORTED_DISTRO[self.distro]
-        if self.python_version not in supported_python:
-            raise BentoMLException(
-                f"{self.python_version} is not supported for {self.distro}. "
-                f"Supported python versions are: {','.join(supported_python)}."
-            )
+        if self.python_version is not None:
+            if self.python_version not in supported_python:
+                raise BentoMLException(
+                    f"{self.python_version} is not supported for {self.distro}. "
+                    f"Supported python versions are: {', '.join(supported_python)}."
+                )
         if self.cuda_version is not None:
             if supported_cuda is None:
                 raise BentoMLException(
                     f"{self.distro} does not support CUDA. "
-                    f"Supported distros that have CUDA supports are: {','.join(DOCKER_SUPPORTED_CUDA_DISTROS)}."
+                    f"Supported distros that have CUDA supports are: {', '.join(DOCKER_SUPPORTED_CUDA_DISTROS)}."
                 )
             if self.cuda_version != "default" and (
                 self.cuda_version not in supported_cuda
             ):
                 raise BentoMLException(
                     f"{self.cuda_version} is not supported for "
-                    f"{self.distro}. Supported cuda versions are: {','.join(supported_cuda)}."
+                    f"{self.distro}. Supported cuda versions are: {', '.join(supported_cuda)}."
                 )
         return self
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
+import platform as python_platform
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -399,6 +400,9 @@ def containerize(
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
+
+    if platform is None:
+        platform = buildx.UNAME_M_TO_PLATFORM_MAPPING[python_platform.machine()]
 
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")
 

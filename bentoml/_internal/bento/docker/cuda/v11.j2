@@ -1,0 +1,316 @@
+{% set cached = ['arm32v5', 'arm32v6'] %}
+{% if "x86_64" in cuda_spec %}
+{% do cached.append("amd64") %}
+FROM base as base-amd64
+ENV NVARCH x86_64
+
+{% if "requires" in cuda_spec.x86_64 %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda_spec.x86_64.requires }}"
+{% endif %}
+
+{% if docker_options.distro in ['ubi8', 'amazonlinux'] %}
+# CUDA instruction sets for rhel-based
+RUN <<EOF > /etc/yum.repos.d/cuda.repo
+[cuda]
+name=cuda
+baseurl={{ cuda_spec.repository }}/rhel8/x86_64
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+EOF
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda_spec.x86_64.cudart.version }}
+
+ENV NVIDIA_NVTX_VERSION {{ cuda_spec.x86_64.nvtx.version }}
+
+{% if "libnpp" in cuda_spec.x86_64 %}
+{% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda_spec.x86_64.libnpp.version }}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNPP_PACKAGE cuda-npp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% else %}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% endif %}
+{% endif %}
+
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda_spec.x86_64.libcublas.version }}
+
+{% if "libnccl2" in cuda_spec.x86_64 %}
+{% set has_libnccl_package = true %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.x86_64.libnccl2.version }}
+ENV NVIDIA_LIBNCCL_VERSION {{ cuda_spec.x86_64.libnccl2.version[:-2] }}
+ENV NCCL_VERSION {{ cuda_spec.x86_64.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}-${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% endif -%}
+
+
+ENV NVIDIA_CUDNN_VERSION {{ cuda_spec.x86_64.cudnn8.version }}
+ENV NVIDIA_CUDNN_PACKAGE libcudnn{{ cuda_spec.x86_64.cudnn8.major }}-${NVIDIA_CUDNN_VERSION}.cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+
+{% else %}
+# CUDA instruction sets for debian-based
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda_spec.x86_64.cudart.version }}
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}
+
+ENV NVIDIA_NVTX_VERSION {{ cuda_spec.x86_64.nvtx.version }}
+
+{% if "libnpp" in cuda_spec.x86_64 %}
+{% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda_spec.x86_64.libnpp.version }}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNPP_PACKAGE cuda-npp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% else %}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% endif %}
+{% endif %}
+
+ENV NVIDIA_LIBCUSPARSE_VERSION {{ cuda_spec.x86_64.libcusparse.version }}
+
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas{{ cuda_spec.version.major }}
+{% else %}
+ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}
+{% endif %}
+
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda_spec.x86_64.libcublas.version }}
+ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
+
+{% if "libnccl2" in cuda_spec.x86_64 and cuda_spec.x86_64.libnccl2 %}
+{% set has_libnccl_package = true %}
+
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME "libnccl2"
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.x86_64.libnccl2.version }}
+ENV NCCL_VERSION {{ cuda_spec.x86_64.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NV_LIBNCCL_PACKAGE_NAME}=${NV_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% else %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.x86_64.libnccl2_dev.version }}
+ENV NCCL_VERSION {{ cuda_spec.x86_64.libnccl2_dev.version }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% endif %}
+{% endif -%}
+
+{%if "cudnn8" in cuda_spec.x86_64 and cuda_spec.x86_64.cudnn8.version != "" %}
+{% set has_cudnn_package = true %}
+{% set cudnn_version = cuda_spec.x86_64.cudnn8.version %}
+{% if "-" in cuda_spec.x86_64.cudnn8.version %}
+{% set cudnn_version = cuda_spec.x86_64.cudnn8.version[:-2] %}
+{% endif -%}
+ENV NVIDIA_CUDNN_VERSION {{ cudnn_version }}
+ENV NVIDIA_CUDNN_PACKAGE "libcudnn{{ cuda_spec.x86_64.cudnn8.major }}=$NVIDIA_CUDNN_VERSION-1+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}"
+ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda_spec.x86_64.cudnn8.major }}"
+{% endif %}
+
+{% endif %}
+
+{% endif %}
+
+{% if "sbsa" in cuda_spec %}
+{% do cached.append("arm64") %}
+FROM base as base-arm64
+ENV NVARCH sbsa
+
+{% if "requires" in cuda_spec.sbsa %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda_spec.sbsa.requires }}"
+{% endif %}
+
+{% if docker_options.distro in ['ubi8', 'amazonlinux'] %}
+# CUDA instruction sets for rhel-based
+RUN <<EOF > /etc/yum.repos.d/cuda.repo
+[cuda]
+name=cuda
+baseurl={{ cuda_spec.repository }}/rhel8/sbsa
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+EOF
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda_spec.sbsa.cudart.version }}
+
+ENV NVIDIA_NVTX_VERSION {{ cuda_spec.sbsa.nvtx.version }}
+
+{% if "libnpp" in cuda_spec.sbsa %}
+{% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda_spec.sbsa.libnpp.version }}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNPP_PACKAGE cuda-npp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% else %}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% endif %}
+{% endif %}
+
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda_spec.sbsa.libcublas.version }}
+
+{% if "libnccl2" in cuda_spec.sbsa %}
+{% set has_libnccl_package = true %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.sbsa.libnccl2.version }}
+ENV NVIDIA_LIBNCCL_VERSION {{ cuda_spec.sbsa.libnccl2.version[:-2] }}
+ENV NCCL_VERSION {{ cuda_spec.sbsa.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}-${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% endif -%}
+
+ENV NVIDIA_CUDNN_VERSION {{ cuda_spec.sbsa.cudnn8.version }}
+ENV NVIDIA_CUDNN_PACKAGE libcudnn{{ cuda_spec.sbsa.cudnn8.major }}-${NVIDIA_CUDNN_VERSION}.cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% else %}
+# CUDA instruction sets for debian-based
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda_spec.sbsa.cudart.version }}
+
+ENV NVIDIA_NVTX_VERSION {{ cuda_spec.sbsa.nvtx.version }}
+{% if "libnpp" in cuda_spec.sbsa %}
+{% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda_spec.sbsa.libnpp.version }}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNPP_PACKAGE cuda-npp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% else %}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% endif %}
+{% endif %}
+
+ENV NVIDIA_LIBCUSPARSE_VERSION {{ cuda_spec.sbsa.libcusparse.version }}
+
+ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda_spec.sbsa.libcublas.version }}
+ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
+
+{% if "libnccl2" in cuda_spec.sbsa and cuda_spec.sbsa.libnccl2 %}
+{% set has_libnccl_package = true %}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME "libnccl2"
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.x86_64.libnccl2.version }}
+ENV NCCL_VERSION {{ cuda_spec.x86_64.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NV_LIBNCCL_PACKAGE_NAME}=${NV_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% else %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.x86_64.libnccl2_dev.version }}
+ENV NCCL_VERSION {{ cuda_spec.x86_64.libnccl2_dev.version }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% endif %}
+{% endif %}
+
+{% if "cudnn8" in cuda_spec.sbsa and cuda_spec.sbsa.cudnn8.version != "" %}
+{% set has_cudnn_package = true %}
+{% set cudnn_version = cuda_spec.sbsa.cudnn8.version %}
+{% if "-" in cuda_spec.sbsa.cudnn8.version %}
+{% set cudnn_version = cuda_spec.sbsa.cudnn8.version[:-2] %}
+{% endif -%}
+
+ENV NVIDIA_CUDNN_VERSION {{ cudnn_version }}
+
+ENV NVIDIA_CUDNN_PACKAGE "libcudnn{{ cuda_spec.sbsa.cudnn8.major }}=$NVIDIA_CUDNN_VERSION-1+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}"
+ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda_spec.sbsa.cudnn8.major }}"
+{% endif %}
+
+{% endif %}
+{% endif %}
+
+
+{% if "ppc64le" in cuda_spec %}
+{% do cached.append("ppc64le") %}
+FROM base as base-ppc64le
+{% if docker_options.distro in ['ubi8', 'amazonlinux'] %}
+# CUDA instruction sets for rhel-based
+ENV NVARCH ppc64le
+
+{% if "requires" in cuda_spec.ppc64le %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda_spec.ppc64le.requires }}"
+{% endif %}
+
+RUN <<EOF > /etc/yum.repos.d/cuda.repo
+[cuda]
+name=cuda
+baseurl={{ cuda_spec.repository }}/rhel8/ppc64le
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+EOF
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda_spec.ppc64le.cudart.version }}
+
+ENV NVIDIA_NVTX_VERSION {{ cuda_spec.ppc64le.nvtx.version }}
+
+{% if "libnpp" in cuda_spec.ppc64le %}
+{% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda_spec.ppc64le.libnpp.version }}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNPP_PACKAGE cuda-npp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% else %}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% endif %}
+{% endif %}
+
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda_spec.ppc64le.libcublas.version }}
+
+{% if "libnccl2" in cuda_spec.ppc64le %}
+{% set has_libnccl_package = true %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.ppc64le.libnccl2.version }}
+ENV NVIDIA_LIBNCCL_VERSION {{ cuda_spec.ppc64le.libnccl2.version[:-2] }}
+ENV NCCL_VERSION {{ cuda_spec.ppc64le.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}-${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% endif -%}
+
+ENV NVIDIA_CUDNN_VERSION {{ cuda_spec.ppc64le.cudnn8.version }}
+ENV NVIDIA_CUDNN_PACKAGE libcudnn{{ cuda_spec.ppc64le.cudnn8.major }}-${NVIDIA_CUDNN_VERSION}.cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% else %}
+# CUDA instruction sets for debian-based
+ENV NVARCH ppc64el
+
+{% if "requires" in cuda_spec.ppc64le %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda_spec.ppc64le.requires }}"
+{% endif %}
+
+ENV NVIDIA_CUDA_CUDART_VERSION {{ cuda_spec.ppc64le.cudart.version }}
+ENV NVIDIA_CUDA_COMPAT_PACKAGE cuda-compat-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}
+
+
+ENV NVIDIA_NVTX_VERSION {{ cuda_spec.ppc64le.nvtx.version }}
+{% if "libnpp" in cuda_spec.ppc64le %}
+{% set has_libnpp_package = true %}
+ENV NVIDIA_LIBNPP_VERSION {{ cuda_spec.ppc64le.libnpp.version }}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNPP_PACKAGE cuda-npp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% else %}
+ENV NVIDIA_LIBNPP_PACKAGE libnpp-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBNPP_VERSION}
+{% endif %}
+{% endif %}
+
+ENV NVIDIA_LIBCUSPARSE_VERSION {{ cuda_spec.ppc64le.libcusparse.version }}
+
+ENV NVIDIA_LIBCUBLAS_PACKAGE_NAME libcublas-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}
+ENV NVIDIA_LIBCUBLAS_VERSION {{ cuda_spec.ppc64le.libcublas.version }}
+ENV NVIDIA_LIBCUBLAS_PACKAGE ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}=${NVIDIA_LIBCUBLAS_VERSION}
+
+{% if "libnccl2" in cuda_spec.ppc64le and cuda_spec.ppc64le.libnccl2 %}
+{% set has_libnccl_package = true %}
+{% if cuda_spec.version.major == "10" %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME "libnccl2"
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.x86_64.libnccl2.version }}
+ENV NCCL_VERSION {{ cuda_spec.x86_64.libnccl2.version[:-2] }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NV_LIBNCCL_PACKAGE_NAME}=${NV_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% else %}
+ENV NVIDIA_LIBNCCL_PACKAGE_NAME libnccl2
+ENV NVIDIA_LIBNCCL_PACKAGE_VERSION {{ cuda_spec.x86_64.libnccl2_dev.version }}
+ENV NCCL_VERSION {{ cuda_spec.x86_64.libnccl2_dev.version }}
+ENV NVIDIA_LIBNCCL_PACKAGE ${NVIDIA_LIBNCCL_PACKAGE_NAME}=${NVIDIA_LIBNCCL_PACKAGE_VERSION}+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}
+{% endif %}
+{% endif %}
+
+{% if "cudnn8" in cuda_spec.ppc64le and cuda_spec.ppc64le.cudnn8.version != "" %}
+{% set has_cudnn_package = true %}
+{% set cudnn_version = cuda_spec.ppc64le.cudnn8.version %}
+{% if "-" in cuda_spec.ppc64le.cudnn8.version %}
+{% set cudnn_version = cuda_spec.ppc64le.cudnn8.version[:-2] %}
+{% endif -%}
+
+ENV NVIDIA_CUDNN_VERSION {{ cudnn_version }}
+
+ENV NVIDIA_CUDNN_PACKAGE "libcudnn{{ cuda_spec.ppc64le.cudnn8.major }}=$NVIDIA_CUDNN_VERSION-1+cuda{{ cuda_spec.version.major }}.{{ cuda_spec.version.minor }}"
+ENV NVIDIA_CUDNN_PACKAGE_NAME "libcudnn{{ cuda_spec.ppc64le.cudnn8.major }}"
+{% endif %}
+
+{% endif %}
+{% endif %}

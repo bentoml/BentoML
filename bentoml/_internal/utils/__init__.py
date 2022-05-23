@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     P = t.ParamSpec("P")
+    GenericFunction = t.Callable[P, t.Any]
 
 
 C = t.TypeVar("C")
@@ -52,6 +53,23 @@ __all__ = [
     "validate_or_create_dir",
     "display_path_under_home",
 ]
+
+
+def kwargs_transformers(
+    _func: GenericFunction[t.Any] | None = None,
+    *,
+    transformer: GenericFunction[t.Any] = lambda x: x,
+):
+    def decorator(func: GenericFunction[t.Any]) -> t.Callable[P, t.Any]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+            return func(*args, **{k: transformer(v) for k, v in kwargs.items()})
+
+        return wrapper
+
+    if _func is None:
+        return decorator
+    return decorator(_func)
 
 
 @t.overload

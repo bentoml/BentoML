@@ -8,6 +8,7 @@ from functools import wraps
 
 import fs
 from jinja2 import Environment
+from jinja2.loaders import FileSystemLoader
 
 from ..utils import bentoml_cattr
 from .docker import make_cuda_cls
@@ -25,8 +26,6 @@ if TYPE_CHECKING:
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
 
-NEED_SETUP_COMPONENTS = ["setup_distro_env", "setup_uid_gid", "cleanup"]
-
 
 def clean_bentoml_version() -> str:
     post_version = BENTOML_VERSION.split("+")[0]
@@ -41,18 +40,19 @@ def ensure_components(
     *,
     conda: bool = False,
     cuda: bool = False,
-    require_setup: t.List[str] = NEED_SETUP_COMPONENTS,
 ):
+
+    _require_setup = ["setup_distro_env", "setup_uid_gid", "cleanup"]
     if conda:
-        require_setup += ["install_python_with_conda"]
+        _require_setup += ["install_python_with_conda"]
     if cuda:
-        require_setup += ["setup_cuda"]
+        _require_setup += ["setup_cuda"]
 
     def decorator(func: TemplateFunc) -> TemplateFunc:
         @wraps(func)
         def wrapper(opts: DockerOptions) -> t.Dict[str, t.Any]:
             ret = func(opts)
-            missing = list(filter(lambda x: x not in ret, require_setup))
+            missing = list(filter(lambda x: x not in ret, _require_setup))
             if len(missing) > 0:
                 raise BentoMLException(
                     f"`{func.__name__}` returns template context that miss "
@@ -137,7 +137,7 @@ fi
 EOF
 
 # copy over all remaining bento files
-COPY --link --chown=bentoml:bentoml . ./
+COPY --chown=bentoml:bentoml . ./
     """
 
 SETUP_ENTRYPOINT_TEMPLATE = """\
@@ -232,19 +232,32 @@ CLEANUP_DEBIAN_TEMPLATE = """\
 RUN rm -rf /var/lib/{apt,dpkg,cache,log}
         """
 
-SETUP_CUDA_DEBIAN_TEMPLATE = """\
+
+def setup_cuda_debian(
+    repository: str, distros: str, cuda_major_version: str, cuda_minor_version: str
+):
+    SETUP_CUDA_DEBIAN_TEMPLATE = (
+        f"""\
 RUN xx-apt-get install -y --no-install-recommends \\
         gnupg2 curl ca-certificates \\
-        && curl -fsSLO {repository}/{distros}/${NVARCH}/cuda-keyring_1.0-1_all.deb \\
+        && curl -fsSLO {repository}/{distros}/"""
+        + "${NVARCH}"
+        + f"""/cuda-keyring_1.0-1_all.deb \\
         && dpkg -i cuda-keyring_1.0-1_all.deb \\
         && rm cuda-keyring_1.0-1_all.deb \\
         && xx-apt-get install -y --no-install-recommends \\
-           cuda-cudart-{cuda_major_version}-{cuda_minor_version}=${NVIDIA_CUDA_CUDART_VERSION} \\
-             ${NVIDIA_CUDA_COMPAT_PACKAGE} \\
+        cuda-cudart-{cuda_major_version}-{cuda_minor_version}="""
+        + "${NVIDIA_CUDA_CUDART_VERSION}"
+        + """ \\
+            """
+        + "${NVIDIA_CUDA_COMPAT_PACKAGE}"
+        + f""" \\
         && ln -s cuda-{cuda_major_version}.{cuda_minor_version} /usr/local/cuda \\
         && xx-apt-get purge --autoremove -y curl \\
         && rm -rf /var/lib/apt/lists/*
         """
+    )
+    return SETUP_CUDA_DEBIAN_TEMPLATE
 
 
 def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
@@ -261,7 +274,7 @@ def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]
                 distros = "ubuntu2004"
         else:
             distros = "rhel8"
-        cuda_debian_setup = SETUP_CUDA_DEBIAN_TEMPLATE.format(
+        cuda_debian_setup = setup_cuda_debian(
             repository=cuda.repository,
             distros=distros,
             cuda_major_version=cuda.version.major,
@@ -296,7 +309,7 @@ def debian_miniconda_template_context(
                 distros = "ubuntu2004"
         else:
             distros = "rhel8"
-        cuda_debian_setup = SETUP_CUDA_DEBIAN_TEMPLATE.format(
+        cuda_debian_setup = setup_cuda_debian(
             repository=cuda.repository,
             distros=distros,
             cuda_major_version=cuda.version.major,
@@ -359,6 +372,7 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
         trim_blocks=True,
         lstrip_blocks=True,
+        loader=FileSystemLoader(docker_dir, followlinks=True),
     )
 
     if docker_options.base_image is None:

@@ -130,6 +130,33 @@ def transformer(_: t.Any, fields: list[Attribute[t.Any]]) -> list[Attribute[t.An
     return results
 
 
+def _make_architecture_cuda_cls(arch: str, cuda_spec: dict[str, t.Any]) -> type:
+    cls_ = attr.make_class(
+        "___cuda_arch_wrapper",
+        {
+            "requires": attr.attrib(type=str),
+            **{
+                lib: attr.attrib(type=NVIDIALibrary)
+                for lib in cuda_spec[f"components_{arch}"]
+            },
+        },
+        slots=True,
+        frozen=True,
+        init=True,
+        field_transformer=transformer,
+    )
+
+    bentoml_cattr.register_unstructure_hook(
+        cls_,
+        make_dict_unstructure_fn(  # type: ignore
+            cls_,
+            bentoml_cattr,
+            tag=override(omit=True),
+        ),
+    )
+    return cls_
+
+
 def make_cuda_cls(value: str | None) -> CUDA | None:
     if value is None:
         return
@@ -151,38 +178,14 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
 
     architectures = cuda_spec["architectures"]
 
-    def _make_architecture_cuda_cls(arch: str) -> type:
-        cls_ = attr.make_class(
-            "___cuda_arch_wrapper",
-            {
-                "requires": attr.attrib(type=str),
-                **{
-                    lib: attr.attrib(type=NVIDIALibrary)
-                    for lib in cuda_spec[f"components_{arch}"]
-                },
-            },
-            slots=True,
-            frozen=True,
-            init=True,
-            field_transformer=transformer,
-        )
-
-        bentoml_cattr.register_unstructure_hook(
-            cls_,
-            make_dict_unstructure_fn(  # type: ignore
-                cls_,
-                bentoml_cattr,
-                tag=override(omit=True),
-            ),
-        )
-        return cls_
-
     cuda_cls = attr.make_class(
         "CUDA",
         {
             "version": attr.attrib(type=CUDAVersion),
             **{
-                arch: attr.attrib(type=_make_architecture_cuda_cls(arch))
+                arch: attr.attrib(
+                    type=_make_architecture_cuda_cls(arch, cuda_spec=cuda_spec)
+                )
                 for arch in architectures
             },
             "repository": attr.attrib(type=str),
@@ -205,7 +208,7 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
         version=CUDAVersion.from_str(value),
         repository=f"{cuda_spec['repository']}",
         **{
-            arch: _make_architecture_cuda_cls(arch)(
+            arch: _make_architecture_cuda_cls(arch, cuda_spec)(
                 requires=cuda_spec[f"requires_{arch}"],
                 **{
                     lib: NVIDIALibrary.from_str(lib_spec["version"])

@@ -1,7 +1,6 @@
 import json
 import typing as t
 import asyncio
-import inspect
 from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
@@ -120,22 +119,10 @@ class RemoteRunnerClient(RunnerHandle):
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        runnable_method = getattr(
-            self._runner.runnable_class,
-            __bentoml_method_name,
-        )
-
-        signature = inspect.signature(runnable_method)
-        # binding self parameter to None as we don't want to instantiate the runner
-        bound_args = signature.bind(None, *args, **kwargs)
-        bound_args.apply_defaults()
-
         from ...runner.container import AutoContainer
 
-        for name, value in bound_args.arguments.items():
-            bound_args.arguments[name] = AutoContainer.to_payload(value)
-        params = Params(*bound_args.args[1:], **bound_args.kwargs)
-        multipart = payload_params_to_multipart(params)
+        payload_params = Params(*args, **kwargs).map(AutoContainer.to_payload)
+        multipart = payload_params_to_multipart(payload_params)
         client = self._get_client()
         async with client.post(
             f"{self._addr}/{__bentoml_method_name}",

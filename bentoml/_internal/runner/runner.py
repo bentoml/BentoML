@@ -174,7 +174,7 @@ class Runner:
             | Resource.from_system()
         )
 
-        for method_name, _ in runnable_class.get_method_configs().items():
+        for method_name in runnable_class.get_method_configs():
             method_max_batch_size = method_configs.get(method_name, {}).get(
                 "max_batch_size"
             )

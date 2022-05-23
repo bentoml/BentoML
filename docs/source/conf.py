@@ -27,7 +27,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx_click.ext",
     "sphinx_copybutton",
-    "sphinx_panels",
+    "sphinx_design",
     "sphinx_issues",
     "sphinxcontrib.spelling",
     "myst_parser",
@@ -55,6 +55,7 @@ templates_path = ["_templates"]
 pygments_style = "zenburn"
 pygments_dark_style = "monokai"
 
+myst_enable_extensions = ["colon_fence"]
 
 # Remove the prompt when copying examples
 copybutton_prompt_text = r">>> |\.\.\.|» |$ |% "

@@ -9,7 +9,7 @@ sphinxcontrib-fulltoc
 sphinxcontrib-spelling
 sphinx-copybutton
 sphinx-issues
-sphinx-panels
+sphinx-design
 pyenchant
 mock
 Jinja2<3.1

@@ -17,3 +17,7 @@
 :root {
     --tabs-color-label-inactive: rgb(149 149 149);
 }
+
+.sd-card-body {
+    background-color: var(--color-background-secondary);
+}

@@ -15,5 +15,6 @@ Integrations
    kubeflow
    kubernetes
    mlflow
+   prefect
    ray
    triton

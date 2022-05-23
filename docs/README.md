@@ -138,15 +138,20 @@ seen in https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#liter
 
 #### Tabs
 
-For most scenarios in BentoML docs, use the `tabbed` syntax provided by `sphinx-panels` 
-plugin: https://sphinx-panels.readthedocs.io/en/latest/#tabbed-content to create tabs.
+For most scenarios in BentoML docs, use the tabs view provided by `sphinx-design`:
+https://sphinx-design.readthedocs.io/en/furo-theme/tabs.html
 
-For syncronized tabs, use the `sphinx-inline-tabs`: https://sphinx-inline-tabs.readthedocs.io/en/latest/usage.html
-Syncronized tabs means it will sync all tab panels in a docs page to the same tab based
-on the tab title. This is good for pages that demonstrating a feature in a few different
-programming language. For example, when user click on the first tab group to choose 
-`python`, it's likely the user will view `python` tab for the other tab groups.
+```rst
+.. tab-set::
 
+    .. tab-item:: Label1
+
+        Content 1
+
+    .. tab-item:: Label2
+
+        Content 2
+```
 
 ### Documenting Source Code
 

@@ -21,44 +21,66 @@ Learn BentoML
 -------------
 
 
-.. panels::
+.. grid:: 1 2 2 2
+    :gutter: 3
+    :margin: 0
+    :padding: 3 4 0 0
 
-    :doc:`💻 Tutorial: Intro to BentoML <tutorial>`
+    .. grid-item-card:: :doc:`💻 Tutorial: Intro to BentoML <tutorial>`
+        :link: tutorial
+        :link-type: doc
 
-    A simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
-    ---
-    :doc:`📖 Main Concepts <concepts/index>`
+        A simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
 
-    A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
-    ---
-    :doc:`🧮 ML Framework Specific Guide <frameworks/index>`
+    .. grid-item-card:: :doc:`📖 Main Concepts <concepts/index>`
+        :link: concepts/index
+        :link-type: doc
 
-    Best practices and example usages by the ML framework used for model training.
-    ---
-    `🎨 Gallery Projects <https://github.com/bentoml/gallery>`_
+        A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
 
-    Example projects demonstrating BentoML usage in a variety of different scenarios.
-    ---
-    :doc:`💪 Advanced Guides <guides/index>`
+    .. grid-item-card:: :doc:`🧮 ML Framework Specific Guide <frameworks/index>`
+        :link: frameworks/index
+        :link-type: doc
 
-    Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and performance optimization.
-    ---
-    `💬 BentoML Community <https://l.linklyhq.com/l/ktOX>`_
+        Best practices and example usages by the ML framework used for model training.
 
-    Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
+    .. grid-item-card:: `🎨 Gallery Projects <https://github.com/bentoml/gallery>`_
+        :link: https://github.com/bentoml/gallery
+        :link-type: url
+
+        Example projects demonstrating BentoML usage in a variety of different scenarios.
+
+    .. grid-item-card:: :doc:`💪 Advanced Guides <guides/index>`
+        :link: guides/index
+        :link-type: doc
+
+        Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and performance optimization.
+
+    .. grid-item-card:: `💬 BentoML Community <https://l.linklyhq.com/l/ktOX>`_
+        :link: https://l.linklyhq.com/l/ktOX
+        :link-type: url
+
+        Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
 
 
 For MLOps engineers:
 
-.. panels::
+.. grid::  1 2 2 2
+    :gutter: 3
+    :margin: 0
+    :padding: 0
 
-    `🦄️ Yatai <https://github.com/bentoml/Yatai>`_
+    .. grid-item-card:: `🦄️ Yatai <https://github.com/bentoml/Yatai>`_
+        :link: https://github.com/bentoml/Yatai
+        :link-type: url
 
-    Model Deployment at scale on Kubernetes.
-    ---
-    `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_
+        Model Deployment at scale on Kubernetes.
 
-    Fast model deployment on any cloud platform.
+    .. grid-item-card:: `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_
+        :link: https://github.com/bentoml/bentoctl
+        :link-type: url
+
+        Fast model deployment on any cloud platform.
 
 
 Staying Informed

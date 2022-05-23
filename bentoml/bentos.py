@@ -443,6 +443,20 @@ def containerize(
         )
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
+        logger.info(
+            f"""\
+If you run into the following error:
+
+    [red]error: failed to solve: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed[/]
+
+This means Docker doesn't have context of your build platform [green]{platform}[/]. By default BentoML will set target build platform to the current machine platform via `uname -m`.
+
+Try again by specifying to build x86_64 (amd64) platform:
+
+    [bold magenta]bentoml containerize {str(bento.tag)} --platform linux/amd64[/]
+            """,
+            extra={"markup": True},
+        )
         return False
     else:
         logger.info(f'Successfully built docker image "{docker_image_tag}"')

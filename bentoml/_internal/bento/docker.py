@@ -63,7 +63,7 @@ DOCKER_SUPPORTED_DISTRO: t.Dict[
         DOCKER_SUPPORTED_PYTHON_VERSION,
         DOCKER_SUPPORTED_CUDA_VERSION,
         ["amd64", "arm64", "ppc64le"],
-        "mambaorg/micromamba:latest",
+        "mambaorg/micromamba:0.23.3",
     ),
     "alpine": (
         DOCKER_SUPPORTED_PYTHON_VERSION,
@@ -157,6 +157,16 @@ def _make_architecture_cuda_cls(arch: str, cuda_spec: dict[str, t.Any]) -> type:
     return cls_
 
 
+def _convert_cuda_supported_architecture(arch: t.List[str]) -> t.List[str]:
+    result: list[str] = []
+    for a in arch:
+        if a == "sbsa":  # arm64
+            result.append("arm64")
+        else:
+            result.append(a)
+    return result
+
+
 def make_cuda_cls(value: str | None) -> CUDA | None:
     if value is None:
         return
@@ -189,6 +199,9 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
                 for arch in architectures
             },
             "repository": attr.attrib(type=str),
+            "supported_architecture": attr.attrib(
+                type=t.List[str], converter=_convert_cuda_supported_architecture
+            ),
         },
         slots=True,
         frozen=True,
@@ -207,6 +220,7 @@ def make_cuda_cls(value: str | None) -> CUDA | None:
     return cuda_cls(
         version=CUDAVersion.from_str(value),
         repository=f"{cuda_spec['repository']}",
+        supported_architecture=architectures,
         **{
             arch: _make_architecture_cuda_cls(arch, cuda_spec)(
                 requires=cuda_spec[f"requires_{arch}"],

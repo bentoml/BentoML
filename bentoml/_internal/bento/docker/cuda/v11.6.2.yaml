@@ -7,6 +7,7 @@ repository: https://developer.download.nvidia.com/compute/cuda/repos
 architectures:
   - x86_64
   - sbsa
+  - ppc64le
 
 requires_x86_64: >
   cuda>=11.6
@@ -21,6 +22,8 @@ requires_x86_64: >
   brand=quadrortx,driver>=470,driver<471
 
 requires_sbsa: cuda>=11.6
+
+requires_ppc64le: cuda>=11.6
 
 components_x86_64:
   cudart:
@@ -65,3 +68,30 @@ components_sbsa:
     version: 2.12.10-1
   cudnn8:
     version: 8.4.0.27-1
+
+components_ppc64le:
+  cudart:
+    version: 11.6.55-1
+  cudart_dev:
+    version: 11.6.55-1
+  libcublas:
+    version: 11.9.2.110-1
+  libcublas_dev:
+    version: 11.9.2.110-1
+  libnpp:
+    version: 11.6.3.124-1
+  libnpp_dev:
+    version: 11.6.3.124-1
+  nvml_dev:
+    version: 11.6.55-1
+  nvprof:
+    version: 11.6.124-1
+  nvtx:
+    version: 11.6.124-1
+  libnccl2:
+    version: 2.12.10-1
+  libnccl2_dev:
+    version: 2.12.10-1
+  cudnn8:
+    version: 8.4.0.27-1
+

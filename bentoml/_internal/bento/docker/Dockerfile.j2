@@ -1,5 +1,5 @@
 {{ header }}
-{% set cached = ['arm32v5', 'arm32v6'] %}
+{% set cached = [] %}
 ARG XX_VERSION=master
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
@@ -38,17 +38,25 @@ FROM base as base-{{ key }}
 {% endfor %}
 {% endif %}
 
-FROM base-${TARGETARCH}
+FROM base-${TARGETARCH} as {{ release_stage }}
 {% else %}
 # custom base image: {{ base_image }}
 # Make sure to have Python and requires dependencies install on this image.
 FROM {{ base_image }} as cached
 
-FROM {{ base_image }}
+FROM {{ base_image }} as {{ release_stage }}
 {% endif %}
 
 {{ base_env }}
+{% if docker_options.distro in ["ubi8", "amazonlinux", "debian-miniconda"] %}
+USER root
+{% endif %}
 
+{% if docker_options.distro not in ["debian-miniconda", "alpine", "alpine-miniconda"] %}
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+{% endif %}
+
+{{ setup_distro_env }}
 {% if docker_options.cuda_version is not none and user_defined_image != true %}
 # Required for nvidia-docker v1
 RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf \
@@ -74,12 +82,30 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 {% if "libnccl2" in cuda_spec.x86_64 %}
 {% set has_libnccl_package = true %}
 {% endif %}
-{% if "cudnn" in cuda_spec.x86_64 %}
+{% if "cudnn8" in cuda_spec.x86_64 %}
 {% set has_cudnn_package = true %}
 {% endif %}
 # Install CUDA runtime
 {% if docker_options.distro in ['ubi8', 'amazonlinux'] %}
-RUN echo "Hello"
+RUN --mount=type=cache,sharing=shared,target=/var/cache/yum \
+    yum install -y \
+    ${NVIDIA_LIBRARIES_PACKAGE} \
+    {% if has_libnpp_package %}
+    ${NVIDIA_LIBNPP_PACKAGE} \
+    {% endif %}
+    ${NVIDIA_NVTX_PACKAGE} \
+    {% if has_libcusparse_package %}
+    ${NVIDIA_CUSPARSE_PACKAGE} \
+    {% endif %}
+    ${NVIDIA_LIBCUBLAS_PACKAGE} \
+    {% if has_cudnn_package %}
+    ${NVIDIA_CUDNN_PACKAGE} \
+    {% endif %}
+    {% if has_libnccl_package %}
+    ${NVIDIA_LIBNCCL_PACKAGE} \
+    {% endif %}
+    && yum clean all \
+    && rm -rf /var/cache/yum
 {% else %}
 RUN xx-apt-get install -y --no-install-recommends \
     ${NVIDIA_LIBRARIES_PACKAGE} \
@@ -87,13 +113,9 @@ RUN xx-apt-get install -y --no-install-recommends \
     ${NVIDIA_LIBNPP_PACKAGE} \
     {% endif %}
     ${NVIDIA_NVTX_PACKAGE} \
-    {# cuda-nvtx-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_NVTX_VERSION} \ #}
+    {% if has_libcusparse_package %}
     ${NVIDIA_CUSPARSE_PACKAGE} \
-    {# {% if cuda_spec.version.major == "10" %}
-    cuda-cusparse-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBCUSPARSE_VERSION} \
-    {% else %}
-    libcusparse-{{ cuda_spec.version.major }}-{{ cuda_spec.version.minor }}=${NVIDIA_LIBCUSPARSE_VERSION} \
-    {% endif %} #}
+    {% endif %}
     ${NVIDIA_LIBCUBLAS_PACKAGE} \
     {% if has_cudnn_package %}
     ${NVIDIA_CUDNN_PACKAGE} \
@@ -105,12 +127,10 @@ RUN xx-apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Keep apt from auto upgrading the cublas and nccl packages. See https://gitlab.com/nvidia/container-images/cuda/-/issues/88
-RUN apt-mark hold ${NVIDIA_CUDNN_PACKAGE_NAME} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}{% if has_libnccl_package %} ${NVIDIA_LIBNCCL_PACKAGE_NAME}{% endif %}
+RUN apt-mark hold {% if has_cudnn_package %}${NVIDIA_CUDNN_PACKAGE_NAME}{% endif %} ${NVIDIA_LIBCUBLAS_PACKAGE_NAME}{% if has_libnccl_package %} ${NVIDIA_LIBNCCL_PACKAGE_NAME}{% endif %}
 
 {% endif %}
 {% endif %}
-
-{{ setup_distro_env }}
 {% if docker_options.env is not none %}
 {% for key, value in docker_options.env.items() -%}
 
@@ -118,10 +138,35 @@ ENV {{ key }}={{ value }}
 {% endfor -%}
 {% endif -%}
 {% if docker_options.system_packages is not none %}
-
 # Install user-defined system package
-RUN --mount=type=cache,from=cached,target=/var/cache/apk xx-apk add --update {{ docker_options.system_packages|join(" ") }}
+{{ install_user_system_packages }}
 {% endif -%}
+# setup shell
+COPY --link <<EOF /etc/bash.bashrc
+# If not running interactively, don't do anything
+[ -z "$PS1" ] && return
+
+export PS1="\[\e[31m\]bentoml\[\e[m\] \[\e[33m\]\w\[\e[m\] » "
+export TERM=xterm-256color
+
+#ignore upper and lowercase when TAB completion
+bind "set completion-ignore-case on"
+
+# alias
+alias grep="grep --color=auto"
+alias la="ls -rthla --color=auto"
+
+echo -e "\e[0;33m"
+if [[ $EUID -eq 0 ]]; then
+  cat <<WARN
+WARNING: You are running this container as root, which can cause new files in
+mounted volumes to be created as the root user on your host machine.
+To avoid this, run the container by specifying your user's userid:
+$ docker run -u \$(id -u):\$(id -g) args...
+WARN
+fi
+echo -e "\e[m"
+EOF
 # Setup UID/GID
 {{ setup_uid_gid }}
 # Setup bento env
@@ -134,5 +179,12 @@ ENV BENTOML_VERSION={{ bentoml_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 {{ setup_python_package }}
+# copy over all remaining bento files
+COPY --chown=bentoml:bentoml . ./
 {{ cleanup }}
+RUN <<EOF
+chmod a+rwx /etc/bash.bashrc
+echo "source /etc/bash.bashrc" >> /root/.bashrc
+EOF
 {{ setup_entrypoint }}
+{{ final_release_stage }}

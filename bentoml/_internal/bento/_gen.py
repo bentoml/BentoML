@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
     from .docker import CUDA
+    from .docker import Distro
     from .build_config import DockerOptions
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
@@ -42,7 +43,12 @@ def ensure_components(
     cuda: bool = False,
 ):
 
-    _require_setup = ["setup_distro_env", "setup_uid_gid", "cleanup"]
+    _require_setup = [
+        "setup_distro_env",
+        "setup_uid_gid",
+        "cleanup",
+        "install_user_system_packages",
+    ]
     if conda:
         _require_setup += ["install_python_with_conda"]
     if cuda:
@@ -56,7 +62,7 @@ def ensure_components(
             if len(missing) > 0:
                 raise BentoMLException(
                     f"`{func.__name__}` returns template context that miss "
-                    f"setup components. Missing components: {','.join(missing)}"
+                    f"setup components. Missing components: {', '.join(missing)}"
                 )
             return ret
 
@@ -78,14 +84,13 @@ HEADER_TEMPLATE = """\
 # ===========================================
         """
 
+
 BASE_ENV_TEMPLATE = """\
 COPY --link --from=xx / /
 
 ARG TARGETARCH
 
 ARG TARGETPLATFORM
-
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -94,22 +99,24 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 """
 
+
 SETUP_UID_GID_TEMPLATE = """\
 ARG UID=1034
 ARG GID=1034
 RUN groupadd -g $GID -o bentoml && useradd -m -u $UID -g $GID -o -r bentoml
 """
 
+
 SETUP_BENTO_ENV_TEMPLATE = """\
 ARG BENTO_PATH=/home/bentoml/bento
 ENV BENTO_PATH=$BENTO_PATH
-ENV BENTOML_HOME=/home/bentoml/
+ENV BENTOML_HOME=/home/bentoml
 
 RUN mkdir $BENTO_PATH && chown bentoml:bentoml $BENTO_PATH -R
 WORKDIR $BENTO_PATH
 
 # init related components
-COPY --link --chown=bentoml:bentoml ./env ./env
+COPY --chown=bentoml:bentoml ./env ./env
 """
 
 SETUP_PYTHON_PACKAGE_TEMPLATE = """\
@@ -118,7 +125,7 @@ SETUP_PYTHON_PACKAGE_TEMPLATE = """\
 #  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
 #  - ./env/python/requirements.txt: all dependecies as user specified in code or requirements.txt file
 # We will only copy over the requirements.txt.lock to install package with -U
-RUN bash <<EOF
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
 if [ -f ./env/python/pip_args.txt ]; then
   EXTRA_PIP_INSTALL_ARGS=$(cat ./env/python/pip_args.txt)
 fi
@@ -135,9 +142,6 @@ if [ -f ./env/docker/setup_script ]; then
   ./env/docker/setup_script
 fi
 EOF
-
-# copy over all remaining bento files
-COPY --chown=bentoml:bentoml . ./
     """
 
 SETUP_ENTRYPOINT_TEMPLATE = """\
@@ -158,9 +162,9 @@ CMD ["bentoml", "serve", ".", "--production"]
 INSTALL_PYTHON_WITH_CONDA_TEMPLATE = """\
 RUN bash <<EOF
 SAVED_PYTHON_VERSION=$(cat ./env/python/version.txt)
-PYTHON_VERSION=${PYTHON_VERSION%.*}
+PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
 
-echo "Installing Python $PYTHON_VERSION with conda.."
+echo "Installing Python $PYTHON_VERSION with conda..."
 conda install -y -n base pkgs/main::python=$PYTHON_VERSION pip
 
 if [ -f ./env/conda/environment.yml ]; then
@@ -178,8 +182,6 @@ EOF
 SETUP_ALPINE_ENV_TEMPLATE = """\
 ENV PATH /usr/local/bin:$PATH
 
-ENV ENV /root/.bashrc
-
 # Install helpers
 RUN --mount=type=cache,from=cached,target=/var/cache/apk \\
     xx-apk add --update bash gcc libc-dev shadow musl-dev build-base \\
@@ -191,6 +193,15 @@ RUN rm -rf /var/cache/apk/*
         """
 
 
+def _install_alpine_system_packages(docker_options: DockerOptions) -> str:
+    if docker_options.system_packages is not None:
+        return f"""\
+RUN --mount=type=cache,from=cached,target=/var/cache/apk \\
+    xx-apk add --update {" ".join(docker_options.system_packages)}
+                """
+    return ""
+
+
 def alpine_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Alpine image.
@@ -199,6 +210,7 @@ def alpine_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]
         "setup_distro_env": SETUP_ALPINE_ENV_TEMPLATE,
         "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
         "cleanup": CLEANUP_ALPINE_TEMPLATE,
+        "install_user_system_packages": _install_alpine_system_packages(docker_options),
     }
 
 
@@ -213,6 +225,7 @@ def alpine_miniconda_template_context(
         "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
         "cleanup": CLEANUP_ALPINE_TEMPLATE,
         "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
+        "install_user_system_packages": _install_alpine_system_packages(docker_options),
     }
 
 
@@ -229,35 +242,41 @@ RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \\
 """
 
 CLEANUP_DEBIAN_TEMPLATE = """\
-RUN rm -rf /var/lib/{apt,dpkg,cache,log}
+RUN rm -rf /var/lib/{apt,cache,log}
         """
 
 
-def setup_cuda_debian(
+def _install_debian_system_packages(docker_options: DockerOptions) -> str:
+    if docker_options.system_packages is not None:
+        return f"""\
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \\
+    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \\
+    xx-apt-get install -q -y --no-install-recommends --allow-remove-essential \\
+    {" ".join(docker_options.system_packages)} \\
+    && xx-apt-get clean \\
+    && rm -rf /var/lib/apt/lists/*
+            """
+    return ""
+
+
+def _setup_debian_base_cuda(
     repository: str, distros: str, cuda_major_version: str, cuda_minor_version: str
 ):
-    SETUP_CUDA_DEBIAN_TEMPLATE = (
-        f"""\
-RUN xx-apt-get install -y --no-install-recommends \\
+    SETUP_DEBIAN_BASE_CUDA_TEMPLATE = f"""\
+# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
+RUN xx-apt-get update && xx-apt-get install -y --no-install-recommends \\
         gnupg2 curl ca-certificates \\
-        && curl -fsSLO {repository}/{distros}/"""
-        + "${NVARCH}"
-        + f"""/cuda-keyring_1.0-1_all.deb \\
+        && curl -fsSLO {repository}/{distros}/{"${NVARCH}"}/cuda-keyring_1.0-1_all.deb \\
         && dpkg -i cuda-keyring_1.0-1_all.deb \\
         && rm cuda-keyring_1.0-1_all.deb \\
         && xx-apt-get install -y --no-install-recommends \\
-        cuda-cudart-{cuda_major_version}-{cuda_minor_version}="""
-        + "${NVIDIA_CUDA_CUDART_VERSION}"
-        + """ \\
-            """
-        + "${NVIDIA_CUDA_COMPAT_PACKAGE}"
-        + f""" \\
+        {"${NVIDIA_CUDA_CUDART_PACKAGE}"} \\
+        {"${NVIDIA_CUDA_COMPAT_PACKAGE}"} \\
         && ln -s cuda-{cuda_major_version}.{cuda_minor_version} /usr/local/cuda \\
         && xx-apt-get purge --autoremove -y curl \\
         && rm -rf /var/lib/apt/lists/*
         """
-    )
-    return SETUP_CUDA_DEBIAN_TEMPLATE
+    return SETUP_DEBIAN_BASE_CUDA_TEMPLATE
 
 
 def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
@@ -267,14 +286,11 @@ def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]
     cuda_version = docker_options.cuda_version
     if cuda_version is not None:
         cuda: CUDA = make_cuda_cls(docker_options.cuda_version)  # type: ignore
-        if "debian" in docker_options.distro:
-            if docker_options.cuda_version.startswith("10"):
-                distros = "ubuntu1804"
-            else:
-                distros = "ubuntu2004"
+        if cuda.version.major == "10":
+            distros = "ubuntu1804"
         else:
-            distros = "rhel8"
-        cuda_debian_setup = setup_cuda_debian(
+            distros = "ubuntu2004"
+        cuda_debian_setup = _setup_debian_base_cuda(
             repository=cuda.repository,
             distros=distros,
             cuda_major_version=cuda.version.major,
@@ -287,6 +303,7 @@ def debian_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]
         "setup_distro_env": SETUP_DEBIAN_ENV_TEMPLATE,
         "cleanup": CLEANUP_DEBIAN_TEMPLATE,
         "setup_cuda": cuda_debian_setup,
+        "install_user_system_packages": _install_debian_system_packages(docker_options),
     }
 
 
@@ -294,22 +311,54 @@ def debian_miniconda_template_context(
     docker_options: DockerOptions,
 ) -> t.Dict[str, t.Any]:
     """
-    Generate a Dockerfile for the Debian MinConda image.
+    Generate a Dockerfile for the Debian miniconda image.
+    Refers to https://github.com/mamba-org/micromamba-docker
     """
     SETUP_UID_GID_MICROMAMBA_TEMPLATE = """\
+ARG NEW_MAMBA_USER=bentoml
+ARG NEW_MAMBA_USER_ID=1034
+ARG NEW_MAMBA_USER_GID=1034
+
+RUN bash <<EOF
+usermod "--login=${NEW_MAMBA_USER}" "--home=/home/${NEW_MAMBA_USER}" --move-home "-u ${NEW_MAMBA_USER_ID}" "${MAMBA_USER}"
+groupmod "--new-name=${NEW_MAMBA_USER}" "-g ${NEW_MAMBA_USER_GID}" "${MAMBA_USER}"
+# Update the expected value of MAMBA_USER for the _entrypoint.sh consistency check.
+echo "${NEW_MAMBA_USER}" > "/etc/arg_mamba_user"
+:
+EOF
+
+ENV MAMBA_USER=$NEW_MAMBA_USER
+            """
+
+    INSTALL_PYTHON_WITH_MICROMAMBA_TEMPLATE = """\
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
+
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
+SAVED_PYTHON_VERSION=$(cat ./env/python/version.txt)
+PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
+
+echo "Installing Python $PYTHON_VERSION with micromamba..."
+micromamba install --yes --name base --channel conda-forge pkgs/main::python=$PYTHON_VERSION pip && micromamba clean --all --yes
+
+if [ -f ./env/conda/environment.yml ]; then
+  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # pip-installed packages to satisfy dependencies.
+  echo "Updating conda base environment with environment.yml"
+  micromamba config --set pip_interop_enabled True || true
+  micromamba env update -n base -f ./env/conda/environment.yml
+  micromamba clean --all
+fi
+EOF
             """
 
     cuda_version = docker_options.cuda_version
     if cuda_version is not None:
         cuda: CUDA = make_cuda_cls(docker_options.cuda_version)  # type: ignore
-        if "debian" in docker_options.distro:
-            if docker_options.cuda_version.startswith("10"):
-                distros = "ubuntu1804"
-            else:
-                distros = "ubuntu2004"
+        if cuda.version.major == "10":
+            distros = "ubuntu1804"
         else:
-            distros = "rhel8"
-        cuda_debian_setup = setup_cuda_debian(
+            distros = "ubuntu2004"
+        cuda_debian_setup = _setup_debian_base_cuda(
             repository=cuda.repository,
             distros=distros,
             cuda_major_version=cuda.version.major,
@@ -320,30 +369,131 @@ def debian_miniconda_template_context(
     return {
         "setup_uid_gid": SETUP_UID_GID_MICROMAMBA_TEMPLATE,
         "setup_distro_env": SETUP_DEBIAN_ENV_TEMPLATE,
-        "install_python_with_conda": INSTALL_PYTHON_WITH_CONDA_TEMPLATE,
+        "install_python_with_conda": INSTALL_PYTHON_WITH_MICROMAMBA_TEMPLATE,
         "cleanup": CLEANUP_DEBIAN_TEMPLATE,
         "setup_cuda": cuda_debian_setup,
+        "install_user_system_packages": _install_debian_system_packages(docker_options),
+        "setup_entrypoint": SETUP_ENTRYPOINT_TEMPLATE,
     }
+
+
+SETUP_RHEL_ENV_TEMPLATE = """\
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \\
+    yum upgrade -y \\
+    && yum install -y ca-certificates curl gcc gcc-c++ make \\
+    && yum clean all
+        """
+
+CLEANUP_RHEL_TEMPLATE = """\
+RUN yum clean all && rm -rf /var/cache/yum
+        """
+
+
+def _setup_rhel_base_cuda(
+    repository: str, distros: str, cuda_major_version: str, cuda_minor_version: str
+):
+    SETUP_RHEL_BASE_CUDA_TEMPLATE = f"""\
+RUN NVIDIA_GPGKEY_SUM=d0664fbbdb8c32356d45de36c5984617217b2d0bef41b93ccecd326ba3b80c87 \\
+    && curl -fsSL {repository}/{distros}/{'${NVARCH}'}/D42D0685.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA \\
+    && echo "$NVIDIA_GPGKEY_SUM /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+
+# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \\
+        yum upgrade -y && yum install -y \\
+        {'${NVIDIA_CUDA_CUDART_PACKAGE}'} \\
+        {'${NVIDIA_CUDA_COMPAT_PACKAGE}'} \\
+        && ln -s cuda-{cuda_major_version}.{cuda_minor_version} /usr/local/cuda \\
+        && yum remove -y curl \\
+        && yum clean all \\
+        && rm -rf /var/cache/yum
+        """
+    return SETUP_RHEL_BASE_CUDA_TEMPLATE
+
+
+def _install_rhel_system_packages(docker_options: DockerOptions) -> str:
+    if docker_options.system_packages is not None:
+        return f"""\
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \\
+    yum install -y \\
+    {" ".join(docker_options.system_packages)} \\
+    && yum clean all \\
+    && rm -rf /var/cache/yum
+            """
+    return ""
+
+
+def _setup_amazonlinux_env_template(docker_options: DockerOptions) -> str:
+    SETUP_AMAZONLINUX_ENV_TEMPLATE = f"""\
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \\
+    yum install -y amazon-linux-extras \\
+    && amazon-linux-extras enable python{docker_options.python_version} \\
+    && yum install python{docker_options.python_version}
+
+{SETUP_RHEL_ENV_TEMPLATE}
+                """
+    return SETUP_AMAZONLINUX_ENV_TEMPLATE
 
 
 def amazonlinux_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the Amazon Linux image.
     """
-    raise NotImplementedError
+    cuda_version = docker_options.cuda_version
+    if cuda_version is not None:
+        cuda: CUDA = make_cuda_cls(docker_options.cuda_version)  # type: ignore
+        if docker_options.distro in ["rhel7", "ubi7"]:
+            distros = "rhel7"
+        else:
+            distros = "rhel8"
+        cuda_rhel_setup = _setup_rhel_base_cuda(
+            repository=cuda.repository,
+            distros=distros,
+            cuda_major_version=cuda.version.major,
+            cuda_minor_version=cuda.version.minor,
+        )
+    else:
+        cuda_rhel_setup = ""
+    return {
+        "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
+        "setup_distro_env": _setup_amazonlinux_env_template(docker_options),
+        "cleanup": CLEANUP_RHEL_TEMPLATE,
+        "setup_cuda": cuda_rhel_setup,
+        "install_user_system_packages": _install_rhel_system_packages(docker_options),
+    }
 
 
 def ubi8_template_context(docker_options: DockerOptions) -> t.Dict[str, t.Any]:
     """
     Generate a Dockerfile for the UBI8 image.
     """
-    raise NotImplementedError
+    cuda_version = docker_options.cuda_version
+    if cuda_version is not None:
+        cuda: CUDA = make_cuda_cls(docker_options.cuda_version)  # type: ignore
+        if docker_options.distro in ["rhel7", "ubi7"]:
+            distros = "rhel7"
+        else:
+            distros = "rhel8"
+        cuda_rhel_setup = _setup_rhel_base_cuda(
+            repository=cuda.repository,
+            distros=distros,
+            cuda_major_version=cuda.version.major,
+            cuda_minor_version=cuda.version.minor,
+        )
+    else:
+        cuda_rhel_setup = ""
+    return {
+        "setup_uid_gid": SETUP_UID_GID_TEMPLATE,
+        "setup_distro_env": SETUP_RHEL_ENV_TEMPLATE,
+        "cleanup": CLEANUP_RHEL_TEMPLATE,
+        "setup_cuda": cuda_rhel_setup,
+        "install_user_system_packages": _install_rhel_system_packages(docker_options),
+    }
 
 
 DOCKERFILE_COMPONENTS = {
     "header": HEADER_TEMPLATE,
     "base_env": BASE_ENV_TEMPLATE,
-    "setup_bentoml_env": SETUP_BENTO_ENV_TEMPLATE,
+    "setup_bento_env": SETUP_BENTO_ENV_TEMPLATE,
     "setup_python_package": SETUP_PYTHON_PACKAGE_TEMPLATE,
     "setup_entrypoint": SETUP_ENTRYPOINT_TEMPLATE,
 }
@@ -358,7 +508,56 @@ TEMPLATE_MAP = {
 }
 
 
-def generate_dockerfile(docker_options: DockerOptions) -> str:
+def setup_release_stage_name(
+    docker_options: DockerOptions,
+    distro_spec: Distro,
+    release_stage_name: str,
+) -> str:
+    architecture = distro_spec.supported_architecture
+    cuda_spec = make_cuda_cls(docker_options.cuda_version)
+    if docker_options.cuda_version is not None:
+        cuda_architecture_mapping = {
+            "amd64": "x86_64",
+            "arm64": "sbsa",
+            "ppc64le": "ppc64le",
+        }
+        architecture = list(
+            filter(
+                lambda x: hasattr(cuda_spec, cuda_architecture_mapping.get(x, x)),
+                architecture,
+            )
+        )
+    FROM_STR = "\n\n".join(
+        [
+            f"FROM {release_stage_name} as {release_stage_name}-{arch}"
+            for arch in architecture
+        ]
+    )
+    FINAL_RELEASE_TEMPLATE = f"""\
+{FROM_STR}
+
+FROM {release_stage_name}-{'${TARGETARCH}'}
+
+ARG TARGETARCH
+
+ARG TARGETPLATFORM
+        """
+
+    # Accepts custom dockerfile
+    if docker_options.custom_dockerfile is not None:
+        return f"""\
+{FINAL_RELEASE_TEMPLATE}
+{docker_options.custom_dockerfile}
+                """
+
+    return FINAL_RELEASE_TEMPLATE
+
+
+def generate_dockerfile(
+    docker_options: DockerOptions,
+    *,
+    _release_stage_name: str = "releases",
+) -> str:
     distro = docker_options.distro
     cuda_version = docker_options.cuda_version
     python_version = docker_options.python_version
@@ -392,11 +591,17 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
 
     template_context = {
         "base_image": base_image,
+        "release_stage": _release_stage_name,
         "user_defined_image": docker_options._user_defined_image,  # type: ignore
         "bentoml_version": clean_bentoml_version(),  # ensure that we don't have a dirty version.
         "docker_options": bentoml_cattr.unstructure(docker_options),  # type: ignore
         "distro_spec": bentoml_cattr.unstructure(distro_spec),  # type: ignore
         "cuda_spec": bentoml_cattr.unstructure(cuda_spec),  # type: ignore
+        "final_release_stage": setup_release_stage_name(
+            docker_options=docker_options,
+            distro_spec=distro_spec,
+            release_stage_name=_release_stage_name,
+        ),
         **DOCKERFILE_COMPONENTS,
         **context_mapping[distro](docker_options),
     }

@@ -2,7 +2,7 @@
 ---
 # https://gitlab.com/nvidia/container-images/cuda/-/blob/master/manifests/cuda.yaml#L3635
 
-repository: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804
+repository: https://developer.download.nvidia.com/compute/cuda/repos
 
 architectures:
   - x86_64

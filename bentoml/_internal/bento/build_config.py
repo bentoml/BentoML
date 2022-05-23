@@ -9,7 +9,7 @@ import attr
 import yaml
 import fs.copy
 from fs.base import FS
-from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
+from piptools.scripts.compile import cli as pip_compile_cli
 
 from ._gen import generate_dockerfile
 from ..utils import bentoml_cattr
@@ -77,6 +77,22 @@ def _convert_cuda_version(cuda_version: t.Optional[str]) -> t.Optional[str]:
     return cuda_version
 
 
+def _convert_to_dockerfile_instruction(
+    maybe_path_or_instruction: t.Optional[str],
+) -> t.Optional[str]:
+    if maybe_path_or_instruction is None:
+        return None
+
+    if os.path.exists(maybe_path_or_instruction):
+        path = os.path.abspath(os.path.expandvars(maybe_path_or_instruction))
+        logger.debug(f"Path to custom Dockerfile is specified: {path}")
+        with open(path, "r") as f:
+            return f.readline()
+
+    # inline Dockerfile instruction under bentofile.yaml
+    return maybe_path_or_instruction
+
+
 @attr.frozen
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
@@ -116,6 +132,13 @@ class DockerOptions:
     # A user-provided custom docker image
     base_image: t.Optional[str] = None
 
+    # A user-provided Dockerfile that can be extended on top of bento's default Dockerfile
+    # Accepts both a path to a file and a Dockerfile as well as inline Dockerfile instruction under bentofile.yaml
+    custom_dockerfile: str = attr.field(
+        default=None,
+        converter=_convert_to_dockerfile_instruction,
+    )
+
     @property
     def _user_defined_image(self) -> bool:
         return self.base_image is not None
@@ -149,6 +172,8 @@ class DockerOptions:
                 update_defaults["python_version"] = PYTHON_VERSION
             if self.cuda_version is None:
                 update_defaults["cuda_version"] = None
+            if self.custom_dockerfile is None:
+                update_defaults["custom_dockerfile"] = None
 
         self = attr.evolve(self, **update_defaults)
 
@@ -182,8 +207,6 @@ class DockerOptions:
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(generate_dockerfile(self))
 
-        # copy over init.sh for bentoctl
-        # TODO:
         copy_file_to_fs_folder(
             fs.path.join(os.path.dirname(__file__), "docker", "entrypoint.sh"),
             bento_fs,

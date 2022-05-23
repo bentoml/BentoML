@@ -223,6 +223,38 @@ class Bento(StoreItem):
                         copy_file(ctx_fs, _path, target_fs, _path)
 
         if build_config.docker:
+            custom_dockerfile = build_config.docker.custom_dockerfile
+            if custom_dockerfile is not None:
+                logger.warning(
+                    f"""\
+        [bold red]`custom_dockerfile`[/] is provided. BentoML will append this into the generated Dockerfile.
+
+        [bold yellow]NOTE: 
+            1. During [bold magenta]{tag}[/]'s dockerfile generation, BentoML changes `WORKDIR` to `/home/bentoml/bento` for the Docker container. For any COPY, ADD instruction, make sure that the copying file is available under {build_ctx}.
+
+            2. The Dockerfile for building the {tag} contains: 
+
+                    ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
+
+                    CMD ["bentoml", "serve", ".", "--production"]
+
+                where the `./env/docker/entrypoint.sh` sets up the environment correctly to run bentoml in the subsequent `CMD`. This allows us to run the container directly as an executable: `docker run -p 3000:3000 {tag}`.
+
+                If the occassion rises where inside given `custom_dockerfile` contains a custom `ENTRYPOINT`:
+
+                    ENTRYPOINT [ "my_command" ]
+
+                Only the last `ENTRYPOINT` instruction in the Dockerfile will have an effect. In order to maintain the default bento container behaviour, add  `$BENTO_PATH/env/docker/entrypoint.sh` as first elements of `ENTRYPOINT`:
+
+                    ENTRYPOINT [ "$BENTO_PATH/env/docker/entrypoint.sh", "custom_scripts.sh" ]
+
+                    CMD ["bentoml", "serve", ".", "--production"]
+
+                Refers to https://docs.docker.com/engine/reference/builder/#understand-how-cmd-and-entrypoint-interact for further details.
+
+                        """,
+                    extra={"markup": True},
+                )
             build_config.docker.write_to_bento(bento_fs, build_ctx)
         if build_config.python:
             build_config.python.write_to_bento(bento_fs, build_ctx)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import functools
 from typing import TYPE_CHECKING
 
 import bentoml

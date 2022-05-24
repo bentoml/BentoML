@@ -99,8 +99,7 @@ def serve_development(
                 "fd://$(circus.sockets._bento_api_server)",
                 "--working-dir",
                 working_dir,
-            ]
-            + (["--reload", "--reload-delay", f"{reload_delay}"] if reload else []),
+            ],
             copy_env=True,
             stop_children=True,
             use_sockets=True,
@@ -108,9 +107,25 @@ def serve_development(
         )
     )
 
+    if reload:
+        # TODO:
+        # - also watch for version changes of models
+        plugins = [
+            dict(
+                use="bentoml._internal.utils.circus.BentoChangeReloader",
+                bento_identifier=bento_identifier,
+                working_dir=working_dir,
+                relaod_delay=reload_delay,
+            ),
+        ]
+    else:
+        plugins = []
+
     arbiter = create_standalone_arbiter(
         watchers,
         sockets=circus_sockets,
+        plugins=plugins,
+        debug=True,
     )
     ensure_prometheus_dir()
 

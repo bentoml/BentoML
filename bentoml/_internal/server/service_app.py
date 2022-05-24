@@ -284,7 +284,7 @@ class ServiceAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> list[t.Callable[[], None]]:
         on_startup = [self.bento_service.on_asgi_app_startup]
-        if DeploymentContainer.api_server_config.development_mode.get():
+        if DeploymentContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(runner._init_local)  # type: ignore
         else:

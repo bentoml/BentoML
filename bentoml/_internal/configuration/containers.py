@@ -94,6 +94,7 @@ SCHEMA = Schema(
                 "access_control_max_age": Or(int, None),
                 "access_control_expose_headers": Or([str], str, None),
             },
+            "development_mode": bool,
         },
         "runners": {
             "logging": {

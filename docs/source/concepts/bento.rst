@@ -373,132 +373,198 @@ Bentos are the unit of deployment in BentoML, one of the most important artifact
 track of for your model deployment workflow. Similar to Models, Bentos built can be
 managed via the :code:`bentoml` CLI command:
 
-.. tabbed:: Get
+.. tab-set::
 
-   .. code:: bash
+    .. tab-item:: Get
 
-      > bentoml get iris_classifier:latest
+       .. code:: bash
 
-      service: service:svc
-      name: iris_classifier
-      version: nvjtj7wwfgsafuqj
-      bentoml_version: 1.0.0
-      creation_time: '2022-05-17T21:36:36.436878+00:00'
-      labels:
-        owner: bentoml-team
-        project: gallery
-      models:
-      - tag: iris_clf:nb5vrfgwfgtjruqj
-        module: bentoml.sklearn
-        creation_time: '2022-05-17T21:36:27.656424+00:00'
-      runners:
-      - name: iris_clf
-        runnable_type: SklearnRunnable
-        models:
-        - iris_clf:nb5vrfgwfgtjruqj
-        resource_config:
-          cpu: 4.0
-          nvidia_gpu: 0.0
-      apis:
-      - name: classify
-        input_type: NumpyNdarray
-        output_type: NumpyNdarray
+          > bentoml get iris_classifier:latest
 
-.. tabbed:: List
+          service: service:svc
+          name: iris_classifier
+          version: nvjtj7wwfgsafuqj
+          bentoml_version: 1.0.0
+          creation_time: '2022-05-17T21:36:36.436878+00:00'
+          labels:
+            owner: bentoml-team
+            project: gallery
+          models:
+          - tag: iris_clf:nb5vrfgwfgtjruqj
+            module: bentoml.sklearn
+            creation_time: '2022-05-17T21:36:27.656424+00:00'
+          runners:
+          - name: iris_clf
+            runnable_type: SklearnRunnable
+            models:
+            - iris_clf:nb5vrfgwfgtjruqj
+            resource_config:
+              cpu: 4.0
+              nvidia_gpu: 0.0
+          apis:
+          - name: classify
+            input_type: NumpyNdarray
+            output_type: NumpyNdarray
 
-   .. code:: bash
+    .. tab-item:: List
 
-      > bentoml list
+       .. code:: bash
 
-      Tag                               Size        Creation Time        Path
-      iris_classifier:nvjtj7wwfgsafuqj  16.99 KiB   2022-05-17 21:36:36  ~/bentoml/bentos/iris_classifier/nvjtj7wwfgsafuqj
-      iris_classifier:jxcnbhfv6w6kvuqj  19.68 KiB   2022-04-06 22:02:52  ~/bentoml/bentos/iris_classifier/jxcnbhfv6w6kvuqj
+          > bentoml list
+
+          Tag                               Size        Creation Time        Path
+          iris_classifier:nvjtj7wwfgsafuqj  16.99 KiB   2022-05-17 21:36:36  ~/bentoml/bentos/iris_classifier/nvjtj7wwfgsafuqj
+          iris_classifier:jxcnbhfv6w6kvuqj  19.68 KiB   2022-04-06 22:02:52  ~/bentoml/bentos/iris_classifier/jxcnbhfv6w6kvuqj
 
 
-.. tabbed:: Import / Export
+    .. tab-item:: Import / Export
 
-   .. code:: bash
+       .. code:: bash
 
-      > bentoml export iris_classifier:latest .
+          > bentoml export iris_classifier:latest .
 
-      INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") exported to ./iris_classifier-nvjtj7wwfgsafuqj.bento
+          INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") exported to ./iris_classifier-nvjtj7wwfgsafuqj.bento
 
-   .. code:: bash
+       .. code:: bash
 
-      > bentoml import ./iris_classifier-nvjtj7wwfgsafuqj.bento
+          > bentoml import ./iris_classifier-nvjtj7wwfgsafuqj.bento
 
-      INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") imported
+          INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") imported
 
-   .. note::
+       .. note::
 
-      Bentos can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
-      example: :code:`bentoml export iris_classifier:latest s3://my_bucket/my_prefix/`
+          Bentos can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
+          example: :code:`bentoml export iris_classifier:latest s3://my_bucket/my_prefix/`
 
-.. tabbed:: Push / Pull
+    .. tab-item:: Push / Pull
 
-   If your team has `Yatai <https://github.com/bentoml/Yatai>`_ setup, you can also
-   push local Bentos to Yatai, it provides APIs and Web UI for managing all Bentos
-   created by your team, stores Bento files on cloud blob storage such as AWS S3, MinIO
-   or GCS, and automatically builds docker images when a new Bento was pushed.
+       If your team has `Yatai <https://github.com/bentoml/Yatai>`_ setup, you can also
+       push local Bentos to Yatai, it provides APIs and Web UI for managing all Bentos
+       created by your team, stores Bento files on cloud blob storage such as AWS S3, MinIO
+       or GCS, and automatically builds docker images when a new Bento was pushed.
 
-   .. code:: bash
+       .. code:: bash
 
-      > bentoml push iris_classifier:latest
+          > bentoml push iris_classifier:latest
 
-      Successfully pushed Bento "iris_classifier:nvjtj7wwfgsafuqj"
+          Successfully pushed Bento "iris_classifier:nvjtj7wwfgsafuqj"
 
-   .. code:: bash
+       .. code:: bash
 
-      > bentoml pull iris_classifier:nvjtj7wwfgsafuqj
+          > bentoml pull iris_classifier:nvjtj7wwfgsafuqj
 
-      Successfully pulled Bento "iris_classifier:nvjtj7wwfgsafuqj"
+          Successfully pulled Bento "iris_classifier:nvjtj7wwfgsafuqj"
 
-   .. image:: /_static/img/yatai-bento-repos.png
-     :alt: Yatai Bento Repo UI
+       .. image:: /_static/img/yatai-bento-repos.png
+         :alt: Yatai Bento Repo UI
 
-.. tabbed:: Delete
+    .. tab-item:: Delete
 
-   .. code:: bash
+       .. code:: bash
 
-      > bentoml delete iris_classifier:latest -y
+          > bentoml delete iris_classifier:latest -y
 
-      INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") deleted
+          INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") deleted
 
+
+Similar to :ref:`concepts/model:Managing Models`, equivalent Python APIs are provided
+for managing Bentos:
+
+.. tab-set::
+
+    .. tab-item:: Get
+
+        .. code:: python
+
+            import bentoml
+            bento = bentoml.get("iris_classifier:latest")
+
+            print(bento.tag)
+            print(bento.path)
+            print(bento.info.to_dict())
+
+    .. tab-item:: List
+
+        .. code:: python
+
+            import bentoml
+            bentos = bentoml.list()
+
+    .. tab-item:: Import / Export
+
+        .. code:: python
+
+            import bentoml
+            bentoml.export_bento('my_bento:latest', '/path/to/folder/my_bento.bento')
+
+        .. code:: bash
+
+            bentoml.import_bento('/path/to/folder/my_bento.bento')
+
+        .. note::
+
+            Bentos can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
+            example: :code:`bentoml.export_bento('my_bento:latest', 's3://my_bucket/folder')`
+
+    .. tab-item:: Push / Pull
+
+        If your team has `Yatai <https://github.com/bentoml/Yatai>`_ setup, you can also
+        push local Bentos to Yatai, it provides APIs and Web UI for managing all Bentos
+        created by your team, stores Bento files on cloud blob storage such as AWS S3, MinIO
+        or GCS, and automatically builds docker images when a new Bento was pushed.
+
+        .. code:: bash
+
+            import bentoml
+            bentoml.push("iris_classifier:nvjtj7wwfgsafuqj")
+
+        .. code:: bash
+
+            bentoml.pull("iris_classifier:nvjtj7wwfgsafuqj")
+
+        .. image:: /_static/img/yatai-bento-repos.png
+            :alt: Yatai Bento Repo UI
+
+    .. tab-item:: Delete
+
+        .. code:: bash
+
+            import bentoml
+            bentoml.delete("iris_classifier:nvjtj7wwfgsafuqj")
 
 .. tip::
 
-   If you need to exam the generated files in a specific Bento, use the
-   :code:`-o/--output` option to print the file path to the Bento archive directory,
-   e.g.:
+    If you need to exam the generated files in a specific Bento, use the
+    :code:`-o/--output` option to print the file path to the Bento archive directory.
 
-   .. code:: bash
+    .. code:: bash
 
-      > cd $(bentoml get iris_classifier:latest -o path)
-      > tree
-      .
-      ├── README.md
-      ├── apis
-      │   └── openapi.yaml
-      ├── bento.yaml
-      ├── env
-      │   ├── docker
-      │   │   ├── Dockerfile
-      │   │   ├── entrypoint.sh
-      │   │   └── init.sh
-      │   └── python
-      │       ├── requirements.lock.txt
-      │       ├── requirements.txt
-      │       └── version.txt
-      ├── models
-      │    └── iris_clf
-      │       ├── latest
-      │       └── nb5vrfgwfgtjruqj
-      │           ├── model.yaml
-      │           └── saved_model.pkl
-      └── src
-          ├── locustfile.py
-          ├── service.py
-          └── train.py
+        > cd $(bentoml get iris_classifier:latest -o path)
+        > tree
+        .
+        ├── README.md
+        ├── apis
+        │   └── openapi.yaml
+        ├── bento.yaml
+        ├── env
+        │   ├── docker
+        │   │   ├── Dockerfile
+        │   │   ├── entrypoint.sh
+        │   │   └── init.sh
+        │   └── python
+        │       ├── requirements.lock.txt
+        │       ├── requirements.txt
+        │       └── version.txt
+        ├── models
+        │    └── iris_clf
+        │       ├── latest
+        │       └── nb5vrfgwfgtjruqj
+        │           ├── model.yaml
+        │           └── saved_model.pkl
+        └── src
+            ├── locustfile.py
+            ├── service.py
+            └── train.py
 
-   We strongly recommend users **do not** change files in the generated Bento archive,
-   unless it's for debugging purpose.
+    :bdg-warning:`Warning:` users **should never** change files in the generated Bento
+    archive, unless it's for debugging purpose.

@@ -89,9 +89,12 @@ class TransformersOptions(ModelOptions):
             lambda instance, attribute, value: transformers.pipelines.check_task(value),  # type: ignore
         ]
     )
+
     pipeline: bool = attr.field(
         default=True, validator=attr.validators.instance_of(bool)
     )
+
+    kwargs: t.Dict[str, t.Any] = attr.field(default={})
 
     @classmethod
     def with_options(cls, **kwargs: t.Any) -> ModelOptions:
@@ -143,7 +146,15 @@ def load_model(
         )
 
     bento_model.info.parse_options(TransformersOptions)
-    return transformers.pipeline(bento_model.info.options.task, bento_model.path, **kwargs)  # type: ignore
+
+    pipeline_task: str = bento_model.info.options.task  # type: ignore
+    pipeline_kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
+    pipeline_kwargs.update(kwargs)
+    if len(pipeline_kwargs) > 0:
+        logger.info(
+            f"Loading '{pipeline_task}' pipeline '{bento_model.tag}' with kwargs {pipeline_kwargs}."
+        )
+    return transformers.pipeline(pipeline_task, bento_model.path, **pipeline_kwargs)  # type: ignore
 
 
 def save_model(

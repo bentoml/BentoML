@@ -15,6 +15,7 @@ from tests.utils.frameworks.tensorflow_utils import NativeModel
 from tests.utils.frameworks.tensorflow_utils import MultiInputModel
 from tests.utils.frameworks.tensorflow_utils import NativeRaggedModel
 from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
+from bentoml._internal.frameworks.tensorflow_v2 import TensorflowTensorContainer
 
 if TYPE_CHECKING:
     from bentoml._internal.external_typing import tensorflow as tf_ext
@@ -35,6 +36,10 @@ def _model_dunder_call(
     model: "tf_ext.Module", tensor: "tf_ext.TensorLike"
 ) -> "tf_ext.TensorLike":
     return model(tensor)
+
+
+def _tensor_equal(t1: "tf_ext.TensorLike", t2: "tf_ext.TensorLike") -> bool:
+    return tf.math.equal(t1, t2).numpy().all()
 
 
 @pytest.mark.parametrize(
@@ -110,3 +115,43 @@ def test_tensorflow_v2_setup_on_gpu():
 
 #     assert runner1.run_batch(native_data, native_data) == np.array([[60.0]])
 #     assert runner2.run_batch(native_data, native_data) == np.array([[45.0]])
+
+
+@pytest.mark.parametrize("batch_dim", [0, 1])
+def test_tensorflow_container(batch_dim: int):
+
+    arr1 = np.ones((3, 3))
+    if batch_dim == 0:
+        arr2 = np.arange(6).reshape(2, 3)
+    else:
+        arr2 = np.arange(6).reshape(3, 2)
+
+    tensor1: "tf_ext.TensorLike" = tf.convert_to_tensor(arr1, dtype=tf.float32)
+    tensor2: "tf_ext.TensorLike" = tf.convert_to_tensor(arr2, dtype=tf.float32)
+
+    batches = [tensor1, tensor2]
+    batch, indices = TensorflowTensorContainer.batches_to_batch(
+        batches, batch_dim=batch_dim
+    )
+    expected_batch: tf.Tensor = tf.concat(batches, axis=batch_dim)
+    assert _tensor_equal(batch, expected_batch)
+
+    restored_tensor1, restored_tensor2 = TensorflowTensorContainer.batch_to_batches(
+        batch, indices, batch_dim=batch_dim
+    )
+    assert _tensor_equal(restored_tensor1, tensor1)
+    assert _tensor_equal(restored_tensor2, tensor2)
+
+    from_payload = TensorflowTensorContainer.from_payload(
+        TensorflowTensorContainer.to_payload(tensor1)
+    )
+    assert _tensor_equal(from_payload, tensor1)
+
+    restored_batch, restored_indices = TensorflowTensorContainer.from_batch_payloads(
+        TensorflowTensorContainer.batch_to_payloads(
+            batch, indices, batch_dim=batch_dim
+        ),
+        batch_dim=batch_dim,
+    )
+    assert restored_indices == indices
+    assert _tensor_equal(restored_batch, batch)

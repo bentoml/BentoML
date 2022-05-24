@@ -298,7 +298,7 @@ class TensorflowTensorContainer(DataContainer[tf.Tensor, tf.Tensor]):
         cls, batch: "tf_ext.Tensor", indices: t.Sequence[int], batch_dim: int = 0
     ) -> t.List["tf_ext.Tensor"]:
         size_splits = [indices[i + 1] - indices[i] for i in range(len(indices) - 1)]
-        return tf.split(batch, size_splits)  # type: ignore
+        return tf.split(batch, size_splits, axis=batch_dim)  # type: ignore
 
     @classmethod
     def to_payload(

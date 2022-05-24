@@ -49,28 +49,36 @@ python -m http.server 8000 -d docs/build/html
 And open your browser at http://0.0.0.0:8000/ to view the generated docs.
 
 
+#### Spellcheck 
+
+Install spellchecker dependencies:
+```bash
+make install-spellchecker-deps
+```
+
+To run spellchecker locally:
+```bash
+make spellcheck-doc
+```
+
 ##### Watch Docs
 
-On MacOS and Linux (UNIX-based system only), it is possible to watch documentation 
-source changes and automatically rebuild the docs and refreshes the page in your 
-browser.
+We recommend using sphinx-autobuild during development, which provides a live-reloading 
+server, that rebuilds the documentation and refreshes any open pages automatically when 
+changes are saved. This enables a much shorter feedback loop which can help boost 
+productivity when writing documentation.
 
 Simply run the following command from BentoML project's root directory: 
 
 ```bash
-make watch-docs
+sphinx-autobuild docs/source docs/build/html
 ```
 
-_Note: Accessing this feature requires `make` command_ 
+If you have `make` installed, you may also run:
 
-> For Apple Silicon (M1), follow the latest suggested installation method for [PyEnchant](https://pyenchant.github.io/pyenchant/install.html). As of this writing there is no compatible arm64 version of pyenchant and the best way to install is the following commands:
->
-> ```bash
-> arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-> arch -x86_64 /usr/local/bin/brew install enchant
-> ```
-> Make sure that PYENCHANT_LIBRARY_PATH is set to the location of libenchant. For MacOS make sure it has the dylib extension, otherwise the .so for Linux based systems.
-
+```bash
+make watch-docs
+```
 
 
 ## Writing Documentation

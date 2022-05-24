@@ -220,64 +220,6 @@ Run type checker:
 ```bash
 make type
 ```
-
-## Documentations
-
-Refers to [BentoML Documentation](./docs/README.md) for more information
-
-Install all docs dependencies:
-```bash
-pip install -r requirements/docs-requirements.txt
-```
-
-To build documentation for locally:
-```bash
-cd docs/
-make clean && make html
-```
-
-
-Modify `*.rst` files inside the `docs` folder to update content, and to
-view your changes, run the following command:
-
-```bash
-python -m http.server --directory ./docs/build/html
-```
-
-Docs can then be accessed at [localhost:8000](http://localhost:8000)
-
-If you are developing under macOS or Linux, we also made a script that watches docs
-file changes, automatically rebuild the docs, and refreshes the browser
-tab to show the change (UNIX-based system only):
-```bash
-./scripts/watch_docs.sh
-```
-
-### Running spellcheck for documentation site.
-
-Install spellchecker dependencies:
-```bash
-make install-spellchecker-deps
-```
-
-To run spellchecker locally:
-```bash
-make spellcheck-doc
-```
-
-#### macOS
-
-Make sure you have fswatch command installed:
-```
-brew install fswatch
-```
-
-#### Debian-based distros
-Make sure you have `inotifywait` installed
-```shell script
-sudo apt install inotify-tools
-```
-
 ## Python tools ecosystem
 
 Currently BentoML are [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible via `setup.cfg` and `pyproject.toml`.
@@ -354,3 +296,7 @@ your branch and the BentoML authors will be notified to review your code
 changes. Once tests are passed and reviewer has signed off, we will merge
 your pull request.
 
+## Documentations
+
+Refers to [BentoML Documentation Guide](./docs/README.md) for how to build and write
+docs.

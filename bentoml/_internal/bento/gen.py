@@ -75,13 +75,6 @@ def ensure_components(
 
 
 HEADER_TEMPLATE = """\
-# syntax = docker/dockerfile:1.4-labs
-#
-# ===========================================
-#
-# THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
-#
-# ===========================================
         """
 
 
@@ -560,10 +553,10 @@ ARG TARGETPLATFORM
         """
 
     # Accepts custom dockerfile
-    if docker_options.custom_dockerfile is not None:
+    if docker_options.dockerfile_template is not None:
         return f"""\
 {FINAL_RELEASE_TEMPLATE}
-{docker_options.custom_dockerfile}
+{docker_options.dockerfile_template}
                 """
 
     return FINAL_RELEASE_TEMPLATE

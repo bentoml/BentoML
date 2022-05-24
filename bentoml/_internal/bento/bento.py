@@ -223,44 +223,6 @@ class Bento(StoreItem):
                         copy_file(ctx_fs, _path, target_fs, _path)
 
         if build_config.docker:
-            custom_dockerfile = build_config.docker.custom_dockerfile
-            if custom_dockerfile is not None:
-                logger.warning(
-                    f"""\
-[bold yellow]NOTE: Since [bold red]`custom_dockerfile`[/] is provided:
-    1. `custom_dockerfile` shouldn't contain any [bold red]`FROM`[/] instruction. BentoML will generate one for you.
-        An example `custom.Dockerfile` provided via `docker.custom_dockerfile=/path/to/custom.Dockerfile`:
-
-            COPY ./README.md .
-
-            RUN python -c "import sys; print('Python version: {'{}'}'.format(sys.version))"
-
-    2. During [bold magenta]{tag}[/]'s dockerfile generation, BentoML changes `WORKDIR` to `/home/bentoml/bento` for the Docker container.
-        For any COPY, ADD instruction, make sure that the copying file is available under {build_ctx}.
-
-    3. The Dockerfile for building `{tag}` contains:
-
-            ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
-            CMD ["bentoml", "serve", ".", "--production"]
-
-        where the `./env/docker/entrypoint.sh` sets up the environment correctly to run bentoml in the subsequent `CMD`.
-        This allows us to run the container directly as an executable: `docker run -p 3000:3000 {tag}`.
-
-        If the occassion arises where inside given `custom_dockerfile` contains a custom `ENTRYPOINT`, or changing `WORKDIR`:
-
-            ENTRYPOINT [ "my_command" ]
-
-            WORKDIR "/my/custom/workdir"
-
-        Only the last `ENTRYPOINT` instruction in the Dockerfile will have an effect. In order to maintain the default bento container behaviour, add  `/home/bentoml/bento/env/docker/entrypoint.sh` as first elements of `ENTRYPOINT`:
-
-            ENTRYPOINT [ "/home/bentoml/bento/env/docker/entrypoint.sh", "custom_scripts.sh" ]
-            CMD ["bentoml", "serve", "/home/bentoml/bento", "--production"]
-
-        Refers to https://docs.docker.com/engine/reference/builder/#understand-how-cmd-and-entrypoint-interact for further details.
-                """,
-                    extra={"markup": True},
-                )
             build_config.docker.write_to_bento(bento_fs, build_ctx)
         if build_config.python:
             build_config.python.write_to_bento(bento_fs, build_ctx)

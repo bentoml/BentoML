@@ -1,51 +1,18 @@
-{{ header }}
-{% set cached = [] %}
+# syntax = docker/dockerfile:1.4-labs
+#
+# ===========================================
+#
+# THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
+#
+# ===========================================
 ARG XX_VERSION=master
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
-{% if user_defined_image != true %}
+{% block setup_base_image %}
 FROM {{ base_image }} as cached
-
 FROM {{ base_image }} as base
-
-{% if docker_options.cuda_version is not none %}
-{% include "cuda.j2" %}
-{% if 'x86_64' in cuda_spec %}
-{% do cached.append("amd64") %}
-{% endif %}
-{% if 'sbsa' in cuda_spec %}
-{% do cached.append("arm64") %}
-{% endif %}
-{% if 'ppc64le' in cuda_spec %}
-{% do cached.append("ppc64le") %}
-{% endif %}
-{% endif %}
-
-{% if docker_options.cuda_version is none %}
-{% for key in distro_spec.supported_architecture if key not in cached %}
-{% if 'arm64' in key %}
-FROM base as base-arm64
-{% elif 'arm' in key %}
-FROM base as base-arm
-{% elif 'i386' in key %}
-FROM base as base-386
-{% elif 's390x' in key %}
-FROM base as base-s390x
-{% else %}
-FROM base as base-{{ key }}
-{% endif %}
-{% endfor %}
-{% endif %}
-
-FROM base-${TARGETARCH} as {{ release_stage }}
-{% else %}
-# custom base image: {{ base_image }}
-# Make sure to have Python and requires dependencies install on this image.
-FROM {{ base_image }} as cached
-
-FROM {{ base_image }} as {{ release_stage }}
-{% endif %}
+{% endblock %}
 
 {{ base_env }}
 {% if docker_options.distro in ["ubi8", "amazonlinux", "debian-miniconda"] %}

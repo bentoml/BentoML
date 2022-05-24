@@ -11,7 +11,7 @@ import fs.copy
 from fs.base import FS
 from piptools.scripts.compile import cli as pip_compile_cli
 
-from ._gen import generate_dockerfile
+from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
@@ -100,7 +100,19 @@ def _convert_user_envars(
         return None
 
     if isinstance(envars, list):
-        return {k: v for envar in envars for k, v in envar.split("=")}
+        result = {}
+        for envar in envars:
+            try:
+                k, v = envar.split("=")
+                if not k.isupper():
+                    raise InvalidArgument(f"{k} should be in all UPPERCASE")
+                result[k] = v
+            except ValueError as ve:
+                raise InvalidArgument(
+                    f"{envar} doesn't follow format ENVAR=value"
+                ) from ve
+            except InvalidArgument:
+                raise
     else:
         return envars
 
@@ -139,11 +151,7 @@ class DockerOptions:
     )
 
     # A user-provided environment variable to be passed to a given bento
-    env: t.Dict[str, t.Any] = attr.field(
-        default=None,
-        converter=_convert_user_envars,
-        validator=attr.validators.optional(or_(dict, list)),
-    )
+    env: t.Dict[str, t.Any] = attr.field(default=None, converter=_convert_user_envars)
 
     # A user-provided system packages that can be installed for a given bento
     # using distro package manager.
@@ -157,7 +165,7 @@ class DockerOptions:
 
     # A user-provided Dockerfile that can be extended on top of bento's default Dockerfile
     # Accepts both a path to a file and a Dockerfile as well as inline Dockerfile instruction under bentofile.yaml
-    custom_dockerfile: str = attr.field(
+    dockerfile_template: str = attr.field(
         default=None,
         converter=_convert_to_dockerfile_instruction,
     )
@@ -195,8 +203,8 @@ class DockerOptions:
                 update_defaults["python_version"] = PYTHON_VERSION
             if self.cuda_version is None:
                 update_defaults["cuda_version"] = None
-            if self.custom_dockerfile is None:
-                update_defaults["custom_dockerfile"] = None
+            if self.dockerfile_template is None:
+                update_defaults["dockerfile_template"] = None
             if self.env is None:
                 update_defaults["env"] = None
 

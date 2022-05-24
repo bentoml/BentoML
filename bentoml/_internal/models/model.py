@@ -26,6 +26,7 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
+from ..types import MetadataType  # type: ignore
 from ..types import MetadataDict
 from ..types import MetadataType  # noqa # pylint: disable
 from ..utils import bentoml_cattr

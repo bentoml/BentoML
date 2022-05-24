@@ -108,8 +108,6 @@ def serve_development(
     )
 
     if reload:
-        # TODO:
-        # - also watch for version changes of models
         plugins = [
             dict(
                 use="bentoml._internal.utils.circus.BentoChangeReloader",

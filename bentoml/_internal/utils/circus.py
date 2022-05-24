@@ -62,6 +62,10 @@ def create_standalone_arbiter(
             )
 
 
+# TODO: use svc.build_args.include/exclude as default files to watch
+# TODO: watch changes in model store when "latest" model tag is used
+
+
 class BentoChangeReloader(CircusPlugin):
     """
     A circus plugin that reloads the BentoService when the service code changes.
@@ -79,6 +83,7 @@ class BentoChangeReloader(CircusPlugin):
         *args: typing.Any,
         **config: typing.Any,
     ):
+        assert "bento_identifier" in config, "bento_identifier is required"
         assert "working_dir" in config, "working_dir is required"
 
         super().__init__(*args, **config)

@@ -39,7 +39,7 @@ CUDA_VERSION_MAJOR_MAPPING = {
 if PYTHON_VERSION not in DOCKER_SUPPORTED_PYTHON_VERSION:
     logger.warning(
         f"BentoML may not work well with current python version: {PYTHON_VERSION}, "
-        f"supported python versions are: {','.join(DOCKER_SUPPORTED_PYTHON_VERSION)}"
+        f"supported python versions are: {', '.join(DOCKER_SUPPORTED_PYTHON_VERSION)}"
     )
 
 
@@ -520,6 +520,7 @@ class BentoBuildConfig:
                 if (
                     distro in ["alpine", "alpine-miniconda"]
                     and "scikit-learn" in yaml_content["python"]["packages"]
+                    and yaml_content["docker"]["system_packages"] is None
                 ):
                     logger.warning(
                         "In order to support scikit-learn on alpine-based images, "

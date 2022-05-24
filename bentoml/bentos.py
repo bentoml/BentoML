@@ -443,7 +443,7 @@ def containerize(
         )
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
-        logger.info(
+        logger.debug(
             f"""\
 If you run into the following error:
 

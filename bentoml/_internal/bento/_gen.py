@@ -124,7 +124,8 @@ SETUP_PYTHON_PACKAGE_TEMPLATE = """\
 # BentoML by default generates two requirment files:
 #  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
 #  - ./env/python/requirements.txt: all dependecies as user specified in code or requirements.txt file
-# We will only copy over the requirements.txt.lock to install package with -U
+# We will try to install from  requirements.txt.lock to install package with -U,
+# else we will try to install from requirements.txt.
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
 if [ -f ./env/python/pip_args.txt ]; then
   EXTRA_PIP_INSTALL_ARGS=$(cat ./env/python/pip_args.txt)
@@ -132,6 +133,19 @@ fi
 if [ -f ./env/python/requirements.lock.txt ]; then
   echo "Installing pip packages from 'requirements.lock.txt'.."
   pip install -r ./env/python/requirements.lock.txt -U --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+else
+  if [ -f ./env/python/requirements.txt ]; then
+    echo "Installing pip packages from 'requirements.txt'.."
+    pip install -r ./env/python/requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+  fi
+fi
+EOF
+
+# install wheels included in Bento
+RUN bash <<EOF
+if [ -d ./env/python/wheels ]; then
+  echo "Installing wheels.."
+  pip install --no-cache-dir ./env/python/wheels/*.whl
 fi
 EOF
 

@@ -227,32 +227,38 @@ class Bento(StoreItem):
             if custom_dockerfile is not None:
                 logger.warning(
                     f"""\
-        [bold red]`custom_dockerfile`[/] is provided. BentoML will append this into the generated Dockerfile.
+[bold yellow]NOTE: Since [bold red]`custom_dockerfile`[/] is provided:
+    1. `custom_dockerfile` shouldn't contain any [bold red]`FROM`[/] instruction. BentoML will generate one for you.
+        An example `custom.Dockerfile` provided via `docker.custom_dockerfile=/path/to/custom.Dockerfile`:
 
-        [bold yellow]NOTE: 
-            1. During [bold magenta]{tag}[/]'s dockerfile generation, BentoML changes `WORKDIR` to `/home/bentoml/bento` for the Docker container. For any COPY, ADD instruction, make sure that the copying file is available under {build_ctx}.
+            COPY ./README.md .
 
-            2. The Dockerfile for building the {tag} contains: 
+            RUN python -c "import sys; print('Python version: {'{}'}'.format(sys.version))"
 
-                    ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
+    2. During [bold magenta]{tag}[/]'s dockerfile generation, BentoML changes `WORKDIR` to `/home/bentoml/bento` for the Docker container.
+        For any COPY, ADD instruction, make sure that the copying file is available under {build_ctx}.
 
-                    CMD ["bentoml", "serve", ".", "--production"]
+    3. The Dockerfile for building `{tag}` contains:
 
-                where the `./env/docker/entrypoint.sh` sets up the environment correctly to run bentoml in the subsequent `CMD`. This allows us to run the container directly as an executable: `docker run -p 3000:3000 {tag}`.
+            ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
+            CMD ["bentoml", "serve", ".", "--production"]
 
-                If the occassion rises where inside given `custom_dockerfile` contains a custom `ENTRYPOINT`:
+        where the `./env/docker/entrypoint.sh` sets up the environment correctly to run bentoml in the subsequent `CMD`.
+        This allows us to run the container directly as an executable: `docker run -p 3000:3000 {tag}`.
 
-                    ENTRYPOINT [ "my_command" ]
+        If the occassion arises where inside given `custom_dockerfile` contains a custom `ENTRYPOINT`, or changing `WORKDIR`:
 
-                Only the last `ENTRYPOINT` instruction in the Dockerfile will have an effect. In order to maintain the default bento container behaviour, add  `$BENTO_PATH/env/docker/entrypoint.sh` as first elements of `ENTRYPOINT`:
+            ENTRYPOINT [ "my_command" ]
 
-                    ENTRYPOINT [ "$BENTO_PATH/env/docker/entrypoint.sh", "custom_scripts.sh" ]
+            WORKDIR "/my/custom/workdir"
 
-                    CMD ["bentoml", "serve", ".", "--production"]
+        Only the last `ENTRYPOINT` instruction in the Dockerfile will have an effect. In order to maintain the default bento container behaviour, add  `/home/bentoml/bento/env/docker/entrypoint.sh` as first elements of `ENTRYPOINT`:
 
-                Refers to https://docs.docker.com/engine/reference/builder/#understand-how-cmd-and-entrypoint-interact for further details.
+            ENTRYPOINT [ "/home/bentoml/bento/env/docker/entrypoint.sh", "custom_scripts.sh" ]
+            CMD ["bentoml", "serve", "/home/bentoml/bento", "--production"]
 
-                        """,
+        Refers to https://docs.docker.com/engine/reference/builder/#understand-how-cmd-and-entrypoint-interact for further details.
+                """,
                     extra={"markup": True},
                 )
             build_config.docker.write_to_bento(bento_fs, build_ctx)

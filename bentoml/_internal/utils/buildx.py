@@ -101,7 +101,7 @@ def create(
     if name is not None:
         cmds.extend(["--name", name])
 
-    if platform is None:
+    if not platform:
         platform = [
             "linux/amd64",
             "linux/arm64/v8",
@@ -245,7 +245,7 @@ def build(
             args = [f"{k}={v}" for k, v in output.items()]
             cmds += ["--output", ",".join(args)]
 
-    if platform is not None:
+    if platform:
         if isinstance(platform, str):
             platform = [platform]
         cmds += ["--platform", ",".join(platform)]

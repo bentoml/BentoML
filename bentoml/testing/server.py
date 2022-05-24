@@ -290,7 +290,7 @@ def run_bento_server_distributed(
 
     with reserve_free_port() as server_port:
         bind = f"tcp://127.0.0.1:{server_port}"
-        my_env["RUNNER_MAP"] = json.dumps(runner_map)
+        my_env["BENTOML_RUNNER_MAP"] = json.dumps(runner_map)
         cmd = [
             sys.executable,
             "-m",

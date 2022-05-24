@@ -7,7 +7,6 @@ from bentoml._internal.types import FileLike
 from bentoml._internal.types import JSONSerializable
 
 
-
 class PickleModel:
     def predict_file(self, input_files: t.List[FileLike[bytes]]) -> t.List[bytes]:
         return [f.read() for f in input_files]

@@ -93,6 +93,25 @@ def _convert_to_dockerfile_instruction(
     return maybe_path_or_instruction
 
 
+def _convert_user_envars(
+    envars: t.Optional[t.Union[t.List[str], t.Dict[str, t.Any]]]
+) -> t.Optional[t.Dict[str, t.Any]]:
+    if envars is None:
+        return None
+
+    if isinstance(envars, list):
+        return {k: v for envar in envars for k, v in envar.split("=")}
+    else:
+        return envars
+
+
+def or_(t1: type, t2: type) -> t.Any:
+    def validator(_: t.Any, __: t.Any, value: t.Any) -> t.Any:
+        return isinstance(value, t1) or isinstance(value, t2)
+
+    return validator
+
+
 @attr.frozen
 class DockerOptions:
     # Options for choosing a BentoML built-in docker images
@@ -120,7 +139,11 @@ class DockerOptions:
     )
 
     # A user-provided environment variable to be passed to a given bento
-    env: t.Optional[t.Dict[str, t.Any]] = None
+    env: t.Dict[str, t.Any] = attr.field(
+        default=None,
+        converter=_convert_user_envars,
+        validator=attr.validators.optional(or_(dict, list)),
+    )
 
     # A user-provided system packages that can be installed for a given bento
     # using distro package manager.
@@ -174,6 +197,8 @@ class DockerOptions:
                 update_defaults["cuda_version"] = None
             if self.custom_dockerfile is None:
                 update_defaults["custom_dockerfile"] = None
+            if self.env is None:
+                update_defaults["env"] = None
 
         self = attr.evolve(self, **update_defaults)
 

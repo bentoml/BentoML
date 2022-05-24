@@ -128,10 +128,8 @@ class Model(StoreItem):
     def custom_objects(self) -> t.Dict[str, t.Any]:
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
-                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "r") as cofile:
-                    self._custom_objects: t.Optional[
-                        t.Dict[str, t.Any]
-                    ] = cloudpickle.load(  # type: ignore (incomplete cloudpickle types)
+                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
+                    self._custom_objects: dict[str, t.Any] | None = cloudpickle.load(
                         cofile
                     )
                     if not isinstance(self._custom_objects, dict):
@@ -475,7 +473,10 @@ class ModelInfo:
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
     options: ModelOptions
-    metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
+    # TODO: make metadata a MetadataDict; this works around a bug in attrs
+    metadata: t.Dict[str, t.Any] = attr.field(
+        validator=metadata_validator, converter=dict
+    )
     context: ModelContext = attr.field()
     signatures: t.Dict[str, ModelSignature] = attr.field(
         converter=ModelSignature.convert_signatures_dict
@@ -491,7 +492,7 @@ class ModelInfo:
         module: str,
         labels: dict[str, str],
         options: ModelOptions,
-        metadata: dict[str, t.Any],
+        metadata: MetadataDict,
         context: ModelContext,
         signatures: ModelSignaturesType,
         api_version: str | None = None,

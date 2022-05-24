@@ -59,7 +59,9 @@ signatures:
     batchable: false
   classify:
     batchable: true
-    batch_dim: 0
+    batch_dim:
+    - 0
+    - 0
   predict_ii:
     batchable: true
     batch_dim:
@@ -68,9 +70,7 @@ signatures:
   classify_ii:
     batchable: true
     batch_dim:
-    - - 1
-      - 0
-      - 2
+    - 1
     - 3
 api_version: v1
 creation_time: '{creation_time}'
@@ -109,9 +109,9 @@ def test_model_info(tmpdir: "Path"):
     # TODO: add test cases for input_spec and output_spec
     signatures = {
         "predict": {"batchable": False},
-        "classify": {"batchable": True, "batch_dim": 0},
+        "classify": {"batchable": True, "batch_dim": (0, 0)},
         "predict_ii": {"batchable": True, "batch_dim": (0, 3)},
-        "classify_ii": {"batchable": True, "batch_dim": ([1, 0, 2], 3)},
+        "classify_ii": {"batchable": True, "batch_dim": (1, 3)},
     }
 
     modelinfo_b = ModelInfo(

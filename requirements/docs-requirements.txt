@@ -5,6 +5,7 @@ myst-parser
 sphinx-click>=3.0.2
 furo
 sphinx-inline-tabs
+sphinxext-opengraph
 sphinxcontrib-fulltoc
 sphinxcontrib-spelling
 sphinx-copybutton

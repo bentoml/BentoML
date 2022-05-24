@@ -19,6 +19,7 @@ master_doc = "index"
 
 # Sphinx extensions
 extensions = [
+    "sphinxext.opengraph",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
@@ -40,6 +41,11 @@ napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
 autosectionlabel_prefix_document = True
+
+ogp_site_url = "http://docs.bentoml.org"
+ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-readme-header.jpeg"
+ogp_site_name = "BentoML Documentation"
+ogp_use_first_image = True
 
 issues_default_group_project = "bentoml/bentoml"
 
@@ -75,6 +81,14 @@ html_theme_options = {
     "source_repository": "https://github.com/bentoml/bentoml/",
     "source_branch": "main",
     "source_directory": "docs/source/",
+    "footer_icons": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/bentoml/bentoml",
+            "html": " 🍱 ",
+            "class": "",
+        },
+    ],
 }
 
 html_title = "BentoML"

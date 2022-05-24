@@ -105,19 +105,19 @@ def test_tensorflow_v2_multi_args():
     model_class = MultiInputModel()
     tag = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
 
-    partial_kwargs1 = {
-        "__call__": {
-            "factor": tf.constant(3.0, dtype=tf.float64)
-        }
-    }
-    runner1 = bentoml.tensorflow.get(tag).with_options(partial_kwargs=partial_kwargs1).to_runner()
+    partial_kwargs1 = {"__call__": {"factor": tf.constant(3.0, dtype=tf.float64)}}
+    runner1 = (
+        bentoml.tensorflow.get(tag)
+        .with_options(partial_kwargs=partial_kwargs1)
+        .to_runner()
+    )
 
-    partial_kwargs2 = {
-        "__call__": {
-            "factor": tf.constant(2.0, dtype=tf.float64)
-        }
-    }
-    runner2 = bentoml.tensorflow.get(tag).with_options(partial_kwargs=partial_kwargs2).to_runner()
+    partial_kwargs2 = {"__call__": {"factor": tf.constant(2.0, dtype=tf.float64)}}
+    runner2 = (
+        bentoml.tensorflow.get(tag)
+        .with_options(partial_kwargs=partial_kwargs2)
+        .to_runner()
+    )
 
     runner1.init_local()
     runner2.init_local()

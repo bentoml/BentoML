@@ -39,8 +39,8 @@ except ImportError:  # pragma: no cover
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
-    from ..external_typing import tensorflow as tf_ext
     from ..models.model import ModelSignatureDict
+    from ..external_typing import tensorflow as tf_ext
 
     TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
@@ -98,7 +98,9 @@ def save_model(
     *,
     tf_signatures: "tf_ext.ConcreteFunction" | None = None,
     tf_save_options: "tf_ext.SaveOptions" | None = None,
-    signatures: t.Dict[str, ModelSignature] | t.Dict[str, ModelSignatureDict] | None = None,
+    signatures: t.Dict[str, ModelSignature]
+    | t.Dict[str, ModelSignatureDict]
+    | None = None,
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
@@ -190,7 +192,7 @@ def save_model(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-        signatures=signatures, # type: ignore
+        signatures=signatures,  # type: ignore
     ) as bento_model:
 
         tf.saved_model.save(
@@ -222,7 +224,7 @@ def get_runnable(
             super().__init__()
             if len(tf.config.list_physical_devices("GPU")) > 0:
                 # In Multi-GPU scenarios, the visible cuda devices will be set for each Runner worker
-                # by the runner's Scheduling Strategy. So that the Runnable implementation only needs 
+                # by the runner's Scheduling Strategy. So that the Runnable implementation only needs
                 # to find the first GPU device visible to current process.
                 self.device_name = "/device:GPU:0"
             else:

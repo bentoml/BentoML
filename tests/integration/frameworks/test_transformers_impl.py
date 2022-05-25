@@ -17,6 +17,22 @@ if TYPE_CHECKING:
 set_seed(124)
 
 
+def tf_gpt2_pipeline():
+    model = transformers.TFAutoModelForCausalLM.from_pretrained("gpt2")
+    tokenizer = transformers.AutoTokenizer.from_pretrained("gpt2")
+    return transformers.pipeline(
+        task="text-generation", model=model, tokenizer=tokenizer
+    )
+
+
+def pt_gpt2_pipeline():
+    model = transformers.AutoModelForCausalLM.from_pretrained("gpt2", from_tf=False)
+    tokenizer = transformers.AutoTokenizer.from_pretrained("gpt2", from_tf=False)
+    return transformers.pipeline(
+        task="text-generation", model=model, tokenizer=tokenizer
+    )
+
+
 @pytest.mark.parametrize(
     "name, pipeline, with_options, expected_options, input_data",
     [
@@ -32,6 +48,20 @@ set_seed(124)
             transformers.pipeline(task="text-generation"),  # type: ignore
             {"pipeline": True, "task": "text-generation", "kwargs": {"a": 1}},
             {"pipeline": True, "task": "text-generation", "kwargs": {"a": 1}},
+            "A Bento box is a ",
+        ),
+        (
+            "text-generation",
+            tf_gpt2_pipeline(),
+            {"pipeline": True, "task": "text-generation"},
+            {"pipeline": True, "task": "text-generation"},
+            "A Bento box is a ",
+        ),
+        (
+            "text-generation",
+            pt_gpt2_pipeline(),
+            {"pipeline": True, "task": "text-generation"},
+            {"pipeline": True, "task": "text-generation"},
             "A Bento box is a ",
         ),
         (

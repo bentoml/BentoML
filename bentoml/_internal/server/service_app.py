@@ -322,34 +322,33 @@ class ServiceAppFactory(BaseAppFactory):
             # handle_request may raise 4xx or 5xx exception.
             try:
                 input_data = await api.input.from_http_request(request)
-                response = await api.output.init_http_response()
                 ctx = None
                 if asyncio.iscoroutinefunction(api.func):
                     if isinstance(api.input, Multipart):
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             input_data[api.ctx_param] = ctx
                         output = await api.func(**input_data)
                     else:
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             output = await api.func(input_data, ctx)
                         else:
                             output = await api.func(input_data)
                 else:
                     if isinstance(api.input, Multipart):
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             input_data[api.ctx_param] = ctx
                         output: t.Any = await run_in_threadpool(api.func, **input_data)
                     else:
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             output = await run_in_threadpool(api.func, input_data, ctx)
                         else:
                             output = await run_in_threadpool(api.func, input_data)
 
-                await api.output.finalize_http_response(response, output)
+                response = await api.output.to_http_response(output, ctx)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 

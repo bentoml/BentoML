@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import typing as t
+from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from ..utils.http import set_content_length
+from ..utils.http import set_cookies
+
+if TYPE_CHECKING:
+    from ..context import InferenceApiContext as Context
+
 
 MIME_TYPE = "text/plain"
 
@@ -91,9 +98,15 @@ class Text(IODescriptor[str]):
         obj = await request.body()
         return str(obj.decode("utf-8"))
 
-    async def init_http_response(self) -> Response:
-        return Response(None, media_type=MIME_TYPE)
-
-    async def finalize_http_response(self, response: Response, obj: str):
-        response.body = response.render(obj)
-        set_content_length(response)
+    async def to_http_response(self, obj: str, ctx: Context | None = None) -> Response:
+        if ctx is not None:
+            res = Response(
+                obj,
+                media_type=MIME_TYPE,
+                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
+            set_cookies(res, ctx.response.cookies)
+            return res
+        else:
+            return Response(obj, media_type=MIME_TYPE)

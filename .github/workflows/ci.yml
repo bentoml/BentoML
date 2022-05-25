@@ -253,7 +253,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install .
+          pip install -e .
           pip install -r requirements/tests-requirements.txt
 
       - name: Export Action Envvar

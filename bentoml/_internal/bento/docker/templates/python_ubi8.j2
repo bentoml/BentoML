@@ -1,0 +1,6 @@
+{% extends "base_ubi8.j2" %}
+{% block setup_entrypoint %}
+{{ super() }}
+
+RUN rm -rf /var/cache/yum
+{% endblock %}

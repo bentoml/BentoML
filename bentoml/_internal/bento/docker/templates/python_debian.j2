@@ -1,0 +1,7 @@
+{% extends "base_debian.j2" %}
+{% block setup_envar %}
+
+SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
+
+{{ super() }}
+{% endblock %}

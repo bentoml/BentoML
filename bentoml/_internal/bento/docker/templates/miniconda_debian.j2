@@ -1,0 +1,40 @@
+{% extends "base_debian.j2" %}
+{% block setup_uid_gid %}
+ARG BENTO_USER={{ default_bento_user }}
+ARG BENTO_USER_UID={{ default_uid_gid }}
+ARG BENTO_USER_GID={{ default_uid_gid }}
+RUN bash <<EOF
+usermod "--login=${BENTO_USER}" "--home=/home/${BENTO_USER}" --move-home "-u ${BENTO_USER_UID}" "${MAMBA_USER}"
+groupmod "--new-name=${BENTO_USER}" "-g ${BENTO_USER_GID}" "${MAMBA_USER}"
+# Update the expected value of MAMBA_USER for the _entrypoint.sh consistency check.
+echo "${BENTO_USER}" > "/etc/arg_mamba_user"
+:
+EOF
+
+ENV MAMBA_USER=$BENTO_USER
+{% endblock %}
+{% block setup_envar %}
+{{ super() }}
+
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
+SAVED_PYTHON_VERSION=$(cat ./env/python/version.txt)
+PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
+
+echo "Installing Python $PYTHON_VERSION with micromamba..."
+micromamba install --yes --name base --channel conda-forge pkgs/main::python=$PYTHON_VERSION pip && micromamba clean --all --yes
+
+if [ -f ./env/conda/environment.yml ]; then
+  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # pip-installed packages to satisfy dependencies.
+  echo "Updating conda base environment with environment.yml"
+  micromamba config --set pip_interop_enabled True || true
+  micromamba env update -n base -f ./env/conda/environment.yml
+  micromamba clean --all
+fi
+
+# Need to source current env in order to use python and pip
+source /usr/local/bin/_activate_current_env.sh
+EOF
+
+{% endblock %}

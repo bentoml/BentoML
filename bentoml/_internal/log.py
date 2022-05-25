@@ -25,8 +25,8 @@ class TraceFilter(Filter):
         return Filter.filter(self, record)
 
 
-TRACED_LOG_FORMAT = "(%(component)s) %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)"
-SERVICE_LOG_FORMAT = "(%(component)s) %(message)s"
+TRACED_LOG_FORMAT = "[%(component)s] %(message)s (trace=%(trace_id)s,span=%(span_id)s,sampled=%(sampled)s)"
+SERVICE_LOG_FORMAT = "[%(component)s] %(message)s"
 DATE_FORMAT = "%x %X"
 
 
@@ -71,21 +71,19 @@ LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
     },
     "handlers": {
         "internal": {
-            "level": "DEBUG" if get_debug_mode() else "INFO",
+            "level": "INFO",
             "filters": ["tracing"],
             "formatter": "tracing",
             "()": "rich.logging.RichHandler",
-            "markup": True,
             "omit_repeated_times": False,
             "rich_tracebacks": True,
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },
         "uvicorn": {
-            "level": "DEBUG" if get_debug_mode() else "INFO",
+            "level": "INFO",
             "filters": ["tracing"],
             "formatter": "tracing",
             "()": "rich.logging.RichHandler",
-            "markup": True,
             "omit_repeated_times": False,
             "rich_tracebacks": True,
             "show_path": get_debug_mode(),  # show log line # in debug mode

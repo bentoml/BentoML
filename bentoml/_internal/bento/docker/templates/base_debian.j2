@@ -1,0 +1,28 @@
+{% extends "base.j2" %}
+{% block setup_base_image %}
+{{ super() }}
+USER root
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
+	apt-get update -y \
+    && apt-get install -q -y --no-install-recommends --allow-remove-essential \
+		ca-certificates gnupg2 bash build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+{% if docker_options.system_packages is not none %}
+# Install user-defined system package
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
+    apt-get install -q -y --no-install-recommends --allow-remove-essential \
+    {{ docker_options.system_packages | join(' ') }} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+{% endif -%}
+RUN rm -rf /var/lib/{apt,cache,log}
+
+{% endblock %}

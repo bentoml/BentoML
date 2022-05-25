@@ -52,7 +52,7 @@ def get_template_env(docker_options: DockerOptions) -> dict[str, t.Any]:
                 python_version = python_version.replace(".", "")
             else:
                 python_version = python_version
-        base_image = distro_spec.image.format(python_version=python_version)
+            base_image = distro_spec.image.format(python_version=python_version)
     else:
         base_image = docker_options.base_image
         logger.warning(f"Make sure to have Python installed for {base_image}.")

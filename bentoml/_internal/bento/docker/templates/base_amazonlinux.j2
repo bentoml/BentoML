@@ -5,7 +5,7 @@
 
 USER root
 
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 
 # Install helpers
 RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum bash <<EOF
@@ -30,8 +30,11 @@ RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 # Install user-defined system package
 RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
     yum install -y {{ docker_options.system_packages | join(' ') }} \
-    && yum clean all
+    && yum -y clean all
 {% endif -%}
+
+RUN ln -sf /usr/bin/python{{ docker_options.python_version }} /usr/bin/python3 && \
+	ln -sf /usr/bin/pip{{ docker_options.python_version }} /usr/bin/pip3
 
 RUN rm -rf /var/cache/yum
 

@@ -43,6 +43,17 @@ ARG TARGETPLATFORM
 ENV LANG=C.UTF-8
 
 ENV LC_ALL=C.UTF-8
+
+ENV PYTHONIOENCODING=UTF-8
+
+ENV PYTHONUNBUFFERED=1
+
+{% endblock %}
+{% block setup_uid_gid %}
+ARG BENTO_USER={{ default_bento_user }}
+ARG BENTO_USER_UID={{ default_uid_gid }}
+ARG BENTO_USER_GID={{ default_uid_gid }}
+RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
 {% endblock %}
 {% block setup_envar %}
 {% if docker_options.env is not none %}
@@ -51,10 +62,6 @@ ENV LC_ALL=C.UTF-8
 ENV {{ key }}={{ value }}
 {% endfor -%}
 {% endif -%}
-
-ARG UID={{ default_uid_gid }}
-ARG GID={{ default_uid_gid }}
-RUN groupadd -g $GID -o {{ default_bento_user }} && useradd -m -u $UID -g $GID -o -r {{ default_bento_user }}
 
 ARG BENTO_PATH={{ default_bento_path }}
 ENV BENTO_PATH=$BENTO_PATH
@@ -70,7 +77,7 @@ COPY --chown={{ default_bento_user }}:{{ default_bento_user }} . ./
 # Install bentoml=={{ bentoml_version }}
 ENV BENTOML_VERSION={{ bentoml_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    {{ pip_cmd }} install bentoml==${BENTOML_VERSION} --no-cache-dir
+    {{ pip_cmd }} install bentoml==${BENTOML_VERSION}
 {% block setup_bento %}
 # install python package with wheels
 # BentoML by default generates two requirment files:
@@ -84,11 +91,11 @@ if [ -f ./env/python/pip_args.txt ]; then
 fi
 if [ -f ./env/python/requirements.lock.txt ]; then
   echo "Installing pip packages from 'requirements.lock.txt'.."
-  {{ pip_cmd }} install -r ./env/python/requirements.lock.txt -U --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+  {{ pip_cmd }} install -r ./env/python/requirements.lock.txt -U $EXTRA_PIP_INSTALL_ARGS
 else
   if [ -f ./env/python/requirements.txt ]; then
     echo "Installing pip packages from 'requirements.txt'.."
-    {{ pip_cmd }} install -r ./env/python/requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+    {{ pip_cmd }} install -r ./env/python/requirements.txt $EXTRA_PIP_INSTALL_ARGS
   fi
 fi
 EOF
@@ -97,7 +104,7 @@ EOF
 RUN bash <<EOF
 if [ -d ./env/python/wheels ]; then
   echo "Installing wheels.."
-  pip install --no-cache-dir ./env/python/wheels/*.whl
+  pip install ./env/python/wheels/*.whl
 fi
 EOF
 

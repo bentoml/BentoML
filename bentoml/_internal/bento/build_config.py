@@ -30,11 +30,7 @@ from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mo
 
 if TYPE_CHECKING:
     from attr import Attribute
-    from attr import _ValidatorType as ValidatorType  # type: ignore
     from fs.base import FS
-
-    _T = t.TypeVar("_T")
-    _V = t.TypeVar("_V")
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +69,7 @@ def _convert_cuda_version(cuda_version: t.Optional[str]) -> t.Optional[str]:
     if cuda_version == "default":
         cuda_version = DEFAULT_CUDA_VERSION
 
-    match = re.match(r"^(\d+)", cuda_version)
+    match = re.match(r"^(\d+)$", cuda_version)
     if match is not None:
         cuda_version = SUPPORTED_CUDA_VERSION[cuda_version]
 
@@ -154,7 +150,9 @@ class DockerOptions(OptionsMeta):
     cuda_version: t.Union[str, t.Literal["default"]] = attr.field(
         default=None,
         converter=_convert_cuda_version,
-        validator=attr.validators.optional(attr.validators.in_(SUPPORTED_CUDA_VERSION)),
+        validator=attr.validators.optional(
+            attr.validators.in_(SUPPORTED_CUDA_VERSION.values())
+        ),
     )
 
     # A user-provided environment variable to be passed to a given bento
@@ -208,6 +206,13 @@ class DockerOptions(OptionsMeta):
                 )
 
     def _validate_options(self) -> None:
+        if self.cuda_version is not None:
+            if self.distro not in CUDA_SUPPORTED_DISTRO:
+                raise BentoMLException(
+                    f"{self.distro} does not support CUDA. "
+                    f"Supported distros that have CUDA supports are: {', '.join(CUDA_SUPPORTED_DISTRO)}."
+                )
+
         distro_info = DistroSpec.from_distro(
             self.distro, cuda=self.cuda_version not in (None, "")
         )
@@ -218,20 +223,15 @@ class DockerOptions(OptionsMeta):
                     f"{self.python_version} is not supported for {self.distro}. "
                     f"Supported python versions are: {', '.join(distro_info.python_version)}."
                 )
+
         if self.cuda_version is not None:
-            if distro_info.cuda_version is None:
+            if self.cuda_version != "default" and (
+                self.cuda_version not in distro_info.cuda_version
+            ):
                 raise BentoMLException(
-                    f"{self.distro} does not support CUDA. "
-                    f"Supported distros that have CUDA supports are: {', '.join(CUDA_SUPPORTED_DISTRO)}."
+                    f"{self.cuda_version} is not supported for "
+                    f"{self.distro}. Supported cuda versions are: {', '.join(distro_info.cuda_version)}."
                 )
-            else:
-                if self.cuda_version != "default" and (
-                    self.cuda_version not in distro_info.cuda_version
-                ):
-                    raise BentoMLException(
-                        f"{self.cuda_version} is not supported for "
-                        f"{self.distro}. Supported cuda versions are: {', '.join(distro_info.cuda_version)}."
-                    )
 
     @property
     def default_values(self) -> t.Dict[str, t.Any]:
@@ -308,7 +308,8 @@ class DockerOptions(OptionsMeta):
                     logger.warning(
                         "In order to support [bold magenta]scikit-learn[/] on alpine-based images, "
                         "make sure to include the following packages under "
-                        f"`docker.system_packages`: [bold yellow]{', '.join(required_packages)}[/]"
+                        f"`docker.system_packages`: [bold yellow]{', '.join(required_packages)}[/]",
+                        extra={"markup": True},
                     )
             if "conda" in yaml_content and distro not in CONDA_SUPPORTED_DISTRO:
                 raise BentoMLException(

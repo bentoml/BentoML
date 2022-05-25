@@ -30,7 +30,7 @@ DEFAULT_DOCKER_DISTRO = "debian"
 # versions and list of supported CUDA versions.
 DOCKER_SUPPORTED_DISTRO: dict[str, dict[str, t.Any]] = {
     "amazonlinux": {
-        "python_version": ["3.8"],
+        "python_version": ["3.7", "3.8"],
         "cuda_version": None,
         "python": {
             "image": "amazonlinux:2",

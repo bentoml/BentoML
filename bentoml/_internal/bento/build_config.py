@@ -306,9 +306,9 @@ class DockerOptions(OptionsMeta):
 
                 if raise_warning:
                     logger.warning(
-                        "In order to support scikit-learn on alpine-based images, "
+                        "In order to support [bold magenta]scikit-learn[/] on alpine-based images, "
                         "make sure to include the following packages under "
-                        f"`docker.system_packages`: {', '.join(required_packages)}"
+                        f"`docker.system_packages`: [bold yellow]{', '.join(required_packages)}[/]"
                     )
             if "conda" in yaml_content and distro not in CONDA_SUPPORTED_DISTRO:
                 raise BentoMLException(

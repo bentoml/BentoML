@@ -12,6 +12,7 @@ RUN --mount=type=cache,from=cached,target=/var/cache/apk \
 ENV ENV /root/.bashrc
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
 {% if docker_options.system_packages is not none %}
 # Install user-defined system package
 RUN --mount=type=cache,from=cached,target=/var/cache/apk \
@@ -19,4 +20,5 @@ RUN --mount=type=cache,from=cached,target=/var/cache/apk \
 {% endif -%}
 
 RUN rm -rf /var/cache/apk/*
+
 {% endblock %}

@@ -99,6 +99,11 @@ def build(
         for allow_arg in allow:
             cmds.extend(["--allow", allow_arg])
 
+    if platform:
+        if isinstance(platform, str):
+            platform = [platform]
+        cmds += ["--platform", ",".join(platform)]
+
     if build_args is not None:
         args = [f"{k}={v}" for k, v in build_args.items()]
         for arg in args:
@@ -168,11 +173,6 @@ def build(
         else:
             args = [f"{k}={v}" for k, v in output.items()]
             cmds += ["--output", ",".join(args)]
-
-    if platform:
-        if isinstance(platform, str):
-            platform = [platform]
-        cmds += ["--platform", ",".join(platform)]
 
     if pull:
         cmds.append("--pull")

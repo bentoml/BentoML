@@ -1,6 +1,6 @@
 {% extends "base_alpine.j2" %}
 {% block setup_envar %}
-{{ super.super() }}
+{{ super() }}
 
 RUN bash <<EOF
 SAVED_PYTHON_VERSION=$(cat ./env/python/version.txt)

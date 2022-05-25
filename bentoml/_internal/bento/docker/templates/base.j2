@@ -1,3 +1,4 @@
+{% set pip_cmd= pip_cmd | default("pip") %}
 # syntax = docker/dockerfile:1.4-labs
 #
 # ===========================================
@@ -51,7 +52,6 @@ ENV {{ key }}={{ value }}
 {% endfor -%}
 {% endif -%}
 
-
 ARG UID={{ default_uid_gid }}
 ARG GID={{ default_uid_gid }}
 RUN groupadd -g $GID -o {{ default_bento_user }} && useradd -m -u $UID -g $GID -o -r {{ default_bento_user }}
@@ -70,7 +70,7 @@ COPY --chown={{ default_bento_user }}:{{ default_bento_user }} . ./
 # Install bentoml=={{ bentoml_version }}
 ENV BENTOML_VERSION={{ bentoml_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    pip install bentoml==${BENTOML_VERSION} --no-cache-dir
+    {{ pip_cmd }} install bentoml==${BENTOML_VERSION} --no-cache-dir
 {% block setup_bento %}
 # install python package with wheels
 # BentoML by default generates two requirment files:
@@ -84,11 +84,11 @@ if [ -f ./env/python/pip_args.txt ]; then
 fi
 if [ -f ./env/python/requirements.lock.txt ]; then
   echo "Installing pip packages from 'requirements.lock.txt'.."
-  pip install -r ./env/python/requirements.lock.txt -U --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+  {{ pip_cmd }} install -r ./env/python/requirements.lock.txt -U --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
 else
   if [ -f ./env/python/requirements.txt ]; then
     echo "Installing pip packages from 'requirements.txt'.."
-    pip install -r ./env/python/requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+    {{ pip_cmd }} install -r ./env/python/requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
   fi
 fi
 EOF

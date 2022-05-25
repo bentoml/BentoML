@@ -1,0 +1,38 @@
+{% extends "base.j2" %}
+{% set pip_cmd="pip3" %}
+{% block setup_base_image %}
+{{ super() }}
+
+USER root
+
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+# Install helpers
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum bash <<EOF
+yum upgrade -y
+yum install -y amazon-linux-extras curl ca-certificates gcc gcc-c++ make bash shadow-utils
+
+{% if docker_options.python_version == "3.7" %}
+yum install -y python3 python3-devel
+{% else %}
+amazon-linux-extras enable python{{ docker_options.python_version }}
+yum install -y python{{ docker_options.python_version.split(".") | join('') }} \
+	python{{ docker_options.python_version.split(".") | join('') }}-devel
+{% endif %}
+
+yum groupinstall -y "Development Tools"
+EOF
+
+RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
+    python{{ docker_options.python_version }} get-pip.py
+
+{% if docker_options.system_packages is not none %}
+# Install user-defined system package
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
+    yum install -y {{ docker_options.system_packages | join(' ') }} \
+    && yum clean all
+{% endif -%}
+
+RUN rm -rf /var/cache/yum
+
+{% endblock %}

@@ -536,9 +536,7 @@ class ModelInfo:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
     def parse_options(self, options_class: type[ModelOptions]) -> None:
-        object.__setattr__(
-            self, "options", options_class.with_options(**self.options.data)
-        )
+        object.__setattr__(self, "options", options_class.with_options(**self.options))
 
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:

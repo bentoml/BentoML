@@ -94,7 +94,7 @@ class TransformersOptions(ModelOptions):
         default=True, validator=attr.validators.instance_of(bool)
     )
 
-    kwargs: t.Dict[str, t.Any] = attr.field(default={})
+    kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
     @classmethod
     def with_options(cls, **kwargs: t.Any) -> ModelOptions:
@@ -154,7 +154,7 @@ def load_model(
         logger.info(
             f"Loading '{pipeline_task}' pipeline '{bento_model.tag}' with kwargs {pipeline_kwargs}."
         )
-    return transformers.pipeline(pipeline_task, bento_model.path, **pipeline_kwargs)  # type: ignore
+    return transformers.pipeline(task=pipeline_task, model=bento_model.path, **pipeline_kwargs)  # type: ignore
 
 
 def save_model(
@@ -163,6 +163,7 @@ def save_model(
     *,
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> Tag:
     """
@@ -178,6 +179,12 @@ def save_model(
              used for creating Runner instances when serving model with bentoml.Service
         labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
             user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects (``dict[str, Any]``, optional):
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``.
+
+            Custom objects are currently serialized with cloudpickle, but this implementation is
+            subject to change.
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
 
@@ -249,6 +256,7 @@ def save_model(
         context=context,
         options=options,
         signatures=signatures,
+        custom_objects=custom_objects,
         metadata=metadata,
     ) as bento_model:
         pipeline.save_pretrained(bento_model.path)

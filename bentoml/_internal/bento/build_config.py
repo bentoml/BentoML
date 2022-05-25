@@ -16,7 +16,7 @@ from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
-from .docker import Distro
+from .docker import DistroSpec
 from .docker import DEFAULT_CUDA_VERSION
 from .docker import CUDA_SUPPORTED_DISTRO
 from .docker import DEFAULT_DOCKER_DISTRO
@@ -64,7 +64,7 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
 
 
 def _convert_cuda_version(cuda_version: t.Optional[str]) -> t.Optional[str]:
-    if cuda_version is None:
+    if cuda_version is None or cuda_version == "":
         return None
 
     if isinstance(cuda_version, int):
@@ -92,32 +92,34 @@ def _convert_user_envars(
     return envars
 
 
-def validate_list_envars(
-    _: t.Any, attribute: "Attribute[t.List[str]]", value: t.List[str]
+def _envars_validator(
+    _: t.Any,
+    attribute: "Attribute[t.Union[t.List[str], t.Dict[str, t.Any]]]",
+    value: t.Union[t.List[str], t.Dict[str, t.Any]],
 ) -> None:
-    if not isinstance(attribute.type, list):
-        raise InvalidArgument("envars should be parsed as a list.")
-
-    for envar in value:
-        try:
-            k, _ = envar.split("=")
-            if not k.isupper():
-                raise InvalidArgument(f"{k} should be in uppercase.")
-        except ValueError as ve:
-            raise InvalidArgument(f"{envar} doesn't follow format ENVAR=value") from ve
-
-
-def or_(f1: "ValidatorType[_T]", f2: "ValidatorType[_V]") -> t.Any:
-    def validator(cls_: t.Any, attribute: "Attribute[t.Any]", value: t.Any) -> t.Any:
-        return f1(cls_, attribute, value) or f2(cls_, attribute, value)
-
-    return validator
+    if isinstance(value, list):
+        for envar in value:
+            try:
+                k, _ = envar.split("=")
+                if not k.isupper():
+                    raise InvalidArgument(f"{k} should be in uppercase.")
+            except ValueError as ve:
+                raise InvalidArgument(
+                    f"{envar} doesn't follow format ENVAR=value"
+                ) from ve
+    elif isinstance(value, dict):
+        if not all(k.isupper() for k in value):
+            raise InvalidArgument("All envars should be in UPPERCASE.")
+    else:
+        raise InvalidArgument(
+            f"`env` must be either a list or a dict, got type {attribute.type} instead."
+        )
 
 
 class OptionsMeta:
     @property
     @abstractmethod
-    def update_defaults(self) -> t.Dict[str, t.Any]:
+    def default_values(self) -> t.Dict[str, t.Any]:
         raise NotImplementedError
 
     def _validate_options(self) -> None:
@@ -157,6 +159,7 @@ class DockerOptions(OptionsMeta):
 
     # A user-provided environment variable to be passed to a given bento
     # accepts the following format:
+    #
     # env:
     #  - ENVAR=value1
     #  - FOO=value2
@@ -167,12 +170,7 @@ class DockerOptions(OptionsMeta):
     env: t.Dict[str, t.Any] = attr.field(
         default=None,
         converter=_convert_user_envars,
-        validator=attr.validators.optional(
-            or_(
-                validate_list_envars,
-                lambda _, attribute, value: isinstance(attribute.type, dict) and all(k.isupper() for k in value),  # type: ignore
-            )
-        ),
+        validator=attr.validators.optional(_envars_validator),
     )
 
     # A user-provided system packages that can be installed for a given bento
@@ -188,7 +186,6 @@ class DockerOptions(OptionsMeta):
     # A user-provided dockerfile jinja2 template
     dockerfile_template: str = attr.field(
         default=None,
-        converter=lambda v: os.path.expandvars(v) if v is not None else None,
         validator=attr.validators.optional(lambda _, __, value: os.path.exists(value)),
     )
 
@@ -211,14 +208,10 @@ class DockerOptions(OptionsMeta):
                 )
 
     def _validate_options(self) -> None:
-        if "miniconda" in self.distro:
-            docker_release_type = "miniconda"
-        elif self.cuda_version is not None:
-            docker_release_type = "cuda"
-        else:
-            docker_release_type = "python"
+        distro_info = DistroSpec.from_distro(
+            self.distro, cuda=self.cuda_version not in (None, "")
+        )
 
-        distro_info = Distro.from_distro(self.distro, docker_release_type)
         if self.python_version is not None:
             if self.python_version not in distro_info.python_version:
                 raise BentoMLException(
@@ -241,7 +234,7 @@ class DockerOptions(OptionsMeta):
                     )
 
     @property
-    def update_defaults(self) -> t.Dict[str, t.Any]:
+    def default_values(self) -> t.Dict[str, t.Any]:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -251,11 +244,11 @@ class DockerOptions(OptionsMeta):
             if self.python_version is None:
                 defaults["python_version"] = PYTHON_VERSION
             if self.cuda_version is None:
-                defaults["cuda_version"] = None
+                defaults["cuda_version"] = ""
             if self.env is None:
-                defaults["env"] = None
+                defaults["env"] = {}
             if self.dockerfile_template is None:
-                defaults["dockerfile_template"] = None
+                defaults["dockerfile_template"] = ""
         return defaults
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
@@ -304,19 +297,18 @@ class DockerOptions(OptionsMeta):
 
                 if "system_packages" not in docker or docker["system_packages"] is None:
                     raise_warning = True
+                    required_packages = sklearn_alpine_req
                 else:
-                    alpine_package = list(
-                        filter(
-                            lambda x: x in sklearn_alpine_req, docker["system_packages"]
-                        )
+                    required_packages = list(
+                        set(sklearn_alpine_req).difference(docker["system_packages"])
                     )
-                    raise_warning = len(alpine_package) != len(sklearn_alpine_req)
+                    raise_warning = len(required_packages) != len(sklearn_alpine_req)
 
                 if raise_warning:
                     logger.warning(
                         "In order to support scikit-learn on alpine-based images, "
                         "make sure to include the following packages under "
-                        f"`docker.system_packages`: {', '.join(sklearn_alpine_req)}"
+                        f"`docker.system_packages`: {', '.join(required_packages)}"
                     )
             if "conda" in yaml_content and distro not in CONDA_SUPPORTED_DISTRO:
                 raise BentoMLException(
@@ -386,7 +378,7 @@ class CondaOptions(OptionsMeta):
             yaml.dump(yaml_content, f)
 
     @property
-    def update_defaults(self) -> t.Dict[str, t.Any]:
+    def default_values(self) -> t.Dict[str, t.Any]:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -521,7 +513,7 @@ class PythonOptions(OptionsMeta):
                 )
 
     @property
-    def update_defaults(self) -> t.Dict[str, t.Any]:
+    def default_values(self) -> t.Dict[str, t.Any]:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -555,7 +547,7 @@ class OptionsFactory:
         if not hasattr(instance, "__attrs_attrs__"):
             raise BentoMLException(f"{instance.__class__} should be an attrs class.")
 
-        instance = attr.evolve(instance, **instance.update_defaults)
+        instance = attr.evolve(instance, **instance.default_values)
 
         if hasattr(instance, "_validate_options"):
             instance._validate_options()  # type: ignore

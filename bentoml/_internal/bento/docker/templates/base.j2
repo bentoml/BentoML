@@ -1,4 +1,3 @@
-{% block setup_base_image %}
 # syntax = docker/dockerfile:1.4-labs
 #
 # ===========================================
@@ -6,18 +5,120 @@
 # THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
 #
 # ===========================================
-ARG XX_VERSION=master
 
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+{% block setup_base_image %}
+	{% set cached = [] %}
 FROM {{ base_image }} as cached
+
 FROM {{ base_image }} as base
-{{ base_env }}
-{% endblock %}
 
-{% block setup_user_env %}
-# envars
+	{% if not user_defined_image %}
+		{% for key in distro_spec.architecture if key not in cached %}
+			{% if 'arm64' in key or 'aarch64' in key %}
+			{% do cached.append(key) %}
+FROM base as base-arm64
+			{% elif 'armhf' in key or 'armel' in key %}
+			{% do cached.append(key) %}
+FROM base as base-arm
+			{% elif 'i386' in key %}
+			{% do cached.append(key) %}
+FROM base as base-386
+			{% else %}
+			{% do cached.append(key) %}
+FROM base as base-{{ key }}
+			{% endif %}
+		{% endfor %}
+		{% else %}
+# custom base_image: {{ base_image }}. BentoML will only support x86_64
+FROM base as base-amd64
+	{% endif %}
+
+FROM base-${TARGETARCH}
+
+ARG TARGETARCH
+
+ARG TARGETPLATFORM
+
+ENV LANG=C.UTF-8
+
+ENV LC_ALL=C.UTF-8
 {% endblock %}
+{% block setup_envar %}
+{% if docker_options.env is not none %}
+{% for key, value in docker_options.env.items() -%}
+
+ENV {{ key }}={{ value }}
+{% endfor -%}
+{% endif -%}
+
+
+ARG UID={{ default_uid_gid }}
+ARG GID={{ default_uid_gid }}
+RUN groupadd -g $GID -o {{ default_bento_user }} && useradd -m -u $UID -g $GID -o -r {{ default_bento_user }}
+
+ARG BENTO_PATH={{ default_bento_path }}
+ENV BENTO_PATH=$BENTO_PATH
+ENV BENTOML_HOME={{ default_bento_home }}
+
+RUN mkdir $BENTO_PATH && chown {{ default_bento_user }}:{{ default_bento_user }} $BENTO_PATH -R
+WORKDIR $BENTO_PATH
+
+# init related components
+COPY --chown={{ default_bento_user }}:{{ default_bento_user }} . ./
+
+{% endblock %}
+# Install bentoml=={{ bentoml_version }}
+ENV BENTOML_VERSION={{ bentoml_version }}
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+    pip install bentoml==${BENTOML_VERSION} --no-cache-dir
 {% block setup_bento %}
+# install python package with wheels
+# BentoML by default generates two requirment files:
+#  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
+#  - ./env/python/requirements.txt: all dependecies as user specified in code or requirements.txt file
+# We will try to install from  requirements.txt.lock to install package with -U,
+# else we will try to install from requirements.txt.
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
+if [ -f ./env/python/pip_args.txt ]; then
+  EXTRA_PIP_INSTALL_ARGS=$(cat ./env/python/pip_args.txt)
+fi
+if [ -f ./env/python/requirements.lock.txt ]; then
+  echo "Installing pip packages from 'requirements.lock.txt'.."
+  pip install -r ./env/python/requirements.lock.txt -U --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+else
+  if [ -f ./env/python/requirements.txt ]; then
+    echo "Installing pip packages from 'requirements.txt'.."
+    pip install -r ./env/python/requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+  fi
+fi
+EOF
+
+# install wheels included in Bento
+RUN bash <<EOF
+if [ -d ./env/python/wheels ]; then
+  echo "Installing wheels.."
+  pip install --no-cache-dir ./env/python/wheels/*.whl
+fi
+EOF
+
+# Run user setup scripts if exists
+RUN bash <<EOF
+if [ -f ./env/docker/setup_script ]; then
+  chmod +x ./env/docker/setup_script
+  ./env/docker/setup_script
+fi
+EOF
+
 {% endblock %}
+{% block setup_entrypoint %}
+# Default port for BentoServer
+EXPOSE 3000
 
+RUN chmod +x ./env/docker/entrypoint.sh
 
+USER bentoml
+
+ENTRYPOINT [ "./env/docker/entrypoint.sh" ]
+
+CMD ["bentoml", "serve", ".", "--production"]
+{% endblock %}

@@ -94,9 +94,10 @@ CONDA_SUPPORTED_DISTRO = ["debian-miniconda", "alpine-miniconda"]
 
 
 @attr.define(slots=True, frozen=True)
-class Distro:
+class DistroSpec:
     name: str = attr.field()
     image: str = attr.field(kw_only=True)
+    release_type: str = attr.field(kw_only=True)
 
     python_version: t.List[str] = attr.field(
         validator=attr.validators.deep_iterable(
@@ -125,26 +126,32 @@ class Distro:
 
     @classmethod
     def from_distro(
-        cls, value: str, docker_release_type: t.Literal["python", "cuda", "miniconda"]
-    ) -> Distro:
+        cls,
+        value: str,
+        *,
+        cuda: bool = False,
+    ) -> DistroSpec:
         if value not in DOCKER_SUPPORTED_DISTRO:
             raise BentoMLException(
                 f"{value} is not supported. "
                 f"Supported distros are: {', '.join(DOCKER_SUPPORTED_DISTRO.keys())}."
             )
 
+        if cuda:
+            release_type = "cuda"
+        elif "miniconda" in value:
+            release_type = "miniconda"
+        else:
+            release_type = "python"
+
         meta = DOCKER_SUPPORTED_DISTRO[value]
         python_version = meta["python_version"]
-        cuda_version = meta["cuda_version"]
+        cuda_version = meta["cuda_version"] if release_type == "cuda" else None
 
-        if docker_release_type not in meta:
-            raise BentoMLException(
-                f"`{value}` does not support {docker_release_type} "
-                f"release type. Supported release types are: {', '.join(meta.keys())}."
-            )
-        return Distro(
-            **meta[docker_release_type],
+        return DistroSpec(
+            **meta[release_type],
             name=value,
+            release_type=release_type,
             python_version=python_version,
             cuda_version=cuda_version,
         )

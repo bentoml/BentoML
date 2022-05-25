@@ -1,0 +1,26 @@
+{% extends "base_alpine.j2" %}
+{% block setup_envar %}
+{{ super.super() }}
+
+RUN bash <<EOF
+SAVED_PYTHON_VERSION=$(cat ./env/python/version.txt)
+PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
+
+echo "Installing Python $PYTHON_VERSION with conda..."
+conda install -y -n base pkgs/main::python=$PYTHON_VERSION pip
+
+if [ -f ./env/conda/environment.yml ]; then
+  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # pip-installed packages to satisfy dependencies.
+  echo "Updating conda base environment with environment.yml"
+  conda config --set pip_interop_enabled True || true
+  conda env update -n base -f ./env/conda/environment.yml
+  conda clean --all
+fi
+EOF
+{% endblock %}
+{% block setup_entrypoint %}
+{{ super() }}
+
+RUN rm -rf /var/cache/apk/*
+{% endblock %}

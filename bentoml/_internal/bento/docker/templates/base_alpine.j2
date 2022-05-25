@@ -1,0 +1,22 @@
+{% extends "base.j2" %}
+{% block setup_base_image %}
+{{ super() }}
+
+ENV PATH /usr/local/bin:$PATH
+
+# Install helpers
+RUN --mount=type=cache,from=cached,target=/var/cache/apk \
+    apk add --update bash gcc libc-dev shadow musl-dev build-base \
+		linux-headers g++
+
+ENV ENV /root/.bashrc
+
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+{% if docker_options.system_packages is not none %}
+# Install user-defined system package
+RUN --mount=type=cache,from=cached,target=/var/cache/apk \
+    apk add --update {{ docker_options.system_packages | join(' ') }}
+{% endif -%}
+
+RUN rm -rf /var/cache/apk/*
+{% endblock %}

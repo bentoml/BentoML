@@ -157,7 +157,7 @@ class BytesIOFile(File):
             return res  # type: ignore
         if content_type.decode("utf-8") == self._mime_type:
             body = await request.body()
-            return FileLike(io.BytesIO(body), "<request body>")
+            return t.cast(t.IO[bytes], FileLike(io.BytesIO(body), "<request body>"))
         raise BentoMLException(
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )

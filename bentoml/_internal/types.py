@@ -217,7 +217,7 @@ def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
 
 @json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
-class FileLike(t.Generic[t.AnyStr], io.IOBase, t.IO[t.AnyStr]):  # type: ignore (python IO types)
+class FileLike(t.Generic[t.AnyStr], io.IOBase):
     """
     A wrapper for file-like objects that includes a custom name.
     """

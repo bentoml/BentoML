@@ -386,17 +386,6 @@ def containerize(
     # run health check whether buildx is install locally
     buildx.health()
 
-    # create a bentoml builder if not exists
-    if builder not in buildx.list_builders():
-        buildx.create(
-            env,
-            driver_opt={"image": "moby/buildkit:master"},
-            use=True,
-            name=builder,
-        )
-    else:
-        buildx.use(builder)
-
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
@@ -455,7 +444,6 @@ Try again by specifying to build x86_64 (amd64) platform:
 
     [bold magenta]bentoml containerize {str(bento.tag)} --platform linux/amd64[/]
             """,
-            extra={"markup": True},
         )
         return False
     else:

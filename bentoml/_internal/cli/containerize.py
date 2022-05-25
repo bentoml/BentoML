@@ -150,7 +150,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
     )
-    @kwargs_transformers(transformer=lambda x: None if isinstance(x, tuple) and not x else x)  # type: ignore
+    @kwargs_transformers(transformer=lambda x: None if not x or (isinstance(x, tuple) and not x) else x)  # type: ignore
     def containerize(  # type: ignore
         bento_tag: str,
         docker_image_tag: str,

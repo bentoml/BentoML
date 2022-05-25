@@ -1,18 +1,20 @@
 from __future__ import annotations
-import os
 
+import os
 import re
-from rich.console import Console
-from rich.syntax import Syntax
 import logging
 from typing import TYPE_CHECKING
+
+from rich.syntax import Syntax
+from rich.console import Console
 
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from click import Context, Parameter
+    from click import Context
+    from click import Parameter
 
 
 def to_valid_docker_image_name(name: str) -> str:
@@ -85,10 +87,10 @@ use `base_image` under `bentofile.yaml`.
         """
 ENTRYPOINT_WARNING = """\
 Since only the [bold yellow link=https://docs.docker.com/engine/reference/builder/#entrypoint]last `ENTRYPOINT` instruction[/link bold yellow] in the Dockerfile will have an effect, the given Bento container will fail when one uses: `docker run -p 3000:3000 bento:tag`.
-To maintain the default behaviour of the Bento container and keep the new `ENTRYPOINT` instruction, update the `ENTRYPOINT` to the following:
+To maintain the default behaviour of the Bento container and keep the new `ENTRYPOINT` instruction, update the `ENTRYPOINT` to the following (given default `BENTO_PATH`={}):
 
-    - {}
-    + {}
+    [red]- {}[/red]
+    [green]+ {}[/green]
 """
 CMD_WARNING = """\
         """
@@ -106,18 +108,22 @@ WARNINGS = {
 # TODO: setup console to use throughout bentoml
 console = Console()
 
-def pretty_warning_logs(parsed_command: str) -> None:
+
+def pretty_warning_logs(parsed_command: str, instruction_warning: str) -> None:
     m = instruction_regex.match(parsed_command)
-    assert m is not None
-    instruction = m.groups()[0]
-    pretty_cmd = Syntax(parsed_command, "dockerfile")
-    warnings = """\
-[bold yellow]{instruction}[/] instruction is given in `dockerfile_template`:
+    if m is not None:
+        instruction = m.groups()[0]
+        pretty_cmd = Syntax(parsed_command, "dockerfile")
+        logger.warning(
+            f"""\
+    [bold yellow]{instruction}[/] instruction is given in `dockerfile_template`:
 
-    {pretty_cmd}
+        {pretty_cmd}
 
-{instruction_warning}
-            """
+    {instruction_warning}
+                """
+        )
+
 
 WARNING_MESSAGE = """\
 [bold yellow]NOTE: Since [bold red]`dockerfile_templates`[/] is provided:
@@ -152,12 +158,15 @@ WARNING_MESSAGE = """\
 
         Refers to [bold yellow][link=https://docs.docker.com/engine/reference/builder/#understand-how-cmd-and-entrypoint-interact]ENTRYPOINT and CMDs interaction[/link][/bold yellow] for further details.
                 """
-# extra={"markup": True},
-#
+
+
 def _strike(text: str) -> str:
     return "".join(["\u0336{}".format(c) for c in text])
 
-def process_entrypoint_cmd(str)
+
+def process_entrypoint_cmd(instruction: str) -> str:
+    ...
+
 
 def rstrip_eol(text: str, continuation_char: str = "\\") -> str:
     text = text.rstrip()

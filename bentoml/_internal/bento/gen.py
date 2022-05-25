@@ -11,8 +11,7 @@ from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
 from ..utils import bentoml_cattr
-from .docker import make_cuda_cls
-from .docker import make_distro_cls
+from .docker import Distro
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 
@@ -20,9 +19,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-
-    from .docker import CUDA
-    from .docker import Distro
     from .build_config import DockerOptions
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
@@ -571,50 +567,47 @@ def generate_dockerfile(
     cuda_version = docker_options.cuda_version
     python_version = docker_options.python_version
 
-    distro_spec = make_distro_cls(distro)
-    cuda_spec = make_cuda_cls(cuda_version)
+    # docker_dir = fs.path.combine(fs.path.dirname(__file__), "docker")
+    # j2_template = fs.path.combine(docker_dir, f"Dockerfile.j2")
+    # template_env = Environment(
+    #     extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
+    #     trim_blocks=True,
+    #     lstrip_blocks=True,
+    #     loader=FileSystemLoader(docker_dir, followlinks=True),
+    # )
 
-    docker_dir = fs.path.combine(fs.path.dirname(__file__), "docker")
-    j2_template = fs.path.combine(docker_dir, f"Dockerfile.j2")
-    template_env = Environment(
-        extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols"],
-        trim_blocks=True,
-        lstrip_blocks=True,
-        loader=FileSystemLoader(docker_dir, followlinks=True),
-    )
+    # if docker_options.base_image is None:
+    #     if docker_options.distro == "ubi8":
+    #         python_version = python_version.replace(".", "")
+    #     else:
+    #         python_version = python_version
+    #     base_image = distro_spec.base_image.format(python_version=python_version)
+    # else:
+    #     base_image = docker_options.base_image
+    #     logger.warning(f"Make sure to have Python installed for {base_image}.")
 
-    if docker_options.base_image is None:
-        if docker_options.distro == "ubi8":
-            python_version = python_version.replace(".", "")
-        else:
-            python_version = python_version
-        base_image = distro_spec.base_image.format(python_version=python_version)
-    else:
-        base_image = docker_options.base_image
-        logger.warning(f"Make sure to have Python installed for {base_image}.")
+    # context_mapping: dict[str, TemplateFunc] = {  # type: ignore
+    #     k: ensure_components(v, conda="conda" in k, cuda=cuda_version is not None)
+    #     for k, v in TEMPLATE_MAP.items()
+    # }
 
-    context_mapping: dict[str, TemplateFunc] = {  # type: ignore
-        k: ensure_components(v, conda="conda" in k, cuda=cuda_version is not None)
-        for k, v in TEMPLATE_MAP.items()
-    }
+    # template_context = {
+    #     "base_image": base_image,
+    #     "release_stage": _release_stage_name,
+    #     "user_defined_image": docker_options._user_defined_image,  # type: ignore
+    #     "bentoml_version": clean_bentoml_version(),  # ensure that we don't have a dirty version.
+    #     "docker_options": bentoml_cattr.unstructure(docker_options),  # type: ignore
+    #     "distro_spec": bentoml_cattr.unstructure(distro_spec),  # type: ignore
+    #     "cuda_spec": bentoml_cattr.unstructure(cuda_spec),  # type: ignore
+    #     "final_release_stage": setup_release_stage_name(
+    #         docker_options=docker_options,
+    #         distro_spec=distro_spec,
+    #         release_stage_name=_release_stage_name,
+    #     ),
+    #     **DOCKERFILE_COMPONENTS,
+    #     **context_mapping[distro](docker_options),
+    # }
 
-    template_context = {
-        "base_image": base_image,
-        "release_stage": _release_stage_name,
-        "user_defined_image": docker_options._user_defined_image,  # type: ignore
-        "bentoml_version": clean_bentoml_version(),  # ensure that we don't have a dirty version.
-        "docker_options": bentoml_cattr.unstructure(docker_options),  # type: ignore
-        "distro_spec": bentoml_cattr.unstructure(distro_spec),  # type: ignore
-        "cuda_spec": bentoml_cattr.unstructure(cuda_spec),  # type: ignore
-        "final_release_stage": setup_release_stage_name(
-            docker_options=docker_options,
-            distro_spec=distro_spec,
-            release_stage_name=_release_stage_name,
-        ),
-        **DOCKERFILE_COMPONENTS,
-        **context_mapping[distro](docker_options),
-    }
-
-    with open(j2_template, "r", encoding="utf-8") as f:
-        template = template_env.from_string(f.read())
-        return template.render(**template_context)
+    # with open(j2_template, "r", encoding="utf-8") as f:
+    #     template = template_env.from_string(f.read())
+    #     return template.render(**template_context)

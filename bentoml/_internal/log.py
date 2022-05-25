@@ -94,25 +94,10 @@ LOGGING_CONFIG: typing.Dict[str, typing.Any] = {
             "handlers": ["internal"],
             "level": "INFO",
             "propagate": False,
-            "extra": {"markup": True},
         },
-        "uvicorn": {
-            "handlers": [],
-            "level": "INFO",
-            "extra": {"markup": True},
-        },
-        "uvicorn.error": {
-            "handlers": ["uvicorn"],
-            "level": "INFO",
-            "propagate": False,
-            "extra": {"markup": True},
-        },
-        "uvicorn.access": {
-            "handlers": [],
-            "level": "INFO",
-            "propagate": False,
-            "extra": {"markup": True},
-        },
+        "uvicorn": {"handlers": [], "level": "INFO"},
+        "uvicorn.error": {"handlers": ["uvicorn"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {"handlers": [], "level": "INFO", "propagate": False},
     },
 }
 

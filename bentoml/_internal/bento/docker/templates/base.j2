@@ -1,0 +1,23 @@
+{% block setup_base_image %}
+# syntax = docker/dockerfile:1.4-labs
+#
+# ===========================================
+#
+# THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
+#
+# ===========================================
+ARG XX_VERSION=master
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+FROM {{ base_image }} as cached
+FROM {{ base_image }} as base
+{{ base_env }}
+{% endblock %}
+
+{% block setup_user_env %}
+# envars
+{% endblock %}
+{% block setup_bento %}
+{% endblock %}
+
+

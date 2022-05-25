@@ -1,8 +1,0 @@
-ENV CUDA_VERSION {{ cuda_spec.version.full }}
-ENV NVIDIA_CUDA_LIB_VERSION {{ cuda_spec.version.full + "-1" }}
-
-{% if cuda_spec.version.major | int == 10 %}
-{% include "cuda/v10.j2" %}
-{% elif cuda_spec.version.major | int == 11 %}
-{% include "cuda/v11.j2" %}
-{% endif %}

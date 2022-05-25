@@ -2,9 +2,7 @@
 Main Concepts
 =============
 
-The main concepts docs is a step-by-step tour of BentoML
-Dive deeper into the main concepts in BentoML and learn about some of the advanced
-features and options.
+This is a step-by-step tour that help you dive into the main concepts in BentoML.
 
 .. grid:: 1 2 2 2
     :gutter: 3

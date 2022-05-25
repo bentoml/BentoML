@@ -96,6 +96,7 @@ html_logo = "_static/img/logo.svg"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 html_js_files = ["js/custom.js"]
+html_show_sphinx = False
 
 # Private dictionary for spell checker
 spelling_word_list_filename = ["bentoml_wordlist.txt"]

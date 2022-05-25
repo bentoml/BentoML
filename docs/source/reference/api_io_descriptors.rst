@@ -14,6 +14,12 @@ NumPy ndarray
 
 Tabular Data with Pandas
 ------------------------
+
+.. note::
+    The :code:`pandas` package is required to use the :code:`bentoml.io.PandasDataFrame`
+    or :code:`bentoml.io.PandasSeries`. Install it with `pip install pandas` and add it
+    to your :code:`bentofile.yaml`'s Python packages list.
+
 .. autoclass:: bentoml.io.PandasDataFrame
 .. automethod:: bentoml.io.PandasDataFrame.from_sample
 .. autoclass:: bentoml.io.PandasSeries
@@ -37,6 +43,12 @@ Texts
 
 Images
 ------
+
+.. note::
+    The :code:`Pillow` package is required to use the :code:`bentoml.io.Image`. Install
+    it with `pip install Pillow` and add it to your :code:`bentofile.yaml`'s Python
+    packages list.
+
 .. autoclass:: bentoml.io.Image
 
 Files

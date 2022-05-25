@@ -21,3 +21,19 @@
 .sd-card-body {
     background-color: var(--color-background-secondary);
 }
+
+/* lighter footer text color */
+.bottom-of-page .left-details {
+    color: #c1c1c1;
+}
+.bottom-of-page .left-details a {
+    color: #c1c1c1;
+    text-decoration: None;
+}
+body[data-theme="dark"] .bottom-of-page .left-details {
+    color: #81868d;
+}
+body[data-theme="dark"] .bottom-of-page .left-details a {
+    color: #81868d;
+    text-decoration: None;
+}

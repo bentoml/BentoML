@@ -88,6 +88,30 @@ make watch-docs
 
 BentoML docs is built with Sphinx, which natively supports [ReStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html).
 
+#### Document titles and section headers
+
+In reStructuredText, there are no heading levels assigned to certain characters as the 
+structure is determined from the succession of headings. However in BentoML docs, we
+follow the following convention:
+
+```rst
+==============
+Document Title
+==============
+
+Top Level Headings
+------------------
+
+2nd level headings
+~~~~~~~~~~~~~~~~~~
+
+3rd level headings
+^^^^^^^^^^^^^^^^^^
+
+4th level heading - avoid this if possible
+""""""""""""""""""""""""""""""""""""""""""
+```
+
 #### Adding Reference Links
 
 When writing documentation, it is common to mention or link to other parts of the docs.
@@ -180,24 +204,24 @@ https://sphinx-design.readthedocs.io/en/furo-theme/tabs.html
 BentoML docs relies heavily on the Python docstrings defined together with the source
 code. We ask our contributors to document every public facing APIs and CLIs, including
 their signatures, options, and example usage. Sphinx can then use these inline docs to
-generate API References pages.
+generate API References pages. 
 
-Our `.rst` documents can also create reference to the inline docstrings. For example, a
-`.rst` document can create a section made from a Python Class's docstring, using the
-following syntax:
-
-```rst
-:class:`~bentoml.Service`
-```
-
-Similarly, for functions and method:
+BentoML uses the [sphinx.ext.autodoc](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html)
+extension to include documentation from docstring. For example, a `.rst` document can 
+create a section made from a Python Class's docstring, using the following syntax:
 
 ```rst
-:func:`~bentoml.models.list`
+.. autoclass:: bentoml.Service
+    :members: api
 ```
+
+Similarly, for functions:
+
 ```rst
-:meth:`~bentoml.Service.api`
+.. autofunction:: bentoml.models.list
 ```
+
+Learn more about this syntax [here](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html).
 
 BentoML codebase follows the [Google's docstring style](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
 for writing inline docstring. Below are some examples.

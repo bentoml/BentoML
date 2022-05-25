@@ -181,7 +181,7 @@ class Bento(StoreItem):
             logger.info('Packing model "%s" from "%s"', model.tag, model.path)
             model._save(bento_model_store)  # type: ignore[reportPrivateUsage]
 
-        # Copy all files base on include and exclude, into `{svc.name}` directory
+        # Copy all files base on include and exclude, into `src` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]
         if len(relpaths) != 0:
             raise InvalidArgument(

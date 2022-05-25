@@ -94,7 +94,6 @@ SCHEMA = Schema(
                 "access_control_max_age": Or(int, None),
                 "access_control_expose_headers": Or([str], str, None),
             },
-            "development_mode": bool,
         },
         "runners": {
             "logging": {
@@ -243,6 +242,7 @@ class DeploymentContainerClass:
     config = bentoml_container.config
     api_server_config = config.bento_server
     runners_config = config.runners
+    development_mode = providers.Static(True)
 
     @providers.SingletonFactory
     @staticmethod

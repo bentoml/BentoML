@@ -14,6 +14,16 @@ from ..utils.docker import validate_tag
 logger = logging.getLogger("bentoml")
 
 
+def containerize_transformer(
+    value: t.Iterable[str] | str | bool | None,
+) -> t.Iterable[str] | str | bool | None:
+    if not value and not isinstance(value, bool):
+        return
+    if isinstance(value, tuple) and not value:
+        return
+    return value
+
+
 def add_containerize_command(cli: click.Group) -> None:
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -150,7 +160,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
     )
-    @kwargs_transformers(transformer=lambda x: None if not x or (isinstance(x, tuple) and not x) else x)  # type: ignore
+    @kwargs_transformers(transformer=containerize_transformer)
     def containerize(  # type: ignore
         bento_tag: str,
         docker_image_tag: str,

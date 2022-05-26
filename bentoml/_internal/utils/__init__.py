@@ -8,6 +8,7 @@ import socket
 import typing as t
 import functools
 import contextlib
+from typing import overload
 from typing import TYPE_CHECKING
 from pathlib import Path
 from datetime import date
@@ -19,7 +20,7 @@ import fs
 import attr
 import fs.copy
 
-if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from backports.cached_property import cached_property
@@ -55,11 +56,27 @@ __all__ = [
 ]
 
 
+@overload
 def kwargs_transformers(
-    _func: GenericFunction[t.Any] | None = None,
+    func: GenericFunction[t.Concatenate[str, bool, t.Iterable[str], P]],
     *,
-    transformer: GenericFunction[t.Any] = lambda x: x,
-):
+    transformer: GenericFunction[t.Any],
+) -> GenericFunction[t.Concatenate[str, t.Iterable[str], bool, P]]:
+    ...
+
+
+@overload
+def kwargs_transformers(
+    func: None = None, *, transformer: GenericFunction[t.Any]
+) -> GenericFunction[t.Any]:
+    ...
+
+
+def kwargs_transformers(
+    _func: t.Callable[..., t.Any] | None = None,
+    *,
+    transformer: GenericFunction[t.Any],
+) -> GenericFunction[t.Any]:
     def decorator(func: GenericFunction[t.Any]) -> t.Callable[P, t.Any]:
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:

@@ -3,12 +3,13 @@ templates generation for all bento dockerfiles, using jinja2 as backend.
 
 All given `__<fields>__` shouldn't be accessed by external users.
 
-All exported blocks that users can use to extends have format: `SETUP_BENTOML_<functionality>` 
+All exported blocks that users can use to extends have format: `SETUP_BENTOML_<functionality>`
   - SETUP_BENTO_BASE_IMAGE
-  - SETUP_BENTO_USER 
+  - SETUP_BENTO_USER
   - SETUP_BENTO_ENVARS
   - SETUP_BENTO_COMPONENTS
   - SETUP_BENTO_ENTRYPOINT
+Users are free to create/add their own block. However, when using predefined bento blocks, only the aboved blocks are allowed.
 
 All given `bento__<fields>` users can access and use to modify. Each of these will always have a default fallback.
 """
@@ -76,7 +77,9 @@ def get_template_env(docker_options: DockerOptions) -> dict[str, t.Any]:
             base_image = distro_spec.image.format(python_version=python_version)
     else:
         base_image = docker_options.base_image
-        logger.info(f"BentoML will not install Python to custom base images; ensure the base image '{base_image}' has Python installed.")
+        logger.info(
+            f"BentoML will not install Python to custom base images; ensure the base image '{base_image}' has Python installed."
+        )
 
     # users shouldn't touch this
     reserved_env: dict[str, t.Any] = {

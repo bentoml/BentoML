@@ -7,8 +7,10 @@ from simple_di import Provide
 
 import bentoml
 from bentoml import Tag
+from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.models.model import Model
 
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
@@ -34,6 +36,15 @@ except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 
 MODULE_NAME = "bentoml.pytorch_lightning"
+
+
+def get(tag_like: str | Tag) -> Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    return model
 
 
 @inject
@@ -69,15 +80,15 @@ def load(
             f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    model_format = bentoml_model.info.context.get("model_format")
-    # backward compatibility
-    if not model_format:
-        model_format = "pytorch_lightning:v1"
+    # model_format = bentoml_model.info.context.get("model_format")
+    # # backward compatibility
+    # if not model_format:
+    # model_format = "pytorch_lightning:v1"
 
-    if model_format == "pytorch_lightning:v1":
-        model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
-    else:
-        raise BentoMLException(f"Unknown model format {model_format}")
+    # if model_format == "pytorch_lightning:v1":
+    model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
+    # else:
+    # raise BentoMLException(f"Unknown model format {model_format}")
 
     return model
 
@@ -176,7 +187,6 @@ def save(
     ) as _model:
 
         weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-        _model.info.context["model_format"] = "pytorch_lightning:v1"
         torch.jit.save(model.to_torchscript(), weight_file)  # type: ignore[reportUnknownMemberType]
 
         return _model.tag

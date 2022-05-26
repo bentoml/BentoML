@@ -1,8 +1,8 @@
 {% extends "base_debian.j2" %}
-{% block setup_uid_gid %}
-ARG BENTO_USER={{ default_bento_user }}
-ARG BENTO_USER_UID={{ default_uid_gid }}
-ARG BENTO_USER_GID={{ default_uid_gid }}
+{% block SETUP_BENTO_USER %}
+ARG BENTO_USER={{ bento__default_user }}
+ARG BENTO_USER_UID={{ bento__default_uid_gid }}
+ARG BENTO_USER_GID={{ bento__default_uid_gid }}
 RUN bash <<EOF
 usermod "--login=${BENTO_USER}" "--home=/home/${BENTO_USER}" --move-home "-u ${BENTO_USER_UID}" "${MAMBA_USER}"
 groupmod "--new-name=${BENTO_USER}" "-g ${BENTO_USER_GID}" "${MAMBA_USER}"
@@ -13,7 +13,7 @@ EOF
 
 ENV MAMBA_USER=$BENTO_USER
 {% endblock %}
-{% block setup_envar %}
+{% block SETUP_BENTO_ENVARS %}
 {{ super() }}
 
 ARG MAMBA_DOCKERFILE_ACTIVATE=1

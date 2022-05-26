@@ -1,5 +1,5 @@
 {% extends "base_alpine.j2" %}
-{% block setup_envar %}
+{% block SETUP_BENTO_ENVARS %}
 {{ super() }}
 
 RUN bash <<EOF
@@ -18,9 +18,4 @@ if [ -f ./env/conda/environment.yml ]; then
   conda clean --all
 fi
 EOF
-{% endblock %}
-{% block setup_entrypoint %}
-{{ super() }}
-
-RUN rm -rf /var/cache/apk/*
 {% endblock %}

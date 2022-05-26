@@ -1,5 +1,5 @@
 {% extends "base.j2" %}
-{% block setup_base_image %}
+{% block SETUP_BENTO_BASE_IMAGE %}
 {{ super() }}
 USER root
 
@@ -10,10 +10,10 @@ RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
     && yum install -y ca-certificates curl gcc gcc-c++ make bash shadow-utils \
     && yum -y clean all
 
-{% if docker_options.system_packages is not none %}
+{% if __options_system_packages is not none %}
 # Install user-defined system package
 RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
-    yum install -y {{ docker_options.system_packages | join(' ') }} \
+    yum install -y {{ __options_system_packages | join(' ') }} \
     && yum -y clean all
 {% endif -%}
 

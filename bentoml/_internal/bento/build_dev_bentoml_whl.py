@@ -10,8 +10,10 @@ from ..utils.tempdir import TempDirectory
 
 logger = logging.getLogger(__name__)
 
+BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
 
-def build_bentoml_whl_to_target_if_in_editable_mode(target_path: str) -> None:
+
+def build_bentoml_editable_wheel(target_path: str) -> None:
     """This is for BentoML developers to create Bentos that contains their local bentoml
     build base on their development branch. To enable this behavior, the developer must
     set env var BENTOML_BUNDLE_LOCAL_BUILD=True before building a Bento.
@@ -20,7 +22,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path: str) -> None:
     distribution with the local bentoml source and add it to saved bento directory
     under {bento_path}/env/python/wheels/
     """
-    if not os.environ.get("BENTOML_BUNDLE_LOCAL_BUILD", None):
+    if os.environ.get(BENTOML_DEV_BUILD, False).lower() != "true":
         return
 
     if is_pypi_installed_bentoml():
@@ -30,14 +32,16 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path: str) -> None:
     # Find bentoml module path
     (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations  # type: ignore # noqa
 
-    bentoml_setup_py = os.path.abspath(os.path.join(module_location, "..", "setup.py"))
+    bentoml_setup_py = os.path.abspath(os.path.join(module_location, "..", "setup.py"))  # type: ignore
 
     # this is for BentoML developer to create Service containing custom development
     # branches of BentoML library, it is True only when BentoML module is installed
     # in development mode via "pip install --editable ."
     if os.path.isfile(bentoml_setup_py):
         logger.info(
-            "BentoML is installed in `editable` model, building BentoML distribution with local BentoML code base. The built wheel file will be included in target bento directory"
+            "BentoML is installed in `editable` model, "
+            "building BentoML distribution with local BentoML code base. "
+            "The built wheel file will be included in target bento directory."
         )
         # temp dir for creating the distribution
         with TempDirectory() as dist_dir:
@@ -46,7 +50,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path: str) -> None:
 
             bdist_dir = os.path.join("build", str(uuid.uuid4())[0:8])
 
-            sandbox.run_setup(
+            sandbox.run_setup(  # type: ignore
                 bentoml_setup_py,
                 [
                     "--quiet",
@@ -58,8 +62,10 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path: str) -> None:
                 ],
             )
             # copy the built wheel file to target directory
-            shutil.copytree(dist_dir, target_path)
+            shutil.copytree(dist_dir, target_path)  # type: ignore
     else:
         logger.info(
-            'Custom BentoML built is detected. For a Bento to use the same build in serving time, add your custom BentoML build to pip packages list, e.g. `packages=["git+https://github.com/bentoml/bentoml.git@13dfb36"]'
+            "Custom BentoML built is detected. For a Bento to use the same build"
+            "in serving time, add your custom BentoML build to pip packages list, "
+            "e.g. `packages=['git+https://github.com/bentoml/bentoml.git@13dfb36']`"
         )

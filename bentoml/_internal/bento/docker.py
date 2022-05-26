@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 SUPPORTED_PYTHON_VERSION = ["3.7", "3.8", "3.9", "3.10"]
 # CUDA supported versions
 SUPPORTED_CUDA_VERSION = {"11": "11.6.2"}
-# Supported architectures
+# Supported supported_architectures
 SUPPORTED_ARCHITECTURE = ["amd64", "arm64", "ppc64le", "s390x"]
 
 
@@ -34,7 +34,7 @@ DOCKER_SUPPORTED_DISTRO: dict[str, dict[str, t.Any]] = {
         "cuda_version": None,
         "python": {
             "image": "amazonlinux:2",
-            "architecture": ["amd64", "arm64"],
+            "supported_architecture": ["amd64", "arm64"],
         },
     },
     "ubi8": {
@@ -42,11 +42,11 @@ DOCKER_SUPPORTED_DISTRO: dict[str, dict[str, t.Any]] = {
         "cuda_version": list(SUPPORTED_CUDA_VERSION.values()),
         "python": {
             "image": "registry.access.redhat.com/ubi8/python-{python_version}:1",
-            "architecture": ["amd64", "arm64"],
+            "supported_architecture": ["amd64", "arm64"],
         },
         "cuda": {
             "image": "nvidia/cuda:{cuda_version}-cudnn8-runtime-ubi8",
-            "architecture": ["amd64", "arm64", "ppc64le"],
+            "supported_architecture": ["amd64", "arm64", "ppc64le"],
         },
     },
     "debian": {
@@ -54,11 +54,11 @@ DOCKER_SUPPORTED_DISTRO: dict[str, dict[str, t.Any]] = {
         "cuda_version": list(SUPPORTED_CUDA_VERSION.values()),
         "python": {
             "image": "python:{python_version}-slim",
-            "architecture": SUPPORTED_ARCHITECTURE,
+            "supported_architecture": SUPPORTED_ARCHITECTURE,
         },
         "cuda": {
             "image": "nvidia/cuda:{cuda_version}-cudnn8-runtime-ubuntu20.04",
-            "architecture": ["amd64", "arm64"],
+            "supported_architecture": ["amd64", "arm64"],
         },
     },
     "debian-miniconda": {
@@ -66,7 +66,7 @@ DOCKER_SUPPORTED_DISTRO: dict[str, dict[str, t.Any]] = {
         "cuda_version": None,
         "miniconda": {
             "image": "mambaorg/micromamba:latest",
-            "architecture": ["amd64", "arm64", "ppc64le"],
+            "supported_architecture": ["amd64", "arm64", "ppc64le"],
         },
     },
     "alpine": {
@@ -74,7 +74,7 @@ DOCKER_SUPPORTED_DISTRO: dict[str, dict[str, t.Any]] = {
         "cuda_version": None,
         "python": {
             "image": "python:{python_version}-alpine",
-            "architecture": SUPPORTED_ARCHITECTURE,
+            "supported_architecture": SUPPORTED_ARCHITECTURE,
         },
     },
     "alpine-miniconda": {
@@ -82,7 +82,7 @@ DOCKER_SUPPORTED_DISTRO: dict[str, dict[str, t.Any]] = {
         "cuda_version": None,
         "miniconda": {
             "image": "continuumio/miniconda3:4.10.3p0-alpine",
-            "architecture": ["amd64"],
+            "supported_architecture": ["amd64"],
         },
     },
 }
@@ -115,7 +115,7 @@ class DistroSpec:
         ),
     )
 
-    architecture: t.Optional[t.List[str]] = attr.field(
+    supported_architecture: t.Optional[t.List[str]] = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.deep_iterable(

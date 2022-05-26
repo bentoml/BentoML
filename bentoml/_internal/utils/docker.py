@@ -6,7 +6,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from rich.syntax import Syntax
-from rich.console import Console
 
 from ...exceptions import BentoMLException
 
@@ -73,11 +72,6 @@ def validate_tag(_: Context, __: Parameter, tag: str | None) -> str | None:
     return tag
 
 
-# A bento dockerfile envars definition
-DEFAULT_BENTO_USER = "bentoml"
-DEFAULT_BENTO_HOME = f"/home/{DEFAULT_BENTO_USER}"
-DEFAULT_BENTO_PATH = f"{DEFAULT_BENTO_HOME}/bento"
-
 FROM_WARNING = """\
 [bold yellow]FROM[/] instruction is [bold red]NOT SUPPORTED[/bold red] in `dockerfile_template`. 
 BentoML will auto-generate a `FROM` instruction that extends the generated Bento dockerfile.
@@ -104,9 +98,6 @@ WARNINGS = {
     "CMD": CMD_WARNING,
     "WORKDIR": WORKDIR_WARNING,
 }
-
-# TODO: setup console to use throughout bentoml
-console = Console()
 
 
 def pretty_warning_logs(parsed_command: str, instruction_warning: str) -> None:

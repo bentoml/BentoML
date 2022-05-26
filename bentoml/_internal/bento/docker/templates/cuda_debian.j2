@@ -1,5 +1,5 @@
 {% extends "base_debian.j2" %}
-{% block setup_base_image %}
+{% block SETUP_BENTO_BASE_IMAGE %}
 {{ super() }}
 
 RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
@@ -13,23 +13,22 @@ add-apt-repository ppa:deadsnakes/ppa
 apt-get update -y
 
 apt-get install -y --no-install-recommends --allow-remove-essential \
-		{% if "ubuntu22.04" in base_image and docker_options.python_version == "3.10" %}python{{ docker_options.python_version }}-jammy{% else %}python{{ docker_options.python_version }}{% endif %} \
-		python{{ docker_options.python_version }}-dev \
-		python{{ docker_options.python_version }}-distutils
+		{% if "ubuntu22.04" in __base_image__ and __options_python_version == "3.10" %}python{{ __options_python_version }}-jammy{% else %}python{{ __options_python_version }}{% endif %} \
+		python{{ __options_python_version }}-dev \
+		python{{ __options_python_version }}-distutils
 
 apt-get clean
-rm -rf /var/lib/apt/lists/*
 EOF
 
-RUN ln -sf /usr/bin/python{{ docker_options.python_version }} /usr/bin/python3 && \
-	ln -sf /usr/bin/pip{{ docker_options.python_version }} /usr/bin/pip3
+RUN ln -sf /usr/bin/python{{ __options_python_version }} /usr/bin/python3 && \
+	ln -sf /usr/bin/pip{{ __options_python_version }} /usr/bin/pip3
 
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
     python3 get-pip.py && \
     rm -rf get-pip.py
 
 {% endblock %}
-{% block setup_envar %}
+{% block SETUP_BENTO_ENVARS %}
 
 SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 

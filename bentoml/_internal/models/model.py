@@ -1,41 +1,40 @@
 from __future__ import annotations
-
-import io
-import typing as t
-import logging
-import importlib
-from sys import version_info as pyver
-from typing import overload
-from typing import TYPE_CHECKING
+from collections import UserDict
 from datetime import datetime
 from datetime import timezone
-from collections import UserDict
+import importlib
+import io
+import logging
+from sys import version_info as pyver
+import typing as t
+from typing import overload
+from typing import TYPE_CHECKING
 
-import fs
 import attr
-import yaml
+from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
+import cloudpickle
+import fs
+from fs.base import FS
 import fs.errors
 import fs.mirror
-import cloudpickle  # type: ignore (no cloudpickle types)
-from fs.base import FS
-from cattr.gen import override  # type: ignore (incomplete cattr types)
-from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 from simple_di import inject
 from simple_di import Provide
+import yaml
 
-from ..tag import Tag
-from ..store import Store
-from ..store import StoreItem
-from ..types import MetadataDict
-from ..utils import bentoml_cattr
-from ..utils import label_validator
-from ..utils import metadata_validator
-from ..runner import Runner
-from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..runner import Runner
+from ..runner import Runnable
+from ..store import Store
+from ..store import StoreItem
+from ..tag import Tag
+from ..types import MetadataDict
+from ..utils import bentoml_cattr
+from ..utils import label_validator
+from ..utils import metadata_validator
 
 if TYPE_CHECKING:
     from ..types import AnyType
@@ -436,7 +435,7 @@ attr.resolve_types(ModelSignature, globals(), locals())
 
 if TYPE_CHECKING:
     ModelSignaturesType: t.TypeAlias = (
-        dict[str, ModelSignatureDict] | dict[str, ModelSignature]
+        dict[str, ModelSignature] | dict[str, ModelSignatureDict]
     )
 
 
@@ -476,9 +475,7 @@ class ModelInfo:
     api_version: str = attr.field(default="v1")
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    # for type checking
     def __init__(
-        # pylint: disable=unused-argument
         self,
         tag: Tag,
         module: str,
@@ -490,12 +487,19 @@ class ModelInfo:
         api_version: str | None = None,
         creation_time: datetime | None = None,
     ):
-        ...
-
-    def __attrs_post_init__(self):
-        object.__setattr__(self, "name", self.tag.name)
-        object.__setattr__(self, "version", self.tag.version)
-
+        self.__attrs_init__(  # type: ignore
+            tag=tag,
+            name=tag.name,
+            version=tag.version,
+            module=module,
+            labels=labels,
+            options=options,
+            metadata=metadata,
+            context=context,
+            signatures=signatures,
+            api_version=api_version,
+            creation_time=creation_time,
+        )
         self.validate()
 
     def __eq__(self, other: object) -> bool:

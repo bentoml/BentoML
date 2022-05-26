@@ -85,7 +85,7 @@ def load_model(
 
     """  # noqa: LN001
     if not isinstance(bento_model, bentoml.Model):
-        bento_model = bentoml.models.get(bento_model)
+        bento_model = get(bento_model)
 
     with tf.device(device_name):
         tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore

@@ -310,8 +310,7 @@ the Bento archive directory.
     ├── env
     │   ├── docker
     │   │   ├── Dockerfile
-    │   │   ├── entrypoint.sh
-    │   │   └── init.sh
+    │   │   └── entrypoint.sh
     │   └── python
     │       ├── requirements.lock.txt
     │       ├── requirements.txt
@@ -327,6 +326,14 @@ the Bento archive directory.
         ├── service.py
         └── train.py
 
+
+The :code:`src/` directory here contains files specified under the
+:ref:`include <concepts/bento:Files to include>` field in the :code:`bentofile.yaml`,
+it will be set as user Python code's CWD(current working directory), so that importing
+local module and reading relative file path work properly.
+
+:code:`models/` directory contains all models required by the Service. This is
+automatically determined from the :code:`bentoml.Service` object's runners list.
 
 :bdg-warning:`Warning:` users **should never** change files in the generated Bento
 archive, unless it's for debugging purpose.
@@ -452,7 +459,7 @@ directory. This is what a :code:`.bentoignore` file would look like:
    .ipynb_checkpoints/
    training_data/
 
-.. tip::
+.. note::
     :code:`exclude` is always applied after :code:`include`.
 
 
@@ -466,39 +473,50 @@ desired version, install from a custom PyPI source, or install from a github rep
 
 .. code:: yaml
 
-   python:
-     packages:
-        - numpy
+    python:
+        packages:
+        - "numpy"
         - "matplotlib==3.5.1"
         - "package>=0.2,<0.3"
         - "torchvision==0.9.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu"
         - "git+https://github.com/bentoml/bentoml.git@main"
 
-If you already have a :code:`requirements.txt` file that defines python packages for
-your project, you may also supply a path to the :code:`requirements.txt` file directly:
-
-.. code:: yaml
-
-   python:
-     requirements_txt: "requirements.txt"
-
-Additionally, all :code:`pip install` options are also supported via the following
-options:
+If you already have a
+`requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_
+file that defines python packages for your project, you may also supply a path to the
+:code:`requirements.txt` file directly:
 
 .. code:: yaml
 
     python:
-        ...
-        index_url: "https://example.org/"
+        requirements_txt: "./project-a/ml-requirements.txt"
+
+Pip install options
+"""""""""""""""""""
+
+Additional :code:`pip install` arguments can also be provided, as shown below. Note that
+these arguments will be applied to all packages defined in the :code:`packages` list, as
+well as the :code:`requirements_txt` file if provided.
+
+.. code:: yaml
+
+    python:
+        requirements_txt: "./requirements.txt"
+        index_url: "https://my.mirror.com/simple"
         no_index: False
-        trusted_host: "localhost"
+        trusted_host:
+        - "pypi.python.org"
+        - "my.mirror.com"
         find_links:
-        - "https://test.org/"
+        - "https://download.pytorch.org/whl/cu80/stable.html"
         extra_index_url:
-        - "https://test.org/"
-        pip_args: "--quiet"
-        wheels:
-        - "./libs/my_package.whl"
+        - "https://<other api token>:@my.mirror.com/pypi/simple"
+        - "https://pypi.python.org/simple"
+        pip_args: "--proxy=.. --cert=.."
+
+.. note::
+    The :code:`--no-cache-dir` argument will also be applied to :code:`pip` by default
+    when installing python packages during :code:`bentoml containerize`.
 
 
 PyPI Package Locking
@@ -529,7 +547,6 @@ Bento. Simply provide a path to your :code:`.whl` files under the :code:`wheels`
 .. code:: yaml
 
     python:
-        ...
         wheels:
         - ./lib/my_package.whl
 
@@ -639,15 +656,34 @@ Here's a basic Docker options configuration.
             - BAR=value2
 
 
-Available distros
-"""""""""""""""""
+OS Distros
+""""""""""
 
-- debian (default)
-- debian-miniconda (default when Conda optiosn are specified)
-- amazonlinux
-- alpine
-- alpine-miniconda
-- ubi8
+The following OS distros are currently supported in BentoML:
+
+- :code:`debian`: **default**, similar to Ubuntu
+- :code:`alpine`: A minimal Docker image based on Alpine Linux
+- :code:`ubi8`: Red Hat Universal Base Image
+- :code:`amazonlinux`: Amazon Linux 2
+
+Some of the distros may not support using conda or specifying CUDA for GPU. Here is the
+support matrix for all distros:
+
++------------------+-----------------------------+-----------------+----------------------+
+| Distro           |  Available Python Versions  | Conda Support   | CUDA Support (GPU)   |
++==================+=============================+=================+======================+
+| debian           |  3.7, 3.8, 3.9, 3.10        |  Yes            |  Yes                 |
++------------------+-----------------------------+-----------------+----------------------+
+| alpine           |  3.7, 3.8, 3.9, 3.10        |  Yes            |  No                  |
++------------------+-----------------------------+-----------------+----------------------+
+| ubi8             |  3.8, 3.9                   |  No             |  Yes                 |
++------------------+-----------------------------+-----------------+----------------------+
+| amazonlinux      |  3.7, 3.8                   |  No             |  No                  |
++------------------+-----------------------------+-----------------+----------------------+
+
+.. TODO::
+    Document image supported architectures
+
 
 GPU support
 """""""""""
@@ -655,6 +691,11 @@ GPU support
 The :code:`cuda_version` field specifies the target cuda version to install on the
 generated docker image. Currently, the only supported cuda version is :code:`"11.6.2"`.
 BentoML also installs additional packages required for the target cuda version.
+
+.. code:: yaml
+
+    docker:
+        cuda_version: "11.6,2"
 
 If you need a different cuda version that is not currently supported in BentoML, it is
 possible to install it by specifying it in the :code:`system_packages` or via the
@@ -706,52 +747,25 @@ BentoML templates used for generating the :code:`Dockerfile` in a Bento.
 Documenting this option is working-in-progress, see :issue:`2497`
 
 
-Limitations
-"""""""""""
-
-With the default distro (when leaving the distro field unspecified), BentoML has the
-best compatibility over all BentoML supported python versions. However there are some
-limitations:
-
-+------------------+-----------------------------+-----------------+----------------------+
-| Distro           |  Available Python Versions  | Conda Support   | CUDA Support (GPU)   |
-+==================+=============================+=================+======================+
-| debian           |  3.7, 3.8, 3.9, 3.10        |  No             |  Yes                 |
-+------------------+-----------------------------+-----------------+----------------------+
-| debian-miniconda |  3.7, 3.8, 3.9, 3.10        |  Yes            |  No                  |
-+------------------+-----------------------------+-----------------+----------------------+
-| amazonlinux      |  3.7, 3.8                   |  No             |  Yes                 |
-+------------------+-----------------------------+-----------------+----------------------+
-| alpine           |  3.7, 3.8, 3.9, 3.10        |  No             |  No                  |
-+------------------+-----------------------------+-----------------+----------------------+
-| alpine-miniconda |  3.7, 3.8, 3.9, 3.10        |  Yes            |  No                  |
-+------------------+-----------------------------+-----------------+----------------------+
-| ubi8             |  3.8, 3.9                   |  No             |  Yes                 |
-+------------------+-----------------------------+-----------------+----------------------+
-
-.. TODO:
-
-    Document image supported architectures
-
 
 Docker Options Table
 """"""""""""""""""""
 
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
-| Field           | Description                                                                                                        |
-+=================+====================================================================================================================+
-| distro          | Configure the particular os distribution on the Docker image                                                       |
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
-| python_version  | Specify which python to include on the Docker image ["3.7", "3.8", "3.9", "3.10"]                                  |
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
-| cuda_version    | Specify the cuda version to install on the Docker image [11.6.2]                                                   |
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
-| env             | Declare environment variables to the generated Dockerfile                                                          |
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
-| setup_script    | Is a python or shell script that executes during docker build time                                                 |
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
-| base_image      | Is a user-provided custom docker base image. This will override all other custom attributes of the image           |
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
-| docker_template | Customize the generated dockerfile by providing a jinja2 template that extends the default dockerfile              |
-+-----------------+--------------------------------------------------------------------------------------------------------------------+
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Field           | Description                                                                                                                               |
++=================+===========================================================================================================================================+
+| distro          | The OS distribution on the Docker image, Default to "debian"                                                                              |
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| python_version  | Specify which python to include on the Docker image ["3.7", "3.8", "3.9", "3.10"]. Default to the Python version in build environment.    |
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| cuda_version    | Specify the cuda version to install on the Docker image [11.6.2]                                                                          |
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| env             | Declare environment variables in the generated Dockerfile                                                                                 |
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| setup_script    | A python or shell script that executes during docker build time                                                                           |
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| base_image      | A user-provided docker base image. This will override all other custom attributes of the image                                            |
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| docker_template | Customize the generated dockerfile by providing a jinja2 template that extends the default dockerfile                                     |
++-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 

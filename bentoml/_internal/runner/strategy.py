@@ -35,6 +35,7 @@ THREAD_ENVS = [
     "OMP_NUM_THREADS",
     "TF_NUM_INTEROP_THREADS",
     "TF_NUM_INTRAOP_THREADS",
+    "BENTOML_NUM_THREAD",
 ]  # TODO(jiang): make it configurable?
 
 

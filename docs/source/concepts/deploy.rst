@@ -3,14 +3,18 @@ Deploying Bento
 ===============
 
 
+Deployment Overview
+-------------------
 
-Manage bentos
-Export, import
-
-Deployment Options - link
+Deployment Options
 * Docker
 * yatai
 * bentoctl
+
+
+
+Containerize Bentos
+-------------------
 
 Containerize/Docker
 * buildx requirement
@@ -19,16 +23,7 @@ Containerize/Docker
 * platform
 * build args
 
-
-
-
-
-BentoML allows you to store models and bentos in local as well as remote repositories. Tools are also provided to easily
-manage the lifecycle of these artifacts. This documentation details the cli tools for both local and remote scenarios
-
-
-Containerize Bentos as Docker Images
-************************************
+run with --gpu
 
 Containerizing bentos as Docker images allows users to easily distribute and deploy bentos.
 Once services are built as bentos and saved to the bento store, we can containerize saved bentos
@@ -76,3 +71,28 @@ We can run the images with `docker run`.
 .. todo::
 
     Add a further reading section
+
+
+Docker can be deployed to ....
+
+
+Deploy with bentoctl
+--------------------
+
+Supported cloud platforms
+
+powered by terraform
+
+terraform template customization
+
+
+Deploy with Yatai
+-----------------
+
+
+deploy via UI
+
+deploy via kubectl and CRD
+
+
+

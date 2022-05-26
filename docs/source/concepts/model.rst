@@ -17,6 +17,11 @@ pipeline, invoking a :code:`save_model` call, as demonstrated in the
     # INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for sklearn model
     # INFO  [cli] Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj", path="~/bentoml/models/iris_clf/2uo5fkgxj27exuqj/")
 
+.. seealso::
+   It is also possible to use pre-trained models directly with BentoML, without saving
+   it to the model store first. Check out the
+   :ref:`Custom Runner <concepts/runner:Custom Runner>` example to learn more.
+
 Optionally, you may attach custom labels, metadata, or :code:`custom_objects` to be
 saved alongside your model in the model store, e.g.:
 
@@ -42,10 +47,6 @@ saved alongside your model in the model store, e.g.:
 - **labels**: user-defined labels for managing models, e.g. team=nlp, stage=dev.
 - **metadata**: user-defined metadata for storing model training context information or model evaluation metrics, e.g. dataset version, training parameters, model scores.
 - **custom_objects**: user-defined additional python objects, e.g. a tokenizer instance, preprocessor function, model configuration json, serialized with cloudpickle. Custom objects will be serialized with `cloudpickle <https://github.com/cloudpipe/cloudpickle>`_.
-
-
-.. TODO::
-    Add example for using ModelOptions
 
 
 Retrieve a saved model
@@ -287,11 +288,22 @@ Besides the CLI commands, BentoML also provides equivalent
 Using Model Runner
 ------------------
 
-The :doc:`tutorial </tutorial>`
+The way to run model inference in the context of a :code:`bentoml.Service`, is via a
+Runner. The Runner abstraction gives BentoServer more flexibility in terms of how to
+schedule the inference computation, how to dynamically batch inference calls and better
+take advantage of all hardware resource available.
+
+As demonstrated in the :doc:`tutorial </tutorial>`, a model runner can be created
+from a saved model via the :code:`to_runner` API:
 
 .. code:: python
 
     iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
+
+
+The runner instance can then be used for creating a :code:`bentoml.Service`:
+
+.. code:: python
 
     svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
@@ -300,20 +312,16 @@ The :doc:`tutorial </tutorial>`
         result = iris_clf_runner.predict.run(input_series)
         return result
 
-.. code:: python
 
-  @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-  async def classify(input_series: np.ndarray) -> np.ndarray:
-     result = await iris_clf_runner.predict.async_run(input_series)
-     return result
-
+To test out the runner interface before writing the Service API callback function,
+you can create a local runner instance outside of a Service:
 
 .. code:: python
 
     # Create a Runner instance:
     iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
-    # Runner#init_local initializes the model in current process, this is meant for development and testing only:
+    # Initializes the runner in current process, this is meant for development and testing only:
     iris_clf_runner.init_local()
 
     # This should yield the same result as the loaded model:
@@ -323,33 +331,140 @@ The :doc:`tutorial </tutorial>`
 To learn more about Runner usage and its architecture, see :doc:`/concepts/runner`.
 
 
-Model Signatures and Batching
------------------------------
+Model Signatures
+----------------
 
-.. code:: python
+A model signature represents a method on a model object that can be called. This
+information is used when creating BentoML runners for this model.
+
+From the example above, the :code:`iris_clf_runner.predict.run` call will pass through
+the function input to the model's :code:`predict` method, running from a remote runner
+process.
+
+For many :doc:`other ML frameworks <frameworks/index>`, the model object's inference
+method may not be called :code:`predict`. Users can customize it by specifying the model
+signature during :code:`save_model`:
+
+.. code-block:: python
+   :emphasize-lines: 4-8,13
 
     bentoml.pytorch.save_model(
         "demo_mnist",  # model name in the local model store
         trained_model,  # model instance being saved
-        signatures={   # model signatures for running inference
-          "predict": {
-            "batchable": True,
-            "batch_dim": 0,
-          }
+        signatures={   # model signatures for runner inference
+            "classify": {
+                "batchable": False,
+            }
         }
     )
 
+    runner = bentoml.pytorch.get("demo_mnist:latest").to_runner()
+    runner.init_local()
+    runner.classify.run( MODEL_INPUT )
 
 
-get, to_runner
-testing runner
-runner input/output
+A special case to noice is for the Python magic method name :code:`__call__`. Similar to
+the Python language convention, the call to :code`runner.run` will be applied to the
+model's :code:`__call__` method:
 
-Model signature
-* batchable
-* batch_dim
+.. code-block:: python
+   :emphasize-lines: 4-8,13
 
-Dynamic batching params
-* max_batch_size
-* max_latency_ms
+    bentoml.pytorch.save_model(
+        "demo_mnist",  # model name in the local model store
+        trained_model,  # model instance being saved
+        signatures={   # model signatures for runner inference
+            "__call__": {
+                "batchable": False,
+            },
+        }
+    )
 
+    runner = bentoml.pytorch.get("demo_mnist:latest").to_runner()
+    runner.init_local()
+    runner.run( MODEL_INPUT )
+
+Batching
+--------
+
+For model inference calls that supports taking a batch input, it is recommended to
+enable batching for the target model signature. In which case, :code:`runner#run` calls
+made from multiple Service workers can be dynamically merged to a larger batch and run
+as one inference call in the runner worker. Here's an example:
+
+.. code-block:: python
+   :emphasize-lines: 4-9,14
+
+    bentoml.pytorch.save_model(
+        "demo_mnist",  # model name in the local model store
+        trained_model,  # model instance being saved
+        signatures={   # model signatures for runner inference
+            "__call__": {
+                "batchable": True,
+                "batch_dim": 0,
+            },
+        }
+    )
+
+    runner = bentoml.pytorch.get("demo_mnist:latest").to_runner()
+    runner.init_local()
+    runner.run( MODEL_INPUT )
+
+.. tip::
+    The runner interface is exactly the same, regardless :code:`batchable` was set to
+    True or False.
+
+The :code:`batch_dim` parameter determines the dimension(s) that contain multiple data
+when passing to this run method.
+
+For example, if you have two inputs you want to run prediction on, :code:`[1, 2]` and
+:code:`[3, 4]`, if the array you would pass to the predict method would be
+:code:`[[1, 2], [3, 4]]`, then the batch dimension would be :code:`0`. If the array you
+would pass to the predict method would be :code:`[[1, 3], [2, 4]]`, then the batch
+dimension would be :code:`1`. For example:
+
+.. code:: python
+
+    # Save two models with `predict` method that supports taking input batches on the
+    # dimension 0 and the other on dimension 1:
+    bentoml.pytorch.save_model("demo0", model_0, signatures={
+        "predict": {"batchable": True, "batch_dim": 0}}
+    )
+    bentoml.pytorch.save_model("demo1", model_1, signatures={
+        "predict": {"batchable": True, "batch_dim": 1}}
+    )
+
+    # if the following calls are batched, the input to the actual predict method on the
+    # model.predict method would be [[1, 2], [3, 4], [5, 6]]
+    runner0 = bentoml.pytorch.get("demo0:latest").to_runner()
+    runner0.init_local()
+    runner0.predict.run(np.array([[1, 2], [3, 4]]))
+    runner0.predict.run(np.array([[5, 6]]))
+
+    # if the following calls are batched, the input to the actual predict method on the
+    # model.predict would be [[1, 2, 5], [3, 4, 6]]
+    runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
+    runner1.init_local()
+    runner1.predict.run(np.array([[1, 2], [3, 4]]))
+    runner1.predict.run(np.array([[5], [6]]))
+
+
+.. admonition:: Expert API
+
+    If there are multiple arguments to the run method and there is only one batch
+    dimension supplied, all arguments will use that batch dimension.
+
+    The batch dimension can also be a tuple of (input batch dimension, output batch
+    dimension). For example, if the predict method should have its input batched along
+    the first axis and its output batched along the zeroth axis, :code:`batch_dim`` can
+    be set to :code:`(1, 0)`.
+
+
+For online serving workloads, adaptive batching is a critical component that contributes
+to the overall performance. If throughput and latency are important to you, learn more
+about other Runner options and batching configurations in the :doc:`/concepts/runner`
+and :doc:`/guides/batching` doc.
+
+
+.. TODO::
+    Add example for using ModelOptions for setting runtime options

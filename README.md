@@ -83,7 +83,7 @@ together with your model, e.g.:
 bentoml.pytorch.save_model(
     "demo_mnist",  # model name in the local model store
     trained_model,  # model instance being saved
-    signatures={   # model signatures for running inference
+    signatures={   # model signatures for runner inference
       "predict": {
         "batchable": True,
         "batch_dim": 0,

@@ -99,7 +99,7 @@ def build(
         for allow_arg in allow:
             cmds.extend(["--allow", allow_arg])
 
-    if platform:
+    if platform is not None and len(platform) > 0:
         if isinstance(platform, str):
             platform = [platform]
         cmds += ["--platform", ",".join(platform)]

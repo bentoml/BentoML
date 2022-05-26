@@ -255,12 +255,10 @@ def add_containerize_command(cli: click.Group) -> None:
         else:
             if len(platform) > 1:
                 logger.warning(
-                    "Multiple `--platform` is parsed. "
+                    "Multiple `--platform` arguments were found.  "
                     "Make sure to also use `--push` to push images "
-                    "to a repository, otherwise, image will only be saved "
-                    "under Docker build cache. "
-                    "Refers to https://docs.docker.com/engine/reference/commandline/buildx_build/#load "
-                    "for more information."
+                    "to a repository or generated images will not be saved. "
+                    "For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
                 )
             else:
                 load = True

@@ -104,10 +104,11 @@ def load_model(
     if not isinstance(bento_model, bentoml.Model):
         bento_model = bentoml.models.get(bento_model)
 
-    return keras.models.load_model(
-        bento_model.path,
-        custom_objects=bento_model.custom_objects,
-    )
+    with tf.device(device_name):
+        return keras.models.load_model(
+            bento_model.path,
+            custom_objects=bento_model.custom_objects,
+        )
 
 
 def save_model(
@@ -132,6 +133,16 @@ def save_model(
             Name for given model instance. This should pass Python identifier check.
         model (`tensorflow.keras.Model`):
             Instance of the Keras model to be saved to BentoML modelstore.
+        tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
+            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+            from Tensorflow documentation for more information.
+        tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
+            :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
+        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
+            Methods to expose for running inference on the target model. Signatures are
+             used for creating Runner instances when serving model with bentoml.Service
+        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
+            user-defined labels for managing models, e.g. team=nlp, stage=dev
         custom_objects (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary of Keras custom objects, if specified.
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
@@ -208,13 +219,11 @@ def save_model(
     if signatures is None:
         signatures = {
             "predict": {
-                "batchable": False,
+                "batchable": True,
             }
         }
 
-        logger.info(
-            f"Using the default model signature {signatures} for TensorFlow models."
-        )
+        logger.info(f"Using the default model signature {signatures} for Keras models.")
 
     options = KerasOptions(include_optimizer=include_optimizer)
 
@@ -291,7 +300,10 @@ def get_runnable(
                         return item
 
                 params = params.map(_mapping)
-                res = raw_method(params.args)
+                res: tf.Tensor | "ext.NpNDArray" = raw_method(params.args)
+                if isinstance(res, tf.Tensor):
+                    return t.cast("ext.NpNDArray", res.numpy())
+
                 return res
 
         return _run_method

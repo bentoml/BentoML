@@ -1,39 +1,38 @@
-# type: ignore[reportMissingTypeStubs]
+from __future__ import annotations
+
 import typing as t
+import logging
 import functools
 from typing import TYPE_CHECKING
 from pathlib import Path
 
+import attr
 import numpy as np
-import cloudpickle
-from simple_di import inject
-from simple_di import Provide
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import BentoMLException
+from bentoml import Runnable
+from bentoml.models import ModelContext
+from bentoml.models import ModelOptions
+from bentoml.exceptions import NotFound
 from bentoml.exceptions import MissingDependencyException
 
-from ..models import H5_EXT
-from ..models import PKL_EXT
-from ..models import HDF5_EXT
-from ..models import JSON_EXT
-from ..models import SAVE_NAMESPACE
+from ..types import LazyType
+from ..models.model import ModelSignature
+from ..runner.utils import Params
 from ..utils.tensorflow import get_tf_version
-from ..configuration.containers import BentoMLContainer
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
-    from tensorflow.python.framework.ops import Graph
-    from tensorflow.python.client.session import BaseSession
-
     from .. import external_typing as ext
-    from ..models import ModelStore
+    from ..models.model import ModelSignatureDict
+    from ..external_typing import tensorflow as tf_ext
+
+    KerasArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
 try:
     import tensorflow as tf
-
-    # TODO: separation of Keras and Tensorflow
-    # https://twitter.com/fchollet/status/1404967230048149506?lang=en
     import tensorflow.keras as keras
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -47,141 +46,80 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.keras"
 
-_tf_version = get_tf_version()
-TF2 = _tf_version.startswith("2")
 
-if TF2:
-    from .tensorflow_v2 import _TensorflowRunner  # type: ignore[reportPrivateUsage]
-else:
-    from .tensorflow_v1 import _TensorflowRunner  # type: ignore[reportPrivateUsage]
+@attr.define
+class KerasOptions(ModelOptions):
+    """Options for the Keras model."""
 
-# Global instance of tf.Session()
-_graph: "Graph" = tf.compat.v1.get_default_graph()
-_sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
+    include_optimizer: bool
+    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
+    @classmethod
+    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
+        return cls(**kwargs)
 
-_CUSTOM_OBJ_FNAME = f"{SAVE_NAMESPACE}_custom_objects{PKL_EXT}"
-_SAVED_MODEL_FNAME_MAPPING = {
-    "h5": f"{SAVE_NAMESPACE}{H5_EXT}",
-    "tf": "/",
-}
-_MODEL_WEIGHT_FNAME_MAPPING = {
-    "h5": f"{SAVE_NAMESPACE}_weights{HDF5_EXT}",
-    "tf": f"{SAVE_NAMESPACE}_weights",
-}
-_MODEL_JSON_FNAME = f"{SAVE_NAMESPACE}_json{JSON_EXT}"
+    @staticmethod
+    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
+        return attr.asdict(options)
 
 
-def get_session() -> "BaseSession":
-    """
-    Return TF1 sessions for :mod:`bentoml.keras`.
-
-    .. warning::
-
-       This function is served for the purposes of using Tensorflow V1.
-
-    Example:
-
-    .. tabs::
-
-        .. code-tab:: keras_v1
-
-            session = bentoml.keras.get_session()
-            # Initialize variables in the graph/model
-            session.run(tf.global_variables_initializer())
-            with session.as_default():
-                loaded = bentoml.keras.load(tag)
-
-    """  # noqa: LN001
-    return _sess
+def get(tag_like: str | Tag) -> bentoml.Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    return model
 
 
-@inject
-def load(
-    tag: Tag,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "keras.Model":
+def load_model(
+    bento_model: str | Tag | bentoml.Model,
+    device_name: str = "/device:CPU:0",
+) -> "tf_ext.KerasModel":
     """
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
+            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
+            instance to load the model from.
+        device_name (``str`` | ``None``):
+            The device id to load the model on. The device id format should be compatible with `tf.device <https://www.tensorflow.org/api_docs/python/tf/device>`_
+
 
     Returns:
         :obj:`keras.Model`: an instance of users :obj:`keras.Model` from BentoML modelstore.
 
     Examples:
 
-    .. tabs::
+    .. code-block:: python
 
-        .. code-tab:: keras_v1
+        import bentoml
 
-            import bentoml
-            import tensorflow as tf
-
-            # retrieve session that save keras model with `bentoml.keras.get_session()`:
-            session = bentoml.keras.get_session()
-            session.run(tf.global_variables_initializer())
-            with session.as_default():
-                # `load` the model back in memory:
-                loaded = bentoml.keras.load("keras_model")
-
-        .. code-tab:: keras_v2
-
-            import bentoml
-
-            # `load` the model back in memory:
-            loaded = bentoml.keras.load("keras_model")
+        # load a model back into memory:
+        loaded = bentoml.keras.load_model("keras_model")
 
     """  # noqa
 
-    bentoml_model: Model = model_store.get(tag)
-    if bentoml_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
-        )
+    if not isinstance(bento_model, bentoml.Model):
+        bento_model = bentoml.models.get(bento_model)
 
-    model_format = bentoml_model.info.context.get("model_format")
-    if model_format:
-        # ignore version=v1 now because all version should be v1
-        save_format, store_as_json_and_weights, _ = model_format.split(":")
-    # backward compatibility
-    else:
-        save_format = "h5"
-        store_as_json_and_weights = bentoml_model.info.options["store_as_json"]
-
-    with get_session().as_default():
-        if store_as_json_and_weights:
-            assert Path(bentoml_model.path_of(_MODEL_JSON_FNAME)).is_file()
-            with Path(bentoml_model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
-                model_json = jsonf.read()
-            model = keras.models.model_from_json(
-                model_json, custom_objects=bentoml_model.custom_objects
-            )
-            weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
-            model.load_weights(bentoml_model.path_of(weight_fname))
-        else:
-            model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
-            model = keras.models.load_model(
-                bentoml_model.path_of(model_fname),
-                custom_objects=bentoml_model.custom_objects,
-            )
-        try:
-            # if model is a dictionary
-            return model["model"]
-        except TypeError:
-            return model
+    return keras.models.load_model(
+        bento_model.path,
+        custom_objects=bento_model.custom_objects,
+    )
 
 
-def save(
+def save_model(
     name: str,
-    model: "keras.Model",
+    model: "tf_ext.KerasModel",
     *,
-    save_format: t.Optional[str] = "tf",
-    store_as_json_and_weights: t.Optional[bool] = False,
+    tf_signatures: "tf_ext.ConcreteFunction" | None = None,
+    tf_save_options: "tf_ext.SaveOptions" | None = None,
+    include_optimizer: bool = False,
+    signatures: t.Dict[str, ModelSignature]
+    | t.Dict[str, ModelSignatureDict]
+    | None = None,
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -194,151 +132,91 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`tensorflow.keras.Model`):
             Instance of the Keras model to be saved to BentoML modelstore.
-        save_format (`str`, `optional`, default to :code:`tf`):
-            Whether to store Keras model or weight in tf format or old h5 format.
         custom_objects (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Dictionary of Keras custom objects, if specified.
-        store_as_json_and_weights (`bool`, `optional`, default to :code:`False`):
-            Whether to store Keras model as JSON and weights.
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
+        the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
-    .. tabs::
+    .. code-block:: python
 
-        .. code-tab:: keras_v1
-
-            import bentoml
-            import tensorflow as tf
-            import tensorflow.keras as keras
+        import bentoml
+        import tensorflow as tf
+        import tensorflow.keras as keras
 
 
-            def custom_activation(x):
-                return tf.nn.tanh(x) ** 2
+        def custom_activation(x):
+            return tf.nn.tanh(x) ** 2
 
 
-            class CustomLayer(keras.layers.Layer):
-                def __init__(self, units=32, **kwargs):
-                    super(CustomLayer, self).__init__(**kwargs)
-                    self.units = tf.Variable(units, name="units")
+        class CustomLayer(keras.layers.Layer):
+            def __init__(self, units=32, **kwargs):
+                super(CustomLayer, self).__init__(**kwargs)
+                self.units = tf.Variable(units, name="units")
 
-                def call(self, inputs, training=False):
-                    if training:
-                        return inputs * self.units
-                    else:
-                        return inputs
+            def call(self, inputs, training=False):
+                if training:
+                    return inputs * self.units
+                else:
+                    return inputs
 
-                def get_config(self):
-                    config = super(CustomLayer, self).get_config()
-                    config.update({"units": self.units.numpy()})
-                    return config
+            def get_config(self):
+                config = super(CustomLayer, self).get_config()
+                config.update({"units": self.units.numpy()})
+                return config
 
 
-            def KerasSequentialModel() -> keras.models.Model:
-                net = keras.models.Sequential(
-                    (
-                        keras.layers.Dense(
-                            units=1,
-                            input_shape=(5,),
-                            use_bias=False,
-                            kernel_initializer=keras.initializers.Ones(),
-                        ),
-                    )
+        def KerasSequentialModel() -> keras.models.Model:
+            net = keras.models.Sequential(
+                (
+                    keras.layers.Dense(
+                        units=1,
+                        input_shape=(5,),
+                        use_bias=False,
+                        kernel_initializer=keras.initializers.Ones(),
+                    ),
                 )
+            )
 
-                opt = keras.optimizers.Adam(0.002, 0.5)
-                net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
-                return net
+            opt = keras.optimizers.Adam(0.002, 0.5)
+            net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
+            return net
 
-            model = KerasSequentialModel()
+        model = KerasSequentialModel()
 
-            # `save` a given model and retrieve coresponding tag:
-            tag = bentoml.keras.save("keras_model", model)
+        # `save` a given model and retrieve coresponding tag:
+        tag = bentoml.keras.save_model("keras_model", model)
 
-            # `save` a given model with custom objects definition:
-            custom_objects = {
-                "CustomLayer": CustomLayer,
-                "custom_activation": custom_activation,
-            },
-            custom_tag = bentoml.keras.save("custom_obj_keras", custom_objects=custom_objects)
-
-        .. code-tab:: keras_v2
-
-            import bentoml
-            import tensorflow as tf
-            import tensorflow.keras as keras
-
-
-            def custom_activation(x):
-                return tf.nn.tanh(x) ** 2
-
-
-            class CustomLayer(keras.layers.Layer):
-                def __init__(self, units=32, **kwargs):
-                    super(CustomLayer, self).__init__(**kwargs)
-                    self.units = tf.Variable(units, name="units")
-
-                def call(self, inputs, training=False):
-                    if training:
-                        return inputs * self.units
-                    else:
-                        return inputs
-
-                def get_config(self):
-                    config = super(CustomLayer, self).get_config()
-                    config.update({"units": self.units.numpy()})
-                    return config
-
-
-            def KerasSequentialModel() -> keras.models.Model:
-                net = keras.models.Sequential(
-                    (
-                        keras.layers.Dense(
-                            units=1,
-                            input_shape=(5,),
-                            use_bias=False,
-                            kernel_initializer=keras.initializers.Ones(),
-                        ),
-                    )
-                )
-
-                opt = keras.optimizers.Adam(0.002, 0.5)
-                net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
-                return net
-
-            model = KerasSequentialModel()
-
-            # `save` a given model and retrieve coresponding tag:
-            tag = bentoml.keras.save("keras_model", model)
-
-            # `save` a given model with custom objects definition:
-            custom_objects = {
-                "CustomLayer": CustomLayer,
-                "custom_activation": custom_activation,
-            },
-            custom_tag = bentoml.keras.save("custom_obj_keras", custom_objects=custom_objects)
+        # `save` a given model with custom objects definition:
+        custom_objects = {
+            "CustomLayer": CustomLayer,
+            "custom_activation": custom_activation,
+        },
+        custom_tag = bentoml.keras.save_model("custom_obj_keras", custom_objects=custom_objects)
 
     """  # noqa
-    assert save_format in ("h5", "tf")
 
-    tf.compat.v1.keras.backend.get_session()
+    context = ModelContext(
+        framework_name="keras", framework_versions={"tensorflow": get_tf_version()}
+    )
 
-    json_field = "json" if store_as_json_and_weights else ""
-    model_format = ":".join([save_format, json_field, "v1"])
-    context: t.Dict[str, t.Any] = {
-        "framework_name": "keras",
-        "pip_dependencies": [f"tensorflow=={_tf_version}"],
-        "model_format": model_format,
-    }
-    options = {
-        "custom_objects": True if custom_objects is not None else False,
-    }
+    if signatures is None:
+        signatures = {
+            "predict": {
+                "batchable": False,
+            }
+        }
+
+        logger.info(
+            f"Using the default model signature {signatures} for TensorFlow models."
+        )
+
+    options = KerasOptions(include_optimizer=include_optimizer)
 
     with bentoml.models.create(
         name,
@@ -348,102 +226,98 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    ) as _model:
+        signatures=signatures,
+    ) as bento_model:
 
-        if store_as_json_and_weights:
-            with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
-                jf.write(model.to_json())
-            weight_fname = _MODEL_WEIGHT_FNAME_MAPPING[save_format]
-            model.save_weights(_model.path_of(weight_fname), save_format=save_format)
-        else:
-            model_fname = _SAVED_MODEL_FNAME_MAPPING[save_format]
-            model.save(_model.path_of(model_fname), save_format=save_format)
+        model.save(
+            bento_model.path,
+            signatures=tf_signatures,
+            options=tf_save_options,
+            include_optimizer=include_optimizer,
+        )
 
-        return _model.tag
-
-
-class _KerasRunner(_TensorflowRunner):
-    def _setup(self) -> None:
-        self._configure(self._device_id)
-        self._session = get_session()
-        self._session.config = self._config_proto
-        self._model = load(self._tag, model_store=self.model_store)
-        raw_predict_fn = getattr(self._model, self._predict_fn_name)
-        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
-
-    def _run_batch(  # type: ignore
-        self,
-        input_data: t.Union[
-            t.List[t.Union[int, float]],
-            "ext.NpNDArray",
-            tf.Tensor,
-        ],
-    ) -> t.Union["ext.NpNDArray", tf.Tensor]:
-        if not isinstance(input_data, (np.ndarray, tf.Tensor)):
-            input_data = np.array(input_data)
-        with tf.device(self._device_id):
-            if TF2:
-                tf.compat.v1.global_variables_initializer()
-            else:
-                self._session.run(tf.compat.v1.global_variables_initializer())
-                with get_session().as_default():
-                    self._predict_fn(input_data)
-            return self._predict_fn(input_data)
+        return bento_model.tag
 
 
-@inject
-def load_runner(
-    tag: t.Union[str, Tag],
-    *,
-    predict_fn_name: str = "predict",
-    device_id: str = "CPU:0",
-    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
-    name: t.Optional[str] = None,
-) -> "_KerasRunner":
+def get_runnable(
+    bento_model: bentoml.Model,
+):
     """
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.tensorflow.load_runner` implements a Runner class that
-    wrap around a Keras model, with Tensorflow as backend, which optimize it for the BentoML runtime.
-
-    Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (:code:`str`, `optional`, default to :code:`predict`):
-            Inference function to be used.
-        partial_kwargs (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary of `predict()` kwargs that can be shared across different model.
-        device_id (:code:`str`, `optional`, default to the first CPU):
-            Optional devices to put the given model on. Refers to `Logical Devices <https://www.tensorflow.org/api_docs/python/tf/config/list_logical_devices>`_ from TF documentation.
-
-    Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.keras` model
-
-    Examples:
-
-    .. tabs::
-
-        .. code-tab:: keras_v1
-
-            import bentoml
-
-            # load tag to a BentoML runner:
-            runner = bentoml.keras.load_runner(tag)
-            with bentoml.keras.get_session().as_default():
-                runner.run_batch([1,2,3])
-
-        .. code-tab:: keras_v2
-
-            import bentoml
-
-            # load tag to a BentoML runner:
-            runner = bentoml.keras.load_runner(tag)
-            runner.run_batch([1,2,3])
-
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    return _KerasRunner(
-        tag=tag,
-        predict_fn_name=predict_fn_name,
-        device_id=device_id,
-        name=name,
-        partial_kwargs=partial_kwargs,
+
+    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.get(
+        "partial_kwargs", dict()
     )
+
+    class KerasRunnable(Runnable):
+        SUPPORT_GPU = True
+        SUPPORT_MULTI_THREADING = True
+
+        def __init__(self):
+            super().__init__()
+            if len(tf.config.list_physical_devices("GPU")) > 0:
+                # In Multi-GPU scenarios, the visible cuda devices will be set for each Runner worker
+                # by the runner's Scheduling Strategy. So that the Runnable implementation only needs
+                # to find the first GPU device visible to current process.
+                self.device_name = "/device:GPU:0"
+            else:
+                self.device_name = "/device:CPU:0"
+                num_threads = int(os.environ["BENTOML_NUM_THREAD"])
+                tf.config.threading.set_inter_op_parallelism_threads(num_threads)
+                tf.config.threading.set_intra_op_parallelism_threads(num_threads)
+
+            self.model = load_model(bento_model, device_name=self.device_name)
+            self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
+
+    def _gen_run_method(runnable_self: KerasRunnable, method_name: str):
+        raw_method = getattr(runnable_self.model, method_name)
+        method_partial_kwargs = partial_kwargs.get(method_name)
+        if method_partial_kwargs:
+            raw_method = functools.partial(raw_method, **method_partial_kwargs)
+
+        def _run_method(
+            runnable_self: KerasRunnable, *args: "KerasArgType"
+        ) -> "ext.NpNDArray":
+
+            params = Params["KerasArgType"](*args)
+
+            with tf.device(runnable_self.device_name):
+
+                def _mapping(item: "KerasArgType") -> "tf_ext.TensorLike":
+                    if not LazyType["tf_ext.TensorLike"]("tf.Tensor").isinstance(item):
+                        return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
+                    else:
+                        return item
+
+                params = params.map(_mapping)
+                res = raw_method(params.args)
+                return res
+
+        return _run_method
+
+    def add_run_method(method_name: str, options: ModelSignature):
+        def run_method(
+            runnable_self: KerasRunnable,
+            *args: "KerasArgType",
+        ) -> "ext.NpNDArray":
+            _run_method = runnable_self.methods_cache.get(method_name)
+            if not _run_method:
+                _run_method = _gen_run_method(runnable_self, method_name)
+                runnable_self.methods_cache[method_name] = _run_method
+
+            return _run_method(runnable_self, *args)
+
+        KerasRunnable.add_method(
+            run_method,
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
+        )
+
+    for method_name, options in bento_model.info.signatures.items():
+        add_run_method(method_name, options)
+
+    return KerasRunnable

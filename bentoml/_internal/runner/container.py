@@ -178,6 +178,70 @@ class NdarrayContainer(
         return cls.batches_to_batch(batches, batch_dim)
 
 
+class DMatrixContainer(
+    DataContainer[
+        "ext.DMatrix",
+        "ext.DMatrix",
+    ]
+):
+    @classmethod
+    def batches_to_batch(
+        cls,
+        batches: t.Sequence[ext.DMatrix],
+        batch_dim: int = 0,
+    ) -> tuple[ext.DMatrix, list[int]]:
+        raise NotImplementedError
+
+    @classmethod
+    def batch_to_batches(
+        cls,
+        batch: ext.DMatrix,
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+    ) -> list[ext.DMatrix]:
+        raise NotImplementedError
+
+    @classmethod
+    @inject
+    def to_payload(
+        cls,
+        batch: ext.DMatrix,
+        batch_dim: int,
+        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+    ) -> Payload:
+        raise NotImplementedError
+
+    @classmethod
+    @inject
+    def from_payload(
+        cls,
+        payload: Payload,
+        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+    ) -> ext.DMatrix:
+        raise NotImplementedError
+
+    @classmethod
+    @inject
+    def batch_to_payloads(
+        cls,
+        batch: ext.DMatrix,
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+    ) -> list[Payload]:
+        raise NotImplementedError
+
+    @classmethod
+    @inject
+    def from_batch_payloads(
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int = 0,
+        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+    ) -> tuple[ext.DMatrix, list[int]]:
+        raise NotImplementedError
+
+
 class PandasDataFrameContainer(
     DataContainer[t.Union["ext.PdDataFrame", "ext.PdSeries"], "ext.PdDataFrame"]
 ):
@@ -410,6 +474,10 @@ def register_builtin_containers():
         LazyType("numpy", "ndarray"), LazyType("numpy", "ndarray"), NdarrayContainer
     )
     # DataContainerRegistry.register_container(np.ndarray, np.ndarray, NdarrayContainer)
+
+    # DataContainerRegistry.register_container(
+    #     LazyType("xgboost", "DMatrix"), LazyType("xgboost", "DMatrix"), DMatrixContainer
+    # )
 
     DataContainerRegistry.register_container(
         LazyType("pandas.core.series", "Series"),

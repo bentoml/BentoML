@@ -21,7 +21,6 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import fs
 import attr
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
@@ -52,7 +51,7 @@ def clean_bentoml_version(bentoml_version: str) -> str:
 
 
 def expands_bento_path(*path: str):
-    return os.path.expandvars(fs.path.join(BENTO_PATH, *path))
+    return os.path.expandvars(os.path.join(BENTO_PATH, *path))
 
 
 BENTO_UID_GID = 1034
@@ -150,7 +149,7 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
     cuda_version = docker_options.cuda_version
     user_templates = docker_options.dockerfile_template
 
-    templates_path = [fs.path.join(fs.path.dirname(__file__), "docker", "templates")]
+    templates_path = [os.path.join(os.path.dirname(__file__), "docker", "templates")]
     if user_templates is not None:
         dir_path = os.path.dirname(os.path.realpath(user_templates))
         templates_path.append(dir_path)

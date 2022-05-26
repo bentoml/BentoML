@@ -353,11 +353,6 @@ class CondaOptions:
     def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
-
-        if not self.environment_yml:
-            if self.channels is None:
-                defaults["channels"] = ["defaults"]
-
         return attr.evolve(self, **defaults)
 
 

@@ -3,6 +3,7 @@
 ARG BENTO_USER={{ bento__default_user }}
 ARG BENTO_USER_UID={{ bento__default_uid_gid }}
 ARG BENTO_USER_GID={{ bento__default_uid_gid }}
+{% raw %}
 RUN bash <<EOF
 usermod "--login=${BENTO_USER}" "--home=/home/${BENTO_USER}" --move-home "-u ${BENTO_USER_UID}" "${MAMBA_USER}"
 groupmod "--new-name=${BENTO_USER}" "-g ${BENTO_USER_GID}" "${MAMBA_USER}"
@@ -10,13 +11,16 @@ groupmod "--new-name=${BENTO_USER}" "-g ${BENTO_USER_GID}" "${MAMBA_USER}"
 echo "${BENTO_USER}" > "/etc/arg_mamba_user"
 :
 EOF
+{% endraw %}
 
 ENV MAMBA_USER=$BENTO_USER
 {% endblock %}
 {% block SETUP_BENTO_ENVARS %}
 {{ super() }}
 
+ENV MAMBA_SKIP_ACTIVATE=0
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
+
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
 SAVED_PYTHON_VERSION=$(cat ./env/python/version.txt)
 PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}

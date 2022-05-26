@@ -22,7 +22,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     distribution with the local bentoml source and add it to saved bento directory
     under {bento_path}/env/python/wheels/
     """
-    if os.environ.get(BENTOML_DEV_BUILD, False).lower() != "true":
+    if str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() != "true":
         return
 
     if is_pypi_installed_bentoml():

@@ -54,7 +54,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--builder",
         type=click.STRING,
-        default="bentoml-builder",
+        default=None,
         help="Override the configured builder instance.",
     )
     @click.option(

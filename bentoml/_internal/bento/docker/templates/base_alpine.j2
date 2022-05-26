@@ -2,8 +2,6 @@
 {% block SETUP_BENTO_BASE_IMAGE %}
 {{ super() }}
 
-ENV PATH /usr/local/bin:$PATH
-
 # Install helpers
 RUN --mount=type=cache,from=cached,target=/var/cache/apk \
     apk add --update bash gcc libc-dev shadow musl-dev build-base \

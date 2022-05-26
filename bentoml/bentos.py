@@ -353,7 +353,7 @@ def containerize(
     allow: t.List[str] | None = None,
     build_args: dict[str, str] | None = None,
     build_context: dict[str, str] | None = None,
-    builder: str = "bentoml-builder",
+    builder: str | None = None,
     cache_from: str | t.List[str] | dict[str, str] | None = None,
     cache_to: str | t.List[str] | dict[str, str] | None = None,
     cgroup_parent: str | None = None,

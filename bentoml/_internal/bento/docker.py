@@ -127,10 +127,13 @@ class DistroSpec:
     @classmethod
     def from_distro(
         cls,
-        value: str,
+        value: str | None,
         *,
         cuda: bool = False,
-    ) -> DistroSpec:
+    ) -> DistroSpec | None:
+        if not value:
+            return
+
         if value not in DOCKER_SUPPORTED_DISTRO:
             raise BentoMLException(
                 f"{value} is not supported. "

@@ -153,6 +153,8 @@ class DockerOptions:
     # env:
     #  ENVAR: value1"Options"
     #  FOO: value2
+    #
+    #  env: /path/to/.env
     env: t.Dict[str, t.Any] = attr.field(
         default=None,
         converter=_convert_user_envars,
@@ -200,25 +202,24 @@ class DockerOptions:
                     f"Supported distros that have CUDA supports are: {', '.join(CUDA_SUPPORTED_DISTRO)}."
                 )
 
-        distro_info = DistroSpec.from_distro(
-            self.distro, cuda=self.cuda_version is not None
-        )
+        _spec = DistroSpec.from_distro(self.distro, cuda=self.cuda_version is not None)
 
-        if self.python_version is not None:
-            if self.python_version not in distro_info.python_version:
-                raise BentoMLException(
-                    f"{self.python_version} is not supported for {self.distro}. "
-                    f"Supported python versions are: {', '.join(distro_info.python_version)}."
-                )
+        if _spec is not None:
+            if self.python_version is not None:
+                if self.python_version not in _spec.python_version:
+                    raise BentoMLException(
+                        f"{self.python_version} is not supported for {self.distro}. "
+                        f"Supported python versions are: {', '.join(_spec.python_version)}."
+                    )
 
-        if self.cuda_version is not None:
-            if self.cuda_version != "default" and (
-                self.cuda_version not in distro_info.cuda_version
-            ):
-                raise BentoMLException(
-                    f"{self.cuda_version} is not supported for "
-                    f"{self.distro}. Supported cuda versions are: {', '.join(distro_info.cuda_version)}."
-                )
+            if self.cuda_version is not None:
+                if self.cuda_version != "default" and (
+                    self.cuda_version not in _spec.cuda_version
+                ):
+                    raise BentoMLException(
+                        f"{self.cuda_version} is not supported for "
+                        f"{self.distro}. Supported cuda versions are: {', '.join(_spec.cuda_version)}."
+                    )
 
     def with_defaults(self) -> "DockerOptions":
         # Convert from user provided options to actual build options with default values
@@ -497,15 +498,10 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 OptionsCls: t.TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
 
 
-def _dict_arg_converter(
+def dict_options_converter(
     options_type: t.Type[OptionsCls],
 ) -> t.Callable[[t.Union[OptionsCls, t.Dict[str, t.Any]]], t.Any]:
-    def _converter(
-        value: t.Optional[t.Union[OptionsCls, t.Dict[str, t.Any]]]
-    ) -> t.Optional[options_type]:
-        if value is None:
-            return
-
+    def _converter(value: t.Union[OptionsCls, t.Dict[str, t.Any]]) -> options_type:
         if isinstance(value, dict):
             return options_type(**value)
         return value
@@ -530,15 +526,15 @@ class BentoBuildConfig:
     exclude: t.Optional[t.List[str]] = None
     docker: DockerOptions = attr.field(
         factory=DockerOptions,
-        converter=_dict_arg_converter(DockerOptions),
+        converter=dict_options_converter(DockerOptions),
     )
     python: PythonOptions = attr.field(
         factory=PythonOptions,
-        converter=_dict_arg_converter(PythonOptions),
+        converter=dict_options_converter(PythonOptions),
     )
     conda: CondaOptions = attr.field(
         factory=CondaOptions,
-        converter=_dict_arg_converter(CondaOptions),
+        converter=dict_options_converter(CondaOptions),
     )
 
     def __attrs_post_init__(self) -> None:

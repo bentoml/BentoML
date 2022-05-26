@@ -56,6 +56,8 @@ ENV PYTHONIOENCODING=UTF-8
 
 ENV PYTHONUNBUFFERED=1
 
+ENV PATH {{ expands_bento_path("env", "docker") }}:/usr/local/bin:$PATH
+
 {% endblock %}
 {% block SETUP_BENTO_USER %}
 ARG BENTO_USER={{ bento__default_user }}
@@ -141,7 +143,7 @@ RUN chmod +x {{ bento__entrypoint }}
 
 USER bentoml
 
-ENTRYPOINT [ {{ bento__entrypoint }} ]
+ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD ["bentoml", "serve", ".", "--production"]
+CMD [ "bentoml", "serve", ".", "--production" ]
 {% endblock %}

@@ -10,6 +10,7 @@ import numpy as np
 import bentoml
 from bentoml import Tag
 from bentoml.exceptions import NotFound
+from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml._internal.models.model import ModelContext
 
@@ -175,9 +176,7 @@ def save_model(
         return bento_model.tag
 
 
-def get_runnable(
-    bento_model: bentoml.Model,
-) -> t.Type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -204,17 +203,22 @@ def get_runnable(
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
-                self.predict_fns[method_name] = getattr(self.model, method_name)
+                try:
+                    self.predict_fns[method_name] = getattr(self.model, method_name)
+                except AttributeError:
+                    raise InvalidArgument(
+                        f"No method with name {method_name} found for XGBoost model of type {self.model.__class__}"
+                    )
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
             self: XGBoostRunnable,
-            input_data: ext.NpNDArray | ext.PdDataFrame | xgb.DMatrix,
+            input_data: ext.NpNDArray
+            | ext.PdDataFrame,  # TODO: add support for DMatrix
         ) -> ext.NpNDArray:
-            if not isinstance(input_data, xgb.DMatrix):
-                input_data = xgb.DMatrix(input_data)
+            dmatrix = xgb.DMatrix(input_data)
 
-            res = self.predict_fns[method_name](input_data)
+            res = self.predict_fns[method_name](dmatrix)
             return np.asarray(res)  # type: ignore (incomplete np types)
 
         XGBoostRunnable.add_method(

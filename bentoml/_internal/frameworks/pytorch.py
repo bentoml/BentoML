@@ -200,5 +200,7 @@ def get_runnable(bento_model: Model):
             output_spec=options.output_spec,
         )
     return functools.partial(
-        PytorchModelRunnable, bento_model=bento_model, loader=load_model
+        PytorchModelRunnable,
+        bento_model=bento_model,
+        loader=load_model,
     )

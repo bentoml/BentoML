@@ -1,23 +1,24 @@
+from __future__ import annotations
+
 import typing as t
+import functools
 from typing import TYPE_CHECKING
 
 import torch
-from simple_di import inject
-from simple_di import Provide
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import MissingDependencyException
-from bentoml._internal.models.model import Model
 
 from ..models import PT_EXT
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ..models.model import Model
+from ..models.model import ModelContext
+from ..models.model import ModelSignaturesType
 from .common.pytorch import torch
-from .common.pytorch import BasePyTorchRunner
-from ..configuration.containers import BentoMLContainer
 
 _PL_IMPORT_ERROR = f"""\
 `pytorch_lightning` and `torch` is required in order to use module `{__name__}`\n
@@ -28,7 +29,6 @@ Then run `pip install pytorch_lightning`
 if TYPE_CHECKING:
     import pytorch_lightning as pl
 
-    from ..models import ModelStore
 
 try:
     import pytorch_lightning as pl  # noqa: F811
@@ -47,11 +47,9 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
-@inject
-def load(
-    tag: Tag,
+def load_model(
+    bentoml_model: str | Tag | Model,
     device_id: t.Optional[str] = "cpu",
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "pl.LightningModule":
     """
     Load a model from BentoML local modelstore with given name.
@@ -74,10 +72,12 @@ def load(
         import bentoml
         lit = bentoml.pytorch_lightning.load('lit_classifier:latest', device_id="cuda:0")
     """  # noqa: LN001
-    bentoml_model = model_store.get(tag)
+    if isinstance(bentoml_model, (str, Tag)):
+        bentoml_model = get(bentoml_model)
+
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bentoml_model} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     # model_format = bentoml_model.info.context.get("model_format")
@@ -93,13 +93,14 @@ def load(
     return model
 
 
-def save(
+def save_model(
     name: str,
     model: "pl.LightningModule",
     *,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    signatures: ModelSignaturesType | None = None,
+    labels: t.Dict[str, str] | None = None,
+    custom_objects: t.Dict[str, t.Any] | None = None,
+    metadata: t.Dict[str, t.Any] | None = None,
 ) -> Tag:
     """
     Save a model instance to BentoML modelstore.
@@ -167,71 +168,52 @@ def save(
                 return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
 
         tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
-    """  # noqa
-    context: t.Dict[str, t.Any] = {
-        "framework_name": "torch",
-        "pip_dependencies": [
-            f"torch=={get_pkg_version('torch')}",
-            f"pytorch_lightning=={get_pkg_version('pytorch_lightning')}",
-        ],
-    }
+    """
+    context: ModelContext = ModelContext(
+        framework_name="pytorch_lightning",
+        framework_versions={
+            "torch": get_pkg_version("torch"),
+            "pytorch_lightning": get_pkg_version("pytorch_lightning"),
+        },
+    )
+
+    if signatures is None:
+        raise ValueError(f"signatures is required for saving a pytorch model")
 
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        labels=labels,
+        signatures=signatures,
+        custom_objects=custom_objects,
         options=None,
         context=context,
-        labels=labels,
-        custom_objects=custom_objects,
         metadata=metadata,
     ) as _model:
-
         weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+        # _model.info.context["model_format"] = "torch.save:v1"
         torch.jit.save(model.to_torchscript(), weight_file)  # type: ignore[reportUnknownMemberType]
-
         return _model.tag
 
 
-class _PyTorchLightningRunner(BasePyTorchRunner):
-    def _load_model(self):
-        return load(self._tag, device_id=self._device_id, model_store=self.model_store)
-
-
-@inject
-def load_runner(
-    tag: t.Union[str, Tag],
-    *,
-    predict_fn_name: str = "__call__",
-    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
-    name: t.Optional[str] = None,
-) -> "_PyTorchLightningRunner":
+def get_runnable(bento_model: Model):
     """
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. :func:`bentoml.pytorch_lightning.load_runner` implements a Runner class that
-    wrap around a :obj:`pl.LightningModule` instance, which optimize it for the BentoML runtime.
-
-    Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (:code:`str`, default to :code:`__call__`):
-            inference function to be used.
-        partial_kwargs (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Common kwargs passed to model for this runner
-
-    Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.pytorch_lightning` model
-
-    Examples:
-
-    .. code-block:: python
-
-        import bentoml.pytorch_lightning
-        runner = bentoml.pytorch_lightning.load_runner("lit_classifier:20201012_DE43A2")
-        runner.run(pd.DataFrame("/path/to/csv"))
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    return _PyTorchLightningRunner(
-        tag=tag,
-        predict_fn_name=predict_fn_name,
-        name=name,
-        partial_kwargs=partial_kwargs,
+    from .common.pytorch import PytorchModelRunnable
+    from .common.pytorch import make_pytorch_runnable_method
+
+    for method_name, options in bento_model.info.signatures.items():
+        PytorchModelRunnable.add_method(
+            make_pytorch_runnable_method(method_name),
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
+        )
+    return functools.partial(
+        PytorchModelRunnable,
+        bento_model=bento_model,
+        loader=load_model,
     )

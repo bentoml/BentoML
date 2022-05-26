@@ -121,6 +121,7 @@ skip_glob = ["typings/*", "docs/*"]
 pythonVersion = "3.10"
 include = ["bentoml"]
 exclude = ['bentoml/_version.py','bentoml/__main__.py']
+analysis.useLibraryCodeForTypes = true
 strictListInference = true
 strictDictionaryInference = true
 strictSetInference = true

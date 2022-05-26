@@ -2,8 +2,6 @@ import os
 import re
 import typing as t
 import logging
-from abc import ABC
-from abc import abstractmethod
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
 
@@ -11,6 +9,7 @@ import fs
 import attr
 import yaml
 import fs.copy
+from dotenv import dotenv_values  # type: ignore
 from piptools.scripts.compile import cli as pip_compile_cli
 
 from .gen import generate_dockerfile
@@ -50,6 +49,9 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if py_version is None:
         return None
 
+    if not isinstance(py_version, str):
+        py_version = str(py_version)
+
     match = re.match(r"^(\d+).(\d+)", py_version)
     if match is None:
         raise InvalidArgument(
@@ -85,16 +87,19 @@ def _convert_user_envars(
 
     if isinstance(envars, list):
         return {k: v for e in envars for k, v in e.split("=")}
-
-    return envars
+    else:
+        return envars
 
 
 def _envars_validator(
     _: t.Any,
-    attribute: "Attribute[t.Union[t.List[str], t.Dict[str, t.Any]]]",
-    value: t.Union[t.List[str], t.Dict[str, t.Any]],
+    attribute: "Attribute[t.Union[str, t.List[str], t.Dict[str, t.Any]]]",
+    value: t.Union[str, t.List[str], t.Dict[str, t.Any]],
 ) -> None:
-    if isinstance(value, list):
+    if isinstance(value, str):
+        if not os.path.exists(value):
+            raise InvalidArgument("envars should be a file path to .env file")
+    elif isinstance(value, list):
         for envar in value:
             try:
                 k, _ = envar.split("=")
@@ -113,38 +118,8 @@ def _envars_validator(
         )
 
 
-class Options(ABC):
-    @property
-    @abstractmethod
-    def default_values(self) -> t.Dict[str, t.Any]:
-        raise NotImplementedError
-
-    def _validate_options(self) -> None:
-        """Validate the given options field."""
-
-    @abstractmethod
-    def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
-        raise NotImplementedError
-
-    def with_defaults(self) -> t.Any:
-        # NOTE: this is not type-safe yet.
-        if not hasattr(self, "__attrs_attrs__"):
-            raise BentoMLException(f"{self.__class__} should be an attrs class.")
-
-        self = attr.evolve(self, **self.default_values)
-
-        if hasattr(self, "_validate_options"):
-            self._validate_options()  # type: ignore
-
-        return self
-
-    @staticmethod
-    def validate_bentofile(yaml_content: t.Dict[str, t.Any]) -> None:
-        """Validate yaml content."""
-
-
 @attr.frozen
-class DockerOptions(Options):
+class DockerOptions:
     distro: str = attr.field(
         default=None,
         validator=attr.validators.optional(
@@ -218,7 +193,6 @@ class DockerOptions(Options):
                     f"'cuda_version={self.cuda_version}' option is ignored.",
                 )
 
-    def _validate_options(self) -> None:
         if self.cuda_version is not None:
             if self.distro not in CUDA_SUPPORTED_DISTRO:
                 raise BentoMLException(
@@ -227,7 +201,7 @@ class DockerOptions(Options):
                 )
 
         distro_info = DistroSpec.from_distro(
-            self.distro, cuda=self.cuda_version not in (None, "")
+            self.distro, cuda=self.cuda_version is not None
         )
 
         if self.python_version is not None:
@@ -246,8 +220,7 @@ class DockerOptions(Options):
                     f"{self.distro}. Supported cuda versions are: {', '.join(distro_info.cuda_version)}."
                 )
 
-    @property
-    def default_values(self) -> t.Dict[str, t.Any]:
+    def with_defaults(self) -> "DockerOptions":
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -257,13 +230,16 @@ class DockerOptions(Options):
             if self.python_version is None:
                 defaults["python_version"] = PYTHON_VERSION
 
-        if self.cuda_version is None:
-            defaults["cuda_version"] = ""
+        if self.system_packages is None:
+            defaults["system_packages"] = []
         if self.env is None:
             defaults["env"] = {}
+        if self.cuda_version is None:
+            defaults["cuda_version"] = None
         if self.dockerfile_template is None:
-            defaults["dockerfile_template"] = ""
-        return defaults
+            defaults["dockerfile_template"] = None
+
+        return attr.evolve(self, **defaults)
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         docker_folder = fs.path.combine("env", "docker")
@@ -292,56 +268,23 @@ class DockerOptions(Options):
                 setup_script, bento_fs, docker_folder, "setup_script"
             )
 
-    @staticmethod
-    def validate_bentofile(yaml_content: t.Dict[str, t.Any]) -> None:
-        docker = yaml_content["docker"]
 
-        if "distro" in docker:
-            distro = docker["distro"]
-            if (
-                distro in ["alpine", "alpine-miniconda"]
-                and "scikit-learn" in yaml_content["python"]["packages"]
-            ):
-                sklearn_alpine_req = [
-                    "libquadmath",
-                    "musl",
-                    "lapack",
-                    "libgomp",
-                    "libstdc++",
-                    "lapack",
-                    "lapack-dev",
-                    "openblas-dev",
-                ]
+def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> DockerOptions:
+    # Allow bentofile yaml to have either a str or list of str for these options
+    if "env" in d and isinstance(d["env"], str):
+        try:
+            d["env"] = dotenv_values(d["env"])
+        except FileNotFoundError:
+            raise BentoMLException(f"Invalid env file path: {d['env']}")
 
-                raise_warning = False
+    return DockerOptions(**d)
 
-                if "system_packages" not in docker or docker["system_packages"] is None:
-                    raise_warning = True
-                    required_packages = sklearn_alpine_req
-                else:
-                    required_packages = list(
-                        set(sklearn_alpine_req).difference(docker["system_packages"])
-                    )
-                    raise_warning = len(required_packages) > 0 and len(
-                        required_packages
-                    ) != len(sklearn_alpine_req)
 
-                if raise_warning:
-                    raise InvalidArgument(
-                        "In order to support scikit-learn on alpine-based images, "
-                        "make sure to include the following packages under "
-                        f"`docker.system_packages`: {', '.join(required_packages)}",
-                    )
-            if "conda" in yaml_content and distro not in CONDA_SUPPORTED_DISTRO:
-                raise BentoMLException(
-                    f"{distro} does not supports conda. BentoML will "
-                    f"only support conda with the following distros: {', '.join(CONDA_SUPPORTED_DISTRO)}. "
-                    "Switch to either of the aforementioned distros and try again."
-                )
+bentoml_cattr.register_structure_hook(DockerOptions, _docker_options_structure_hook)
 
 
 @attr.frozen
-class CondaOptions(Options):
+class CondaOptions:
     environment_yml: t.Optional[str] = None
     channels: t.Optional[t.List[str]] = None
     dependencies: t.Optional[t.List[str]] = None
@@ -399,8 +342,7 @@ class CondaOptions(Options):
         with bento_fs.open(fs.path.join(conda_folder, "environment_yml"), "w") as f:
             yaml.dump(yaml_content, f)
 
-    @property
-    def default_values(self) -> t.Dict[str, t.Any]:
+    def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -410,11 +352,11 @@ class CondaOptions(Options):
             if self.channels is None:
                 defaults["channels"] = ["defaults"]
 
-        return defaults
+        return attr.evolve(self, **defaults)
 
 
 @attr.frozen
-class PythonOptions(Options):
+class PythonOptions:
     requirements_txt: t.Optional[str] = None
     packages: t.Optional[t.List[str]] = None
     lock_packages: t.Optional[bool] = None
@@ -529,8 +471,7 @@ class PythonOptions(Options):
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
                 )
 
-    @property
-    def default_values(self) -> t.Dict[str, t.Any]:
+    def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -538,10 +479,10 @@ class PythonOptions(Options):
             if self.lock_packages is None:
                 defaults["lock_packages"] = True
 
-        return defaults
+        return attr.evolve(self, **defaults)
 
 
-def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]):
+def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
         if field in d and isinstance(d[field], str):
@@ -600,6 +541,17 @@ class BentoBuildConfig:
         converter=_dict_arg_converter(CondaOptions),
     )
 
+    def __attrs_post_init__(self) -> None:
+        if (
+            self.conda.environment_yml is not None
+            and self.docker.distro not in CONDA_SUPPORTED_DISTRO
+        ):
+            raise BentoMLException(
+                f"{self.docker.distro} does not supports conda. BentoML will "
+                f"only support conda with the following distros: {', '.join(CONDA_SUPPORTED_DISTRO)}. "
+                "Switch to either of the aforementioned distros and try again."
+            )
+
     def with_defaults(self) -> "FilledBentoBuildConfig":
         """
         Convert from user provided options to actual build options will defaults
@@ -620,15 +572,6 @@ class BentoBuildConfig:
             CondaOptions.with_defaults(self.conda),
         )
 
-    @staticmethod
-    def validate_bentofile(yaml_content: t.Dict[str, t.Any]) -> None:
-        if "docker" in yaml_content:
-            DockerOptions.validate_bentofile(yaml_content)
-        if "python" in yaml_content:
-            PythonOptions.validate_bentofile(yaml_content)
-        if "conda" in yaml_content:
-            CondaOptions.validate_bentofile(yaml_content)
-
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
         try:
@@ -636,8 +579,6 @@ class BentoBuildConfig:
         except yaml.YAMLError as exc:
             logger.error(exc)
             raise
-
-        cls.validate_bentofile(yaml_content)
 
         try:
             return bentoml_cattr.structure(yaml_content, cls)

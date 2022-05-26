@@ -14,22 +14,21 @@ All given `bento__<fields>` users can access and use to modify. Each of these wi
 """
 from __future__ import annotations
 
+import os
 import re
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-import os
 
 import fs
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
-from .build_dev_bentoml_whl import BENTOML_DEV_BUILD
-
 from ..utils import bentoml_cattr
 from .docker import DistroSpec
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
+from .build_dev_bentoml_whl import BENTOML_DEV_BUILD
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +63,7 @@ def get_template_env(docker_options: DockerOptions) -> dict[str, t.Any]:
     cuda_version = docker_options.cuda_version
     python_version = docker_options.python_version
 
-    distro_spec = DistroSpec.from_distro(distro, cuda=cuda_version not in (None, ""))
+    distro_spec = DistroSpec.from_distro(distro, cuda=cuda_version is not None)
 
     if docker_options.base_image is None:
         if cuda_version not in ("", None):
@@ -108,27 +107,33 @@ J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
     "expands_bento_path": expands_bento_path,
 }
 
+
 def validate_setup_blocks(environment: Environment, dockerfile_template: str) -> None:
     """
     Validate all setup blocks in the given environment.
     """
-    base_template = environment.get_template("base.j2")
-    user_template = environment.get_template(dockerfile_template)
-    if not set(user_template.blocks).issubset(set(base_template.blocks)):
+    base_blocks = set(environment.get_template("base.j2").blocks)
+    user_blocks = set(environment.get_template(dockerfile_template).blocks)
+
+    contains_bentoml_blocks = set(filter(lambda x: "SETUP_BENTO" in x, user_blocks))
+    if not contains_bentoml_blocks.issubset(base_blocks):
         raise BentoMLException(
-            f"Missing setup blocks in {dockerfile_template} template: {set(user_template.blocks) - set(base_template.blocks)}"
+            f"Unknown SETUP block in `{dockerfile_template}`: {list(filter(lambda x: x not in base_blocks, contains_bentoml_blocks))}.\n"
+            f"All supported blocks include: {', '.join(base_blocks)}"
         )
 
 
 def generate_dockerfile(docker_options: DockerOptions) -> str:
     distro = docker_options.distro
     cuda_version = docker_options.cuda_version
+    user_templates = docker_options.dockerfile_template
+
     templates_path = [fs.path.join(fs.path.dirname(__file__), "docker", "templates")]
-    if docker_options.dockerfile_template:
-        dir_path = os.path.dirname(os.path.realpath(docker_options.dockerfile_template))
+    if user_templates is not None:
+        dir_path = os.path.dirname(os.path.realpath(user_templates))
         templates_path.append(dir_path)
 
-    distro_spec = DistroSpec.from_distro(distro, cuda=cuda_version not in ("", None))
+    distro_spec = DistroSpec.from_distro(distro, cuda=cuda_version is not None)
 
     j2_template = f"{distro_spec.release_type}_{distro.split('-')[0]}.j2"
     dockerfile_env = Environment(
@@ -141,13 +146,13 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
 
     bento_dockerfile_tmpl = dockerfile_env.get_template(j2_template)
 
-    if docker_options.dockerfile_template:
+    if user_templates is not None:
         template = dockerfile_env.get_template(
-            docker_options.dockerfile_template,
+            user_templates,
             globals={"bento__dockerfile": bento_dockerfile_tmpl},
         )
+        validate_setup_blocks(dockerfile_env, user_templates)
     else:
         template = bento_dockerfile_tmpl
-    print(template.blocks)
 
     return template.render(**get_template_env(docker_options))

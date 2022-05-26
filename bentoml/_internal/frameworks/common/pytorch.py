@@ -54,24 +54,27 @@ class PytorchModelRunnable(bentoml.Runnable):
         # if torch.cuda.device_count():
         if torch.cuda.is_available():
             self.device_id = "cuda"
-            torch.set_default_tensor_type("torch.cuda.FloatTensor")
+            torch.set_default_tensor_type(
+                "torch.cuda.FloatTensor"
+            )  # initially torch.FloatTensor
         else:
             self.device_id = "cpu"
-        # if self.device_id == "cuda":
-        # import torch.nn.parallel as parallel
-        # self._model = parallel.DataParallel(model)
-        # torch.cuda.empty_cache()
         self.model: ModelType = loader(bento_model, device_id=self.device_id)
-        # self.model.eval()
+        self.model.eval()  # to turn off dropout and batchnorm
 
         self._no_grad_context = contextlib.ExitStack()
-        self._no_grad_context.enter_context(torch.no_grad())
+
         if get_pkg_version("torch").startswith("1.9"):
             # inference mode is required for PyTorch version 1.9.*
             self._no_grad_context.enter_context(torch.inference_mode())
+        else:
+            self._no_grad_context.enter_context(torch.no_grad())
 
     def __del__(self):
         self._no_grad_context.close()
+        # no need for now because our worker process will quit and return the gpu memory
+        # if self.device_id == "cuda":
+        # torch.cuda.empty_cache()
 
 
 def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:

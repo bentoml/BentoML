@@ -11,8 +11,6 @@ import bentoml
 from bentoml import Tag
 
 from ..models import Model
-from ..models import PT_EXT
-from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
@@ -24,6 +22,7 @@ from .common.pytorch import PyTorchTensorContainer
 __all__ = ["load_model", "get_runnable", "get", "PyTorchTensorContainer"]
 
 MODULE_NAME = "bentoml.pytorch"
+MODEL_FILENAME = "saved_model.pt"
 
 logger = logging.getLogger(__name__)
 
@@ -68,24 +67,7 @@ def load_model(
             f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    weight_file = bentoml_model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    # model_format = bentoml_model.info.context.get("model_format")
-
-    # backward compatibility
-    # if not model_format:
-    # model_format = "cloudpickle:v1"
-
-    # if model_format == "cloudpickle:v1":
-    # with Path(weight_file).open("rb") as file:
-    # model: "torch.nn.Module" = cloudpickle.load(file).to(device_id)
-
-    # elif model_format == "torch.save:v1":
-    # else:
-    # with Path(weight_file).open("rb") as file:
-    # model: "torch.nn.Module" = torch.load(file, map_location=device_id)
-    # else:
-    # raise BentoMLException(f"Unknown model format {model_format}")
-
+    weight_file = bentoml_model.path_of(MODEL_FILENAME)
     with Path(weight_file).open("rb") as file:
         model: "torch.nn.Module" = torch.load(file, map_location=device_id)
     return model
@@ -156,14 +138,14 @@ def save_model(
         # trained a custom resnet50
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
-    """  # noqa
+    """
     context: ModelContext = ModelContext(
         framework_name="torch",
         framework_versions={"torch": get_pkg_version("torch")},
     )
 
     if signatures is None:
-        raise ValueError(f"signatures is required for saving a pytorch model")
+        raise ValueError("signatures is required for saving a pytorch model")
 
     with bentoml.models.create(
         name,
@@ -175,8 +157,7 @@ def save_model(
         context=context,
         metadata=metadata,
     ) as _model:
-        weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-        # _model.info.context["model_format"] = "torch.save:v1"
+        weight_file = _model.path_of(MODEL_FILENAME)
         with open(weight_file, "wb") as file:
             torch.save(model, file, pickle_module=cloudpickle)  # type: ignore
 

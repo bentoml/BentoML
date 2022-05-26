@@ -27,7 +27,6 @@ from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
 from ..types import MetadataDict
-from ..types import MetadataType  # noqa # pylint: disable
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
@@ -42,7 +41,7 @@ if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
 
-    class ModelSignatureDict(t.TypedDict):
+    class ModelSignatureDict(t.TypedDict, total=False):
         batch_dim: tuple[int, int]
         batchable: bool
         input_spec: tuple[AnyType] | AnyType | None
@@ -77,7 +76,7 @@ class ModelOptions(ModelOptionsSuper):
 bentoml_cattr.register_structure_hook_func(
     lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)  # type: ignore
 )
-bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore
+bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
 
 
 @attr.define(repr=False, eq=False, init=False)
@@ -256,7 +255,7 @@ class Model(StoreItem):
 
     def _write_info(self):
         with self._fs.open(MODEL_YAML_FILENAME, "w", encoding="utf-8") as model_yaml:
-            self.info.dump(model_yaml)  # type: ignore (python IO types are not compatible)
+            self.info.dump(t.cast(io.StringIO, model_yaml))
 
     def _write_custom_objects(self):
         # pickle custom_objects if it is not None and not empty
@@ -559,8 +558,8 @@ class ModelInfo:
 
         yaml_content["tag"] = str(
             Tag(
-                yaml_content["name"],  # type: ignore
-                yaml_content["version"],  # type: ignore
+                t.cast(str, yaml_content["name"]),
+                t.cast(str, yaml_content["version"]),
             )
         )
         del yaml_content["name"]

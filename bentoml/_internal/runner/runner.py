@@ -135,12 +135,13 @@ class Runner:
         name: str | None = None,
         scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
         models: t.List[Model] | None = None,
-        cpu: int | None,  # TODO: support str and float type here? e.g "500m" or "0.5"
-        nvidia_gpu: int | None,
+        cpu: int
+        | None = None,  # TODO: support str and float type here? e.g "500m" or "0.5"
+        nvidia_gpu: int | None = None,
         custom_resources: t.Dict[str, float] | None = None,
-        max_batch_size: int | None,
-        max_latency_ms: int | None,
-        method_configs: t.Dict[str, t.Dict[str, int]] | None,
+        max_batch_size: int | None = None,
+        max_latency_ms: int | None = None,
+        method_configs: t.Dict[str, t.Dict[str, int]] | None = None,
     ) -> None:
         """
         Args:

@@ -90,9 +90,7 @@ class RemoteRunnerClient(RunnerHandle):
             or self._loop.is_closed()
         ):
             import yarl
-            from opentelemetry.instrumentation.aiohttp_client import (
-                create_trace_config,  # type: ignore (missing type stubs)
-            )
+            from opentelemetry.instrumentation.aiohttp_client import create_trace_config  # type: ignore (missing type stubs)
 
             def strip_query_params(url: yarl.URL) -> str:
                 return str(url.with_query(None))

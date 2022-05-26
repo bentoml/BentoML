@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import os
 import typing as t
 import logging
 import functools
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 import attr
-import numpy as np
 
 import bentoml
 from bentoml import Tag

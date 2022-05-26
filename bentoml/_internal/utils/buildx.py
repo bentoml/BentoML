@@ -36,13 +36,102 @@ def health() -> None:
     cmds = DOCKER_BUILDX_CMD + ["--help"]
     try:
         output = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
-        assert "buildx" in output.decode("utf-8")
+        assert "--builder string" in output.decode("utf-8")
     except (subprocess.CalledProcessError, AssertionError):
         raise BentoMLException(
             "BentoML requires Docker Buildx to be installed to support multi-arch builds. "
             "Buildx comes with Docker Desktop, but one can also install it manually by following "
             "instructions via https://docs.docker.com/buildx/working-with-buildx/#install."
         )
+
+
+def lists() -> list[str]:
+    # Should only be used for testing purposes.
+    cmds = DOCKER_BUILDX_CMD + ["ls"]
+    proc = subprocess.run(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stream = proc.stdout.decode("utf-8")
+
+    if len(stream) != 0 and stream[-1] == "\n":
+        stream = stream[:-1]
+
+    output = stream.splitlines()[1:]  # first line is a header
+    # lines starting with a blank space are builders metadata, not builder name
+    output = list(filter(lambda x: not x.startswith(" "), output))
+    return [s.split(" ")[0] for s in output]
+
+
+def use(
+    builder: str, default: bool = False, global_: bool = False
+) -> None:  # pragma: no cover
+    # Should only be used for testing purposes.
+    cmds = DOCKER_BUILDX_CMD + ["use"]
+    if default:
+        cmds.append("--default")
+    if global_:
+        cmds.append("--global")
+    cmds.append(builder)
+    run_docker_cmd(cmds)
+
+
+def create(
+    subprocess_env: dict[str, str] | None = None,
+    cwd: PathType | None = None,
+    *,
+    context_or_endpoints: str | None = None,
+    buildkitd_flags: str | None = None,
+    config: PathType | None = None,
+    driver: t.Literal["docker", "kubernetes", "docker-container"] | None = None,
+    driver_opt: dict[str, str] | None = None,
+    name: str | None = None,
+    platform: list[str] | None = None,
+    use: bool = False,
+) -> None:
+    """
+    Create a new buildx instance.
+    Args:
+        context_or_endpoints: Custom docker context or endpoints (DOCKER_HOSTS).
+        buildkitd_flags: Flags to pass to buildkitd.
+        config: Path to a buildx configuration file.
+        driver: Driver to use for buildx.
+        driver_opt: Driver options.
+        name: Name of the buildx context.
+        platform: List of platform for a given builder instance.
+        use: whether to use the builder instance after create.
+    """
+    cmds = DOCKER_BUILDX_CMD + ["create"]
+
+    if buildkitd_flags is not None:
+        cmds.extend(["--buildkitd-flags", buildkitd_flags])
+    if config is not None:
+        cmds.extend(["--config", str(config)])
+    if driver is not None:
+        cmds.extend(["--driver", driver])
+    if driver_opt is not None:
+        cmds.extend(
+            ["--driver-opt", ",".join([f"{k}={v}" for k, v in driver_opt.items()])]
+        )
+
+    if name is not None:
+        cmds.extend(["--name", name])
+
+    if platform is None:
+        platform = [
+            "linux/amd64",
+            "linux/arm64/v8",
+            "linux/ppc64le",
+            "linux/s390x",
+            "linux/riscv64",
+            "linux/mips64le",
+        ]
+    cmds.extend(["--platform", ",".join(platform)])
+
+    if use:
+        cmds.append("--use")
+
+    if context_or_endpoints is not None:
+        cmds.append(context_or_endpoints)
+
+    run_docker_cmd(cmds, env=subprocess_env, cwd=cwd)
 
 
 def build(
@@ -207,7 +296,7 @@ def build(
 
     cmds.append(str(context_path))
 
-    logger.debug(f"docker buildx build cmd: [bold yellow]{cmds}[/]")
+    logger.debug(f"docker buildx build cmd: `{cmds}`")
 
     run_docker_cmd(cmds, env=subprocess_env, cwd=cwd)
 

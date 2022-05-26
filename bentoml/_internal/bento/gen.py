@@ -22,6 +22,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import fs
+import attr
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
@@ -35,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
+
     from .build_config import DockerOptions
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
@@ -50,15 +52,46 @@ def clean_bentoml_version(bentoml_version: str) -> str:
 
 
 def expands_bento_path(*path: str):
-    return os.path.expandvars(fs.path.join(BENTO_DEFAULT_PATH, *path))
+    return os.path.expandvars(fs.path.join(BENTO_PATH, *path))
 
 
-BENTO_DEFAULT_UID_GID = 1034
-BENTO_DEFAULT_USER = "bentoml"
-BENTO_DEFAULT_HOME = f"/home/{BENTO_DEFAULT_USER}/"
-BENTO_DEFAULT_PATH = f"{BENTO_DEFAULT_HOME}bento"
+BENTO_UID_GID = 1034
+BENTO_USER = "bentoml"
+BENTO_HOME = f"/home/{BENTO_USER}/"
+BENTO_PATH = f"{BENTO_HOME}bento"
 
-_reserved_env, _customizable_env = {}, {}
+
+J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
+    "clean_bentoml_version": clean_bentoml_version,
+    "expands_bento_path": expands_bento_path,
+}
+
+
+@attr.frozen(on_setattr=None, eq=False, repr=False)
+class ReservedEnv:
+    base_image: str
+    supported_architectures: t.List[str] | None
+    bentoml_version: str = attr.field(default=BENTOML_VERSION)
+    is_editable: bool = attr.field(
+        default=str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() == "true"
+    )
+
+
+@attr.frozen(on_setattr=None, eq=False, repr=False)
+class CustomizableEnv:
+    uid_gid: int = attr.field(default=BENTO_UID_GID)
+    user: str = attr.field(default=BENTO_USER)
+    home: str = attr.field(default=BENTO_HOME)
+    path: str = attr.field(default=BENTO_PATH)
+
+
+bentoml_cattr.register_unstructure_hook(
+    ReservedEnv, lambda rs: {f"__{k}__": v for k, v in attr.asdict(rs).items()}
+)
+
+bentoml_cattr.register_unstructure_hook(
+    CustomizableEnv, lambda rs: {f"bento__{k}": v for k, v in attr.asdict(rs).items()}
+)
 
 
 def get_template_env(
@@ -68,50 +101,31 @@ def get_template_env(
     cuda_version = docker_options.cuda_version
     python_version = docker_options.python_version
 
+    supported_architectures = spec.supported_architectures
+
     if docker_options.base_image is None:
-        if cuda_version not in ("", None):
-            base_image = spec.image.format(cuda_version=cuda_version)
+        if cuda_version is not None:
+            base_image = spec.image.format(spec_version=cuda_version)
         else:
             if distro in ["ubi8"]:
                 python_version = python_version.replace(".", "")
             else:
                 python_version = python_version
-            base_image = spec.image.format(python_version=python_version)
+            base_image = spec.image.format(spec_version=python_version)
     else:
         base_image = docker_options.base_image
         logger.info(
             f"BentoML will not install Python to custom base images; ensure the base image '{base_image}' has Python installed."
         )
 
-    # users shouldn't touch this
-    global _reserved_env, _customizable_env
-    _reserved_env = {
-        "base_image": base_image,
-        "bentoml_version": BENTOML_VERSION,
-        "is_editable": str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() == "true",
-        "supported_architecture": spec.supported_architecture,
-    }
-
-    _customizable_env = {
-        "default_uid_gid": BENTO_DEFAULT_UID_GID,
-        "default_user": BENTO_DEFAULT_USER,
-        "default_path": BENTO_DEFAULT_PATH,
-        "default_home": BENTO_DEFAULT_HOME,
-    }
-
     return {
-        **{f"__{k}__": v for k, v in _reserved_env.items()},
         **{
-            f"__options_{k}": v for k, v in bentoml_cattr.unstructure(docker_options).items()  # type: ignore
+            f"__options__{k}": v
+            for k, v in bentoml_cattr.unstructure(docker_options).items()
         },
-        **{f"bento__{k}": v for k, v in _customizable_env.items()},
+        **bentoml_cattr.unstructure(CustomizableEnv()),
+        **bentoml_cattr.unstructure(ReservedEnv(base_image, supported_architectures)),
     }
-
-
-J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
-    "clean_bentoml_version": clean_bentoml_version,
-    "expands_bento_path": expands_bento_path,
-}
 
 
 def validate_setup_blocks(environment: Environment, dockerfile_template: str) -> None:
@@ -128,7 +142,7 @@ def validate_setup_blocks(environment: Environment, dockerfile_template: str) ->
         )
 
 
-def generate_dockerfile(docker_options: DockerOptions) -> str:
+def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> str:
     distro = docker_options.distro
     cuda_version = docker_options.cuda_version
     user_templates = docker_options.dockerfile_template
@@ -138,11 +152,14 @@ def generate_dockerfile(docker_options: DockerOptions) -> str:
         dir_path = os.path.dirname(os.path.realpath(user_templates))
         templates_path.append(dir_path)
 
-    spec = DistroSpec.from_distro(distro, cuda=cuda_version is not None)
+    spec = DistroSpec.from_distro(
+        distro, cuda=cuda_version is not None, conda=use_conda
+    )
     if spec is None:
-        raise BentoMLException(f"function is called before with_defaults() is invoked.")
+        raise BentoMLException("function is called before with_defaults() is invoked.")
 
-    j2_template = f"{spec.release_type}_{distro.split('-')[0]}.j2"
+    j2_template = f"{spec.release_type}_{distro}.j2"
+
     dockerfile_env = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
         trim_blocks=True,

@@ -12,12 +12,12 @@ RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
 		ca-certificates gnupg2 bash build-essential \
     && apt-get clean
 
-{% if __options_system_packages is not none %}
+{% if __options__system_packages is not none %}
 # Install user-defined system package
 RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
-    {{ __options_system_packages | join(' ') }} \
+    {{ __options__system_packages | join(' ') }} \
     && apt-get clean
 
 {% endif -%}

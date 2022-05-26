@@ -7,7 +7,6 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
-import platform as python_platform
 import subprocess
 from typing import TYPE_CHECKING
 

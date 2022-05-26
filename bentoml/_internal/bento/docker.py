@@ -111,12 +111,10 @@ class DistroSpec:
         ),
     )
 
-    supported_architectures: t.Optional[t.List[str]] = attr.field(
-        default=None,
-        validator=attr.validators.optional(
-            attr.validators.deep_iterable(
-                lambda _, __, value: value in SUPPORTED_ARCHITECTURES,
-            )
+    supported_architectures: t.List[str] = attr.field(
+        default=SUPPORTED_ARCHITECTURES,
+        validator=attr.validators.deep_iterable(
+            lambda _, __, value: value in SUPPORTED_ARCHITECTURES,
         ),
     )
 

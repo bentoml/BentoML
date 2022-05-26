@@ -70,7 +70,7 @@ J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
 @attr.frozen(on_setattr=None, eq=False, repr=False)
 class ReservedEnv:
     base_image: str
-    supported_architectures: t.List[str] | None
+    supported_architectures: t.List[str]
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     is_editable: bool = attr.field(
         default=str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() == "true"
@@ -88,10 +88,13 @@ class CustomizableEnv:
 bentoml_cattr.register_unstructure_hook(
     ReservedEnv, lambda rs: {f"__{k}__": v for k, v in attr.asdict(rs).items()}
 )
+attr.resolve_types(ReservedEnv, globals(), locals())
 
 bentoml_cattr.register_unstructure_hook(
     CustomizableEnv, lambda rs: {f"bento__{k}": v for k, v in attr.asdict(rs).items()}
 )
+
+attr.resolve_types(CustomizableEnv, globals(), locals())
 
 
 def get_template_env(

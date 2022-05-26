@@ -34,6 +34,11 @@ if TYPE_CHECKING:
     from attr import Attribute
     from fs.base import FS
 
+if pyver >= (3, 10):
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
+
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = f"{pyver.major}.{pyver.minor}"
@@ -495,7 +500,7 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> Python
 bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
-OptionsCls: t.TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
+OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
 
 
 def dict_options_converter(

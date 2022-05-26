@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import attr
-
 import typing as t
+
+import attr
 
 from bentoml._internal.runner.resource import Resource
 

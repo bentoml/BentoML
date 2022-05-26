@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import typing as t
-from typing import overload
 import logging
 from abc import ABC
+from typing import overload
 from typing import TYPE_CHECKING
 
 import attr

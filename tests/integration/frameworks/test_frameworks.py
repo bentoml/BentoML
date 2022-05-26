@@ -1,39 +1,21 @@
 from __future__ import annotations
 
-import os
 import types
 import typing as t
-import pkgutil
-from importlib import import_module
 
 import pytest
 
 import bentoml
-from bentoml._internal.runner.resource import Resource
-from bentoml._internal.runner.runner import Runner
-from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 from bentoml.exceptions import NotFound
 from bentoml._internal.models.model import ModelContext
 from bentoml._internal.models.model import ModelSignature
+from bentoml._internal.runner.runner import Runner
+from bentoml._internal.runner.resource import Resource
+from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 
 from .models import FrameworkTestModel
 
-frameworks: list[types.ModuleType] = []
-test_inputs: list[tuple[types.ModuleType, FrameworkTestModel]] = []
-input_modules = [
-    import_module(f".{name}", "tests.integration.frameworks.models")
-    for _, name, _ in pkgutil.iter_modules(
-        [os.path.join(os.path.dirname(__file__), "models")]
-    )
-]
-for module in input_modules:
-    frameworks.append(module.framework)
 
-    for _model in module.models:
-        test_inputs.append((module.framework, _model))
-
-
-@pytest.mark.parametrize("framework", frameworks)
 def test_wrong_module_load_exc(framework: types.ModuleType):
     with bentoml.models.create(
         "wrong_module",
@@ -49,7 +31,6 @@ def test_wrong_module_load_exc(framework: types.ModuleType):
         framework.load_model(tag)
 
 
-@pytest.mark.parametrize("framework,test_model", test_inputs)
 def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTestModel):
     # test that the generic save API works
     from sklearn.preprocessing import StandardScaler  # type: ignore (bad sklearn types)
@@ -101,7 +82,6 @@ def fixture_saved_model(
     )
 
 
-@pytest.mark.parametrize("framework,test_model", test_inputs)
 def test_get(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
@@ -116,7 +96,6 @@ def test_get(
     assert bento_model == bento_model_from_str
 
 
-@pytest.mark.parametrize("framework,test_model", test_inputs)
 def test_get_runnable(
     framework: types.ModuleType,
     saved_model: bentoml.Tag,
@@ -136,7 +115,6 @@ def test_get_runnable(
     ), "get_runnable for {bento_model.info.name} gives a runnable with no methods"
 
 
-@pytest.mark.parametrize("framework,test_model", test_inputs)
 def test_load(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
@@ -158,7 +136,6 @@ def test_load(
                 inp.check_output(out)
 
 
-@pytest.mark.parametrize("framework,test_model", test_inputs)
 def test_runner_batching(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
@@ -198,7 +175,6 @@ def test_runner_batching(
         runner.destroy()
 
 
-@pytest.mark.parametrize("framework,test_model", test_inputs)
 @pytest.mark.gpus
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,

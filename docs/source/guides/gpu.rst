@@ -2,17 +2,9 @@
 Serving with GPU
 ================
 
-It is widely recognized within the academia world and industry that GPUs have superior benefits over CPU-based platform due to its speed and efficiency advantages for both training and inference
-tasks, as shown `by NVIDIA <https://www.nvidia.com/content/tegra/embedded-systems/pdf/jetson_tx1_whitepaper.pdf>`_.
-
-Almost every deep learning frameworks (Tensorflow, PyTorch, ONNX, etc.) have supports for GPU, this guide demonstrates how to serve your ``BentoService`` with GPU.
-
-Prerequisite
-------------
-
-- ``GNU/Linux x86_64`` with kernel version ``>=3.10``. (``uname -a`` to check)
-- Docker >=19.03
-- NVIDIA GPU that has compute capability ``>=3.0`` (find yours `from NVIDIA <https://developer.nvidia.com/cuda-gpus>`_)
+Most popular deep learning frameworks (Tensorflow, PyTorch, ONNX, etc.) have supports
+for GPU, both for training and inference. This guide demonstrates how to serve models
+with BentoML on GPU.
 
 
 NVIDIA Drivers
@@ -35,7 +27,6 @@ NVIDIA Container Toolkit
     Recent updates to ``systemd`` re-architecture, which is described via `#1447 <https://github.com/NVIDIA/nvidia-docker/issues/1447>`_, completely breaks ``nvidia-docker``.
     This issue is confirmed to be `patched <https://github.com/NVIDIA/nvidia-docker/issues/1447#issuecomment-760189260>`_ for future releases.
 
-.. _general-workaround:
 
 General workaround (Recommended)
 """"""""""""""""""""""""""""""""
@@ -57,57 +48,13 @@ General workaround (Recommended)
         svc-d-r:
             docker run --gpus all $(DEVICE_ARGS) foo:bar
 
-Debian-based OS
-"""""""""""""""
-    Disable ``cgroup`` hierarchy by adding to ``systemd.unified_cgroup_hierarchy=0`` to ``GRUB_CMDLINE_LINUX_DEFAULT``.
-
-    .. code-block::
-
-        GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.unified_cgroup_hierarchy=0"
-
-Other OS
-"""""""""
-    Change ``#no-cgroups=false`` to ``no-cgroups=true`` under ``/etc/nvidia-container-runtime/config.toml``.
-
-docker-compose
-""""""""""""""
-    Add the following:
-
-    .. code-block::
-
-        # docker-compose.yaml
-
-        ...
-        devices:
-          - /dev/nvidia0:/dev/nvidia0
-          - /dev/nvidiactl:/dev/nvidiactl
-          - /dev/nvidia-modeset:/dev/nvidia-modeset
-          - /dev/nvidia-uvm:/dev/nvidia-uvm
-          - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
-
-Framework Support for GPU Inference with Implementation
--------------------------------------------------------
-
-Jump to :ref:`tensorflow-impl` | :ref:`pytorch-impl` | :ref:`onnx-impl`
 
 
-.. note::
-    The examples we show here are merely demonstration on how GPU inference works among different frameworks to avoid bloating the guide.
-
-.. seealso:: Please refers to BentoML's `gallery <https://github.com/bentoml/gallery>`_ for more detailed use-cases on GPU Serving.
-
-Preface
-^^^^^^^
-
-.. warning::
-    As of **0.13.0**, Multiple GPUs Inference is currently not supported. (However, it is within our future roadmap to provide support for such feature)
-
-.. note::
+.. tip::
     In order to check for GPU usage, one can run ``nvidia-smi`` to check whether BentoService is using GPU. e.g
 
-    .. code-block:: bash
+    .. code:: bash
 
-        # BentoService is running in another session
         » nvidia-smi
         Thu Jun 10 15:30:28 2021
         +-----------------------------------------------------------------------------+
@@ -130,26 +77,7 @@ Preface
         |    0   N/A  N/A    179346      C   /opt/conda/bin/python             745MiB |
         +-----------------------------------------------------------------------------+
 
-.. note::
-    After each implementation:
 
-    .. code-block:: bash
-
-        # to serve our service locally
-        $ bentoml serve TensorflowService:latest
-
-    .. code-block:: bash
-
-        # containerize our saved service
-        $ bentoml containerize TensorflowService:latest -t tf_svc
-
-    .. code-block:: bash
-
-        # start our container and check for GPU usages:
-        $ docker run --gpus all ${DEVICE_ARGS} -p 3000:3000 tf_svc:latest --workers=2
-
-.. note::
-    see :ref:`general-workaround` for ``$DEVICE_ARGS``.
 
 
 Docker Images Options
@@ -161,126 +89,18 @@ Make sure that your custom docker images have Python and CUDA library in order t
 BentoML also provides three `CUDA-enabled images <https://hub.docker.com/r/bentoml/model-server/tags?page=1&ordering=last_updated&name=gpu>`_
 with CUDA 11.3 and CUDNN 8.2.0 (refers to this `support matrix <https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html>`_ for CUDA and CUDNN version matching).
 
-.. note::
-    See :ref:`gpu-impl-warning`'s notes on GPU serving.
 
-Tensorflow
-^^^^^^^^^^
+.. code-block:: bash
 
-.. note::
-    If users want to utilize multiple GPUs while training, refers to Tensorflow's `distributed strategies <https://www.tensorflow.org/guide/distributed_training>`_.
+    # to serve bento locally
+    $ bentoml serve TensorflowService:latest
 
-TLDR, Tensorflow code with ``tf.keras`` model will run transparently on a single GPU without any changes. One can read more `here <https://www.tensorflow.org/guide/gpu>`_.
+.. code-block:: bash
 
-.. warning::
+    # containerize saved bento
+    $ bentoml containerize TensorflowService:latest -t tf_svc
 
-    **NOT RECOMMEND** to manually set device placement unless you know what you are doing!
+.. code-block:: bash
 
-        During training, if one chooses to manually set device placement for specific operations, e.g:
-
-        .. code-block:: python
-
-            tf.debugging.set_log_device_placement(True)
-
-            # train my_model on GPU:1
-            with tf.device("/GPU:1"):
-                ... # train code goes here.
-
-        then make sure you correctly create your model during inference to avoid any potential errors.
-
-        .. code-block:: python
-
-            # my_model_gpu is a trained on GPU:1, with weight and tokenizer to file
-            # now I want to run model on GPU:0
-            with tf.device("/GPU:0"):
-                my_inference_model = build_model() # build_model
-                my_inference_model.set_weights(my_model_gpu.get_weights())
-                ... # inference code goes here.
-
-.. note::
-    Tensorflow provides ``/GPU:{device_id}`` where ``device_id`` is our GPU/CPU id. This is useful if you have a multiple CPUs/GPUs setup.
-    For most use-case ``/GPU:0`` will do the job.
-
-    You can get the specific device with
-
-    .. code-block:: python
-
-        tf.config.list_physical_devices("GPU") # or CPU
-
-.. _tensorflow-impl:
-
-Tensorflow Implementation
-"""""""""""""""""""""""""
-
-TODO
-
-.. _gpu-impl-warning:
-
-PyTorch
-^^^^^^^
-
-.. warning::
-    Since PyTorch bundles CUDNN and NCCL runtime with its python library, we **recommend** users install PyTorch with ``conda``
-    via BentoML `@env <http://localhost:8000/api/bentoml.html#env>`_ instead of using GPU images provided by BentoML:
-
-    .. code-block:: python
-
-        @env(conda_dependencies=['pytorch', 'torchtext', 'cudatoolkit=11.1'], conda_channels=['pytorch', 'nvidia'])
-
-PyTorch provides a more pythonic way to define device for our deep learning model. This can be used through training and inference tasks
-
-.. code-block:: python
-
-    import torch
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-.. note::
-    PyTorch provides users with **OPTIONAL** ``cuda:{device_id}`` or ``cpu:{device_id}`` to explicitly assign GPU if the vendors contain multiple GPUs or CPUs.
-    For mose use-case "cuda" or "cpu" will dynamically allocate GPU resources and fallback to CPU for you.
-
-However, make sure that in our BentoService definition every tensor that is needed for inference *should be cast to the same device as our our model*, see :ref:`pytorch-impl`.
-
-.. note::
-    All of the above apply to ``transformers``, ``PytorchLightning`` or any other variant of PyTorch deep learning frameworks.
-
-.. _pytorch-impl:
-
-PyTorch Implementation
-""""""""""""""""""""""
-
-TODO
-
-ONNX
-^^^^
-
-Users only need to install ``onnxruntime-gpu`` to be able to run their ONNX model with GPU. It will automatically fallback to CPUs if no GPUs are found.
-
-.. note::
-    ONNX use-case is dependent on the base deep learning framework user chooses to build their model on. This guide will provide
-    PyTorch to ONNX use-case. Contributions are welcome for others deep learning frameworks.
-
-User can check if GPU is running for their ``InferenceSession`` with ``get_providers()``:
-
-.. code-block:: python
-
-    cuda = "CUDA" in session.get_providers()[0] # True if you have a GPU
-
-Some notes with regarding to building ONNX services:
-
-- as shown with :ref:`onnx-impl` below, make sure that you setup a correct input and outputs for your ONNX models to avoid any errors.
-- your input should be a ``numpy`` array, refers to ``to_numpy()`` for example.
-
-.. _onnx-impl:
-
-ONNX Implementation
-"""""""""""""""""""
-
-TODO
-
-
-.. spelling::
-
-    pythonic
-    mose
-    cuda
+    # start bento generated image and check for GPU usages:
+    $ docker run --gpus all ${DEVICE_ARGS} -p 3000:3000 tf_svc:latest --workers=2

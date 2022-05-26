@@ -9,12 +9,10 @@ Performance Benchmark
    serving performance possible in Python.
 
 
+
 gallery project
 locust
-
 use --production
-
 run locust on a separate machine
-
 benchmark the framework
 

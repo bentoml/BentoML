@@ -49,7 +49,7 @@ ogp_use_first_image = True
 
 issues_default_group_project = "bentoml/bentoml"
 
-todo_include_todos = False  # Hide Todo items from the generated doc
+todo_include_todos = True
 
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"

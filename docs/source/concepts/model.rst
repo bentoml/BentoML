@@ -2,7 +2,6 @@
 Preparing Models
 ================
 
-
 Save A Trained Model
 --------------------
 
@@ -44,8 +43,9 @@ saved alongside your model in the model store, e.g.:
 - **metadata**: user-defined metadata for storing model training context information or model evaluation metrics, e.g. dataset version, training parameters, model scores.
 - **custom_objects**: user-defined additional python objects, e.g. a tokenizer instance, preprocessor function, model configuration json, serialized with cloudpickle. Custom objects will be serialized with `cloudpickle <https://github.com/cloudpipe/cloudpickle>`_.
 
+
 .. TODO::
-    add example for ModelOptions
+    Add example for using ModelOptions
 
 
 Retrieve a saved model
@@ -102,99 +102,115 @@ maintained by BentoML. Users can view and manage all saved models via the
 
 .. tab-set::
 
-    .. tab-item:: Get
-
-       .. code:: bash
-
-          > bentoml models get iris_clf:latest
-
-          name: iris_clf
-          version: 2uo5fkgxj27exuqj
-          module: bentoml.sklearn
-          labels: {}
-          options: {}
-          metadata: {}
-          context:
-            framework_name: sklearn
-            framework_versions:
-              scikit-learn: 1.1.0
-            bentoml_version: 1.0.0
-            python_version: 3.8.12
-          signatures:
-            predict:
-              batchable: false
-          api_version: v1
-          creation_time: '2022-05-19T08:36:52.456990+00:00'
-
     .. tab-item:: List
 
-       .. code:: bash
+        .. code:: bash
 
-          > bentoml models list
+            > bentoml models list
 
-          Tag                        Module           Size        Creation Time        Path
-          iris_clf:2uo5fkgxj27exuqj  bentoml.sklearn  5.81 KiB    2022-05-19 08:36:52  ~/bentoml/models/iris_clf/2uo5fkgxj27exuqj
-          iris_clf:nb5vrfgwfgtjruqj  bentoml.sklearn  5.80 KiB    2022-05-17 21:36:27  ~/bentoml/models/iris_clf/nb5vrfgwfgtjruqj
+            Tag                        Module           Size        Creation Time        Path
+            iris_clf:2uo5fkgxj27exuqj  bentoml.sklearn  5.81 KiB    2022-05-19 08:36:52  ~/bentoml/models/iris_clf/2uo5fkgxj27exuqj
+            iris_clf:nb5vrfgwfgtjruqj  bentoml.sklearn  5.80 KiB    2022-05-17 21:36:27  ~/bentoml/models/iris_clf/nb5vrfgwfgtjruqj
 
 
-    .. tab-item:: Import / Export
+    .. tab-item:: Get
 
-       .. code:: bash
+        .. code:: bash
 
-          > bentoml models export iris_clf:latest .
+            > bentoml models get iris_clf:latest
 
-          INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ./iris_clf-2uo5fkgxj27exuqj.bentomodel
-
-       .. code:: bash
-
-          > bentoml models import ./iris_clf-2uo5fkgxj27exuqj.bentomodel
-
-          INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") imported
-
-       .. note::
-
-          Model can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
-          example:
-
-          .. code:: bash
-
-             bentoml models export iris_clf:latest s3://my_bucket/my_prefix/
-
-    .. tab-item:: Push / Pull
-
-       If your team has `Yatai <https://github.com/bentoml/Yatai>`_ setup, you can also
-       push local Models to Yatai, it provides APIs and Web UI for managing all Models
-       created by your team and stores model files on cloud blob storage such as AWS S3,
-       MinIO or GCS.
-
-       .. code:: bash
-
-          > bentoml models push iris_clf:latest
-
-          Successfully pushed model "iris_clf:2uo5fkgxj27exuqj"                                                                                                                                                                                           │
-
-       .. code:: bash
-
-          > bentoml models pull iris_clf:latest
-
-          Successfully pulled model "iris_clf:2uo5fkgxj27exuqj"
-
-       .. image:: /_static/img/yatai-model-detail.png
-         :alt: Yatai Model Details UI
+            name: iris_clf
+            version: 2uo5fkgxj27exuqj
+            module: bentoml.sklearn
+            labels: {}
+            options: {}
+            metadata: {}
+            context:
+                framework_name: sklearn
+                framework_versions:
+                  scikit-learn: 1.1.0
+                bentoml_version: 1.0.0
+                python_version: 3.8.12
+            signatures:
+                predict:
+                  batchable: false
+            api_version: v1
+            creation_time: '2022-05-19T08:36:52.456990+00:00'
 
     .. tab-item:: Delete
 
-       .. code:: bash
+        .. code:: bash
 
-          > bentoml models delete iris_clf:latest -y
+            > bentoml models delete iris_clf:latest -y
 
-          INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") deleted
+            INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") deleted
+
+
+
+Model Import and Export
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Models saved with BentoML can be exported to a standalone archive file outside of the
+model store, for sharing models between teams or moving models between different build
+stages. For example:
+
+.. code:: bash
+
+    > bentoml models export iris_clf:latest .
+
+    INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ./iris_clf-2uo5fkgxj27exuqj.bentomodel
+
+.. code:: bash
+
+    > bentoml models import ./iris_clf-2uo5fkgxj27exuqj.bentomodel
+
+    INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") imported
+
+.. note::
+
+    Model can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
+    example:
+
+    .. code:: bash
+
+        pip install fs-s3fs  # Additional dependency required for working with s3
+        bentoml models export iris_clf:latest s3://my_bucket/my_prefix/
+
+
+Push and Pull with Yatai
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+`Yatai <https://github.com/bentoml/Yatai>`_ provides a centralized Model repository
+that comes with flexible APIs and Web UI for managing all models (and
+:doc:`Bentos </concepts/bento>`) created by your team. It can be configured to store
+model files on cloud blob storage such as AWS S3, MinIO or GCS.
+
+Once your team have Yatai setup, you can use the :code:`bentoml models push` and
+:code:`bentoml models pull` command to get models to and from Yatai:
+
+.. code:: bash
+
+    > bentoml models push iris_clf:latest
+
+    Successfully pushed model "iris_clf:2uo5fkgxj27exuqj"                                                                                                                                                                                           │
+
+.. code:: bash
+
+    > bentoml models pull iris_clf:latest
+
+    Successfully pulled model "iris_clf:2uo5fkgxj27exuqj"
+
+.. image:: /_static/img/yatai-model-detail.png
+    :alt: Yatai Model Details UI
 
 
 .. tip::
 
     Learn more about CLI usage from :code:`bentoml models --help`.
 
+
+Model Management API
+^^^^^^^^^^^^^^^^^^^^
 
 Besides the CLI commands, BentoML also provides equivalent
 :doc:`Python APIs </reference/stores>` for managing models:
@@ -259,8 +275,6 @@ Besides the CLI commands, BentoML also provides equivalent
 
             bentoml.models.pull("iris_clf:latest")
 
-        .. image:: /_static/img/yatai-model-detail.png
-            :alt: Yatai Model Details UI
 
     .. tab-item:: Delete
 
@@ -306,7 +320,8 @@ The :doc:`tutorial </tutorial>`
     iris_clf_runner.predict.run([[5.9, 3., 5.1, 1.8]])
 
 
-To learn more about Runner usage and architecture, see :doc:`/concepts/runner`.
+To learn more about Runner usage and its architecture, see :doc:`/concepts/runner`.
+
 
 Model Signatures and Batching
 -----------------------------

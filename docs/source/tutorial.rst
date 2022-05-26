@@ -79,7 +79,7 @@ Saving Models with BentoML
 --------------------------
 
 To begin with BentoML, you will need to save your trained models with BentoML API in
-its model store(a local directory managed by BentoML). The local model store is used for
+its model store(a local directory managed by BentoML). The model store is used for
 managing all your trained models locally as well as accessing them for serving.
 
 .. code-block:: python
@@ -107,11 +107,12 @@ managing all your trained models locally as well as accessing them for serving.
 
 The model is now saved under the name :code:`iris_clf` with an automatically generated
 version. The name and version pair can then be used for retrieving the model. For
-example, the original model instance can be loaded back into memory for testing via:
+instance, the original model object can be loaded back into memory for testing via:
 
 .. code-block::
 
    model = bentoml.sklearn.load_model("iris_clf:2uo5fkgxj27exuqj")
+
    # Alternatively, use `latest` to find the newest version
    model = bentoml.sklearn.load_model("iris_clf:latest")
 
@@ -301,16 +302,16 @@ To build a Bento, first create a :code:`bentofile.yaml` file in your project dir
 
 .. code:: yaml
 
-    service: "service:svc"  # Same as the argument passed to `bentoml serve`
-    labels:
-        owner: bentoml-team
-        stage: dev
-    include:
-     - "*.py"  # A pattern for matching which files to include in the bento
-    python:
+   service: "service:svc"  # Same as the argument passed to `bentoml serve`
+   labels:
+      owner: bentoml-team
+      stage: dev
+   include:
+   - "*.py"  # A pattern for matching which files to include in the bento
+   python:
       packages:  # Additional pip packages required by the service
-       - scikit-learn
-       - pandas
+      - scikit-learn
+      - pandas
 
 .. tip::
    BentoML provides lots of build options in :code:`bentofile.yaml` for customizing the

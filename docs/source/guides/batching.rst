@@ -2,29 +2,6 @@
 Adaptive Batching
 =================
 
-Why batching?
-
-How dynamic batch work?
-
-Using dynamic batching
-
-
-Input Output type
-
-Order of request needs to be preserved
-
-Error handling
-
-Configuring batch parameters
-
-Custom Runnable data types
-
-
-
---
-.. _adaptive-batching-page:
-
-
 Batching is the term used for combining multiple inputs for submission to processing at the same time. The idea is that processing multiple messages is be faster than processing each individual message one at a time. In practice many ML frameworks have optimizations for processing multiple messages at a time because that is how the underlying hardware works in many cases.
 
 .. epigraph::
@@ -68,3 +45,15 @@ Configuring Batching
 --------------------
 
 The main configuration concern is the way in which each input is combined when batching occurs. We call this the “batch axis”. When configuring whether a model runner should be batching, the batch axis must be specified
+
+
+.. TODO::
+    Why batching?
+    How dynamic batch work?
+    Using dynamic batching
+    Runnable Input Output types and setting batch dimension
+    Custom Runnable data types
+    Order of request needs to be preserved
+    Error handling
+    Configuring batch parameters (max batch size, max latency)
+

@@ -36,11 +36,11 @@ with a :code:`bentofile.yaml` build file. Here's an example from the
         owner: bentoml-team
         stage: dev
     include:
-     - "*.py"  # A pattern for matching which files to include in the bento
+    - "*.py"  # A pattern for matching which files to include in the bento
     python:
-      packages:  # Additional pip packages required by the service
-       - scikit-learn
-       - pandas
+        packages:  # Additional pip packages required by the service
+        - scikit-learn
+        - pandas
 
 .. code:: bash
 
@@ -196,7 +196,7 @@ Bentos between teams or moving between different deployment stages. For example:
 
     .. code:: bash
 
-        pip install fs-s3fs bentoml
+        pip install fs-s3fs  # Additional dependency required for working with s3
         bentoml import s3://bentoml.com/quickstart/iris_classifier.bento
         bentoml export iris_classifier:latest s3://my_bucket/my_prefix/
 
@@ -207,7 +207,7 @@ Push and Pull
 `Yatai <https://github.com/bentoml/Yatai>`_ provides a centralized Bento repository
 that comes with flexible APIs and Web UI for managing all Bentos created by your team.
 It can be configured to store Bento files on cloud blob storage such as AWS S3, MinIO
-or GCS, and automatically builds docker images when a new Bento was pushed.
+or GCS, and automatically build docker images when a new Bento was pushed.
 
 .. code:: bash
 
@@ -416,15 +416,15 @@ In the example above, the :code:`*.py` is including every Python file from the
     - "path/to/a/file.csv"
 
 
-If the include field is not specified, BentoML, by default, will include
-all files under the :code:`build_ctx` directory, besides the ones explicitly set to be
-excluded, as shown in the section below.
+If the include field is not specified, BentoML will include all files under the
+:code:`build_ctx` directory, besides the ones explicitly set to be excluded, as shown in
+the section below.
 
 
 Files to exclude
 ^^^^^^^^^^^^^^^^
 
-If the user needs to include a lot of files, another approach is to
+If the user needs to include a lot of files under a directory, another approach is to
 only specify which files to be ignored.
 
 The :code:`exclude` field specifies the pathspecs (similar to the :code:`.gitignore`
@@ -442,7 +442,7 @@ the :code:`build_ctx` directory.
     - "secrets.key"
 
 Users can also opt to place a :code:`.bentoignore` file in the :code:`build_ctx`
-directory. This is what a :code:`.bentoignore` file would look like.
+directory. This is what a :code:`.bentoignore` file would look like:
 
 .. code:: bash
 
@@ -459,11 +459,10 @@ directory. This is what a :code:`.bentoignore` file would look like.
 Python Packages
 ^^^^^^^^^^^^^^^
 
-There are two ways to specify packages in the Bentofile. First,
-we can list packages like below.
-
-When left without a version,
-pip will just use the latest release from PyPI.
+Required Python packages can be specified under the :code:`python.packages` field. When
+a package name is left without a version, BentoML will by default lock the version to
+the current environment when running :code:`bentoml build`. User can also specify the
+desired version, install from a custom PyPI source, or install from a github repo:
 
 .. code:: yaml
 
@@ -471,49 +470,69 @@ pip will just use the latest release from PyPI.
      packages:
         - numpy
         - "matplotlib==3.5.1"
+        - "package>=0.2,<0.3"
+        - "torchvision==0.9.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu"
+        - "git+https://github.com/bentoml/bentoml.git@main"
 
-The user needs to put all required python packages for the Bento Service in a
-``requirements.txt``. For a project, you can run ``pip freeze > requirements.txt``
-to generate a requirements file to load with BentoML.
-
-.. code:: yaml
-
-   python:
-     requirements_txt: "requirements.txt"
-
-Additionally, there are more fields that can help manage larger projects.
+If you already have a :code:`requirements.txt` file that defines python packages for
+your project, you may also supply a path to the :code:`requirements.txt` file directly:
 
 .. code:: yaml
 
    python:
      requirements_txt: "requirements.txt"
-     lock_packages: False
-     index_url: "https://example.org/"
-     no_index: False
-     trusted_host: "localhost"
-     find_links:
+
+Additionally, all :code:`pip install` options are also supported via the following
+options:
+
+.. code:: yaml
+
+    python:
+        ...
+        index_url: "https://example.org/"
+        no_index: False
+        trusted_host: "localhost"
+        find_links:
         - "https://test.org/"
-     extra_index_url:
+        extra_index_url:
         - "https://test.org/"
-     pip_args: "--quiet"
-     wheels:
+        pip_args: "--quiet"
+        wheels:
         - "./libs/my_package.whl"
+
 
 PyPI Package Locking
 """"""""""""""""""""
 
-By default, when the :code:`bentoml.Service` generates package requirements
-from the :code:`Bentofile`, the package versions will be locked for easier
-reproducibility. BentoML uses pip-tools to lock the packages.
+By default, BentoML automatically locks all package versions, as well as all packages in
+their dependency graph, to the version found in the current build environment, and
+generates a :code:`requirements.lock.txt` file. This process uses
+`pip-compile <https://github.com/jazzband/pip-tools>`_ under the hood.
 
-If the ``requirements.txt`` includes locked packages, or a configuration
-you need, set the ``lock_packages`` field to False.
+If you have already specified a version for all packages, you can optionally disable
+this behavior by setting the :code:`lock_packages` field to False:
 
-Pip Wheels
-""""""""""
+.. code:: yaml
 
-If you're maintaining a private pip wheel, it can be included
-with the ``wheels`` field.
+    python:
+        requirements_txt: "requirements.txt"
+        lock_packages: False
+
+
+Python Wheels
+"""""""""""""
+
+Python :code:`.whl` files are also supported as a type of dependency to include in a
+Bento. Simply provide a path to your :code:`.whl` files under the :code:`wheels`` field.
+
+
+.. code:: yaml
+
+    python:
+        ...
+        wheels:
+        - ./lib/my_package.whl
+
 
 If the wheel is hosted on a local network without TLS, you can indicate
 that the domain is safe to pip with the ``trusted_host`` field.
@@ -546,36 +565,44 @@ Python Options Table
 +-------------------+------------------------------------------------------------------------------------+
 
 
-
 Conda Options
 ^^^^^^^^^^^^^
 
-Similarly to PyPi, you can use Conda to handle dependencies.
+Conda dependencies can be specified under the :code:`conda` field. Unlike Python
+packages, BentoML does not support locking conda packages to version automatically. It
+is recommended for users to specify a version in the :code:`bentofile`:
 
 .. code:: yaml
 
-   conda:
-     dependencies:
-        - "scikit-learn==1.2.0"
+    ...
+    conda:
+        dependencies:
         - numpy
         - nltk
-     channels:
+        - "scikit-learn==1.2.0"
+        channels:
         - "conda-forge"
 
-Here, we need the conda-forge repository to install numpy with conda.
-The ``channels`` field let's us specify that to the BentoML service.
+Optionally, you may export all dependencies from a preexisting conda environment to
+an :code:`environment.yml`, and provide this file to BentoML instead.
 
-In a preexisting environment, running ``conda export`` will generate
-an ``environment.yml`` file to be included in the ``environment_yml``
-field.
+Export conda environment:
+
+.. code:: bash
+
+    conda env export > environment.yml
+
+In your :code:`bentofile.yaml`:
 
 .. code:: yaml
 
-   conda:
-     environment_yml: "environment.yml"
+    conda:
+        environment_yml: "./environment.yml"
+
 
 Conda Options Table
 """""""""""""""""""
+
 +------------------+----------------------------------------------------------------------------------------------------------------------------------+
 | Field            | Description                                                                                                                      |
 +==================+==================================================================================================================================+
@@ -598,34 +625,114 @@ Here's a basic Docker options configuration.
 
 .. code:: yaml
 
-   docker:
-     distro: debian
-     gpu: True
-     python_version: "3.8.9"
-     setup_script: "setup.sh"
+    docker:
+        distro: debian
+        python_version: "3.8.9"
+        cuda_version: "11.6,2"
+        setup_script: "setup.sh"
+        system_packages:
+            - libblas-dev
+            - liblapack-dev
+            - gfortran
+        env:
+            - FOO=value1
+            - BAR=value2
 
-For the ``distro`` options, you can choose from 5.
 
-- debian
-- amazonlinux2
+Available distros
+"""""""""""""""""
+
+- debian (default)
+- debian-miniconda (default when Conda optiosn are specified)
+- amazonlinux
 - alpine
+- alpine-miniconda
 - ubi8
-- ubi7
 
-This config can be explored from `BentoML's Docker page <https://hub.docker.com/r/bentoml/bento-server>`_.
+GPU support
+"""""""""""
 
-The `gpu` field instructs BentoML to select a Docker base
-image that contains NVIDIA drivers and cuDNN library.
+The :code:`cuda_version` field specifies the target cuda version to install on the
+generated docker image. Currently, the only supported cuda version is :code:`"11.6.2"`.
+BentoML also installs additional packages required for the target cuda version.
 
-For further Docker development, you can also use a ``setup_script``
-for the container. This script will run during the ``docker build``
-process, as Docker containerizes the image.
+If you need a different cuda version that is not currently supported in BentoML, it is
+possible to install it by specifying it in the :code:`system_packages` or via the
+:code:`setup_script`.
 
-For example, with NLP projects you can preinstall NLTK data with:
 
-.. code:: shell
-   # ``setup.sh``
+Setup Script
+""""""""""""
+
+For advanced Docker customization, you can also use a :code:`setup_script` to inject
+arbitrary user provided script during the image build process. For example, with NLP
+projects you can pre-download NLTK data in the image with:
+
+.. code:: yaml
+
+
+.. code:: bash
+
+   # setup.sh
    python -m nltk.downloader all
+
+Custom Base Image (Advanced)
+""""""""""""""""""""""""""""
+
+If none of the provided distros work for your use case, e.g. if your infrastructure
+requires all docker images to be derived from the same base image with certain security
+fixes, you can config BentoML to use your base image instead:
+
+.. code:: yaml
+
+    docker:
+        base_image: "my_custom_image:latest"
+
+.. note::
+    :bdg-warning:`Warning:` When a :code:`base_image` is provided, all other docker
+    options (distro, cuda_version, system_packages, python_version) will be ignored.
+    User must ensure that the provided base image has Python or Conda installed. In this
+    case, :code:`bentoml containerize` will build a new image on top of your base_image:
+    run the :code:`setup_script` if provided, install the required Python dependencies,
+    copy over the Bento file, and lastly setup the entrypoint command for serving.
+
+
+Docker Template (Danger Zone)
+"""""""""""""""""""""""""""""
+
+The :code:`docker_template` field opens up opportunity to extend and change the
+BentoML templates used for generating the :code:`Dockerfile` in a Bento.
+
+Documenting this option is working-in-progress, see :issue:`2497`
+
+
+Limitations
+"""""""""""
+
+With the default distro (when leaving the distro field unspecified), BentoML has the
+best compatibility over all BentoML supported python versions. However there are some
+limitations:
+
++------------------+-----------------------------+-----------------+----------------------+
+| Distro           |  Available Python Versions  | Conda Support   | CUDA Support (GPU)   |
++==================+=============================+=================+======================+
+| debian           |  3.7, 3.8, 3.9, 3.10        |  No             |  Yes                 |
++------------------+-----------------------------+-----------------+----------------------+
+| debian-miniconda |  3.7, 3.8, 3.9, 3.10        |  Yes            |  No                  |
++------------------+-----------------------------+-----------------+----------------------+
+| amazonlinux      |  3.7, 3.8                   |  No             |  Yes                 |
++------------------+-----------------------------+-----------------+----------------------+
+| alpine           |  3.7, 3.8, 3.9, 3.10        |  No             |  No                  |
++------------------+-----------------------------+-----------------+----------------------+
+| alpine-miniconda |  3.7, 3.8, 3.9, 3.10        |  Yes            |  No                  |
++------------------+-----------------------------+-----------------+----------------------+
+| ubi8             |  3.8, 3.9                   |  No             |  Yes                 |
++------------------+-----------------------------+-----------------+----------------------+
+
+.. TODO:
+
+    Document image supported architectures
+
 
 Docker Options Table
 """"""""""""""""""""
@@ -633,16 +740,18 @@ Docker Options Table
 +-----------------+--------------------------------------------------------------------------------------------------------------------+
 | Field           | Description                                                                                                        |
 +=================+====================================================================================================================+
-| distro          | Configure the particular os distribution on the Docker image ["debian", "amazonlinux2", "alpine", "ubi8", "ubi7"]  |
+| distro          | Configure the particular os distribution on the Docker image                                                       |
 +-----------------+--------------------------------------------------------------------------------------------------------------------+
-| python_version  | Specify which python to include on the Docker image ["3.7", "3.8", "3.9"]                                          |
+| python_version  | Specify which python to include on the Docker image ["3.7", "3.8", "3.9", "3.10"]                                  |
 +-----------------+--------------------------------------------------------------------------------------------------------------------+
-| gpu             | Determine if your container will have a gpu. This is not compatible with certain distros                           |
+| cuda_version    | Specify the cuda version to install on the Docker image [11.6.2]                                                   |
 +-----------------+--------------------------------------------------------------------------------------------------------------------+
-| devel           | If you want to use the latest main branch from the BentoML repo in your bento                                      |
+| env             | Declare environment variables to the generated Dockerfile                                                          |
 +-----------------+--------------------------------------------------------------------------------------------------------------------+
 | setup_script    | Is a python or shell script that executes during docker build time                                                 |
 +-----------------+--------------------------------------------------------------------------------------------------------------------+
 | base_image      | Is a user-provided custom docker base image. This will override all other custom attributes of the image           |
++-----------------+--------------------------------------------------------------------------------------------------------------------+
+| docker_template | Customize the generated dockerfile by providing a jinja2 template that extends the default dockerfile              |
 +-----------------+--------------------------------------------------------------------------------------------------------------------+
 

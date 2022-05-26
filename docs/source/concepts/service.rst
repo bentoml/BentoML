@@ -4,40 +4,53 @@ Service and APIs
 
 The service definition is the manifestation of the 
 `Service Oriented Architecture <https://en.wikipedia.org/wiki/Service-oriented_architecture>`_ 
-and the core building block in BentoML where users define the service runtime architecture and model serving logic. 
-This guide will dissect and explain the key components in the service definition. By the end, you will gain a full 
-understanding of the composition of the service definition and the responsibilities of each key component.
+and the core building block in BentoML where users define the model serving logic. This
+guide will dissect and explain the key components in the service definition.
 
-Composition
------------
 
-Consider the following service definition we created in the :ref:`Getting Started <getting-started-page>` guide. 
-A BentoML service is composed of three components.
-- Runners
-- Services
-- APIs
+Creating a Service
+------------------
 
-.. code-block:: python
+A BentoML service is composed of Runners and APIs. Consider the following service
+definition from the :doc:`tutorial <tutorial>`:
 
-    # bento.py
-    import bentoml
+.. code:: python
+
     import numpy as np
-
+    import bentoml
     from bentoml.io import NumpyNdarray
 
-    # Load the runner for the latest ScikitLearn model we just saved
-    runner = bentoml.sklearn.load_runner("iris_classifier_model:latest")
+    iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
+
+    svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+
+    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+    def classify(input_series: np.ndarray) -> np.ndarray:
+        result = iris_clf_runner.predict.run(input_series)
+        return result
+
+
+Services are initialized through `bentoml.Service()`, with the service name and a list
+of :doc:`Runners </concepts/runner>` required in the service:
+
+.. code:: python
 
     # Create the iris_classifier_service with the ScikitLearn runner
-    svc = bentoml.Service("iris_classifier_service", runners=[runner])
+    svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-    # Create API function with pre- and post- processing logic
+.. note::
+    The service name will become the name of the Bento.
+
+The :code:`svc` instance created provides a decorator method :code:`svc.api`for defining
+APIs in this service.
+
+.. code:: python
+
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-    def predict(input_array: np.ndarray) -> np.ndarray:
-        # Define pre-processing logic
-        result = runner.run(input_array)
-        # Define post-processing logic
+    def classify(input_series: np.ndarray) -> np.ndarray:
+        result = iris_clf_runner.predict.run(input_series)
         return result
+
 
 Runners
 -------
@@ -62,23 +75,9 @@ be packaged into the bento when the service is built. Multiple runners can be de
 
 To learn more, please see the :ref:`Runner <runner-page>` advanced guide.
 
-Services
---------
 
-Services are composed of APIs and Runners and can be initialized through `bentoml.Service()`.
-
-.. code-block:: python
-
-    # Create the iris_classifier_service with the ScikitLearn runner
-    svc = bentoml.Service("iris_classifier_service", runners=[runner])
-
-The first argument of the service is the name which will become the name of the Bento after the service is built. Runners that 
-should be parts of the service are passed in through the `runners` keyword argument. This is an important step because this is
-how the BentoML library knows which runners to package into the bento. Build time and runtime behaviors of the service can be
-customized through the `svc` instance.
-
-APIs
-----
+Service APIs
+------------
 
 Inference APIs define how the service functionality can be accessed remotely and the high level pre- and post-processing logic.
 
@@ -106,9 +105,8 @@ BentoML aims to parallelize API logic by starting multiple instances of the API 
 optimal performance, we recommend defining asynchronous APIs. To learn more, continue to :ref:`IO descriptors <api-io-descriptors-page>`.
 
 
-
-
-API and IO Descriptors
+API Callback Function
+---------------------
 
 
 APIs are functions defined in the service definition that are exposed as an HTTP or gRPC endpoint.
@@ -220,12 +218,9 @@ disable validation through the `validate` argument.
         # Define post-processing logic
         return result
 
-.. todo::
-
-    insert Swagger screenshot
 
 Built-in Types
---------------
+^^^^^^^^^^^^^^
 
 Beside `NumpyNdarray`, BentoML supports a variety of other built-in IO descriptor types under the
 `bentoml.io` package. Each type comes with support of type validation and OpenAPI specification
@@ -241,8 +236,14 @@ generation.
 | Json            | Python native types | validate, schema | Pydantic.BaseModel      |
 +-----------------+---------------------+------------------+-------------------------+
 
+image
+file
+series
+
+link to api page
+
 Composite Types
----------------
+^^^^^^^^^^^^^^^
 
 Multiple IO descriptors can be specified as tuples in the input and output arguments the API decorator.
 Composite IO descriptors allow the API to accept multiple arguments and return multiple values. Each IO
@@ -275,8 +276,13 @@ descriptor can be customized with independent schema and validation logic.
     def predict(arr: np.ndarray, json: t.Dict[str, t.Any]) -> np.ndarray:
         ...
 
-.. todo::
-    TODO: Open API
+
+
+IO Schema and Validation
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 
+Open API (Swagger)
+------------------
+jlkj

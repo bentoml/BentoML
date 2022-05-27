@@ -3,6 +3,7 @@ from __future__ import annotations
 import pickle
 import typing as t
 import logging
+import functools
 import itertools
 import contextlib
 from typing import TYPE_CHECKING
@@ -40,6 +41,16 @@ if TYPE_CHECKING:
     ModelType = t.Union[torch.nn.Module, torch.ScriptModule, pl.LightningModule]
 
 logger = logging.getLogger(__name__)
+
+
+def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
+    class NewClass(cls):
+        def __init__(self, *inner_args: t.Any, **inner_kwargs: t.Any) -> None:
+            functools.partial(cls.__init__, *args, **kwargs)(
+                *inner_args, **inner_kwargs
+            )
+
+    return NewClass
 
 
 class PytorchModelRunnable(bentoml.Runnable):

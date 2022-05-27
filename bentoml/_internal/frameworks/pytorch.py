@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import functools
+from typing import TYPE_CHECKING
 from pathlib import Path
 
 import cloudpickle
@@ -15,7 +15,6 @@ from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..models.model import ModelContext
-from ..models.model import ModelSignaturesType
 from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer
 
@@ -26,6 +25,10 @@ MODULE_NAME = "bentoml.pytorch"
 MODEL_FILENAME = "saved_model.pt"
 
 logger = logging.getLogger(__name__)
+
+
+if TYPE_CHECKING:
+    from ..models.model import ModelSignaturesType
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -174,6 +177,7 @@ def get_runnable(bento_model: Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
+    from .common.pytorch import partial_class
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method
 
@@ -186,7 +190,7 @@ def get_runnable(bento_model: Model):
             input_spec=options.input_spec,
             output_spec=options.output_spec,
         )
-    return functools.partial(
+    return partial_class(
         PytorchModelRunnable,
         bento_model=bento_model,
         loader=load_model,

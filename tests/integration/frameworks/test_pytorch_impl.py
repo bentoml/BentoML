@@ -1,4 +1,4 @@
-import math
+# import math
 
 import numpy as np
 import torch
@@ -10,11 +10,14 @@ import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from bentoml._internal.tag import Tag
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
+
+# from tests.utils.frameworks.pytorch_utils import ExtendedModel
 from tests.utils.frameworks.pytorch_utils import test_df
 from tests.utils.frameworks.pytorch_utils import predict_df
 from tests.utils.frameworks.pytorch_utils import LinearModel
-from tests.utils.frameworks.pytorch_utils import ExtendedModel
-from tests.utils.frameworks.pytorch_utils import LinearModelWithBatchAxis
+
+# TODO: signatures
+# TODO: to_payload
 
 
 @pytest.fixture(scope="module")
@@ -79,8 +82,8 @@ def test_pytorch_save_load_across_devices(dev: str, model_tag: Tag):
         torch.from_numpy(test_df.to_numpy().astype(np.float32)),
     ],
 )
-def test_pytorch_runner_setup_run_batch(model_tag: Tag):
-    runner = bentoml.pytorch.get(model_tag).to_runner()
+def test_pytorch_runner_setup_run_batch(input_data, model_tag: Tag):
+    runner = bentoml.pytorch.get(model_tag).to_runner(cpu=4)
 
     assert model_tag in [m.tag for m in runner.models]
 
@@ -103,6 +106,7 @@ def test_pytorch_runner_setup_on_gpu(nvidia_gpu: int, model_tag: Tag):
     assert numprocesses == nvidia_gpu
 
 
+"""
 @pytest.mark.parametrize(
     "bias_pair",
     [(0.0, 1.0), (-0.212, 1.1392)],
@@ -113,7 +117,7 @@ def test_pytorch_runner_with_partial_kwargs(bias_pair):
     x = torch.randn(N, D_in)
     model = ExtendedModel(D_in, H, D_out)
 
-    tag = bentoml.pytorch.save("pytorch_test_extended", model)
+    tag = bentoml.pytorch.save_model("pytorch_test_extended", model)
     bias1, bias2 = bias_pair
     runner1 = bentoml.pytorch.load_runner(tag, partial_kwargs=dict(bias=bias1))
 
@@ -125,34 +129,23 @@ def test_pytorch_runner_with_partial_kwargs(bias_pair):
     # tensor to float may introduce larger errors, so we bump rel_tol
     # from 1e-9 to 1e-6 just in case
     assert math.isclose(res1 - res2, bias1 - bias2, rel_tol=1e-6)
-
+"""
 
 # TODO: add back batch_axis=1 tst
 @pytest.mark.parametrize("batch_axis", [0])
-def test_pytorch_container(batch_axis):
+def test_pytorch_container(batch_axis: int):
+    one_batch = torch.arange(6).reshape(2, 3)
+    batch_list = [one_batch, one_batch + 1]
+    merged_batch = torch.stack(batch_list, dim=batch_axis)
 
-    single_tensor = torch.arange(6).reshape(2, 3)
-    singles = [single_tensor, single_tensor + 1]
-    batch_tensor = torch.stack(singles, dim=batch_axis)
-
-    assert (
-        PyTorchTensorContainer.singles_to_batch(singles, batch_axis=batch_axis)
-        == batch_tensor
-    ).all()
-    assert (
-        PyTorchTensorContainer.batch_to_singles(batch_tensor, batch_axis=batch_axis)[0]
-        == single_tensor
-    ).all()
-
-    model = LinearModelWithBatchAxis()
-    tag = bentoml.pytorch.save("pytorch_test_container", model)
-    runner = bentoml.pytorch.load_runner(
-        tag,
-        partial_kwargs=dict(batch_axis=batch_axis),
+    batches, indices = PyTorchTensorContainer.batches_to_batch(
+        batch_list,
+        batch_dim=batch_axis,
     )
-
-    single_tensor = torch.arange(5, dtype=torch.float32)
-    singles = [single_tensor, single_tensor]
-    batch_tensor = torch.stack(singles, dim=batch_axis)
-    assert runner.run_batch(batch_tensor)[0][0] == 10.0
-    assert runner.run(single_tensor)[0] == 10.0
+    assert (batches == merged_batch).all()
+    assert (
+        PyTorchTensorContainer.batch_to_batches(
+            merged_batch, indices=indices, batch_dim=batch_axis
+        )[0]
+        == one_batch
+    ).all()

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import functools
 
 import torch
 
@@ -160,6 +159,7 @@ def get_runnable(bento_model: Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
+    from .common.pytorch import partial_class
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method
 
@@ -172,7 +172,7 @@ def get_runnable(bento_model: Model):
             input_spec=options.input_spec,
             output_spec=options.output_spec,
         )
-    return functools.partial(
+    return partial_class(
         PytorchModelRunnable,
         bento_model=bento_model,
         loader=load_model,

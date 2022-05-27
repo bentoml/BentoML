@@ -229,9 +229,6 @@ def get_runnable(
                 self.device_name = "/device:GPU:0"
             else:
                 self.device_name = "/device:CPU:0"
-                num_threads = int(os.environ["BENTOML_NUM_THREAD"])
-                tf.config.threading.set_inter_op_parallelism_threads(num_threads)
-                tf.config.threading.set_intra_op_parallelism_threads(num_threads)
 
             self.model = load_model(bento_model, device_name=self.device_name)
             self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}

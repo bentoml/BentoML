@@ -17,7 +17,7 @@ logger = logging.getLogger("bentoml")
 def containerize_transformer(
     value: t.Iterable[str] | str | bool | None,
 ) -> t.Iterable[str] | str | bool | None:
-    if not value and not isinstance(value, bool):
+    if value is None:
         return
     if isinstance(value, tuple) and not value:
         return
@@ -265,10 +265,7 @@ def add_containerize_command(cli: click.Group) -> None:
         else:
             if len(platform) > 1:
                 logger.warning(
-                    "Multiple `--platform` arguments were found.  "
-                    "Make sure to also use `--push` to push images "
-                    "to a repository or generated images will not be saved. "
-                    "For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
+                    "Multiple `--platform` arguments were found. Make sure to also use `--push` to push images to a repository or generated images will not be saved. For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
                 )
             else:
                 load = True

@@ -353,6 +353,10 @@ class CondaOptions:
     def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
+
+        if self.channels is not None:
+            defaults["channels"] = self.channels + ["defaults"]
+
         return attr.evolve(self, **defaults)
 
 
@@ -501,7 +505,9 @@ OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
 def dict_options_converter(
     options_type: t.Type[OptionsCls],
 ) -> t.Callable[[t.Union[OptionsCls, t.Dict[str, t.Any]]], t.Any]:
-    def _converter(value: t.Union[OptionsCls, t.Dict[str, t.Any]]) -> options_type:
+    def _converter(
+        value: t.Union[OptionsCls, t.Dict[str, t.Any]]
+    ) -> t.Optional[options_type]:
         if isinstance(value, dict):
             return options_type(**value)
         return value

@@ -21,12 +21,7 @@ import click
 
 
 @click.command()
-@click.argument(
-    "bento_identifier",
-    type=click.STRING,
-    required=False,
-    default=".",
-)
+@click.argument("bento_identifier", type=click.STRING, required=False, default=".")
 @click.option(
     "--bind",
     type=click.STRING,

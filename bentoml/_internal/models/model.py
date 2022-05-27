@@ -1,40 +1,41 @@
 from __future__ import annotations
-from collections import UserDict
-from datetime import datetime
-from datetime import timezone
-import importlib
+
 import io
-import logging
-from sys import version_info as pyver
 import typing as t
+import logging
+import importlib
+from sys import version_info as pyver
 from typing import overload
 from typing import TYPE_CHECKING
+from datetime import datetime
+from datetime import timezone
+from collections import UserDict
 
-import attr
-from cattr.gen import override
-from cattr.gen import make_dict_unstructure_fn
-import cloudpickle
 import fs
-from fs.base import FS
+import attr
+import yaml
 import fs.errors
 import fs.mirror
+import cloudpickle
+from fs.base import FS
+from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
-import yaml
 
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
-from ..configuration.containers import BentoMLContainer
-from ..runner import Runner
-from ..runner import Runnable
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..tag import Tag
 from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
+from ..runner import Runner
+from ..runner import Runnable
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ..configuration import BENTOML_VERSION
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..types import AnyType
@@ -459,8 +460,8 @@ bentoml_cattr.register_unstructure_hook(ModelSignature, model_signature_encoder)
 @attr.define(repr=False, eq=False, init=True)
 class ModelInfo:
     tag: Tag
-    name: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
-    version: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
+    name: str
+    version: str
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
     options: ModelOptions

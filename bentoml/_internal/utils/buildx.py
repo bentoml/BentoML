@@ -17,6 +17,16 @@ logger = logging.getLogger(__name__)
 
 DOCKER_BUILDX_CMD = ["docker", "buildx"]
 
+# https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
+UNAME_M_TO_PLATFORM_MAPPING = {
+    "x86_64": "linux/amd64",
+    "arm64": "linux/arm64/v8",
+    "ppc64le": "linux/ppc64le",
+    "s390x": "linux/s390x",
+    "riscv64": "linux/riscv64",
+    "mips64": "linux/mips64le",
+}
+
 
 @functools.lru_cache(maxsize=1)
 def health() -> None:
@@ -25,8 +35,8 @@ def health() -> None:
     """
     cmds = DOCKER_BUILDX_CMD + ["--help"]
     try:
-        output = subprocess.check_output(cmds)
-        assert "buildx" in output.decode("utf-8")
+        output = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
+        assert "--builder string" in output.decode("utf-8")
     except (subprocess.CalledProcessError, AssertionError):
         raise BentoMLException(
             "BentoML requires Docker Buildx to be installed to support multi-arch builds. "
@@ -35,7 +45,8 @@ def health() -> None:
         )
 
 
-def list_builders() -> list[str]:
+def lists() -> list[str]:
+    # Should only be used for testing purposes.
     cmds = DOCKER_BUILDX_CMD + ["ls"]
     proc = subprocess.run(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stream = proc.stdout.decode("utf-8")
@@ -49,7 +60,10 @@ def list_builders() -> list[str]:
     return [s.split(" ")[0] for s in output]
 
 
-def use(builder: str, default: bool = False, global_: bool = False) -> None:
+def use(
+    builder: str, default: bool = False, global_: bool = False
+) -> None:  # pragma: no cover
+    # Should only be used for testing purposes.
     cmds = DOCKER_BUILDX_CMD + ["use"]
     if default:
         cmds.append("--default")
@@ -74,7 +88,6 @@ def create(
 ) -> None:
     """
     Create a new buildx instance.
-
     Args:
         context_or_endpoints: Custom docker context or endpoints (DOCKER_HOSTS).
         buildkitd_flags: Flags to pass to buildkitd.
@@ -101,7 +114,7 @@ def create(
     if name is not None:
         cmds.extend(["--name", name])
 
-    if not platform:
+    if platform is None:
         platform = [
             "linux/amd64",
             "linux/arm64/v8",
@@ -175,6 +188,11 @@ def build(
         for allow_arg in allow:
             cmds.extend(["--allow", allow_arg])
 
+    if platform is not None and len(platform) > 0:
+        if isinstance(platform, str):
+            platform = [platform]
+        cmds += ["--platform", ",".join(platform)]
+
     if build_args is not None:
         args = [f"{k}={v}" for k, v in build_args.items()]
         for arg in args:
@@ -245,11 +263,6 @@ def build(
             args = [f"{k}={v}" for k, v in output.items()]
             cmds += ["--output", ",".join(args)]
 
-    if platform:
-        if isinstance(platform, str):
-            platform = [platform]
-        cmds += ["--platform", ",".join(platform)]
-
     if pull:
         cmds.append("--pull")
 
@@ -283,7 +296,7 @@ def build(
 
     cmds.append(str(context_path))
 
-    logger.debug("docker buildx build cmd: %s", cmds)
+    logger.debug(f"docker buildx build cmd: `{cmds}`")
 
     run_docker_cmd(cmds, env=subprocess_env, cwd=cwd)
 
@@ -298,6 +311,4 @@ def run_docker_cmd(
     if env is not None:
         subprocess_env.update(env)
 
-    full_cmd = list(map(str, cmds))
-
-    subprocess.check_output(full_cmd, env=subprocess_env, cwd=cwd)
+    subprocess.check_output(list(map(str, cmds)), env=subprocess_env, cwd=cwd)

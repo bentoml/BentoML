@@ -1,0 +1,20 @@
+{% extends "base.j2" %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+{{ super() }}
+USER root
+
+SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
+
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
+    yum upgrade -y \
+    && yum install -y ca-certificates curl gcc gcc-c++ make bash shadow-utils \
+    && yum -y clean all
+
+{% if __options__system_packages is not none %}
+# Install user-defined system package
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
+    yum install -y {{ __options__system_packages | join(' ') }} \
+    && yum -y clean all
+{% endif -%}
+
+{% endblock %}

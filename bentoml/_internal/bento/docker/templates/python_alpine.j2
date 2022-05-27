@@ -1,0 +1,6 @@
+{% extends "base_alpine.j2" %}
+{% block SETUP_BENTO_ENTRYPOINT %}
+{{ super() }}
+
+RUN rm -rf /var/cache/apk/*
+{% endblock %}

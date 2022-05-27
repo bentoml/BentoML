@@ -352,7 +352,7 @@ def containerize(
     allow: t.List[str] | None = None,
     build_args: dict[str, str] | None = None,
     build_context: dict[str, str] | None = None,
-    builder: str = "bentoml-builder",
+    builder: str | None = None,
     cache_from: str | t.List[str] | dict[str, str] | None = None,
     cache_to: str | t.List[str] | dict[str, str] | None = None,
     cgroup_parent: str | None = None,
@@ -384,17 +384,6 @@ def containerize(
 
     # run health check whether buildx is install locally
     buildx.health()
-
-    # create a bentoml builder if not exists
-    if builder not in buildx.list_builders():
-        buildx.create(
-            env,
-            driver_opt={"image": "moby/buildkit:master"},
-            use=True,
-            name=builder,
-        )
-    else:
-        buildx.use(builder)
 
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
@@ -439,6 +428,10 @@ def containerize(
         )
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
+        if platform != "linux/amd64":
+            logger.debug(
+                f"""If you run into the following error: "failed to solve: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed". This means Docker doesn't have context of your build platform {platform}. By default BentoML will set target build platform to the current machine platform via `uname -m`. Try again by specifying to build x86_64 (amd64) platform: bentoml containerize {str(bento.tag)} --platform linux/amd64"""
+            )
         return False
     else:
         logger.info(f'Successfully built docker image "{docker_image_tag}"')

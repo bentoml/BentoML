@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 else:
     PathType = t.Union[str, os.PathLike]
 
-MetadataType = t.Union[
+MetadataType: t.TypeAlias = t.Union[
     str,
     bytes,
     bool,

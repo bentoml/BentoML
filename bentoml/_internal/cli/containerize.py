@@ -8,7 +8,20 @@ import click
 
 from bentoml.bentos import containerize as containerize_bento
 
+from ..utils import kwargs_transformers
 from ..utils.docker import validate_tag
+
+logger = logging.getLogger("bentoml")
+
+
+def containerize_transformer(
+    value: t.Iterable[str] | str | bool | None,
+) -> t.Iterable[str] | str | bool | None:
+    if value is None:
+        return
+    if isinstance(value, tuple) and not value:
+        return
+    return value
 
 
 def add_containerize_command(cli: click.Group) -> None:
@@ -41,7 +54,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--builder",
         type=click.STRING,
-        default="bentoml-builder",
+        default=None,
         help="Override the configured builder instance.",
     )
     @click.option(
@@ -72,7 +85,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--load",
         is_flag=True,
-        default=True,
+        default=False,
         help="Shorthand for '--output=type=docker'.",
     )
     @click.option(
@@ -147,6 +160,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
     )
+    @kwargs_transformers(transformer=containerize_transformer)
     def containerize(  # type: ignore
         bento_tag: str,
         docker_image_tag: str,
@@ -246,6 +260,16 @@ def add_containerize_command(cli: click.Group) -> None:
         else:
             output_ = None
 
+        if not platform:
+            load = True
+        else:
+            if len(platform) > 1:
+                logger.warning(
+                    "Multiple `--platform` arguments were found. Make sure to also use `--push` to push images to a repository or generated images will not be saved. For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
+                )
+            else:
+                load = True
+
         exit_code = not containerize_bento(
             bento_tag,
             docker_image_tag=docker_image_tag,
@@ -254,8 +278,8 @@ def add_containerize_command(cli: click.Group) -> None:
             build_args=build_args,
             build_context=build_context_,
             builder=builder,
-            cache_from=list(cache_from),
-            cache_to=list(cache_to),
+            cache_from=cache_from,
+            cache_to=cache_to,
             cgroup_parent=cgroup_parent,
             iidfile=iidfile,
             labels=labels,
@@ -263,14 +287,14 @@ def add_containerize_command(cli: click.Group) -> None:
             metadata_file=metadata_file,
             network=network,
             no_cache=no_cache,
-            no_cache_filter=list(no_cache_filter),
+            no_cache_filter=no_cache_filter,
             output=output_,  # type: ignore
             platform=platform,
             progress=progress,
             pull=pull,
             push=push,
-            quiet=logging.getLogger("bentoml").getEffectiveLevel() == logging.ERROR,
-            secrets=list(secret),
+            quiet=logger.getEffectiveLevel() == logging.ERROR,
+            secrets=secret,
             shm_size=shm_size,
             ssh=ssh,
             target=target,

@@ -1,0 +1,19 @@
+{% extends "base.j2" %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+{{ super() }}
+
+# Install helpers
+RUN --mount=type=cache,from=cached,target=/var/cache/apk \
+    apk add --update bash gcc libc-dev shadow musl-dev build-base \
+		linux-headers g++
+
+ENV ENV /root/.bashrc
+
+SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
+
+{% if __options__system_packages is not none %}
+# Install user-defined system package
+RUN --mount=type=cache,from=cached,target=/var/cache/apk \
+    apk add --update {{ __options__system_packages | join(' ') }}
+{% endif -%}
+{% endblock %}

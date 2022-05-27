@@ -137,16 +137,19 @@ def test_pytorch_runner_with_partial_kwargs(bias_pair):
 def test_pytorch_container(batch_axis: int):
     one_batch = torch.arange(6).reshape(2, 3)
     batch_list = [one_batch, one_batch + 1]
-    merged_batch = torch.stack(batch_list, dim=batch_axis)
+    merged_batch = torch.cat(batch_list, dim=batch_axis)
 
     batches, indices = PyTorchTensorContainer.batches_to_batch(
         batch_list,
         batch_dim=batch_axis,
     )
+    assert batches.shape == merged_batch.shape
     assert (batches == merged_batch).all()
     assert (
         PyTorchTensorContainer.batch_to_batches(
-            merged_batch, indices=indices, batch_dim=batch_axis
+            merged_batch,
+            indices=indices,
+            batch_dim=batch_axis,
         )[0]
         == one_batch
     ).all()

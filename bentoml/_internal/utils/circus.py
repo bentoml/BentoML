@@ -95,12 +95,8 @@ class BentoChangeReloader(CircusPlugin):
     def look_after(self):
         if self.file_watcher.is_file_changed():
             logger.info("Restarting...")
-            self.call("restart", name="*")
+            self.call("restart", name="*")  # type: ignore
             self.file_watcher.reset()
-
-    @final
-    def call(self, command: t.Any, **props: t.Any) -> None:
-        ...
 
     def handle_init(self):
         from tornado import ioloop

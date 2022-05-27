@@ -20,7 +20,7 @@ from .common.pytorch import torch
 _PL_IMPORT_ERROR = f"""\
 `torch` is required in order to use module `{__name__}`\n
 Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
-Then run `pip install pytorch_lightning`
+Then run `pip install torch`
 """
 
 
@@ -30,7 +30,7 @@ except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 
 logger = logging.getLogger(__name__)
-MODULE_NAME = "bentoml.pytorch_lightning"
+MODULE_NAME = "bentoml.torchscript"
 MODEL_FILENAME = "savd_model.pt"
 
 
@@ -66,7 +66,7 @@ def load_model(
     .. code-block:: python
 
         import bentoml
-        lit = bentoml.pytorch_lightning.load('lit_classifier:latest', device_id="cuda:0")
+        lit = bentoml.torchscript.load_model('lit_classifier:latest', device_id="cuda:0")
     """
     if isinstance(bentoml_model, (str, Tag)):
         bentoml_model = get(bentoml_model)

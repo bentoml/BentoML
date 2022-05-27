@@ -56,7 +56,7 @@ def load_model(
     .. code-block:: python
 
         import bentoml
-        model = bentoml.pytorch.load('lit_classifier:latest', device_id="cuda:0")
+        model = bentoml.pytorch.load_model('lit_classifier:latest', device_id="cuda:0")
     """
     if isinstance(bentoml_model, (str, Tag)):
         bentoml_model = get(bentoml_model)

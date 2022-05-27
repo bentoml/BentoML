@@ -10,7 +10,7 @@ from .torchscript import load_model
 from .torchscript import save_model as script_save_model
 from .torchscript import get_runnable
 
-_PL_IMPORT_ERROR = f"""\
+_IMPORT_ERROR = f"""\
 `pytorch_lightning` and `torch` is required in order to use module `{__name__}`\n
 Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
 Then run `pip install pytorch_lightning`
@@ -19,7 +19,7 @@ Then run `pip install pytorch_lightning`
 try:
     import pytorch_lightning as pl
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException(_PL_IMPORT_ERROR)
+    raise MissingDependencyException(_IMPORT_ERROR)
 
 MODULE_NAME = "bentoml.pytorch_lightning"
 

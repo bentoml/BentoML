@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from pygments.lexers import PythonLexer
-
 # Adding BentoML source directory for accessing BentoML version
 import bentoml
 
@@ -21,6 +19,7 @@ master_doc = "index"
 
 # Sphinx extensions
 extensions = [
+    "sphinxext.opengraph",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
@@ -29,7 +28,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx_click.ext",
     "sphinx_copybutton",
-    "sphinx_panels",
+    "sphinx_design",
     "sphinx_issues",
     "sphinxcontrib.spelling",
     "myst_parser",
@@ -43,9 +42,14 @@ napoleon_include_special_with_doc = False
 
 autosectionlabel_prefix_document = True
 
+ogp_site_url = "http://docs.bentoml.org"
+ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-readme-header.jpeg"
+ogp_site_name = "BentoML Documentation"
+ogp_use_first_image = True
+
 issues_default_group_project = "bentoml/bentoml"
 
-todo_include_todos = False  # Hide Todo items from the generated doc
+todo_include_todos = True
 
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
@@ -55,6 +59,9 @@ templates_path = ["_templates"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "zenburn"
+pygments_dark_style = "monokai"
+
+myst_enable_extensions = ["colon_fence"]
 
 # Remove the prompt when copying examples
 copybutton_prompt_text = r">>> |\.\.\.|» |$ |% "
@@ -64,28 +71,33 @@ copybutton_prompt_is_regexp = True
 html_theme = "furo"
 html_theme_options = {
     "light_css_variables": {
-        # #c9378a
-        # #44a4c6
         "color-brand-primary": "#44a4c6 ",
         "color-brand-content": "#44a4c6 ",
-        "font-stack": "Arial, sans-serif",
-        "font-stack--monospace": "Courier, monospace",
     },
     "dark_css_variables": {
         "color-brand-primary": "#c9378a ",
         "color-brand-content": "#c9378a ",
-        "font-stack": "Arial, sans-serif",
-        "font-stack--monospace": "Courier, monospace",
     },
     "source_repository": "https://github.com/bentoml/bentoml/",
     "source_branch": "main",
     "source_directory": "docs/source/",
+    "footer_icons": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/bentoml/bentoml",
+            "html": " 🍱 ",
+            "class": "",
+        },
+    ],
 }
 
 html_title = "BentoML"
 html_logo = "_static/img/logo.svg"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
+html_js_files = ["js/custom.js"]
+html_show_sphinx = False
+html_favicon = "_static/img/favicon-32x32.ico"
 
 # Private dictionary for spell checker
 spelling_word_list_filename = ["bentoml_wordlist.txt"]
@@ -151,31 +163,3 @@ autodoc_mock_imports = [
     "transformers.file_utils",
     "xgboost",
 ]
-
-# -- Custom lexers
-class TensorflowV1Lexer(PythonLexer):
-    name = "Tensorflow V1"
-    aliases = ["tensorflow_v1"]
-
-
-class TensorflowV2Lexer(PythonLexer):
-    name = "Tensorflow V2"
-    aliases = ["tensorflow_v2"]
-
-
-class KerasTensorflowV1Lexer(PythonLexer):
-    name = "Keras (Tensorflow V1 backend)"
-    aliases = ["keras_v1"]
-
-
-class KerasTensorflowV2Lexer(PythonLexer):
-    name = "Keras (Tensorflow V2 backend)"
-    aliases = ["keras_v2"]
-
-
-def setup(app):
-    # Adding lexers for rendering different code version
-    app.add_lexer("keras_v1", KerasTensorflowV1Lexer)
-    app.add_lexer("keras_v2", KerasTensorflowV2Lexer)
-    app.add_lexer("tensorflow_v1", TensorflowV1Lexer)
-    app.add_lexer("tensorflow_v2", TensorflowV2Lexer)

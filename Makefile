@@ -64,26 +64,19 @@ install-docs-deps: ## Install documentation dependencies
 
 # Docs
 watch-docs: install-docs-deps ## Build and watch documentation
-	@./scripts/watch_docs.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
+	sphinx-autobuild docs/source docs/build/html
 spellcheck-docs: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
-install-watch-deps: ## Install MacOS dependencies for watching docs
-	brew install fswatch
 install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
 	pip install sphinxcontrib-spelling
 else ifneq ("$(wildcard $(/etc/debian_version))","")
-install-watch-deps: ## Install Debian-based OS dependencies for watching docs
-	sudo apt install inotify-tools
 install-spellchecker-deps: ## Install Debian-based dependencies for spellchecker
 	sudo apt install libenchant-dev
 else
-install-watch-deps: ## Inform users to install inotify-tools depending on their distros
-	@echo Make sure to install inotify-tools from your distros package manager
-	@exit 1
 install-spellchecker-deps: ## Inform users to install enchant depending on their distros
 	@echo Make sure to install enchant from your distros package manager
 	@exit 1

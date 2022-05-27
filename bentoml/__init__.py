@@ -18,13 +18,13 @@ from .bentos import get
 from .bentos import list  # pylint: disable=W0622
 from .bentos import pull
 from .bentos import push
-from .bentos import build
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento
 
 # BentoML built-in types
 from ._internal.tag import Tag
+from ._internal.bento import Bento
 from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner import Runnable
@@ -111,10 +111,10 @@ __all__ = [
     "delete",
     "import_bento",
     "export_bento",
-    "build",
     "load",
     "push",
     "pull",
+    "Bento",
     # Framework specific modules
     "catboost",
     "detectron",

@@ -1,14 +1,39 @@
+/* adjust logo image position in sidebar */
 .sidebar-logo-container {
     margin: 23px 0 14px;
 }
-
 .sidebar-logo-container img.sidebar-logo {
-    max-width: 100px;
+    max-width: 60px;
 }
 
-
-@media screen and (max-width: 600px) {
+/* minimize logo image on mobile view */
+@media screen and (max-width: 1070px) {
     .sidebar-logo-container img.sidebar-logo {
-        display: none;
+        max-width: 30px;
     }
+}
+
+/* change the color of inactive labels in a :tabbed: view */
+:root {
+    --tabs-color-label-inactive: rgb(149 149 149);
+}
+
+.sd-card-body {
+    background-color: var(--color-background-secondary);
+}
+
+/* lighter footer text color */
+.bottom-of-page .left-details {
+    color: #c1c1c1;
+}
+.bottom-of-page .left-details a {
+    color: #c1c1c1;
+    text-decoration: None;
+}
+body[data-theme="dark"] .bottom-of-page .left-details {
+    color: #81868d;
+}
+body[data-theme="dark"] .bottom-of-page .left-details a {
+    color: #81868d;
+    text-decoration: None;
 }

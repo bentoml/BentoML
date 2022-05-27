@@ -2,310 +2,283 @@
 Deploying Bento
 ===============
 
-BentoML allows you to store models and bentos in local as well as remote repositories. Tools are also provided to easily
-manage the lifecycle of these artifacts. This documentation details the cli tools for both local and remote scenarios
 
-Managing Models Locally
------------------------
+Deployment Overview
+-------------------
 
-Creating Models
-^^^^^^^^^^^^^^^
+The three most common deployment options with BentoML are:
 
-Recall the :ref:`Getting Started <getting-started-page>` guide, models are saved using the framework 
-specific `save()` function. In the example, we used the `save()` function from the `sklearn` module for 
-the Scikit Learn framework.
+- 🐳 Generate container images from Bento for custom docker deployment
+- `🦄️ Yatai <https://github.com/bentoml/Yatai>`_: Model Deployment at scale on Kubernetes
+- `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_: Fast model deployment on any cloud platform
 
-.. code-block:: python
 
-    import bentoml.sklearn
-    bentoml.sklearn.save("iris_classifier_model", clf)
+Containerize Bentos
+-------------------
 
-Models can also be imported from support framework specific registries. In the example below, a model 
-is imported from the MLFlow Model Registry.
-
-.. code-block:: python
-
-    import bentoml.mlflow
-    bentoml.mlflow.import_from_uri("mlflow_model", uri=mlflow_registry_uri)
-
-Saved and imported models are added to the local file system based model store located in the 
-`$HOME/bentoml/models` directory by default. In order to see what types of model creation is supported per framework, please
-visit our :ref:`Frameworks <frameworks-page>` section.
-
-Listing Models
-^^^^^^^^^^^^^^
-
-To list all the models created, use either the `list()` Python function in the `bentoml.models` 
-modules or the `models list` CLI command:
-
-.. tabs::
-
-    .. code-tab:: python
-
-        import bentoml.models
-
-        bentoml.models.list() # get a list of all models
-        # [
-        #   {
-        #     tag: Tag("iris_classifier_model", "vkorlosfifi6zhqqvtpeqaare"),
-        #     framework: "SKLearn",
-        #     created: 2021/11/14 03:55:11
-        #   },
-        #    {
-        #     tag: Tag("iris_classifier_model", "vlqdohsfifi6zhqqvtpeqaare"),
-        #     framework: "SKLearn",
-        #     created: 2021/11/14 03:55:15
-        #   },
-        #   {
-        #     tag: Tag("iris_classifier_model", "vmiqwpcfifi6zhqqvtpeqaare"),
-        #     framework: "SKLearn",
-        #     created: 2021/11/14 03:55:25
-        #   },
-        #   {
-        #     tag: Tag("fraud_detection_model", "5v4pdccfifi6zhqqvtpeqaare"),
-        #     framework: "PyTorch",
-        #     created: 2021/11/14 03:57:01
-        #   },
-        #   {
-        #     tag: Tag("fraud_detection_model", "5xorursfifi6zhqqvtpeqaare"),
-        #     framework: "PyTorch",
-        #     created: 2021/11/14 03:57:45
-        #   },
-        # ]
-        bentoml.models.list("iris_classifier_model") # get a list of all versions of a specific model
-        bentoml.models.list(Tag("iris_classifier_model", None))
-        # [
-        #   {
-        #     tag: Tag("iris_classifier_model", "vkorlosfifi6zhqqvtpeqaare"),
-        #     framework: "SKLearn",
-        #     created: 2021/11/14 03:55:11
-        #   },
-        #    {
-        #     tag: Tag("iris_classifier_model", "vlqdohsfifi6zhqqvtpeqaare"),
-        #     framework: "SKLearn",
-        #     created: 2021/11/14 03:55:15
-        #   },
-        #   {
-        #     tag: Tag("iris_classifier_model", "vmiqwpcfifi6zhqqvtpeqaare"),
-        #     framework: "SKLearn",
-        #     created: 2021/11/14 03:55:25
-        #   },
-        # ]
-
-    .. code-tab:: bash
-
-        > bentoml models list # list all models
-        MODEL                 FRAMEWORK   VERSION                    CREATED
-        iris_classifier_model SKLearn     vkorlosfifi6zhqqvtpeqaare  2021/11/14 03:55:11
-        iris_classifier_model SKLearn     vlqdohsfifi6zhqqvtpeqaare  2021/11/14 03:55:15
-        iris_classifier_model SKLearn     vmiqwpcfifi6zhqqvtpeqaare  2021/11/14 03:55:25
-        fraud_detection_model PyTorch     5v4pdccfifi6zhqqvtpeqaare  2021/11/14 03:57:01
-        fraud_detection_model PyTorch     5xorursfifi6zhqqvtpeqaare  2021/11/14 03:57:45
-        > bentoml models list iris_classifier # list all version of my-model
-        MODEL           FRAMEWORK   VERSION          CREATED
-        iris_classifier_model PyTorch     vkorlosfifi6zhqqvtpeqaare  2021/11/14 03:55:11
-        iris_classifier_model PyTorch     vlqdohsfifi6zhqqvtpeqaare  2021/11/14 03:55:15
-        iris_classifier_model SKLearn     vmiqwpcfifi6zhqqvtpeqaare  2021/11/14 03:55:25
-
-To get model information, use either the `get()` function under the `bentoml.models` module or 
-the models get CLI command.
-
-.. tabs::
-
-    .. code-tab:: python
-
-        import bentoml.models
-
-        bentoml.models.get("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare")
-        bentoml.models.get(Tag("iris_classifier_model", "vmiqwpcfifi6zhqqvtpeqaare"))
-        # Model(
-        #   tag: Tag("iris_classifier_model", "vmiqwpcfifi6zhqqvtpeqaare"),
-        #   framework: "SKLearn",
-        #   created: 2021/11/14 03:55:25
-        #   description: "The iris classifier model"
-        #   path: "/user/home/bentoml/models/iris_classifier_model/vmiqwpcfifi6zhqqvtpeqaare"
-        # )
-    
-    .. code-tab:: bash
-
-        > bentoml models get iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
-        TAG         iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
-        FRAMEWORK   SKLearn
-        CREATED     2021/9/21 10:07:45
-        DESCRIPTION The iris classifier model
-        PATH        /user/home/bentoml/models/iris_classifier_model/vmiqwpcfifi6zhqqvtpeqaare
-
-Deleting Models
-^^^^^^^^^^^^^^^
-
-To delete models in the model store, use either the `delete()` function under the `bentoml.models` 
-module or the `models delete` CLI command.
-
-.. tabs::
-
-    .. code-tab:: python
-
-        import bentoml.models
-
-        bentoml.models.delete("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", skip_confirm=True)
-    
-    .. code-tab:: bash
-
-        > bentoml models delete iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
-
-Managing Bentos Locally
------------------------
-
-Creating Bentos
-^^^^^^^^^^^^^^^
-
-Bentos are created through the bento build process. Recall the :ref:`Getting Started <getting-started-page>` 
-guide, bentos are built with the `build` CLI command. See :ref:`Building Bentos <building-bentos-page>` 
-for more details. Built bentos are added to the local file system based bento store located under 
-the `$HOME/bentoml/bentos` by default.
-
-.. code-block:: bash
-
-    > bentoml build ./bento.py:svc
-
-Listing Bentos
-^^^^^^^^^^^^^^
-
-To view bentos in the bento store, use the `list` CLI command.
-
-.. code-block:: bash
-
-    > bentoml list
-    BENTO                   VERSION                    LABELS      CREATED
-    iris_classifier_service v5mgcacfgzi6zdz7vtpeqaare  iris,prod   2021/09/19 10:15:50
-
-Deleting Bentos
-^^^^^^^^^^^^^^^
-
-To delete bentos in the bento store, use  the `delete` CLI command.
-
-.. code-block:: bash
-    
-    > bentoml delete iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare
-
-Managing Models and Bentos Remotely with Yatai
-----------------------------------------------
-
-Yatai is BentoML's end to end deployment and monitoring platform. It also functions as a remote model and bento repository. To connect the CLI to a remote `Yatai <yatai-service-page>`, use the `bentoml login` command.
-
-.. tabs::
-
-    .. code-tab:: bash
-
-        > bentoml login <YATAI_URL>
-
-
-Once logged in, you'll be able to use the following commands.
-
-Pushing Models
-^^^^^^^^^^^^^^
-
-Once you are happy with a model and ready to share with other collaborators, you can upload it to a
-remote `Yatai <yatai-service-page>` model store with the `push()` function under the `bentoml.models`
-module or the `models push` CLI command.
-
-.. tabs::
-
-    .. code-tab:: python
-
-        import bentoml.models
-
-        bentoml.models.push("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", skip_confirm=True)
-
-    .. code-tab:: bash
-
-        > bentoml models push iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
-
-Pulling Models
-^^^^^^^^^^^^^^
-
-Previously pushed models can be downloaded from `Yatai <yatai-service-page>` and saved local model
-store with the `pull()` function under the `bentoml.models` module or the `models pull` CLI command.
-
-.. tabs::
-
-    .. code-tab:: python
-
-        import bentoml.models
-
-        bentoml.modles.pull("iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare", url=yatai_url)
-
-    .. code-tab:: bash
-
-        > bentoml models pull iris_classifier_model:vmiqwpcfifi6zhqqvtpeqaare
-
-Pushing Bentos
-^^^^^^^^^^^^^^
-
-To upload bento in the local file system store to a remote `Yatai <yatai-service-page>` bento store
-for collaboration and deployment, use the `push` CLI command.
-
-.. code-block:: bash
-
-    > bentoml push iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare
-
-Pulling Bentos
-^^^^^^^^^^^^^^
-
-To download a bento from a remote `Yatai <yatai-service-page>` bento store to the local file system
-bento store for troubleshooting, use the `pull` CLI command.
-
-.. code-block:: bash
-
-    > bentoml pull iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare
-
-
-Containerize Bentos as Docker Images
-************************************
-
-Containerizing bentos as Docker images allows users to easily distribute and deploy bentos.
-Once services are built as bentos and saved to the bento store, we can containerize saved bentos
-with the CLI command `bentoml containerize`.
+Containerizing bentos as Docker images allows users to easily distribute and deploy
+bentos. Once services are built as bentos and saved to the bento store, we can
+containerize saved bentos with the CLI command `bentoml containerize`.
 
 Start the Docker engine. Verify using `docker info`.
 
-.. code-block:: bash
+.. code:: bash
 
     > docker info
 
-Run `bentoml list` to view available bentos in the store.
+Run :code:`bentoml list` to view available bentos in the store.
 
-.. code-block:: bash
+.. code:: bash
 
     > bentoml list
-    BENTO                   VERSION                    LABELS      CREATED
-    iris_classifier_service v5mgcacfgzi6zdz7vtpeqaare  iris,prod   2021/09/19 10:15:50
 
-Run `bentoml containerize` to start the containerization process.
+    Tag                               Size        Creation Time        Path
+    iris_classifier:ejwnswg5kw6qnuqj  803.01 KiB  2022-05-27 00:37:08  ~/bentoml/bentos/iris_classifier/ejwnswg5kw6qnuqj
+    iris_classifier:h4g6jmw5kc4ixuqj  644.45 KiB  2022-05-27 00:02:08  ~/bentoml/bentos/iris_classifier/h4g6jmw5kc4ixuqj
 
-.. code-block:: bash
 
-    > bentoml containerize iris_classifier_service:latest
-    Containerizing iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare with docker daemon from local environment
-    ✓ Build container image: iris_classifier_service:v5mgcacfgzi6zdz7vtpeqaare
+Run :code:`bentoml containerize` to start the containerization process.
+
+.. code:: bash
+
+    > bentoml containerize iris_classifier:latest                                                                                                                                             02:10:47
+
+    INFO [cli] Building docker image for Bento(tag="iris_classifier:ejwnswg5kw6qnuqj")...
+    [+] Building 21.2s (20/20) FINISHED
+    ...
+    INFO [cli] Successfully built docker image "iris_classifier:ejwnswg5kw6qnuqj"
+
 
 Built Docker images are stored to the local Docker repository.
 
-.. code-block:: bash
+.. code:: bash
 
     > docker images
-    REPOSITORY               TAG               IMAGE ID       CREATED         SIZE
-    IrisClassifierService    20210919_UN30CA   669e3ce35013   1 minutes ago   1.21GB
 
-We can run the images with `docker run`.
+    REPOSITORY          TAG                 IMAGE ID       CREATED         SIZE
+    iris_classifier     ejwnswg5kw6qnuqj    669e3ce35013   1 minutes ago   1.12GB
 
-.. code-block:: bash
+We can run the generated docker image with :code:`docker run` commnad:
 
-    > docker run IrisClassifierService:20210919_UN30CA
-    [INFO] Starting BentoML API server in development mode with auto-reload enabled
-    [INFO] Serving BentoML Service "IrisClassifierService" defined in "bento.py"
-    [INFO] API Server running on http://0.0.0.0:3000
+.. code:: bash
+
+    > docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj
 
 .. todo::
 
-    Add a further reading section
+    - Add sample code for working with GPU and --gpu flag
+    - Add a further reading section
+    - Explain buildx requirement
+    - Explain multi-platform build
+
+
+Deploy with Yatai
+-----------------
+
+Yatai helps ML teams to deploy large scale model serving workloads on Kubernetes. It
+standardizes BentoML deployment on Kubernetes, provides UI and APis for managing all
+your ML models and deployments in one place, and enables advanced GitOps and CI/CD
+workflows.
+
+Yatai is Kubernetes native, integrates well with other cloud native tools in the K8s
+eco-system.
+
+To get started, get an API token from Yatai Web UI and login from your :code:`bentoml`
+CLI command:
+
+.. code:: bash
+
+    bentoml yatai login --api-token {YOUR_TOKEN_GOES_HERE} --endpoint http://yatai.127.0.0.1.sslip.io
+
+Push your local Bentos to yatai:
+
+.. code:: python
+
+    bentoml push iris_classifier:latest
+
+.. tip::
+    Yatai will automatically start building container images for a new Bento pushed.
+
+
+Deploy via Web UI
+^^^^^^^^^^^^^^^^^
+
+Although not always recommended for production workloads, Yatai offers an easy-to-use
+web UI for quickly creating deployments. This is convenient for data scientists to test
+out Bento deployments end-to-end from a development or testing environment:
+
+.. image:: /_static/img/yatai-deployment-creation.png
+    :alt: Yatai Deployment creation UI
+
+The web UI is also very helpful for viewing system status, monitoring services, and
+debugging issues.
+
+.. image:: /_static/img/yatai-deployment-details.png
+    :alt: Yatai Deployment Details UI
+
+Commonly we recommend using APIs or Kubernetes CRD objects to automate the deployment
+pipeline for production workloads.
+
+Deploy via API
+^^^^^^^^^^^^^^
+
+Yatai's REST API specification can be found under the :code:`/swagger` endpoint. If you
+have Yatai deployed locally with minikube, visit:
+http://yatai.127.0.0.1.sslip.io/swagger/. The Swagger API spec covers all core Yatai
+functionalities ranging from model/bento management, cluster management to deployment
+automation.
+
+.. note::
+
+    Python APIs for creating deployment on Yatai is on our roadmap. See :issue:`2405`.
+    Current proposal looks like this:
+
+    .. code:: python
+
+        yatai_client = bentoml.YataiClient.from_env()
+
+        bento = yatai_client.get_bento('my_svc:v1')
+        assert bento and bento.status.is_ready()
+
+        yatai_client.create_deployment('my_deployment', bento.tag, ...)
+
+        # For updating a deployment:
+        yatai_client.update_deployment('my_deployment', bento.tag)
+
+        # check deployment_info.status
+        deployment_info = yatai_client.get_deployment('my_deployment')
+
+
+Deploy via kubectl and CRD
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For DevOps managing production model serving workloads along with other kubernetes
+resources, the best option is to use :code:`kubectl` and directly create
+:code:`BentoDeployment` objects in the cluster, which will be handled by the Yatai
+deployment CRD controller.
+
+.. code:: yaml
+
+    # my_deployment.yaml
+    apiVersion: serving.yatai.ai/v1alpha2
+    kind: BentoDeployment
+    metadata:
+      name: demo
+    spec:
+      bento_tag: iris_classifier:3oevmqfvnkvwvuqj
+      resources:
+        limits:
+          cpu: 1000m
+        requests:
+          cpu: 500m
+
+.. code:: bash
+
+    kubectl apply -f my_deployment.yaml
+
+
+
+Deploy with bentoctl
+--------------------
+
+:code:`bentoctl` is a CLI tool for deploying Bentos to run on any cloud platform. It
+supports all major cloud providers, including AWS, Azure, Google Cloud, and many more.
+
+Underneath, :code:`bentoctl` is powered by Terraform. :code:`bentoctl` adds required
+modifications to Bento or service configurations, and then generate terraform templates
+for the target deploy platform for easy deployment.
+
+The :code:`bentoctl` deployment workflow is optimized for CI/CD and GitOps. It is highly
+customizable, users can fine-tune all configurations provided by the cloud platform. It
+is also extensible, for users to define additional terraform templates to be attached
+to a deployment.
+
+Quick Tour
+^^^^^^^^^^
+
+Install aws-lambda plugin for :code:`bentoctl` as an example:
+
+.. code:: bash
+
+    bentoctl operator install aws-lambda
+
+Initialize a bentoctl project. This enters an interactive mode asking users for related
+deployment configurations:
+
+.. code:: bash
+
+    > bentoctl init
+
+    Bentoctl Interactive Deployment Config Builder
+    ...
+
+    deployment config generated to: deployment_config.yaml
+    ✨ generated template files.
+      - bentoctl.tfvars
+      - main.tf
+
+
+Deployment config will be saved to :code:`./deployment_config.yaml`:
+
+.. code:: yaml
+
+    api_version: v1
+    name: quickstart
+    operator:
+        name: aws-lambda
+    template: terraform
+    spec:
+        region: us-west-1
+        timeout: 10
+        memory_size: 512
+
+Now, we are ready to build the deployable artifacts required for this deployment. In
+most cases, this step will product a new docker image specific to the target deployment
+configuration:
+
+
+.. code:: bash
+
+    bentoctl build -b iris_classifier:btzv5wfv665trhcu -f ./deployment_config.yaml
+
+Next step, use :code:`terraform` CLI command to apply the generated deployment configs
+to AWS. This will require user setting up AWS credentials on the environment.
+
+
+.. code:: bash
+
+    > terraform init
+    > terraform apply -var-file=bentoctl.tfvars --auto-approve
+
+    ...
+    base_url = "https://ka8h2p2yfh.execute-api.us-west-1.amazonaws.com/"
+    function_name = "quickstart-function"
+    image_tag = "192023623294.dkr.ecr.us-west-1.amazonaws.com/quickstart:btzv5wfv665trhcu"
+
+
+Testing the endpoint deployed:
+
+.. code:: bash
+    URL=$(terraform output -json | jq -r .base_url.value)classify
+    curl -i \
+        --header "Content-Type: application/json" \
+        --request POST \
+        --data '[5.1, 3.5, 1.4, 0.2]' \
+        $URL
+
+
+Supported Cloud Platforms
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- AWS Lambda: https://github.com/bentoml/aws-lambda-deploy
+- AWS SageMaker: https://github.com/bentoml/aws-sagemaker-deploy
+- AWS EC2: https://github.com/bentoml/aws-ec2-deploy
+- Google Cloud Run: https://github.com/bentoml/google-cloud-run-deploy
+- Google Compute Engine: https://github.com/bentoml/google-compute-engine-deploy
+- Azure Functions: https://github.com/bentoml/azure-functions-deploy
+- Azure Container Instances: https://github.com/bentoml/azure-container-instances-deploy
+- Heroku: https://github.com/bentoml/heroku-deploy
+
+.. TODO::
+    Explain limitations of each platform, e.g. GPU support
+    Explain how to customize the terraform workflow

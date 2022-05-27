@@ -281,6 +281,39 @@ def build(
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
 
+    Example:
+
+        .. code-block::
+            import bentoml
+
+            bentoml.build(
+                service="fraud_detector.py:svc",
+                version="any_version_label",  # override default version generator
+                description=open("README.md").read(),
+                include=['*'],
+                exclude=[], # files to exclude can also be specified with a .bentoignore file
+                labels={
+                    "foo": "bar",
+                    "team": "abc"
+                },
+                python=dict(
+                    packages=["tensorflow", "numpy"],
+                    # requirements_txt="./requirements.txt",
+                    index_url="http://<api token>:@mycompany.com/pypi/simple",
+                    trusted_host=["mycompany.com"],
+                    find_links=['thirdparty..'],
+                    extra_index_url=["..."],
+                    pip_args="ANY ADDITIONAL PIP INSTALL ARGS",
+                    wheels=["./wheels/*"],
+                    lock_packages=True,
+                ),
+                docker=dict(
+                    distro="amazonlinux2",
+                    setup_script="setup_docker_container.sh",
+                    python_version="3.8",
+                ),
+            )
+
     """  # noqa: LN001
     build_config = BentoBuildConfig(
         service=service,

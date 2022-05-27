@@ -2,15 +2,37 @@
 Customize BentoServer
 =====================
 
-TODO
 
+BentoML supports mounting a variety of different types of endpoints alongside it’s
+standard prediction endpoints. Both WSGI and ASGI python web applications are supported.
+So whether you already have code written in these frameworks or if it’s just a framework
+that you know, we support the additions.
 
-.. _custom-endpoints-page:
+Custom ASGI Middleware
+----------------------
 
-Custom HTTP endpoints
-=====================
+The :code:`bentoml.Service`'s :code:`add_asgi_middleware` API supports mounting any
+`ASGI middleware <https://asgi.readthedocs.io/en/latest/specs/main.html>`_ to the
+BentoServer endpoints.
 
-BentoML supports mounting a variety of different types of endpoints alongside it’s standard prediction endpoints. Both WSGI and ASGI python web applications are supported. So whether you already have code written in these frameworks or if it’s just a framework that you know, we support the additions.
+Users can implement their own ASGI middleware class, but before you do so, make sure
+to checkout the existing middleware built by the Python community, such as:
+
+- FastAPI middlewares: https://fastapi.tiangolo.com/advanced/middleware/
+- Starlette middlewares: https://www.starlette.io/middleware/
+
+For example, you can add do:
+
+.. code::
+
+    from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+    svc = bentoml.Service('my_service', runners=[...])
+
+    svc.add_asgi_middleware(TrustedHostMiddleware, allowed_hosts=['example.com', '*.example.com'])
+    svc.add_asgi_middleware(HTTPSRedirectMiddleware)
+
 
 Mounting WSGI based web frameworks
 ----------------------------------

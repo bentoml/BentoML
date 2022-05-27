@@ -27,66 +27,6 @@ R = t.TypeVar("R")
 logger = logging.getLogger(__name__)
 
 
-"""
-runners config:
-
-runners:
-  - name: iris_clf
-    cpu: 4
-    nvidia_gpu: 0  # requesting 0 GPU
-    max_batch_size: 20
-  - name: my_custom_runner
-	cpu: 2
-	nvidia_gpu: 2  # requesting 2 GPUs
-	runnable_method_configs:
-      - name: "predict"
-		max_batch_size: 10
-		max_latency_ms: 500
-
-
-Runner API usage:
-
-my_runner = bentoml.Runner(
-	MyRunnable,
-	init_params={"foo": foo, "bar": bar},
-	name="custom_runner_name",
-	strategy=None, # default strategy will be selected depending on the SUPPORT_GPU and SUPPORT_CPU_MULTI_THREADING flag on runnable
-	models=[..],
-
-	# below are also configurable via config file:
-
-	# default configs:
-	cpu=4,
-	nvidia_gpu=1
-	custom_resources={..} # reserved API for supporting custom accelerators, a custom scheduling strategy will be needed to support new hardware types
-	max_batch_size=..  # default max batch size will be applied to all run methods, unless override in the runnable_method_configs
-	max_latency_ms=.. # default max latency will be applied to all run methods, unless override in the runnable_method_configs
-
-	runnable_method_configs=[
-		{
-			method_name="predict",
-			max_batch_size=..,
-			max_latency_ms=..,
-		}
-	],
-)
-
-
-
-Testing Runner script:
-
-my_runner = benotml.pytorch.get(tag).to_runner(..)
-
-os.environ["CUDA_VISIBLE_DEVICES"] = None  # if needed
-my_runner.init_local()
-# warning user: for testing purpose only
-# warning user: resource configs are not respected
-
-my_runner.predict.run( test_input_df )
-
-"""
-
-
 @attr.frozen(slots=False)
 class RunnerMethod(t.Generic[T, P, R]):
     runner: Runner

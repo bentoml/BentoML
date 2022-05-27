@@ -114,6 +114,7 @@ def save_model(
     context = ModelContext(
         framework_name="FRAMEWORK_PY",
         framework_versions={"FRAMEWORK_PY": FRAMEWORK_PY.__version__},
+        model_format_version=0,
     )
 
     if signatures is None:

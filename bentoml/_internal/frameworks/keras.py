@@ -212,7 +212,9 @@ def save_model(
     """  # noqa
 
     context = ModelContext(
-        framework_name="keras", framework_versions={"tensorflow": get_tf_version()}
+        framework_name="keras",
+        framework_versions={"tensorflow": get_tf_version()},
+        model_format_version=0,
     )
 
     if signatures is None:

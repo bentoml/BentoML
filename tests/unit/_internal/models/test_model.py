@@ -24,7 +24,9 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 TEST_MODEL_CONTEXT = ModelContext(
-    framework_name="testing", framework_versions={"testing": "v1"}
+    framework_name="testing",
+    framework_versions={"testing": "v1"},
+    model_format_version=0,
 )
 
 TEST_PYTHON_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
@@ -52,6 +54,7 @@ context:
   framework_name: testing
   framework_versions:
     testing: v1
+  model_format_version: 0
   bentoml_version: {bentoml_version}
   python_version: {python_version}
 signatures:

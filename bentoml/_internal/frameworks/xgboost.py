@@ -152,6 +152,7 @@ def save_model(
     context: ModelContext = ModelContext(
         framework_name="xgboost",
         framework_versions={"xgboost": get_pkg_version("xgboost")},
+        model_format_version=0,
     )
 
     if signatures is None:

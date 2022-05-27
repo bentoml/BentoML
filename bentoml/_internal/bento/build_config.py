@@ -549,33 +549,37 @@ class BentoBuildConfig:
         )
         use_cuda = self.docker.cuda_version is not None
 
-        if use_conda and self.docker.distro not in get_supported_spec("miniconda"):
-            raise BentoMLException(
-                f"{self.docker.distro} does not supports conda. BentoML will only support conda with the following distros: {get_supported_spec('miniconda')}."
+        if self.docker.distro is not None:
+            if use_conda and self.docker.distro not in get_supported_spec("miniconda"):
+                raise BentoMLException(
+                    f"{self.docker.distro} does not supports conda. BentoML will only support conda with the following distros: {get_supported_spec('miniconda')}."
+                )
+            if use_cuda and self.docker.distro not in get_supported_spec("cuda"):
+                raise BentoMLException(
+                    f"{self.docker.distro} does not supports cuda. BentoML will only support cuda with the following distros: {get_supported_spec('cuda')}."
+                )
+
+            _spec = DistroSpec.from_distro(
+                self.docker.distro, cuda=use_cuda, conda=use_conda
             )
-        if use_cuda and self.docker.distro not in get_supported_spec("cuda"):
-            raise BentoMLException(
-                f"{self.docker.distro} does not supports cuda. BentoML will only support cuda with the following distros: {get_supported_spec('cuda')}."
-            )
 
-        _spec = DistroSpec.from_distro(
-            self.docker.distro, cuda=use_cuda, conda=use_conda
-        )
+            if _spec is not None:
+                if self.docker.python_version is not None:
+                    if (
+                        self.docker.python_version
+                        not in _spec.supported_python_versions
+                    ):
+                        raise BentoMLException(
+                            f"{self.docker.python_version} is not supported for {self.docker.distro}. Supported python versions are: {', '.join(_spec.supported_python_versions)}."
+                        )
 
-        if _spec is not None:
-            if self.docker.python_version is not None:
-                if self.docker.python_version not in _spec.supported_python_versions:
-                    raise BentoMLException(
-                        f"{self.docker.python_version} is not supported for {self.docker.distro}. Supported python versions are: {', '.join(_spec.supported_python_versions)}."
-                    )
-
-            if self.docker.cuda_version is not None:
-                if self.docker.cuda_version != "default" and (
-                    self.docker.cuda_version not in _spec.supported_cuda_versions
-                ):
-                    raise BentoMLException(
-                        f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
-                    )
+                if self.docker.cuda_version is not None:
+                    if self.docker.cuda_version != "default" and (
+                        self.docker.cuda_version not in _spec.supported_cuda_versions
+                    ):
+                        raise BentoMLException(
+                            f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
+                        )
 
     def with_defaults(self) -> "FilledBentoBuildConfig":
         """

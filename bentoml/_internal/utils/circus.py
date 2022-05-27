@@ -126,7 +126,7 @@ class PyFileChangeWatcher:
         self.watch_dirs = [
             pathlib.Path(d) if isinstance(d, str) else d for d in watch_dirs
         ]
-        # logger.info(f"Watching directories: {', '.join(map(str, self.watch_dirs))}")
+        logger.info(f"Watching directories: {', '.join(map(str, self.watch_dirs))}")
 
     def is_file_changed(self) -> bool:
         for file in self.iter_files():
@@ -146,7 +146,7 @@ class PyFileChangeWatcher:
                 except ValueError:
                     pass
                 message = "Detected file change in '%s'"
-                # logger.warning(message, display_path)
+                logger.warning(message, display_path)
                 return True
         return False
 

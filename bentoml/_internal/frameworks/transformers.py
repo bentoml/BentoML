@@ -238,7 +238,6 @@ def save_model(
     context = ModelContext(
         framework_name="transformers",
         framework_versions={"transformers": get_pkg_version("transformers")},
-        model_format_version=0,
     )
     options = TransformersOptions(task=pipeline.task)
 

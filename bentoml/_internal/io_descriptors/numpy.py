@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import typing as t
 import logging
@@ -9,7 +11,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ..types import LazyType
-from ..utils.http import set_content_length
+from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InternalServerError
 
@@ -17,6 +19,7 @@ if TYPE_CHECKING:
     import numpy as np
 
     from .. import external_typing as ext
+    from ..context import InferenceApiContext as Context
 
 logger = logging.getLogger(__name__)
 
@@ -210,10 +213,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         res = self._verify_ndarray(res, BadInput)
         return res
 
-    async def init_http_response(self) -> Response:
-        return Response(None, media_type=MIME_TYPE_JSON)
-
-    async def finalize_http_response(self, response: Response, obj: "ext.NpNDArray"):
+    async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
         """
         Process given objects and convert it to HTTP response.
 
@@ -225,8 +225,17 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
              be accessed via cURL or any external web traffic.
         """
         obj = self._verify_ndarray(obj, InternalServerError)
-        response.body = response.render(json.dumps(obj.tolist()))
-        set_content_length(response)
+        if ctx is not None:
+            res = Response(
+                json.dumps(obj.tolist()),
+                media_type=MIME_TYPE_JSON,
+                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
+            set_cookies(res, ctx.response.cookies)
+            return res
+        else:
+            return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(

@@ -10,6 +10,10 @@ from ....exceptions import StateException
 
 if TYPE_CHECKING:
     from ..runner import Runner
+    from ..runner import RunnerMethod
+
+    R = t.TypeVar("R")
+    P = t.ParamSpec("P")
 
 
 logger = logging.getLogger(__name__)
@@ -23,19 +27,19 @@ class RunnerHandle(ABC):
     @abstractmethod
     def run_method(
         self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
         ...
 
     @abstractmethod
     async def async_run_method(
         self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
         ...
 
 
@@ -47,7 +51,7 @@ class DummyRunnerHandle(RunnerHandle):
 
     def run_method(
         self,
-        method_name: str,
+        __bentoml_method: RunnerMethod[t.Any, t.Any, t.Any],
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
@@ -55,7 +59,7 @@ class DummyRunnerHandle(RunnerHandle):
 
     async def async_run_method(
         self,
-        method_name: str,
+        __bentoml_method: RunnerMethod[t.Any, t.Any, t.Any],
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:

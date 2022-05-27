@@ -5,77 +5,105 @@ import pytest
 import bentoml._internal.runner.container as c
 
 
-@pytest.mark.parametrize("batch_axis_exc", [AssertionError])
-@pytest.mark.parametrize("wrong_batch_axis", [1, 19])
-def test_default_container(batch_axis_exc, wrong_batch_axis):
+@pytest.mark.parametrize("batch_dim_exc", [AssertionError])
+@pytest.mark.parametrize("wrong_batch_dim", [1, 19])
+def test_default_container(batch_dim_exc, wrong_batch_dim):
 
-    _list = [1, 2, 3]
-    assert c.DefaultContainer.singles_to_batch(_list) == _list
-    assert c.DefaultContainer.batch_to_singles(_list) == _list
+    l1 = [1, 2, 3]
+    l2 = [3, 4, 5, 6]
+    batch, indices = c.DefaultContainer.batches_to_batch([l1, l2])
+    assert batch == l1 + l2
+    assert indices == [0, 3, 7]
+    restored_l1, restored_l2 = c.DefaultContainer.batch_to_batches(batch, indices)
+    assert restored_l1 == l1
+    assert restored_l2 == l2
+
+    # DefaultContainer should only allow batch_dim = 0
+    with pytest.raises(batch_dim_exc):
+        c.DefaultContainer.batches_to_batch([l1, l2], batch_dim=wrong_batch_dim)
+
+    with pytest.raises(batch_dim_exc):
+        c.DefaultContainer.batch_to_batches(batch, indices, batch_dim=wrong_batch_dim)
 
     def _generator():
         yield "apple"
         yield "banana"
         yield "cherry"
 
-    assert c.DefaultContainer.payload_to_single(
-        c.DefaultContainer.single_to_payload(_generator())
-    ) == list(_generator())
-    assert c.DefaultContainer.payload_to_batch(
-        c.DefaultContainer.batch_to_payload(_generator())
+    assert c.DefaultContainer.from_payload(
+        c.DefaultContainer.to_payload(_generator())
     ) == list(_generator())
 
-    # DefaultContainer should only allow batch_axis = 0
-    with pytest.raises(batch_axis_exc):
-        c.DefaultContainer.singles_to_batch(_list, batch_axis=wrong_batch_axis)
-
-    with pytest.raises(batch_axis_exc):
-        c.DefaultContainer.batch_to_singles(_list, batch_axis=wrong_batch_axis)
+    assert c.DefaultContainer.from_batch_payloads(
+        c.DefaultContainer.batch_to_payloads(batch, indices)
+    ) == (batch, indices)
 
 
-@pytest.mark.parametrize("batch_axis", [0, 1])
-def test_ndarray_container(batch_axis):
+@pytest.mark.parametrize("batch_dim", [0, 1])
+def test_ndarray_container(batch_dim):
 
-    single_array = np.arange(6).reshape(2, 3)
-    singles = [single_array, single_array]
-    batch_array = np.stack(singles, axis=batch_axis)
+    arr1 = np.ones((3, 3))
+    if batch_dim == 0:
+        arr2 = np.arange(6).reshape(2, 3)
+    else:
+        arr2 = np.arange(6).reshape(3, 2)
+
+    batches = [arr1, arr2]
+    batch, indices = c.NdarrayContainer.batches_to_batch(batches, batch_dim=batch_dim)
+    assert (batch == np.concatenate(batches, axis=batch_dim)).all()
+    restored_arr1, restored_arr2 = c.NdarrayContainer.batch_to_batches(
+        batch, indices, batch_dim=batch_dim
+    )
+    assert (arr1 == restored_arr1).all()
+    assert (arr2 == restored_arr2).all()
 
     assert (
-        c.NdarrayContainer.singles_to_batch(singles, batch_axis=batch_axis)
-        == batch_array
-    ).all()
-    assert (
-        c.NdarrayContainer.batch_to_singles(batch_array, batch_axis=batch_axis)[0]
-        == single_array
+        c.NdarrayContainer.from_payload(c.NdarrayContainer.to_payload(arr1)) == arr1
     ).all()
 
+    restored_batch, restored_indices = c.NdarrayContainer.from_batch_payloads(
+        c.NdarrayContainer.batch_to_payloads(batch, indices, batch_dim=batch_dim),
+        batch_dim=batch_dim,
+    )
+    assert restored_indices == indices
+    assert (restored_batch == batch).all()
 
-@pytest.mark.parametrize("batch_axis_exc", [AssertionError])
-@pytest.mark.parametrize("wrong_batch_axis", [1, 19])
-def test_pandas_container(batch_axis_exc, wrong_batch_axis):
 
-    d = {"a": 1, "b": 2, "c": 3}
-    ser = pd.Series(data=d, index=["a", "b", "c"])
-    ser_singles = [ser, ser]
-    single_df = ser.to_frame().T
-    df_singles = [single_df, single_df]
+@pytest.mark.parametrize("batch_dim_exc", [AssertionError])
+@pytest.mark.parametrize("wrong_batch_dim", [1, 19])
+def test_pandas_container(batch_dim_exc, wrong_batch_dim):
 
-    batch_df = c.PandasDataFrameContainer.singles_to_batch(ser_singles)
+    cols = ["a", "b", "c"]
+    arr1 = np.ones((3, 3))
+    df1 = pd.DataFrame(arr1, columns=cols)
+    arr2 = np.arange(6, dtype=np.float64).reshape(2, 3)
+    df2 = pd.DataFrame(arr2, columns=cols)
+    batches = [df1, df2]
+    batch, indices = c.PandasDataFrameContainer.batches_to_batch(batches)
+    assert batch.equals(pd.concat(batches, ignore_index=True))
 
-    ser_batch_df = c.PandasDataFrameContainer.singles_to_batch(ser_singles)
-    assert batch_df.equals(ser_batch_df)
+    restored_df1, restored_df2 = c.PandasDataFrameContainer.batch_to_batches(
+        batch, indices
+    )
+    assert df1.equals(restored_df1)
+    assert df2.equals(restored_df2)
 
-    # df_batch_df = c.PandasDataFrameContainer.singles_to_batch(df_singles)
-    # assert batch_df.equals(df_batch_df)
+    assert c.PandasDataFrameContainer.from_payload(
+        c.PandasDataFrameContainer.to_payload(df1)
+    ).equals(df1)
 
-    # PandasDataFrameContainer should only allow batch_axis = 0
+    restored_batch, restored_indices = c.PandasDataFrameContainer.from_batch_payloads(
+        c.PandasDataFrameContainer.batch_to_payloads(batch, indices)
+    )
+    assert restored_indices == indices
+    assert restored_batch.equals(batch)
 
-    with pytest.raises(batch_axis_exc):
-        c.PandasDataFrameContainer.singles_to_batch(
-            df_singles, batch_axis=wrong_batch_axis
-        )
+    # PandasDataFrameContainer should only allow batch_dim = 0
 
-    with pytest.raises(batch_axis_exc):
-        c.PandasDataFrameContainer.batch_to_singles(
-            batch_df, batch_axis=wrong_batch_axis
+    with pytest.raises(batch_dim_exc):
+        c.PandasDataFrameContainer.batches_to_batch(batches, batch_dim=wrong_batch_dim)
+
+    with pytest.raises(batch_dim_exc):
+        c.PandasDataFrameContainer.batch_to_batches(
+            batch, indices, batch_dim=wrong_batch_dim
         )

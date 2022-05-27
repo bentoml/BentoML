@@ -20,10 +20,18 @@ def unparse_click_params(
     args: t.List[str] = []
     for command_param in command_params:
         if isinstance(command_param, click.Argument):
-            if command_param.name in params:
+            if (
+                command_param.name in params
+                and command_param.name is not None
+                and str(params[command_param.name])
+            ):
                 args.append(str(params[command_param.name]))
         elif isinstance(command_param, click.Option):
-            if command_param.name in params:
+            if (
+                command_param.name in params
+                and command_param.name is not None
+                and str(params[command_param.name])
+            ):
                 if command_param.is_flag:
                     if params[command_param.name]:
                         args.append(command_param.opts[0])

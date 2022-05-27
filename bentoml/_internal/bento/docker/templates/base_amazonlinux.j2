@@ -1,0 +1,39 @@
+{% extends "base.j2" %}
+{% set bento__pip_cmd="pip3" %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+{{ super() }}
+
+USER root
+
+SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
+
+# Install helpers
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum bash <<EOF
+yum upgrade -y
+yum install -y amazon-linux-extras curl ca-certificates gcc gcc-c++ make bash shadow-utils
+
+{% if __options__python_version == "3.7" %}
+yum install -y python3 python3-devel
+{% else %}
+amazon-linux-extras enable python{{ __options__python_version }}
+yum install -y python{{ __options__python_version.split(".") | join('') }} \
+	python{{ __options__python_version.split(".") | join('') }}-devel
+{% endif %}
+
+yum groupinstall -y "Development Tools"
+EOF
+
+RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
+    python{{ __options__python_version }} get-pip.py
+
+{% if __options__system_packages is not none %}
+# Install user-defined system package
+RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
+    yum install -y {{ __options__system_packages | join(' ') }} \
+    && yum -y clean all
+{% endif -%}
+
+RUN ln -sf /usr/bin/python{{ __options__python_version }} /usr/bin/python3 && \
+	ln -sf /usr/bin/pip{{ __options__python_version }} /usr/bin/pip3
+
+{% endblock %}

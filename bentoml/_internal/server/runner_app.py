@@ -8,11 +8,13 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
+from bentoml.exceptions import InvalidArgument
+from bentoml._internal.runner.batching import batch_params
+
 from ..trace import ServiceContext
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
-from ..runner.container import Payload
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
 from ..configuration.containers import DeploymentContainer
@@ -31,9 +33,6 @@ if TYPE_CHECKING:
     from ..runner.runner import RunnerMethod
 
 
-T = t.TypeVar("T")
-
-
 class RunnerAppFactory(BaseAppFactory):
     def __init__(
         self,
@@ -49,7 +48,7 @@ class RunnerAppFactory(BaseAppFactory):
 
         self.dispatchers: dict[str, CorkDispatcher] = {}
         for method in runner.runner_methods:
-            if not method.runnable_method_config.batchable:
+            if not method.config.batchable:
                 continue
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
@@ -101,7 +100,7 @@ class RunnerAppFactory(BaseAppFactory):
         routes = super().routes
         for method in self.runner.runner_methods:
             path = "/" if method.name == "__call__" else "/" + method.name
-            if method.runnable_method_config.batchable:
+            if method.config.batchable:
                 _func = self.dispatchers[method.name](
                     self._async_cork_run(runner_method=method)
                 )
@@ -169,76 +168,38 @@ class RunnerAppFactory(BaseAppFactory):
 
     def _async_cork_run(
         self,
-        runner_method: RunnerMethod,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
     ) -> t.Callable[[t.Iterable[Request]], t.Coroutine[None, None, list[Response]]]:
         from starlette.responses import Response
 
         async def _run(requests: t.Iterable[Request]) -> list[Response]:
             assert self._is_ready
-
+            if not requests:
+                return []
             params_list = await asyncio.gather(
                 *tuple(multipart_to_payload_params(r) for r in requests)
             )
 
-            batch_dim = runner_method.runnable_method_config.batch_dim
+            batch_dim = runner_method.config.batch_dim
 
-            indices: list[int] = []
-
-            i = 0
-            batch_args: list[t.Any] = []
-            while i < len(batch_dim.args):
-                args = [param.args[i] for param in params_list]
-                batched_arg, indices = AutoContainer.from_batch_payloads(
-                    args, batch_dim=batch_dim[i]
-                )
-                batch_args.append(batched_arg)
-                i += 1
-
-            max_arg_len = max([len(param.args) for param in params_list])
-
-            # iterate over any remaining vararg parameters, appending None if there is no corresponding argument
-            while i < max_arg_len:
-                args: list[t.Any] = []
-                for params in params_list:
-                    if i < len(params.args):
-                        args.append(params.args[i])
-                    else:
-                        args.append(None)
-                        continue
-                batched_arg, indices = AutoContainer.from_batch_payloads(
-                    args, batch_dim=batch_dim[i]
-                )
-                batch_args.append(batched_arg)
-                i += 1
-
-            # construct a dict of lists of kwargs, appending None if there is no corresponding keyword argument
-            kwargs: dict[str, list[Payload | None]] = {}
-            for i, params in enumerate(params_list):
-                for kwarg in kwargs:
-                    if kwarg in params.kwargs:
-                        kwargs[kwarg].append(params.kwargs[kwarg])
-                    else:
-                        kwargs[kwarg].append(None)
-
-                for kwarg in params.kwargs:
-                    if kwarg not in kwargs:
-                        kwarg_list: list[Payload | None] = [None] * i
-                        kwarg_list.append(params.kwargs[kwarg])
-                        kwargs[kwarg] = kwarg_list
-
-            batch_kwargs = {}
-            for kwarg, payloads in kwargs.items():
-                batch_kwargs[kwarg], indices = AutoContainer.from_batch_payloads(
-                    payloads, batch_dim=batch_dim[kwarg]
+            try:
+                batched_params, indices = batch_params(params_list, batch_dim[0])
+            except InvalidArgument as e:
+                raise InvalidArgument(
+                    f"Error while batching arguments for call to {runner_method.name}: {e.message}"
                 )
 
-            batch_ret = await runner_method.async_run(*batch_args, **batch_kwargs)
+            batch_ret = await runner_method.async_run(
+                *batched_params.args,
+                **batched_params.kwargs,
+            )
 
             payloads = AutoContainer.batch_to_payloads(
                 batch_ret,
                 indices,
                 batch_dim=batch_dim[-1],
             )
+
             return [
                 Response(
                     payload.data,
@@ -255,7 +216,7 @@ class RunnerAppFactory(BaseAppFactory):
 
     def async_run(
         self,
-        runner_method: RunnerMethod,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
     ) -> t.Callable[[Request], t.Coroutine[None, None, Response]]:
         from starlette.responses import Response
 
@@ -266,7 +227,8 @@ class RunnerAppFactory(BaseAppFactory):
             params = await multipart_to_payload_params(request)
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)
-            payload = AutoContainer.to_payload(ret)
+
+            payload = AutoContainer.to_payload(ret, 0)
             return Response(
                 payload.data,
                 headers={

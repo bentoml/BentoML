@@ -1,191 +1,131 @@
 from __future__ import annotations
 
 import typing as t
-import inspect
 import logging
-import functools
 from abc import ABC
+from typing import overload
 from typing import TYPE_CHECKING
-from collections.abc import Mapping
-
-if TYPE_CHECKING:
-    WrappedMethod = t.TypeVar("WrappedMethod", bound=t.Callable[..., t.Any])
-    from ..types import AnyType
 
 import attr
 
 from ..types import LazyType
-from ..utils import bentoml_cattr
+from ..types import ParamSpec
+
+if TYPE_CHECKING:
+    from ..types import AnyType
+
+T = t.TypeVar("T", bound="Runnable")
+P = ParamSpec("P")
+R = t.TypeVar("R")
 
 logger = logging.getLogger(__name__)
 
 RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
-# not usable because attrs is unable to resolve the type at runtime
-# BatchDimType: t.TypeAlias = tuple[list[int] | int, list[int] | int] | int
-BatchDimType: t.TypeAlias = t.Union[t.Tuple[t.Union[t.List[int], int], int], int]
-
-
-def batch_dim_structure_hook(
-    batch_dim_encoded: int | list[list[int] | int], _: t.Any
-) -> BatchDimType:
-    if isinstance(batch_dim_encoded, int):
-        return batch_dim_encoded
-    out_dim = batch_dim_encoded[1]
-    assert isinstance(out_dim, int)
-    return (batch_dim_encoded[0], out_dim)
-
-
-bentoml_cattr.register_structure_hook(BatchDimType, batch_dim_structure_hook)
 
 
 class Runnable(ABC):
     SUPPORT_NVIDIA_GPU: bool
     SUPPORT_CPU_MULTI_THREADING: bool
 
+    methods: dict[str, RunnableMethod[t.Any, t.Any, t.Any]] | None = None
+
     @classmethod
     def add_method(
-        cls,
-        method: t.Callable[..., t.Any],
+        cls: t.Type[T],
+        method: t.Callable[t.Concatenate[T, P], t.Any],
         name: str,
         *,
         batchable: bool = False,
-        batch_dim: BatchDimType = 0,
+        batch_dim: tuple[int, int] | int = 0,
         input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
         output_spec: LazyType[t.Any] | None = None,
     ):
-        setattr(
-            cls,
-            name,
-            Runnable.method(
-                method,
-                batchable=batchable,
-                batch_dim=batch_dim,
-                input_spec=input_spec,
-                output_spec=output_spec,
-            ),
+        meth = Runnable.method(
+            method,
+            batchable=batchable,
+            batch_dim=batch_dim,
+            input_spec=input_spec,
+            output_spec=output_spec,
         )
+        setattr(cls, name, meth)
+        meth.__set_name__(cls, name)
+
+    @overload
+    @staticmethod
+    def method(
+        meth: t.Callable[t.Concatenate[T, P], R],
+        *,
+        batchable: bool = False,
+        batch_dim: tuple[int, int] | int = 0,
+        input_spec: AnyType | tuple[AnyType, ...] | None = None,
+        output_spec: AnyType | None = None,
+    ) -> RunnableMethod[T, P, R]:
+        ...
+
+    @overload
+    @staticmethod
+    def method(
+        meth: None = None,
+        *,
+        batchable: bool = False,
+        batch_dim: tuple[int, int] | int = 0,
+        input_spec: AnyType | tuple[AnyType, ...] | None = None,
+        output_spec: AnyType | None = None,
+    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]:
+        ...
 
     @staticmethod
     def method(
-        meth: WrappedMethod | None = None,
+        meth: t.Callable[t.Concatenate[T, P], R] | None = None,
         *,
         batchable: bool = False,
-        batch_dim: BatchDimType = 0,
+        batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> t.Callable[[WrappedMethod], WrappedMethod] | WrappedMethod:
-        def method_decorator(meth: WrappedMethod) -> WrappedMethod:
-            params = inspect.signature(meth).parameters
-
-            mapped_batch_dim = BatchDimMapping(batch_dim, params)
-
-            setattr(
+    ) -> t.Callable[
+        [t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]
+    ] | RunnableMethod[T, P, R]:
+        def method_decorator(
+            meth: t.Callable[t.Concatenate[T, P], R]
+        ) -> RunnableMethod[T, P, R]:
+            return RunnableMethod(
                 meth,
-                RUNNABLE_METHOD_MARK,
                 RunnableMethodConfig(
                     batchable=batchable,
-                    batch_dim=mapped_batch_dim,
+                    batch_dim=(batch_dim, batch_dim)
+                    if isinstance(batch_dim, int)
+                    else batch_dim,
                     input_spec=input_spec,
                     output_spec=output_spec,
                 ),
             )
-            return meth
 
         if callable(meth):
             return method_decorator(meth)
         return method_decorator
 
-    @classmethod
-    @functools.lru_cache(maxsize=1)
-    def get_method_configs(cls) -> t.Dict[str, RunnableMethodConfig]:
-        return {
-            name: getattr(meth, RUNNABLE_METHOD_MARK)
-            for name, meth in inspect.getmembers(
-                cls, predicate=lambda x: hasattr(x, RUNNABLE_METHOD_MARK)
-            )
-        }
 
+@attr.define
+class RunnableMethod(t.Generic[T, P, R]):
+    func: t.Callable[t.Concatenate[T, P], R]
+    config: RunnableMethodConfig
+    _bentoml_runnable_method: None = None
 
-if TYPE_CHECKING:
-    BatchDimSuper: t.TypeAlias = Mapping[str | int, int]
-else:
-    BatchDimSuper = Mapping
+    def __get__(self, obj: T, _: t.Type[T] | None = None) -> t.Callable[P, R]:
+        def method(*args: P.args, **kwargs: P.kwargs) -> R:
+            return self.func(obj, *args, **kwargs)
 
+        return method
 
-class BatchDimMapping(BatchDimSuper):
-    args: list[int]
-    kwargs: dict[str, int]
-    ret: int
-    var_arg: int | None = None
-    var_kw: int | None = None
-
-    def __init__(
-        self, batch_dim: BatchDimType, params: t.Mapping[str, inspect.Parameter]
-    ):
-        def get_batch_dim(idx: int) -> int:
-            if isinstance(batch_dim, tuple):
-                if idx == -1:
-                    return batch_dim[1]
-                elif isinstance(batch_dim[0], list):
-                    return batch_dim[0][idx]
-                else:
-                    return batch_dim[0]
-            else:
-                return batch_dim
-
-        self.args = []
-        self.kwargs = {}
-        # drop self parameter from params
-        param_items = list(params.items())[1:]
-        for i, (name, param) in enumerate(param_items):
-            if param.kind in [
-                inspect.Parameter.POSITIONAL_ONLY,
-                inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            ]:
-                self.args.append(get_batch_dim(i))
-            elif param.kind == inspect.Parameter.KEYWORD_ONLY:
-                self.kwargs[name] = get_batch_dim(i)
-            elif param.kind == inspect.Parameter.VAR_KEYWORD:
-                self.var_kw = get_batch_dim(i)
-            else:
-                self.var_arg = get_batch_dim(i)
-
-        self.ret = get_batch_dim(-1)
-
-    def __getitem__(self, key: str | int) -> int:
-        if isinstance(key, int):
-            if key < 0:
-                return self.ret
-            if key < len(self.args):
-                return self.args[key]
-            elif self.var_arg is not None:
-                return self.var_arg
-            else:
-                raise KeyError(f"{key} not found")
-        else:
-            try:
-                res = self.kwargs[key]
-            except KeyError:
-                if self.var_kw is not None:
-                    res = self.var_kw
-                else:
-                    raise
-
-            return res
-
-    def __iter__(self) -> t.Iterator[str | int]:
-        for i, _ in enumerate(self.args):
-            yield i
-        for key in self.kwargs:
-            yield key
-
-    def __len__(self) -> int:
-        return len(self.args) + len(self.kwargs)
+    def __set_name__(self, owner: t.Any, name: str):
+        if owner.methods is None:
+            owner.methods = {}
+        owner.methods[name] = self
 
 
 @attr.define()
 class RunnableMethodConfig:
     batchable: bool
-    batch_dim: BatchDimMapping
+    batch_dim: tuple[int, int]
     input_spec: AnyType | t.Tuple[AnyType, ...] | None = None
     output_spec: AnyType | None = None

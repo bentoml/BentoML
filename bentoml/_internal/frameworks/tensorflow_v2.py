@@ -1,28 +1,28 @@
+from __future__ import annotations
+
 import os
-import re
-import uuid
+import pickle
 import typing as t
 import logging
-import pathlib
 import functools
+import itertools
 from typing import TYPE_CHECKING
-from distutils.dir_util import copy_tree
-
-from simple_di import inject
-from simple_di import Provide
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import BentoMLException
+from bentoml import Runnable
+from bentoml.models import ModelContext
+from bentoml.exceptions import NotFound
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
+from ..models.model import ModelSignature
 from ..runner.utils import Params
+from ..runner.container import Payload
+from ..runner.container import DataContainer
+from ..runner.container import DataContainerRegistry
 from ..utils.tensorflow import get_tf_version
-from ..utils.tensorflow import is_gpu_available
 from ..utils.tensorflow import hook_loaded_model
-from .common.model_runner import BaseModelRunner
-from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -36,72 +36,40 @@ except ImportError:  # pragma: no cover
     """
     )
 
-try:
-    import tensorflow_hub as hub  # type: ignore
-    from tensorflow_hub import resolve  # type: ignore
-    from tensorflow_hub import native_module  # type: ignore
-except ImportError:  # pragma: no cover
-    logger.warning(
-        """\
-    If you want to use `bentoml.tensorflow.import_from_tfhub(),
-     make sure to `pip install --upgrade tensorflow_hub` before using.
-     """
-    )
-    hub = None
-
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
 
 if TYPE_CHECKING:
-    from tensorflow_hub import Module as HubModule  # type: ignore
-    from tensorflow_hub import KerasLayer  # type: ignore
-
     from .. import external_typing as ext
-    from ..types import PathType
-    from ..models import ModelStore
+    from ..models.model import ModelSignatureDict
     from ..external_typing import tensorflow as tf_ext
 
     TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
-MODULE_NAME = "bentoml.tensorflow_v2"
+MODULE_NAME = "bentoml.tensorflow"
 
 
-def _clean_name(name: str) -> str:  # pragma: no cover
-    if name.startswith(("http://", "https://")):
-        name = name.split("/", maxsplit=3)[-1]
-    else:
-        name = name.split("/")[-1]
-    return re.sub(r"\W|^(?=\d)-", "_", name)
+def get(tag_like: str | Tag) -> bentoml.Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+        )
+    return model
 
 
-@inject
-def load(
-    bento_tag: t.Union[str, Tag],
-    tags: t.Optional[t.List[str]] = None,
-    options: t.Optional["tf_ext.SaveOptions"] = None,
-    load_as_hub_module: t.Optional[bool] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["tf_ext.AutoTrackable", "tf_ext.Module", "HubModule", "KerasLayer"]:
+def load_model(
+    bento_model: str | Tag | bentoml.Model,
+    device_name: str = "/device:CPU:0",
+) -> "tf_ext.AutoTrackable" | "tf_ext.Module":
     """
-    Load a model from BentoML local modelstore with given name.
+    Load a tensorflow model from BentoML local modelstore with given name.
 
     Args:
-        bento_tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        tags (:code:`str`, `optional`, defaults to `None`):
-            A set of strings specifying the graph variant to use, if loading from a v1 module.
-        options (:code:`tensorflow.saved_model.SaveOptions`, `optional`, default to :code:`None`):
-            :code:`tensorflow.saved_model.LoadOptions` object that specifies options for loading. This
-            argument can only be used from TensorFlow 2.3 onwards.
-        load_as_hub_module (`bool`, `optional`, default to :code:`True`):
-            Load the given weight that is saved from tfhub as either `hub.KerasLayer` or `hub.Module`.
-            The latter only applies for TF1.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
+            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
+            instance to load the model from.
+        device_name (``str`` | ``None``):
+            The device id to load the model on. The device id format should be compatible with `tf.device <https://www.tensorflow.org/api_docs/python/tf/device>`_
+
 
     Returns:
         :obj:`SavedModel`: an instance of :obj:`SavedModel` format from BentoML modelstore.
@@ -113,215 +81,47 @@ def load(
         import bentoml
 
         # load a model back into memory
-        model = bentoml.tensorflow.load("my_tensorflow_model")
+        model = bentoml.tensorflow.load_model("my_tensorflow_model")
 
     """  # noqa: LN001
-    model = model_store.get(bento_tag)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {bento_tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
-        )
-    if model.info.context["import_from_tfhub"]:
-        assert load_as_hub_module is not None, (
-            "You have to specified `load_as_hub_module=True | False`"
-            " to load a `tensorflow_hub` module. If True is chosen,"
-            " then BentoML will return either an instance of `hub.KerasLayer`"
-            " or `hub.Module` depending on your TF version. For most usecase,"
-            " we recommend to keep `load_as_hub_module=True`. If you wish to extend"
-            " the functionalities of the given model, set `load_as_hub_module=False`"
-            " will return a SavedModel object."
-        )
+    if not isinstance(bento_model, bentoml.Model):
+        bento_model = get(bento_model)
 
-        if hub is None:
-            raise MissingDependencyException(
-                """\
-            `tensorflow_hub` does not exists.
-            Make sure to `pip install --upgrade tensorflow_hub` before using.
-            """
-            )
-
-        module_path = model.path_of(model.info.options["local_path"])
-        if load_as_hub_module:
-            return (
-                hub.Module(module_path)
-                if get_tf_version().startswith("1")
-                else hub.KerasLayer(module_path)
-            )
-        # In case users want to load as a SavedModel file object.
-        # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
-        is_hub_module_v1: bool = tf.io.gfile.exists(  # type: ignore
-            native_module.get_module_proto_path(module_path)
-        )
-        if tags is None and is_hub_module_v1:
-            tags = []
-        if options is not None:
-            if not LazyType(
-                "tensorflow.python.saved_model.save_options.SaveOptions"
-            ).isinstance(options):
-                raise BentoMLException(
-                    f"`options` has to be of type `tf.saved_model.SaveOptions`, got {type(options)} instead."
-                )
-            if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
-                raise NotImplementedError(
-                    "options are not supported for TF < 2.3.x,"
-                    f" Current version: {get_tf_version()}"
-                )
-            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(  # type: ignore
-                module_path,
-                tags=tags,
-                options=options,  # type: ignore
-            )
-        else:
-            tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(  # type: ignore
-                module_path,
-                tags=tags,
-            )
-        tf_model._is_hub_module_v1 = (
-            is_hub_module_v1  # pylint: disable=protected-access # noqa
-        )
-        return tf_model
-    else:
-        tf_model: "tf_ext.AutoTrackable" = tf.compat.v1.saved_model.load_v2(model.path)  # type: ignore
+    with tf.device(device_name):
+        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore
         return hook_loaded_model(tf_model, MODULE_NAME)
 
 
-def import_from_tfhub(
-    identifier: t.Union[str, "HubModule", "KerasLayer"],
-    name: t.Optional[str] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
-) -> Tag:
-    """
-    Import a model from `Tensorflow Hub <https://tfhub.dev/>`_ to BentoML modelstore.
-
-    Args:
-        identifier (:code:`Union[str, tensorflow_hub.Module, tensorflow_hub.KerasLayer]`): Identifier accepts
-            two type of inputs:
-                - if `type` of :code:`identifier` either of type :code:`tensorflow_hub.Module` (**legacy** `tensorflow_hub`) or :code:`tensorflow_hub.KerasLayer` (`tensorflow_hub`), then we will save the given model to a :code:`SavedModel` format.
-                - if `type` of :code:`identifier` is a :obj:`str`, we assume that this is the URI retrieved from Tensorflow Hub. We then clean the given URI, and get a local copy of a given model to BentoML modelstore. name (:code:`str`, `optional`, defaults to `None`): An optional name for the model. If :code:`identifier` is a :obj:`str`, then name can be autogenerated from the given URI.
-        name (:code:`str`, `optional`, default to `None`):
-            Optional name for the saved model. If None, then name will be generated from :code:`identifier`.
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
-            user-defined additional python objects to be saved alongside the model,
-            e.g. a tokenizer instance, preprocessor function, model configuration json
-        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
-
-    Returns:
-        :obj:`~bentoml.Tag`: A :obj:`~bentoml.Tag` object that can be used to retrieve the model with :func:`bentoml.tensorflow.load`:
-
-    Example for importing a model from Tensorflow Hub:
-
-    .. code-block:: python
-
-        import tensorflow_text as text # noqa # pylint: disable
-        import bentoml
-
-        tag = bentoml.tensorflow.import_from_tfhub("https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
-
-        # load model back with `load`:
-        model = bentoml.tensorflow.load(tag, load_as_hub_module=True)
-
-
-    Example for importing a custom Tensorflow Hub model:
-
-    .. code-block:: python
-
-        import tensorflow as tf
-        import tensorflow_hub as hub
-        import bentoml
-
-        def _plus_one_model_tf2():
-            obj = tf.train.Checkpoint()
-
-            @tf.function(input_signature=[tf.TensorSpec(None, dtype=tf.float32)])
-            def plus_one(x):
-                return x + 1
-
-            obj.__call__ = plus_one
-            return obj
-
-        # then save the given model to BentoML modelstore:
-        model = _plus_one_model_tf2()
-        tag = bentoml.tensorflow.import_from_tfhub(model)
-    """  # noqa
-    if hub is None:
-        raise MissingDependencyException(
-            """\
-        `tensorflow_hub` does not exists.
-        Make sure to `pip install --upgrade tensorflow_hub` before using.
-        """
-        )
-    context: t.Dict[str, t.Any] = {
-        "framework_name": "tensorflow",
-        "pip_dependencies": [
-            f"tensorflow=={get_tf_version()}",
-            f"tensorflow_hub=={importlib_metadata.version('tensorflow_hub')}",
-        ],
-        "import_from_tfhub": True,
-    }
-    if name is None:
-        if isinstance(identifier, str):
-            name = _clean_name(identifier)
-        else:
-            name = f"{identifier.__class__.__name__}_{uuid.uuid4().hex[:5].upper()}"
-
-    with bentoml.models.create(
-        name,
-        module=MODULE_NAME,
-        options=None,
-        context=context,
-        metadata=metadata,
-        labels=labels,
-        custom_objects=custom_objects,
-    ) as _model:
-        if isinstance(identifier, str):
-            current_cache_dir = os.environ.get("TFHUB_CACHE_DIR")
-            os.environ["TFHUB_CACHE_DIR"] = _model.path
-            fpath: str = resolve(identifier)
-            folder = fpath.split("/")[-1]
-            _model.info.options = {"model": identifier, "local_path": folder}
-            if current_cache_dir is not None:
-                os.environ["TFHUB_CACHE_DIR"] = current_cache_dir
-        else:
-            if hasattr(identifier, "export"):
-                # hub.Module.export()
-                with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:  # type: ignore
-                    sess.run(tf.compat.v1.global_variables_initializer())  # type: ignore
-                    identifier.export(_model.path, sess)  # type: ignore
-            else:
-                tf.saved_model.save(identifier, _model.path)
-            _model.info.options = {
-                "model": identifier.__class__.__name__,
-                "local_path": ".",
-            }
-
-        return _model.tag
-
-
-def save(
+def save_model(
     name: str,
-    model: t.Union["PathType", "tf_ext.KerasModel", "tf_ext.Module"],
+    model: t.Union["tf_ext.KerasModel", "tf_ext.Module"],
     *,
-    signatures: t.Optional["tf_ext.ConcreteFunction"] = None,
-    options: t.Optional["tf_ext.SaveOptions"] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    tf_signatures: "tf_ext.ConcreteFunction" | None = None,
+    tf_save_options: "tf_ext.SaveOptions" | None = None,
+    signatures: t.Dict[str, ModelSignature]
+    | t.Dict[str, ModelSignatureDict]
+    | None = None,
+    labels: t.Dict[str, str] | None = None,
+    custom_objects: t.Dict[str, t.Any] | None = None,
+    metadata: t.Dict[str, t.Any] | None = None,
 ) -> Tag:
+
     """
     Save a model instance to BentoML modelstore.
 
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[keras.Model, tf.Module, path-like objects]`):
+        model (``keras.Model`` | ``tf.Module``):
             Instance of model to be saved
+        tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
+            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+            from Tensorflow documentation for more information.
+        tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
+            :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
+        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
+            Methods to expose for running inference on the target model. Signatures are
+             used for creating Runner instances when serving model with bentoml.Service
         labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
             user-defined labels for managing models, e.g. team=nlp, stage=dev
         custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
@@ -329,19 +129,13 @@ def save(
             e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
-        signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
-            from Tensorflow documentation for more information.
-        options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
-            :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
 
     Raises:
         ValueError: If :obj:`obj` is not trackable.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
+        the user-defined model's name, and a generated `version` by BentoML.
 
     Examples:
 
@@ -365,19 +159,31 @@ def save(
 
         # then save the given model to BentoML modelstore:
         model = NativeModel()
-        tag = bentoml.tensorflow.save("native_toy", model)
+        tag = bentoml.tensorflow.save_model("native_toy", model)
 
     .. note::
 
-       :code:`bentoml.tensorflow.save` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
-       with :code:`bentoml.tensorflow.save`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
+       :code:`bentoml.tensorflow.save_model` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
+       with :code:`bentoml.tensorflow.save_model`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
 
     """  # noqa
-    context: t.Dict[str, t.Any] = {
-        "framework_name": "tensorflow",
-        "pip_dependencies": [f"tensorflow=={get_tf_version()}"],
-        "import_from_tfhub": False,
-    }
+    context = ModelContext(
+        framework_name="tensorflow",
+        framework_versions={"tensorflow": get_tf_version()},
+    )
+
+    # will add signatures inference from tf_signatures later
+    if signatures is None:
+        signatures = {
+            "__call__": {
+                "batchable": False,
+            }
+        }
+
+        logger.info(
+            f"Using the default model signature {signatures} for TensorFlow models."
+        )
+
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
@@ -386,129 +192,169 @@ def save(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-    ) as _model:
+        signatures=signatures,  # type: ignore
+    ) as bento_model:
 
-        if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType]
-            assert os.path.isdir(model)
-            copy_tree(str(model), _model.path)
-        else:
-            if options:
-                logger.warning(
-                    f"Parameter 'options: {str(options)}' is ignored when "
-                    f"using tensorflow {get_tf_version()}"
-                )
-            tf.saved_model.save(
-                model, _model.path, signatures=signatures, options=options
-            )
-
-        return _model.tag
-
-
-class _TensorflowRunner(BaseModelRunner):
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        device_id: str,
-        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
-        name: t.Optional[str] = None,
-    ):
-        super().__init__(tag, name=name)
-        self._device_id = device_id
-        self._configure(device_id)
-        self._predict_fn_name = predict_fn_name
-        self._partial_kwargs: t.Dict[str, t.Any] = (
-            partial_kwargs if partial_kwargs is not None else dict()
+        tf.saved_model.save(
+            model,
+            bento_model.path,
+            signatures=tf_signatures,
+            options=tf_save_options,
         )
 
-    def _configure(self, device_id: str) -> None:
-        if "GPU" in device_id:
-            tf.config.set_visible_devices(device_id, "GPU")
-        self._config_proto = dict(
-            allow_soft_placement=True,
-            log_device_placement=False,
-            intra_op_parallelism_threads=self._num_threads,
-            inter_op_parallelism_threads=self._num_threads,
-        )
-
-    @property
-    def _num_threads(self) -> int:
-        if is_gpu_available() and self.resource_quota.nvidia_gpu:
-            return 1
-        return max(round(self.resource_quota.cpu), 1)
-
-    @property
-    def num_replica(self) -> int:
-        if is_gpu_available() and self.resource_quota.nvidia_gpu:
-            return self.resource_quota.nvidia_gpu
-        return 1
-
-    def _setup(self) -> None:
-        self._model = load(self._tag, model_store=self.model_store)
-        raw_predict_fn = getattr(self._model, self._predict_fn_name)  # type: ignore
-        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
-
-    def _run_batch(self, *args: "TFArgType", **kwargs: "TFArgType") -> "ext.NpNDArray":
-        params = Params["TFArgType"](*args, **kwargs)
-
-        with tf.device(self._device_id):  # type: ignore
-
-            def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
-                if not LazyType["tf_ext.TensorLike"]("tf.Tensor").isinstance(item):
-                    return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
-                else:
-                    return item
-
-            params = params.map(_mapping)
-
-            tf.compat.v1.global_variables_initializer()  # type: ignore
-            res = self._predict_fn(*params.args, **params.kwargs)
-            return t.cast("ext.NpNDArray", res.numpy())
+        return bento_model.tag
 
 
-def load_runner(
-    tag: t.Union[str, Tag],
-    *,
-    predict_fn_name: str = "__call__",
-    device_id: str = "CPU:0",
-    name: t.Optional[str] = None,
-    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
-) -> "_TensorflowRunner":
+def get_runnable(
+    bento_model: bentoml.Model,
+):
     """
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.tensorflow.load_runner` implements a Runner class that
-    wrap around a Tensorflow model, which optimize it for the BentoML runtime.
-
-    Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (:code:`str`, default to :code:`__call__`):
-            Inference function to be used.
-        partial_kwargs (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary of partial kwargs that can be shared across different model.
-        device_id (:code:`str`, `optional`, default to the first CPU):
-            Optional devices to put the given model on. Refers to `Logical Devices <https://www.tensorflow.org/api_docs/python/tf/config/list_logical_devices>`_ from TF documentation.
-
-    Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.tensorflow` model
-
-    Examples:
-
-    .. code-block:: python
-
-        import bentoml
-
-        # load a runner from a given flag
-        runner = bentoml.tensorflow.load_runner(tag)
-
-        # load a runner on GPU:0
-        runner = bentoml.tensorflow.load_runner(tag, resource_quota=dict(nvidia_gpu=1), device_id="GPU:0")
-
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    return _TensorflowRunner(
-        tag=tag,
-        predict_fn_name=predict_fn_name,
-        device_id=device_id,
-        partial_kwargs=partial_kwargs,
-        name=name,
+
+    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.get(
+        "partial_kwargs", dict()
     )
+
+    class TensorflowRunnable(Runnable):
+        SUPPORT_GPU = True
+        SUPPORT_MULTI_THREADING = True
+
+        def __init__(self):
+            super().__init__()
+            if len(tf.config.list_physical_devices("GPU")) > 0:
+                # In Multi-GPU scenarios, the visible cuda devices will be set for each Runner worker
+                # by the runner's Scheduling Strategy. So that the Runnable implementation only needs
+                # to find the first GPU device visible to current process.
+                self.device_name = "/device:GPU:0"
+            else:
+                self.device_name = "/device:CPU:0"
+                num_threads = int(os.environ["BENTOML_NUM_THREAD"])
+                tf.config.threading.set_inter_op_parallelism_threads(num_threads)
+                tf.config.threading.set_intra_op_parallelism_threads(num_threads)
+
+            self.model = load_model(bento_model, device_name=self.device_name)
+            self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
+
+    def _gen_run_method(runnable_self: TensorflowRunnable, method_name: str):
+        raw_method = getattr(runnable_self.model, method_name)
+        method_partial_kwargs = partial_kwargs.get(method_name)
+        if method_partial_kwargs:
+            raw_method = functools.partial(raw_method, **method_partial_kwargs)
+
+        def _run_method(
+            runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
+        ) -> "ext.NpNDArray":
+            params = Params["TFArgType"](*args, **kwargs)
+
+            with tf.device(runnable_self.device_name):
+
+                def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
+                    if not LazyType["tf_ext.TensorLike"]("tf.Tensor").isinstance(item):
+                        return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
+                    else:
+                        return item
+
+                params = params.map(_mapping)
+                res = raw_method(*params.args, **params.kwargs)
+                return t.cast("ext.NpNDArray", res.numpy())
+
+        return _run_method
+
+    def add_run_method(method_name: str, options: ModelSignature):
+        def run_method(
+            runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
+        ) -> "ext.NpNDArray":
+            _run_method = runnable_self.methods_cache.get(method_name)
+            if not _run_method:
+                _run_method = _gen_run_method(runnable_self, method_name)
+                runnable_self.methods_cache[method_name] = _run_method
+
+            return _run_method(runnable_self, *args, **kwargs)
+
+        TensorflowRunnable.add_method(
+            run_method,
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
+        )
+
+    for method_name, options in bento_model.info.signatures.items():
+        add_run_method(method_name, options)
+
+    return TensorflowRunnable
+
+
+class TensorflowTensorContainer(DataContainer[tf.Tensor, tf.Tensor]):
+    @classmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence["tf_ext.Tensor"], batch_dim: int = 0
+    ) -> t.Tuple["tf_ext.Tensor", list[int]]:
+        batch: "tf_ext.Tensor" = tf.concat(batches, axis=batch_dim)
+        # TODO: fix typing mismatch @larme
+        indices: list[int] = list(
+            itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
+        )  # type: ignore
+        indices = [0] + indices
+        return batch, indices
+
+    @classmethod
+    def batch_to_batches(
+        cls, batch: "tf_ext.Tensor", indices: t.Sequence[int], batch_dim: int = 0
+    ) -> t.List["tf_ext.Tensor"]:
+        size_splits = [indices[i + 1] - indices[i] for i in range(len(indices) - 1)]
+        return tf.split(batch, size_splits, axis=batch_dim)  # type: ignore
+
+    @classmethod
+    def to_payload(
+        cls,
+        single: "tf_ext.Tensor",
+    ) -> Payload:
+
+        return cls.create_payload(
+            pickle.dumps(single),
+        )
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: Payload,
+    ) -> "tf_ext.Tensor":
+
+        return pickle.loads(payload.data)
+
+    @classmethod
+    def batch_to_payloads(
+        cls,
+        batch: "tf_ext.Tensor",
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+    ) -> t.List[Payload]:
+
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+
+        def to_payload(subbatch: "tf_ext.Tensor"):
+            payload = cls.to_payload(subbatch)
+            payload.meta["batch_size"] = subbatch.shape[batch_dim]
+            return payload
+
+        payloads = [to_payload(subbatch) for subbatch in batches]
+        return payloads
+
+    @classmethod
+    def from_batch_payloads(
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int = 0,
+    ) -> t.Tuple["tf_ext.Tensor", t.List[int]]:
+        batches = [cls.from_payload(payload) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
+
+
+DataContainerRegistry.register_container(
+    LazyType("tf", "Tensor"),
+    LazyType("tf", "Tensor"),
+    TensorflowTensorContainer,
+)

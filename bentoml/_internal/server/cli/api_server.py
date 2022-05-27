@@ -66,7 +66,7 @@ def main(
     """
     from ...configuration.containers import DeploymentContainer
 
-    DeploymentContainer.api_server_config.development_mode.set(False)
+    DeploymentContainer.development_mode.set(False)
 
     if not as_worker:
         # Start a standalone server with a supervisor process

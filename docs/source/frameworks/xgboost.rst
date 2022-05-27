@@ -2,7 +2,7 @@
 XGBoost
 =======
 
-Users can now use XGBoost with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
+Users can now use XGBoost with BentoML with the following API: :code:`save_model`, :code:`load_model`, and :code:`get` as follows:
 
 .. code-block:: python
 
@@ -29,13 +29,13 @@ Users can now use XGBoost with BentoML with the following API: :code:`load`, :co
    model = xgboost_model()
 
    # `save` a given model and retrieve coresponding tag:
-   tag = bentoml.xgboost.save("booster_tree", model, booster_params={"disable_default_eval_metric": 1, "nthread": 2, "tree_method": "hist"})
+   tag = bentoml.xgboost.save_model("booster_tree", model, booster_params={"disable_default_eval_metric": 1, "nthread": 2, "tree_method": "hist"})
 
-   # retrieve metadata with `bentoml.models.get`:
-   metadata = bentoml.models.get(tag)
+   # retrieve metadata with `bentoml.xgboost.get`:
+   metadata = bentoml.xgboost.get(tag)
 
    # `load` the model back in memory:
-   loaded = bentoml.xgboost.load("booster_tree")
+   loaded = bentoml.xgboost.load_model("booster_tree")
 
 .. note::
 
@@ -43,8 +43,8 @@ Users can now use XGBoost with BentoML with the following API: :code:`load`, :co
 
 .. currentmodule:: bentoml.xgboost
 
-.. autofunction:: bentoml.xgboost.save
+.. autofunction:: bentoml.xgboost.save_model
 
-.. autofunction:: bentoml.xgboost.load
+.. autofunction:: bentoml.xgboost.load_model
 
-.. autofunction:: bentoml.xgboost.load_runner
+.. autofunction:: bentoml.xgboost.get

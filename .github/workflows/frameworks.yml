@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - runners-1.0
   schedule:
     - cron: "0 0 * * 1/2"
 
@@ -26,7 +27,7 @@ jobs:
       fasttext: ${{ steps.filter.outputs.fasttext }}
       gluon: ${{ steps.filter.outputs.gluon }}
       h2o: ${{ steps.filter.outputs.h2o }}
-      keras_tf1: ${{ steps.filter.outputs.keras_tf1 }}
+      # keras_tf1: ${{ steps.filter.outputs.keras_tf1 }}
       keras_tf2: ${{ steps.filter.outputs.keras_tf2 }}
       lightgbm: ${{ steps.filter.outputs.lightgbm }}
       mlflow: ${{ steps.filter.outputs.mlflow }}
@@ -190,12 +191,12 @@ jobs:
               - bentoml/tensorflow.py
               - bentoml/_internal/frameworks/tensorflow_v2.py
               - tests/integration/frameworks/test_tensorflow_v2_impl.py
-            keras_tf1:
-              - *runner
-              - *tf1
-              - bentoml/keras.py
-              - bentoml/_internal/frameworks/keras.py
-              - tests/integration/frameworks/test_keras_impl.py
+            # keras_tf1:
+            #   - *runner
+            #   - *tf1
+            #   - bentoml/keras.py
+            #   - bentoml/_internal/frameworks/keras.py
+            #   - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
               - *runner
               - *tf2
@@ -211,7 +212,7 @@ jobs:
               - *runner
               - bentoml/xgboost.py
               - bentoml/_internal/frameworks/xgboost.py
-              - tests/integration/frameworks/test_xgboost_impl.py
+              - tests/integration/frameworks/test_frameworks.py
 
 
   catboost_integration_tests:
@@ -440,49 +441,49 @@ jobs:
           flags: h2o
           verbose: true
 
-  keras_with_tf1_integration_tests:
-    needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.7.10
+  # keras_with_tf1_integration_tests:
+  #   needs: diff
+  #   if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 0 # fetch all tags and branches
+  #     - name: Setup python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: 3.7.10
 
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
+  #     - name: Get pip cache dir
+  #       id: cache-dir
+  #       run: |
+  #         echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v2
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+  #     - name: Cache pip dependencies
+  #       uses: actions/cache@v2
+  #       id: cache-pip
+  #       with:
+  #         path: ${{ steps.cache-dir.outputs.dir }}
+  #         key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
-      - name: Install dependencies
-        run: |
-          pip install .
-          pip install -r requirements/tests-requirements.txt
+  #     - name: Install dependencies
+  #       run: |
+  #         pip install .
+  #         pip install -r requirements/tests-requirements.txt
 
-      - name: Run tests and generate coverage report
-        run: make tests-keras_tf1
-        shell: bash
+  #     - name: Run tests and generate coverage report
+  #       run: make tests-keras_tf1
+  #       shell: bash
 
-      - name: Upload test coverage to Codecov
-        if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
-        uses: codecov/codecov-action@v2
-        with:
-          directory: ./
-          files: ./keras_tf1.xml
-          flags: keras
-          verbose: true
+  #     - name: Upload test coverage to Codecov
+  #       if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
+  #       uses: codecov/codecov-action@v2
+  #       with:
+  #         directory: ./
+  #         files: ./keras_tf1.xml
+  #         flags: keras
+  #         verbose: true
 
   keras_with_tf2_integration_tests:
     needs: diff

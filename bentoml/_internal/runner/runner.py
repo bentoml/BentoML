@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING
 
 import attr
 
+from ..types import ParamSpec
 from ..utils import first_not_none
-from ..utils import cached_property
 from .resource import Resource
 from .runnable import Runnable
-from .runnable import RunnableMethodConfig
 from .strategy import Strategy
 from .strategy import DefaultStrategy
 from ...exceptions import StateException
@@ -19,34 +18,33 @@ from .runner_handle import DummyRunnerHandle
 
 if TYPE_CHECKING:
     from ..models import Model
+    from .runnable import RunnableMethodConfig
 
+T = t.TypeVar("T", bound=Runnable)
+P = ParamSpec("P")
+R = t.TypeVar("R")
 
 logger = logging.getLogger(__name__)
 
 
 @attr.frozen(slots=False)
-class RunnerMethod:
+class RunnerMethod(t.Generic[T, P, R]):
     runner: Runner
     name: str
+    config: RunnableMethodConfig
     max_batch_size: int
     max_latency_ms: int
-    args: dict[str, int]
-
-    @cached_property
-    def runnable_method_config(self) -> RunnableMethodConfig:
-        configs = self.runner.runnable_class.get_method_configs()
-        return configs[self.name]
 
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self.runner._runner_handle.run_method(  # type: ignore
-            self.name,
+            self,
             *args,
             **kwargs,
         )
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self.runner._runner_handle.async_run_method(  # type: ignore
-            self.name,
+            self,
             *args,
             **kwargs,
         )
@@ -64,7 +62,7 @@ class Runner:
     name: str
     models: t.List[Model]
     resource_config: Resource
-    runner_methods: t.List[RunnerMethod]
+    runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: t.Type[Strategy]
 
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
@@ -77,7 +75,8 @@ class Runner:
         name: str | None = None,
         scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
         models: t.List[Model] | None = None,
-        cpu: int | None = None,  # TODO: support str and float type here? e.g "500m" or "0.5"
+        cpu: int
+        | None = None,  # TODO: support str and float type here? e.g "500m" or "0.5"
         nvidia_gpu: int | None = None,
         custom_resources: t.Dict[str, float] | None = None,
         max_batch_size: int | None = None,
@@ -101,7 +100,7 @@ class Runner:
 
         name = runnable_class.__name__ if name is None else name
         models = [] if models is None else models
-        runner_method_map: dict[str, RunnerMethod] = {}
+        runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runner_init_params = {} if init_params is None else init_params
         method_configs = {} if method_configs is None else {}
         custom_resources = {} if custom_resources is None else {}
@@ -115,7 +114,7 @@ class Runner:
             | Resource.from_system()
         )
 
-        for method_name, config in runnable_class.get_method_configs().items():
+        for method_name, method in runnable_class.methods.items():
             method_max_batch_size = method_configs.get(method_name, {}).get(
                 "max_batch_size"
             )
@@ -126,7 +125,7 @@ class Runner:
             runner_method_map[method_name] = RunnerMethod(
                 runner=self,
                 name=method_name,
-                args=method_name,
+                config=method.config,
                 max_batch_size=first_not_none(
                     method_max_batch_size,
                     max_batch_size,

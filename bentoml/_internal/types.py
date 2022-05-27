@@ -22,6 +22,21 @@ else:
     from typing import get_args
     from typing import get_origin
 
+if sys.version_info < (3, 10):
+    from typing_extensions import ParamSpec
+else:
+    from typing import ParamSpec
+
+__all__ = [
+    "ParamSpec",
+    "MetadataType",
+    "MetadataDict",
+    "JSONSerializable",
+    "LazyType",
+    "is_compatible_type",
+    "FileLike",
+]
+
 logger = logging.getLogger(__name__)
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
@@ -37,7 +52,7 @@ if TYPE_CHECKING:
 else:
     PathType = t.Union[str, os.PathLike]
 
-MetadataType = t.Union[
+MetadataType: t.TypeAlias = t.Union[
     str,
     bytes,
     bool,
@@ -217,7 +232,7 @@ def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
 
 @json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
-class FileLike(t.Generic[t.AnyStr]):
+class FileLike(t.Generic[t.AnyStr], io.IOBase):
     """
     A wrapper for file-like objects that includes a custom name.
     """
@@ -249,16 +264,16 @@ class FileLike(t.Generic[t.AnyStr]):
     def isatty(self) -> bool:
         return self._wrapped.isatty()
 
-    def read(self, size: int = -1) -> t.AnyStr:
+    def read(self, size: int = -1) -> t.AnyStr:  # type: ignore # pylint: disable=arguments-renamed # python IO types
         return self._wrapped.read(size)
 
     def readable(self) -> bool:
         return self._wrapped.readable()
 
-    def readline(self, size: int = -1) -> t.AnyStr:
+    def readline(self, size: int = -1) -> t.AnyStr:  # type: ignore (python IO types)
         return self._wrapped.readline(size)
 
-    def readlines(self, size: int = -1) -> t.List[t.AnyStr]:
+    def readlines(self, size: int = -1) -> t.List[t.AnyStr]:  # type: ignore (python IO types)
         return self._wrapped.readlines(size)
 
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
@@ -276,22 +291,22 @@ class FileLike(t.Generic[t.AnyStr]):
     def writable(self) -> bool:
         return self._wrapped.writable()
 
-    def write(self, s: t.AnyStr) -> int:
+    def write(self, s: t.AnyStr) -> int:  # type: ignore (python IO types)
         return self._wrapped.write(s)
 
-    def writelines(self, lines: t.Iterable[t.AnyStr]):
+    def writelines(self, lines: t.Iterable[t.AnyStr]):  # type: ignore (python IO types)
         return self._wrapped.writelines(lines)
 
-    def __next__(self) -> t.AnyStr:
+    def __next__(self) -> t.AnyStr:  # type: ignore (python IO types)
         return next(self._wrapped)
 
-    def __iter__(self) -> t.Iterator[t.AnyStr]:
+    def __iter__(self) -> t.Iterator[t.AnyStr]:  # type: ignore (python IO types)
         return self._wrapped.__iter__()
 
     def __enter__(self) -> t.IO[t.AnyStr]:
         return self._wrapped.__enter__()
 
-    def __exit__(
+    def __exit__(  # type: ignore (python IO types)
         self,
         typ: t.Optional[t.Type[BaseException]],
         value: t.Optional[BaseException],

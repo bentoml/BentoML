@@ -34,63 +34,23 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_INDEX_HTML = """\
 <!DOCTYPE html>
-<head>
-  <link rel="stylesheet" type="text/css" href="static_content/main.css">
-  <link rel="stylesheet" type="text/css" href="static_content/readme.css">
-  <link rel="stylesheet" type="text/css" href="static_content/swagger-ui.css">
-</head>
-<body>
-  <div id="tab">
-    <button
-      class="tabLinks active"
-      onclick="openTab(event, 'swagger_ui_container')"
-      id="defaultOpen"
-    >
-      Swagger UI
-    </button>
-    <button class="tabLinks" onclick="openTab(event, 'markdown_readme')">
-      ReadMe
-    </button>
-  </div>
-  <script>
-    function openTab(evt, tabName) {{
-      // Declare all variables
-      var i, tabContent, tabLinks;
-      // Get all elements with class="tabContent" and hide them
-      tabContent = document.getElementsByClassName("tabContent");
-      for (i = 0; i < tabContent.length; i++) {{
-        tabContent[i].style.display = "none";
-      }}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="./static_content/swagger-ui.css" />
+    <link rel="stylesheet" type="text/css" href="./static_content/index.css" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-96x96.png" sizes="96x96" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="./static_content/swagger-ui-bundle.js" charset="UTF-8"> </script>
+    <script src="./static_content/swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
+    <script src="./static_content/swagger-initializer.js" charset="UTF-8"> </script>
+  </body>
+</html>
 
-      // Get all elements with class="tabLinks" and remove the class "active"
-      tabLinks = document.getElementsByClassName("tabLinks");
-      for (i = 0; i < tabLinks.length; i++) {{
-        tabLinks[i].className = tabLinks[i].className.replace(" active", "");
-      }}
-
-      // Show the current tab, and add an "active" class to the button that opened the
-      // tab
-      document.getElementById(tabName).style.display = "block";
-      evt.currentTarget.className += " active";
-    }}
-  </script>
-  <div id="markdown_readme" class="tabContent"></div>
-  <script src="static_content/marked.min.js"></script>
-  <script>
-    // TODO: Fix readme escape and index page redesign
-    var markdownContent = marked(`{readme}`);
-    var element = document.getElementById('markdown_readme');
-    element.innerHTML = markdownContent;
-  </script>
-  <div id="swagger_ui_container" class="tabContent" style="display: block"></div>
-  <script src="static_content/swagger-ui-bundle.js"></script>
-  <script>
-      SwaggerUIBundle({{
-          url: '/docs.json',
-          dom_id: '#swagger_ui_container'
-      }})
-  </script>
-</body>
 """
 
 
@@ -284,7 +244,7 @@ class ServiceAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> list[t.Callable[[], None]]:
         on_startup = [self.bento_service.on_asgi_app_startup]
-        if DeploymentContainer.api_server_config.development_mode.get():
+        if DeploymentContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(runner._init_local)  # type: ignore
         else:
@@ -322,34 +282,33 @@ class ServiceAppFactory(BaseAppFactory):
             # handle_request may raise 4xx or 5xx exception.
             try:
                 input_data = await api.input.from_http_request(request)
-                response = await api.output.init_http_response()
                 ctx = None
                 if asyncio.iscoroutinefunction(api.func):
                     if isinstance(api.input, Multipart):
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             input_data[api.ctx_param] = ctx
                         output = await api.func(**input_data)
                     else:
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             output = await api.func(input_data, ctx)
                         else:
                             output = await api.func(input_data)
                 else:
                     if isinstance(api.input, Multipart):
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             input_data[api.ctx_param] = ctx
                         output: t.Any = await run_in_threadpool(api.func, **input_data)
                     else:
                         if api.needs_ctx:
-                            ctx = Context.from_http(request, response)
+                            ctx = Context.from_http(request)
                             output = await run_in_threadpool(api.func, input_data, ctx)
                         else:
                             output = await run_in_threadpool(api.func, input_data)
 
-                await api.output.finalize_http_response(response, output)
+                response = await api.output.to_http_response(output, ctx)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 

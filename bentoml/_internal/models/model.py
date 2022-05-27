@@ -26,7 +26,6 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import MetadataType  # noqa # pylint: disable
 from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
@@ -36,16 +35,17 @@ from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
-from ..runner.runnable import BatchDimType
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
 
-    ModelSignatureDict: t.TypeAlias = dict[
-        str, bool | BatchDimType | AnyType | tuple[AnyType] | None
-    ]
+    class ModelSignatureDict(t.TypedDict, total=False):
+        batch_dim: tuple[int, int]
+        batchable: bool
+        input_spec: tuple[AnyType] | AnyType | None
+        output_spec: AnyType | None
 
 
 T = t.TypeVar("T")
@@ -66,10 +66,7 @@ else:
 class ModelOptions(ModelOptionsSuper):
     @classmethod
     def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        if len(kwargs) != 0:
-            for k in kwargs:
-                raise ValueError(f"Option {k} is not supported")
-        return cls()
+        return cls(**kwargs)
 
     @staticmethod
     def to_dict(options: ModelOptions) -> dict[str, t.Any]:
@@ -77,9 +74,9 @@ class ModelOptions(ModelOptionsSuper):
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls(**d)
+    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)  # type: ignore
 )
-bentoml_cattr.register_unstructure_hook(ModelOptions, ModelOptions.to_dict)
+bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
 
 
 @attr.define(repr=False, eq=False, init=False)
@@ -128,10 +125,8 @@ class Model(StoreItem):
     def custom_objects(self) -> t.Dict[str, t.Any]:
         if self._custom_objects is None:
             if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
-                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "r") as cofile:
-                    self._custom_objects: t.Optional[
-                        t.Dict[str, t.Any]
-                    ] = cloudpickle.load(  # type: ignore (incomplete cloudpickle types)
+                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
+                    self._custom_objects: dict[str, t.Any] | None = cloudpickle.load(
                         cofile
                     )
                     if not isinstance(self._custom_objects, dict):
@@ -260,7 +255,7 @@ class Model(StoreItem):
 
     def _write_info(self):
         with self._fs.open(MODEL_YAML_FILENAME, "w", encoding="utf-8") as model_yaml:
-            self.info.dump(model_yaml)  # type: ignore (python IO types are not compatible)
+            self.info.dump(t.cast(io.StringIO, model_yaml))
 
     def _write_custom_objects(self):
         # pickle custom_objects if it is not None and not empty
@@ -376,52 +371,47 @@ class ModelSignature:
         batch_dim:
             The dimension(s) that contain multiple data when passing to this prediction method.
 
-            For example, if you have two inputs you want to run prediction on, ``[1, 2]`` and
-            ``[3, 4]``, if the array you would pass to the predict method would be
-            ``[[1, 2], [3, 4]]``, then the batch dimension would be ``0``. If the array you would
-            pass to the predict method would be ``[[1, 3], [2, 4]]``, then the batch dimension would
-            be ``1``.
+            For example, if you have two inputs you want to run prediction on, ``[1, 2]`` and ``[3,
+            4]``, if the array you would pass to the predict method would be ``[[1, 2], [3, 4]]``,
+            then the batch dimension would be ``0``. If the array you would pass to the predict
+            method would be ``[[1, 3], [2, 4]]``, then the batch dimension would be ``1``.
 
             If there are multiple arguments to the predict method and there is only one batch
             dimension supplied, all arguments will use that batch dimension.
 
-            Example:
-            .. code-block:: python
-                # Save two models with `predict` method that supports taking input batches on the dimension 0 and the other on dimension 1:
-                bentoml.pytorch.save_model("demo0", model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
-                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable": True, "batch_dim": 1}})
+            Example: .. code-block:: python
+                # Save two models with `predict` method that supports taking input batches on the
+                dimension 0 and the other on dimension 1: bentoml.pytorch.save_model("demo0",
+                model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable":
+                True, "batch_dim": 1}})
 
                 # if the following calls are batched, the input to the actual predict method on the
-                # model.predict method would be [[1, 2], [3, 4], [5, 6]]
-                runner0 = bentoml.pytorch.get("demo0:latest").to_runner()
-                runner0.init_local()
-                runner0.predict.run(np.array([[1, 2], [3, 4]]))
-                runner0.predict.run(np.array([[5, 6]]))
+                # model.predict method would be [[1, 2], [3, 4], [5, 6]] runner0 =
+                bentoml.pytorch.get("demo0:latest").to_runner() runner0.init_local()
+                runner0.predict.run(np.array([[1, 2], [3, 4]])) runner0.predict.run(np.array([[5,
+                6]]))
 
                 # if the following calls are batched, the input to the actual predict method on the
-                # model.predict would be [[1, 2, 5], [3, 4, 6]]
-                runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
-                runner1.init_local()
-                runner1.predict.run(np.array([[1, 2], [3, 4]]))
-                runner1.predict.run(np.array([[5], [6]]))
+                # model.predict would be [[1, 2, 5], [3, 4, 6]] runner1 =
+                bentoml.pytorch.get("demo1:latest").to_runner() runner1.init_local()
+                runner1.predict.run(np.array([[1, 2], [3, 4]])) runner1.predict.run(np.array([[5],
+                [6]]))
 
             Expert API:
 
             The batch dimension can also be a tuple of (input batch dimension, output batch
-            dimension). In this case, the input batch dimension can be an array which contains the
-            batch dimension for each argument. For example, if the predict method takes three
-            arguments ``predict(x, y, z)``, the batch dimension could be ``([0, 1, 2], 0)``, meaning
-            ``x`` would be batched along the zeroth dimension, ``y`` along the first, ``z`` along
-            the second, and the output along the zeroth axis.
+            dimension). For example, if the predict method should have its input batched along the
+            first axis and its output batched along the zeroth axis, ``batch_dim`` can be set to
+            ``(1, 0)``.
 
-            Partial argument arrays are not supported; if the input takes n arguments, the batch
-            dimension array must have length n.
         input_spec: Reserved for future use.
+
         output_spec: Reserved for future use.
     """
 
     batchable: bool = False
-    batch_dim: BatchDimType = 0
+    batch_dim: t.Tuple[int, int] = (0, 0)
     # TODO: define input/output spec struct
     input_spec: t.Any = None
     output_spec: t.Any = None
@@ -475,7 +465,10 @@ class ModelInfo:
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
     options: ModelOptions
-    metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
+    # TODO: make metadata a MetadataDict; this works around a bug in attrs
+    metadata: t.Dict[str, t.Any] = attr.field(
+        validator=metadata_validator, converter=dict
+    )
     context: ModelContext = attr.field()
     signatures: t.Dict[str, ModelSignature] = attr.field(
         converter=ModelSignature.convert_signatures_dict
@@ -491,7 +484,7 @@ class ModelInfo:
         module: str,
         labels: dict[str, str],
         options: ModelOptions,
-        metadata: dict[str, t.Any],
+        metadata: MetadataDict,
         context: ModelContext,
         signatures: ModelSignaturesType,
         api_version: str | None = None,
@@ -538,6 +531,9 @@ class ModelInfo:
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
+    def parse_options(self, options_class: type[ModelOptions]) -> None:
+        object.__setattr__(self, "options", options_class.with_options(**self.options))
+
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:
         ...
@@ -562,8 +558,8 @@ class ModelInfo:
 
         yaml_content["tag"] = str(
             Tag(
-                yaml_content["name"],  # type: ignore
-                yaml_content["version"],  # type: ignore
+                t.cast(str, yaml_content["name"]),
+                t.cast(str, yaml_content["version"]),
             )
         )
         del yaml_content["name"]

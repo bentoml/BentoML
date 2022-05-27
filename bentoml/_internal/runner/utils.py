@@ -22,6 +22,10 @@ To = t.TypeVar("To")
 CUDA_SUCCESS = 0
 
 
+def pass_through(i: T) -> T:
+    return i
+
+
 class Params(t.Generic[T]):
     args: tuple[T, ...]
     kwargs: dict[str, T]
@@ -51,32 +55,18 @@ class Params(t.Generic[T]):
         except StopIteration:
             pass
 
+    def keys(self) -> t.Iterator[int | str]:
+        return itertools.chain(range(len(self.args)), self.kwargs.keys())
+
     def items(self) -> t.Iterator[t.Tuple[t.Union[int, str], T]]:
         return itertools.chain(enumerate(self.args), self.kwargs.items())
 
     @classmethod
-    def agg(
-        cls,
-        params_list: t.Sequence[Params[T]],
-        agg_func: t.Callable[[t.Sequence[T], int], To] = lambda b, _: b,
-    ) -> Params[To]:
-        if not params_list:
-            return Params()
-
-        args: t.List[To] = []
-        kwargs: t.Dict[str, To] = {}
-
-        for j, _ in enumerate(params_list[0].args):
-            arg: t.List[T] = []
-            for params in params_list:
-                arg.append(params.args[j])
-            args.append(agg_func(arg, j))
-        for k in params_list[0].kwargs:
-            kwarg: t.List[T] = []
-            for params in params_list:
-                kwarg.append(params.kwargs[k])
-            kwargs[k] = agg_func(kwarg, -1)
-        return Params(*tuple(args), **kwargs)
+    def from_dict(cls, data: dict[str | int, T]) -> Params[T]:
+        return cls(
+            *(data[k] for k in sorted(k for k in data if isinstance(k, int))),
+            **{k: v for k, v in data.items() if isinstance(k, str)},
+        )
 
     @property
     def sample(self) -> T:

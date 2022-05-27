@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from abc import ABC
 from abc import abstractmethod
@@ -6,35 +8,12 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ..types import FileLike
-
 if TYPE_CHECKING:
-    from types import UnionType  # noqa: F401
+    from types import UnionType
 
-    import numpy as np  # noqa: F401
-    import pandas as pd  # noqa: F401
-    import pydantic  # noqa: F401
-    import PIL.Image  # noqa: F401
+    from ..types import LazyType
+    from ..context import InferenceApiContext as Context
 
-    from ..types import LazyType  # noqa: F401
-
-
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
-
-# NOTES: we will keep type in quotation to avoid backward compatibility
-#  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
-#  that enable a new way to type hint an ndarray.
-ImageType = t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]
-
-IOType = t.Union[
-    str,
-    JSONType,
-    FileLike,
-    ImageType,
-    "np.ndarray[t.Any, np.dtype[t.Any]]",
-    "pd.DataFrame",
-    "pd.Series[t.Any]",
-]
 
 IOPyObj = t.TypeVar("IOPyObj")
 
@@ -92,11 +71,9 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         ...
 
     @abstractmethod
-    async def init_http_response(self) -> Response:
-        ...
-
-    @abstractmethod
-    async def finalize_http_response(self, response: Response, obj: IOPyObj):
+    async def to_http_response(
+        self, obj: IOPyObj, ctx: Context | None = None
+    ) -> Response:
         ...
 
     # TODO: gRPC support

@@ -8,6 +8,7 @@ import socket
 import typing as t
 import functools
 import contextlib
+from typing import overload
 from typing import TYPE_CHECKING
 from pathlib import Path
 from datetime import date
@@ -19,7 +20,7 @@ import fs
 import attr
 import fs.copy
 
-if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from backports.cached_property import cached_property
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     P = t.ParamSpec("P")
+    GenericFunction = t.Callable[P, t.Any]
 
 
 C = t.TypeVar("C")
@@ -52,6 +54,39 @@ __all__ = [
     "validate_or_create_dir",
     "display_path_under_home",
 ]
+
+
+@overload
+def kwargs_transformers(
+    func: GenericFunction[t.Concatenate[str, bool, t.Iterable[str], P]],
+    *,
+    transformer: GenericFunction[t.Any],
+) -> GenericFunction[t.Concatenate[str, t.Iterable[str], bool, P]]:
+    ...
+
+
+@overload
+def kwargs_transformers(
+    func: None = None, *, transformer: GenericFunction[t.Any]
+) -> GenericFunction[t.Any]:
+    ...
+
+
+def kwargs_transformers(
+    _func: t.Callable[..., t.Any] | None = None,
+    *,
+    transformer: GenericFunction[t.Any],
+) -> GenericFunction[t.Any]:
+    def decorator(func: GenericFunction[t.Any]) -> t.Callable[P, t.Any]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+            return func(*args, **{k: transformer(v) for k, v in kwargs.items()})
+
+        return wrapper
+
+    if _func is None:
+        return decorator
+    return decorator(_func)
 
 
 @t.overload
@@ -125,11 +160,9 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._fallback = fallback
         self._raises = raises
 
-    def __call__(
-        self, func: "t.Callable[P, _T_co]"
-    ) -> "t.Callable[P, t.Optional[_T_co]]":
+    def __call__(self, func: t.Callable[P, _T_co]) -> t.Callable[P, t.Optional[_T_co]]:
         @functools.wraps(func)
-        def _(*args: "P.args", **kwargs: "P.kwargs") -> t.Optional[_T_co]:
+        def _(*args: P.args, **kwargs: P.kwargs) -> t.Optional[_T_co]:
             try:
                 return func(*args, **kwargs)
             except self._catch_exc:
@@ -174,7 +207,7 @@ def reserve_free_port(
 
 def copy_file_to_fs_folder(
     src_path: str,
-    dst_fs: "FS",
+    dst_fs: FS,
     dst_folder_path: str = ".",
     dst_filename: t.Optional[str] = None,
 ):

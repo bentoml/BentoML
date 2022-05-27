@@ -1,15 +1,10 @@
 # Dev dependencies
 -r tests-requirements.txt
-python-minifier==2.5.0
 attrs>=21.1
 GitPython>=2.0
 setup-cfg-fmt
 yamllint
 setuptools>=62.0.0
 twine
-types-chardet
-types-click
-types-filelock
-types-PyYAML
-types-setuptools
 wheel
+backports.cached_property

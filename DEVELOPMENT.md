@@ -61,7 +61,7 @@ It is possible to force a Bento to use a custom BentoML source distribution:
 1. Install custom BentoML in editable mode. e.g.:
    * git clone your bentoml fork
    * `pip install -e PATH_TO_THE_FORK`
-2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True`
+2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True` and `export SETUPTOOLS_USE_DISTUTILS=stdlib`
    * make sure you have the latest setuptools installed:  `pip install -U setuptools`
 3. Build a new Bento with `bentoml build` in your project directory
 4. The new Bento will include a wheel file built from the BentoML source, and 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -5,31 +7,20 @@ from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from .base import IOType
 from .base import IODescriptor
-from ..utils.http import set_content_length
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.formparser import populate_multipart_requests
-from ..utils.formparser import concat_to_multipart_responses
+from ..utils.formparser import concat_to_multipart_response
 
 if TYPE_CHECKING:
     from types import UnionType
 
-    from .file import File
-    from .json import JSON
-    from .text import Text
-    from .image import Image
-    from .numpy import NumpyNdarray
     from ..types import LazyType
-    from .pandas import PandasSeries
-    from .pandas import PandasDataFrame
+    from ..context import InferenceApiContext as Context
 
 
-MultipartIO = t.Dict[str, IOType]
-
-
-class Multipart(IODescriptor[MultipartIO]):
+class Multipart(IODescriptor[t.Any]):
     """
     :code:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a *multipart* request/responses as specified in your API function signature.
@@ -133,40 +124,18 @@ class Multipart(IODescriptor[MultipartIO]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that Multipart request/response.
     """
 
-    def __init__(
-        self,
-        **inputs: t.Union[
-            "Image",
-            "JSON",
-            "Text",
-            "NumpyNdarray",
-            "PandasDataFrame",
-            "PandasSeries",
-            "File",
-        ],
-    ):
+    def __init__(self, **inputs: IODescriptor[t.Any]):
         for descriptor in inputs.values():
             if isinstance(descriptor, Multipart):  # pragma: no cover
                 raise InvalidArgument(
-                    "Multipart IO can not contain nested Multipart item"
+                    "Multipart IO can not contain nested Multipart IO descriptor"
                 )
-        self._inputs: t.Dict[
-            str,
-            t.Union[
-                "Image",
-                "JSON",
-                "Text",
-                "NumpyNdarray",
-                "PandasDataFrame",
-                "PandasSeries",
-                "File",
-            ],
-        ] = inputs
+        self._inputs: dict[str, t.Any] = inputs
 
     def input_type(
         self,
-    ) -> t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]]:
-        res: t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]] = {}
+    ) -> dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]:
+        res: dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]] = {}
         for (k, v) in self._inputs.items():
             inp_type = v.input_type()
             if isinstance(inp_type, dict):
@@ -177,7 +146,7 @@ class Multipart(IODescriptor[MultipartIO]):
 
         return res
 
-    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+    def openapi_schema_type(self) -> dict[str, t.Any]:
         return {
             "type": "object",
             "properties": {
@@ -185,22 +154,22 @@ class Multipart(IODescriptor[MultipartIO]):
             },
         }
 
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_request_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
         return {"multipart/form-data": {"schema": self.openapi_schema_type()}}
 
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_responses_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
         return {"multipart/form-data": {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> MultipartIO:
+    async def from_http_request(self, request: Request) -> dict[str, t.Any]:
         ctype, _ = parse_options_header(request.headers["content-type"])
         if ctype != b"multipart/form-data":
             raise BentoMLException(
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             )
 
-        res: MultipartIO = dict()
+        res: dict[str, t.Any] = dict()
         reqs = await populate_multipart_requests(request)
 
         for k, i in self._inputs.items():
@@ -209,14 +178,12 @@ class Multipart(IODescriptor[MultipartIO]):
             res[k] = v
         return res
 
-    async def init_http_response(self) -> Response:
-        return Response(None)
-
-    async def finalize_http_response(self, response: Response, obj: MultipartIO):
-        res_mapping: t.Dict[str, Response] = {}
+    async def to_http_response(
+        self, obj: dict[str, t.Any], ctx: Context | None = None
+    ) -> Response:
+        res_mapping: dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]
             resp = io_.init_http_response()
-            res_mapping[k] = await io_.finalize_http_response(resp, data)  # type: ignore[reportGeneralTypeIssue]
-        await concat_to_multipart_responses(response, res_mapping)
-        set_content_length(response)
+            res_mapping[k] = await io_.finalize_http_response(resp, data)
+        return await concat_to_multipart_response(res_mapping, ctx)

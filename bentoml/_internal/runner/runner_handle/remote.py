@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import json
 import typing as t
 import asyncio
-import inspect
+import functools
 from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
@@ -20,27 +22,29 @@ if TYPE_CHECKING:  # pragma: no cover
     from aiohttp.client import ClientSession
 
     from ..runner import Runner
+    from ..runner import RunnerMethod
+
+    P = t.ParamSpec("P")
+    R = t.TypeVar("R")
 
 
 class RemoteRunnerClient(RunnerHandle):
-    def __init__(  # pylint: disable=super-init-not-called
-        self, runner: "Runner"
-    ) -> None:
+    def __init__(self, runner: Runner):  # pylint: disable=super-init-not-called
         self._runner = runner
-        self._conn: t.Optional["BaseConnector"] = None
-        self._client: t.Optional["ClientSession"] = None
-        self._loop: t.Optional[asyncio.AbstractEventLoop] = None
-        self._addr: t.Optional[str] = None
+        self._conn: BaseConnector | None = None
+        self._client: ClientSession | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._addr: str | None = None
 
     @property
-    def _remote_runner_server_map(self) -> t.Dict[str, str]:
+    def _remote_runner_server_map(self) -> dict[str, str]:
         return DeploymentContainer.remote_runner_mapping.get()
 
     def _close_conn(self) -> None:
         if self._conn:
             self._conn.close()
 
-    def _get_conn(self) -> "BaseConnector":
+    def _get_conn(self) -> BaseConnector:
         import aiohttp
 
         if (
@@ -75,8 +79,8 @@ class RemoteRunnerClient(RunnerHandle):
 
     def _get_client(
         self,
-        timeout_sec: t.Optional[float] = None,
-    ) -> "ClientSession":
+        timeout_sec: float | None = None,
+    ) -> ClientSession:
         import aiohttp
 
         if (
@@ -86,7 +90,9 @@ class RemoteRunnerClient(RunnerHandle):
             or self._loop.is_closed()
         ):
             import yarl
-            from opentelemetry.instrumentation.aiohttp_client import create_trace_config
+            from opentelemetry.instrumentation.aiohttp_client import (
+                create_trace_config,  # type: ignore (missing type stubs)
+            )
 
             def strip_query_params(url: yarl.URL) -> str:
                 return str(url.with_query(None))
@@ -116,25 +122,35 @@ class RemoteRunnerClient(RunnerHandle):
 
     async def async_run_method(
         self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
-        runnable_method = getattr(self._runner.runnable_class, method_name)
-
-        signature = inspect.signature(runnable_method)
-        # binding self parameter to None as we don't want to instantiate the runner
-        bound_args = signature.bind(None, *args, **kwargs)
-        bound_args.apply_defaults()
-
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
         from ...runner.container import AutoContainer
 
-        for name, value in bound_args.arguments.items():
-            bound_args.arguments[name] = AutoContainer.to_payload(value)
-        params = Params(*bound_args.args[1:], **bound_args.kwargs)
-        multipart = payload_params_to_multipart(params)
+        # TODO: validate call signature
+
+        inp_batch_dim = __bentoml_method.config.batch_dim[0]
+
+        payload_params = Params[Payload](*args, **kwargs).map(
+            functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
+        )
+
+        if __bentoml_method.config.batchable:
+            params_iter = iter(payload_params.items())
+            size = next(params_iter)[1].batch_size
+            for param in params_iter:
+                if param[1].batch_size != size:
+                    raise ValueError(
+                        "All batchable arguments must have the same batch size."
+                    )
+
+        multipart = payload_params_to_multipart(payload_params)
         client = self._get_client()
-        async with client.post(f"{self._addr}/{method_name}", data=multipart) as resp:
+        async with client.post(
+            f"{self._addr}/{__bentoml_method.name}",
+            data=multipart,
+        ) as resp:
             body = await resp.read()
 
         if resp.status != 200:
@@ -178,15 +194,15 @@ class RemoteRunnerClient(RunnerHandle):
 
     def run_method(
         self,
-        method_name: str,
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.Any:
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
         import anyio
 
-        return anyio.from_thread.run(
+        return anyio.from_thread.run(  # type: ignore (pyright cannot infer the return type)
             self.async_run_method,
-            method_name,
+            __bentoml_method,
             *args,
             **kwargs,
         )

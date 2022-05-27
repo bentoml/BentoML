@@ -95,8 +95,6 @@ else:
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
-    del _LazyLoader
-
 __all__ = [
     "__version__",
     "Context",

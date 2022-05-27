@@ -7,12 +7,12 @@ from typing import final
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from circus.plugins import CircusPlugin
+from circus.plugins import CircusPlugin  # type: ignore[reportMissingTypeStubs]
 
 if TYPE_CHECKING:
-    from circus.arbiter import Arbiter
-    from circus.sockets import CircusSocket
-    from circus.watcher import Watcher
+    from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
+    from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
+    from circus.watcher import Watcher  # type: ignore[reportMissingTypeStubs]
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def create_circus_socket_from_uri(
     name: str = "",
     **kwargs: t.Any,
 ) -> CircusSocket:
-    from circus.sockets import CircusSocket
+    from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
 
     from bentoml._internal.utils.uri import uri_to_path
 
@@ -47,8 +47,8 @@ def create_circus_socket_from_uri(
         raise ValueError(f"Unsupported URI scheme: {parsed.scheme}")
 
 
-def create_standalone_arbiter(watchers: list["Watcher"], **kwargs: t.Any) -> "Arbiter":
-    from circus.arbiter import Arbiter
+def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbiter:
+    from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
 
     from . import reserve_free_port
 

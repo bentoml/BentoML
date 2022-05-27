@@ -23,15 +23,15 @@ things MLOps.
 - **Stream serving** with Kafka, Beam, and Flink
 
 🍱 Easily go from training to model serving in production
-- 27 ML Frameworks natively supported and counting! - Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more
+- All common ML libraries natively supported! - Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more
 - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
-- Automatically setup CUDA and cuDNN for serving models with GPU
+- Automatically setup Dockerfile, CUDA and python packages for model serving 
 - Designed to work with any training pipeline or experimentation platform
 
 🐍 Python-first, scales with powerful optimizations
-- Scale Model inference workers separately from business logic and feature processing code
+- Scale model inference workers separately from business logic and feature processing code
 - Adaptive batching dynamically groups inference requests for optimal performance
-- Complex inference graphs automatically orchestrated with Yatai on Kubernetes
+- Inference graphs with multiple models automatically orchestrated with Yatai on Kubernetes
 
 🚢 Deployment workflow made for production
 - 🐳 Automatically generate docker images for production deployment

@@ -636,7 +636,8 @@ Conda Options Table
 Docker Options
 ^^^^^^^^^^^^^^
 
-BentoML makes it easy to deploy a Bento to a Docker container.
+BentoML makes it easy to deploy a Bento to a Docker container. This section discuss the
+available options for customizing the docker image generated from a Bento.
 
 Here's a basic Docker options configuration.
 
@@ -644,9 +645,8 @@ Here's a basic Docker options configuration.
 
     docker:
         distro: debian
-        python_version: "3.8.9"
+        python_version: "3.8.12"
         cuda_version: "11.6,2"
-        setup_script: "setup.sh"
         system_packages:
             - libblas-dev
             - liblapack-dev
@@ -717,32 +717,49 @@ projects you can pre-download NLTK data in the image with:
    # setup.sh
    python -m nltk.downloader all
 
+
 Custom Base Image (Advanced)
 """"""""""""""""""""""""""""
 
 If none of the provided distros work for your use case, e.g. if your infrastructure
 requires all docker images to be derived from the same base image with certain security
-fixes, you can config BentoML to use your base image instead:
+fixes and libraries, you can config BentoML to use your base image instead:
 
 .. code:: yaml
 
     docker:
         base_image: "my_custom_image:latest"
 
+When a :code:`base_image` is provided, **all other docker options will be ignored**,
+(distro, cuda_version, system_packages, python_version). :code:`bentoml containerize`
+will build a new image on top of the base_image with the following steps:
+
+- setup env vars
+- run the :code:`setup_script` if provided
+- install the required Python packages
+- copy over the Bento file
+- setup the entrypoint command for serving.
+
+
 .. note::
-    :bdg-warning:`Warning:` When a :code:`base_image` is provided, all other docker
-    options (distro, cuda_version, system_packages, python_version) will be ignored.
-    User must ensure that the provided base image has Python or Conda installed. In this
-    case, :code:`bentoml containerize` will build a new image on top of your base_image:
-    run the :code:`setup_script` if provided, install the required Python dependencies,
-    copy over the Bento file, and lastly setup the entrypoint command for serving.
+    :bdg-warning:`Warning:` user must ensure that the provided base image has desired
+    Python version installed. If the base image you have doesn't have Python, you may
+    install python via a :code:`setup_script`. The implementation of the script depends
+    on the base image distro or the package manager available.
+
+    .. code:: yaml
+
+        docker:
+            base_image: "my_custom_image:latest"
+            setup_script: "./setup.sh"
+
 
 
 Docker Template (Danger Zone)
 """""""""""""""""""""""""""""
 
-The :code:`docker_template` field opens up opportunity to extend and change the
-BentoML templates used for generating the :code:`Dockerfile` in a Bento.
+The :code:`docker_template` field gives user the full control over how the
+:code:`Dockerfile` was generated in a Bento.
 
 Documenting this option is working-in-progress, see :issue:`2497`
 

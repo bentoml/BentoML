@@ -79,26 +79,39 @@ General workaround (Recommended)
 
 
 
-
 Docker Images Options
 ^^^^^^^^^^^^^^^^^^^^^
 
-Users have options to build their own customized docker images to serve with ``BentoService`` via ``@env(docker_base_images="")``.
-Make sure that your custom docker images have Python and CUDA library in order to run with GPU.
+See :ref:`concepts/bento:Docker Options` for all options related to setting up docker
+image options related to GPU. Here's a sample :code:`bentofile.yaml` config for serving
+with GPU:
 
-BentoML also provides three `CUDA-enabled images <https://hub.docker.com/r/bentoml/model-server/tags?page=1&ordering=last_updated&name=gpu>`_
-with CUDA 11.3 and CUDNN 8.2.0 (refers to this `support matrix <https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html>`_ for CUDA and CUDNN version matching).
+.. code:: yaml
 
+    service: "service:svc"
+    include:
+    - "*.py"
+    python:
+        packages:
+        - torch
+        - torchvision
+        - torchaudio
+        extra_index_url:
+        - "https://download.pytorch.org/whl/cu113"
+    docker:
+        distro: debian
+        python_version: "3.8.12"
+        cuda_version: "11.6,2"
 
 .. code-block:: bash
 
     # to serve bento locally
-    $ bentoml serve TensorflowService:latest
+    $ bentoml serve MyTFService:latest
 
 .. code-block:: bash
 
     # containerize saved bento
-    $ bentoml containerize TensorflowService:latest -t tf_svc
+    $ bentoml containerize MyTFService:latest -t tf_svc
 
 .. code-block:: bash
 

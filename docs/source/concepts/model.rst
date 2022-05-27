@@ -232,7 +232,7 @@ Besides the CLI commands, BentoML also provides equivalent
 
     .. tab-item:: List
 
-        :code:`bentoml.models.list` returns a list of :ref:`bentoml.Model </reference/core:Model>`:
+        :code:`bentoml.models.list` returns a list of :ref:`bentoml.Model <reference/core:Model>`:
 
         .. code:: python
 
@@ -415,7 +415,8 @@ as one inference call in the runner worker. Here's an example:
     True or False.
 
 The :code:`batch_dim` parameter determines the dimension(s) that contain multiple data
-when passing to this run method.
+when passing to this run method. The default :code:`batch_dim`, when left unspecified,
+is :code:`0`.
 
 For example, if you have two inputs you want to run prediction on, :code:`[1, 2]` and
 :code:`[3, 4]`, if the array you would pass to the predict method would be

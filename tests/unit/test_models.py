@@ -34,7 +34,7 @@ def createfile(filepath: str) -> str:
 TEST_MODEL_CONTEXT = ModelContext(
     framework_name="testing",
     framework_versions={"testing": "v1"},
-    save_format_version=0,
+    model_format_version=0,
 )
 
 

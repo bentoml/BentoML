@@ -170,7 +170,7 @@ def save_model(
     context = ModelContext(
         framework_name="tensorflow",
         framework_versions={"tensorflow": get_tf_version()},
-        save_format_version=0,
+        model_format_version=0,
     )
 
     # will add signatures inference from tf_signatures later

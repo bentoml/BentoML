@@ -21,7 +21,7 @@ def test_wrong_module_load_exc(framework: types.ModuleType):
         "wrong_module",
         module=__name__,
         context=ModelContext(
-            "wrong_module", {"wrong_module": "1.0.0"}, save_format_version=0
+            "wrong_module", {"wrong_module": "1.0.0"}, model_format_version=0
         ),
         signatures={},
     ) as ctx:

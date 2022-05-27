@@ -126,7 +126,7 @@ def save_model(
     context = ModelContext(
         framework_name="cloudpickle",
         framework_versions={"cloudpickle": cloudpickle.__version__},
-        save_format_version=0,
+        model_format_version=0,
     )
 
     if signatures is None:

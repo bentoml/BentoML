@@ -214,7 +214,7 @@ def save_model(
     context = ModelContext(
         framework_name="keras",
         framework_versions={"tensorflow": get_tf_version()},
-        save_format_version=0,
+        model_format_version=0,
     )
 
     if signatures is None:

@@ -243,7 +243,7 @@ def save_model(
 
     if signatures is None:
         signatures = {
-            "__call__": {"batchable": True},
+            "__call__": {"batchable": False},
         }
         logger.info(
             f"Using the default model signature for Transformers ({signatures}) for model {name}."

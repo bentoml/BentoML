@@ -79,7 +79,7 @@ LOGGING_CONFIG: dict[str, t.Any] = {
             "()": "rich.logging.RichHandler",
             "omit_repeated_times": False,
             "rich_tracebacks": True,
-            "tracebacks_show_locals": True,
+            "tracebacks_show_locals": get_debug_mode(),
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },
         "uvicorn": {
@@ -89,7 +89,7 @@ LOGGING_CONFIG: dict[str, t.Any] = {
             "()": "rich.logging.RichHandler",
             "omit_repeated_times": False,
             "rich_tracebacks": True,
-            "tracebacks_show_locals": True,
+            "tracebacks_show_locals": get_debug_mode(),
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },
         "circus": {
@@ -99,7 +99,7 @@ LOGGING_CONFIG: dict[str, t.Any] = {
             "()": "rich.logging.RichHandler",
             "omit_repeated_times": True,
             "rich_tracebacks": True,
-            "tracebacks_show_locals": True,
+            "tracebacks_show_locals": get_debug_mode(),
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },
     },
@@ -107,7 +107,7 @@ LOGGING_CONFIG: dict[str, t.Any] = {
         "bentoml": {"handlers": ["internal"], "level": "INFO", "propagate": False},
         # circus logger
         "circus": {"handlers": ["circus"], "level": "INFO", "propagate": False},
-        "circus.plugins": {"handlers": [], "level": "INFO", "propagate": False},
+        "circus.plugins": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "asyncio": {"handlers": ["internal"], "level": "INFO"},
         # uvicorn logger
         "uvicorn": {"handlers": [], "level": "INFO"},

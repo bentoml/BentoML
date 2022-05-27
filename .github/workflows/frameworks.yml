@@ -13,6 +13,8 @@ on:
 
 env:
   BENTOML_DO_NOT_TRACK: True
+  LINES: 125
+  COLUMNS: 125
 
 jobs:
   diff:

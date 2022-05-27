@@ -1,20 +1,21 @@
 from __future__ import annotations
-import functools
-import logging
+
 import typing as t
+import logging
+import functools
 
 import torch
 
 import bentoml
 from bentoml import Tag
 
+from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelSignaturesType
-from ..utils.pkg import get_pkg_version
 from .common.pytorch import torch
 
 _PL_IMPORT_ERROR = f"""\

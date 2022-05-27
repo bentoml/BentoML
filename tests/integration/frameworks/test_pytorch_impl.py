@@ -8,6 +8,7 @@ import torch.nn as nn
 
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
+from bentoml._internal.tag import Tag
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
 from tests.utils.frameworks.pytorch_utils import test_df
 from tests.utils.frameworks.pytorch_utils import predict_df
@@ -17,44 +18,54 @@ from tests.utils.frameworks.pytorch_utils import LinearModelWithBatchAxis
 
 
 @pytest.fixture(scope="module")
-def models():
-    def _(labels=None, custom_objects=None):
-        model: nn.Module = LinearModel()
-        tag = bentoml.pytorch.save(
-            "pytorch_test", model, labels=labels, custom_objects=custom_objects
-        )
-        return tag
-
-    return _
+def model():
+    return LinearModel()
 
 
-def test_pytorch_save_load(models):
-
+@pytest.fixture(scope="module")
+def model_tag(model: nn.Module):
     labels = {"stage": "dev"}
 
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = models(labels=labels, custom_objects={"func": custom_f})
+    return bentoml.pytorch.save_model(
+        "pytorch_test",
+        model,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
+
+
+def test_pytorch_save_load(model: nn.Module):
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = bentoml.pytorch.save_model(
+        "pytorch_test",
+        model,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
     bentomodel = bentoml.models.get(tag)
     assert_have_file_extension(bentomodel.path, ".pt")
-    assert bentomodel.info.context.get("model_format") == "torch.save:v1"
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
-    pytorch_loaded: nn.Module = bentoml.pytorch.load(tag)
+    pytorch_loaded: nn.Module = bentoml.pytorch.load_model(tag)
     assert predict_df(pytorch_loaded, test_df) == 5.0
 
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("dev", ["cpu", "cuda", "cuda:0"])
-def test_pytorch_save_load_across_devices(dev, models):
-    def is_cuda(model):
+def test_pytorch_save_load_across_devices(dev: str, model_tag: Tag):
+    def is_cuda(model: nn.Module) -> bool:
         return next(model.parameters()).is_cuda
 
-    tag = models()
-    loaded: nn.Module = bentoml.pytorch.load(tag)
+    loaded: nn.Module = bentoml.pytorch.load_model(model_tag, device_id=dev)
     if dev == "cpu":
         assert not is_cuda(loaded)
     else:
@@ -68,12 +79,10 @@ def test_pytorch_save_load_across_devices(dev, models):
         torch.from_numpy(test_df.to_numpy().astype(np.float32)),
     ],
 )
-def test_pytorch_runner_setup_run_batch(input_data):
-    model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model)
-    runner = bentoml.pytorch.load_runner(tag)
+def test_pytorch_runner_setup_run_batch(model_tag: Tag):
+    runner = bentoml.pytorch.get(model_tag).to_runner()
 
-    assert tag in runner.required_models
+    assert tag in runner.models
     assert runner.num_replica == 1
 
     res = runner.run_batch(input_data)

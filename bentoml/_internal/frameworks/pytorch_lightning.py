@@ -1,14 +1,15 @@
 from __future__ import annotations
+
 import typing as t
 
 from bentoml import Tag
 
-from ...exceptions import MissingDependencyException
-from ..models.model import ModelSignaturesType
 from .torchscript import get
 from .torchscript import load_model
 from .torchscript import save_model as script_save_model
 from .torchscript import get_runnable
+from ...exceptions import MissingDependencyException
+from ..models.model import ModelSignaturesType
 
 _IMPORT_ERROR = f"""\
 `pytorch_lightning` and `torch` is required in order to use module `{__name__}`\n
@@ -29,7 +30,7 @@ __all__ = ["save_model", "load_model", "get_runnable", "get"]
 
 def save_model(
     name: str,
-    model: "pl.LightningModule",
+    model: pl.LightningModule,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: t.Dict[str, str] | None = None,

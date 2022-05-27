@@ -549,6 +549,11 @@ class BentoBuildConfig:
         )
         use_cuda = self.docker.cuda_version is not None
 
+        if use_cuda and use_conda:
+            logger.warning(
+                f'Conda will be ignored and will not be available inside bento container when "cuda={self.docker.cuda_version}" is set.'
+            )
+
         if self.docker.distro is not None:
             if use_conda and self.docker.distro not in get_supported_spec("miniconda"):
                 raise BentoMLException(

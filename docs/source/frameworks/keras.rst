@@ -2,79 +2,41 @@
 Keras
 =====
 
-Users can now use Keras (with Tensorflow v1 and v2 backend) with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
+Users can now use Keras (with Tensorflow v2 backend) with BentoML with the following
+APIs:
 
-.. tabs::
+.. code:: python
 
-   .. code-tab:: keras_v1
+    import bentoml
+    import tensorflow as tf
+    import tensorflow.keras as keras
 
-      import bentoml
-      import tensorflow as tf
-      import tensorflow.keras as keras
-
-      def KerasSequentialModel() -> keras.models.Model:
-         net = keras.models.Sequential(
+    def KerasSequentialModel() -> keras.models.Model:
+        net = keras.models.Sequential(
             (
-                  keras.layers.Dense(
-                     units=1,
-                     input_shape=(5,),
-                     use_bias=False,
-                     kernel_initializer=keras.initializers.Ones(),
-                  ),
-            )
-         )
+                keras.layers.Dense(
+                    units=1,
+                    input_shape=(5,),
+                    use_bias=False,
+                    kernel_initializer=keras.initializers.Ones(),
+                ),
+            ),
+        )
 
-         opt = keras.optimizers.Adam(0.002, 0.5)
-         net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
-         return net
-      
-      model = KerasSequentialModel()
+        opt = keras.optimizers.Adam(0.002, 0.5)
+        net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
+        return net
 
-      # `save` a given model and retrieve coresponding tag:
-      tag = bentoml.keras.save("keras_model", model, store_as_json=True)
+    model = KerasSequentialModel()
 
-      # retrieve metadata with `bentoml.models.get`:
-      metadata = bentoml.models.get(tag)
+    # save a given model:
+    tag = bentoml.keras.save_model("keras_model", model)
 
-      # retrieve session that save keras model with `bentoml.keras.get_session()`:
-      session = bentoml.keras.get_session()
-      session.run(tf.global_variables_initializer())
-      with session.as_default():
-         # `load` the model back in memory:
-         loaded = bentoml.keras.load("keras_model:latest")
+    # retrieve metadata with the tag:
+    metadata = bentoml.models.get(tag)
 
-   .. code-tab:: keras_v2
-
-      import bentoml
-      import tensorflow as tf
-      import tensorflow.keras as keras
-
-      def KerasSequentialModel() -> keras.models.Model:
-         net = keras.models.Sequential(
-            (
-                  keras.layers.Dense(
-                     units=1,
-                     input_shape=(5,),
-                     use_bias=False,
-                     kernel_initializer=keras.initializers.Ones(),
-                  ),
-            )
-         )
-
-         opt = keras.optimizers.Adam(0.002, 0.5)
-         net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
-         return net
-      
-      model = KerasSequentialModel()
-
-      # `save` a given model and retrieve coresponding tag:
-      tag = bentoml.keras.save("keras_model", model, store_as_json=True)
-
-      # retrieve metadata with `bentoml.models.get`:
-      metadata = bentoml.models.get(tag)
-
-      # `load` the model back in memory:
-      loaded = bentoml.keras.load("keras_model:latest")
+    # load the model back in memory:
+    loaded = bentoml.keras.load_model("keras_model:latest")
 
 .. note::
 
@@ -82,10 +44,8 @@ Users can now use Keras (with Tensorflow v1 and v2 backend) with BentoML with th
 
 .. currentmodule:: bentoml.keras
 
-.. autofunction:: bentoml.keras.save
+.. autofunction:: bentoml.keras.save_model
 
-.. autofunction:: bentoml.keras.load
+.. autofunction:: bentoml.keras.load_model
 
-.. autofunction:: bentoml.keras.load_runner
-
-.. autofunction:: bentoml.keras.get_session
+.. autofunction:: bentoml.keras.get

@@ -507,7 +507,7 @@ def dict_options_converter(
 ) -> t.Callable[[t.Union[OptionsCls, t.Dict[str, t.Any]]], t.Any]:
     def _converter(
         value: t.Union[OptionsCls, t.Dict[str, t.Any]]
-    ) -> t.Optional[options_type]:
+    ) -> options_type:
         if isinstance(value, dict):
             return options_type(**value)
         return value

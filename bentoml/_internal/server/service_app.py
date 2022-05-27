@@ -34,63 +34,23 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_INDEX_HTML = """\
 <!DOCTYPE html>
-<head>
-  <link rel="stylesheet" type="text/css" href="static_content/main.css">
-  <link rel="stylesheet" type="text/css" href="static_content/readme.css">
-  <link rel="stylesheet" type="text/css" href="static_content/swagger-ui.css">
-</head>
-<body>
-  <div id="tab">
-    <button
-      class="tabLinks active"
-      onclick="openTab(event, 'swagger_ui_container')"
-      id="defaultOpen"
-    >
-      Swagger UI
-    </button>
-    <button class="tabLinks" onclick="openTab(event, 'markdown_readme')">
-      ReadMe
-    </button>
-  </div>
-  <script>
-    function openTab(evt, tabName) {{
-      // Declare all variables
-      var i, tabContent, tabLinks;
-      // Get all elements with class="tabContent" and hide them
-      tabContent = document.getElementsByClassName("tabContent");
-      for (i = 0; i < tabContent.length; i++) {{
-        tabContent[i].style.display = "none";
-      }}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="./static_content/swagger-ui.css" />
+    <link rel="stylesheet" type="text/css" href="./static_content/index.css" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-96x96.png" sizes="96x96" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="./static_content/swagger-ui-bundle.js" charset="UTF-8"> </script>
+    <script src="./static_content/swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
+    <script src="./static_content/swagger-initializer.js" charset="UTF-8"> </script>
+  </body>
+</html>
 
-      // Get all elements with class="tabLinks" and remove the class "active"
-      tabLinks = document.getElementsByClassName("tabLinks");
-      for (i = 0; i < tabLinks.length; i++) {{
-        tabLinks[i].className = tabLinks[i].className.replace(" active", "");
-      }}
-
-      // Show the current tab, and add an "active" class to the button that opened the
-      // tab
-      document.getElementById(tabName).style.display = "block";
-      evt.currentTarget.className += " active";
-    }}
-  </script>
-  <div id="markdown_readme" class="tabContent"></div>
-  <script src="static_content/marked.min.js"></script>
-  <script>
-    // TODO: Fix readme escape and index page redesign
-    var markdownContent = marked(`{readme}`);
-    var element = document.getElementById('markdown_readme');
-    element.innerHTML = markdownContent;
-  </script>
-  <div id="swagger_ui_container" class="tabContent" style="display: block"></div>
-  <script src="static_content/swagger-ui-bundle.js"></script>
-  <script>
-      SwaggerUIBundle({{
-          url: '/docs.json',
-          dom_id: '#swagger_ui_container'
-      }})
-  </script>
-</body>
 """
 
 

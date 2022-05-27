@@ -2,7 +2,7 @@
 Building Bentos
 ===============
 
-What is a Bento？
+What is a Bento?
 ----------------
 
 :ref:`Bento 🍱 <reference/core:bentoml.Bento>` is a file archive with all the source
@@ -343,7 +343,9 @@ Bento Build Options
 -------------------
 
 Build options are specified in a :code:`.yaml` file, which customizes the final Bento
-produced. In this section, we will go over all the build options, including defining
+produced. By convention, this file is named :code:`bentofile.yaml`.
+
+In this section, we will go over all the build options, including defining
 dependencies, configuring files to include, and customize docker image settings.
 
 Service
@@ -711,6 +713,8 @@ projects you can pre-download NLTK data in the image with:
 
 .. code:: yaml
 
+    docker:
+        setup_script: "./setup.sh"
 
 .. code:: bash
 

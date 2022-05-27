@@ -15,11 +15,11 @@ processes will be created, and :code:`run` method calls made from the
 :code:`bentoml.Service` code will be scheduled among those runner workers.
 
 Runner also supports :doc:`/guides/batching`. For a
-:ref:`bentoml.Runnable <reference/core:bentoml.Runnable>` configured with batching
-enabled, the :code:`run` method invocations made from other processes can be dynamically
-grouped into larger batches in real-time and execute at once. This is especially
-beneficial for compute intensive workloads such as model inference, where batching can
-lead to better hardware utilization, through vectorization or multi-threading.
+:ref:`bentoml.Runnable <reference/core:bentoml.Runnable>` configured with batching,
+multiple :code:`run` method invocations made from other processes can be dynamically
+grouped into one batch execution in real-time. This is especially beneficial for compute
+intensive workloads such as model inference, helps to bring better performance through
+vectorization or multi-threading.
 
 
 Pre-built Model Runners
@@ -162,7 +162,7 @@ and used in the same service. For example:
         MyTransformerRunnable,
         name="my_runner_1",
         runnable_init_params={
-            "seed"; 42,
+            "seed": 42,
             "max_length": 30,
             "num_return_sequences": 10,
         }
@@ -171,7 +171,7 @@ and used in the same service. For example:
         MyTransformerRunnable,
         name="my_runner_2",
         runnable_init_params={
-            "seed"; 20,
+            "seed": 20,
             "max_length": 30,
             "num_return_sequences": 5,
         }
@@ -183,7 +183,9 @@ and used in the same service. For example:
     All runners presented in one :code:`bentoml.Service` object must have unique names.
     The default Runner name is the Runnable class name. When using the same Runnable
     class to create multiple runners and use them in the same service, user must rename
-    runners by specifying the :code:`name` parameter when creating the runners.
+    runners by specifying the :code:`name` parameter when creating the runners. Runner
+    name are a key to configuring individual runner at deploy time and to runner related
+    logging and tracing features.
 
 .. TODO::
     Add example Runnable implementation with a batchable method

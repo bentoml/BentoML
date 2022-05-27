@@ -259,6 +259,7 @@ to AWS. This will require user setting up AWS credentials on the environment.
 Testing the endpoint deployed:
 
 .. code:: bash
+
     URL=$(terraform output -json | jq -r .base_url.value)classify
     curl -i \
         --header "Content-Type: application/json" \

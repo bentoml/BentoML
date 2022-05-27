@@ -7,47 +7,69 @@ for GPU, both for training and inference. This guide demonstrates how to serve m
 with BentoML on GPU.
 
 
-NVIDIA Drivers
-^^^^^^^^^^^^^^
-Make sure you have installed NVIDIA driver for your Linux distribution. The recommended way to install drivers is to use the package manager of your distribution but other alternatives are also `available <https://www.nvidia.com/Download/index.aspx?lang=en-us>`_.
+Docker Images Options
+---------------------
 
-For instruction on how to use your package manager to install drivers from CUDA network repository, follow this `guide <https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html>`_.
+See :ref:`concepts/bento:Docker Options` for all options related to setting up docker
+image options related to GPU. Here's a sample :code:`bentofile.yaml` config for serving
+with GPU:
 
-NVIDIA Container Toolkit
-^^^^^^^^^^^^^^^^^^^^^^^^
+.. code:: yaml
+
+    service: "service:svc"
+    include:
+    - "*.py"
+    python:
+        packages:
+        - torch
+        - torchvision
+        - torchaudio
+        extra_index_url:
+        - "https://download.pytorch.org/whl/cu113"
+    docker:
+        distro: debian
+        python_version: "3.8.12"
+        cuda_version: "11.6,2"
+
+When containerize a saved bento with a :code:`cuda_version` configured, BentoML will
+install the corresponding cuda version onto the docker image created:
+
+.. code-block:: bash
+
+    $ bentoml containerize MyTFService:latest -t tf_svc
+
+If the desired :code:`cuda_version` is not natively supported by BentoML, users can
+still customize the installation of cuda driver and libraries via the
+:code:`system_packages`, :code:`setup_script`, or :code:`base_image` options under the
+:ref:`Bento build docker options<concepts/bento:Docker Options>`.
+
+
+Running Docker with GPU
+-----------------------
+
+The NVIDIA Container Toolkit is required for running docker containers with Nvidia GPU.
+NVIDIA provides `detailed instructions <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`_
+for installing both :code:`Docker CE` and :code:`nvidia-docker`.
+
+Start bento generated image and check for GPU usages:
+
+.. code-block:: bash
+
+    $ docker run --gpus all ${DEVICE_ARGS} -p 3000:3000 tf_svc:latest --workers=2
 
 .. seealso::
-    NVIDIA provides `detailed instructions <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`_ for installing both ``Docker CE`` and ``nvidia-docker``.
-    Refers to ``nvidia-docker`` `wiki <https://github.com/NVIDIA/nvidia-docker/wiki>`_ for more information.
+    For more information, check out the `nvidia-docker wiki <https://github.com/NVIDIA/nvidia-docker/wiki>`_.
+
 
 .. note::
-    For Arch users install ``nvidia-docker`` via `AUR <https://aur.archlinux.org/packages/nvidia-docker/>`_.
-
-.. warning::
-    Recent updates to ``systemd`` re-architecture, which is described via `#1447 <https://github.com/NVIDIA/nvidia-docker/issues/1447>`_, completely breaks ``nvidia-docker``.
-    This issue is confirmed to be `patched <https://github.com/NVIDIA/nvidia-docker/issues/1447#issuecomment-760189260>`_ for future releases.
-
-
-General workaround (Recommended)
-""""""""""""""""""""""""""""""""
-    Append device location to ``--device`` when running the container.
+    It is recommended to append device location to ``--device`` when running the
+    container:
 
     .. code-block:: bash
 
         $ docker run --gpus all --device /dev/nvidia0 \
                        --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
                        --device /dev/nvidia-modeset --device /dev/nvidiactl <docker-args>
-
-    If one chooses to make use of ``Makefile`` then adds the following:
-
-    .. code-block::
-
-    	DEVICE_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
-
-        # example docker run
-        svc-d-r:
-            docker run --gpus all $(DEVICE_ARGS) foo:bar
-
 
 
 .. tip::
@@ -76,44 +98,3 @@ General workaround (Recommended)
         |=============================================================================|
         |    0   N/A  N/A    179346      C   /opt/conda/bin/python             745MiB |
         +-----------------------------------------------------------------------------+
-
-
-
-Docker Images Options
-^^^^^^^^^^^^^^^^^^^^^
-
-See :ref:`concepts/bento:Docker Options` for all options related to setting up docker
-image options related to GPU. Here's a sample :code:`bentofile.yaml` config for serving
-with GPU:
-
-.. code:: yaml
-
-    service: "service:svc"
-    include:
-    - "*.py"
-    python:
-        packages:
-        - torch
-        - torchvision
-        - torchaudio
-        extra_index_url:
-        - "https://download.pytorch.org/whl/cu113"
-    docker:
-        distro: debian
-        python_version: "3.8.12"
-        cuda_version: "11.6,2"
-
-.. code-block:: bash
-
-    # to serve bento locally
-    $ bentoml serve MyTFService:latest
-
-.. code-block:: bash
-
-    # containerize saved bento
-    $ bentoml containerize MyTFService:latest -t tf_svc
-
-.. code-block:: bash
-
-    # start bento generated image and check for GPU usages:
-    $ docker run --gpus all ${DEVICE_ARGS} -p 3000:3000 tf_svc:latest --workers=2

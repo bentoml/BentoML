@@ -119,24 +119,18 @@ instance, the original model object can be loaded back into memory for testing v
 
 The :code:`bentoml.sklearn.save_model` API is built specifically for the Scikit-Learn
 framework and uses its native saved model format under the hood for best compatibility
-and performance. This goes the same for other ML framework, e.g.
-:code:`bentoml.pytorch.save_model`, see the :doc:`frameworks/index` for usage with other
-ML frameworks.
+and performance. This goes the same for other ML frameworks, e.g.
+:code:`bentoml.pytorch.save_model`, see the :doc:`frameworks/index` to learn more.
 
-.. tip::
 
-   If you have existing model saved to file on disk, you will need to load the model
-   in a python session and then use BentoML's framework specific :code:`save_model`
-   method to put it into the BentoML model store.
+.. seealso::
 
-   We recommend always save the model with BentoML as soon as it finished training and
-   validation. By putting the :code:`save_model` call to the end of your training
-   pipeline, all your finalized models can be managed in one place and ready for
-   inference.
+   It is possible to use pre-trained models directly with BentoML or import existing
+   trained model files to BentoML. Learn more about it from :doc:`concepts/model`.
 
 
 Saved models can be managed via the :code:`bentoml models` CLI command or Python API,
-learn more about it in :ref:`concepts/model:Managing Models`.
+learn about it here: :ref:`concepts/model:Managing Models`.
 
 
 Creating a Service

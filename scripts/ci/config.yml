@@ -99,7 +99,8 @@ keras_tf2:
   <<: *tmpl
   override_name_or_path: test_keras_impl.py
   dependencies:
-    - "tensorflow==2.2.0"
+    - "protobuf<3.20,>=3.9.2"
+    - "tensorflow==2.7.3"
 
 lightgbm:
   <<: *tmpl
@@ -190,7 +191,7 @@ spacy:
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.9.0+cpu"
     - "torchvision==0.10.0+cpu"
-    - "tensorflow==2.6.0"
+    - "tensorflow==2.7.3"
   external_scripts: |
     python -m spacy download en_core_web_sm
     python -m pip install "typing_extensions>=3.10"

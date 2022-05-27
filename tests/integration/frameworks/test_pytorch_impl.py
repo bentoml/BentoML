@@ -8,6 +8,7 @@ import torch.nn as nn
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from bentoml._internal.tag import Tag
+from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
 
 # from tests.utils.frameworks.pytorch_utils import ExtendedModel
@@ -16,7 +17,7 @@ from tests.utils.frameworks.pytorch_utils import predict_df
 from tests.utils.frameworks.pytorch_utils import LinearModel
 
 # TODO: signatures
-# TODO: to_payload
+# TODO: to_payload with plasma
 
 
 @pytest.fixture(scope="module")
@@ -150,5 +151,17 @@ def test_pytorch_container(batch_axis: int):
             indices=indices,
             batch_dim=batch_axis,
         )[0]
+        == one_batch
+    ).all()
+
+    assert (
+        PyTorchTensorContainer.from_payload(
+            PyTorchTensorContainer.to_payload(one_batch)
+        )
+        == one_batch
+    ).all()
+
+    assert (
+        AutoContainer.from_payload(AutoContainer.to_payload(one_batch, batch_dim=0))
         == one_batch
     ).all()

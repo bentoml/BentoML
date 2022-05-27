@@ -95,10 +95,6 @@ class TransformersOptions(ModelOptions):
     def to_dict(self) -> dict[str, t.Any]:
         return attr.asdict(self)
 
-    @classmethod
-    def parse_options(cls, options: ModelOptions) -> TransformersOptions:
-        return cls(**options)
-
 
 def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
@@ -140,9 +136,7 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    options: TransformersOptions = TransformersOptions.parse_options(
-        bento_model.info.options
-    )
+    options: TransformersOptions = TransformersOptions(**bento_model.info.options)
     options.kwargs.update(kwargs)
     if len(options.kwargs) > 0:
         logger.info(

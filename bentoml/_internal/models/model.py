@@ -336,7 +336,6 @@ class ModelStore(Store[Model]):
 class ModelContext:
     framework_name: str
     framework_versions: t.Dict[str, str]
-    model_format_version: int
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     python_version: str = attr.field(default=PYTHON_VERSION)
 

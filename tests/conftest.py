@@ -7,9 +7,7 @@ from bentoml._internal.models import ModelStore
 from bentoml._internal.models import ModelContext
 
 TEST_MODEL_CONTEXT = ModelContext(
-    framework_name="testing",
-    framework_versions={"testing": "v1"},
-    model_format_version=0,
+    framework_name="testing", framework_versions={"testing": "v1"}
 )
 
 

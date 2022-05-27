@@ -18,9 +18,21 @@ pipeline, invoking a :code:`save_model` call, as demonstrated in the
     # INFO  [cli] Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj", path="~/bentoml/models/iris_clf/2uo5fkgxj27exuqj/")
 
 .. seealso::
-   It is also possible to use pre-trained models directly with BentoML, without saving
-   it to the model store first. Check out the
+   It is also possible to **use pre-trained models** directly with BentoML, without
+   saving it to the model store first. Check out the
    :ref:`Custom Runner <concepts/runner:Custom Runner>` example to learn more.
+
+.. tip::
+
+   If you have an existing model saved to file on disk, you will need to load the model
+   in a python session first and then use BentoML's framework specific
+   :code:`save_model` method to put it into the BentoML model store.
+
+   We recommend **always save the model with BentoML as soon as it finished training and
+   validation**. By putting the :code:`save_model` call to the end of your training
+   pipeline, all your finalized models can be managed in one place and ready for
+   inference.
+
 
 Optionally, you may attach custom labels, metadata, or :code:`custom_objects` to be
 saved alongside your model in the model store, e.g.:

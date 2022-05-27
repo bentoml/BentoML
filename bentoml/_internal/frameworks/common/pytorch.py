@@ -47,7 +47,7 @@ def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
     class NewClass(cls):
         def __init__(self, *inner_args: t.Any, **inner_kwargs: t.Any) -> None:
             functools.partial(cls.__init__, *args, **kwargs)(
-                *inner_args, **inner_kwargs
+                self, *inner_args, **inner_kwargs
             )
 
     return NewClass

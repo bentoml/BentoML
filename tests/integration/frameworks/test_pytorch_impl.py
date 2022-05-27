@@ -92,6 +92,7 @@ def test_pytorch_runner_setup_run_batch(input_data, model_tag: Tag):
     )
     assert numprocesses == 1
 
+    runner.init_local()
     res = runner.run(input_data)
     assert res.unsqueeze(dim=0).item() == 5.0
 

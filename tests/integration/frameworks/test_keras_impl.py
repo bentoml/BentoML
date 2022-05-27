@@ -1,8 +1,6 @@
 import typing as t
-from typing import TYPE_CHECKING
 
 import numpy as np
-import psutil
 import pytest
 import tensorflow as tf
 import tensorflow.keras as keras
@@ -10,16 +8,8 @@ import tensorflow.keras as keras
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.tensorflow_utils import CustomLayer
-from tests.utils.frameworks.tensorflow_utils import KerasNLPModel
 from tests.utils.frameworks.tensorflow_utils import custom_activation
 from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-TF2 = importlib_metadata.version("tensorflow").startswith("2")
 
 MODEL_NAME = __name__.split(".")[-1]
 
@@ -37,25 +27,11 @@ def predict_assert_equal(model: "keras.Model") -> None:
     [
         (
             KerasSequentialModel(),
-            {"store_as_json_and_weights": True, "save_format": "tf"},
-        ),
-        (
-            KerasSequentialModel(),
-            {"store_as_json_and_weights": False, "save_format": "tf"},
-        ),
-        (
-            KerasSequentialModel(),
-            {"store_as_json_and_weights": True, "save_format": "h5"},
-        ),
-        (
-            KerasSequentialModel(),
-            {"store_as_json_and_weights": False, "save_format": "h5"},
+            {},
         ),
         (
             KerasSequentialModel(),
             {
-                "store_as_json_and_weights": False,
-                "save_format": "tf",
                 "custom_objects": {
                     "CustomLayer": CustomLayer,
                     "custom_activation": custom_activation,
@@ -68,77 +44,22 @@ def test_keras_save_load(
     model: "keras.Model",
     kwargs: t.Dict[str, t.Any],
 ) -> None:
-    tag = bentoml.keras.save(MODEL_NAME, model, **kwargs)
-    model_info = bentoml.models.get(tag)
-    if kwargs.get("custom_objects") is not None:
-        assert_have_file_extension(model_info.path, ".pkl")
-    if kwargs["store_as_json_and_weights"]:
-        assert_have_file_extension(model_info.path, ".json")
-        if kwargs["save_format"] == "h5":
-            assert_have_file_extension(model_info.path, ".hdf5")
-    else:
-        if kwargs["save_format"] == "h5":
-            assert_have_file_extension(model_info.path, ".h5")
-    if not TF2:
-        session = bentoml.keras.get_session()
-        # Initialize variables in the graph/model
-        session.run(tf.global_variables_initializer())
-        with session.as_default():
-            loaded = bentoml.keras.load(tag)
-            predict_assert_equal(loaded)
-    else:
-        loaded = bentoml.keras.load(tag)
-        predict_assert_equal(loaded)
+    tag = bentoml.keras.save_model(MODEL_NAME, model, **kwargs)
+    bento_model = bentoml.keras.get(tag)
+    assert_have_file_extension(bento_model.path, ".pb")
+    loaded = bentoml.keras.load_model(tag)
+    predict_assert_equal(loaded)
 
 
-@pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")
-@pytest.mark.parametrize("store_as_json_and_weights", [True, False])
-def test_keras_save_load_complex(store_as_json_and_weights) -> None:
-    model: keras.Model = KerasNLPModel()
-    with pytest.raises(NotImplementedError):
-        bentoml.keras.save(
-            MODEL_NAME,
-            model,
-            save_format="h5",
-            store_as_json_and_weights=store_as_json_and_weights,
-        )
+@pytest.mark.parametrize("signatures", [None, {"__call__": {"batchable": True}}])
+def test_keras_run(signatures) -> None:
+    model = KerasSequentialModel()
+    tag = bentoml.keras.save_model(MODEL_NAME, model, signatures=signatures)
+    runner = bentoml.keras.get(tag).to_runner()
+    runner.init_local()
 
-    try:
-        bentoml.keras.save(
-            MODEL_NAME,
-            model,
-            save_format="tf",
-            store_as_json_and_weights=store_as_json_and_weights,
-        )
-    except NotImplementedError as exc:
-        assert False, f"Save KerasNLPModel in 'tf' format raised an exception {exc}"
-
-
-@pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")
-def test_keras_v2_setup_run_batch() -> None:
-    model_class = KerasSequentialModel()
-    tag = bentoml.keras.save(MODEL_NAME, model_class)
-    runner = bentoml.keras.load_runner(tag)
-
-    assert tag in runner.required_models
-    assert runner.num_replica == 1
-    assert runner.run_batch([test_data]) == res
-
-
-@pytest.mark.skipif(TF2, reason="Tests for Tensorflow 1.x")
-def test_keras_v1_setup_run_batch() -> None:
-    model_class = KerasSequentialModel()
-    tag = bentoml.keras.save(MODEL_NAME, model_class)
-    runner = bentoml.keras.load_runner(tag)
-    with bentoml.keras.get_session().as_default():
-        assert runner.run_batch([test_data]) == res
-
-
-@pytest.mark.gpus
-def test_tensorflow_v2_setup_on_gpu() -> None:
-    model_class = KerasSequentialModel()
-    tag = bentoml.keras.save(MODEL_NAME, model_class)
-    runner = bentoml.keras.load_runner(tag)
-
-    assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
-    assert runner.run_batch([test_data]) == res
+    # keras model's `__call__` will return a Tensor instead of
+    # ndarray, here we test if we convert the Tensor to ndarray
+    run_res = runner.run([test_data])
+    assert isinstance(run_res, np.ndarray)
+    assert np.array_equal(run_res, res)

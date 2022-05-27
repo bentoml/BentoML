@@ -22,6 +22,21 @@ else:
     from typing import get_args
     from typing import get_origin
 
+if sys.version_info < (3, 10):
+    from typing_extensions import ParamSpec
+else:
+    from typing import ParamSpec
+
+__all__ = [
+    "ParamSpec",
+    "MetadataType",
+    "MetadataDict",
+    "JSONSerializable",
+    "LazyType",
+    "is_compatible_type",
+    "FileLike",
+]
+
 logger = logging.getLogger(__name__)
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
@@ -249,7 +264,7 @@ class FileLike(t.Generic[t.AnyStr], io.IOBase):
     def isatty(self) -> bool:
         return self._wrapped.isatty()
 
-    def read(self, size: int = -1) -> t.AnyStr:  # type: ignore (python IO types)
+    def read(self, size: int = -1) -> t.AnyStr:  # type: ignore # pylint: disable=arguments-renamed # python IO types
         return self._wrapped.read(size)
 
     def readable(self) -> bool:

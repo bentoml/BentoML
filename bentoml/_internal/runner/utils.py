@@ -55,6 +55,9 @@ class Params(t.Generic[T]):
         except StopIteration:
             pass
 
+    def keys(self) -> t.Iterator[int | str]:
+        return itertools.chain(range(len(self.args)), self.kwargs.keys())
+
     def items(self) -> t.Iterator[t.Tuple[t.Union[int, str], T]]:
         return itertools.chain(enumerate(self.args), self.kwargs.items())
 
@@ -64,42 +67,6 @@ class Params(t.Generic[T]):
             *(data[k] for k in sorted(k for k in data if isinstance(k, int))),
             **{k: v for k, v in data.items() if isinstance(k, str)},
         )
-
-    @classmethod
-    def agg(
-        cls,
-        params_list: t.Sequence[Params[T]],
-        agg_func: t.Callable[[t.Sequence[T]], To] = pass_through,
-    ) -> Params[To]:
-        if not params_list:
-            return Params()
-
-        args: t.List[To] = []
-        kwargs: t.Dict[str, To] = {}
-
-        for j, _ in enumerate(params_list[0].args):
-            arg: t.List[T] = []
-            for params in params_list:
-                arg.append(params.args[j])
-            args.append(agg_func(arg))
-        for k in params_list[0].kwargs:
-            kwarg: t.List[T] = []
-            for params in params_list:
-                kwarg.append(params.kwargs[k])
-            kwargs[k] = agg_func(kwarg)
-        return Params(*tuple(args), **kwargs)
-
-    def vsplit(
-        self,
-        split_func: t.Callable[[T], t.Tuple[To, ...]],
-    ) -> t.Tuple[Params[To], ...]:
-        it = self.items()
-        k, v = next(it)
-        params_list = [{k: i} for i in split_func(v)]
-        for k, v in it:
-            for params, i in zip(params_list, split_func(v)):
-                params[k] = i
-        return tuple(Params.from_dict(i) for i in params_list)
 
     @property
     def sample(self) -> T:

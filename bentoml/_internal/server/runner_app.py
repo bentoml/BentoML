@@ -8,8 +8,10 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
+from bentoml.exceptions import InvalidArgument
+from bentoml._internal.runner.batching import batch_params
+
 from ..trace import ServiceContext
-from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
@@ -31,9 +33,6 @@ if TYPE_CHECKING:
     from ..runner.runner import RunnerMethod
 
 
-T = t.TypeVar("T")
-
-
 class RunnerAppFactory(BaseAppFactory):
     def __init__(
         self,
@@ -49,7 +48,7 @@ class RunnerAppFactory(BaseAppFactory):
 
         self.dispatchers: dict[str, CorkDispatcher] = {}
         for method in runner.runner_methods:
-            if not method.runnable_method_config.batchable:
+            if not method.config.batchable:
                 continue
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
@@ -101,7 +100,7 @@ class RunnerAppFactory(BaseAppFactory):
         routes = super().routes
         for method in self.runner.runner_methods:
             path = "/" if method.name == "__call__" else "/" + method.name
-            if method.runnable_method_config.batchable:
+            if method.config.batchable:
                 _func = self.dispatchers[method.name](
                     self._async_cork_run(runner_method=method)
                 )
@@ -169,7 +168,7 @@ class RunnerAppFactory(BaseAppFactory):
 
     def _async_cork_run(
         self,
-        runner_method: RunnerMethod,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
     ) -> t.Callable[[t.Iterable[Request]], t.Coroutine[None, None, list[Response]]]:
         from starlette.responses import Response
 
@@ -181,23 +180,26 @@ class RunnerAppFactory(BaseAppFactory):
                 *tuple(multipart_to_payload_params(r) for r in requests)
             )
 
-            batch_dim = runner_method.runnable_method_config.batch_dim
-            mix_params = Params.agg(
-                params_list=params_list,
-                agg_func=lambda i: AutoContainer.from_batch_payloads(
-                    i, batch_dim=batch_dim[0]
-                ),
-            )
-            batched_params, indices_params = mix_params.vsplit(lambda i: (i[0], i[1]))
+            batch_dim = runner_method.config.batch_dim
+
+            try:
+                batched_params, indices = batch_params(params_list, batch_dim[0])
+            except InvalidArgument as e:
+                raise InvalidArgument(
+                    f"Error while batching arguments for call to {runner_method.name}: {e.message}"
+                )
+
             batch_ret = await runner_method.async_run(
                 *batched_params.args,
                 **batched_params.kwargs,
             )
+
             payloads = AutoContainer.batch_to_payloads(
                 batch_ret,
-                indices_params.sample,
+                indices,
                 batch_dim=batch_dim[-1],
             )
+
             return [
                 Response(
                     payload.data,
@@ -214,7 +216,7 @@ class RunnerAppFactory(BaseAppFactory):
 
     def async_run(
         self,
-        runner_method: RunnerMethod,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
     ) -> t.Callable[[Request], t.Coroutine[None, None, Response]]:
         from starlette.responses import Response
 
@@ -225,7 +227,8 @@ class RunnerAppFactory(BaseAppFactory):
             params = await multipart_to_payload_params(request)
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)
-            payload = AutoContainer.to_payload(ret)
+
+            payload = AutoContainer.to_payload(ret, 0)
             return Response(
                 payload.data,
                 headers={

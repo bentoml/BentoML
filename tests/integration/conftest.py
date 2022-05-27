@@ -31,7 +31,7 @@ def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> No
 
 
 def pytest_sessionstart(session):
-    path = tempfile.mkdtemp("bentoml")
+    path = tempfile.mkdtemp("bentoml-pytest")
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     BentoMLContainer.model_store.set(ModelStore(path))

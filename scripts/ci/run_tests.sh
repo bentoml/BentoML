@@ -191,6 +191,10 @@ main() {
     OPTS=( ${OPTS[@]} ${PYTESTARGS[@]} )
   fi
 
+  if [ "$fname" == "test_frameworks.py" ]; then
+    OPTS=( "--framework" "$target" ${OPTS[@]} )
+  fi
+
   if [ "$SKIP_DEPS" -eq 0 ]; then
     # setup tests environment
     if [ -f "$REQ_FILE" ]; then
@@ -224,4 +228,3 @@ main() {
 main "$@" || exit 1
 
 # vim: set ft=sh ts=2 sw=2 tw=0 et :
-

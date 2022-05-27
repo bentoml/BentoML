@@ -1,6 +1,6 @@
-from ._internal.frameworks.keras import load
-from ._internal.frameworks.keras import save
-from ._internal.frameworks.keras import get_session
-from ._internal.frameworks.keras import load_runner
+from ._internal.frameworks.keras import get
+from ._internal.frameworks.keras import load_model
+from ._internal.frameworks.keras import save_model
+from ._internal.frameworks.keras import get_runnable
 
-__all__ = ["load", "load_runner", "save", "get_session"]
+__all__ = ["get", "load_model", "save_model", "get_runnable"]

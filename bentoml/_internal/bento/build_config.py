@@ -505,9 +505,7 @@ OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
 def dict_options_converter(
     options_type: t.Type[OptionsCls],
 ) -> t.Callable[[t.Union[OptionsCls, t.Dict[str, t.Any]]], t.Any]:
-    def _converter(
-        value: t.Union[OptionsCls, t.Dict[str, t.Any]]
-    ) -> options_type:
+    def _converter(value: t.Union[OptionsCls, t.Dict[str, t.Any]]) -> options_type:
         if isinstance(value, dict):
             return options_type(**value)
         return value

@@ -590,9 +590,6 @@ class ModelInfo:
         # add tests when implemented
         ...
 
-    def freeze(self) -> "ModelInfo":
-        return self
-
 
 # Remove after attrs support ForwardRef natively
 attr.resolve_types(ModelInfo, globals(), locals())

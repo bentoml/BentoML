@@ -457,7 +457,7 @@ def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]
 bentoml_cattr.register_unstructure_hook(ModelSignature, model_signature_encoder)
 
 
-@attr.define(repr=False, eq=False)
+@attr.define(repr=False, eq=False, frozen=True)
 class ModelInfo:
     tag: Tag
     name: str
@@ -504,7 +504,7 @@ class ModelInfo:
         self.validate()
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, (ModelInfo, FrozenModelInfo)):
+        if not isinstance(other, ModelInfo):
             return False
 
         return (
@@ -580,7 +580,7 @@ class ModelInfo:
             yaml_content["context"]["framework_versions"] = {}
 
         try:
-            model_info = bentoml_cattr.structure(yaml_content, FrozenModelInfo)
+            model_info = bentoml_cattr.structure(yaml_content, ModelInfo)
         except TypeError as e:  # pragma: no cover - simple error handling
             raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}: {e}")
         return model_info
@@ -591,21 +591,14 @@ class ModelInfo:
         ...
 
     def freeze(self) -> "ModelInfo":
-        self.__class__ = FrozenModelInfo
         return self
-
-
-@attr.define(repr=False, eq=False, frozen=True, on_setattr=None)  # type: ignore (pyright doesn't allow for a frozen subclass)
-class FrozenModelInfo(ModelInfo):
-    pass
 
 
 # Remove after attrs support ForwardRef natively
 attr.resolve_types(ModelInfo, globals(), locals())
-attr.resolve_types(FrozenModelInfo, globals(), locals())
 
 bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),  # for both ModelInfo and FrozenModelInfo
+    lambda cls: issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
     make_dict_unstructure_fn(ModelInfo, bentoml_cattr, tag=override(omit=True)),  # type: ignore (incomplete types)
 )
@@ -635,4 +628,3 @@ def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:
 
 
 yaml.add_representer(ModelInfo, _ModelInfo_dumper)  # type: ignore (incomplete yaml types)
-yaml.add_representer(FrozenModelInfo, _ModelInfo_dumper)  # type: ignore (incomplete yaml types)

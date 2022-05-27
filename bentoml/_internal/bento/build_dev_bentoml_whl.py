@@ -39,9 +39,9 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     # in development mode via "pip install --editable ."
     if os.path.isfile(bentoml_setup_py):
         logger.info(
-            "BentoML is installed in `editable` model, "
-            "building BentoML distribution with local BentoML code base. "
-            "The built wheel file will be included in target bento directory."
+            "BentoML is installed in `editable` mode; "
+            "building BentoML distribution with the local BentoML code base. "
+            "The built wheel file will be included in the target bento."
         )
         # temp dir for creating the distribution
         with TempDirectory() as dist_dir:

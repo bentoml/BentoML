@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 import logging
 import pathlib
+from typing import final
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
@@ -76,19 +77,19 @@ class BentoChangeReloader(CircusPlugin):
     """
 
     name = "bento_change_reloader"
+    config: dict[str, t.Any]
 
-    def __init__(
-        self,
-        *args: t.Any,
-        **config: t.Any,
-    ):
-        assert "bento_identifier" in config, "bento_identifier is required"
-        assert "working_dir" in config, "working_dir is required"
+    def __init__(self, *args: t.Any, **config: t.Any):
+        assert "bento_identifier" in config, "`bento_identifier` is required"
+        assert "working_dir" in config, "`working_dir` is required"
 
-        super().__init__(*args, **config)
-        self.name = config.get("name")
-        working_dir: str = config["working_dir"]
-        self.reload_delay: float = config.get("reload_delay", 1)
+        super().__init__(*args, **config)  # type: ignore (unfinished types for circus)
+
+        self.name = self.config.get("name")
+        working_dir: str = self.config["working_dir"]
+
+        # circus/plugins/__init__.py:282 -> converts all given configs to dict[str, str]
+        self.reload_delay: float = float(self.config.get("reload_delay", 1))
         self.file_watcher = PyFileChangeWatcher([working_dir])
 
     def look_after(self):
@@ -96,6 +97,10 @@ class BentoChangeReloader(CircusPlugin):
             logger.info("Restarting...")
             self.call("restart", name="*")
             self.file_watcher.reset()
+
+    @final
+    def call(self, command: t.Any, **props: t.Any) -> None:
+        ...
 
     def handle_init(self):
         from tornado import ioloop
@@ -121,7 +126,7 @@ class PyFileChangeWatcher:
         self.watch_dirs = [
             pathlib.Path(d) if isinstance(d, str) else d for d in watch_dirs
         ]
-        logger.info(f"Watching directories: {self.watch_dirs}")
+        # logger.info(f"Watching directories: {', '.join(map(str, self.watch_dirs))}")
 
     def is_file_changed(self) -> bool:
         for file in self.iter_files():
@@ -141,7 +146,7 @@ class PyFileChangeWatcher:
                 except ValueError:
                     pass
                 message = "Detected file change in '%s'"
-                logger.warning(message, display_path)
+                # logger.warning(message, display_path)
                 return True
         return False
 

@@ -21,10 +21,10 @@ from .bentos import push
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento
-from ._internal.bento import Bento
 
 # BentoML built-in types
 from ._internal.tag import Tag
+from ._internal.bento import Bento
 from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner import Runnable

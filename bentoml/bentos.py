@@ -280,12 +280,12 @@ def build(
 
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
-        
+
     Example:
-        
+
         .. code-block::
             import bentoml
-            
+
             bentoml.build(
                 service="fraud_detector.py:svc",
                 version="any_version_label",  # override default version generator

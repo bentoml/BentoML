@@ -2,7 +2,6 @@
 
 import numpy as np
 import torch
-import pandas as pd
 import pytest
 import torch.nn as nn
 
@@ -132,8 +131,8 @@ def test_pytorch_runner_with_partial_kwargs(bias_pair):
     assert math.isclose(res1 - res2, bias1 - bias2, rel_tol=1e-6)
 """
 
-# TODO: add back batch_axis=1 tst
-@pytest.mark.parametrize("batch_axis", [0])
+
+@pytest.mark.parametrize("batch_axis", [0, 1])
 def test_pytorch_container(batch_axis: int):
     one_batch = torch.arange(6).reshape(2, 3)
     batch_list = [one_batch, one_batch + 1]

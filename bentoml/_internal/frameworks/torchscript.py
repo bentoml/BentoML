@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 import logging
+from typing import TYPE_CHECKING
 
 import torch
 
@@ -14,8 +15,11 @@ from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
-from ..models.model import ModelSignaturesType
 from .common.pytorch import torch
+
+if TYPE_CHECKING:
+    from ..models.model import ModelSignaturesType
+
 
 _PL_IMPORT_ERROR = f"""\
 `torch` is required in order to use module `{__name__}`\n
@@ -135,10 +139,10 @@ def save_model(
     )
 
     if signatures is None:
+        signatures = {"__call__": {"batchable": False}}
         logger.info(
             f"Using the default model signature ({signatures}) for model {name}."
         )
-        raise ValueError("signatures is required for saving a pytorch model")
 
     with bentoml.models.create(
         name,

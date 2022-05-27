@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+from typing import TYPE_CHECKING
 
 from bentoml import Tag
 
@@ -9,7 +10,9 @@ from .torchscript import load_model
 from .torchscript import save_model as script_save_model
 from .torchscript import get_runnable
 from ...exceptions import MissingDependencyException
-from ..models.model import ModelSignaturesType
+
+if TYPE_CHECKING:
+    from ..models.model import ModelSignaturesType
 
 _IMPORT_ERROR = f"""\
 `pytorch_lightning` and `torch` is required in order to use module `{__name__}`\n

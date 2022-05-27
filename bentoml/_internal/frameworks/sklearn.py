@@ -146,6 +146,7 @@ def save_model(
     context = ModelContext(
         framework_name="sklearn",
         framework_versions={"scikit-learn": get_pkg_version("scikit-learn")},
+        save_format_version=0,
     )
 
     if signatures is None:

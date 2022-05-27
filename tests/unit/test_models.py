@@ -32,7 +32,9 @@ def createfile(filepath: str) -> str:
 
 
 TEST_MODEL_CONTEXT = ModelContext(
-    framework_name="testing", framework_versions={"testing": "v1"}
+    framework_name="testing",
+    framework_versions={"testing": "v1"},
+    save_format_version=0,
 )
 
 

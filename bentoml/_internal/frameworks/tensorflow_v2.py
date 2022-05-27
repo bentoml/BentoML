@@ -229,9 +229,6 @@ def get_runnable(
                 self.device_name = "/device:GPU:0"
             else:
                 self.device_name = "/device:CPU:0"
-                num_threads = int(os.environ["BENTOML_NUM_THREAD"])
-                tf.config.threading.set_inter_op_parallelism_threads(num_threads)
-                tf.config.threading.set_intra_op_parallelism_threads(num_threads)
 
             self.model = load_model(bento_model, device_name=self.device_name)
             self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
@@ -250,7 +247,9 @@ def get_runnable(
             with tf.device(runnable_self.device_name):
 
                 def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
-                    if not LazyType["tf_ext.TensorLike"]("tf.Tensor").isinstance(item):
+                    if not LazyType["tf_ext.TensorLike"](
+                        "tensorflow.Tensor"
+                    ).isinstance(item):
                         return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
                     else:
                         return item
@@ -287,12 +286,14 @@ def get_runnable(
     return TensorflowRunnable
 
 
-class TensorflowTensorContainer(DataContainer[tf.Tensor, tf.Tensor]):
+class TensorflowTensorContainer(
+    DataContainer["tf_ext.EagerTensor", "tf_ext.EagerTensor"]
+):
     @classmethod
     def batches_to_batch(
-        cls, batches: t.Sequence["tf_ext.Tensor"], batch_dim: int = 0
-    ) -> t.Tuple["tf_ext.Tensor", list[int]]:
-        batch: "tf_ext.Tensor" = tf.concat(batches, axis=batch_dim)
+        cls, batches: t.Sequence["tf_ext.EagerTensor"], batch_dim: int = 0
+    ) -> t.Tuple["tf_ext.EagerTensor", list[int]]:
+        batch: "tf_ext.EagerTensor" = tf.concat(batches, axis=batch_dim)
         # TODO: fix typing mismatch @larme
         indices: list[int] = list(
             itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
@@ -302,45 +303,42 @@ class TensorflowTensorContainer(DataContainer[tf.Tensor, tf.Tensor]):
 
     @classmethod
     def batch_to_batches(
-        cls, batch: "tf_ext.Tensor", indices: t.Sequence[int], batch_dim: int = 0
-    ) -> t.List["tf_ext.Tensor"]:
+        cls, batch: "tf_ext.EagerTensor", indices: t.Sequence[int], batch_dim: int = 0
+    ) -> t.List["tf_ext.EagerTensor"]:
         size_splits = [indices[i + 1] - indices[i] for i in range(len(indices) - 1)]
         return tf.split(batch, size_splits, axis=batch_dim)  # type: ignore
 
     @classmethod
     def to_payload(
         cls,
-        single: "tf_ext.Tensor",
+        batch: "tf_ext.EagerTensor",
+        batch_dim: int = 0,
     ) -> Payload:
 
         return cls.create_payload(
-            pickle.dumps(single),
+            pickle.dumps(batch),
+            batch_size=batch.shape[batch_dim],
         )
 
     @classmethod
     def from_payload(
         cls,
         payload: Payload,
-    ) -> "tf_ext.Tensor":
+    ) -> "tf_ext.EagerTensor":
 
         return pickle.loads(payload.data)
 
     @classmethod
     def batch_to_payloads(
         cls,
-        batch: "tf_ext.Tensor",
+        batch: "tf_ext.EagerTensor",
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> t.List[Payload]:
 
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
-        def to_payload(subbatch: "tf_ext.Tensor"):
-            payload = cls.to_payload(subbatch)
-            payload.meta["batch_size"] = subbatch.shape[batch_dim]
-            return payload
-
-        payloads = [to_payload(subbatch) for subbatch in batches]
+        payloads = [cls.to_payload(subbatch) for subbatch in batches]
         return payloads
 
     @classmethod
@@ -348,13 +346,13 @@ class TensorflowTensorContainer(DataContainer[tf.Tensor, tf.Tensor]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-    ) -> t.Tuple["tf_ext.Tensor", t.List[int]]:
+    ) -> t.Tuple["tf_ext.EagerTensor", t.List[int]]:
         batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 
 
 DataContainerRegistry.register_container(
-    LazyType("tf", "Tensor"),
-    LazyType("tf", "Tensor"),
+    LazyType("tensorflow.python.framework.ops", "_EagerTensorBase"),
+    LazyType("tensorflow.python.framework.ops", "_EagerTensorBase"),
     TensorflowTensorContainer,
 )

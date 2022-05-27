@@ -218,7 +218,7 @@ def save_model(
     if signatures is None:
         signatures = {
             "predict": {
-                "batchable": True,
+                "batchable": False,
             }
         }
 
@@ -294,14 +294,18 @@ def get_runnable(
             with tf.device(runnable_self.device_name):
 
                 def _mapping(item: "KerasArgType") -> "tf_ext.TensorLike":
-                    if not LazyType["tf_ext.TensorLike"]("tf.Tensor").isinstance(item):
+                    if not LazyType["tf_ext.TensorLike"](
+                        "tensorflow.Tensor"
+                    ).isinstance(item):
                         return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
                     else:
                         return item
 
                 params = params.map(_mapping)
-                res: tf.Tensor | "ext.NpNDArray" = raw_method(params.args)
-                if isinstance(res, tf.Tensor):
+                res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(params.args)
+                if LazyType["tf_ext.EagerTensor"](
+                    "tensorflow.python.framework.ops._EagerTensorBase"
+                ).isinstance(res):
                     return t.cast("ext.NpNDArray", res.numpy())
 
                 return res

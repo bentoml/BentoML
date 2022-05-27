@@ -1,5 +1,6 @@
-from ._internal.frameworks.pytorch_lightning import load
-from ._internal.frameworks.pytorch_lightning import save
-from ._internal.frameworks.pytorch_lightning import load_runner
+from ._internal.frameworks.pytorch_lightning import get
+from ._internal.frameworks.pytorch_lightning import load_model
+from ._internal.frameworks.pytorch_lightning import save_model
+from ._internal.frameworks.pytorch_lightning import get_runnable
 
-__all__ = ["load", "load_runner", "save"]
+__all__ = ["load_model", "save_model", "get", "get_runnable"]

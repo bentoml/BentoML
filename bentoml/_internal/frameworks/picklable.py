@@ -47,7 +47,7 @@ def get(tag_like: str | Tag) -> Model:
 
 def load_model(bento_model: str | Tag | Model) -> ModelType:
     """
-    Load the scikit-learn model with the given tag from the local BentoML model store.
+    Load the picklable model with the given tag from the local BentoML model store.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -55,8 +55,8 @@ def load_model(bento_model: str | Tag | Model) -> ModelType:
             instance to load the model from.
         ...
     Returns:
-        ``BaseEstimator`` ``|`` ``Pipeline``:
-            The scikit-learn model loaded from the model store or BentoML :obj:`~bentoml.Model`.
+        ``object``
+            The picklable model loaded from the model store or BentoML :obj:`~bentoml.Model`.
     Example:
     .. code-block:: python
         import bentoml
@@ -166,10 +166,11 @@ def get_runnable(bento_model: Model):
     def _get_run(method_name: str):
         def _run(
             self: PicklableRunnable,
-            input_data: ext.NpNDArray | ext.PdDataFrame,
+            *args: ext.NpNDArray | ext.PdDataFrame,
+            **kwargs: ext.NpNDArray | ext.PdDataFrame,
         ) -> ext.NpNDArray:
             assert isinstance(method_name, str), repr(method_name)
-            return getattr(self.model, method_name)(input_data)
+            return getattr(self.model, method_name)(*args, **kwargs)
 
         return _run
 

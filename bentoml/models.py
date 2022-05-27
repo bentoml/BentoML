@@ -247,7 +247,6 @@ def create(
     try:
         yield res
     finally:
-        res.info.freeze()
         res.flush()
         res.save(_model_store)
 

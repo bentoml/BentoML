@@ -16,10 +16,10 @@ import attr
 import yaml
 import fs.errors
 import fs.mirror
-import cloudpickle  # type: ignore (no cloudpickle types)
+import cloudpickle
 from fs.base import FS
-from cattr.gen import override  # type: ignore (incomplete cattr types)
-from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
+from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
@@ -436,7 +436,7 @@ attr.resolve_types(ModelSignature, globals(), locals())
 
 if TYPE_CHECKING:
     ModelSignaturesType: t.TypeAlias = (
-        dict[str, ModelSignatureDict] | dict[str, ModelSignature]
+        dict[str, ModelSignature] | dict[str, ModelSignatureDict]
     )
 
 
@@ -457,11 +457,11 @@ def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]
 bentoml_cattr.register_unstructure_hook(ModelSignature, model_signature_encoder)
 
 
-@attr.define(repr=False, eq=False, init=True)
+@attr.define(repr=False, eq=False, frozen=True)
 class ModelInfo:
     tag: Tag
-    name: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
-    version: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
+    name: str
+    version: str
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
     options: ModelOptions
@@ -473,12 +473,10 @@ class ModelInfo:
     signatures: t.Dict[str, ModelSignature] = attr.field(
         converter=ModelSignature.convert_signatures_dict
     )
-    api_version: str = attr.field(default="v1")
-    creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+    api_version: str
+    creation_time: datetime
 
-    # for type checking
     def __init__(
-        # pylint: disable=unused-argument
         self,
         tag: Tag,
         module: str,
@@ -490,16 +488,23 @@ class ModelInfo:
         api_version: str | None = None,
         creation_time: datetime | None = None,
     ):
-        ...
-
-    def __attrs_post_init__(self):
-        object.__setattr__(self, "name", self.tag.name)
-        object.__setattr__(self, "version", self.tag.version)
-
+        self.__attrs_init__(  # type: ignore
+            tag=tag,
+            name=tag.name,
+            version=tag.version,
+            module=module,
+            labels=labels,
+            options=options,
+            metadata=metadata,
+            context=context,
+            signatures=signatures,
+            api_version=api_version or "v1",
+            creation_time=creation_time or datetime.now(timezone.utc),
+        )
         self.validate()
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, (ModelInfo, FrozenModelInfo)):
+        if not isinstance(other, ModelInfo):
             return False
 
         return (
@@ -575,7 +580,7 @@ class ModelInfo:
             yaml_content["context"]["framework_versions"] = {}
 
         try:
-            model_info = bentoml_cattr.structure(yaml_content, FrozenModelInfo)
+            model_info = bentoml_cattr.structure(yaml_content, ModelInfo)
         except TypeError as e:  # pragma: no cover - simple error handling
             raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}: {e}")
         return model_info
@@ -585,22 +590,12 @@ class ModelInfo:
         # add tests when implemented
         ...
 
-    def freeze(self) -> "ModelInfo":
-        self.__class__ = FrozenModelInfo
-        return self
-
-
-@attr.define(repr=False, eq=False, frozen=True, on_setattr=None)  # type: ignore (pyright doesn't allow for a frozen subclass)
-class FrozenModelInfo(ModelInfo):
-    pass
-
 
 # Remove after attrs support ForwardRef natively
 attr.resolve_types(ModelInfo, globals(), locals())
-attr.resolve_types(FrozenModelInfo, globals(), locals())
 
 bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),  # for both ModelInfo and FrozenModelInfo
+    lambda cls: issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
     make_dict_unstructure_fn(ModelInfo, bentoml_cattr, tag=override(omit=True)),  # type: ignore (incomplete types)
 )
@@ -630,4 +625,3 @@ def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:
 
 
 yaml.add_representer(ModelInfo, _ModelInfo_dumper)  # type: ignore (incomplete yaml types)
-yaml.add_representer(FrozenModelInfo, _ModelInfo_dumper)  # type: ignore (incomplete yaml types)

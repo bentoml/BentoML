@@ -184,7 +184,6 @@ def bento_model():
             "add": AdditionClass(add_num_1),
         },
     )
-    model.info.freeze()
     model.flush()
     return model
 

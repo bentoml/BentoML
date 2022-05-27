@@ -11,6 +11,7 @@ from bentoml.models import ModelContext
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.models.model import ModelSignaturesType
 
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
     from sklearn.pipeline import Pipeline
 
     from bentoml.types import ModelSignature
-    from bentoml.types import ModelSignatureDict
 
     from .. import external_typing as ext
 
@@ -44,7 +44,7 @@ except ImportError:  # pragma: no cover
         )
 
 MODULE_NAME = "bentoml.sklearn"
-MODEL_FILENAME = "saved_model.pkl"
+MODEL_FILENAME = f"{SAVE_NAMESPACE}.{PKL_EXT}"
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def save_model(
     name: str,
     model: SklearnModel,
     *,
-    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
+    signatures: ModelSignaturesType | None = None,
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,

@@ -219,7 +219,7 @@ class DockerOptions:
             supports_cuda = get_supported_spec("cuda")
             if self.distro not in supports_cuda:
                 raise BentoMLException(
-                    f'distro="{self.distro}" does not support CUDA. Supported distros that have CUDA supports are: {supports_cuda}.'
+                    f'Distro "{self.distro}" does not support CUDA. Distros that support CUDA are: {supports_cuda}.'
                 )
 
     def with_defaults(self) -> "DockerOptions":

@@ -64,8 +64,7 @@ class PytorchModelRunnable(bentoml.Runnable):
 
         self._no_grad_context = contextlib.ExitStack()
 
-        if get_pkg_version("torch").startswith("1.9"):
-            # inference mode is required for PyTorch version 1.9.*
+        if hasattr(torch, "inference_mode"):  # pytorch>=1.9
             self._no_grad_context.enter_context(torch.inference_mode())
         else:
             self._no_grad_context.enter_context(torch.no_grad())

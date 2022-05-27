@@ -1,25 +1,24 @@
 from __future__ import annotations
-
-import typing as t
-import logging
 import functools
+import logging
 from pathlib import Path
+import typing as t
 
 import cloudpickle
 
 import bentoml
 from bentoml import Tag
 
-from ..models import Model
-from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
+from ..models import Model
 from ..models.model import ModelContext
 from ..models.model import ModelSignaturesType
-from .common.pytorch import torch  # type: ignore
+from ..utils.pkg import get_pkg_version
+from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer
 
-__all__ = ["load_model", "get_runnable", "get", "PyTorchTensorContainer"]
+__all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
 
 MODULE_NAME = "bentoml.pytorch"
 MODEL_FILENAME = "saved_model.pt"
@@ -90,6 +89,8 @@ def save_model(
             Name for given model instance. This should pass Python identifier check.
         model (:code:`torch.nn.Module`):
             Instance of model to be saved
+        signatures (:code:`ModelSignaturesType`, `optional`, default to :code:`None`):
+            A dictionary of method names and their corresponding signatures.
         labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
             user-defined labels for managing models, e.g. team=nlp, stage=dev
         custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
@@ -145,7 +146,10 @@ def save_model(
     )
 
     if signatures is None:
-        raise ValueError("signatures is required for saving a pytorch model")
+        signatures = {"__call__": {"batchable": False}}
+        logger.info(
+            f"Using the default model signature ({signatures}) for model {name}."
+        )
 
     with bentoml.models.create(
         name,

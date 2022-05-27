@@ -1,20 +1,20 @@
 from __future__ import annotations
-
-import typing as t
 import functools
+import logging
+import typing as t
 
 import torch
 
 import bentoml
 from bentoml import Tag
 
-from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelSignaturesType
+from ..utils.pkg import get_pkg_version
 from .common.pytorch import torch
 
 _PL_IMPORT_ERROR = f"""\
@@ -29,6 +29,7 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 
+logger = logging.getLogger(__name__)
 MODULE_NAME = "bentoml.pytorch_lightning"
 MODEL_FILENAME = "savd_model.pt"
 
@@ -58,7 +59,7 @@ def load_model(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        :obj:`pl.LightningModule`: an instance of :obj:`pl.LightningModule` from BentoML modelstore.
+        :obj:`torch.ScriptModule`: an instance of :obj:`torch.ScriptModule` from BentoML modelstore.
 
     Examples:
 
@@ -95,8 +96,10 @@ def save_model(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`pl.LightningModule`):
+        model (`torch.ScriptModule`):
             Instance of model to be saved
+        signatures (:code:`dict`, `optional`):
+            A dictionary of method names and their corresponding signatures.
         labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
             user-defined labels for managing models, e.g. team=nlp, stage=dev
         custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
@@ -104,8 +107,6 @@ def save_model(
             e.g. a tokenizer instance, preprocessor function, model configuration json
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
@@ -116,45 +117,8 @@ def save_model(
 
         import bentoml
         import torch
-        import pytorch_lightning as pl
 
-        class LitClassifier(pl.LightningModule):
-
-            def __init__(self, hidden_dim: int = 128, learning_rate: float = 0.0001):
-                super().__init__()
-                self.save_hyperparameters()
-
-                self.l1 = torch.nn.Linear(28 * 28, self.hparams.hidden_dim)
-                self.l2 = torch.nn.Linear(self.hparams.hidden_dim, 10)
-
-            def forward(self, x):
-                x = x.view(x.size(0), -1)
-                x = torch.relu(self.l1(x))
-                x = torch.relu(self.l2(x))
-                return x
-
-            def training_step(self, batch, batch_idx):
-                x, y = batch
-                y_hat = self(x)
-                loss = F.cross_entropy(y_hat, y)
-                return loss
-
-            def validation_step(self, batch, batch_idx):
-                x, y = batch
-                y_hat = self(x)
-                loss = F.cross_entropy(y_hat, y)
-                self.log("valid_loss", loss)
-
-            def test_step(self, batch, batch_idx):
-                x, y = batch
-                y_hat = self(x)
-                loss = F.cross_entropy(y_hat, y)
-                self.log("test_loss", loss)
-
-            def configure_optimizers(self):
-                return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
-
-        tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
+        TODO(jiang)
     """
 
     if _include_pytorch_lightning_version:
@@ -171,6 +135,9 @@ def save_model(
     )
 
     if signatures is None:
+        logger.info(
+            f"Using the default model signature ({signatures}) for model {name}."
+        )
         raise ValueError("signatures is required for saving a pytorch model")
 
     with bentoml.models.create(

@@ -1,17 +1,16 @@
 from __future__ import annotations
-
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
-from bentoml.models import Model
-from bentoml.models import ModelContext
+from bentoml._internal.models.model import ModelSignaturesType
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
-from bentoml._internal.models.model import ModelSignaturesType
+from bentoml.models import Model
+from bentoml.models import ModelContext
 
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
@@ -152,9 +151,6 @@ def save_model(
         signatures = {
             "predict": {
                 "batchable": False,
-                "batch_dim": None,
-                "input_spec": None,
-                "output_spec": None,
             }
         }
         logger.info(

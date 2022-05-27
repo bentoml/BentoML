@@ -53,13 +53,8 @@ class KerasOptions(ModelOptions):
     include_optimizer: bool
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
-
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return attr.asdict(options)
+    def to_dict(self) -> dict[str, t.Any]:
+        return attr.asdict(self)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:

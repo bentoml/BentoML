@@ -64,19 +64,18 @@ else:
 
 
 class ModelOptions(ModelOptionsSuper):
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
+    def with_options(self, **kwargs: t.Any) -> ModelOptions:
+        self.update(kwargs)
+        return self
 
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return dict(options)
+    def to_dict(self) -> dict[str, t.Any]:
+        return dict(self)
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)  # type: ignore
+    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls(**d)  # type: ignore
 )
-bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
+bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict())  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
 
 
 @attr.define(repr=False, eq=False, init=False)
@@ -530,9 +529,6 @@ class ModelInfo:
 
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
-
-    def parse_options(self, options_class: type[ModelOptions]) -> None:
-        object.__setattr__(self, "options", options_class.with_options(**self.options))
 
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:

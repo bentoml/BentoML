@@ -90,19 +90,14 @@ class TransformersOptions(ModelOptions):
         ]
     )
 
-    pipeline: bool = attr.field(
-        default=True, validator=attr.validators.instance_of(bool)
-    )
-
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
+    def to_dict(self) -> dict[str, t.Any]:
+        return attr.asdict(self)
 
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return attr.asdict(options)
+    @classmethod
+    def parse_options(cls, options: ModelOptions) -> TransformersOptions:
+        return cls(**options)
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -145,16 +140,15 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    bento_model.info.parse_options(TransformersOptions)
-
-    pipeline_task: str = bento_model.info.options.task  # type: ignore
-    pipeline_kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
-    pipeline_kwargs.update(kwargs)
-    if len(pipeline_kwargs) > 0:
+    options: TransformersOptions = TransformersOptions.parse_options(
+        bento_model.info.options
+    )
+    options.kwargs.update(kwargs)
+    if len(options.kwargs) > 0:
         logger.info(
-            f"Loading '{pipeline_task}' pipeline '{bento_model.tag}' with kwargs {pipeline_kwargs}."
+            f"Loading '{options.task}' pipeline '{bento_model.tag}' with kwargs {options.kwargs}."
         )
-    return transformers.pipeline(task=pipeline_task, model=bento_model.path, **pipeline_kwargs)  # type: ignore
+    return transformers.pipeline(task=options.task, model=bento_model.path, **options.kwargs)  # type: ignore
 
 
 def save_model(

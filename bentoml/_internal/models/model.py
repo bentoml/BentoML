@@ -457,7 +457,7 @@ def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]
 bentoml_cattr.register_unstructure_hook(ModelSignature, model_signature_encoder)
 
 
-@attr.define(repr=False, eq=False, init=True)
+@attr.define(repr=False, eq=False)
 class ModelInfo:
     tag: Tag
     name: str

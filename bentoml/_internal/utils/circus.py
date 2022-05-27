@@ -1,26 +1,27 @@
 from __future__ import annotations
 
-import typing
+import typing as t
 import logging
 import pathlib
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from circus.plugins import CircusPlugin
 
-if typing.TYPE_CHECKING:
-    from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
-    from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
-    from circus.watcher import Watcher  # type: ignore[reportMissingTypeStubs]
+if TYPE_CHECKING:
+    from circus.arbiter import Arbiter
+    from circus.sockets import CircusSocket
+    from circus.watcher import Watcher
 
 logger = logging.getLogger(__name__)
 
 
 def create_circus_socket_from_uri(
     uri: str,
-    *args: typing.Any,
+    *args: t.Any,
     name: str = "",
-    **kwargs: typing.Any,
-) -> "CircusSocket":
+    **kwargs: t.Any,
+) -> CircusSocket:
     from circus.sockets import CircusSocket
 
     from bentoml._internal.utils.uri import uri_to_path
@@ -45,10 +46,8 @@ def create_circus_socket_from_uri(
         raise ValueError(f"Unsupported URI scheme: {parsed.scheme}")
 
 
-def create_standalone_arbiter(
-    watchers: list["Watcher"], **kwargs: typing.Any
-) -> "Arbiter":
-    from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
+def create_standalone_arbiter(watchers: list["Watcher"], **kwargs: t.Any) -> "Arbiter":
+    from circus.arbiter import Arbiter
 
     from . import reserve_free_port
 
@@ -80,8 +79,8 @@ class BentoChangeReloader(CircusPlugin):
 
     def __init__(
         self,
-        *args: typing.Any,
-        **config: typing.Any,
+        *args: t.Any,
+        **config: t.Any,
     ):
         assert "bento_identifier" in config, "bento_identifier is required"
         assert "working_dir" in config, "working_dir is required"
@@ -107,7 +106,7 @@ class BentoChangeReloader(CircusPlugin):
     def handle_stop(self):
         self.period.stop()
 
-    def handle_recv(self, data: typing.Any):
+    def handle_recv(self, data: t.Any):
         pass
 
 
@@ -149,7 +148,7 @@ class PyFileChangeWatcher:
     def reset(self) -> None:
         self.mtimes = {}
 
-    def iter_files(self) -> typing.Iterator[pathlib.Path]:
+    def iter_files(self) -> t.Iterator[pathlib.Path]:
         for reload_dir in self.watch_dirs:
             for path in list(reload_dir.rglob("*.py")):
                 yield path.resolve()

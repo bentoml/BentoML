@@ -113,7 +113,7 @@ def serve_development(
                 use="bentoml._internal.utils.circus.BentoChangeReloader",
                 bento_identifier=bento_identifier,
                 working_dir=working_dir,
-                relaod_delay=reload_delay,
+                reload_delay=reload_delay,
             ),
         ]
     else:

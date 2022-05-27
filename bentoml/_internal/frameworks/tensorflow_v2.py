@@ -241,10 +241,8 @@ def get_runnable(
 
         def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
             if not LazyType["tf_ext.TensorLike"]("tensorflow.Tensor").isinstance(item):
-                print("not tensor!")
                 return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
             else:
-                print("is tensor!")
                 return item
 
         def _run_method(

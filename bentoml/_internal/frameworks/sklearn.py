@@ -13,8 +13,6 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 from bentoml._internal.models.model import ModelSignaturesType
 
-from ..models import PKL_EXT
-from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:

@@ -8,17 +8,18 @@ import contextlib
 from typing import TYPE_CHECKING
 
 from simple_di import inject
+from simple_di import Provide
 
 import bentoml
 
 from ...types import LazyType
-from ...utils.pkg import get_pkg_version
 from ....exceptions import MissingDependencyException
 from ...models.model import Model
 from ...runner.utils import Params
 from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
+from ...configuration.containers import DeploymentContainer
 
 try:
     import torch
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 
     from ... import external_typing as ext
 
-    ModelType = t.Union[torch.nn.Module, torch.jit.ScriptModule, pl.LightningModule]
+    ModelType = t.Union[torch.nn.Module, torch.ScriptModule, pl.LightningModule]
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +61,8 @@ class PytorchModelRunnable(bentoml.Runnable):
         else:
             self.device_id = "cpu"
         self.model: ModelType = loader(bento_model, device_id=self.device_id)
-        self.model.eval()  # to turn off dropout and batchnorm
-
+        self.model.train(False)  # to turn off dropout and batchnorm
         self._no_grad_context = contextlib.ExitStack()
-
         if hasattr(torch, "inference_mode"):  # pytorch>=1.9
             self._no_grad_context.enter_context(torch.inference_mode())
         else:
@@ -88,7 +87,7 @@ def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tens
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return torch.Tensor(item, device=self.device_id)
             else:
-                return item.to(self.device_id)  # type: ignore
+                return item.to(self.device_id)  # type: ignore # the overhead is trivial if it is already on the right device
 
         params = params.map(_mapping)
         return getattr(self.model, method_name)(*params.args, **params.kwargs)
@@ -100,14 +99,10 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
     @classmethod
     def batches_to_batch(
         cls,
-        batches: tuple[torch.Tensor] | list[torch.Tensor],
+        batches: t.Sequence[torch.Tensor],
         batch_dim: int = 0,
     ) -> t.Tuple[torch.Tensor, list[int]]:
-        # numpy.concatenate may consume lots of memory, need optimization later
-        batch = torch.cat(  # type: ignore[reportGeneralTypeIssues]
-            batches,
-            dim=batch_dim,
-        )
+        batch = torch.cat(tuple(batches), dim=batch_dim)
         indices = list(
             itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
         )
@@ -122,25 +117,29 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         batch_dim: int = 0,
     ) -> t.List[torch.Tensor]:
         sizes = [indices[i] - indices[i - 1] for i in range(1, len(indices))]
-        return torch.split(batch, sizes, axis=batch_dim)
+        output: list[torch.Tensor] = torch.split(batch, sizes, dim=batch_dim)
+        return output
 
     @classmethod
     @inject
     def to_payload(  # pylint: disable=arguments-differ
         cls,
-        single: torch.Tensor,
+        batch: torch.Tensor,
+        batch_dim: int = 0,
         plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
-        single = single.numpy()
+        batch = batch.numpy()
         if plasma_db:
             return cls.create_payload(
-                plasma_db.put(single).binary(),
-                {"plasma": True},
+                plasma_db.put(batch).binary(),
+                batch_size=batch.shape[batch_dim],
+                meta={"plasma": True},
             )
 
         return cls.create_payload(
-            pickle.dumps(single),
-            {"plasma": False},
+            pickle.dumps(batch),
+            batch_size=batch.shape[batch_dim],
+            meta={"plasma": False},
         )
 
     @classmethod
@@ -169,15 +168,8 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         batch_dim: int = 0,
         plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> t.List[Payload]:
-
         batches = cls.batch_to_batches(batch, indices, batch_dim)
-
-        def to_payload(subbatch: torch.Tensor):
-            payload = cls.to_payload(subbatch, plasma_db)
-            payload.meta["batch_size"] = subbatch.shape[batch_dim]
-            return payload
-
-        payloads = [to_payload(subbatch) for subbatch in batches]
+        payloads = [cls.to_payload(i, batch_dim=batch_dim) for i in batches]
         return payloads
 
     @classmethod

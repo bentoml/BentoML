@@ -32,7 +32,7 @@ import click
     "--runner-map",
     type=click.STRING,
     envvar="BENTOML_RUNNER_MAP",
-    help="Path to runner map file, default sets to envars `BENTOML_RUNNER_MAP`",
+    help="JSON string of runners map, default sets to envars `BENTOML_RUNNER_MAP`",
 )
 @click.option(
     "--backlog", type=click.INT, default=2048, help="Backlog size for the socket"
@@ -87,7 +87,7 @@ def main(
             name="bento_api_server",
             cmd=sys.executable,
             args=["-m", "bentoml._internal.server.cli.api_server"]
-            + unparse_click_params(params, ctx.command.params),
+            + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
             stop_children=True,

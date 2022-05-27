@@ -7,7 +7,7 @@ from opentelemetry import trace  # type: ignore[import]
 
 class ServiceContextClass:
     def __init__(self) -> None:
-        self.request_id_var: ContextVar[None] = ContextVar(
+        self.request_id_var: ContextVar[int | None] = ContextVar(
             "request_id_var", default=None
         )
         self.component_name_var: ContextVar[str] = ContextVar(

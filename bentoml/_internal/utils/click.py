@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 def unparse_click_params(
     params: dict[str, t.Any],
     command_params: list[click.Parameter],
+    *,
+    factory: t.Callable[..., t.Any] | None = None,
 ) -> list[str]:
     """
     Unparse click call to a list of arguments. Used to modify some parameters and
@@ -77,4 +79,9 @@ def unparse_click_params(
             logger.warning(
                 "Given command params is a subclass of click.Parameter, but not a click.Argument or click.Option. Passing through..."
             )
+
+    # We will also convert values if factory is parsed:
+    if factory is not None:
+        return list(map(factory, args))
+
     return args

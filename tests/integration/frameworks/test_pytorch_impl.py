@@ -82,21 +82,25 @@ def test_pytorch_save_load_across_devices(dev: str, model_tag: Tag):
 def test_pytorch_runner_setup_run_batch(model_tag: Tag):
     runner = bentoml.pytorch.get(model_tag).to_runner()
 
-    assert tag in runner.models
-    assert runner.num_replica == 1
+    assert model_tag in [m.tag for m in runner.models]
 
-    res = runner.run_batch(input_data)
+    numprocesses = runner.scheduling_strategy.get_worker_count(
+        runner.runnable_class, runner.resource_config
+    )
+    assert numprocesses == 1
+
+    res = runner.run(input_data)
     assert res.unsqueeze(dim=0).item() == 5.0
 
 
 @pytest.mark.gpus
-@pytest.mark.parametrize("dev", ["cuda", "cuda:0"])
-def test_pytorch_runner_setup_on_gpu(dev):
-    model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model)
-    runner = bentoml.pytorch.load_runner(tag)
-
-    assert torch.cuda.device_count() == runner.num_replica
+@pytest.mark.parametrize("nvidia_gpu", [1, 2])
+def test_pytorch_runner_setup_on_gpu(nvidia_gpu: int, model_tag: Tag):
+    runner = bentoml.pytorch.get(model_tag).to_runner(nvidia_gpu=nvidia_gpu)
+    numprocesses = runner.scheduling_strategy.get_worker_count(
+        runner.runnable_class, runner.resource_config
+    )
+    assert numprocesses == nvidia_gpu
 
 
 @pytest.mark.parametrize(

@@ -285,6 +285,12 @@ def get_runnable(
         if method_partial_kwargs:
             raw_method = functools.partial(raw_method, **method_partial_kwargs)
 
+        def _mapping(item: "KerasArgType") -> "tf_ext.TensorLike":
+            if not LazyType["tf_ext.TensorLike"]("tensorflow.Tensor").isinstance(item):
+                return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
+            else:
+                return item
+
         def _run_method(
             runnable_self: KerasRunnable, *args: "KerasArgType"
         ) -> "ext.NpNDArray":
@@ -292,15 +298,6 @@ def get_runnable(
             params = Params["KerasArgType"](*args)
 
             with tf.device(runnable_self.device_name):
-
-                def _mapping(item: "KerasArgType") -> "tf_ext.TensorLike":
-                    if not LazyType["tf_ext.TensorLike"](
-                        "tensorflow.Tensor"
-                    ).isinstance(item):
-                        return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
-                    else:
-                        return item
-
                 params = params.map(_mapping)
                 res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(params.args)
                 if LazyType["tf_ext.EagerTensor"](

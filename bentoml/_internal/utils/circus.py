@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 import logging
 import pathlib
-from typing import final
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 

@@ -139,11 +139,6 @@ EOF
 # Default port for BentoServer
 EXPOSE 3000
 
-# https://unix.stackexchange.com/a/184016/430604
-ARG LINES
-
-ARG COLUMNS
-
 RUN chmod +x {{ bento__entrypoint }}
 
 USER bentoml

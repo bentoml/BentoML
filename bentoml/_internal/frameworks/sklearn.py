@@ -1,16 +1,17 @@
 from __future__ import annotations
-import logging
+
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
-from bentoml._internal.models.model import ModelSignaturesType
+from bentoml.models import Model
+from bentoml.models import ModelContext
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
-from bentoml.models import Model
-from bentoml.models import ModelContext
+from bentoml._internal.models.model import ModelSignaturesType
 
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
@@ -148,11 +149,7 @@ def save_model(
     )
 
     if signatures is None:
-        signatures = {
-            "predict": {
-                "batchable": False,
-            }
-        }
+        signatures = {"predict": {"batchable": False}}
         logger.info(
             f"Using the default model signature for sklearn ({signatures}) for model {name}."
         )

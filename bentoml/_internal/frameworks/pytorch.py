@@ -1,24 +1,26 @@
 from __future__ import annotations
-import functools
-import logging
-from pathlib import Path
+
 import typing as t
+import logging
+import functools
+from pathlib import Path
 
 import cloudpickle
 
 import bentoml
 from bentoml import Tag
 
+from ..models import Model
+from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
-from ..models import Model
 from ..models.model import ModelContext
 from ..models.model import ModelSignaturesType
-from ..utils.pkg import get_pkg_version
 from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer
 
 __all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
+
 
 MODULE_NAME = "bentoml.pytorch"
 MODEL_FILENAME = "saved_model.pt"

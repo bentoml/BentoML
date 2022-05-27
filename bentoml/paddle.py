@@ -1,6 +1,5 @@
-from ._internal.frameworks.paddle import load
-from ._internal.frameworks.paddle import save
-from ._internal.frameworks.paddle import load_runner
-from ._internal.frameworks.paddle import import_from_paddlehub
-
-__all__ = ["import_from_paddlehub", "load", "load_runner", "save"]
+raise NotImplementedError(f"""\
+Support for "{__name__}" is temporarily unavailable as BentoML transition to the new \
+design in version 1.0.0 release. Before this module is officially implemented in \
+BentoML, users may use Custom Runner as a workaround. Learn more at http://docs.bentoml.org
+""")

@@ -473,8 +473,8 @@ class ModelInfo:
     signatures: t.Dict[str, ModelSignature] = attr.field(
         converter=ModelSignature.convert_signatures_dict
     )
-    api_version: str = attr.field(default="v1")
-    creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+    api_version: str
+    creation_time: datetime
 
     def __init__(
         self,
@@ -498,8 +498,8 @@ class ModelInfo:
             metadata=metadata,
             context=context,
             signatures=signatures,
-            api_version=api_version,
-            creation_time=creation_time,
+            api_version=api_version or "v1",
+            creation_time=creation_time or datetime.now(timezone.utc),
         )
         self.validate()
 

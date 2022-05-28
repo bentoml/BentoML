@@ -38,7 +38,7 @@ FROM base as base-{{ key }}
 		{% endfor %}
 		{% else %}
 # custom base_image: {{ __base_image__ }}.
-# BentoML will only provide support for x86 architecture
+# BentoML only support x86 architecture when using custom base_image
 FROM base as base-amd64
 	{% endif %}
 
@@ -97,10 +97,10 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 {% endif %}
 {% block SETUP_BENTO_COMPONENTS %}
 
-# install python package with wheels
-# BentoML by default generates two requirment files:
+# Install python package dependencies with pip
+# BentoML by default generates two requirement files:
 #  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
-#  - ./env/python/requirements.txt: all dependecies as user specified in code or requirements.txt file
+#  - ./env/python/requirements.txt: all dependencies as user specified in code or requirements.txt file
 # We will try to install from  requirements.txt.lock to install package with -U,
 # else we will try to install from requirements.txt.
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF

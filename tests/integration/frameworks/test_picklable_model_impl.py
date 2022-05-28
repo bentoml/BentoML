@@ -19,19 +19,19 @@ class MyCoolModel:
         return list(map(lambda x: x**2, some_integer))
 
 
-class MockBatchOptions:
-    enabled = True
-
-
-def save_procedure(
+def save_test_model(
     metadata: t.Dict[str, t.Any],
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> "Tag":
     model_to_save = MyCoolModel()
-    tag = bentoml.picklable_model.save(
+    tag = bentoml.picklable_model.save_model(
         "test_picklable_model",
         model_to_save,
+        signatures={
+            "predict": {"batchable": False},
+            "batch_predict": {"batchable": True},
+        },
         metadata=metadata,
         labels=labels,
         custom_objects=custom_objects,
@@ -52,44 +52,34 @@ def test_picklable_model_save_load(
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = save_procedure(metadata, labels=labels, custom_objects={"func": custom_f})
+    tag = save_test_model(metadata, labels=labels, custom_objects={"func": custom_f})
     bentomodel = bentoml.models.get(tag)
     assert bentomodel.info.metadata is not None
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
-    loaded_model = bentoml.picklable_model.load(bentomodel.tag)
+    loaded_model = bentoml.picklable_model.load_model(bentomodel.tag)
     assert isinstance(loaded_model, MyCoolModel)
     assert loaded_model.predict(4) == np.array([16])
 
 
-def test_picklable_model_runner_setup_run() -> None:
+def test_picklable_runner() -> None:
+    tag = save_test_model({})
+    runner = bentoml.picklable_model.get(tag).to_runner()
+    runner.init_local()
 
-    tag = save_procedure({})
-    runner = bentoml.picklable_model.load_runner(tag, method_name="predict")
-
-    assert tag in runner.required_models
-    assert runner.run(3) == np.array([9])
+    assert runner.models[0].tag == tag
+    assert runner.predict.run(3) == np.array([9])
+    assert runner.batch_predict.run([3, 9]) == [9, 81]
 
 
-def test_pickle_runner_setup_run_method() -> None:
-    tag = bentoml.picklable_model.save(
+def test_picklable_model_default_signature() -> None:
+    tag = bentoml.picklable_model.save_model(
         "test_pickle_model", lambda x: x**2, metadata={}
     )
-    runner = bentoml.picklable_model.load_runner(tag)
+    runner = bentoml.picklable_model.get(tag).to_runner()
+    runner.init_local()
 
-    assert tag in runner.required_models
+    assert runner.models[0].tag == tag
     assert runner.run(3) == np.array([9])
-
-
-def test_pickle_runner_setup_run_batch() -> None:
-    tag = save_procedure({})
-    runner = bentoml.picklable_model.load_runner(
-        tag,
-        method_name="batch_predict",
-        batch=True,
-    )
-
-    assert tag in runner.required_models
-    assert runner.run_batch([3, 9]) == [9, 81]

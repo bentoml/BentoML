@@ -136,44 +136,31 @@ and used in the same service. For example:
 .. code:: python
 
     import bentoml
-    from transformers import pipeline, set_seed
+    import torch
 
-    class MyTransformerRunnable(bentoml.Runnable):
+    class MyModelRunnable(bentoml.Runnable):
         SUPPORT_NVIDIA_GPU = True
         SUPPORT_CPU_MULTI_THREADING = True
 
-        def __init__(self, seed, max_length, num_return_sequences=5):
-            self.num_return_sequences = num_return_sequences
-            self.max_length = max_length
-            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES", "")
-            device = -1 if available_gpus == "" else available_gpus
-            self.generator = pipeline('text-generation', model='gpt2', device=device)
-            set_seed(seed)
+        def __init__(self, model_file):
+            self.model = torch.load_model(model_file)
 
-        @bentoml.Runnable.method(batchable=False)
-        def generate(self, text):
-            return generator(
-                text,
-                max_length=self.max_length,
-                num_return_sequences=self.num_return_sequences
-            )
+        @bentoml.Runnable.method(batchable=True, batch_dim=0)
+        def predict(self, input_tensor):
+            return self.model(input_tensor)
 
     my_runner_1 = bentoml.Runner(
-        MyTransformerRunnable,
+        MyModelRunnable,
         name="my_runner_1",
         runnable_init_params={
-            "seed": 42,
-            "max_length": 30,
-            "num_return_sequences": 10,
+            "model_file": "./saved_model_1.pt",
         }
     )
     my_runner_2 = bentoml.Runner(
-        MyTransformerRunnable,
+        MyModelRunnable,
         name="my_runner_2",
         runnable_init_params={
-            "seed": 20,
-            "max_length": 30,
-            "num_return_sequences": 5,
+            "model_file": "./saved_model_2.pt",
         }
     )
 

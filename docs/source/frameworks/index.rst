@@ -12,56 +12,12 @@ repository.
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`/frameworks/catboost`
-        :link: /frameworks/catboost
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/detectron`
-        :link: /frameworks/detectron
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/easyocr`
-        :link: /frameworks/easyocr
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/gluon`
-        :link: /frameworks/gluon
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/h2o`
-        :link: /frameworks/h2o
-        :link-type: doc
-
     .. grid-item-card:: :doc:`/frameworks/keras`
         :link: /frameworks/keras
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/lightgbm`
-        :link: /frameworks/lightgbm
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/mlflow`
-        :link: /frameworks/mlflow
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/onnx`
-        :link: /frameworks/onnx
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/onnxmlir`
-        :link: /frameworks/onnxmlir
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/paddle`
-        :link: /frameworks/paddle
-        :link-type: doc
-
     .. grid-item-card:: :doc:`/frameworks/picklable`
         :link: /frameworks/picklable
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/pycaret`
-        :link: /frameworks/pycaret
         :link-type: doc
 
     .. grid-item-card:: :doc:`/frameworks/pytorch`
@@ -76,20 +32,8 @@ repository.
         :link: /frameworks/sklearn
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/spacy`
-        :link: /frameworks/spacy
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/statsmodels`
-        :link: /frameworks/statsmodels
-        :link-type: doc
-
     .. grid-item-card:: :doc:`/frameworks/tensorflow`
         :link: /frameworks/tensorflow
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/tensorflow_v1`
-        :link: /frameworks/tensorflow_v1
         :link-type: doc
 
     .. grid-item-card:: :doc:`/frameworks/transformers`
@@ -101,11 +45,27 @@ repository.
         :link-type: doc
 
 
-Support for the following frameworks are currently on our roadmap:
+The following frameworks are supported in BentoML prior to 1.0.0 release and is still
+being migrated to the new API design. Before they are officially supported in BentoML
+1.0, users may use :ref:`Custom Runner <concepts/runner:Custom Runner>` to serve models
+from these ML libraries with BentoML.
 
+- Catboost
+- Detectron
+- EasyOCR
 - EvalML
 - FastText
 - FastAI
+- Gluon
+- H2O
+- LightGBM
+- MLFlow
+- ONNX
+- ONNX-MLIR
+- PaddlePaddle
+- PyCaret
+- Spacy
+- Statsmodels
 - Flax
 - Jax
 - Neuropod
@@ -127,26 +87,12 @@ Support for the following frameworks are currently on our roadmap:
 .. toctree::
   :hidden:
 
-  catboost
-  detectron
-  easyocr
-  gluon
-  h2o
-  mlflow
-  onnx
-  onnxmlir
-  lightgbm
-  paddle
   picklable_model
-  pycaret
   pytorch
   pytorch_lightning
   keras
   sklearn
-  spacy
-  statsmodels
   tensorflow
-  tensorflow_v1
   transformers
   xgboost
 

@@ -1,7 +1,7 @@
-from ._internal.frameworks.spacy import load
-from ._internal.frameworks.spacy import save
-from ._internal.frameworks.spacy import projects
-from ._internal.frameworks.spacy import load_runner
-from ._internal.frameworks.spacy import load_project
-
-__all__ = ["projects", "load", "load_project", "load_runner", "save"]
+raise NotImplementedError(
+    f"""\
+Support for "{__name__}" is temporarily unavailable as BentoML transition to the new \
+design in version 1.0.0 release. Before this module is officially implemented in \
+BentoML, users may use Custom Runner as a workaround. Learn more at http://docs.bentoml.org
+"""
+)

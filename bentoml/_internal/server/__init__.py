@@ -17,7 +17,6 @@ from bentoml import load
 from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
-from ..configuration import get_debug_mode
 from ..runner.resource import query_cpu_count
 from ..utils.analytics import track_serve
 from ..configuration.containers import DeploymentContainer
@@ -124,7 +123,7 @@ def serve_development(
         watchers,
         sockets=circus_sockets,
         plugins=plugins,
-        debug=get_debug_mode(),
+        debug=True,
     )
     ensure_prometheus_dir()
 

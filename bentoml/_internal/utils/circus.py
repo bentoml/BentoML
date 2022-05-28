@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import typing
+import typing as t
 import logging
 import pathlib
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from circus.plugins import CircusPlugin
+from circus.plugins import CircusPlugin  # type: ignore[reportMissingTypeStubs]
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
     from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
     from circus.watcher import Watcher  # type: ignore[reportMissingTypeStubs]
@@ -17,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 def create_circus_socket_from_uri(
     uri: str,
-    *args: typing.Any,
+    *args: t.Any,
     name: str = "",
-    **kwargs: typing.Any,
-) -> "CircusSocket":
-    from circus.sockets import CircusSocket
+    **kwargs: t.Any,
+) -> CircusSocket:
+    from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
 
     from bentoml._internal.utils.uri import uri_to_path
 
@@ -45,9 +46,7 @@ def create_circus_socket_from_uri(
         raise ValueError(f"Unsupported URI scheme: {parsed.scheme}")
 
 
-def create_standalone_arbiter(
-    watchers: list["Watcher"], **kwargs: typing.Any
-) -> "Arbiter":
+def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbiter:
     from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
 
     from . import reserve_free_port
@@ -77,25 +76,25 @@ class BentoChangeReloader(CircusPlugin):
     """
 
     name = "bento_change_reloader"
+    config: dict[str, t.Any]
 
-    def __init__(
-        self,
-        *args: typing.Any,
-        **config: typing.Any,
-    ):
-        assert "bento_identifier" in config, "bento_identifier is required"
-        assert "working_dir" in config, "working_dir is required"
+    def __init__(self, *args: t.Any, **config: t.Any):
+        assert "bento_identifier" in config, "`bento_identifier` is required"
+        assert "working_dir" in config, "`working_dir` is required"
 
-        super().__init__(*args, **config)
-        self.name = config.get("name")
-        working_dir: str = config["working_dir"]
-        self.reload_delay: float = config.get("reload_delay", 1)
+        super().__init__(*args, **config)  # type: ignore (unfinished types for circus)
+
+        self.name = self.config.get("name")
+        working_dir: str = self.config["working_dir"]
+
+        # circus/plugins/__init__.py:282 -> converts all given configs to dict[str, str]
+        self.reload_delay: float = float(self.config.get("reload_delay", 1))
         self.file_watcher = PyFileChangeWatcher([working_dir])
 
     def look_after(self):
         if self.file_watcher.is_file_changed():
             logger.info("Restarting...")
-            self.call("restart", name="*")
+            self.call("restart", name="*")  # type: ignore
             self.file_watcher.reset()
 
     def handle_init(self):
@@ -107,7 +106,7 @@ class BentoChangeReloader(CircusPlugin):
     def handle_stop(self):
         self.period.stop()
 
-    def handle_recv(self, data: typing.Any):
+    def handle_recv(self, data: t.Any):
         pass
 
 
@@ -122,7 +121,7 @@ class PyFileChangeWatcher:
         self.watch_dirs = [
             pathlib.Path(d) if isinstance(d, str) else d for d in watch_dirs
         ]
-        logger.info(f"Watching directories: {self.watch_dirs}")
+        logger.info(f"Watching directories: {', '.join(map(str, self.watch_dirs))}")
 
     def is_file_changed(self) -> bool:
         for file in self.iter_files():
@@ -149,7 +148,7 @@ class PyFileChangeWatcher:
     def reset(self) -> None:
         self.mtimes = {}
 
-    def iter_files(self) -> typing.Iterator[pathlib.Path]:
+    def iter_files(self) -> t.Iterator[pathlib.Path]:
         for reload_dir in self.watch_dirs:
             for path in list(reload_dir.rglob("*.py")):
                 yield path.resolve()

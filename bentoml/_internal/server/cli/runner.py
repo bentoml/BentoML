@@ -78,7 +78,7 @@ def main(
             name=f"runner_{runner_name}",
             cmd=sys.executable,
             args=["-m", "bentoml._internal.server.cli.runner"]
-            + unparse_click_params(params, ctx.command.params),
+            + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
             stop_children=True,

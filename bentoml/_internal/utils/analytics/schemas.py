@@ -27,6 +27,12 @@ if TYPE_CHECKING:
     P = t.ParamSpec("P")
     GenericFunction = t.Callable[P, t.Any]
 
+# Refers to bentoml/yatai-deployment-operator/common/consts/consts.go
+ENV_YATAI_VERSION = "YATAI_T_VERSION"
+ENV_YATAI_ORG_UID = "YATAI_T_ORG_UID"
+ENV_YATAI_DEPLOYMENT_UID = "YATAI_T_DEPLOYMENT_UID"
+ENV_YATAI_CLUSTER_UID = "YATAI_T_CLUSTER_UID"
+
 
 @lru_cache(maxsize=1)
 def get_platform() -> str:
@@ -114,6 +120,18 @@ class CommonProperties:
     # client related
     client: ClientInfo = attr.field(factory=get_client_info)
     yatai_user_email: t.Optional[str] = attr.field(factory=get_yatai_user_email)
+    yatai_version: t.Optional[str] = attr.field(
+        default=os.environ.get(ENV_YATAI_VERSION, None)
+    )
+    yatai_org_uid: t.Optional[str] = attr.field(
+        default=os.environ.get(ENV_YATAI_ORG_UID, None)
+    )
+    yatai_cluster_uid: t.Optional[str] = attr.field(
+        default=os.environ.get(ENV_YATAI_CLUSTER_UID, None)
+    )
+    yatai_deployment_uid: t.Optional[str] = attr.field(
+        default=os.environ.get(ENV_YATAI_DEPLOYMENT_UID, None)
+    )
 
     def __attrs_post_init__(self):
         self.total_memory_in_mb = int(psutil.virtual_memory().total / 1024.0 / 1024.0)
@@ -192,6 +210,7 @@ ALL_EVENT_TYPES = t.Union[
     BentoBuildEvent,
     ServeInitEvent,
     ServeUpdateEvent,
+    EventMeta,
 ]
 
 

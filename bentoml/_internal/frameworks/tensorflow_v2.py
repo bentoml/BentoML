@@ -239,21 +239,18 @@ def get_runnable(
         if method_partial_kwargs:
             raw_method = functools.partial(raw_method, **method_partial_kwargs)
 
+        def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
+            if not LazyType["tf_ext.TensorLike"]("tensorflow.Tensor").isinstance(item):
+                return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
+            else:
+                return item
+
         def _run_method(
             runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
         ) -> "ext.NpNDArray":
             params = Params["TFArgType"](*args, **kwargs)
 
             with tf.device(runnable_self.device_name):
-
-                def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
-                    if not LazyType["tf_ext.TensorLike"](
-                        "tensorflow.Tensor"
-                    ).isinstance(item):
-                        return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
-                    else:
-                        return item
-
                 params = params.map(_mapping)
                 res = raw_method(*params.args, **params.kwargs)
                 return t.cast("ext.NpNDArray", res.numpy())

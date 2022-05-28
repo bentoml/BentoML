@@ -42,7 +42,7 @@ except ImportError:  # pragma: no cover
         )
 
 MODULE_NAME = "bentoml.sklearn"
-MODEL_FILENAME = f"saved_model.pkl"
+MODEL_FILENAME = "saved_model.pkl"
 
 logger = logging.getLogger(__name__)
 

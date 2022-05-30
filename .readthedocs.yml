@@ -18,4 +18,6 @@ python:
       path: .
   system_packages: true
 
-formats: []
+formats:
+  - epub
+  - pdf

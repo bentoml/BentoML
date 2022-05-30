@@ -16,7 +16,6 @@ from ..types import PathType
 from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
 from ..runner.utils import Params
-from ..runner.utils import get_gpu_memory
 from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
@@ -320,14 +319,14 @@ class _ONNXRunner(BaseModelRunner):
 
     @property
     def _num_threads(self) -> int:
-        if self.resource_quota.on_gpu:
+        if self.resource_quota.nvidia_gpu:
             return 1
         return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:
-        if self.resource_quota.on_gpu:
-            return len(self.resource_quota.gpus)
+        if self.resource_quota.nvidia_gpu:
+            return self.resource_quota.nvidia_gpu
         return 1
 
     def _setup(self) -> None:

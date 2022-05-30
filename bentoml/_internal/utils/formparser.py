@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import io
 import uuid
 import typing as t
+from typing import TYPE_CHECKING
 
 import multipart.multipart as multipart
 from starlette.requests import Request
@@ -9,7 +12,11 @@ from starlette.formparsers import MultiPartMessage
 from starlette.datastructures import Headers
 from starlette.datastructures import MutableHeaders
 
+from .http import set_cookies
 from ...exceptions import BentoMLException
+
+if TYPE_CHECKING:
+    from ..context import InferenceApiContext as Context
 
 _ItemsBody = t.List[t.Tuple[str, t.List[t.Tuple[bytes, bytes]], bytes]]
 
@@ -140,17 +147,17 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     content_type_header = request.headers.get("Content-Type")
     content_type, _ = multipart.parse_options_header(content_type_header)
     assert content_type in (b"multipart/form-data", b"multipart/mixed")
-    stream = t.cast(t.AsyncGenerator[bytes, None], request.stream())
+    stream = request.stream()
     multipart_parser = MultiPartParser(request.headers, stream)
     try:
         form = await multipart_parser.parse()
     except multipart.MultipartParseError:
         raise BentoMLException("Invalid multipart requests")
 
-    reqs = dict()  # type: t.Dict[str, Request]
+    reqs: dict[str, Request] = dict()
     for field_name, headers, data in form:
         scope = dict(request.scope)
-        ori_headers = dict(scope.get("headers", list()))
+        ori_headers = dict(scope.get("headers", dict()))
         ori_headers = t.cast(t.Dict[bytes, bytes], ori_headers)
         ori_headers.update(dict(headers))
         scope["headers"] = list(ori_headers.items())
@@ -168,11 +175,10 @@ def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
     return None
 
 
-async def concat_to_multipart_responses(
-    http_response: Response, responses: t.Mapping[str, Response]
-):
+async def concat_to_multipart_response(
+    responses: t.Mapping[str, Response], ctx: Context | None
+) -> Response:
     boundary = uuid.uuid4().hex
-    http_response.headers["content-type"] = f"multipart/form-data; boundary={boundary}"
     boundary_bytes = boundary.encode("latin1")
 
     writer = io.BytesIO()
@@ -204,4 +210,16 @@ async def concat_to_multipart_responses(
 
     writer.write(b"--%b--\r\n" % boundary_bytes)
 
-    http_response.body = writer.getvalue()
+    if ctx is not None:
+        res = Response(
+            writer.getvalue(),
+            headers=ctx.response.metadata,  # type: ignore (pyright thinks the type is dict[Unknown, Unknown])
+            media_type=f"multipart/form-data; boundary={boundary}",
+            status_code=ctx.response.status_code,
+        )
+        set_cookies(res, ctx.response.cookies)
+        return res
+    else:
+        return Response(
+            writer.getvalue(), media_type=f"multipart/form-data; boundary={boundary}"
+        )

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 import typing as t
@@ -8,12 +10,14 @@ from abc import abstractmethod
 
 import fs
 import fs.copy
+import fs.errors
 import fs.mirror
 import fs.opener
 import fs.tempfs
+from fs import open_fs
 from fs.base import FS
 
-T = t.TypeVar("T")
+T = t.TypeVar("T", bound="Exportable")
 
 
 uriSchemeRe = re.compile(r".*[^\\](?=://)")
@@ -44,7 +48,10 @@ class Exportable(ABC):
     def guess_format(cls, path: str) -> str:
         _, ext = fs.path.splitext(path)
 
-        ext = ext if ext == "" else ext[1:]
+        if ext == "":
+            return cls._export_ext()
+
+        ext = ext[1:]
         if ext in [cls._export_ext(), "gz", "xz", "bz2", "tar", "zip"]:
             return ext
         else:
@@ -64,24 +71,26 @@ class Exportable(ABC):
     ) -> T:
         try:
             parsedurl = fs.opener.parse(path)
-        except fs.opener.errors.ParseError:
+        except fs.opener.errors.ParseError:  # type: ignore (FS types)
             if protocol is None:
                 protocol = "osfs"
-                resource = path if os.sep == "/" else path.replace(os.sep, "/")
+                resource: str = path if os.sep == "/" else path.replace(os.sep, "/")
+            else:
+                resource: str = ""
         else:
             if any(v is not None for v in [protocol, user, passwd, params, subpath]):
                 raise ValueError(
                     "An FS URL was passed as the output path; all additional information should be passed as part of the URL."
                 )
 
-            protocol = parsedurl.protocol
-            user = parsedurl.username
-            passwd = parsedurl.password
-            resource = parsedurl.resource
-            params = parsedurl.params
-            subpath = parsedurl.path
+            protocol = parsedurl.protocol  # type: ignore (FS types)
+            user = parsedurl.username  # type: ignore (FS types)
+            passwd = parsedurl.password  # type: ignore (FS types)
+            resource: str = parsedurl.resource  # type: ignore (FS types)
+            params = parsedurl.params  # type: ignore (FS types)
+            subpath = parsedurl.path  # type: ignore (FS types)
 
-        if protocol not in fs.opener.registry.protocols:
+        if protocol not in fs.opener.registry.protocols:  # type: ignore (FS types)
             if protocol == "s3":
                 raise ValueError(
                     "Tried to open an S3 url but the protocol is not registered; did you 'pip install fs-s3fs'?"
@@ -182,24 +191,26 @@ class Exportable(ABC):
     ) -> str:
         try:
             parsedurl = fs.opener.parse(path)
-        except fs.opener.errors.ParseError:
+        except fs.opener.errors.ParseError:  # type: ignore (incomplete FS types)
             if protocol is None:
                 protocol = "osfs"
                 resource = path if os.sep == "/" else path.replace(os.sep, "/")
+            else:
+                resource = ""
         else:
             if any(v is not None for v in [protocol, user, passwd, params, subpath]):
                 raise ValueError(
                     "An FS URL was passed as the output path; all additional information should be passed as part of the URL."
                 )
 
-            protocol = parsedurl.protocol
-            user = parsedurl.username
-            passwd = parsedurl.password
-            resource = parsedurl.resource
-            params = parsedurl.params
-            subpath = parsedurl.path
+            protocol = parsedurl.protocol  # type: ignore (incomplete FS types)
+            user = parsedurl.username  # type: ignore (incomplete FS types)
+            passwd = parsedurl.password  # type: ignore (incomplete FS types)
+            resource: str = parsedurl.resource  # type: ignore (incomplete FS types)
+            params = parsedurl.params  # type: ignore (incomplete FS types)
+            subpath = parsedurl.path  # type: ignore (incomplete FS types)
 
-        if protocol not in fs.opener.registry.protocols:
+        if protocol not in fs.opener.registry.protocols:  # type: ignore (incomplete FS types)
             if protocol == "s3":
                 raise ValueError(
                     "Tried to open an S3 url but the protocol is not registered; did you install fs-s3fs?"
@@ -302,7 +313,9 @@ class Exportable(ABC):
                 destfs = fs.open_fs(dest_uri, writeable=True, create=True)
                 fs.mirror.mirror(self._fs, destfs, copy_if_newer=False)
             else:
-                tempfs = fs.tempfs.TempFS(identifier=f"bentoml-{self._tag}-export")
+                tempfs = fs.tempfs.TempFS(
+                    identifier=f"bentoml-{self._export_name}-export"
+                )
                 filename = fs.path.basename(subpath)
                 self._compress(tempfs.getsyspath(filename), output_format)
 
@@ -321,20 +334,20 @@ class Exportable(ABC):
 
     def _compress(self, path: str, output_format: str):
         if output_format in ["gz", "xz", "bz2", "tar", self._export_ext()]:
-            import fs.tarfs
+            from fs.tarfs import WriteTarFS
 
             compression = output_format
             if compression == "tar":
                 compression = None
             if compression == self._export_ext():
                 compression = "xz"
-            out_fs = fs.tarfs.WriteTarFS(path, compression)
+            out_fs = WriteTarFS(path, compression)
         elif output_format == "zip":
-            import fs.zipfs
+            from fs.zipfs import WriteZipFS
 
-            out_fs = fs.zipfs.WriteZipFS(path)
+            out_fs = WriteZipFS(path)
         elif output_format == "folder":
-            out_fs = fs.open_fs(path, writeable=True, create=True)
+            out_fs: FS = open_fs(path, writeable=True, create=True)
         else:
             raise ValueError(f"Unsupported format {output_format}")
 
@@ -344,20 +357,20 @@ class Exportable(ABC):
     @classmethod
     def _from_compressed(cls: t.Type[T], path: str, input_format: str) -> T:
         if input_format in ["gz", "xz", "bz2", "tar", cls._export_ext()]:
-            import fs.tarfs
+            from fs.tarfs import ReadTarFS
 
             compression = input_format
             if compression == "tar":
                 compression = None
             if compression == cls._export_ext():
                 compression = "xz"
-            ret_fs = fs.tarfs.ReadTarFS(path, compression)
+            ret_fs = ReadTarFS(path)
         elif input_format == "zip":
-            import fs.zipfs
+            from fs.zipfs import ReadZipFS
 
-            ret_fs = fs.zipfs.ReadZipFS(path)
+            ret_fs = ReadZipFS(path)
         elif input_format == "folder":
-            ret_fs = fs.open_fs(path)
+            ret_fs: FS = open_fs(path)
         else:
             raise ValueError(f"Unsupported format {input_format}")
 

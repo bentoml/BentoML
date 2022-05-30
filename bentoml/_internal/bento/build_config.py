@@ -3,47 +3,66 @@ import re
 import typing as t
 import logging
 from sys import version_info as pyver
+from typing import TYPE_CHECKING
 
 import fs
 import attr
 import yaml
 import fs.copy
-from fs.base import FS
-from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
+from dotenv import dotenv_values  # type: ignore
+from piptools.scripts.compile import cli as pip_compile_cli
 
-from ..tag import Tag
+from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
-from .docker import ImageProvider
+from .docker import DistroSpec
+from .docker import get_supported_spec
+from .docker import SUPPORTED_CUDA_VERSIONS
+from .docker import DOCKER_SUPPORTED_DISTROS
+from .docker import SUPPORTED_PYTHON_VERSIONS
 from ...exceptions import InvalidArgument
-from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
+from ...exceptions import BentoMLException
+from .build_dev_bentoml_whl import build_bentoml_editable_wheel
+
+if pyver >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
+if TYPE_CHECKING:
+    from attr import Attribute
+    from fs.base import FS
+
+if pyver >= (3, 10):
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
 
 logger = logging.getLogger(__name__)
 
-PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
-PYTHON_MINOR_VERSION: str = f"{pyver.major}.{pyver.minor}"
-PYTHON_SUPPORTED_VERSIONS: t.List[str] = ["3.7", "3.8", "3.9"]
-DOCKER_SUPPORTED_DISTROS: t.List[str] = [
-    "debian",
-    "amazonlinux2",
-    "alpine3.14",
-    "ubi8",
-    "ubi7",
-]
-DOCKER_DEFAULT_DISTRO = "debian"
+PYTHON_VERSION = f"{pyver.major}.{pyver.minor}"
+PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 
-if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
+
+# Docker defaults
+DEFAULT_CUDA_VERSION = "11.6.2"
+DEFAULT_DOCKER_DISTRO = "debian"
+
+
+if PYTHON_VERSION not in SUPPORTED_PYTHON_VERSIONS:
     logger.warning(
-        "BentoML may not work well with current python version %s, supported python versions are: %s",
-        PYTHON_MINOR_VERSION,
-        ",".join(PYTHON_SUPPORTED_VERSIONS),
+        f"BentoML may not work well with current python version: {PYTHON_VERSION}, "
+        f"supported python versions are: {', '.join(SUPPORTED_PYTHON_VERSIONS)}"
     )
 
 
 def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if py_version is None:
         return None
+
+    if not isinstance(py_version, str):
+        py_version = str(py_version)
 
     match = re.match(r"^(\d+).(\d+)", py_version)
     if match is None:
@@ -55,98 +74,198 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     return f"{major}.{minor}"
 
 
+def _convert_cuda_version(cuda_version: t.Optional[str]) -> t.Optional[str]:
+    if cuda_version is None or cuda_version == "":
+        return None
+
+    if isinstance(cuda_version, int):
+        cuda_version = str(cuda_version)
+
+    if cuda_version == "default":
+        cuda_version = DEFAULT_CUDA_VERSION
+
+    match = re.match(r"^(\d+)$", cuda_version)
+    if match is not None:
+        cuda_version = SUPPORTED_CUDA_VERSIONS[cuda_version]
+
+    return cuda_version
+
+
+def _convert_user_envars(
+    envars: t.Optional[t.Union[t.List[str], t.Dict[str, t.Any]]]
+) -> t.Optional[t.Dict[str, t.Any]]:
+    if envars is None:
+        return None
+
+    if isinstance(envars, list):
+        return {k: v for e in envars for k, v in e.split("=")}
+    else:
+        return envars
+
+
+def _envars_validator(
+    _: t.Any,
+    attribute: "Attribute[t.Union[str, t.List[str], t.Dict[str, t.Any]]]",
+    value: t.Union[str, t.List[str], t.Dict[str, t.Any]],
+) -> None:
+    if isinstance(value, str):
+        if not os.path.exists(value) and os.path.isfile(value):
+            raise InvalidArgument(
+                f'`env="{value}"` is not a valid path. if `env` is parsed as a string, it should be a path to an ".env" file.'
+            )
+
+    envars_rgx = re.compile(r"(^[A-Z0-9_]+)(\=)(.*\n)")
+
+    if isinstance(value, list):
+        for envar in value:
+            match = envars_rgx.match(envar)
+            if match is None:
+                raise InvalidArgument(f"{envar} doesn't follow format ENVAR=value")
+
+            k, _ = envar.split("=")
+            if not k.isupper():
+                raise InvalidArgument(
+                    f'Invalid env var defined, key "{k}" should be in uppercase.'
+                )
+    elif isinstance(value, dict):
+        if not all(k.isupper() for k in value):
+            raise InvalidArgument("All envars should be in UPPERCASE.")
+    else:
+        raise InvalidArgument(
+            f"`env` must be either a list or a dict, got type {attribute.type} instead."
+        )
+
+
 @attr.frozen
 class DockerOptions:
-    # Options for choosing a BentoML built-in docker images
     distro: str = attr.field(
+        default=None,
         validator=attr.validators.optional(
             attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
         ),
-        default=None,
     )
-    python_version: t.Optional[str] = attr.field(
+
+    python_version: str = attr.field(
         converter=_convert_python_version,
         default=None,
         validator=attr.validators.optional(
-            attr.validators.in_(PYTHON_SUPPORTED_VERSIONS)
+            attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
         ),
     )
-    gpu: t.Optional[bool] = None
-    devel: t.Optional[bool] = None
 
-    # A python or shell script that executes during docker build time
+    cuda_version: t.Union[str, Literal["default"]] = attr.field(
+        default=None,
+        converter=_convert_cuda_version,
+        validator=attr.validators.optional(
+            attr.validators.in_(SUPPORTED_CUDA_VERSIONS.values())
+        ),
+    )
+
+    # A user-provided environment variable to be passed to a given bento
+    # accepts the following format:
+    #
+    # env:
+    #  - ENVAR=value1
+    #  - FOO=value2
+    #
+    # env:
+    #  ENVAR: value1"Options"
+    #  FOO: value2
+    #
+    #  env: /path/to/.env
+    env: t.Dict[str, t.Any] = attr.field(
+        default=None,
+        converter=_convert_user_envars,
+        validator=attr.validators.optional(_envars_validator),
+    )
+
+    # A user-provided system packages that can be installed for a given bento
+    # using distro package manager.
+    system_packages: t.Optional[t.List[str]] = None
+
+    # A python or sh script that executes during docker build time
     setup_script: t.Optional[str] = None
 
     # A user-provided custom docker image
     base_image: t.Optional[str] = None
 
+    # A user-provided dockerfile jinja2 template
+    dockerfile_template: str = attr.field(
+        default=None,
+        validator=attr.validators.optional(
+            lambda _, __, value: os.path.exists(value) and os.path.isfile(value)
+        ),
+    )
+
     def __attrs_post_init__(self):
         if self.base_image is not None:
             if self.distro is not None:
                 logger.warning(
-                    "docker base_image %s is used, 'distro=%s' option is ignored",
-                    self.base_image,
-                    self.distro,
+                    f"docker base_image {self.base_image} is used, "
+                    f"'distro={self.distro}' option is ignored.",
                 )
             if self.python_version is not None:
                 logger.warning(
-                    "docker base_image %s is used, 'python=%s' option is ignored",
-                    self.base_image,
-                    self.python_version,
+                    f"docker base_image {self.base_image} is used, "
+                    f"'python={self.python_version}' option is ignored.",
                 )
-            if self.gpu is not None:
+            if self.cuda_version is not None:
                 logger.warning(
-                    "docker base_image %s is used, 'gpu=%s' option is ignored",
-                    self.base_image,
-                    self.gpu,
+                    f"docker base_image {self.base_image} is used, "
+                    f"'cuda_version={self.cuda_version}' option is ignored.",
+                )
+
+        if self.cuda_version is not None:
+            supports_cuda = get_supported_spec("cuda")
+            if self.distro not in supports_cuda:
+                raise BentoMLException(
+                    f'Distro "{self.distro}" does not support CUDA. Distros that support CUDA are: {supports_cuda}.'
                 )
 
     def with_defaults(self) -> "DockerOptions":
         # Convert from user provided options to actual build options with default values
-        update_defaults = {}
+        defaults: t.Dict[str, t.Any] = {}
 
         if self.base_image is None:
             if self.distro is None:
-                update_defaults["distro"] = DOCKER_DEFAULT_DISTRO
+                defaults["distro"] = DEFAULT_DOCKER_DISTRO
             if self.python_version is None:
-                update_defaults["python_version"] = PYTHON_MINOR_VERSION
-            if self.gpu is None:
-                update_defaults["gpu"] = False
+                defaults["python_version"] = PYTHON_VERSION
 
-        return attr.evolve(self, **update_defaults)
+        if self.system_packages is None:
+            defaults["system_packages"] = []
+        if self.env is None:
+            defaults["env"] = {}
+        if self.cuda_version is None:
+            defaults["cuda_version"] = None
+        if self.dockerfile_template is None:
+            defaults["dockerfile_template"] = None
 
-    def get_base_image_tag(self):
-        if self.base_image is None:
-            if self.distro is None:
-                raise KeyError("distro not set, can't get base image tag")
-            base_image = repr(
-                ImageProvider(self.distro, self.python_version, self.gpu, self.devel)
-            )
-            return base_image
-        else:
-            return self.base_image
+        return attr.evolve(self, **defaults)
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str):
-        docker_folder = fs.path.join("env", "docker")
-        bento_fs.makedirs(docker_folder, recreate=True)
-        dockerfile = fs.path.join(docker_folder, "Dockerfile")
-        template_file = os.path.join(
-            os.path.dirname(__file__), "docker", "Dockerfile.template"
+    def write_to_bento(
+        self, bento_fs: "FS", build_ctx: str, conda_options: "CondaOptions"
+    ) -> None:
+        use_conda = any(
+            val is not None
+            for _, val in bentoml_cattr.unstructure(conda_options).items()
         )
-        with open(template_file, "r", encoding="utf-8") as f:
-            dockerfile_template = f.read()
+        docker_folder = fs.path.combine("env", "docker")
+        bento_fs.makedirs(docker_folder, recreate=True)
+        dockerfile = fs.path.combine(docker_folder, "Dockerfile")
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
-            dockerfile.write(
-                dockerfile_template.format(base_image=self.get_base_image_tag())
-            )
+            dockerfile.write(generate_dockerfile(self, use_conda=use_conda))
 
-        for filename in ["init.sh", "entrypoint.sh"]:
-            copy_file_to_fs_folder(
-                os.path.join(os.path.dirname(__file__), "docker", filename),
-                bento_fs,
-                docker_folder,
-            )
+        copy_file_to_fs_folder(
+            fs.path.join(os.path.dirname(__file__), "docker", "entrypoint.sh"),
+            bento_fs,
+            docker_folder,
+        )
+
+        # If BentoML is installed in editable mode, build bentoml whl and save to Bento
+        whl_dir = fs.path.combine(docker_folder, "whl")
+        build_bentoml_editable_wheel(bento_fs.getsyspath(whl_dir))
 
         if self.setup_script:
             try:
@@ -156,6 +275,20 @@ class DockerOptions:
             copy_file_to_fs_folder(
                 setup_script, bento_fs, docker_folder, "setup_script"
             )
+
+
+def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> DockerOptions:
+    # Allow bentofile yaml to have either a str or list of str for these options
+    if "env" in d and isinstance(d["env"], str):
+        try:
+            d["env"] = dotenv_values(d["env"])
+        except FileNotFoundError:
+            raise BentoMLException(f"Invalid env file path: {d['env']}")
+
+    return DockerOptions(**d)
+
+
+bentoml_cattr.register_structure_hook(DockerOptions, _docker_options_structure_hook)
 
 
 @attr.frozen
@@ -186,7 +319,7 @@ class CondaOptions:
                     self.pip,
                 )
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str):
+    def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         conda_folder = fs.path.join("env", "conda")
         bento_fs.makedirs(conda_folder, recreate=True)
 
@@ -198,7 +331,7 @@ class CondaOptions:
                 environment_yml_file,
                 bento_fs,
                 conda_folder,
-                dst_filename="environment_yml",
+                dst_filename="environment.yml",
             )
 
             return
@@ -219,12 +352,12 @@ class CondaOptions:
 
     def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
-        update_defaults = {}
+        defaults: t.Dict[str, t.Any] = {}
 
-        if self.channels is None:
-            update_defaults["channels"] = ["defaults"]
+        if self.channels is not None:
+            defaults["channels"] = self.channels + ["defaults"]
 
-        return attr.evolve(self, **update_defaults)
+        return attr.evolve(self, **defaults)
 
 
 @attr.frozen
@@ -252,14 +385,14 @@ class PythonOptions:
                 " and extra_index_url option when installing PyPI packages"
             )
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str):
+    def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
 
         # Save the python version of current build environment
         with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:
-            f.write(PYTHON_VERSION)
+            f.write(PYTHON_FULL_VERSION)
 
         # Move over required wheel files
         # Note: although wheel files outside of build_ctx will also work, we should
@@ -268,11 +401,6 @@ class PythonOptions:
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
-
-        # If BentoML is installed in editable mode, build bentoml whl and save to Bento
-        build_bentoml_whl_to_target_if_in_editable_mode(
-            bento_fs.getsyspath(wheels_folder)
-        )
 
         if self.requirements_txt is not None:
             requirements_txt_file = resolve_user_filepath(
@@ -350,16 +478,16 @@ class PythonOptions:
 
     def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values
-        update_defaults = {}
+        defaults: t.Dict[str, t.Any] = {}
 
         if self.requirements_txt is None:
             if self.lock_packages is None:
-                update_defaults["lock_packages"] = True
+                defaults["lock_packages"] = True
 
-        return attr.evolve(self, **update_defaults)
+        return attr.evolve(self, **defaults)
 
 
-def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]):
+def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
         if field in d and isinstance(d[field], str):
@@ -371,28 +499,18 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]):
 bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
-def _dict_arg_converter(  # type: ignore
-    options_type: t.Type[t.Union[DockerOptions, CondaOptions, PythonOptions]]
-):
-    def _converter(
-        value: t.Optional[
-            t.Union[DockerOptions, CondaOptions, PythonOptions, t.Dict[str, t.Any]]
-        ]
-    ) -> t.Optional[options_type]:
+OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
+
+
+def dict_options_converter(
+    options_type: t.Type[OptionsCls],
+) -> t.Callable[[t.Union[OptionsCls, t.Dict[str, t.Any]]], t.Any]:
+    def _converter(value: t.Union[OptionsCls, t.Dict[str, t.Any]]) -> options_type:
         if isinstance(value, dict):
             return options_type(**value)
         return value
 
-    return _converter  # type: ignore
-
-
-def _additional_models_converter(
-    tags: t.Optional[t.List[t.Union[str, Tag]]]
-) -> t.Optional[t.List[Tag]]:
-    if tags is None:
-        return tags
-
-    return list(map(Tag.from_taglike, tags))
+    return _converter
 
 
 @attr.define(frozen=True, on_setattr=None)
@@ -410,26 +528,66 @@ class BentoBuildConfig:
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
     exclude: t.Optional[t.List[str]] = None
-    additional_models: t.Optional[t.List[Tag]] = attr.field(
-        converter=_additional_models_converter,
-        default=None,
+    docker: DockerOptions = attr.field(
+        factory=DockerOptions,
+        converter=dict_options_converter(DockerOptions),
     )
-    docker: t.Optional[DockerOptions] = attr.field(
-        default=None,
-        converter=_dict_arg_converter(DockerOptions),
+    python: PythonOptions = attr.field(
+        factory=PythonOptions,
+        converter=dict_options_converter(PythonOptions),
     )
-    python: t.Optional[PythonOptions] = attr.field(
-        default=None,
-        converter=_dict_arg_converter(PythonOptions),
-    )
-    conda: t.Optional[CondaOptions] = attr.field(
-        default=None,
-        converter=_dict_arg_converter(CondaOptions),
+    conda: CondaOptions = attr.field(
+        factory=CondaOptions,
+        converter=dict_options_converter(CondaOptions),
     )
 
+    def __attrs_post_init__(self) -> None:
+        use_conda = any(
+            val is not None for _, val in bentoml_cattr.unstructure(self.conda).items()
+        )
+        use_cuda = self.docker.cuda_version is not None
+
+        if use_cuda and use_conda:
+            logger.warning(
+                f'Conda will be ignored and will not be available inside bento container when "cuda={self.docker.cuda_version}" is set.'
+            )
+
+        if self.docker.distro is not None:
+            if use_conda and self.docker.distro not in get_supported_spec("miniconda"):
+                raise BentoMLException(
+                    f"{self.docker.distro} does not supports conda. BentoML will only support conda with the following distros: {get_supported_spec('miniconda')}."
+                )
+            if use_cuda and self.docker.distro not in get_supported_spec("cuda"):
+                raise BentoMLException(
+                    f"{self.docker.distro} does not supports cuda. BentoML will only support cuda with the following distros: {get_supported_spec('cuda')}."
+                )
+
+            _spec = DistroSpec.from_distro(
+                self.docker.distro, cuda=use_cuda, conda=use_conda
+            )
+
+            if _spec is not None:
+                if self.docker.python_version is not None:
+                    if (
+                        self.docker.python_version
+                        not in _spec.supported_python_versions
+                    ):
+                        raise BentoMLException(
+                            f"{self.docker.python_version} is not supported for {self.docker.distro}. Supported python versions are: {', '.join(_spec.supported_python_versions)}."
+                        )
+
+                if self.docker.cuda_version is not None:
+                    if self.docker.cuda_version != "default" and (
+                        self.docker.cuda_version not in _spec.supported_cuda_versions
+                    ):
+                        raise BentoMLException(
+                            f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
+                        )
+
     def with_defaults(self) -> "FilledBentoBuildConfig":
-        """Convert from user provided options to actual build options will defaults
-        values filled in
+        """
+        Convert from user provided options to actual build options with defaults
+        values filled in.
 
         Returns:
             BentoBuildConfig: a new copy of self, with default values filled
@@ -441,10 +599,9 @@ class BentoBuildConfig:
             {} if self.labels is None else self.labels,
             ["*"] if self.include is None else self.include,
             [] if self.exclude is None else self.exclude,
-            [] if self.additional_models is None else self.additional_models,
-            (DockerOptions() if self.docker is None else self.docker).with_defaults(),
-            (PythonOptions() if self.python is None else self.python).with_defaults(),
-            (CondaOptions() if self.conda is None else self.conda).with_defaults(),
+            self.docker.with_defaults(),
+            self.python.with_defaults(),
+            self.conda.with_defaults(),
         )
 
     @classmethod
@@ -467,7 +624,7 @@ class BentoBuildConfig:
             else:
                 raise
 
-    def to_yaml(self, stream: t.TextIO):
+    def to_yaml(self, stream: t.TextIO) -> None:
         # TODO: Save BentoBuildOptions to a yaml file
         # This is reserved for building interactive build file creation CLI
         raise NotImplementedError
@@ -479,7 +636,6 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     labels: t.Dict[str, t.Any]
     include: t.List[str]
     exclude: t.List[str]
-    additional_models: t.List[Tag]
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions

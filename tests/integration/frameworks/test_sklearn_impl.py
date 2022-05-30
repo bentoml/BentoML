@@ -28,13 +28,13 @@ if TYPE_CHECKING:
     from bentoml import Tag
 
 
-def save_procedure(
+def save_test_model(
     metadata: t.Dict[str, t.Any],
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> "Tag":
     model, _ = sklearn_model_data(clf=RandomForestClassifier)
-    tag_info = bentoml.sklearn.save(
+    tag_info = bentoml.sklearn.save_model(
         "test_sklearn_model",
         model,
         metadata=metadata,
@@ -42,20 +42,6 @@ def save_procedure(
         custom_objects=custom_objects,
     )
     return tag_info
-
-
-def forbidden_procedure() -> "Tag":
-    model, _ = sklearn_model_data(clf=RandomForestClassifier)
-    with bentoml.models.create(
-        "invalid_module",
-        module=__name__,
-        labels=None,
-        options=None,
-        context=None,
-        metadata=None,
-    ) as ctx:
-        joblib.dump(model, ctx.path_of("saved_model.pkl"))
-        return ctx.tag
 
 
 @pytest.mark.parametrize(
@@ -73,7 +59,7 @@ def test_sklearn_save_load(metadata: t.Dict[str, t.Any]) -> None:
         return x + 1
 
     _, data = sklearn_model_data(clf=RandomForestClassifier)
-    tag = save_procedure(metadata, labels=labels, custom_objects={"func": custom_f})
+    tag = save_test_model(metadata, labels=labels, custom_objects={"func": custom_f})
     bentomodel = bentoml.models.get(tag)
     assert bentomodel.info.metadata is not None
     assert_have_file_extension(bentomodel.path, ".pkl")
@@ -81,26 +67,26 @@ def test_sklearn_save_load(metadata: t.Dict[str, t.Any]) -> None:
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
-    loaded = bentoml.sklearn.load(bentomodel.tag)
+    loaded = bentoml.sklearn.load_model(bentomodel.tag)
 
     assert isinstance(loaded, RandomForestClassifier)
 
     np.testing.assert_array_equal(loaded.predict(data), res_arr)
 
 
-def test_get_model_info_exc() -> None:
-    tag = forbidden_procedure()
-    with pytest.raises(BentoMLException):
-        _ = bentoml.sklearn.load(tag)
-
-
-def test_sklearn_runner_setup_run_batch() -> None:
+def test_sklearn_runner() -> None:
     _, data = sklearn_model_data(clf=RandomForestClassifier)
-    tag = save_procedure({})
-    runner = bentoml.sklearn.load_runner(tag)
+    tag = save_test_model({})
+    runner = bentoml.sklearn.get(tag).to_runner()
+    runner.init_local()
 
-    assert tag in runner.required_models
-    assert runner.num_replica == 1
+    assert runner.models[0].tag == tag
+    assert (
+        runner.scheduling_strategy.get_worker_count(
+            runner.runnable_class, runner.resource_config
+        )
+        == 1
+    )
 
-    res = runner.run_batch(data)
+    res = runner.run(data)
     assert (res == res_arr).all()

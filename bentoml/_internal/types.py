@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import os
 import sys
@@ -20,14 +22,20 @@ else:
     from typing import get_args
     from typing import get_origin
 
-if sys.version_info < (3, 7):
-    from backports.datetime_fromisoformat import MonkeyPatch
+if sys.version_info < (3, 10):
+    from typing_extensions import ParamSpec
+else:
+    from typing import ParamSpec
 
-    MonkeyPatch.patch_fromisoformat()
-
-if TYPE_CHECKING:
-    from types import UnionType
-
+__all__ = [
+    "ParamSpec",
+    "MetadataType",
+    "MetadataDict",
+    "JSONSerializable",
+    "LazyType",
+    "is_compatible_type",
+    "FileLike",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +52,7 @@ if TYPE_CHECKING:
 else:
     PathType = t.Union[str, os.PathLike]
 
-MetadataType = t.Union[
+MetadataType: t.TypeAlias = t.Union[
     str,
     bytes,
     bool,
@@ -63,36 +71,6 @@ MetadataType = t.Union[
 MetadataDict = t.Dict[str, MetadataType]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
-
-
-def is_compatible_type(
-    t1: "t.Union[t.Type[t.Any], UnionType, LazyType[t.Any]]",
-    t2: "t.Union[t.Type[t.Any], UnionType, LazyType[t.Any]]",
-) -> bool:
-    """
-    A very loose check that it is possible for an object to be both an instance of ``t1``
-    and an instance of ``t2``.
-
-    Note: this will resolve ``LazyType``s, so should not be used in any
-    peformance-critical contexts.
-    """
-    if get_origin(t1) is t.Union:
-        return any((is_compatible_type(t2, arg_type) for arg_type in get_args(t1)))
-
-    if get_origin(t2) is t.Union:
-        return any((is_compatible_type(t1, arg_type) for arg_type in get_args(t2)))
-
-    if isinstance(t1, LazyType):
-        t1 = t1.get_class()
-
-    if isinstance(t2, LazyType):
-        t2 = t2.get_class()
-
-    if isinstance(t1, type) and isinstance(t2, type):
-        return issubclass(t1, t2) or issubclass(t2, t1)
-
-    # catchall return true in unsupported cases so we don't error on unsupported types
-    return True
 
 
 T = t.TypeVar("T")
@@ -151,8 +129,8 @@ class LazyType(t.Generic[T]):
 
     def __init__(
         self,
-        module_or_cls: t.Union[str, t.Type[T]],
-        qualname: t.Optional[str] = None,
+        module_or_cls: str | t.Type[T],
+        qualname: str | None = None,
     ) -> None:
         if isinstance(module_or_cls, str):
             if qualname is None:  # LazyType("numpy.ndarray")
@@ -196,9 +174,7 @@ class LazyType(t.Generic[T]):
     def __repr__(self) -> str:
         return f'LazyType("{self.module}", "{self.qualname}")'
 
-    def get_class(
-        self, import_module: bool = True
-    ) -> "t.Union[t.Type[T], t.Tuple[t.Type[T]]]":
+    def get_class(self, import_module: bool = True) -> t.Type[T]:
         if self._runtime_class is None:
             try:
                 m = sys.modules[self.module]
@@ -210,10 +186,6 @@ class LazyType(t.Generic[T]):
                 else:
                     raise ValueError(f"Module {self.module} not imported")
 
-            if isinstance(self.qualname, tuple):
-                self._runtime_class = tuple(
-                    (t.cast("t.Type[T]", getattr(m, x)) for x in self.qualname)
-                )
             self._runtime_class = t.cast("t.Type[T]", getattr(m, self.qualname))
 
         return self._runtime_class
@@ -225,9 +197,42 @@ class LazyType(t.Generic[T]):
             return False
 
 
+if TYPE_CHECKING:
+    from types import UnionType
+
+    AnyType: t.TypeAlias = t.Type[t.Any] | UnionType | LazyType[t.Any]
+
+
+def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
+    """
+    A very loose check that it is possible for an object to be both an instance of ``t1``
+    and an instance of ``t2``.
+
+    Note: this will resolve ``LazyType``s, so should not be used in any
+    peformance-critical contexts.
+    """
+    if get_origin(t1) is t.Union:
+        return any((is_compatible_type(t2, arg_type) for arg_type in get_args(t1)))
+
+    if get_origin(t2) is t.Union:
+        return any((is_compatible_type(t1, arg_type) for arg_type in get_args(t2)))
+
+    if isinstance(t1, LazyType):
+        t1 = t1.get_class()
+
+    if isinstance(t2, LazyType):
+        t2 = t2.get_class()
+
+    if isinstance(t1, type) and isinstance(t2, type):
+        return issubclass(t1, t2) or issubclass(t2, t1)
+
+    # catchall return true in unsupported cases so we don't error on unsupported types
+    return True
+
+
 @json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
-class FileLike(t.Generic[t.AnyStr]):
+class FileLike(t.Generic[t.AnyStr], io.IOBase):
     """
     A wrapper for file-like objects that includes a custom name.
     """
@@ -259,16 +264,16 @@ class FileLike(t.Generic[t.AnyStr]):
     def isatty(self) -> bool:
         return self._wrapped.isatty()
 
-    def read(self, size: int = -1) -> t.AnyStr:
+    def read(self, size: int = -1) -> t.AnyStr:  # type: ignore # pylint: disable=arguments-renamed # python IO types
         return self._wrapped.read(size)
 
     def readable(self) -> bool:
         return self._wrapped.readable()
 
-    def readline(self, size: int = -1) -> t.AnyStr:
+    def readline(self, size: int = -1) -> t.AnyStr:  # type: ignore (python IO types)
         return self._wrapped.readline(size)
 
-    def readlines(self, size: int = -1) -> t.List[t.AnyStr]:
+    def readlines(self, size: int = -1) -> t.List[t.AnyStr]:  # type: ignore (python IO types)
         return self._wrapped.readlines(size)
 
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
@@ -286,22 +291,22 @@ class FileLike(t.Generic[t.AnyStr]):
     def writable(self) -> bool:
         return self._wrapped.writable()
 
-    def write(self, s: t.AnyStr) -> int:
+    def write(self, s: t.AnyStr) -> int:  # type: ignore (python IO types)
         return self._wrapped.write(s)
 
-    def writelines(self, lines: t.Iterable[t.AnyStr]):
+    def writelines(self, lines: t.Iterable[t.AnyStr]):  # type: ignore (python IO types)
         return self._wrapped.writelines(lines)
 
-    def __next__(self) -> t.AnyStr:
+    def __next__(self) -> t.AnyStr:  # type: ignore (python IO types)
         return next(self._wrapped)
 
-    def __iter__(self) -> t.Iterator[t.AnyStr]:
+    def __iter__(self) -> t.Iterator[t.AnyStr]:  # type: ignore (python IO types)
         return self._wrapped.__iter__()
 
     def __enter__(self) -> t.IO[t.AnyStr]:
         return self._wrapped.__enter__()
 
-    def __exit__(
+    def __exit__(  # type: ignore (python IO types)
         self,
         typ: t.Optional[t.Type[BaseException]],
         value: t.Optional[BaseException],

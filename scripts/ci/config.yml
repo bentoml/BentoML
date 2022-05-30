@@ -13,6 +13,14 @@ template: &tmpl
   external_scripts:
   type_tests: "integration"
 
+new_template: &ntmpl
+  root_test_dir: "tests/integration/frameworks"
+  is_dir: false
+  override_name_or_path: "test_frameworks.py"
+  depedencies: []
+  external_scripts:
+  type_tests: "integration"
+
 unit:
   <<: *tmpl
   root_test_dir: "tests/unit"
@@ -91,7 +99,8 @@ keras_tf2:
   <<: *tmpl
   override_name_or_path: test_keras_impl.py
   dependencies:
-    - "tensorflow==2.2.0"
+    - "protobuf<3.20,>=3.9.2"
+    - "tensorflow==2.7.3"
 
 lightgbm:
   <<: *tmpl
@@ -153,14 +162,6 @@ pyspark:
   dependencies:
     - "pyspark"
 
-pytorch_lightning:
-  <<: *tmpl
-  dependencies:
-    - "pytorch-lightning"
-    - "-f https://download.pytorch.org/whl/torch_stable.html"
-    - "torch==1.9.0+cpu"
-    - "torchvision==0.10.0+cpu"
-
 pytorch:
   <<: *tmpl
   dependencies:
@@ -182,7 +183,7 @@ spacy:
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.9.0+cpu"
     - "torchvision==0.10.0+cpu"
-    - "tensorflow==2.6.0"
+    - "tensorflow==2.7.3"
   external_scripts: |
     python -m spacy download en_core_web_sm
     python -m pip install "typing_extensions>=3.10"
@@ -213,8 +214,10 @@ torchscript:
   <<: *tmpl
   dependencies:
     - "-f https://download.pytorch.org/whl/torch_stable.html"
-    - "torch==1.9.0+cpu"
-    - "torchvision==0.10.0+cpu"
+    - "torch==1.11.0+cpu"
+    - "torchvision==0.12.0+cpu"
+    - "pytorch_lightning==1.6.3"
+    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
     - "psutil"
 
 transformers:
@@ -228,13 +231,14 @@ transformers:
     - "jax==0.2.19"
     - "jaxlib==0.1.70"
     - "flax==0.3.4"
-    - "tensorflow==2.5.0"
+    - "tensorflow==2.8.0"
     - "importlib_metadata"
     - "Pillow==8.4.0"
+    - "typing_extensions==4.2.0"
   external_scripts: |
     python -m pip install "typing_extensions>=3.10"
 
 xgboost:
-  <<: *tmpl
+  <<: *ntmpl
   dependencies:
     - "xgboost"

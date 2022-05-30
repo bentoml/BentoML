@@ -1,5 +1,6 @@
-from ._internal.frameworks.picklable_model import load
-from ._internal.frameworks.picklable_model import save
-from ._internal.frameworks.picklable_model import load_runner
+from ._internal.frameworks.picklable import get
+from ._internal.frameworks.picklable import load_model
+from ._internal.frameworks.picklable import save_model
+from ._internal.frameworks.picklable import get_runnable
 
-__all__ = ["load", "load_runner", "save"]
+__all__ = ["load_model", "get_runnable", "save_model", "get"]

@@ -242,6 +242,7 @@ class DeploymentContainerClass:
     config = bentoml_container.config
     api_server_config = config.bento_server
     runners_config = config.runners
+    development_mode = providers.Static(True)
 
     @providers.SingletonFactory
     @staticmethod

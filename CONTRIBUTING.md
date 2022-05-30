@@ -4,7 +4,7 @@
 
 The decision-making process and governance structure of BentoML project can be found in the governance document: [BentoML Governance Doc](https://github.com/bentoml/BentoML/blob/main/GOVERNANCE.md).
 
-To follow development updates and discussion, join the #dev channel in [BentoML Slack community](https://join.slack.bentoml.org).
+To follow development updates and discussion, join the #bentoml-contributors channel in [BentoML Slack community](https://join.slack.bentoml.org).
 
 
 ## Ways to contribute

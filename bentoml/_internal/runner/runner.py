@@ -1,283 +1,210 @@
-import os
-import re
-import sys
-import enum
+from __future__ import annotations
+
 import typing as t
-from abc import ABC
-from abc import abstractmethod
+import logging
 from typing import TYPE_CHECKING
 
 import attr
-import psutil
 
-from ..tag import Tag
-from .utils import cpu_converter
-from .utils import gpu_converter
-from .utils import mem_converter
-from .utils import query_cgroup_cpu_count
-from ..utils import cached_property
-from ..configuration.containers import DeploymentContainer
+from ..types import ParamSpec
+from ..utils import first_not_none
+from .resource import Resource
+from .runnable import Runnable
+from .strategy import Strategy
+from .strategy import DefaultStrategy
+from ...exceptions import StateException
+from .runner_handle import RunnerHandle
+from .runner_handle import DummyRunnerHandle
 
 if TYPE_CHECKING:
-    import platform
+    from ..models import Model
+    from .runnable import RunnableMethodConfig
 
-    if platform.system() == "Darwin":
-        from psutil._psosx import svmem
-    elif platform.system() == "Linux":
-        from psutil._pslinux import svmem
-    else:
-        from psutil._pswindows import svmem
+T = t.TypeVar("T", bound=Runnable)
+P = ParamSpec("P")
+R = t.TypeVar("R")
 
-if sys.version_info >= (3, 8):
-    from typing import final
-else:
-    final = lambda x: x
+logger = logging.getLogger(__name__)
 
 
-def _get_default_cpu() -> float:
-    # Default to the total CPU count available in current node or cgroup
-    if psutil.POSIX:
-        return query_cgroup_cpu_count()
-    else:
-        cpu_count = os.cpu_count()
-        if cpu_count is not None:
-            return float(cpu_count)
-        raise ValueError("CPU count is NoneType")
+@attr.frozen(slots=False)
+class RunnerMethod(t.Generic[T, P, R]):
+    runner: Runner
+    name: str
+    config: RunnableMethodConfig
+    max_batch_size: int
+    max_latency_ms: int
+
+    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return self.runner._runner_handle.run_method(  # type: ignore
+            self,
+            *args,
+            **kwargs,
+        )
+
+    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return await self.runner._runner_handle.async_run_method(  # type: ignore
+            self,
+            *args,
+            **kwargs,
+        )
 
 
-def _get_default_mem() -> int:
-    # Default to the total memory available
-    from psutil import virtual_memory
-
-    mem: "svmem" = virtual_memory()
-    return mem.total
+# TODO: Move these to the default configuration file and allow user override
+GLOBAL_DEFAULT_MAX_BATCH_SIZE = 100
+GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
 
 
-@attr.define
-class ResourceQuota:
-    cpu: float = attr.field(converter=cpu_converter, factory=_get_default_cpu)
-    mem: int = attr.field(converter=mem_converter, factory=_get_default_mem)
-    # Example gpus value: "all", 2, "device=1,2"
-    # Default to "None", returns all available GPU devices in current environment
-    gpus: t.List[str] = attr.field(converter=gpu_converter, default=None)
+@attr.define(slots=False, frozen=True)
+class Runner:
+    runnable_class: t.Type[Runnable]
+    runnable_init_params: t.Dict[str, t.Any]
+    name: str
+    models: t.List[Model]
+    resource_config: Resource
+    runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
+    scheduling_strategy: t.Type[Strategy]
 
-    @property
-    def on_gpu(self) -> bool:
-        if self.gpus is not None:
-            return len(self.gpus) > 0
-        return False
+    _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
-
-@attr.s
-class BatchOptions:
-    enabled = attr.ib(
-        type=bool,
-        default=attr.Factory(
-            DeploymentContainer.api_server_config.batch_options.enabled.get
-        ),
-    )
-    max_batch_size = attr.ib(
-        type=int,
-        default=attr.Factory(
-            DeploymentContainer.api_server_config.batch_options.max_batch_size.get
-        ),
-    )
-    max_latency_ms = attr.ib(
-        type=int,
-        default=attr.Factory(
-            DeploymentContainer.api_server_config.batch_options.max_latency_ms.get
-        ),
-    )
-    input_batch_axis = attr.ib(type=int, default=0)
-    output_batch_axis = attr.ib(type=int, default=0)
-
-
-VARNAME_RE = re.compile(r"\W|^(?=\d)")
-
-
-class BaseRunner:
-    """
-    This class should not be implemented directly. Instead, implement the SimpleRunner or Runner.
-    """
-
-    def __init__(self, name: t.Optional[str]) -> None:
-        self._name = name
-
-    @property
-    def default_name(self) -> str:
+    def __init__(
+        self,
+        runnable_class: t.Type[Runnable],
+        *,
+        init_params: t.Dict[str, t.Any] | None = None,
+        name: str | None = None,
+        scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
+        models: t.List[Model] | None = None,
+        cpu: int
+        | None = None,  # TODO: support str and float type here? e.g "500m" or "0.5"
+        nvidia_gpu: int | None = None,
+        custom_resources: t.Dict[str, float] | None = None,
+        max_batch_size: int | None = None,
+        max_latency_ms: int | None = None,
+        method_configs: t.Dict[str, t.Dict[str, int]] | None = None,
+    ) -> None:
         """
-        Return the default name of the runner. Will be used if no name is provided.
+        Args:
+            runnable_class: runnable class
+            init_params: runnable init params
+            name: runner name
+            scheduling_strategy: scheduling strategy
+            models: list of required bento models
+            cpu: cpu resource
+            nvidia_gpu: nvidia gpu resource
+            custom_resources: custom resources
+            max_batch_size: max batch size config for micro batching
+            max_latency_ms: max latency config for micro batching
+            method_configs: per method configs
         """
-        return type(self).__name__
 
-    @abstractmethod
-    def _setup(self) -> None:
-        ...
+        name = runnable_class.__name__ if name is None else name
+        models = [] if models is None else models
+        runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
+        runner_init_params = {} if init_params is None else init_params
+        method_configs = {} if method_configs is None else {}
+        custom_resources = {} if custom_resources is None else {}
+        resource = (
+            Resource.from_config(name)
+            | Resource(
+                cpu=cpu,
+                nvidia_gpu=nvidia_gpu,
+                custom_resources=custom_resources or {},
+            )
+            | Resource.from_system()
+        )
 
-    def _shutdown(self) -> None:
-        # still a hidden SDK API
-        pass
+        for method_name, method in runnable_class.methods.items():
+            method_max_batch_size = method_configs.get(method_name, {}).get(
+                "max_batch_size"
+            )
+            method_max_latency_ms = method_configs.get(method_name, {}).get(
+                "max_latency_ms"
+            )
 
-    @property
-    def num_replica(self) -> int:
-        return 1
+            runner_method_map[method_name] = RunnerMethod(
+                runner=self,
+                name=method_name,
+                config=method.config,
+                max_batch_size=first_not_none(
+                    method_max_batch_size,
+                    max_batch_size,
+                    default=GLOBAL_DEFAULT_MAX_BATCH_SIZE,
+                ),
+                max_latency_ms=first_not_none(
+                    method_max_latency_ms,
+                    max_latency_ms,
+                    default=GLOBAL_DEFAULT_MAX_LATENCY_MS,
+                ),
+            )
 
-    @property
-    def required_models(self) -> t.List[Tag]:
-        return []
+        self.__attrs_init__(  # type: ignore
+            runnable_class=runnable_class,
+            runnable_init_params=runner_init_params,
+            name=name,
+            models=models,
+            resource_config=resource,
+            runner_methods=list(runner_method_map.values()),
+            scheduling_strategy=scheduling_strategy,
+        )
 
-    @cached_property
-    @final
-    def name(self) -> str:
-        if self._name is None:
-            name = self.default_name
+        # Choose the default method:
+        #  1. if there's only one method, it will be set as default
+        #  2. if there's a method named "__call__", it will be set as default
+        #  3. otherwise, there's no default method
+        if len(runner_method_map) == 1:
+            default_method = next(iter(runner_method_map.values()))
+            logger.info(
+                f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`"
+            )
+        elif "__call__" in runner_method_map:
+            default_method = runner_method_map["__call__"]
+            logger.info(
+                "Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`"
+            )
         else:
-            name = self._name
-        if not name.isidentifier():
-            return VARNAME_RE.sub("_", name)
-        return name
+            default_method = None
+            logger.info(
+                f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`'
+            )
 
-    @cached_property
-    @final
-    def resource_quota(self) -> ResourceQuota:
-        return ResourceQuota()
+        # set default run method entrypoint
+        if default_method is not None:
+            object.__setattr__(self, "run", default_method.run)
+            object.__setattr__(self, "async_run", default_method.async_run)
 
-    @cached_property
-    @final
-    def batch_options(self) -> BatchOptions:
-        return BatchOptions()
+        # set all run method entrypoint
+        for runner_method in self.runner_methods:
+            object.__setattr__(self, runner_method.name, runner_method)
 
-    @final
-    @cached_property
-    def _impl(self) -> "RunnerImpl":
-        return create_runner_impl(self)
+    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
+        if not isinstance(self._runner_handle, DummyRunnerHandle):
+            raise StateException("Runner already initialized")
 
-    @final
-    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._impl.async_run(*args, **kwargs)
+        runner_handle = handle_class(self)
+        object.__setattr__(self, "_runner_handle", runner_handle)
 
-    @final
-    async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self._impl.async_run_batch(*args, **kwargs)
+    def _init_local(self) -> None:
+        from .runner_handle.local import LocalRunnerRef
 
-    @final
-    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self._impl.run(*args, **kwargs)
+        self._init(LocalRunnerRef)
 
-    @final
-    def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self._impl.run_batch(*args, **kwargs)
+    def init_local(self, quiet: bool = False) -> None:
+        """
+        init local runnable instance, for testing and debugging only
+        """
+        if not quiet:
+            logger.warning("'Runner.init_local' is for debugging and testing only")
 
+        self._init_local()
 
-class Runner(BaseRunner, ABC):
-    """
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. This Runner class is an abstract class, used for creating
-    actual Runners, by implementing `__init__`, `_setup` and `_run_batch` method.
+    def init_client(self):
+        """
+        init client for a remote runner instance
+        """
+        from .runner_handle.remote import RemoteRunnerClient
 
-    Runner instances exposes `run` and `run_batch` method, which will eventually be
-    piped to the `_run_batch` implementation of the Runner. BentoML applies dynamic
-    batching optimization for all Runners by default.
+        self._init(RemoteRunnerClient)
 
-    Why use Runner:
-
-    - Runner allow BentoML to better leverage multiple threads or processes for higher
-      hardware utilization (CPU, GPU, Memory)
-
-    - Runner enables higher concurrency in serving workload, which minimizes latency:
-      you may prefetch data while model is being executed, parallelize data
-      extraction, data transformation or multiple runner execution.
-
-    - Runner comes with dynamic batching optimization, which groups `run` calls into
-      batch execution when serving online, the batch size and wait time is adaptive
-      to the workload. This can bring massive throughput improvement to a ML service.
-
-    All `_run_batch` argument value must be one of the three types below:
-    numpy.ndarray, pandas.DataFrame, List[PickleSerializable]
-
-    Return value of `_run_batch` acceptable types :
-
-    - numpy.ndarray, pandas.DataFrame, pandas.Series, List[PickleSerializable]
-
-    - Tuple of the types above, indicating multiple return values
-
-    Runner `run` accepts argument value of the following types:
-
-    - numpy.ndarray => numpy.ndarray
-
-    - pandas.DataFrame, pandas.Series => pandas.DataFrame
-
-    - any => List[PickleSerializable]
-
-    Note: for pandas.DataFrame and List, the batch_axis must be 0
-    """
-
-    @abstractmethod
-    def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        ...
-
-
-class SimpleRunner(BaseRunner, ABC):
-    """
-    SimpleRunner is a special type of Runner that does not support dynamic batching.
-    Instead of `_run_batch` in Runner, a `_run` method is expected to be defined in its
-    subclasses.
-
-    A SimpleRunner only exposes `run` method to its users.
-
-    `SimpleRunner._run` can accept arbitrary input type that are pickle-serializable
-    """
-
-    @abstractmethod
-    def _run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        ...
-
-
-class RunnerState(enum.IntEnum):
-    INIT = 0
-    SETTING_UP = 1
-    READY = 2
-    SHUTIING_DOWN = 3
-    SHUTDOWN = 4
-
-
-class RunnerImpl:
-    def __init__(self, runner: BaseRunner):
-        self._runner = runner
-        self._state: RunnerState = RunnerState.INIT
-
-    def setup(self) -> None:
-        pass
-
-    def shutdown(self) -> None:
-        pass
-
-    @abstractmethod
-    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        ...
-
-    @abstractmethod
-    async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        ...
-
-    @abstractmethod
-    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        ...
-
-    @abstractmethod
-    def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        ...
-
-
-def create_runner_impl(runner: BaseRunner) -> RunnerImpl:
-    remote_runner_mapping = DeploymentContainer.remote_runner_mapping.get()
-    if runner.name in remote_runner_mapping:
-        from .remote import RemoteRunnerClient
-
-        impl = RemoteRunnerClient(runner)
-    else:
-        from .local import LocalRunner
-
-        impl = LocalRunner(runner)
-
-    return impl
+    def destroy(self):
+        object.__setattr__(self, "_runner_handle", DummyRunnerHandle())

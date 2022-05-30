@@ -132,29 +132,25 @@ def _track_serve_init(
             num_of_runners=len(svc.runners),
             num_of_apis=len(bento.info.apis),
             model_types=[m.module for m in bento.info.models],
-            runner_types=[r.runner_type for r in bento.info.runners],
+            runnable_types=[r.runnable_type for r in bento.info.runners],
             api_input_types=[api.input_type for api in bento.info.apis],
             api_output_types=[api.output_type for api in bento.info.apis],
         )
     else:
-        from ...frameworks.common.model_runner import BaseModelRunner
-        from ...frameworks.common.model_runner import BaseModelSimpleRunner
-
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
             serve_from_bento=False,
             production=production,
             bento_creation_timestamp=None,
             num_of_models=len(
-                [
-                    r
-                    for r in svc.runners
-                    if isinstance(r, (BaseModelRunner, BaseModelSimpleRunner))
-                ]
+                set(
+                    svc.models
+                    + [model for runner in svc.runners for model in runner.models]
+                )
             ),
             num_of_runners=len(svc.runners),
             num_of_apis=len(svc.apis.keys()),
-            runner_types=[type(v).__name__ for v in svc.runners.values()],
+            runnable_types=[r.runnable_class.__name__ for r in svc.runners],
             api_input_types=[api.input.__class__.__name__ for api in svc.apis.values()],
             api_output_types=[
                 api.output.__class__.__name__ for api in svc.apis.values()

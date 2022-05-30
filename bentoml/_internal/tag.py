@@ -40,7 +40,7 @@ def validate_tag_str(value: str):
         raise InvalidArgument(f"{value} is not a valid tag: " + ", and ".join(errors))
 
 
-@attr.define
+@attr.define(slots=True)
 class Tag:
     name: str
     version: t.Optional[str]
@@ -128,6 +128,9 @@ class Tag:
     def latest_path(self) -> str:
         return fs.path.combine(self.name, "latest")
 
+
+# Remove after attrs support ForwardRef natively
+attr.resolve_types(Tag, globals(), locals())
 
 bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
 bentoml_cattr.register_unstructure_hook(Tag, lambda tag: str(tag))

@@ -30,6 +30,13 @@ import click
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--worker-index",
+    type=click.INT,
+    required=False,
+    default=0,
+    help="Worker index",
+)
 @click.pass_context
 def main(
     ctx: click.Context,
@@ -38,6 +45,7 @@ def main(
     bind: str,
     working_dir: t.Optional[str],
     as_worker: bool,
+    worker_index: int,
 ) -> None:
     """
     Start a runner server.
@@ -70,7 +78,7 @@ def main(
             name=f"runner_{runner_name}",
             cmd=sys.executable,
             args=["-m", "bentoml._internal.server.cli.runner"]
-            + unparse_click_params(params, ctx.command.params),
+            + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
             stop_children=True,
@@ -87,9 +95,16 @@ def main(
 
     ServiceContext.component_name_var.set(runner_name)
 
-    svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
-    runner = svc.runners[runner_name]
-    app = t.cast("ASGI3Application", RunnerAppFactory(runner)())
+    service = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
+    for runner in service.runners:
+        if runner.name == runner_name:
+            break
+    else:
+        raise ValueError(f"Runner {runner_name} not found")
+
+    app = t.cast(
+        "ASGI3Application", RunnerAppFactory(runner, worker_index=worker_index)()
+    )
 
     parsed = urlparse(bind)
     uvicorn_options = {

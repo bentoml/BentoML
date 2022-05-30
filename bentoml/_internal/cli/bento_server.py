@@ -10,7 +10,7 @@ from ..configuration.containers import DeploymentContainer
 logger = logging.getLogger(__name__)
 
 DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
-DEFAULT_RELAOD_DELAY = 0.25
+DEFAULT_RELOAD_DELAY = 0.25
 
 
 def add_serve_command(cli: click.Group) -> None:
@@ -59,7 +59,7 @@ def add_serve_command(cli: click.Group) -> None:
         type=click.FLOAT,
         help="Delay in seconds between each check if the Service needs to be reloaded",
         show_default=True,
-        default=DEFAULT_RELAOD_DELAY,
+        default=DEFAULT_RELOAD_DELAY,
     )
     @click.option(
         "--working-dir",

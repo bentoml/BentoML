@@ -7,11 +7,14 @@ on:
   pull_request:
     branches:
       - main
+      - runners-1.0
   schedule:
     - cron: '0 0 * * 1/2'
 
 env:
   BENTOML_DO_NOT_TRACK: True
+  LINES: 120
+  COLUMNS: 120
 
 jobs:
 
@@ -40,7 +43,6 @@ jobs:
               - *related
               - "bentoml/**"
               - "tests/**"
-              - "docker/**"
             docs:
               - *related
               - requirements/docs-requirements.txt
@@ -110,7 +112,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0 # fetch all tags and branches
+          fetch-depth: 1
+
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -149,7 +152,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [ '3.7', '3.8', '3.9' ]
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
     defaults:
       run:
         shell: bash
@@ -214,7 +217,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [ '3.7', '3.8', '3.9' ]
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
     defaults:
       run:
         shell: bash
@@ -238,6 +241,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Set up Docker Buildx
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Get pip cache dir
         id: cache-dir
         run: |
@@ -252,7 +263,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install .
+          pip install -e .
           pip install -r requirements/tests-requirements.txt
 
       - name: Export Action Envvar

@@ -169,7 +169,7 @@ main() {
   need_cmd tr
   (need_cmd yq && echo "Using yq via $(which yq)...";) || install_yq
 
-  pip install -U pip==22.0.4 "setuptools<60"
+  pip install -U "setuptools<60"
 
 
   for args in "$@"; do
@@ -189,6 +189,10 @@ main() {
   if [ -n "${PYTESTARGS[*]}" ]; then
     # shellcheck disable=SC2206
     OPTS=( ${OPTS[@]} ${PYTESTARGS[@]} )
+  fi
+
+  if [ "$fname" == "test_frameworks.py" ]; then
+    OPTS=( "--framework" "$target" ${OPTS[@]} )
   fi
 
   if [ "$SKIP_DEPS" -eq 0 ]; then
@@ -224,4 +228,3 @@ main() {
 main "$@" || exit 1
 
 # vim: set ft=sh ts=2 sw=2 tw=0 et :
-

@@ -212,7 +212,7 @@ Test test out your changes in an actual BentoML model deployment, you can create
 1. Install custom BentoML in editable mode. e.g.:
    * git clone your bentoml fork
    * `pip install -e PATH_TO_THE_FORK`
-2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True`
+2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True` and `export SETUPTOOLS_USE_DISTUTILS=stdlib`
    * make sure you have the latest setuptools installed:  `pip install -U setuptools`
 3. Build a new Bento with `bentoml build` in your project directory
 4. The new Bento will include a wheel file built from the BentoML source, and 
@@ -357,63 +357,6 @@ pytorch_lightning:
 Refer to [config.yml](./scripts/ci/config.yml) for more examples.
 
 
-## Documentations
-
-Refers to [BentoML Documentation](./docs/README.md) for more information
-
-Install all docs dependencies:
-```bash
-pip install -r requirements/docs-requirements.txt
-```
-
-To build documentation for locally:
-```bash
-cd docs/
-make clean && make html
-```
-
-
-Modify `*.rst` files inside the `docs` folder to update content, and to
-view your changes, run the following command:
-
-```bash
-python -m http.server --directory ./docs/build/html
-```
-
-Docs can then be accessed at [localhost:8000](http://localhost:8000)
-
-If you are developing under macOS or Linux, we also made a script that watches docs
-file changes, automatically rebuilds the docs, and refreshes the browser
-tab to show changes (UNIX-based system only):
-```bash
-./scripts/watch_docs.sh
-```
-
-### Running spellcheck for documentation site.
-
-Install spellchecker dependencies:
-```bash
-make install-spellchecker-deps
-```
-
-To run spellchecker locally:
-```bash
-make spellcheck-doc
-```
-
-#### macOS
-
-Make sure you have fswatch command installed:
-```
-brew install fswatch
-```
-
-#### Debian-based distros
-Make sure you have `inotifywait` installed:
-```shell script
-sudo apt install inotify-tools
-```
-
 ## Python tools ecosystem
 
 Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible via `setup.cfg` and `pyproject.toml`.
@@ -455,3 +398,9 @@ Once your pull request is created, an automated test run will be triggered on
 your branch and the BentoML authors will be notified to review your code
 changes. Once tests are passed and a reviewer has signed off, we will merge
 your pull request.
+
+## Documentations
+
+Refers to [BentoML Documentation Guide](./docs/README.md) for how to build and write
+docs.
+

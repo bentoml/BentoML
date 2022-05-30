@@ -488,7 +488,7 @@ class _SpacyRunner(BaseModelRunner):
 
     @property
     def num_replica(self) -> int:
-        if self.resource_quota.on_gpu:
+        if self.resource_quota.nvidia_gpu:
             if self._backend_options == "pytorch":
                 num_devices = self._get_pytorch_gpu_count()
             else:

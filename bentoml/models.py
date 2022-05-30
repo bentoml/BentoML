@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
@@ -8,13 +10,15 @@ from simple_di import Provide
 from ._internal.tag import Tag
 from ._internal.utils import calc_dir_size
 from ._internal.models import Model
+from ._internal.models import ModelContext
+from ._internal.models import ModelOptions
 from ._internal.utils.analytics import track
 from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.models import ModelStore
-    from ._internal.runner import Runner
+    from ._internal.models.model import ModelSignaturesType
 
 
 @inject
@@ -221,17 +225,20 @@ def create(
     name: str,
     *,
     module: str = "",
-    labels: t.Optional[t.Dict[str, t.Any]] = None,
-    options: t.Optional[t.Dict[str, t.Any]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    context: t.Optional[t.Dict[str, t.Any]] = None,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Iterator[Model]:
+    signatures: ModelSignaturesType,
+    labels: dict[str, t.Any] | None = None,
+    options: ModelOptions | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    context: ModelContext,
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+) -> t.Generator[Model, None, None]:
+    options = ModelOptions() if options is None else options
     res = Model.create(
         name,
         module=module,
         labels=labels,
+        signatures=signatures,
         options=options,
         custom_objects=custom_objects,
         metadata=metadata,
@@ -240,7 +247,7 @@ def create(
     try:
         yield res
     finally:
-        res.info.freeze()
+        res.flush()
         res.save(_model_store)
 
         track(
@@ -251,16 +258,6 @@ def create(
         )
 
 
-@inject
-def load_runner(
-    tag: t.Union[Tag, str],
-    *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "Runner":
-    model = get(tag, _model_store=_model_store)
-    return model.load_runner()
-
-
 __all__ = [
     "list",
     "get",
@@ -269,5 +266,6 @@ __all__ = [
     "export_model",
     "push",
     "pull",
-    "load_runner",
+    "ModelContext",
+    "ModelOptions",
 ]

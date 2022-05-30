@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import math
 import shutil
 import typing as t
 import logging
@@ -16,6 +17,7 @@ from bentoml import load
 from ..utils import reserve_free_port
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
+from ..runner.resource import query_cpu_count
 from ..utils.analytics import track_serve
 from ..configuration.containers import DeploymentContainer
 
@@ -70,7 +72,6 @@ def serve_development(
                     SCRIPT_NGROK,
                 ],
                 copy_env=True,
-                numprocesses=1,
                 stop_children=True,
                 working_dir=working_dir,
             )
@@ -98,19 +99,31 @@ def serve_development(
                 "fd://$(circus.sockets._bento_api_server)",
                 "--working-dir",
                 working_dir,
-            ]
-            + (["--reload", "--reload-delay", f"{reload_delay}"] if reload else []),
+            ],
             copy_env=True,
-            numprocesses=1,
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,
         )
     )
 
+    if reload:
+        plugins = [
+            dict(
+                use="bentoml._internal.utils.circus.BentoChangeReloader",
+                bento_identifier=bento_identifier,
+                working_dir=working_dir,
+                reload_delay=reload_delay,
+            ),
+        ]
+    else:
+        plugins = []
+
     arbiter = create_standalone_arbiter(
         watchers,
         sockets=circus_sockets,
+        plugins=plugins,
+        debug=True,
     )
     ensure_prometheus_dir()
 
@@ -149,29 +162,29 @@ def serve_production(
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
-        for runner_name, runner in svc.runners.items():
+        for runner in svc.runners:
             sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
             assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
-            runner_bind_map[runner_name] = path_to_uri(sockets_path)
-            circus_socket_map[runner_name] = CircusSocket(
-                name=runner_name,
+            runner_bind_map[runner.name] = path_to_uri(sockets_path)
+            circus_socket_map[runner.name] = CircusSocket(
+                name=runner.name,
                 path=sockets_path,
                 backlog=backlog,
             )
 
             watchers.append(
                 Watcher(
-                    name=f"runner_{runner_name}",
+                    name=f"runner_{runner.name}",
                     cmd=sys.executable,
                     args=[
                         "-m",
                         SCRIPT_RUNNER,
                         bento_identifier,
                         "--runner-name",
-                        runner_name,
+                        runner.name,
                         "--bind",
-                        f"fd://$(circus.sockets.{runner_name})",
+                        f"fd://$(circus.sockets.{runner.name})",
                         "--working-dir",
                         working_dir,
                         "--as-worker",
@@ -180,20 +193,22 @@ def serve_production(
                     stop_children=True,
                     working_dir=working_dir,
                     use_sockets=True,
-                    numprocesses=runner.num_replica,
+                    numprocesses=runner.scheduling_strategy.get_worker_count(
+                        runner.runnable_class, runner.resource_config
+                    ),
                 )
             )
 
     elif psutil.WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
-            for runner_name, runner in svc.runners.items():
+            for runner in svc.runners:
                 runner_port = port_stack.enter_context(reserve_free_port())
                 runner_host = "127.0.0.1"
 
-                runner_bind_map[runner_name] = f"tcp://{runner_host}:{runner_port}"
-                circus_socket_map[runner_name] = CircusSocket(
-                    name=runner_name,
+                runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
+                circus_socket_map[runner.name] = CircusSocket(
+                    name=runner.name,
                     host=runner_host,
                     port=runner_port,
                     backlog=backlog,
@@ -201,16 +216,16 @@ def serve_production(
 
                 watchers.append(
                     Watcher(
-                        name=f"runner_{runner_name}",
+                        name=f"runner_{runner.name}",
                         cmd=sys.executable,
                         args=[
                             "-m",
                             SCRIPT_RUNNER,
                             bento_identifier,
                             "--runner-name",
-                            runner_name,
+                            runner.name,
                             "--bind",
-                            f"fd://$(circus.sockets.{runner_name})",
+                            f"fd://$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
                             "--as-worker",
@@ -219,7 +234,9 @@ def serve_production(
                         stop_children=True,
                         use_sockets=True,
                         working_dir=working_dir,
-                        numprocesses=runner.num_replica,
+                        numprocesses=runner.scheduling_strategy.get_worker_count(
+                            runner.runnable_class, runner.resource_config
+                        ),
                     )
                 )
             port_stack.enter_context(
@@ -255,7 +272,7 @@ def serve_production(
                 "--as-worker",
             ],
             copy_env=True,
-            numprocesses=app_workers or 1,
+            numprocesses=app_workers or math.ceil(query_cpu_count()),
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,
@@ -273,7 +290,7 @@ def serve_production(
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
-                    f'Starting production BentoServer from "bento_identifier" '
+                    f'Starting production BentoServer from "{bento_identifier}" '
                     f"running on http://{host}:{port} (Press CTRL+C to quit)"
                 ),
             )

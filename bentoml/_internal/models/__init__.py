@@ -1,19 +1,18 @@
 from .model import Model
 from .model import copy_model
 from .model import ModelStore
+from .model import ModelContext
+from .model import ModelOptions
 
-EXPORTED_STORE_PREFIX = "exported"
+# Deprecated. Use framework module local constants and name the saved files with API
+# Version in mind. E.g.:
+# api_v1_model_file_name = "saved_model.pkl"
+# api_v2_model_file_name = "torch_model.pth"
 SAVE_NAMESPACE = "saved_model"
-MODEL_YAML_NAMESPACE = "model_details"
-
-H5_EXT = ".h5"
-HDF5_EXT = ".hdf5"
 JSON_EXT = ".json"
 PKL_EXT = ".pkl"
 PTH_EXT = ".pth"
-PT_EXT = ".pt"
 TXT_EXT = ".txt"
 YAML_EXT = ".yaml"
-MODEL_EXT = ".model"
 
-__all__ = ["Model", "ModelStore", "copy_model"]
+__all__ = ["Model", "ModelStore", "ModelContext", "ModelOptions", "copy_model"]

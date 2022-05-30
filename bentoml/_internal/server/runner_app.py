@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import json
 import typing as t
 import asyncio
 import logging
+import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
+from bentoml.exceptions import InvalidArgument
+from bentoml._internal.runner.batching import batch_params
+
 from ..trace import ServiceContext
-from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..server.base_app import BaseAppFactory
@@ -24,35 +29,32 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from opentelemetry.sdk.trace import Span
 
-    from ..runner import Runner
-    from ..runner import SimpleRunner
+    from ..runner.runner import Runner
+    from ..runner.runner import RunnerMethod
 
 
 class RunnerAppFactory(BaseAppFactory):
     def __init__(
         self,
-        runner: "t.Union[Runner, SimpleRunner]",
-        instance_id: t.Optional[int] = None,
+        runner: Runner,
+        worker_index: int = 0,
     ) -> None:
         self.runner = runner
-        self.instance_id = instance_id
+        self.worker_index = worker_index
 
         from starlette.responses import Response
 
-        from ..runner import Runner
-
         TooManyRequests = partial(Response, status_code=429)
 
-        options = self.runner.batch_options
-        if isinstance(self.runner, Runner) and options.enabled:
-            options = self.runner.batch_options
-            self.dispatcher = CorkDispatcher(
-                max_latency_in_ms=options.max_latency_ms,
-                max_batch_size=options.max_batch_size,
+        self.dispatchers: dict[str, CorkDispatcher] = {}
+        for method in runner.runner_methods:
+            if not method.config.batchable:
+                continue
+            self.dispatchers[method.name] = CorkDispatcher(
+                max_latency_in_ms=method.max_latency_ms,
+                max_batch_size=method.max_batch_size,
                 fallback=TooManyRequests,
             )
-        else:
-            self.dispatcher = None
 
     @property
     def name(self) -> str:
@@ -61,19 +63,28 @@ class RunnerAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
-        on_startup.insert(0, self.runner._impl.setup)  # type: ignore[reportPrivateUsage]
+        on_startup.insert(0, functools.partial(self.runner.init_local, quiet=True))
+        on_startup.insert(
+            0,
+            functools.partial(
+                self.runner.scheduling_strategy.setup_worker,
+                runnable_class=self.runner.runnable_class,
+                resource_request=self.runner.resource_config,
+                worker_index=self.worker_index,
+            ),
+        )
         return on_startup
 
     @property
     def on_shutdown(self) -> t.List[t.Callable[[], None]]:
-        on_shutdown = super().on_shutdown
-        on_shutdown.insert(0, self.runner._impl.shutdown)  # type: ignore[reportPrivateUsage]
-        if self.dispatcher is not None:
-            on_shutdown.insert(0, self.dispatcher.shutdown)
+        on_shutdown = [self.runner.destroy]
+        for dispatcher in self.dispatchers.values():
+            on_shutdown.append(dispatcher.shutdown)
+        on_shutdown.extend(super().on_shutdown)
         return on_shutdown
 
     @property
-    def routes(self) -> t.List["BaseRoute"]:
+    def routes(self) -> t.List[BaseRoute]:
         """
         Setup routes for Runner server, including:
 
@@ -87,29 +98,43 @@ class RunnerAppFactory(BaseAppFactory):
         from starlette.routing import Route
 
         routes = super().routes
-        routes.append(Route("/run_batch", self.async_run_batch, methods=["POST"]))
-
-        if self.dispatcher is not None:
-            _func = self.dispatcher(self._async_cork_run)
-            routes.append(Route("/run", _func, methods=["POST"]))
-        else:
-            routes.append(Route("/run", self.async_run, methods=["POST"]))
+        for method in self.runner.runner_methods:
+            path = "/" if method.name == "__call__" else "/" + method.name
+            if method.config.batchable:
+                _func = self.dispatchers[method.name](
+                    self._async_cork_run(runner_method=method)
+                )
+                routes.append(
+                    Route(
+                        path=path,
+                        endpoint=_func,
+                        methods=["POST"],
+                    )
+                )
+            else:
+                routes.append(
+                    Route(
+                        path=path,
+                        endpoint=self.async_run(runner_method=method),
+                        methods=["POST"],
+                    )
+                )
         return routes
 
     @property
-    def middlewares(self) -> t.List["Middleware"]:
+    def middlewares(self) -> list[Middleware]:
         middlewares = super().middlewares
 
         # otel middleware
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
         from starlette.middleware import Middleware
 
-        def client_request_hook(span: "Span", _scope: t.Dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span, _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
                 span_id: int = span.context.span_id
                 ServiceContext.request_id_var.set(span_id)
 
-        def client_response_hook(span: "Span", _message: t.Any) -> None:
+        def client_response_hook(span: Span, _message: t.Any) -> None:
             if span is not None:
                 ServiceContext.request_id_var.set(None)
 
@@ -141,69 +166,76 @@ class RunnerAppFactory(BaseAppFactory):
 
         return middlewares
 
-    async def _async_cork_run(
-        self, requests: t.Iterable["Request"]
-    ) -> t.List["Response"]:
+    def _async_cork_run(
+        self,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
+    ) -> t.Callable[[t.Iterable[Request]], t.Coroutine[None, None, list[Response]]]:
         from starlette.responses import Response
 
-        assert self._is_ready
+        async def _run(requests: t.Iterable[Request]) -> list[Response]:
+            assert self._is_ready
+            if not requests:
+                return []
+            params_list = await asyncio.gather(
+                *tuple(multipart_to_payload_params(r) for r in requests)
+            )
 
-        params_list = await asyncio.gather(
-            *tuple(multipart_to_payload_params(r) for r in requests)
-        )
-        params = Params.agg(
-            params_list,
-            lambda i: AutoContainer.payloads_to_batch(
-                i,
-                batch_axis=self.runner.batch_options.input_batch_axis,
-            ),
-        )
-        batch_ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
-        payloads = AutoContainer.batch_to_payloads(
-            batch_ret,
-            batch_axis=self.runner.batch_options.input_batch_axis,
-        )
-        return [
-            Response(
+            batch_dim = runner_method.config.batch_dim
+
+            try:
+                batched_params, indices = batch_params(params_list, batch_dim[0])
+            except InvalidArgument as e:
+                raise InvalidArgument(
+                    f"Error while batching arguments for call to {runner_method.name}: {e.message}"
+                )
+
+            batch_ret = await runner_method.async_run(
+                *batched_params.args,
+                **batched_params.kwargs,
+            )
+
+            payloads = AutoContainer.batch_to_payloads(
+                batch_ret,
+                indices,
+                batch_dim=batch_dim[-1],
+            )
+
+            return [
+                Response(
+                    payload.data,
+                    headers={
+                        PAYLOAD_META_HEADER: json.dumps(payload.meta),
+                        "Content-Type": f"application/vnd.bentoml.{payload.container}",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                    },
+                )
+                for payload in payloads
+            ]
+
+        return _run
+
+    def async_run(
+        self,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
+    ) -> t.Callable[[Request], t.Coroutine[None, None, Response]]:
+        from starlette.responses import Response
+
+        async def _run(request: Request) -> Response:
+            assert self._is_ready
+
+            logger.info(request)
+            params = await multipart_to_payload_params(request)
+            params = params.map(AutoContainer.from_payload)
+            ret = await runner_method.async_run(*params.args, **params.kwargs)
+
+            payload = AutoContainer.to_payload(ret, 0)
+            return Response(
                 payload.data,
                 headers={
                     PAYLOAD_META_HEADER: json.dumps(payload.meta),
-                    "Server": f"BentoML-Runner/{self.runner.name}/{self.instance_id}",
+                    "Content-Type": f"application/vnd.bentoml.{payload.container}",
+                    "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
                 },
             )
-            for payload in payloads
-        ]
 
-    async def async_run(self, request: "Request") -> "Response":
-        from starlette.responses import Response
-
-        assert self._is_ready
-
-        params = await multipart_to_payload_params(request)
-        params = params.map(AutoContainer.payload_to_single)
-        ret = await self.runner.async_run(*params.args, **params.kwargs)
-        payload = AutoContainer.single_to_payload(ret)
-        return Response(
-            payload.data,
-            headers={
-                PAYLOAD_META_HEADER: json.dumps(payload.meta),
-                "Server": f"BentoML-Runner/{self.runner.name}/{self.instance_id}",
-            },
-        )
-
-    async def async_run_batch(self, request: "Request") -> "Response":
-        from starlette.responses import Response
-
-        assert self._is_ready
-
-        params = await multipart_to_payload_params(request)
-        params = params.map(AutoContainer.payload_to_batch)
-        ret = await self.runner.async_run_batch(*params.args, **params.kwargs)
-        payload = AutoContainer.batch_to_payload(ret)
-        return Response(
-            payload.data,
-            headers={
-                PAYLOAD_META_HEADER: json.dumps(payload.meta),
-                "Server": f"BentoML-Runner/{self.runner.name}/{self.instance_id}",
-            },
-        )
+        return _run

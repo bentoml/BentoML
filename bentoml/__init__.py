@@ -10,27 +10,30 @@ from ._internal.log import configure_logging  # noqa: E402
 
 configure_logging()
 
+# Model management APIs
 from . import models
 
-# bento APIs are top-level
+# Bento management APIs
 from .bentos import get
 from .bentos import list  # pylint: disable=W0622
 from .bentos import pull
 from .bentos import push
-from .bentos import build
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento
+
+# BentoML built-in types
 from ._internal.tag import Tag
-from ._internal.utils import LazyLoader as _LazyLoader
+from ._internal.bento import Bento
 from ._internal.models import Model
 from ._internal.runner import Runner
-from ._internal.runner import SimpleRunner
+from ._internal.runner import Runnable
 from ._internal.context import InferenceApiContext as Context
 from ._internal.service import Service
 from ._internal.yatai_client import YataiClient
 from ._internal.service.loader import load
 
+# Framework specific modules are lazily loaded upon import
 if TYPE_CHECKING:
     from bentoml import h2o
     from bentoml import flax
@@ -57,6 +60,8 @@ if TYPE_CHECKING:
     from bentoml import picklable_model
     from bentoml import pytorch_lightning
 else:
+    from ._internal.utils import LazyLoader as _LazyLoader
+
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
     easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
@@ -96,21 +101,21 @@ __all__ = [
     "Service",
     "models",
     "Tag",
-    "Runner",
-    "SimpleRunner",
-    "YataiClient",
     "Model",
+    "Runner",
+    "Runnable",
+    "YataiClient",  # Yatai REST API Client
     # bento APIs
     "list",
     "get",
     "delete",
     "import_bento",
     "export_bento",
-    "build",
     "load",
     "push",
     "pull",
-    # frameworks
+    "Bento",
+    # Framework specific modules
     "catboost",
     "detectron",
     "easyocr",

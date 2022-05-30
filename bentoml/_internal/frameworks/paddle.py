@@ -511,10 +511,10 @@ class _PaddlePaddleRunner(BaseModelRunner):
 
     @property
     def _enable_gpu(self):
-        enable_gpu = self.resource_quota.on_gpu
+        enable_gpu = self.resource_quota.nvidia_gpu
         if enable_gpu and not paddle.is_compiled_with_cuda():  # type: ignore
             raise BentoMLException(
-                "`resource_quota.on_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
+                "`resource_quota.nvidia_com_gpu` is not 0 while CUDA is not currently supported by existing paddlepaddle."
                 " Make sure to install `paddlepaddle-gpu` and try again."
             )
         return enable_gpu
@@ -545,15 +545,14 @@ class _PaddlePaddleRunner(BaseModelRunner):
 
     @property
     def _num_threads(self) -> int:
-        if self._enable_gpu and self.resource_quota.on_gpu:
+        if self._enable_gpu and self.resource_quota.nvidia_gpu:
             return 1
         return max(round(self.resource_quota.cpu), 1)
 
     @property
     def num_replica(self) -> int:
         if self._enable_gpu:
-            count = len(self.resource_quota.gpus)
-            return count
+            return self.resource_quota.nvidia_gpu
         return 1
 
     def _setup(self) -> None:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import typing as t
 import dataclasses
@@ -6,10 +8,9 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import JSONType
 from .base import IODescriptor
 from ..types import LazyType
-from ..utils.http import set_content_length
+from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
 
@@ -19,8 +20,9 @@ if TYPE_CHECKING:
     import pydantic
 
     from .. import external_typing as ext
+    from ..context import InferenceApiContext as Context
 
-    _SerializableObj = t.Union[
+    _SerializableObj: t.TypeAlias = t.Union[
         "ext.NpNDArray",
         "ext.PdDataFrame",
         t.Type["pydantic.BaseModel"],
@@ -28,11 +30,13 @@ if TYPE_CHECKING:
     ]
 
 
+JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
+
 MIME_TYPE_JSON = "application/json"
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
-    def default(self, o: "_SerializableObj") -> t.Any:
+    def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 
@@ -124,7 +128,7 @@ class JSON(IODescriptor[JSONType]):
 
     def __init__(
         self,
-        pydantic_model: t.Optional["t.Type[pydantic.BaseModel]"] = None,
+        pydantic_model: t.Type[pydantic.BaseModel] | None = None,
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
@@ -169,7 +173,8 @@ class JSON(IODescriptor[JSONType]):
                     "`pydantic` must be installed to use `pydantic_model`"
                 ) from None
             try:
-                return self._pydantic_model.parse_raw(json_str)
+                pydantic_model = self._pydantic_model.parse_raw(json_str)
+                return pydantic_model.dict()
             except pydantic.ValidationError as e:
                 raise BadInput(f"Json validation error: {e}") from None
         else:
@@ -178,10 +183,7 @@ class JSON(IODescriptor[JSONType]):
             except json.JSONDecodeError as e:
                 raise BadInput(f"Json validation error: {e}") from None
 
-    async def init_http_response(self) -> Response:
-        return Response(None, media_type=MIME_TYPE_JSON)
-
-    async def finalize_http_response(self, response: Response, obj: JSONType):
+    async def to_http_response(self, obj: JSONType, ctx: Context | None = None):
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,
@@ -191,5 +193,14 @@ class JSON(IODescriptor[JSONType]):
             separators=(",", ":"),
         )
 
-        response.body = response.render(json_str)
-        set_content_length(response)
+        if ctx is not None:
+            res = Response(
+                json_str,
+                media_type=MIME_TYPE_JSON,
+                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
+            set_cookies(res, ctx.response.cookies)
+            return res
+        else:
+            return Response(json_str, media_type=MIME_TYPE_JSON)

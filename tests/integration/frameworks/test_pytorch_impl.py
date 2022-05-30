@@ -1,60 +1,74 @@
-import math
+# import math
 
 import numpy as np
 import torch
-import pandas as pd
 import pytest
 import torch.nn as nn
 
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
+from bentoml._internal.tag import Tag
+from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
+
+# from tests.utils.frameworks.pytorch_utils import ExtendedModel
 from tests.utils.frameworks.pytorch_utils import test_df
 from tests.utils.frameworks.pytorch_utils import predict_df
 from tests.utils.frameworks.pytorch_utils import LinearModel
-from tests.utils.frameworks.pytorch_utils import ExtendedModel
-from tests.utils.frameworks.pytorch_utils import LinearModelWithBatchAxis
+
+# TODO: signatures
+# TODO: to_payload with plasma
 
 
 @pytest.fixture(scope="module")
-def models():
-    def _(labels=None, custom_objects=None):
-        model: nn.Module = LinearModel()
-        tag = bentoml.pytorch.save(
-            "pytorch_test", model, labels=labels, custom_objects=custom_objects
-        )
-        return tag
-
-    return _
+def model():
+    return LinearModel()
 
 
-def test_pytorch_save_load(models):
-
+@pytest.fixture(scope="module")
+def model_tag(model: nn.Module):
     labels = {"stage": "dev"}
 
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = models(labels=labels, custom_objects={"func": custom_f})
+    return bentoml.pytorch.save_model(
+        "pytorch_test",
+        model,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
+
+
+def test_pytorch_save_load(model: nn.Module):
+    labels = {"stage": "dev"}
+
+    def custom_f(x: int) -> int:
+        return x + 1
+
+    tag = bentoml.pytorch.save_model(
+        "pytorch_test",
+        model,
+        labels=labels,
+        custom_objects={"func": custom_f},
+    )
     bentomodel = bentoml.models.get(tag)
     assert_have_file_extension(bentomodel.path, ".pt")
-    assert bentomodel.info.context.get("model_format") == "torch.save:v1"
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
-    pytorch_loaded: nn.Module = bentoml.pytorch.load(tag)
+    pytorch_loaded: nn.Module = bentoml.pytorch.load_model(tag)
     assert predict_df(pytorch_loaded, test_df) == 5.0
 
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("dev", ["cpu", "cuda", "cuda:0"])
-def test_pytorch_save_load_across_devices(dev, models):
-    def is_cuda(model):
+def test_pytorch_save_load_across_devices(dev: str, model_tag: Tag):
+    def is_cuda(model: nn.Module) -> bool:
         return next(model.parameters()).is_cuda
 
-    tag = models()
-    loaded: nn.Module = bentoml.pytorch.load(tag)
+    loaded: nn.Module = bentoml.pytorch.load_model(model_tag, device_id=dev)
     if dev == "cpu":
         assert not is_cuda(loaded)
     else:
@@ -68,28 +82,32 @@ def test_pytorch_save_load_across_devices(dev, models):
         torch.from_numpy(test_df.to_numpy().astype(np.float32)),
     ],
 )
-def test_pytorch_runner_setup_run_batch(input_data):
-    model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model)
-    runner = bentoml.pytorch.load_runner(tag)
+def test_pytorch_runner_setup_run_batch(input_data, model_tag: Tag):
+    runner = bentoml.pytorch.get(model_tag).to_runner(cpu=4)
 
-    assert tag in runner.required_models
-    assert runner.num_replica == 1
+    assert model_tag in [m.tag for m in runner.models]
 
-    res = runner.run_batch(input_data)
+    numprocesses = runner.scheduling_strategy.get_worker_count(
+        runner.runnable_class, runner.resource_config
+    )
+    assert numprocesses == 1
+
+    runner.init_local()
+    res = runner.run(input_data)
     assert res.unsqueeze(dim=0).item() == 5.0
 
 
 @pytest.mark.gpus
-@pytest.mark.parametrize("dev", ["cuda", "cuda:0"])
-def test_pytorch_runner_setup_on_gpu(dev):
-    model = LinearModel()
-    tag = bentoml.pytorch.save("pytorch_test", model)
-    runner = bentoml.pytorch.load_runner(tag)
+@pytest.mark.parametrize("nvidia_gpu", [1, 2])
+def test_pytorch_runner_setup_on_gpu(nvidia_gpu: int, model_tag: Tag):
+    runner = bentoml.pytorch.get(model_tag).to_runner(nvidia_gpu=nvidia_gpu)
+    numprocesses = runner.scheduling_strategy.get_worker_count(
+        runner.runnable_class, runner.resource_config
+    )
+    assert numprocesses == nvidia_gpu
 
-    assert torch.cuda.device_count() == runner.num_replica
 
-
+"""
 @pytest.mark.parametrize(
     "bias_pair",
     [(0.0, 1.0), (-0.212, 1.1392)],
@@ -100,7 +118,7 @@ def test_pytorch_runner_with_partial_kwargs(bias_pair):
     x = torch.randn(N, D_in)
     model = ExtendedModel(D_in, H, D_out)
 
-    tag = bentoml.pytorch.save("pytorch_test_extended", model)
+    tag = bentoml.pytorch.save_model("pytorch_test_extended", model)
     bias1, bias2 = bias_pair
     runner1 = bentoml.pytorch.load_runner(tag, partial_kwargs=dict(bias=bias1))
 
@@ -112,34 +130,38 @@ def test_pytorch_runner_with_partial_kwargs(bias_pair):
     # tensor to float may introduce larger errors, so we bump rel_tol
     # from 1e-9 to 1e-6 just in case
     assert math.isclose(res1 - res2, bias1 - bias2, rel_tol=1e-6)
+"""
 
 
-# TODO: add back batch_axis=1 tst
-@pytest.mark.parametrize("batch_axis", [0])
-def test_pytorch_container(batch_axis):
+@pytest.mark.parametrize("batch_axis", [0, 1])
+def test_pytorch_container(batch_axis: int):
+    one_batch = torch.arange(6).reshape(2, 3)
+    batch_list = [one_batch, one_batch + 1]
+    merged_batch = torch.cat(batch_list, dim=batch_axis)
 
-    single_tensor = torch.arange(6).reshape(2, 3)
-    singles = [single_tensor, single_tensor + 1]
-    batch_tensor = torch.stack(singles, dim=batch_axis)
-
-    assert (
-        PyTorchTensorContainer.singles_to_batch(singles, batch_axis=batch_axis)
-        == batch_tensor
-    ).all()
-    assert (
-        PyTorchTensorContainer.batch_to_singles(batch_tensor, batch_axis=batch_axis)[0]
-        == single_tensor
-    ).all()
-
-    model = LinearModelWithBatchAxis()
-    tag = bentoml.pytorch.save("pytorch_test_container", model)
-    runner = bentoml.pytorch.load_runner(
-        tag,
-        partial_kwargs=dict(batch_axis=batch_axis),
+    batches, indices = PyTorchTensorContainer.batches_to_batch(
+        batch_list,
+        batch_dim=batch_axis,
     )
+    assert batches.shape == merged_batch.shape
+    assert (batches == merged_batch).all()
+    assert (
+        PyTorchTensorContainer.batch_to_batches(
+            merged_batch,
+            indices=indices,
+            batch_dim=batch_axis,
+        )[0]
+        == one_batch
+    ).all()
 
-    single_tensor = torch.arange(5, dtype=torch.float32)
-    singles = [single_tensor, single_tensor]
-    batch_tensor = torch.stack(singles, dim=batch_axis)
-    assert runner.run_batch(batch_tensor)[0][0] == 10.0
-    assert runner.run(single_tensor)[0] == 10.0
+    assert (
+        PyTorchTensorContainer.from_payload(
+            PyTorchTensorContainer.to_payload(one_batch)
+        )
+        == one_batch
+    ).all()
+
+    assert (
+        AutoContainer.from_payload(AutoContainer.to_payload(one_batch, batch_dim=0))
+        == one_batch
+    ).all()

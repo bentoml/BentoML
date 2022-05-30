@@ -84,8 +84,7 @@ def add_model_management_commands(
             info = json.dumps(model.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            info = yaml.dump(model.info, indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(model.info.dump(), "yaml"))
 
     @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)
@@ -168,13 +167,12 @@ def add_model_management_commands(
     ) -> None:
         """Delete Model in local model store.
 
-        Specify target Models to remove:
-
         \b
-        * Delete single model by "name:version", e.g: `bentoml models delete iris_clf:v1`
-        * Bulk delete all models with a specific name, e.g.: `bentoml models delete iris_clf`
-        * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete iris_clf:v1,iris_clf:v2`
-        * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
+        Examples:
+            * Delete single model by "name:version", e.g: `bentoml models delete iris_clf:v1`
+            * Bulk delete all models with a specific name, e.g.: `bentoml models delete iris_clf`
+            * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete iris_clf:v1,iris_clf:v2`
+            * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
         """  # noqa
 
         def delete_target(target: str) -> None:
@@ -202,7 +200,7 @@ def add_model_management_commands(
     @click.argument("model_tag", type=click.STRING)
     @click.argument("out_path", type=click.STRING, default="", required=False)
     def export(model_tag: str, out_path: str) -> None:
-        """Export Model files to an archive file
+        """Export a Model to an external archive file
 
         arguments:
 
@@ -221,7 +219,7 @@ def add_model_management_commands(
         bentoml models export FraudDetector:20210709_DE14C9 s3://mybucket/models/my_model.bentomodel
         """
         bentomodel = model_store.get(model_tag)
-        bentomodel.export(out_path)
+        out_path = bentomodel.export(out_path)
         logger.info(f"{bentomodel} exported to {out_path}")
 
     @model_cli.command(name="import")

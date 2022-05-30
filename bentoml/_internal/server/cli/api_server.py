@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import json
 import socket
@@ -20,50 +22,53 @@ import click
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
-@click.option("--bind", type=click.STRING, required=True)
-@click.option("--runner-map", type=click.STRING, envvar="BENTOML_RUNNER_MAP")
-@click.option("--backlog", type=click.INT, default=2048)
-@click.option("--working-dir", type=click.Path(exists=True))
+@click.option(
+    "--bind",
+    type=click.STRING,
+    required=True,
+    help="Bind address sent to circus. This address accepts the following values: 'tcp://127.0.0.1:3000','unix:///tmp/bento_api.sock', 'fd://12'",
+)
+@click.option(
+    "--runner-map",
+    type=click.STRING,
+    envvar="BENTOML_RUNNER_MAP",
+    help="JSON string of runners map, default sets to envars `BENTOML_RUNNER_MAP`",
+)
+@click.option(
+    "--backlog", type=click.INT, default=2048, help="Backlog size for the socket"
+)
+@click.option(
+    "--working-dir",
+    type=click.Path(exists=True),
+    help="Working directory for the API server",
+)
 @click.option(
     "--as-worker",
     required=False,
     type=click.BOOL,
     is_flag=True,
     default=False,
+    help="If True, start the server as a bare worker. Otherwise start a standalone server with a supervisor process.",
 )
 @click.pass_context
 def main(
     ctx: click.Context,
     bento_identifier: str,
     bind: str,
-    runner_map: t.Optional[str],
+    runner_map: str | None,
     backlog: int,
-    working_dir: t.Optional[str],
+    working_dir: str | None,
     as_worker: bool,
 ):
     """
     Start BentoML API server.
-
-    Args
-    ----
-    bento_identifier: str
-        BentoML identifier.
-    bind: str
-        Bind address.
-        values:
-            - "tcp://127.0.0.1:3000"
-            - "unix:///tmp/bento_api.sock"
-            - "fd://12"
-    runner_map: str
-        Path to runner map file.
-    backlog: int
-        Backlog size.
-    working_dir: str
-        Working directory.
-    as_worker: bool (default: False)
-        If True, start the server as a bare worker. Else, start a standalone server
-        with a supervisor process.
+    \b
+    This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
     """
+    from ...configuration.containers import DeploymentContainer
+
+    DeploymentContainer.development_mode.set(False)
+
     if not as_worker:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
@@ -82,7 +87,7 @@ def main(
             name="bento_api_server",
             cmd=sys.executable,
             args=["-m", "bentoml._internal.server.cli.api_server"]
-            + unparse_click_params(params, ctx.command.params),
+            + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
             stop_children=True,
@@ -99,8 +104,6 @@ def main(
 
     log_level = "info"
     if runner_map is not None:
-        from ...configuration.containers import DeploymentContainer
-
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))
     svc = bentoml.load(
         bento_identifier, working_dir=working_dir, change_global_cwd=True

@@ -249,7 +249,7 @@ class YataiClient:
         apis: t.Dict[str, BentoApiSchema] = {}
         models = [str(m.tag) for m in info.models]
         runners = [
-            BentoRunnerSchema(name=r.name, runner_type=r.runner_type)
+            BentoRunnerSchema(name=r.name, runner_type=r.runnable_type)
             for r in info.runners
         ]
         manifest = BentoManifestSchema(
@@ -530,10 +530,10 @@ class YataiClient:
                         manifest=ModelManifestSchema(
                             module=info.module,
                             metadata=info.metadata,
-                            context=info.context,
-                            options=info.options,
+                            context=info.context.to_dict(),
+                            options=dict(info.options),
                             api_version=info.api_version,
-                            bentoml_version=info.bentoml_version,
+                            bentoml_version=info.context.bentoml_version,
                             size_bytes=calc_dir_size(model.path),
                         ),
                         labels=labels,

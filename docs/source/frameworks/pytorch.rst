@@ -1,42 +1,46 @@
+=======
 PyTorch
--------
+=======
 
-Users can now use PyTorch with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
+Here's an example using PyTorch with BentoML:
 
-.. code-block:: python
+.. code:: python
 
-   import pandas as pd
-   import torch
-   import bentoml
+    import pandas as pd
+    import torch
+    import bentoml
 
-   class NGramLanguageModeler(nn.Module):
+    class NGramLanguageModeler(nn.Module):
 
-      def __init__(self, vocab_size, embedding_dim, context_size):
-            super(NGramLanguageModeler, self).__init__()
-            self.embeddings = nn.Embedding(vocab_size, embedding_dim)
-            self.linear1 = nn.Linear(context_size * embedding_dim, 128)
-            self.linear2 = nn.Linear(128, vocab_size)
+    def __init__(self, vocab_size, embedding_dim, context_size):
+        super(NGramLanguageModeler, self).__init__()
+        self.embeddings = nn.Embedding(vocab_size, embedding_dim)
+        self.linear1 = nn.Linear(context_size * embedding_dim, 128)
+        self.linear2 = nn.Linear(128, vocab_size)
 
-      def forward(self, inputs):
-            embeds = self.embeddings(inputs).view((1, -1))
-            out = F.relu(self.linear1(embeds))
-            out = self.linear2(out)
-            log_probs = F.log_softmax(out, dim=1)
-            return log_probs
+    def forward(self, inputs):
+        embeds = self.embeddings(inputs).view((1, -1))
+        out = F.relu(self.linear1(embeds))
+        out = self.linear2(out)
+        log_probs = F.log_softmax(out, dim=1)
+        return log_probs
 
-   # `save` a given classifier and retrieve coresponding tag:
-   tag = bentoml.pytorch.save("ngrams", NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE))
+    model = NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
 
-   # retrieve metadata with `bentoml.models.get`:
-   metadata = bentoml.models.get(tag)
+    # save the model to model store:
+    tag = bentoml.pytorch.save_model("ngrams", )
 
-   # `load` the model back in memory:
-   model = bentoml.pytorch.load("ngrams:latest")
+    # get a BentoModel (a reference to model in model store) by tag:
+    metadata = bentoml.models.get(tag)
 
-   # Run a given model under `Runner` abstraction with `load_runner`
-   input_data = pd.from_csv("/path/to/csv")
-   runner = bentoml.pytorch.load_runner(tag)
-   runner.run(pd.DataFrame("/path/to/csv"))
+    # load the model back in memory:
+    model = bentoml.pytorch.load_model("ngrams:latest")
+
+    # Run a given model under `Runner` abstraction with `load_runner`
+    input_data = pd.from_csv("/path/to/csv")
+    runner = bentoml.pytorch.get(tag).to_runner()
+    runner.init_local()
+    runner.run(pd.DataFrame("/path/to/csv"))
 
 .. note::
 
@@ -44,8 +48,9 @@ Users can now use PyTorch with BentoML with the following API: :code:`load`, :co
 
 .. currentmodule:: bentoml.pytorch
 
-.. autofunction:: bentoml.pytorch.save
+.. autofunction:: bentoml.pytorch.save_model
 
-.. autofunction:: bentoml.pytorch.load
+.. autofunction:: bentoml.pytorch.load_model
 
-.. autofunction:: bentoml.pytorch.load_runner
+.. autofunction:: bentoml.pytorch.get
+

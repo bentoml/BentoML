@@ -1,27 +1,29 @@
+from __future__ import annotations
+
 import pickle
 import typing as t
 import logging
 import functools
+import itertools
 import contextlib
-from abc import ABC
-from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from simple_di import inject
+from simple_di import Provide
 
-from ...tag import Tag
+import bentoml
+
 from ...types import LazyType
-from ...utils.pkg import get_pkg_version
-from .model_runner import BaseModelRunner
 from ....exceptions import MissingDependencyException
+from ...models.model import Model
 from ...runner.utils import Params
 from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
+from ...configuration.containers import DeploymentContainer
 
 try:
     import torch
-    import torch.nn.parallel as parallel
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -36,146 +38,161 @@ if TYPE_CHECKING:
 
     from ... import external_typing as ext
 
-    ModelType = t.Union[torch.nn.Module, torch.jit.ScriptModule, pl.LightningModule]
+    ModelType = t.Union[torch.nn.Module, torch.ScriptModule, pl.LightningModule]
 
 logger = logging.getLogger(__name__)
 
 
-class BasePyTorchRunner(BaseModelRunner, ABC):
+def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
+    class NewClass(cls):
+        def __init__(self, *inner_args: t.Any, **inner_kwargs: t.Any) -> None:
+            functools.partial(cls.__init__, *args, **kwargs)(
+                self, *inner_args, **inner_kwargs
+            )
+
+    return NewClass
+
+
+class PytorchModelRunnable(bentoml.Runnable):
+    SUPPORT_NVIDIA_GPU = True
+    SUPPORT_CPU_MULTI_THREADING = True
+
     def __init__(
         self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
-        name: t.Optional[str] = None,
+        bento_model: Model,
+        loader: t.Callable[..., torch.nn.Module],
     ):
-        super().__init__(tag=tag, name=name)
-
-        self._predict_fn_name = predict_fn_name
-        self._partial_kwargs = partial_kwargs or dict()
-
-        self._predict_fn: t.Callable[..., torch.Tensor]
-        self._no_grad_context: t.Optional[contextlib.ExitStack] = None
-        self._model: t.Optional["ModelType"] = None
-
-    @property
-    def _device_id(self):
-        if self._on_gpu:
-            return "cuda"
+        super().__init__()
+        # if torch.cuda.device_count():
+        if torch.cuda.is_available():
+            self.device_id = "cuda"
+            torch.set_default_tensor_type(
+                "torch.cuda.FloatTensor"
+            )  # initially torch.FloatTensor
         else:
-            return "cpu"
-
-    @property
-    def _num_threads(self) -> int:
-        if self._on_gpu:
-            return 1
-        return max(round(self.resource_quota.cpu), 1)
-
-    @property
-    def num_replica(self) -> int:
-        if self._on_gpu:
-            return torch.cuda.device_count()
-        return 1
-
-    def _configure(self) -> None:
-        if self._on_gpu:
-            torch.set_default_tensor_type("torch.cuda.FloatTensor")
-        else:
-            torch.set_num_threads(self._num_threads)
-            torch.set_default_tensor_type("torch.FloatTensor")
-
-    @property
-    def _on_gpu(self) -> bool:
-        if self.resource_quota.on_gpu:
-            if torch.cuda.is_available():
-                return True
-            else:
-                logger.warning(
-                    "GPU is not available, but GPU resource is requested. "
-                    "Falling back to CPU."
-                )
-        return False
-
-    @abstractmethod
-    def _load_model(self):
-        raise NotImplementedError
-
-    def _setup(self) -> None:
+            self.device_id = "cpu"
+        self.model: ModelType = loader(bento_model, device_id=self.device_id)
+        self.model.train(False)  # to turn off dropout and batchnorm
         self._no_grad_context = contextlib.ExitStack()
-        self._no_grad_context.enter_context(torch.no_grad())
-        if get_pkg_version("torch").startswith("1.9"):
-            # inference mode is required for PyTorch version 1.9.*
+        if hasattr(torch, "inference_mode"):  # pytorch>=1.9
             self._no_grad_context.enter_context(torch.inference_mode())
-
-        self._configure()
-        model = self._load_model()
-        model.eval()
-        if self._on_gpu:
-            self._model = parallel.DataParallel(model)
-            torch.cuda.empty_cache()
         else:
-            self._model = model
-        raw_predict_fn = getattr(self._model, self._predict_fn_name)
-        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
+            self._no_grad_context.enter_context(torch.no_grad())
 
-    def _shutdown(self) -> None:
-        if self._no_grad_context is not None:
-            self._no_grad_context.close()
-            self._no_grad_context = None
+    def __del__(self):
+        self._no_grad_context.close()
+        # no need for now because our worker process will quit and return the gpu memory
+        # if self.device_id == "cuda":
+        # torch.cuda.empty_cache()
 
-    def _run_batch(
-        self,
-        *args: t.Union["ext.NpNDArray", torch.Tensor],
-        **kwargs: t.Union["ext.NpNDArray", torch.Tensor],
+
+def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:
+    def _run(
+        self: PytorchModelRunnable,
+        *args: ext.NpNDArray | torch.Tensor,
+        **kwargs: ext.NpNDArray | torch.Tensor,
     ) -> torch.Tensor:
-
         params = Params[t.Union["ext.NpNDArray", torch.Tensor]](*args, **kwargs)
 
         def _mapping(item: t.Union["ext.NpNDArray", torch.Tensor]) -> torch.Tensor:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
-                item = torch.Tensor(item, device=self._device_id)
+                return torch.Tensor(item, device=self.device_id)
             else:
-                item = item.to(self._device_id)
-            return item
+                return item.to(self.device_id)  # type: ignore # the overhead is trivial if it is already on the right device
 
         params = params.map(_mapping)
-        res = self._predict_fn(*params.args, **kwargs)
-        return res
+        return getattr(self.model, method_name)(*params.args, **params.kwargs)
+
+    return _run
 
 
 class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
     @classmethod
-    def singles_to_batch(cls, singles, batch_axis=0):
-        return torch.stack(singles, dim=batch_axis)
+    def batches_to_batch(
+        cls,
+        batches: t.Sequence[torch.Tensor],
+        batch_dim: int = 0,
+    ) -> t.Tuple[torch.Tensor, list[int]]:
+        batch = torch.cat(tuple(batches), dim=batch_dim)
+        indices = list(
+            itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
+        )
+        indices = [0] + indices
+        return batch, indices
 
     @classmethod
-    def batch_to_singles(cls, batch, batch_axis=0):
-        return [
-            torch.squeeze(tensor, dim=batch_axis)
-            for tensor in torch.split(batch, 1, dim=batch_axis)
-        ]
+    def batch_to_batches(
+        cls,
+        batch: torch.Tensor,
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+    ) -> t.List[torch.Tensor]:
+        sizes = [indices[i] - indices[i - 1] for i in range(1, len(indices))]
+        output: list[torch.Tensor] = torch.split(batch, sizes, dim=batch_dim)
+        return output
 
     @classmethod
     @inject
-    def single_to_payload(
+    def to_payload(  # pylint: disable=arguments-differ
         cls,
-        single,
+        batch: torch.Tensor,
+        batch_dim: int = 0,
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
     ) -> Payload:
+        batch = batch.numpy()
+        if plasma_db:
+            return cls.create_payload(
+                plasma_db.put(batch).binary(),
+                batch_size=batch.shape[batch_dim],
+                meta={"plasma": True},
+            )
+
         return cls.create_payload(
-            pickle.dumps(single),
-            {"plasma": False},
+            pickle.dumps(batch),
+            batch_size=batch.shape[batch_dim],
+            meta={"plasma": False},
         )
 
     @classmethod
     @inject
-    def payload_to_single(
+    def from_payload(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-    ):
-        return pickle.loads(payload.data)
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+    ) -> torch.Tensor:
+        if payload.meta.get("plasma"):
+            import pyarrow.plasma as plasma
 
-    batch_to_payload = single_to_payload
-    payload_to_batch = payload_to_single
+            assert plasma_db
+            ret = plasma_db.get(plasma.ObjectID(payload.data))
+
+        else:
+            ret = pickle.loads(payload.data)
+        return torch.Tensor(ret)
+
+    @classmethod
+    @inject
+    def batch_to_payloads(  # pylint: disable=arguments-differ
+        cls,
+        batch: torch.Tensor,
+        indices: t.Sequence[int],
+        batch_dim: int = 0,
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+    ) -> t.List[Payload]:
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+        payloads = [cls.to_payload(i, batch_dim=batch_dim) for i in batches]
+        return payloads
+
+    @classmethod
+    @inject
+    def from_batch_payloads(  # pylint: disable=arguments-differ
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int = 0,
+        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+    ) -> t.Tuple[torch.Tensor, list[int]]:
+        batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
 
 
 DataContainerRegistry.register_container(

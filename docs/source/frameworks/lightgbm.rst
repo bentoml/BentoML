@@ -1,5 +1,6 @@
+========
 LightGBM
---------
+========
 
 Users can now use LightGBM with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
 

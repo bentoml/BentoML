@@ -42,12 +42,11 @@ def _generate_responses_schema(
 
 
 def get_service_openapi_doc(svc: "Service"):
-    # TODO: add licensing options for service swagger?
     info = {
         "title": svc.name,
         "description": "A Prediction Service built with BentoML",
         "contact": {"email": "contact@bentoml.ai"},
-        "version": svc.version or "0.0.0",
+        "version": svc.tag.version if svc.tag is not None else "0.0.0",
     }
     docs: t.Dict[str, t.Any] = {
         "openapi": "3.0.0",

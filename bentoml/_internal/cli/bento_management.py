@@ -161,13 +161,12 @@ def add_bento_management_commands(
     ) -> None:
         """Delete Bento in local bento store.
 
-        Specify target Bentos to remove:
-
         \b
-        * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
-        * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
-        * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
-        * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
+        Examples:
+            * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
+            * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
+            * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+            * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
         """  # noqa
 
         def delete_target(target: str) -> None:
@@ -200,24 +199,25 @@ def add_bento_management_commands(
         required=False,
     )
     def export(bento_tag: str, out_path: str) -> None:
-        """Export Bento files to an archive file
+        """Export a Bento to an external file archive
 
         \b
-        arguments:
-        BENTO_TAG: bento identifier
-        OUT_PATH: output path of exported bento.
-          If this argument is not provided, bento is exported to name-version.bento in the current directory.
-          Besides native .bento format, we also supported formats like tar ('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip.
+        Arguments:
+            BENTO_TAG: bento identifier
+            OUT_PATH: output path of exported bento.
+
+        If out_path argument is not provided, bento is exported to name-version.bento in the current directory.
+        Beside the native .bento format, we also support ('tar'), tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip.
 
         \b
-        examples:
-        bentoml export FraudDetector:20210709_DE14C9
-        bentoml export FraudDetector:20210709_DE14C9 ./my_bento.bento
-        bentoml export FraudDetector:latest ./my_bento.bento
-        bentoml export FraudDetector:latest s3://mybucket/bentos/my_bento.bento
+        Examples:
+            bentoml export FraudDetector:20210709_DE14C9
+            bentoml export FraudDetector:20210709_DE14C9 ./my_bento.bento
+            bentoml export FraudDetector:latest ./my_bento.bento
+            bentoml export FraudDetector:latest s3://mybucket/bentos/my_bento.bento
         """
         bento = bento_store.get(bento_tag)
-        bento.export(out_path)
+        out_path = bento.export(out_path)
         logger.info(f"{bento} exported to {out_path}")
 
     @cli.command(name="import")
@@ -226,13 +226,13 @@ def add_bento_management_commands(
         """Import a previously exported Bento archive file
 
         \b
-        argument:
-        BENTO_PATH: path of Bento archive file
+        Arguments:
+            BENTO_PATH: path of Bento archive file
 
         \b
-        examples:
-        bentoml import ./my_bento.bento
-        bentoml import s3://mybucket/bentos/my_bento.bento
+        Examples:
+            bentoml import ./my_bento.bento
+            bentoml import s3://mybucket/bentos/my_bento.bento
         """
         bento = import_bento(bento_path)
         logger.info(f"{bento} imported")

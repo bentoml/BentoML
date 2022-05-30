@@ -1,6 +1,9 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
+
+from __future__ import annotations
+
 import os
 import typing as t
 import logging
@@ -20,9 +23,19 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.bento import BentoStore
+    from ._internal.types import PathType
     from ._internal.models import ModelStore
 
 logger = logging.getLogger(__name__)
+
+BENTOML_FIGLET = """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
 
 
 @inject
@@ -231,7 +244,6 @@ def build(
     description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
     exclude: t.Optional[t.List[str]] = None,
-    additional_models: t.Optional[t.List[t.Union[str, Tag]]] = None,
     docker: t.Optional[t.Dict[str, t.Any]] = None,
     python: t.Optional[t.Dict[str, t.Any]] = None,
     conda: t.Optional[t.Dict[str, t.Any]] = None,
@@ -255,9 +267,6 @@ def build(
             default is all files under build_ctx, beside the ones excluded from the
             exclude parameter or a :code:`.bentoignore` file for a given directory
         exclude: list of file paths and patterns to exclude from the final Bento archive
-        additional_models: list of model tags to pack in Bento, in addition to the
-            models that are required by service's runners. These models must be
-            found in the given _model_store
         docker: dictionary for configuring Bento's containerization process, see details
             in :class:`bentoml._internal.bento.build_config.DockerOptions`
         python: dictionary for configuring Bento's python dependencies, see details in
@@ -272,6 +281,39 @@ def build(
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
 
+    Example:
+
+        .. code-block::
+            import bentoml
+
+            bentoml.build(
+                service="fraud_detector.py:svc",
+                version="any_version_label",  # override default version generator
+                description=open("README.md").read(),
+                include=['*'],
+                exclude=[], # files to exclude can also be specified with a .bentoignore file
+                labels={
+                    "foo": "bar",
+                    "team": "abc"
+                },
+                python=dict(
+                    packages=["tensorflow", "numpy"],
+                    # requirements_txt="./requirements.txt",
+                    index_url="http://<api token>:@mycompany.com/pypi/simple",
+                    trusted_host=["mycompany.com"],
+                    find_links=['thirdparty..'],
+                    extra_index_url=["..."],
+                    pip_args="ANY ADDITIONAL PIP INSTALL ARGS",
+                    wheels=["./wheels/*"],
+                    lock_packages=True,
+                ),
+                docker=dict(
+                    distro="amazonlinux2",
+                    setup_script="setup_docker_container.sh",
+                    python_version="3.8",
+                ),
+            )
+
     """  # noqa: LN001
     build_config = BentoBuildConfig(
         service=service,
@@ -279,28 +321,17 @@ def build(
         labels=labels,
         include=include,
         exclude=exclude,
-        additional_models=additional_models,
-        docker=docker,
-        python=python,
-        conda=conda,
+        docker=docker,  # type: ignore
+        python=python,  # type: ignore
+        conda=conda,  # type: ignore
     )
 
     bento = Bento.create(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
-        model_store=_model_store,
     ).save(_bento_store)
-    logger.info(
-        """
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-"""
-    )
+    logger.info(BENTOML_FIGLET)
     logger.info('Successfully built %s at "%s"', bento, bento.path)
     return bento
 
@@ -339,63 +370,101 @@ def build_bentofile(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
-        model_store=_model_store,
     ).save(_bento_store)
-    logger.info(
-        """
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-"""
-    )
+    logger.info(BENTOML_FIGLET)
     logger.info('Successfully built %s at "%s"', bento, bento.path)
     return bento
 
 
 @inject
 def containerize(
-    tag: t.Union[Tag, str],
-    docker_image_tag: t.Optional[str] = None,
+    tag: Tag | str,
+    docker_image_tag: str | None = None,
     *,
-    build_args: t.Optional[t.Dict[str, str]] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
+    add_host: dict[str, str] | None = None,
+    allow: t.List[str] | None = None,
+    build_args: dict[str, str] | None = None,
+    build_context: dict[str, str] | None = None,
+    builder: str | None = None,
+    cache_from: str | t.List[str] | dict[str, str] | None = None,
+    cache_to: str | t.List[str] | dict[str, str] | None = None,
+    cgroup_parent: str | None = None,
+    iidfile: PathType | None = None,
+    labels: dict[str, str] | None = None,
+    load: bool = True,
+    metadata_file: PathType | None = None,
+    network: str | None = None,
     no_cache: bool = False,
-    platform: t.Optional[str] = None,
+    no_cache_filter: t.List[str] | None = None,
+    output: str | dict[str, str] | None = None,
+    platform: str | t.List[str] | None = None,
+    progress: t.Literal["auto", "tty", "plain"] = "auto",
+    pull: bool = False,
+    push: bool = False,
+    quiet: bool = False,
+    secrets: str | t.List[str] | None = None,
+    shm_size: str | int | None = None,
+    rm: bool = False,
+    ssh: str | None = None,
+    target: str | None = None,
+    ulimit: str | None = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> bool:
+
+    from bentoml._internal.utils import buildx
+
+    env = {"DOCKER_BUILDKIT": "1", "DOCKER_SCAN_SUGGEST": "false"}
+
+    # run health check whether buildx is install locally
+    buildx.health()
+
     bento = _bento_store.get(tag)
     if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
 
-    docker_build_cmd = ["docker", "build", "."]
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")
-    docker_build_cmd += ["-f", dockerfile_path]
-    docker_build_cmd += ["-t", docker_image_tag]
 
-    if no_cache:
-        docker_build_cmd.append("--no-cache")
-
-    if build_args:
-        for key, value in build_args.items():
-            docker_build_cmd += ["--build-arg", f"{key}={value}"]
-
-    if labels:
-        for key, value in labels.items():
-            docker_build_cmd += ["--label", f"{key}={value}"]
-
-    if platform:
-        docker_build_cmd += ["--platform", platform]
-
-    env = os.environ.copy()
-    env["DOCKER_SCAN_SUGGEST"] = "false"
     logger.info(f"Building docker image for {bento}...")
     try:
-        subprocess.check_output(docker_build_cmd, cwd=bento.path, env=env)
+        buildx.build(
+            subprocess_env=env,
+            cwd=bento.path,
+            file=dockerfile_path,
+            tags=docker_image_tag,
+            add_host=add_host,
+            allow=allow,
+            build_args=build_args,
+            build_context=build_context,
+            builder=builder,
+            cache_from=cache_from,
+            cache_to=cache_to,
+            cgroup_parent=cgroup_parent,
+            iidfile=iidfile,
+            labels=labels,
+            load=load,
+            metadata_file=metadata_file,
+            network=network,
+            no_cache=no_cache,
+            no_cache_filter=no_cache_filter,
+            output=output,
+            platform=platform,
+            progress=progress,
+            pull=pull,
+            push=push,
+            quiet=quiet,
+            secrets=secrets,
+            shm_size=shm_size,
+            rm=rm,
+            ssh=ssh,
+            target=target,
+            ulimit=ulimit,
+        )
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
+        if platform != "linux/amd64":
+            logger.debug(
+                f"""If you run into the following error: "failed to solve: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed". This means Docker doesn't have context of your build platform {platform}. By default BentoML will set target build platform to the current machine platform via `uname -m`. Try again by specifying to build x86_64 (amd64) platform: bentoml containerize {str(bento.tag)} --platform linux/amd64"""
+            )
         return False
     else:
         logger.info(f'Successfully built docker image "{docker_image_tag}"')

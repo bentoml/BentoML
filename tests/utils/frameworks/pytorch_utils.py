@@ -8,12 +8,27 @@ test_df = pd.DataFrame([[1] * 5])
 
 class LinearModel(nn.Module):
     def __init__(self):
-        super(LinearModel, self).__init__()
+        super().__init__()
         self.linear = nn.Linear(5, 1, bias=False)
         torch.nn.init.ones_(self.linear.weight)
 
     def forward(self, x):
         return self.linear(x)
+
+
+def make_pytorch_lightning_linear_model_class():
+    import pytorch_lightning as pl
+
+    class LightningLinearModel(pl.LightningModule):
+        def __init__(self):
+            super().__init__()
+            self.linear = nn.Linear(5, 1, bias=False)
+            torch.nn.init.ones_(self.linear.weight)
+
+        def forward(self, x):
+            return self.linear(x)
+
+    return LightningLinearModel
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):

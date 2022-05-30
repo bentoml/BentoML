@@ -270,7 +270,7 @@ jobs:
         run: export GITHUB_ACTION=true
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh general_features -x -s
+        run: ./scripts/ci/run_tests.sh general_features -- -x -s
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2

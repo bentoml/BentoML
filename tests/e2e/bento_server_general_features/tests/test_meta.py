@@ -24,8 +24,23 @@ async def test_api_server_meta(host: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_cors(host: str) -> None:
+async def test_cors(host: str, server_config_file: str) -> None:
     ORIGIN = "http://bentoml.ai"
+
+    status, headers, body = await async_request(
+        "OPTIONS",
+        f"http://{host}/echo_json",
+        headers={
+            "Content-Type": "application/json",
+            "Origin": ORIGIN,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type",
+        },
+    )
+    if server_config_file == "server_config_cors_enabled.yml":
+        assert status == 200
+    else:
+        assert status == 405
 
     status, headers, body = await async_request(
         "POST",
@@ -33,11 +48,16 @@ async def test_cors(host: str) -> None:
         headers={"Content-Type": "application/json", "Origin": ORIGIN},
         data='"hi"',
     )
-    assert status == 200
-    assert body == b'"hi"'
-    assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
-    assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
-    assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
+    if server_config_file == "server_config_cors_enabled.yml":
+        assert status == 200
+        assert body == b'"hi"'
+        assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
+        assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
+        assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
+    else:
+        assert status == 200
+        assert headers.get("Access-Control-Allow-Origin") not in ("*", ORIGIN)
+        assert "Content-Length" not in headers.get("Access-Control-Expose-Headers", [])
 
 
 """

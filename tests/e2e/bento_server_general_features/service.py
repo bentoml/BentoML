@@ -13,16 +13,9 @@ from bentoml.io import JSON
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
-from bentoml.io import PandasSeries
 from bentoml.io import PandasDataFrame
 from bentoml._internal.types import FileLike
 from bentoml._internal.types import JSONSerializable
-
-
-class _Schema(pydantic.BaseModel):
-    name: str
-    endpoints: t.List[str]
-
 
 py_model = bentoml.picklable_model.get("py_model").to_runner()
 
@@ -37,6 +30,17 @@ svc = bentoml.Service(
 async def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
     batch_ret = await py_model.echo_json.async_run([json_obj])
     return batch_ret[0]
+
+
+@svc.api(input=JSON(), output=JSON())
+def echo_json_sync(json_obj: JSONSerializable) -> JSONSerializable:
+    batch_ret = py_model.echo_json.run([json_obj])
+    return batch_ret[0]
+
+
+class _Schema(pydantic.BaseModel):
+    name: str
+    endpoints: t.List[str]
 
 
 @svc.api(

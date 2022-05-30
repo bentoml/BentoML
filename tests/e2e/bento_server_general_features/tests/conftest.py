@@ -39,6 +39,14 @@ def pytest_configure(config):  # pylint: disable=unused-argument
 
 @pytest.fixture(
     scope="session",
+    params=["server_config_default.yml", "server_config_cors_enabled.yml"],
+)
+def server_config_file(request):
+    return request.param
+
+
+@pytest.fixture(
+    scope="session",
     params=[
         # "dev",
         "standalone",
@@ -46,7 +54,7 @@ def pytest_configure(config):  # pylint: disable=unused-argument
         "distributed",
     ],
 )
-def host(request) -> t.Generator[str, None, None]:
+def host(request, server_config_file: str) -> t.Generator[str, None, None]:
     deployment_mode = request.param
     if (
         (psutil.WINDOWS or psutil.MACOS)
@@ -65,7 +73,7 @@ def host(request) -> t.Generator[str, None, None]:
 
     with host_bento(
         "service:svc",
-        config_file="bentoml_config.yml",
+        config_file=server_config_file,
         deployment_mode=deployment_mode,
     ) as host_address:
         yield host_address

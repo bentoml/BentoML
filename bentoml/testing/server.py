@@ -330,6 +330,7 @@ def host_bento(
     project_path: str = ".",
     config_file: str = "bentoml_config.yml",
     deployment_mode: str = "standalone",
+    clean_context: contextlib.ExitStack | None = None,
 ) -> t.Generator[str, None, None]:
     """
     Host a bentoml service, yields the host URL.
@@ -339,6 +340,9 @@ def host_bento(
         project_path: the path to the project directory
         config_file: the path to the config file
         deployment_mode: the deployment mode, one of `standalone`, `docker` or `distributed`
+        clean_context: a contextlib.ExitStack to clean up the intermediate files,
+            like docker image and bentos. If None, it will be created. Used for reusing
+            those files in the same test session.
     """
 
     if not os.path.exists(config_file):
@@ -346,7 +350,12 @@ def host_bento(
 
     import bentoml
 
-    clean_context = contextlib.ExitStack()
+    if clean_context is None:
+        clean_context = contextlib.ExitStack()
+        clean_on_exit = True
+    else:
+        clean_on_exit = False
+
     try:
         if bento is None or not bentoml.list(bento):
             bento_tag = clean_context.enter_context(bentoml_build(project_path))
@@ -355,32 +364,30 @@ def host_bento(
 
         if deployment_mode == "docker":
             image_tag = clean_context.enter_context(bentoml_containerize(bento_tag))
-            host = clean_context.enter_context(
-                run_bento_server_in_docker(
-                    image_tag,
-                    config_file,
-                )
-            )
-            yield host
+            with run_bento_server_in_docker(
+                image_tag,
+                config_file,
+            ) as host:
+                yield host
+                logger.info("shutting down...")
         elif deployment_mode == "standalone":
-            host = clean_context.enter_context(
-                run_bento_server(
-                    str(bento_tag),
-                    config_file=config_file,
-                    workdir=project_path,
-                )
-            )
-            yield host
+            with run_bento_server(
+                str(bento_tag),
+                config_file=config_file,
+                workdir=project_path,
+            ) as host:
+                yield host
+                logger.info("shutting down...")
         elif deployment_mode == "distributed":
-            host = clean_context.enter_context(
-                run_bento_server_distributed(
-                    str(bento_tag),
-                    config_file=config_file,
-                )
-            )
-            yield host
+            with run_bento_server_distributed(
+                str(bento_tag),
+                config_file=config_file,
+            ) as host:
+                yield host
+                logger.info("shutting down...")
         else:
             raise ValueError(f"Unknown deployment mode: {deployment_mode}")
     finally:
-        logger.info("Cleaning up...")
-        clean_context.close()
+        if clean_on_exit:
+            logger.info("Cleaning up...")
+            clean_context.close()

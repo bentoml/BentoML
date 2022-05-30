@@ -47,9 +47,14 @@ class _Schema(pydantic.BaseModel):
     input=JSON(pydantic_model=_Schema),
     output=JSON(),
 )
-async def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
+async def echo_json_enforce_structure(json_obj: JSONSerializable) -> JSONSerializable:
     batch_ret = await py_model.echo_json.async_run([json_obj])
     return batch_ret[0]
+
+
+@svc.api(input=JSON(), output=JSON())
+async def echo_obj(obj: JSONSerializable) -> JSONSerializable:
+    return await py_model.echo_obj.async_run(obj)
 
 
 @svc.api(

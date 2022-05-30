@@ -49,12 +49,12 @@ reporting issues, contribute to the documentation and create sample gallery proj
 - [Examples](https://github.com/bentoml/gallery) - Gallery of sample projects using BentoML
 - [ML Framework Sepecific Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) - Learn about BentoML's internals, architecture and advanced features
-- [Integrations](https://docs.bentoml.org/en/latest/integrations/index.html) - Integrate BentoML with your training pipeline, existing infrastructure or monitoring tools
+
 
 ## Installation ##
 
 ```bash
-pip install bentoml
+pip install bentoml --pre
 ```
 
 ## Quick Tour ##

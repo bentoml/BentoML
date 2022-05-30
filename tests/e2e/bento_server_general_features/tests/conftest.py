@@ -2,6 +2,7 @@
 
 import os
 import typing as t
+import contextlib
 
 import numpy as np
 import psutil
@@ -37,16 +38,24 @@ def pytest_configure(config):  # pylint: disable=unused-argument
     os.environ["BENTOML_BUNDLE_LOCAL_BUILD"] = "True"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def clean_context():
+    stack = contextlib.ExitStack()
+    yield stack
+    stack.close()
+
+
 @pytest.fixture(
-    scope="session",
-    params=["server_config_default.yml", "server_config_cors_enabled.yml"],
+    params=[
+        "server_config_default.yml",
+        "server_config_cors_enabled.yml",
+    ],
 )
 def server_config_file(request):
     return request.param
 
 
 @pytest.fixture(
-    scope="session",
     params=[
         # "dev",
         "standalone",
@@ -54,8 +63,16 @@ def server_config_file(request):
         "distributed",
     ],
 )
-def host(request, server_config_file: str) -> t.Generator[str, None, None]:
-    deployment_mode = request.param
+def deployment_mode(request) -> str:
+    return request.param
+
+
+@pytest.fixture()
+def host(
+    deployment_mode: str,
+    server_config_file: str,
+    clean_context: contextlib.ExitStack,
+) -> t.Generator[str, None, None]:
     if (
         (psutil.WINDOWS or psutil.MACOS)
         and os.environ.get("GITHUB_ACTION")
@@ -71,9 +88,10 @@ def host(request, server_config_file: str) -> t.Generator[str, None, None]:
 
     from bentoml.testing.server import host_bento
 
-    with host_bento(
-        "service:svc",
-        config_file=server_config_file,
-        deployment_mode=deployment_mode,
-    ) as host_address:
-        yield host_address
+    return clean_context.enter_context(
+        host_bento(
+            "service:svc",
+            config_file=server_config_file,
+            deployment_mode=deployment_mode,
+        )
+    )

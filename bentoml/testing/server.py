@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name # pragma: no cover
+from __future__ import annotations
+
 import os
 import re
 import sys
@@ -147,7 +149,7 @@ def run_bento_server_in_docker(
     """
     Launch a bentoml service container from a docker image, yield the host URL
     """
-    container_name = f"bentoml-test-{image_tag}"
+    container_name = f"bentoml-test-{image_tag}-{hash(config_file)}"
     with reserve_free_port() as port:
         pass
 

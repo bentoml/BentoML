@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from contextvars import ContextVar
 from timeit import default_timer
-import typing as t
 from typing import TYPE_CHECKING
+from contextvars import ContextVar
 
 from simple_di import inject
 from simple_di import Provide
@@ -20,14 +19,6 @@ logger = logging.getLogger(__name__)
 
 START_TIME_VAR: ContextVar[float] = ContextVar("START_TIME_VAR")
 
-EXCLUDE_PATH = [
-    "/docs.json",
-    "/openapi.json",
-    "/static_content/*",
-    "/metrics",
-    "/metrics/",
-]
-
 
 class MetricsMiddleware:
     @inject
@@ -36,24 +27,12 @@ class MetricsMiddleware:
         app: ext.ASGIApp,
         bento_service: Service,
         metrics_client: PrometheusClient = Provide[DeploymentContainer.metrics_client],
-        exclude_path: list[str] = EXCLUDE_PATH,
     ):
         self.app = app
         self.bento_service = bento_service
-        self.exc_path: list[t.Any] = exclude_path if exclude_path else list()
 
         service_name = self.bento_service.name
 
-        self.metrics_response_total = metrics_client.Counter(
-            name=service_name + "_response_total",
-            documentation="Total number of HTTP response",
-            labelnames=[
-                "method",
-                "endpoint",
-                "service_version",
-                "http_response_code",
-            ],
-        )
         self.metrics_request_total = metrics_client.Counter(
             name=service_name + "_request_total",
             documentation="Total number of HTTP requests",
@@ -79,11 +58,6 @@ class MetricsMiddleware:
             documentation="Total number of HTTP requests in progress now",
             labelnames=["method", "endpoint", "service_version"],
             multiprocess_mode="livesum",
-        )
-        self.metrics_exceptions_total = metrics_client.Counter(
-            name=service_name + "_exceptions_total",
-            documentation="Total number of exceptions",
-            labelnames=["endpoint", "service_version", "exception_type"],
         )
 
     @inject
@@ -131,13 +105,6 @@ class MetricsMiddleware:
                     service_version=service_version,
                     http_response_code=status_code,
                 ).inc()
-                # instrument response total count
-                self.metrics_response_total.labels(
-                    method=method,
-                    endpoint=endpoint,
-                    service_version=service_version,
-                    http_response_code=status_code,
-                ).inc()
 
                 assert START_TIME_VAR.get() != 0
                 total_time = max(default_timer() - START_TIME_VAR.get(), 0)
@@ -152,27 +119,7 @@ class MetricsMiddleware:
             START_TIME_VAR.set(0)
             return await send(message)
 
-        if self._get_path(scope) in self.exc_path:
-            return await self.app(scope, receive, send)
-
-        try:
-            with self.metrics_request_in_progress.labels(
-                method=method, endpoint=endpoint, service_version=service_version
-            ).track_inprogress():
-                return await self.app(scope, receive, wrapped_send)
-        except Exception as e:  # pylint: disable=broad-except
-            self.metrics_exceptions_total.labels(
-                endpoint=endpoint,
-                service_version=service_version,
-                exception_type=type(e).__name__,
-            ).inc()
-            raise
-
-    def _get_path(self, scope: ext.ASGIScope) -> str:
-        # use route template url or full path to determine whether
-        # to ignore a given path
-        root = scope.get("root_path", "")
-        path = scope.get("path", "")
-        full_path = f"{root}{path}"
-
-        return full_path
+        with self.metrics_request_in_progress.labels(
+            method=method, endpoint=endpoint, service_version=service_version
+        ).track_inprogress():
+            return await self.app(scope, receive, wrapped_send)

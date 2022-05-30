@@ -125,6 +125,7 @@ class PyFileChangeWatcher:
         ]
 
         if not is_pypi_installed_bentoml():
+            # git root from this __file__
             git_root = pathlib.Path(__file__).parent.parent.parent.parent
             self.watch_dirs.append(git_root)
         logger.info(f"Watching directories: {', '.join(map(str, self.watch_dirs))}")

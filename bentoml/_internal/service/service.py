@@ -88,8 +88,12 @@ class Service:
     runners: list[Runner]
     models: list[Model]
 
-    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(init=False, factory=list)
-    middlewares: list[tuple[t.Type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(init=False, factory=list)
+    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(
+        init=False, factory=list
+    )
+    middlewares: list[tuple[t.Type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(
+        init=False, factory=list
+    )
 
     apis: dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
@@ -216,7 +220,9 @@ class Service:
 
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
-    def add_asgi_middleware(self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any) -> None:
+    def add_asgi_middleware(
+        self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any
+    ) -> None:
         self.middlewares.append((middleware_cls, options))
 
 

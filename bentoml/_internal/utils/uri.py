@@ -25,7 +25,7 @@ def path_to_uri(path: str) -> str:
     raise ValueError("Unsupported OS")
 
 
-def uri_to_path(uri: str) -> str:
+def uri_to_path(uri: str) -> str:  # pragma:
     """
     Convert a file URI to a path.
 

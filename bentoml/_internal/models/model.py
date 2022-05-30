@@ -9,7 +9,6 @@ from typing import overload
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
-from collections import UserDict
 
 import fs
 import attr
@@ -57,24 +56,25 @@ MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 
-if TYPE_CHECKING:
-    ModelOptionsSuper = UserDict[str, t.Any]
-else:
-    ModelOptionsSuper = UserDict
-
-
-class ModelOptions(ModelOptionsSuper):
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
+@attr.define
+class ModelOptions():
+    def with_options(self, **kwargs: t.Any) -> 'ModelOptions':
+        return attr.evolve(self, **kwargs)
 
     @staticmethod
     def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return dict(options)
+        return attr.asdict(options)
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)  # type: ignore
+    lambda cls: issubclass(cls, ModelOptions),  # type: ignore
+    lambda d, cls: attr.make_class(
+        "GeneratedModelOptions",
+        attrs={k: attr.ib() for k in d},
+        bases=(ModelOptions,),
+        repr=False,
+        frozen=True,
+    )(**d),
 )
 bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
 

@@ -39,36 +39,36 @@ def pt_gpt2_pipeline():
         (
             "text-generation",
             transformers.pipeline(task="text-generation"),  # type: ignore
-            {"pipeline": True, "task": "text-generation"},
-            {"pipeline": True, "task": "text-generation"},
+            {},
+            {"task": "text-generation", "kwargs": {}},
             "A Bento box is a ",
         ),
         (
             "text-generation",
             transformers.pipeline(task="text-generation"),  # type: ignore
-            {"pipeline": True, "task": "text-generation", "kwargs": {"a": 1}},
-            {"pipeline": True, "task": "text-generation", "kwargs": {"a": 1}},
+            {"kwargs": {"a": 1}},
+            {"task": "text-generation", "kwargs": {"a": 1}},
             "A Bento box is a ",
         ),
         (
             "text-generation",
             tf_gpt2_pipeline(),
-            {"pipeline": True, "task": "text-generation"},
-            {"pipeline": True, "task": "text-generation"},
+            {},
+            {"task": "text-generation", "kwargs": {}},
             "A Bento box is a ",
         ),
         (
             "text-generation",
             pt_gpt2_pipeline(),
-            {"pipeline": True, "task": "text-generation"},
-            {"pipeline": True, "task": "text-generation"},
+            {},
+            {"task": "text-generation", "kwargs": {}},
             "A Bento box is a ",
         ),
         (
             "image-classification",
             transformers.pipeline("image-classification"),  # type: ignore
-            {"pipeline": True, "task": "image-classification"},
-            {"pipeline": True, "task": "image-classification"},
+            {},
+            {"task": "image-classification", "kwargs": {}},
             Image.open(
                 requests.get(
                     "http://images.cocodataset.org/val2017/000000039769.jpg",
@@ -79,8 +79,8 @@ def pt_gpt2_pipeline():
         (
             "text-classification",
             transformers.pipeline("text-classification"),  # type: ignore
-            {"pipeline": True, "task": "text-classification"},
-            {"pipeline": True, "task": "text-classification"},
+            {},
+            {"task": "text-classification", "kwargs": {}},
             "BentoML is an awesome library for machine learning.",
         ),
     ],
@@ -101,7 +101,8 @@ def test_transformers(
     )
     assert bento_model.tag == tag
     assert bento_model.info.context.framework_name == "transformers"
-    assert dict(bento_model.info.options) == expected_options
+    assert bento_model.info.options.task == expected_options["task"]  # type: ignore
+    assert bento_model.info.options.kwargs == expected_options["kwargs"]  # type: ignore
 
     runnable: bentoml.Runnable = bentoml.transformers.get_runnable(bento_model)()
     output_data = runnable(input_data)  # type: ignore

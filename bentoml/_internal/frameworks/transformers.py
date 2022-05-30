@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 
 MODULE_NAME = "bentoml.transformers"
+API_VERSION = "v1"
 
 
 logger = logging.getLogger(__name__)
@@ -252,6 +253,7 @@ def save_model(
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
         labels=labels,
         context=context,
         options=options,

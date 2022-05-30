@@ -23,6 +23,7 @@ __all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorCont
 
 MODULE_NAME = "bentoml.pytorch"
 MODEL_FILENAME = "saved_model.pt"
+API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +160,7 @@ def save_model(
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
         labels=labels,
         signatures=signatures,
         custom_objects=custom_objects,

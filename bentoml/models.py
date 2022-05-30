@@ -225,6 +225,7 @@ def create(
     name: str,
     *,
     module: str = "",
+    api_version: str | None = None,
     signatures: ModelSignaturesType,
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
@@ -234,9 +235,11 @@ def create(
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
     options = ModelOptions() if options is None else options
+    api_version = "v1" if api_version is None else api_version
     res = Model.create(
         name,
         module=module,
+        api_version=api_version,
         labels=labels,
         signatures=signatures,
         options=options,

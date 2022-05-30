@@ -44,6 +44,7 @@ except ImportError:  # pragma: no cover
     )
 
 MODULE_NAME = "bentoml.keras"
+API_VERSION = "v1"
 
 
 @attr.define
@@ -229,6 +230,7 @@ def save_model(
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
         options=options,
         context=context,
         labels=labels,

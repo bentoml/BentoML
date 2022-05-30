@@ -11,9 +11,9 @@ from circus.plugins import CircusPlugin
 from ..configuration import is_pypi_installed_bentoml
 
 if TYPE_CHECKING:
-    from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
-    from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
-    from circus.watcher import Watcher  # type: ignore[reportMissingTypeStubs]
+    from circus.arbiter import Arbiter
+    from circus.sockets import CircusSocket
+    from circus.watcher import Watcher
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def create_circus_socket_from_uri(
     name: str = "",
     **kwargs: t.Any,
 ) -> CircusSocket:
-    from circus.sockets import CircusSocket  # type: ignore[reportMissingTypeStubs]
+    from circus.sockets import CircusSocket
 
     from bentoml._internal.utils.uri import uri_to_path
 
@@ -49,7 +49,7 @@ def create_circus_socket_from_uri(
 
 
 def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbiter:
-    from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
+    from circus.arbiter import Arbiter
 
     from . import reserve_free_port
 

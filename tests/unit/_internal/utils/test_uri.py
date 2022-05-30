@@ -50,5 +50,3 @@ def test_invalid_os_support(mock_windows: MagicMock, mock_posix: MagicMock) -> N
 
     with pytest.raises(ValueError):
         path_to_uri("/invalid\\/path")
-        assert mock_windows.called
-        assert mock_posix.called

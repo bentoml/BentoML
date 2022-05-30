@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import os
 import sys
+import typing as t
 import logging
+from typing import overload
+from typing import TYPE_CHECKING
 from functools import partial
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from ...external_typing import prometheus as ext
 
 
 class PrometheusClient:
@@ -30,12 +38,12 @@ class PrometheusClient:
         self.multiproc = multiproc
         self.namespace = namespace
         self.multiproc_dir: str | None = multiproc_dir
-        self._registry = None
+        self._registry: ext.CollectorRegistry | None = None
         self._imported = False
         self._pid: int | None = None
 
     @property
-    def prometheus_client(self):
+    def prometheus_client(self) -> ModuleType:
         if self.multiproc and not self._imported:
             # step 1: check environment
             assert (
@@ -89,22 +97,27 @@ class PrometheusClient:
             registry=self.registry,
         )
 
-    def generate_latest(self):
+    def generate_latest(self) -> bytes:
         if self.multiproc:
             registry = self.prometheus_client.CollectorRegistry()
             self.prometheus_client.multiprocess.MultiProcessCollector(registry)
-            return self.prometheus_client.generate_latest(registry)
+            return t.cast(bytes, self.prometheus_client.generate_latest(registry))
         else:
             return self.prometheus_client.generate_latest()
 
     def get_metrics_report(self) -> list[dict[str, str | float]]:
-        metrics_text = self.generate_latest().decode()
-        if not metrics_text:
-            return []
+        metrics_text = self.generate_latest().decode("utf-8")
 
-        from prometheus_client.parser import text_string_to_metric_families
+        from prometheus_client.parser import (
+            text_string_to_metric_families,  # type: ignore
+        )
 
-        for metric in text_string_to_metric_families(metrics_text):
+        yield_metrics_families = t.cast(
+            t.Callable[[str], t.Generator[ext.Metric, None, None]],
+            text_string_to_metric_families,
+        )
+
+        for metric in yield_metrics_families(metrics_text):
             if (
                 metric.type == "counter"
                 and metric.name.startswith("BENTOML_")

@@ -69,10 +69,10 @@ class MetricsMiddleware:
         metrics_client: PrometheusClient = Provide[DeploymentContainer.metrics_client],
     ) -> None:
 
+        method, endpoint = scope["method"], scope["path"]
+
         if not scope["type"].startswith("http"):
             return await self.app(scope, receive, send)
-
-        method, endpoint = scope["method"], scope["path"]
 
         if scope["path"] == "/metrics":
             from starlette.responses import Response

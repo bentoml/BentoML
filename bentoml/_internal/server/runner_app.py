@@ -129,12 +129,12 @@ class RunnerAppFactory(BaseAppFactory):
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
         from starlette.middleware import Middleware
 
-        def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span, _scope: dict[str, t.Any]) -> None:
             if span is not None:
                 span_id: int = span.context.span_id
                 ServiceContext.request_id_var.set(span_id)
 
-        def client_response_hook(span: Span, _: t.Any) -> None:
+        def client_response_hook(span: Span, _scope: t.Any) -> None:
             if span is not None:
                 ServiceContext.request_id_var.set(None)
 

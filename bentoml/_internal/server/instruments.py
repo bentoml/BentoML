@@ -33,9 +33,9 @@ class MetricsMiddleware:
 
         service_name = self.bento_service.name
 
-        self.metrics_request_total = metrics_client.Counter(
-            name=service_name + "_request_total",
-            documentation="Total number of HTTP requests",
+        self.metrics_request_duration = metrics_client.Histogram(
+            name=service_name + "_request_duration_seconds",
+            documentation=service_name + " API HTTP request duration in seconds",
             labelnames=[
                 "method",
                 "endpoint",
@@ -43,9 +43,9 @@ class MetricsMiddleware:
                 "http_response_code",
             ],
         )
-        self.metrics_request_duration = metrics_client.Histogram(
-            name=service_name + "_request_duration_seconds",
-            documentation=service_name + " API HTTP request duration in seconds",
+        self.metrics_request_total = metrics_client.Counter(
+            name=service_name + "_request_total",
+            documentation="Total number of HTTP requests",
             labelnames=[
                 "method",
                 "endpoint",
@@ -87,11 +87,6 @@ class MetricsMiddleware:
         service_version = (
             self.bento_service.tag.version if self.bento_service.tag is not None else ""
         )
-        self.metrics_request_in_progress.labels(
-            method=method,
-            endpoint=endpoint,
-            service_version=service_version,
-        ).inc()
         START_TIME_VAR.set(default_timer())
 
         async def wrapped_send(message: ext.ASGIMessage) -> None:
@@ -117,7 +112,7 @@ class MetricsMiddleware:
                 ).observe(total_time)
 
             START_TIME_VAR.set(0)
-            return await send(message)
+            await send(message)
 
         with self.metrics_request_in_progress.labels(
             method=method, endpoint=endpoint, service_version=service_version

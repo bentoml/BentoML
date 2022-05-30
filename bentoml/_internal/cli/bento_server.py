@@ -1,6 +1,6 @@
 # type: ignore[reportUnusedFunction]
+from __future__ import annotations
 import sys
-import typing as t
 import logging
 
 import click
@@ -80,7 +80,7 @@ def add_serve_command(cli: click.Group) -> None:
         bento: str,
         production: bool,
         port: int,
-        host: t.Optional[str],
+        host: str | None,
         backlog: int,
         reload: bool,
         reload_delay: float,

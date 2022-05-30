@@ -1,7 +1,6 @@
-# type: ignore[reportMissingTypeStubs]
+from __future__ import annotations
 import os
 import sys
-import typing as t
 import logging
 from functools import partial
 
@@ -14,7 +13,7 @@ class PrometheusClient:
         *,
         namespace: str = "",
         multiproc: bool = True,
-        multiproc_dir: t.Optional[str] = None,
+        multiproc_dir: str | None = None,
     ):
         """
         Set up multiproc_dir for prometheus to work in multiprocess mode,
@@ -29,10 +28,10 @@ class PrometheusClient:
 
         self.multiproc = multiproc
         self.namespace = namespace
-        self.multiproc_dir: t.Optional[str] = multiproc_dir
+        self.multiproc_dir: str | None = multiproc_dir
         self._registry = None
         self._imported = False
-        self._pid: t.Optional[int] = None
+        self._pid: int | None = None
 
     @property
     def prometheus_client(self):
@@ -83,7 +82,7 @@ class PrometheusClient:
             self.prometheus_client.multiprocess.mark_process_dead(self._pid)
 
     def start_http_server(self, port: int, addr: str = "") -> None:
-        self.prometheus_client.start_http_server(
+        self.prometheus_client.start_http_server(  # type: ignore
             port=port,
             addr=addr,
             registry=self.registry,
@@ -97,9 +96,7 @@ class PrometheusClient:
         else:
             return self.prometheus_client.generate_latest()
 
-    def get_metrics_report(
-        self,
-    ) -> t.List[t.Dict[str, t.Union[str, float]]]:
+    def get_metrics_report(self) -> list[dict[str, str | float]]:
         metrics_text = self.generate_latest().decode()
         if not metrics_text:
             return []

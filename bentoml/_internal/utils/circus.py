@@ -6,7 +6,9 @@ import pathlib
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from circus.plugins import CircusPlugin  # type: ignore[reportMissingTypeStubs]
+from circus.plugins import CircusPlugin
+
+from ..configuration import is_pypi_installed_bentoml
 
 if TYPE_CHECKING:
     from circus.arbiter import Arbiter  # type: ignore[reportMissingTypeStubs]
@@ -121,6 +123,10 @@ class PyFileChangeWatcher:
         self.watch_dirs = [
             pathlib.Path(d) if isinstance(d, str) else d for d in watch_dirs
         ]
+
+        if not is_pypi_installed_bentoml():
+            git_root = pathlib.Path(__file__).parent.parent.parent.parent
+            self.watch_dirs.append(git_root)
         logger.info(f"Watching directories: {', '.join(map(str, self.watch_dirs))}")
 
     def is_file_changed(self) -> bool:

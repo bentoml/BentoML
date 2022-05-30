@@ -246,7 +246,7 @@ def load(
     bento_identifier: str,
     working_dir: t.Optional[str] = None,
     change_global_cwd: bool = False,
-) -> Service:
+) -> "Service":
     """Load a Service instance by the bento_identifier
 
     A bento_identifier:str can be provided in three different forms:

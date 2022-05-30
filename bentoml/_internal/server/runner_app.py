@@ -61,7 +61,7 @@ class RunnerAppFactory(BaseAppFactory):
         return self.runner.name
 
     @property
-    def on_startup(self) -> list[t.Callable[[], None]]:
+    def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
         on_startup.insert(0, functools.partial(self.runner.init_local, quiet=True))
         on_startup.insert(
@@ -76,7 +76,7 @@ class RunnerAppFactory(BaseAppFactory):
         return on_startup
 
     @property
-    def on_shutdown(self) -> list[t.Callable[[], None]]:
+    def on_shutdown(self) -> t.List[t.Callable[[], None]]:
         on_shutdown = [self.runner.destroy]
         for dispatcher in self.dispatchers.values():
             on_shutdown.append(dispatcher.shutdown)
@@ -84,7 +84,7 @@ class RunnerAppFactory(BaseAppFactory):
         return on_shutdown
 
     @property
-    def routes(self) -> list[BaseRoute]:
+    def routes(self) -> t.List[BaseRoute]:
         """
         Setup routes for Runner server, including:
 
@@ -129,12 +129,12 @@ class RunnerAppFactory(BaseAppFactory):
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
         from starlette.middleware import Middleware
 
-        def client_request_hook(span: Span, _scope: dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span, _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
                 span_id: int = span.context.span_id
                 ServiceContext.request_id_var.set(span_id)
 
-        def client_response_hook(span: Span, _scope: t.Any) -> None:
+        def client_response_hook(span: Span, _message: t.Any) -> None:
             if span is not None:
                 ServiceContext.request_id_var.set(None)
 
@@ -223,6 +223,7 @@ class RunnerAppFactory(BaseAppFactory):
         async def _run(request: Request) -> Response:
             assert self._is_ready
 
+            logger.info(request)
             params = await multipart_to_payload_params(request)
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)

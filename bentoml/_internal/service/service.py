@@ -31,9 +31,9 @@ def add_inference_api(
     func: t.Callable[..., t.Any],
     input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
     output: IODescriptor[t.Any],
-    name: str | None,
-    doc: str | None,
-    route: str | None,
+    name: t.Optional[str],
+    doc: t.Optional[str],
+    route: t.Optional[str],
 ) -> None:
     api = InferenceAPI(
         name=name if name is not None else func.__name__,
@@ -85,17 +85,17 @@ class Service:
     """
 
     name: str
-    runners: list[Runner]
-    models: list[Model]
+    runners: t.List[Runner]
+    models: t.List[Model]
 
-    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(
+    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
-    middlewares: list[tuple[t.Type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(
-        init=False, factory=list
-    )
+    middlewares: t.List[
+        t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
+    ] = attr.field(init=False, factory=list)
 
-    apis: dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -109,8 +109,8 @@ class Service:
         self,
         name: str,
         *,
-        runners: list[Runner] | None = None,
-        models: list[Model] | None = None,
+        runners: t.List[Runner] | None = None,
+        models: t.List[Model] | None = None,
     ):
         """
 
@@ -152,9 +152,9 @@ class Service:
         self,
         input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
         output: IODescriptor[t.Any],
-        name: str | None = None,
-        doc: str | None = None,
-        route: str | None = None,
+        name: t.Optional[str] = None,
+        doc: t.Optional[str] = None,
+        route: t.Optional[str] = None,
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         """Decorator for adding InferenceAPI to this service"""
 
@@ -203,25 +203,26 @@ class Service:
         pass
 
     @property
-    def asgi_app(self) -> ext.ASGIApp:
+    def asgi_app(self) -> "ext.ASGIApp":
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
 
     def mount_asgi_app(
-        self, app: ext.ASGIApp, path: str = "/", name: str | None = None
+        self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
     ) -> None:
         self.mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(
-        self, app: WSGI_APP, path: str = "/", name: str | None = None
+        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
     ) -> None:
+        # TODO: Migrate to a2wsgi
         from starlette.middleware.wsgi import WSGIMiddleware
 
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_asgi_middleware(
-        self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any
+        self, middleware_cls: t.Type["ext.AsgiMiddleware"], **options: t.Any
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 

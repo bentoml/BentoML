@@ -1,0 +1,3 @@
+bento_server:
+  cors:  # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
+    enabled: False

@@ -80,6 +80,15 @@ async def test_json(host):
 
     await async_request(
         "POST",
+        f"http://{host}/echo_json_sync",
+        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
+        data='"hi"',
+        assert_status=200,
+        assert_data=b'"hi"',
+    )
+
+    await async_request(
+        "POST",
         f"http://{host}/pydantic_json",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
         data='{"name":"test","endpoints":["predict","health"]}',

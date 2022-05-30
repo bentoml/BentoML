@@ -1,9 +1,0 @@
-bento_server:
-  cors:  # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
-    enabled: True
-    access_control_allow_origin: "*"
-    access_control_allow_methods: ["GET", "OPTIONS", "POST", "HEAD", "PUT"]
-    access_control_allow_credentials: True
-    access_control_allow_headers: Null
-    access_control_max_age: Null
-    access_control_expose_headers: ["Content-Length"]

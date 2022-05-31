@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 
+import attr
 import fs
 import numpy as np
 import pytest
@@ -77,7 +78,8 @@ creation_time: '{creation_time}'
 """
 
 
-class TestModelOption(ModelOptions):
+@attr.define
+class TestModelOptions(ModelOptions):
     option_a: int
     option_b: str
     option_c: list[float]
@@ -104,7 +106,7 @@ def test_model_info(tmpdir: "Path"):
     tag = Tag("test", "v1")
     module = "testmodule"
     labels = {"label": "stringvalue"}
-    options = TestModelOption(option_a=1, option_b="foo", option_c=[0.1, 0.2])
+    options = TestModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2])
     metadata = {"a": 0.1, "b": 1, "c": np.array([2, 3, 4], dtype=np.uint32)}
     # TODO: add test cases for input_spec and output_spec
     signatures = {
@@ -138,7 +140,7 @@ def test_model_info(tmpdir: "Path"):
 
     with open(model_yaml_b_filename, encoding="utf-8") as model_yaml_b:
         modelinfo_b_from_yaml = ModelInfo.from_yaml_file(model_yaml_b)
-        assert modelinfo_b_from_yaml == modelinfo_b
+        assert modelinfo_b_from_yaml.to_dict() == modelinfo_b.to_dict()
 
     # attempt to test that serialization is deterministic
     det_check_filename = os.path.join(tmpdir, "det_check.yml")
@@ -227,7 +229,7 @@ def test_model_export_import(bento_model, tmpdir: "Path"):
     from_tar_model = Model.from_fs(tar_fs)
 
     assert from_tar_model == bento_model
-    assert from_tar_model.info == bento_model.info
+    assert from_tar_model.info.to_dict() == bento_model.info.to_dict()
     assert (
         from_tar_model._fs.readtext("sys_written/file")  # type: ignore
         == sys_written_content

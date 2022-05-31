@@ -217,8 +217,8 @@ def get_runnable(
     )
 
     class TensorflowRunnable(Runnable):
-        SUPPORT_GPU = True
-        SUPPORT_MULTI_THREADING = True
+        SUPPORT_NVIDIA_GPU = True
+        SUPPORT_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

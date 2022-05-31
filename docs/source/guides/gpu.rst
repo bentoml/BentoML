@@ -29,7 +29,7 @@ with GPU:
     docker:
         distro: debian
         python_version: "3.8.12"
-        cuda_version: "11.6,2"
+        cuda_version: "11.6.2"
 
 When containerize a saved bento with a :code:`cuda_version` configured, BentoML will
 install the corresponding cuda version onto the docker image created:

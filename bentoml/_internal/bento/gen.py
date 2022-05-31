@@ -153,6 +153,7 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
     if user_templates is not None:
         dir_path = os.path.dirname(os.path.realpath(user_templates))
         templates_path.append(dir_path)
+        user_template_name = os.path.basename(user_templates)
 
     spec = DistroSpec.from_distro(
         distro, cuda=cuda_version is not None, conda=use_conda
@@ -175,10 +176,10 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
 
     if user_templates is not None:
         template = dockerfile_env.get_template(
-            user_templates,
+            user_template_name,
             globals={"bento__dockerfile": bento_dockerfile_tmpl},
         )
-        validate_setup_blocks(dockerfile_env, user_templates)
+        validate_setup_blocks(dockerfile_env, user_template_name)
     else:
         template = bento_dockerfile_tmpl
 

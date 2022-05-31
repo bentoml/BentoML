@@ -50,6 +50,7 @@ def clean_context():
         "server_config_default.yml",
         "server_config_cors_enabled.yml",
     ],
+    scope="session",
 )
 def server_config_file(request):
     return request.param
@@ -62,12 +63,13 @@ def server_config_file(request):
         "docker",
         "distributed",
     ],
+    scope="session",
 )
 def deployment_mode(request) -> str:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def host(
     deployment_mode: str,
     server_config_file: str,
@@ -88,10 +90,10 @@ def host(
 
     from bentoml.testing.server import host_bento
 
-    return clean_context.enter_context(
-        host_bento(
-            "service:svc",
-            config_file=server_config_file,
-            deployment_mode=deployment_mode,
-        )
-    )
+    with host_bento(
+        "service:svc",
+        config_file=server_config_file,
+        deployment_mode=deployment_mode,
+        clean_context=clean_context,
+    ) as host:
+        yield host

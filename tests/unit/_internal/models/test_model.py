@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 
-import attr
 import fs
+import attr
 import numpy as np
 import pytest
 import fs.errors

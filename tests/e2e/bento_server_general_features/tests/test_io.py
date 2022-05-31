@@ -3,6 +3,7 @@
 
 import io
 import sys
+import json
 
 import numpy as np
 import pytest
@@ -89,12 +90,26 @@ async def test_json(host):
 
     await async_request(
         "POST",
-        f"http://{host}/pydantic_json",
+        f"http://{host}/echo_json_enforce_structure",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
         data='{"name":"test","endpoints":["predict","health"]}',
         assert_status=200,
         assert_data=b'{"name":"test","endpoints":["predict","health"]}',
     )
+
+
+@pytest.mark.asyncio
+async def test_obj(host):
+    for obj in [1, 2.2, "str", [1, 2, 3], {"a": 1, "b": 2}]:
+        obj_str = json.dumps(obj, separators=(",", ":"))
+        await async_request(
+            "POST",
+            f"http://{host}/echo_obj",
+            headers=(("Content-Type", "application/json"),),
+            data=obj_str,
+            assert_status=200,
+            assert_data=obj_str.encode("utf-8"),
+        )
 
 
 @pytest.mark.asyncio

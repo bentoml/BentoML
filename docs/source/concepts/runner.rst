@@ -74,8 +74,8 @@ analysis with a pre-trained model:
 
     class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
 
-        SUPPORT_GPU = False
-        SUPPORT_MULTI_THREADING = False
+        SUPPORT_NVIDIA_GPU = False
+        SUPPORT_CPU_MULTI_THREADING = False
 
         def __init__(self):
             nltk.download('vader_lexicon')
@@ -114,7 +114,7 @@ Send a test request:
     {"is_positive":true}%
 
 
-The :code:`SUPPORT_GPU` and :code:`SUPPORT_MULTI_THREADING` class attribute indicates
+The :code:`SUPPORT_NVIDIA_GPU` and :code:`SUPPORT_CPU_MULTI_THREADING` class attribute indicates
 whether or not this Runnable class implementation supports using GPU or utilizes multi
 threading. Since NLTK library doesn't support utilizing GPU nor multi-cpu-core natively,
 they are both set to False. This information is used by the BentoServer scheduler
@@ -191,8 +191,8 @@ Custom Model Runner
     bento_model = bentoml.pytorch.get("fraud_detect:latest")
 
     class MyPytorchRunnable(bentoml.Runnable):
-        SUPPORT_GPU = False
-        SUPPORT_MULTI_THREADING = True
+        SUPPORT_NVIDIA_GPU = False
+        SUPPORT_CPU_MULTI_THREADING = True
 
         def __init__(self):
             self.model = torch.load_model(bento_model.path)
@@ -219,7 +219,7 @@ Runner Options
         MyRunnable,
         init_params={"foo": foo, "bar": bar},
         name="custom_runner_name",
-        strategy=None, # default strategy will be selected depending on the SUPPORT_GPU and SUPPORT_CPU_MULTI_THREADING flag on runnable
+        strategy=None, # default strategy will be selected depending on the SUPPORT_NVIDIA_GPU and SUPPORT_CPU_MULTI_THREADING flag on runnable
         models=[..],
 
         # below are also configurable via config file:

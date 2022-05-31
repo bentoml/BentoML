@@ -329,8 +329,8 @@ VT = t.TypeVar("VT")
 class cached_contextmanager:
     """
     Just like contextlib.contextmanager, but will cache the yield value for the same
-    arguments. When one instance of the contextmanager exits, the cache value will
-    also be poped.
+    arguments. When all instances of the same contextmanager exits, the cache value will
+    be dropped.
     Example Usage:
     (To reuse the container based on the same image)
     >>> @cached_contextmanager("{docker_image.id}")

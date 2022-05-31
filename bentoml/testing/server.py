@@ -357,6 +357,11 @@ def host_bento(
         clean_on_exit = False
 
     try:
+        logger.info(
+            f"starting bento server {bento} at {project_path} "
+            f"with config file {config_file} "
+            f"in {deployment_mode} mode..."
+        )
         if bento is None or not bentoml.list(bento):
             bento_tag = clean_context.enter_context(bentoml_build(project_path))
         else:
@@ -369,7 +374,6 @@ def host_bento(
                 config_file,
             ) as host:
                 yield host
-                logger.info("shutting down...")
         elif deployment_mode == "standalone":
             with run_bento_server(
                 str(bento_tag),
@@ -377,17 +381,16 @@ def host_bento(
                 workdir=project_path,
             ) as host:
                 yield host
-                logger.info("shutting down...")
         elif deployment_mode == "distributed":
             with run_bento_server_distributed(
                 str(bento_tag),
                 config_file=config_file,
             ) as host:
                 yield host
-                logger.info("shutting down...")
         else:
             raise ValueError(f"Unknown deployment mode: {deployment_mode}")
     finally:
+        logger.info("shutting down bento server...")
         if clean_on_exit:
             logger.info("Cleaning up...")
             clean_context.close()

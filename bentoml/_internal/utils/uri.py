@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import os
+import typing as t
 import pathlib
 from urllib.parse import unquote
 from urllib.parse import urlparse
@@ -7,7 +10,7 @@ from urllib.request import url2pathname
 import psutil
 
 
-def path_to_uri(path: str) -> str:
+def path_to_uri(path: str) -> str | t.NoReturn:
     """
     Convert a path to a URI.
 

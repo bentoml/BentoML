@@ -1,10 +1,21 @@
+from __future__ import annotations
+
+from uuid import uuid4
+from typing import TYPE_CHECKING
+from datetime import datetime
+from unittest.mock import Mock
 from unittest.mock import patch
 
+import pytest
 from schema import Or
 from schema import And
 from schema import Schema
 
-import bentoml._internal.utils.analytics as analytics_lib
+import bentoml
+from bentoml._internal.utils import analytics
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 SCHEMA = Schema(
     {
@@ -34,12 +45,16 @@ SCHEMA = Schema(
 )
 
 
-def test_get_payload():
-    event_properties = analytics_lib.schemas.ModelSaveEvent(
+@pytest.fixture(scope="function", name="event_properties")
+def fixture_event_properties() -> analytics.schemas.ModelSaveEvent:
+    return analytics.schemas.ModelSaveEvent(
         module="test",
         model_size_in_kb=123123123,
     )
-    payload = analytics_lib.usage_stats.get_payload(
+
+
+def test_get_payload(event_properties: analytics.schemas.ModelSaveEvent):
+    payload = analytics.usage_stats.get_payload(
         event_properties=event_properties, session_id="random_session_id"
     )
     assert SCHEMA.validate(payload)
@@ -47,32 +62,27 @@ def test_get_payload():
 
 @patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-def test_send_usage(mock_do_not_track, mock_post):
-    event_properties = analytics_lib.schemas.ModelSaveEvent(
-        module="test",
-        model_size_in_kb=123123123,
-    )
-
+def test_send_usage(
+    mock_do_not_track: MagicMock,
+    mock_post: MagicMock,
+    event_properties: analytics.schemas.ModelSaveEvent,
+):
     mock_do_not_track.return_value = False
-    analytics_lib.track(
-        event_properties,
-    )
+    analytics.track(event_properties)
     assert mock_do_not_track.called
     assert mock_post.called
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-def test_do_not_track(mock_do_not_track, mock_post):
-    event_properties = analytics_lib.schemas.ModelSaveEvent(
-        module="test",
-        model_size_in_kb=123123123,
-    )
-
+@pytest.mark.usefixtures("event_properties")
+def test_do_not_track(
+    mock_do_not_track: MagicMock,
+    mock_post: MagicMock,
+    event_properties: analytics.schemas.ModelSaveEvent,
+):
     mock_do_not_track.return_value = True
-    analytics_lib.track(
-        event_properties,
-    )
+    analytics.track(event_properties)
     assert mock_do_not_track.called
     assert not mock_post.called
 
@@ -80,18 +90,51 @@ def test_do_not_track(mock_do_not_track, mock_post):
 @patch("bentoml._internal.utils.analytics.usage_stats.logger")
 @patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-def test_send_usage_failure(mock_do_not_track, mock_post, mock_logger):
-    event_properties = analytics_lib.schemas.ModelSaveEvent(
-        module="test",
-        model_size_in_kb=123123123,
-    )
+@pytest.mark.usefixtures("event_properties")
+def test_send_usage_failure(
+    mock_do_not_track: MagicMock,
+    mock_post: MagicMock,
+    mock_logger: MagicMock,
+    event_properties: analytics.schemas.ModelSaveEvent,
+):
 
     mock_do_not_track.return_value = False
     mock_post.side_effect = AssertionError("something went wrong")
     # nothing should happen
-    analytics_lib.track(
-        event_properties,
-    )
+    analytics.track(event_properties)
     assert mock_do_not_track.called
     assert mock_post.called
     mock_logger.debug.assert_called_with("Tracking Error: something went wrong")
+
+
+@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
+@pytest.mark.parametrize(
+    "production, serve_info", [(False, uuid4().hex), (True, uuid4().hex)]
+)
+@pytest.mark.usefixtures("noop_service")
+def test_track_serve_init(
+    mock_post: MagicMock,
+    mock_do_not_track: MagicMock,
+    noop_service: bentoml.Service,
+    production: bool,
+    serve_info: str,
+):
+    from bentoml._internal.utils.analytics.usage_stats import ServeInfo
+
+    mock_do_not_track.return_value = False
+
+    mock_response = Mock()
+    mock_post.return_value = mock_response
+    mock_response.text = "sent"
+
+    analytics.usage_stats.track_serve_init(
+        noop_service,
+        production=production,
+        serve_info=ServeInfo(
+            serve_id=serve_info, serve_started_timestamp=datetime.now()
+        ),
+    )
+
+    assert not mock_do_not_track.called
+    assert mock_post.called

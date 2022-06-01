@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import typing as t
 import logging
-from typing import overload
 from typing import TYPE_CHECKING
 from functools import partial
 
@@ -14,6 +14,17 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ...external_typing import prometheus as ext
+
+
+# filter out unnecessary metrics
+EXCLUDE_PATHS = [
+    "/metrics",
+    "/static_content",
+    "/static_content/*",
+    "/docs.json",
+    "/openapi.json",
+    "/favicon.ico",
+]
 
 
 class PrometheusClient:
@@ -41,6 +52,7 @@ class PrometheusClient:
         self._registry: ext.CollectorRegistry | None = None
         self._imported = False
         self._pid: int | None = None
+        self._exc_paths: list[str] = EXCLUDE_PATHS
 
     @property
     def prometheus_client(self) -> ModuleType:
@@ -105,30 +117,45 @@ class PrometheusClient:
         else:
             return self.prometheus_client.generate_latest()
 
-    def get_metrics_report(self) -> list[dict[str, str | float]]:
+    def get_metrics_report(
+        self, filter_: list[str] | None = None
+    ) -> list[dict[str, str | float]] | None:
         metrics_text = self.generate_latest().decode("utf-8")
+
+        if not metrics_text:
+            return []
+
+        if filter_ is not None:
+            filter_ = self._exc_paths + filter_
+        else:
+            filter_ = self._exc_paths
 
         from prometheus_client.parser import (
             text_string_to_metric_families,  # type: ignore
         )
 
-        yield_metrics_families = t.cast(
-            t.Callable[[str], t.Generator[ext.Metric, None, None]],
-            text_string_to_metric_families,
-        )
+        metric: ext.Metric
 
-        for metric in yield_metrics_families(metrics_text):
+        def truncate(metrics: dict[str, str | float]) -> bool:
+            for m in filter_:
+                if re.match(m, str(metrics["endpoint"])) is not None:
+                    return False
+            return True
+
+        report_: list[dict[str, str | float]] = []
+
+        for metric in text_string_to_metric_families(metrics_text):
             if (
                 metric.type == "counter"
                 and metric.name.startswith("BENTOML_")
                 and metric.name.endswith("_request")
             ):
-                return [
+                metric_ = [
                     {**sample.labels, "value": sample.value}
                     for sample in metric.samples
                 ]
-
-        return []
+                report_ += list(filter(truncate, metric_))
+        return report_
 
     @property
     def CONTENT_TYPE_LATEST(self) -> str:

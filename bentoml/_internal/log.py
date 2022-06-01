@@ -26,6 +26,8 @@ class TraceFilter(Filter):
             component_name = "circus"
         elif "asyncio" in record.name:
             component_name = "asyncio"
+        elif "watchfiles" in record.name:
+            component_name = "watchfiles"
         else:
             component_name = ServiceContext.component_name
 
@@ -109,6 +111,12 @@ LOGGING_CONFIG: dict[str, t.Any] = {
         "circus": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "circus.plugins": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "asyncio": {"handlers": ["internal"], "level": "INFO", "propagate": False},
+        # watchfiles logger
+        "watchfiles.main": {
+            "handlers": ["circus"],
+            "level": "INFO",
+            "propagate": False,
+        },
         # uvicorn logger
         "uvicorn": {"handlers": [], "level": "INFO"},
         "uvicorn.error": {"handlers": ["uvicorn"], "level": "INFO", "propagate": False},

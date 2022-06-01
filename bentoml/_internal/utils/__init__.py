@@ -201,8 +201,10 @@ def reserve_free_port(
     else:
         sock.bind((host, 0))
     port = sock.getsockname()[1]
-    yield port
-    sock.close()
+    try:
+        yield port
+    finally:
+        sock.close()
 
 
 def copy_file_to_fs_folder(

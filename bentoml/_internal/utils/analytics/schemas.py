@@ -54,7 +54,7 @@ class ClientInfo:
 @lru_cache(maxsize=1)
 def get_client_info(
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
-) -> t.Optional[ClientInfo]:
+) -> t.Optional[ClientInfo]:  # pragma: no cover
     CLIENT_INFO_FILE_PATH = os.path.join(bentoml_home, "client_id")
 
     if os.path.exists(CLIENT_INFO_FILE_PATH):
@@ -69,30 +69,30 @@ def get_client_info(
         )
         # write client info to ~/bentoml/client_id
         with open(CLIENT_INFO_FILE_PATH, "w", encoding="utf-8") as f:
-            yaml.dump(attr.asdict(new_client_info), stream=f)
+            yaml.dump(bentoml_cattr.unstructure(new_client_info), stream=f)  # type: ignore
 
         return new_client_info
 
 
 @lru_cache(maxsize=1)
-def get_yatai_user_email() -> t.Optional[str]:
+def get_yatai_user_email() -> t.Optional[str]:  # pragma: no cover
     if os.path.exists(get_config_path()):
         return get_current_context().email
 
 
 @lru_cache(maxsize=1)
-def is_interactive() -> bool:
+def is_interactive() -> bool:  # pragma: no cover
     import __main__ as main
 
     return not hasattr(main, "__file__")
 
 
 @lru_cache(maxsize=1)
-def in_notebook() -> bool:
+def in_notebook() -> bool:  # pragma: no cover
     try:
-        from IPython import get_ipython
+        from IPython import get_ipython  # type: ignore
 
-        if "IPKernelApp" not in get_ipython().config:  # pragma: no cover
+        if "IPKernelApp" not in get_ipython().config:
             return False
     except ImportError:
         return False
@@ -201,7 +201,9 @@ class ServeUpdateEvent(EventMeta):
     production: bool
     triggered_at: datetime
     duration_in_seconds: int
-    metrics: t.List[t.Dict[str, t.Union[str, float]]] = attr.field(factory=list)
+    metrics: t.Optional[t.List[t.Dict[str, t.Union[str, float]]]] = attr.field(
+        factory=list
+    )
 
 
 ALL_EVENT_TYPES = t.Union[
@@ -222,4 +224,4 @@ class TrackingPayload:
     event_type: str
 
     def to_dict(self):
-        return bentoml_cattr.unstructure(self)
+        return bentoml_cattr.unstructure(self)  # type: ignore

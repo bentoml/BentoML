@@ -110,7 +110,7 @@ def serve_development(
     if reload:
         plugins = [
             dict(
-                use="bentoml._internal.utils.circus.BentoChangeReloader",
+                use="bentoml._internal.utils.circus.ReloaderPlugin",
                 bento_identifier=bento_identifier,
                 working_dir=working_dir,
                 reload_delay=reload_delay,

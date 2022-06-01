@@ -38,21 +38,20 @@ logger = logging.getLogger(__name__)
 
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
 USAGE_TRACKING_URL = "https://t.bentoml.com"
-USAGE_REQUEST_TIMEOUT_SECONDS = 1
-
 # Send a serve event every 12 hours
-_serve_usage_tracking_interval_seconds = int(12 * 60 * 60)
+SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)
+USAGE_REQUEST_TIMEOUT_SECONDS = 1
 
 
 @lru_cache(maxsize=1)
-def do_not_track() -> bool:
+def do_not_track() -> bool:  # pragma: no cover
     # Returns True if and only if the environment variable is defined and has value True.
     # The function is cached for better performance.
     return os.environ.get(BENTOML_DO_NOT_TRACK, str(False)).lower() == "true"
 
 
 @lru_cache(maxsize=1)
-def _usage_event_debugging() -> bool:
+def usage_event_debugging() -> bool:  # pragma: no cover
     # For BentoML developers only - debug and print event payload if turned on
     return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
 
@@ -64,7 +63,7 @@ def slient(func: t.Callable[P, T]) -> t.Callable[P, T]:  # pragma: no cover
         try:
             return func(*args, **kwargs)
         except Exception as err:  # pylint: disable=broad-except
-            if _usage_event_debugging():
+            if usage_event_debugging():
                 logger.info(f"Tracking Error: {err}")
             else:
                 logger.debug(f"Tracking Error: {err}")
@@ -106,10 +105,10 @@ def track(event_properties: EventMeta):
 
     payload = get_payload(event_properties=event_properties)
 
-    if _usage_event_debugging():
+    if usage_event_debugging():
         # For internal debugging purpose
-        global _serve_usage_tracking_interval_seconds
-        _serve_usage_tracking_interval_seconds = 5
+        global SERVE_USAGE_TRACKING_INTERVAL_SECONDS  # pylint: disable=global-statement
+        SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 5
         logger.info("Tracking Payload: %s", payload)
         return
 
@@ -119,7 +118,7 @@ def track(event_properties: EventMeta):
 
 
 @inject
-def _track_serve_init(
+def track_serve_init(
     svc: Service,
     production: bool,
     serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
@@ -163,21 +162,6 @@ def _track_serve_init(
     track(event_properties)
 
 
-# filter out unnecessary metrics
-EXCLUDE_PATHS = [
-    "/metrics",
-    "/static_content",
-    "/static_content/*",
-    "/docs.json",
-    "/openapi.json",
-    "/favicon.ico",
-]
-
-# import re
-
-# full_path = f"{scope.get('root_path', '')}{endpoint}"
-
-
 @inject
 @contextlib.contextmanager
 def track_serve(
@@ -190,21 +174,20 @@ def track_serve(
         yield
         return
 
-    _track_serve_init(svc, production)
+    track_serve_init(svc, production)
 
     stop_event = threading.Event()
-    metrics = metrics_client.get_metrics_report()
 
     @slient
     def loop() -> t.NoReturn:  # type: ignore
-        while not stop_event.wait(_serve_usage_tracking_interval_seconds):
+        while not stop_event.wait(SERVE_USAGE_TRACKING_INTERVAL_SECONDS):
             now = datetime.now(timezone.utc)
             event_properties = ServeUpdateEvent(
                 serve_id=serve_info.serve_id,
                 production=production,
                 triggered_at=now,
                 duration_in_seconds=(now - serve_info.serve_started_timestamp).seconds,
-                metrics=metrics,
+                metrics=metrics_client.get_metrics_report(),
             )
             track(event_properties)
 

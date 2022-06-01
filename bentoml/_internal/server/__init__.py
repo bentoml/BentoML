@@ -48,6 +48,7 @@ def serve_development(
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+    bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
     reload_delay: float = 0.25,
 ) -> None:
@@ -89,17 +90,22 @@ def serve_development(
         )
     )
 
+    plugins = []
     if reload:
+        logger.debug(
+            "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
+        )
+        from .supervisors import ServiceReloaderPlugin
+
+        modules = ServiceReloaderPlugin.__module__.rsplit(".", maxsplit=1)[0]
         plugins = [
-            dict(
-                use="bentoml._internal.utils.circus.ReloaderPlugin",
-                bento_identifier=bento_identifier,
-                working_dir=working_dir,
-                reload_delay=reload_delay,
-            ),
+            {
+                "use": f"{modules}.ServiceReloaderPlugin",
+                "working_dir": working_dir,
+                "reload_delay": reload_delay,
+                "bentoml_home": bentoml_home,
+            },
         ]
-    else:
-        plugins = []
 
     arbiter = create_standalone_arbiter(
         watchers,

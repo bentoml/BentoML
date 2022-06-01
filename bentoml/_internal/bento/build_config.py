@@ -15,6 +15,7 @@ import attr
 import yaml
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
+from pathspec import PathSpec
 
 from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
@@ -724,6 +725,65 @@ class BentoBuildConfig:
         # TODO: Save BentoBuildOptions to a yaml file
         # This is reserved for building interactive build file creation CLI
         raise NotImplementedError
+
+
+@attr.define(frozen=True, init=False)
+class IgnoreSpec:
+    _include: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    _exclude: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    # we want to ignore .git folder in cases the .git folder is very large.
+    gitdir: PathSpec = attr.field(
+        default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
+    )
+
+    def __init__(self, build_config: "FilledBentoBuildConfig") -> None:
+        if not build_config.include or not build_config.exclude:
+            raise BentoMLException(
+                "To use IgnoreSpec, make sure to call build_config.with_defaults() first."
+            )
+        return self.__attrs_init__(build_config.include, build_config.exclude)  # type: ignore (unfinished __attr_init__ type)
+
+    def includes(
+        self,
+        path: str,
+        *,
+        dir_path: t.Optional[str] = None,
+        ctx_fs: t.Optional["FS"] = None,
+    ) -> bool:
+        # to determine whether a path is included or not.
+        include = (
+            self._include.match_file(path)
+            and not self._exclude.match_file(path)
+            and not self.gitdir.match_file(path)
+        )
+        if include:
+            if dir_path and ctx_fs:
+                recursive_exclude_specs = [
+                    i
+                    for i in self._bentoignore(ctx_fs, _internal=True)
+                    if fs.path.isparent(i[0], dir_path)
+                ]
+                return not any(
+                    exclude_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                    for ignore_parent, exclude_spec in recursive_exclude_specs
+                )
+        return include
+
+    def _bentoignore(
+        self, fs_: "FS", *, _internal: bool = False
+    ) -> t.Generator[tuple[str, PathSpec], None, None]:
+        # yield directory path containing a .bentoignore and its spec.
+        if not _internal:
+            raise BentoMLException(
+                "'_bentoignore' is a private function. Use 'IgnoreSpec.includes()' instead."
+            )
+        for file in fs_.walk.files(filter=[".bentoignore"]):
+            dir_path = "".join(fs.path.parts(file)[:-1])
+            yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 
 class FilledBentoBuildConfig(BentoBuildConfig):

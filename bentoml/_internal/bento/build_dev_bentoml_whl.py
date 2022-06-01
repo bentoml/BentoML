@@ -2,8 +2,9 @@ import os
 import uuid
 import shutil
 import logging
+import importlib
+import importlib.util
 
-from ..utils.pkg import source_locations
 from ..configuration import is_pypi_installed_bentoml
 from ..utils.tempdir import TempDirectory
 
@@ -29,7 +30,9 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         return
 
     # Find bentoml module path
-    bentoml_setup_py: str = os.path.abspath(os.path.join(source_locations("bentoml"), "..", "setup.py"))  # type: ignore
+    (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations  # type: ignore # noqa
+
+    bentoml_setup_py = os.path.abspath(os.path.join(module_location, "..", "setup.py"))  # type: ignore
 
     # this is for BentoML developer to create Service containing custom development
     # branches of BentoML library, it is True only when BentoML module is installed

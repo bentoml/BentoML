@@ -8,7 +8,6 @@ import yaml
 import pytest
 
 import bentoml
-from bentoml.io import Text
 from bentoml._internal.utils import bentoml_cattr
 from bentoml._internal.models import ModelStore
 from bentoml._internal.models import ModelContext
@@ -19,30 +18,21 @@ TEST_MODEL_CONTEXT = ModelContext(
 )
 
 
-def pytest_generate_tests(metafunc):
-    from bentoml._internal.utils import analytics
-
-    analytics.usage_stats.do_not_track.cache_clear()
-    analytics.usage_stats.usage_event_debugging.cache_clear()  # type: ignore
-
-    os.environ["__BENTOML_DEBUG_USAGE"] = "False"
-    os.environ["BENTOML_DO_NOT_TRACK"] = "True"
-
-
 @pytest.fixture(scope="function")
 def reload_directory(
-    tmp_path_factory: pytest.TempPathFactory,
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
 ) -> t.Generator[pathlib.Path, None, None]:
     """
     This fixture will create an example bentoml working file directory
     and yield the results directory
     ./
+    ├── models/  # mock default bentoml home models directory
     ├── [fdir, fdir_one, fdir_two]/
     │   ├── README.md
         ├── subdir/
         │   ├── README.md
     │   │   └── app.py
-    │   ├── somefile_here.rs
+    │   ├── somerust.rs
     │   └── app.py
     ├── README.md
     ├── .bentoignore
@@ -53,6 +43,13 @@ def reload_directory(
     └── train.py
     """
     root = tmp_path_factory.mktemp("reload_directory")
+    # create a models directory
+    root.joinpath("models").mkdir()
+
+    # enable this fixture to use with unittest.TestCase
+    if request.cls is not None:
+        request.cls.reload_directory = root
+
     root_file = [
         "README.md",
         "requirements.txt",
@@ -66,13 +63,9 @@ def reload_directory(
 
     build_config = BentoBuildConfig(
         service="service.py:svc",
-        description="A simple service",
-        include=["*.py"],
+        description="A mock service",
         exclude=["*.rs"],
-        labels={"foo": "bar", "team": "abc"},
-        python=dict(packages=["tensorflow", "numpy"]),
-        docker=dict(distro="amazonlinux2"),
-    )
+    ).with_defaults()
     bentofile = root / "bentofile.yaml"
     bentofile.touch()
     with bentofile.open("w", encoding="utf-8") as f:
@@ -85,7 +78,7 @@ def reload_directory(
         dir_files: list[tuple[str, list[t.Any]]] = [
             ("README.md", []),
             ("subdir", ["README.md", "app.py"]),
-            ("somefile_here.rs", []),
+            ("lib.rs", []),
             ("app.py", []),
         ]
         for name, maybe_files in dir_files:
@@ -100,30 +93,6 @@ def reload_directory(
                 p.touch()
 
     yield root
-
-
-@pytest.fixture(scope="function")
-def noop_service() -> bentoml.Service:
-    class NoopModel:
-        def predict(self, data: t.Any) -> t.Any:
-            return data
-
-    bentoml.picklable_model.save_model(
-        "noop_model",
-        NoopModel(),
-        signatures={"predict": {"batchable": True}},
-    )
-
-    svc = bentoml.Service(
-        name="noop_service",
-        runners=[bentoml.picklable_model.get("noop_model").to_runner()],
-    )
-
-    @svc.api(input=Text(), output=Text())
-    def noop_sync(data: str) -> str:  # type: ignore
-        return data
-
-    return svc
 
 
 @pytest.fixture(scope="function", name="change_test_dir")

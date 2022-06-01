@@ -1,6 +1,4 @@
 from __future__ import annotations
-import signal
-from types import FrameType
 
 import typing as t
 import logging
@@ -10,12 +8,11 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import fs
+import watchfiles
 from pathspec import PathSpec
 from simple_di import inject
 from simple_di import Provide
 from circus.plugins import CircusPlugin
-import watchfiles
-from watchfiles.filters import DefaultFilter
 
 from ..configuration import is_pypi_installed_bentoml
 from ..bento.build_config import BentoBuildConfig
@@ -26,7 +23,6 @@ if TYPE_CHECKING:
     from circus.arbiter import Arbiter
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
-    from watchfiles.main import Change
 
     from ..types import PathType
 

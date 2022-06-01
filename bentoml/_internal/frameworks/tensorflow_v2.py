@@ -6,6 +6,7 @@ import typing as t
 import logging
 import functools
 import itertools
+import contextlib
 from typing import TYPE_CHECKING
 
 import bentoml
@@ -232,6 +233,14 @@ def get_runnable(
 
             self.model = load_model(bento_model, device_name=self.device_name)
             self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
+            self.session_stack = contextlib.ExitStack()
+            self.session_stack.enter_context(tf.device(self.device_name))
+
+        def __del__(self):
+            try:
+                self.session_stack.close()
+            except RuntimeError:
+                pass
 
     def _gen_run_method(runnable_self: TensorflowRunnable, method_name: str):
         raw_method = getattr(runnable_self.model, method_name)
@@ -249,11 +258,9 @@ def get_runnable(
             runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
         ) -> "ext.NpNDArray":
             params = Params["TFArgType"](*args, **kwargs)
-
-            with tf.device(runnable_self.device_name):
-                params = params.map(_mapping)
-                res = raw_method(*params.args, **params.kwargs)
-                return t.cast("ext.NpNDArray", res.numpy())
+            params = params.map(_mapping)
+            res = raw_method(*params.args, **params.kwargs)
+            return t.cast("ext.NpNDArray", res.numpy())
 
         return _run_method
 
@@ -261,7 +268,9 @@ def get_runnable(
         def run_method(
             runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
         ) -> "ext.NpNDArray":
-            _run_method = runnable_self.methods_cache.get(method_name)
+            _run_method = runnable_self.methods_cache.get(
+                method_name
+            )  # is methods_cache nessesary?
             if not _run_method:
                 _run_method = _gen_run_method(runnable_self, method_name)
                 runnable_self.methods_cache[method_name] = _run_method

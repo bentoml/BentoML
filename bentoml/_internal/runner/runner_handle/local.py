@@ -20,8 +20,6 @@ if TYPE_CHECKING:
 
 
 class LocalRunnerRef(RunnerHandle):
-    _runnable: Runnable
-
     def __init__(self, runner: Runner) -> None:  # pylint: disable=super-init-not-called
         self._runnable = runner.runnable_class()
 

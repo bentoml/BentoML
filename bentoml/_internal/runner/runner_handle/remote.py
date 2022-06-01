@@ -147,8 +147,13 @@ class RemoteRunnerClient(RunnerHandle):
 
         multipart = payload_params_to_multipart(payload_params)
         client = self._get_client()
+
+        method_name = __bentoml_method.name
+        if __bentoml_method.name == "__call__":
+            method_name = ""
+
         async with client.post(
-            f"{self._addr}/{__bentoml_method.name}",
+            f"{self._addr}/{method_name}",
             data=multipart,
         ) as resp:
             body = await resp.read()

@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from ..types import PathType
 
     class ModelSignatureDict(t.TypedDict, total=False):
-        batch_dim: tuple[int, int]
+        batch_dim: tuple[int, int] | int
         batchable: bool
         input_spec: tuple[AnyType] | AnyType | None
         output_spec: AnyType | None
@@ -418,7 +418,11 @@ class ModelSignature:
 
     @staticmethod
     def from_dict(data: ModelSignatureDict) -> ModelSignature:
-        return bentoml_cattr.structure(data, ModelSignature)
+        if "batch_dim" in data and isinstance(data["batch_dim"], int):
+            formated_data = dict(data, batch_dim=(data["batch_dim"], data["batch_dim"]))
+        else:
+            formated_data = data
+        return bentoml_cattr.structure(formated_data, ModelSignature)
 
     @staticmethod
     def convert_signatures_dict(

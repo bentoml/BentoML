@@ -39,6 +39,7 @@ def main(
             "backlog": backlog,
             "log_config": LOGGING_CONFIG,
             "workers": 1,
+            "lifespan": "on",
         }
         if psutil.WINDOWS:
             uvicorn_options["loop"] = "asyncio"

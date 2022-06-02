@@ -145,5 +145,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", "{{ bento__path }}", "--production" ]
+CMD [ "bentoml", "serve", ".", "--production" ]
 {% endblock %}

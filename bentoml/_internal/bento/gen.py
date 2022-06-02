@@ -1,3 +1,18 @@
+"""
+templates generation for all bento dockerfiles, using jinja2 as backend.
+
+All given `__<fields>__` shouldn't be accessed by external users.
+
+All exported blocks that users can use to extends have format: `SETUP_BENTOML_<functionality>`
+  - SETUP_BENTO_BASE_IMAGE
+  - SETUP_BENTO_USER
+  - SETUP_BENTO_ENVARS
+  - SETUP_BENTO_COMPONENTS
+  - SETUP_BENTO_ENTRYPOINT
+Users are free to create/add their own block. However, when using predefined bento blocks, only the aboved blocks are allowed.
+
+All given `bento__<fields>` users can access and use to modify. Each of these will always have a default fallback.
+"""
 from __future__ import annotations
 
 import os
@@ -6,7 +21,6 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import fs
 import attr
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
@@ -37,9 +51,6 @@ def clean_bentoml_version(bentoml_version: str) -> str:
 
 
 def expands_bento_path(*path: str):
-    """
-    Expand a given paths with respect to :code:`BENTO_PATH`.
-    """
     return os.path.expandvars(os.path.join(BENTO_PATH, *path))
 
 
@@ -112,10 +123,10 @@ def get_template_env(
     return {
         **{
             f"__options__{k}": v
-            for k, v in bentoml_cattr.unstructure(docker_options).items()  # type: ignore
+            for k, v in bentoml_cattr.unstructure(docker_options).items()
         },
-        **bentoml_cattr.unstructure(CustomizableEnv()),  # type: ignore
-        **bentoml_cattr.unstructure(ReservedEnv(base_image, supported_architectures)),  # type: ignore
+        **bentoml_cattr.unstructure(CustomizableEnv()),
+        **bentoml_cattr.unstructure(ReservedEnv(base_image, supported_architectures)),
     }
 
 
@@ -134,51 +145,14 @@ def validate_setup_blocks(environment: Environment, dockerfile_template: str) ->
 
 
 def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> str:
-    """
-    Generate a Dockerfile that containerize a Bento.
-
-    Args:
-        docker_options (:class:`DockerOptions`):
-            Docker Options class parsed from :code:`bentofile.yaml` or any arbitrary Docker options class.
-        use_conda (:code:`bool`, `required`):
-            Whether to use conda in the given Dockerfile.
-
-    Returns:
-        str: The rendered Dockerfile string.
-
-    .. dropdown:: Implementation Notes
-
-        The coresponding Dockerfile template will be determined automatically based on given :class:`DockerOptions`.
-        The templates are located `here <https://github.com/bentoml/BentoML/tree/main/bentoml/_internal/bento/docker/templates>`_
-
-        As one can see, the Dockerfile templates are organized with the format :code:`<release_type>_<distro>.j2` with:
-
-        +---------------+------------------------------------------+
-        | Release type  | Description                              |
-        +===============+==========================================+
-        | base          | A base setup for all supported distros.  |
-        +---------------+------------------------------------------+
-        | cuda          | CUDA-supported templates.                |
-        +---------------+------------------------------------------+
-        | miniconda     | Conda-supported templates.               |
-        +---------------+------------------------------------------+
-        | python        | Python releases.                         |
-        +---------------+------------------------------------------+
-
-        Each of the templates will be validated correctly before being rendered. This will also include the user-defined custom templates
-        if :code:`dockerfile_template` is specified.
-
-    .. code-block:: python
-
-        from bentoml.build_utils import generate_dockerfile
-        from bentoml.build_utils import DockerOptions
-
-        dockerfile = generate_dockerfile(DockerOptions().with_defaults(), use_conda=False)
-
-    """
     distro = docker_options.distro
     cuda_version = docker_options.cuda_version
     user_templates = docker_options.dockerfile_template
+
+    templates_path = [os.path.join(os.path.dirname(__file__), "docker", "templates")]
+    if user_templates is not None:
+        dir_path = os.path.dirname(os.path.realpath(user_templates))
+        templates_path.append(dir_path)
 
     spec = DistroSpec.from_distro(
         distro, cuda=cuda_version is not None, conda=use_conda
@@ -186,10 +160,7 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
     if spec is None:
         raise BentoMLException("function is called before with_defaults() is invoked.")
 
-    templates_path = [fs.path.join(fs.path.dirname(__file__), "docker", "templates")]
-    if user_templates is not None:
-        dir_path = fs.path.dirname(os.path.realpath(user_templates))
-        templates_path.append(dir_path)
+    j2_template = f"{spec.release_type}_{distro}.j2"
 
     dockerfile_env = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
@@ -199,13 +170,10 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
     )
     dockerfile_env.globals.update(**J2_FUNCTION)  # type: ignore
 
-    j2_template = f"{spec.release_type}_{distro}.j2"
     validate_setup_blocks(dockerfile_env, j2_template)
     bento_dockerfile_tmpl = dockerfile_env.get_template(j2_template)
 
     if user_templates is not None:
-        dir_path = os.path.dirname(os.path.realpath(user_templates))
-        user_templates = fs.path.relativefrom(dir_path, user_templates)
         template = dockerfile_env.get_template(
             user_templates,
             globals={"bento__dockerfile": bento_dockerfile_tmpl},

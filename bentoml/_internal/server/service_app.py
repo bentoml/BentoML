@@ -5,6 +5,7 @@ import sys
 import typing as t
 import asyncio
 import logging
+import functools
 from typing import TYPE_CHECKING
 
 from simple_di import inject
@@ -246,7 +247,7 @@ class ServiceAppFactory(BaseAppFactory):
         on_startup = [self.bento_service.on_asgi_app_startup]
         if DeploymentContainer.development_mode.get():
             for runner in self.bento_service.runners:
-                on_startup.append(runner._init_local)  # type: ignore
+                on_startup.append(functools.partial(runner.init_local, quiet=True))
         else:
             for runner in self.bento_service.runners:
                 on_startup.append(runner.init_client)

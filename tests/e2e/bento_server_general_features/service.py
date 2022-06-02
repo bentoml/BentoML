@@ -116,3 +116,31 @@ async def predict_multi_images(
     )
     img = fromarray(output_array)
     return dict(img1=img, img2=img)
+
+
+# customise the service
+from starlette.types import Send
+from starlette.types import Scope
+from starlette.types import ASGIApp
+from starlette.types import Receive
+from starlette.requests import Request
+
+
+class AllowPingMiddleware:
+    def __init__(
+        self,
+        app: ASGIApp,
+    ) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            req = Request(scope, receive)
+            if req.url.path == "/ping":
+                scope["path"] = "/livez"
+
+        await self.app(scope, receive, send)
+        return
+
+
+svc.add_asgi_middleware(AllowPingMiddleware)  # type: ignore[arg-type]

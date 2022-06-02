@@ -14,6 +14,8 @@ async def test_api_server_meta(host: str) -> None:
     assert status == 200
     status, _, _ = await async_request("GET", f"http://{host}/livez")
     assert status == 200
+    status, _, _ = await async_request("GET", f"http://{host}/ping")
+    assert status == 200
     status, _, _ = await async_request("GET", f"http://{host}/docs.json")
     assert status == 200
     status, _, _ = await async_request("GET", f"http://{host}/readyz")

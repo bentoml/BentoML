@@ -328,7 +328,7 @@ def run_bento_server_distributed(
 def host_bento(
     bento: t.Union[str, Tag, None] = None,
     project_path: str = ".",
-    config_file: str = "bentoml_config.yml",
+    config_file: str | None = None,
     deployment_mode: str = "standalone",
     clean_context: contextlib.ExitStack | None = None,
 ) -> t.Generator[str, None, None]:
@@ -344,10 +344,6 @@ def host_bento(
             like docker image and bentos. If None, it will be created. Used for reusing
             those files in the same test session.
     """
-
-    if not os.path.exists(config_file):
-        raise Exception(f"config file not found: {config_file}")
-
     import bentoml
 
     if clean_context is None:

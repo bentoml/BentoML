@@ -216,7 +216,7 @@ Test test out your changes in an actual BentoML model deployment, you can create
    * make sure you have the latest setuptools installed:  `pip install -U setuptools`
 3. Build a new Bento with `bentoml build` in your project directory
 4. The new Bento will include a wheel file built from the BentoML source, and 
-`bentoml containrize` will install it to override the default BentoML installation in base image
+`bentoml containerize` will install it to override the default BentoML installation in base image
 
 
 ### Distribute a custom BentoML release for your team

@@ -27,7 +27,7 @@ from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
 if pyver >= (3, 8):
     from typing import Literal
-else:
+else:  # pragma: no cover
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 if pyver >= (3, 10):
     from typing import TypeAlias
-else:
+else:  # pragma: no cover
     from typing_extensions import TypeAlias
 
 logger = logging.getLogger(__name__)
@@ -48,13 +48,6 @@ PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 # Docker defaults
 DEFAULT_CUDA_VERSION = "11.6.2"
 DEFAULT_DOCKER_DISTRO = "debian"
-
-
-if PYTHON_VERSION not in SUPPORTED_PYTHON_VERSIONS:
-    logger.warning(
-        f"BentoML may not work well with current python version: {PYTHON_VERSION}, "
-        f"supported python versions are: {', '.join(SUPPORTED_PYTHON_VERSIONS)}"
-    )
 
 
 def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
@@ -138,13 +131,105 @@ def _envars_validator(
 
 @attr.frozen
 class DockerOptions:
+    """
+    .. note::
+
+        Refers to :ref:`concepts/bento:Docker Options` section for more information.
+
+    Args:
+        distro (:code:`str`, `optional`):
+            Distros to use in a 🍱 container.
+
+            .. note::
+
+                If :code:`None` is given, default to `debian`.
+
+        python_version (:code:`str`, `optional`):
+            Python version to use in a 🍱 container.
+
+            .. note::
+
+                If :code:`None` is given, default to current python version.
+
+        cuda_version (:code:`str| Literal["default"]`, `optional`):
+            CUDA version to use in a 🍱 container.
+
+            Currently supported CUDA versions are: 11.6.2
+
+            .. note::
+
+                :code:`cuda_version` also accepts :code:`"default"` to use the default version set by BentoML.
+                If you need supports for other CUDA versions, please open an issue at `BentoML Issue Tracker <https://github.com/bentoml/BentoML/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc>`_
+
+        env (:code:`dict[str, Any]`, `optional`):
+            A user-provided environment variable to be passed to a given bento.
+            We support the following formats:
+
+            - Passing as a YAML list of string:
+
+            .. code-block:: yaml
+
+                env:
+                - ENVAR=value1
+                - FOO=value2
+
+            - Passing as a YAML dictionary:
+
+            .. code-block:: yaml
+
+                env:
+                ENVAR: value1
+                FOO: value2
+
+            - Passing path to a :code:`.env` file:
+
+            .. code-block:: yaml
+
+                env: /path/to/.env
+
+            .. note ::
+
+                Make sure to follow the correct envar format: :code:`UPPERCASE=value`
+
+        system_packages (:code:`List[str]`, `optional`):
+            A user-provided system packages that can be install to a given bento based on :code:`distro` option.
+            BentoML will utilize the default system package manager for the given distro to install these packages.
+
+            .. note ::
+
+                System packages will be installed at  **Block** :code:`SETUP_BENTO_BASE_IMAGE`
+
+                **Block** is a component that construct the generated Dockerfile for a given bento.
+                Refers to :ref:`Dockerfile generation <reference/build_config:dockerfile generation>`.
+
+        setup_script (:code:`str`, `optional`):
+            A user-provided setup script to be executed during the construction of a 🍱 container.
+
+        base_image (:code:`str`, `optional`):
+            A user-provided base image to be used for a given 🍱 container.
+
+            .. note ::
+
+                If a base image is provided, :code:`distro`, :code:`python_version`, :code:`cuda_version` and :code:`system_packages` options will be ignored.
+
+            .. warning::
+
+                Make sure to have Python installed in this given :code:`base_image`. User can also install python via a custom :code:`setup_script`.
+
+        dockerfile_template (:code:`str`):
+            A user-provided Dockerfile template to be used for a given 🍱 container.
+
+            .. note ::
+
+                Refers to :ref:`reference/build_config:dockerfile generation`  for more information.
+    """
+
     distro: str = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
         ),
     )
-
     python_version: str = attr.field(
         converter=_convert_python_version,
         default=None,
@@ -152,7 +237,6 @@ class DockerOptions:
             attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
         ),
     )
-
     cuda_version: t.Union[str, Literal["default"]] = attr.field(
         default=None,
         converter=_convert_cuda_version,
@@ -160,36 +244,14 @@ class DockerOptions:
             attr.validators.in_(SUPPORTED_CUDA_VERSIONS.values())
         ),
     )
-
-    # A user-provided environment variable to be passed to a given bento
-    # accepts the following format:
-    #
-    # env:
-    #  - ENVAR=value1
-    #  - FOO=value2
-    #
-    # env:
-    #  ENVAR: value1"Options"
-    #  FOO: value2
-    #
-    #  env: /path/to/.env
     env: t.Dict[str, t.Any] = attr.field(
         default=None,
         converter=_convert_user_envars,
         validator=attr.validators.optional(_envars_validator),
     )
-
-    # A user-provided system packages that can be installed for a given bento
-    # using distro package manager.
     system_packages: t.Optional[t.List[str]] = None
-
-    # A python or sh script that executes during docker build time
     setup_script: t.Optional[str] = None
-
-    # A user-provided custom docker image
     base_image: t.Optional[str] = None
-
-    # A user-provided dockerfile jinja2 template
     dockerfile_template: str = attr.field(
         default=None,
         validator=attr.validators.optional(
@@ -201,18 +263,19 @@ class DockerOptions:
         if self.base_image is not None:
             if self.distro is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, "
-                    f"'distro={self.distro}' option is ignored.",
+                    f"docker base_image {self.base_image} is used, 'distro={self.distro}' option is ignored.",
                 )
             if self.python_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, "
-                    f"'python={self.python_version}' option is ignored.",
+                    f"docker base_image {self.base_image} is used, 'python={self.python_version}' option is ignored.",
                 )
             if self.cuda_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, "
-                    f"'cuda_version={self.cuda_version}' option is ignored.",
+                    f"docker base_image {self.base_image} is used, 'cuda_version={self.cuda_version}' option is ignored.",
+                )
+            if self.system_packages is not None:
+                logger.warning(
+                    f"docker base_image {self.base_image} is used, 'system_packages={self.system_packages}' option is ignored.",
                 )
 
         if self.cuda_version is not None:
@@ -223,13 +286,24 @@ class DockerOptions:
                 )
 
     def with_defaults(self) -> "DockerOptions":
-        # Convert from user provided options to actual build options with default values
+        """
+        Returns:
+            :class:`DockerOptions`: A new instance of :class:`DockerOptions` with default values evolve around user-provided options.
+
+        .. note ::
+
+            BentoML will fill out the missing options with default values if user does not provide them.
+        """
         defaults: t.Dict[str, t.Any] = {}
 
         if self.base_image is None:
             if self.distro is None:
                 defaults["distro"] = DEFAULT_DOCKER_DISTRO
             if self.python_version is None:
+                if PYTHON_VERSION not in SUPPORTED_PYTHON_VERSIONS:  # pragma: no cover
+                    logger.warning(
+                        f"BentoML may not work well with current python version: {PYTHON_VERSION}. Supported python versions are: {', '.join(SUPPORTED_PYTHON_VERSIONS)}"
+                    )
                 defaults["python_version"] = PYTHON_VERSION
 
         if self.system_packages is None:
@@ -246,9 +320,31 @@ class DockerOptions:
     def write_to_bento(
         self, bento_fs: "FS", build_ctx: str, conda_options: "CondaOptions"
     ) -> None:
+        """
+        Convert all user-provided options to respective file under a 🍱 directory.
+
+        Args:
+            bento_fs (:code:`fs.base.FS`):
+                The filesystem representing a bento directory.
+            build_ctx (:code:`str`):
+                The path to the given build context. This is the context directory of the :code:`bentofile.yaml`.
+
+                .. note ::
+
+                    :code:`build_ctx` is retrieved from :doc:`../../reference/cli` :code:`serve`.
+            conda_options (:class:`CondaOptions`):
+                Given :class:`CondaOptions` instance to determine whether to support conda in the 🍱 container.
+
+        The results target will be written to :code:`env/docker` under the bento directory. The directory contains:
+            - A generated :code:`Dockerfile`
+            - :code:`entrypoint.sh`
+            - :code:`<setup_script>.sh` [`optional`, if specified by user]
+            - A wheel file of bentoml if :code:`BENTOML_BUNDLE_LOCAL_BUILD=True`
+
+        """
         use_conda = any(
             val is not None
-            for _, val in bentoml_cattr.unstructure(conda_options).items()
+            for _, val in bentoml_cattr.unstructure(conda_options).items()  # type: ignore
         )
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
@@ -293,10 +389,46 @@ bentoml_cattr.register_structure_hook(DockerOptions, _docker_options_structure_h
 
 @attr.frozen
 class CondaOptions:
+    """
+    .. note::
+
+        Refers to :ref:`concepts/bento:Conda Options` section for more information.
+
+    .. note::
+
+        :code:`conda` is not required for :code:`bentofile.yaml` to work. If both :code:`conda` and :code:`python` are provided under **bentofile.yaml**, then :code:`conda` will be used in conjunction with :code:`python`.
+
+    Args:
+        environment_yml (:code:`str`, `optional`):
+            Path to a given :code:`environment.yml` file.
+
+            .. note ::
+                if :code:`environment.yml` is provided, then :code:`channels`, :code:`dependencies` and :code:`pip` will be ignored.
+
+        channels (:code:`list[str]`, `optional`):
+            List of conda channels to be used.
+
+            - If not specified, then :code:`channels` will be set to :code:`None`.
+
+            - If specified, BentoML will append :code:`["defaults"]` channels to the list.
+
+        dependencies (:code:`list[str]`, `optional`):
+            List of conda dependencies to be used.
+
+            We recommend to lock this dependencies since BentoML won't automatically lock them.
+
+            - If not specified, then :code:`dependencies` will be set to :code:`None`.
+
+        pip (:code:`list[str]`, `optional`):
+            List of pip packages to be installed via conda.
+
+            - If not specified, then :code:`pip` will be set to :code:`None`.
+    """
+
     environment_yml: t.Optional[str] = None
     channels: t.Optional[t.List[str]] = None
     dependencies: t.Optional[t.List[str]] = None
-    pip: t.Optional[t.List[str]] = None  # list of pip packages to install via conda
+    pip: t.Optional[t.List[str]] = None
 
     def __attrs_post_init__(self):
         if self.environment_yml is not None:
@@ -320,6 +452,24 @@ class CondaOptions:
                 )
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
+        """
+        Convert all user-provided options to respective file under a bento 🍱 directory.
+
+        Args:
+            bento_fs (:code:`fs.base.FS`):
+                The filesystem representing a bento directory.
+            build_ctx (:code:`str`):
+                The path to the given build context. This is the context directory of the :code:`bentofile.yaml`.
+
+                .. note ::
+
+                    :code:`build_ctx` is retrieved from :doc:`../../reference/cli` :code:`serve`.
+
+        The results target will be written to :code:`env/conda` under the bento directory. The directory contains:
+            - If users provides :code:`environment.yml`:
+                - The file will be copied to :code:`env/conda/environment.yml`.
+                - Otherwise, a :code:`environment.yml` will be generated from the remaining specified fields.
+        """
         conda_folder = fs.path.join("env", "conda")
         bento_fs.makedirs(conda_folder, recreate=True)
 
@@ -351,7 +501,14 @@ class CondaOptions:
             yaml.dump(yaml_content, f)
 
     def with_defaults(self) -> "CondaOptions":
-        # Convert from user provided options to actual build options with default values
+        """
+        Returns:
+            :class:`CondaOptions`: A new instance of :class:`CondaOptions` with default values evolve around user-provided options.
+
+        .. note ::
+
+            BentoML will fill out the missing options with default values if user does not provide them.
+        """
         defaults: t.Dict[str, t.Any] = {}
 
         if self.channels is not None:
@@ -362,6 +519,64 @@ class CondaOptions:
 
 @attr.frozen
 class PythonOptions:
+    """
+    .. note::
+
+        Refers to :ref:`concepts/bento:Python Packages` section for more information.
+
+    Args:
+
+        requirements_txt (:code:`str`, `optional`):
+            Path to a custom :code:`requirements.txt` file.
+
+        packages: (:code:`list[str]`, `optional`):
+            List of pip packages to be installed in a given bento.
+
+            User can specify which packages to lock or not.
+
+            .. code-block:: yaml
+
+                python:
+                    packages:
+                    - "numpy"
+                    - "matplotlib==3.5.1"
+                    - "package>=0.2,<0.3"
+                    - "torchvision==0.9.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu"
+                    - "git+https://github.com/bentoml/bentoml.git@main"
+
+        lock_packages: (:code:`bool`, `optional`):
+            Whether to lock the packages or not.
+
+            By default, BentoML will lock the packages for you using `pip-tools <https://github.com/jazzband/pip-tools>`_
+
+            if :code:`lock_packages` is set to :code:`False`, then :code:`packages` won't be locked.
+
+        index_url (:code:`str`, `optional`):
+            Custom pip index URL. This is passed through :code:`--index-url` option of pip.
+
+        no_index (:code:`bool`, `optional`):
+            Whether to use :code:`--no-index` option of pip.
+
+        trusted_host (:code:`list[str]`, `optional`):
+            List of trusted hosts. This is passed through :code:`--trusted-host` option of pip.
+
+        find_links (:code:`list[str]`, `optional`):
+            List of find links. This is passed through :code:`--find-links` option of pip.
+
+        extra_index_url (:code:`list[str]`, `optional`):
+            List of extra index URLs. This is passed through :code:`--extra-index-url` option of pip.
+
+        pip_args (:code:`str`, `optional`):
+            Additional pip arguments. This is passed to :code:`pip` command when installing a package.
+
+        wheels (:code:`list[str]`, `optional`):
+            List of wheels to be included in the 🍱.
+
+            .. note ::
+
+                If the wheel is hosted on a local network without TLS, you can indicate that the domain is safe to pip with the :code:`trusted_host` field.
+    """
+
     requirements_txt: t.Optional[str] = None
     packages: t.Optional[t.List[str]] = None
     lock_packages: t.Optional[bool] = None
@@ -376,16 +591,36 @@ class PythonOptions:
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
             logger.warning(
-                f'Build option python: requirements_txt="{self.requirements_txt}" found,'
-                f' this will ignore the option: packages="{self.packages}"'
+                f'Build option python: requirements_txt="{self.requirements_txt}" found, this will ignore the option: packages="{self.packages}"'
             )
         if self.no_index and (self.index_url or self.extra_index_url):
             logger.warning(
-                "Build option python.no_index=True found, this will ignore index_url"
-                " and extra_index_url option when installing PyPI packages"
+                "Build option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
             )
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
+        """
+        Convert all user-provided options to respective file under a bento 🍱 directory.
+
+        Args:
+            bento_fs (:code:`fs.base.FS`):
+                The filesystem representing a bento directory.
+            build_ctx (:code:`str`):
+                The path to the given build context. This is the context directory of the :code:`bentofile.yaml`.
+
+                .. note ::
+
+                    :code:`build_ctx` is retrieved from :doc:`../../reference/cli` :code:`serve`.
+
+        The results target will be written to :code:`env/python` under the bento directory. The directory contains:
+            - :code:`version.txt` which contains the python version in full format: :code:`3.7.3`, :code:`3.9.0`, etc.
+            - :code:`wheels/` directory which contains the wheels specified in :code:`wheels` field.
+            - If users specify :code:`requirements.txt` file:
+                - The :code:`requirements.txt` will be copied to the bento 🍱 directory.
+                - Otherwise, a generated :code:`requirements.txt` will be included containing the pip packages specified in :code:`packages` field.
+            - If :code:`lock_packages` is set to :code:`True`, then a :code:`requirements.txt.lock` file will be included.
+            - :code:`pip_args.txt` file which contains the pip arguments specified in :code:`pip_args` and all of the remaining field.
+        """
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
@@ -477,7 +712,18 @@ class PythonOptions:
                 )
 
     def with_defaults(self) -> "PythonOptions":
-        # Convert from user provided options to actual build options with default values
+        """
+        Returns:
+            :class:`PythonOptions`: A new instance of :class:`PythonOptions` with default values evolve around user-provided options.
+
+        .. note ::
+
+            BentoML will fill out the missing options with default values if user does not provide them.
+
+        .. note ::
+
+            BentoML will lock package from python by default unless user provides :code:`lock_packages=False`.
+        """
         defaults: t.Dict[str, t.Any] = {}
 
         if self.requirements_txt is None:
@@ -515,15 +761,52 @@ def dict_options_converter(
 
 @attr.define(frozen=True, on_setattr=None)
 class BentoBuildConfig:
-    """This class is intended for modeling the bentofile.yaml file where user will
-    provide all the options for building a Bento. All optional build options should be
-    default to None so it knows which fields are NOT SET by the user provided config,
-    which makes it possible to omitted unset fields when writing a BentoBuildOptions to
+    """
+    .. note::
+        Refers to :ref:`concepts/bento:Building Bentos` for more details.
+
+    This class is intended for modeling the :code:`bentofile.yaml` file where user will
+    provide all the options for building a Bento.
+
+    All optional build options should be default to :code:`None` so BentoML knows
+    which fields are **NOT SET** by the user provided config.
+
+    Thus, it is possible to omitted unset fields when writing a :code:`BentoBuildOptions` to
     a yaml file for future use. This also applies to nested options such as the
-    DockerOptions class and the PythonOptions class.
+    :class:`DockerOptions` class and the :class:`PythonOptions` class.
+
+    Args:
+
+        service (:code:`str`):
+            The required name of the service to be built.
+
+        description (:code:`str`, `optional`):
+            An optional description of the service.
+
+        labels (:code:`dict[str, Any]`, `optional`):
+            An optional dictionary of labels to be applied to the service.
+
+        include (:code:`list[str]`, `optional`):
+            An optional list of files to include in the build. This is useful for only including necessary files for the bento.
+
+            By default if :code:`include` is not set under :code:`bentofile.yaml`, all files will be included.
+
+        exclude (:code:`list[str]`, `optional`):
+            An optional list of files to exclude from the build. This is useful for excluding unnecessary files from the bento.
+
+            By default if :code:`exclude` is not set under :code:`bentofile.yaml`, no files will be excluded.
+
+        docker (:class:`DockerOptions`, `optional`):
+            All options related to :class:`DockerOptions`.
+
+        python (:class:`PythonOptions`, `optional`):
+            All options related to :class:`PythonOptions`.
+
+        conda (:class:`CondaOptions`, `optional`):
+            All options related to :class:`CondaOptions`.
     """
 
-    service: str  # Import Str of target service to build
+    service: str
     description: t.Optional[str] = None
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
@@ -590,7 +873,7 @@ class BentoBuildConfig:
         values filled in.
 
         Returns:
-            BentoBuildConfig: a new copy of self, with default values filled
+            BentoBuildConfig: a new copy of :class:`BentoBuildConfig`, with default values filled in.
         """
 
         return FilledBentoBuildConfig(
@@ -606,6 +889,14 @@ class BentoBuildConfig:
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
+        """
+        Args:
+            stream (:code:`TextIO`):
+                A YAML file stream.
+
+        Returns:
+            BentoBuildConfig: a new copy of :class:`BentoBuildConfig`, with default values filled in.
+        """
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

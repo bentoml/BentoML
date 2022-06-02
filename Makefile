@@ -64,7 +64,7 @@ install-docs-deps: ## Install documentation dependencies
 
 # Docs
 watch-docs: install-docs-deps ## Build and watch documentation
-	sphinx-autobuild docs/source docs/build/html
+	sphinx-autobuild docs/source docs/build/html --watch $(GIT_ROOT)/bentoml/ --open-browser
 spellcheck-docs: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 

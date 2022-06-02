@@ -41,6 +41,7 @@ napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
 autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 10
 
 ogp_site_url = "http://docs.bentoml.org"
 ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-readme-header.jpeg"
@@ -58,8 +59,7 @@ autodoc_typehints_description_target = "documented"
 templates_path = ["_templates"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "zenburn"
-pygments_dark_style = "monokai"
+pygments_dark_style = "one-dark"
 
 myst_enable_extensions = ["colon_fence"]
 

@@ -147,6 +147,7 @@ class Model(StoreItem):
         name: str,
         *,
         module: str,
+        api_version: str,
         signatures: ModelSignaturesType,
         labels: dict[str, str] | None = None,
         options: ModelOptions | None = None,
@@ -190,6 +191,7 @@ class Model(StoreItem):
             ModelInfo(
                 tag=tag,
                 module=module,
+                api_version=api_version,
                 signatures=signatures,
                 labels=labels,
                 options=options,
@@ -489,7 +491,7 @@ class ModelInfo:
         metadata: MetadataDict,
         context: ModelContext,
         signatures: ModelSignaturesType,
-        api_version: str | None = None,
+        api_version: str,
         creation_time: datetime | None = None,
     ):
         self.__attrs_init__(  # type: ignore
@@ -502,7 +504,7 @@ class ModelInfo:
             metadata=metadata,
             context=context,
             signatures=signatures,
-            api_version=api_version or "v1",
+            api_version=api_version,
             creation_time=creation_time or datetime.now(timezone.utc),
         )
         self.validate()

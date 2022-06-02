@@ -88,6 +88,7 @@ def test_model_info(tmpdir: "Path"):
     modelinfo_a = ModelInfo(
         tag=Tag("tag"),
         module="module",
+        api_version="v1",
         labels={},
         options=ModelOptions(),
         metadata={},
@@ -96,7 +97,6 @@ def test_model_info(tmpdir: "Path"):
     )
     end = datetime.now(timezone.utc)
 
-    assert modelinfo_a.api_version == "v1"
     assert modelinfo_a.context.bentoml_version == BENTOML_VERSION
     assert modelinfo_a.context.python_version == TEST_PYTHON_VERSION
     assert start <= modelinfo_a.creation_time <= end
@@ -117,6 +117,7 @@ def test_model_info(tmpdir: "Path"):
     modelinfo_b = ModelInfo(
         tag=tag,
         module=module,
+        api_version="v1",
         labels=labels,
         options=options,
         metadata=metadata,
@@ -153,7 +154,11 @@ def test_model_info(tmpdir: "Path"):
 def test_model_creationtime():
     start = datetime.now(timezone.utc)
     model_a = Model.create(
-        "testmodel", module="test", signatures={}, context=TEST_MODEL_CONTEXT
+        "testmodel",
+        module="test",
+        api_version="v1",
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
     )
     end = datetime.now(timezone.utc)
 
@@ -178,6 +183,7 @@ def bento_model():
     model = Model.create(
         "testmodel",
         module="foo",
+        api_version="v1",
         signatures={},
         context=TEST_MODEL_CONTEXT,
         custom_objects={
@@ -192,7 +198,7 @@ def test_model_equal(bento_model):
     # note: models are currently considered to be equal if their tag is equal;
     #       this is a test of that behavior
     eq_to_b = Model.create(
-        "tmp", module="bar", signatures={}, context=TEST_MODEL_CONTEXT
+        "tmp", module="bar", api_version="v1", signatures={}, context=TEST_MODEL_CONTEXT
     )
     eq_to_b._tag = bento_model._tag  # type: ignore
 

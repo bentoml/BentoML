@@ -34,6 +34,7 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.xgboost"
 MODEL_FILENAME = "saved_model.ubj"
+API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +166,7 @@ def save_model(
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
         signatures=signatures,
         labels=labels,
         custom_objects=custom_objects,

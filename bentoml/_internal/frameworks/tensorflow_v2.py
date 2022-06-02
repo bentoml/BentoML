@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
 MODULE_NAME = "bentoml.tensorflow"
+API_VERSION = "v1"
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -192,6 +193,7 @@ def save_model(
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
         options=None,
         context=context,
         labels=labels,

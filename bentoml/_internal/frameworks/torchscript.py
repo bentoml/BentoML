@@ -36,6 +36,7 @@ except ImportError:  # pragma: no cover
 logger = logging.getLogger(__name__)
 MODULE_NAME = "bentoml.torchscript"
 MODEL_FILENAME = "savd_model.pt"
+API_VERSION = "v1"
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -147,6 +148,7 @@ def save_model(
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
         labels=labels,
         signatures=signatures,
         custom_objects=custom_objects,

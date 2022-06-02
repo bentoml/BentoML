@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     ModelType = t.Any
 
 MODULE_NAME = "bentoml.picklable_model"
+API_VERSION = "v1"
 
 try:
     import cloudpickle  # type: ignore
@@ -137,6 +138,7 @@ def save_model(
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,

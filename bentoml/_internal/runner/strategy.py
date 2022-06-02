@@ -89,6 +89,7 @@ class DefaultStrategy(Strategy):
 
         # use CPU
         if resource_request.cpu is not None and resource_request.cpu > 0:
+            os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # disable gpu
             if runnable_class.SUPPORT_CPU_MULTI_THREADING:
                 thread_count = math.ceil(resource_request.cpu)
                 for thread_env in THREAD_ENVS:

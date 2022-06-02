@@ -88,6 +88,10 @@ def load_model(
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
+    if "GPU" in device_name:
+        physical_devices = tf.config.list_physical_devices("GPU")
+        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
     with tf.device(device_name):
         tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore
         return hook_loaded_model(tf_model, MODULE_NAME)

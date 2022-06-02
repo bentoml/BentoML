@@ -80,7 +80,11 @@ class DefaultStrategy(Strategy):
             and resource_request.nvidia_gpu > 0
             and runnable_class.SUPPORT_NVIDIA_GPU
         ):
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index)
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index - 1)
+            logger.info(
+                "Setting up worker: set CUDA_VISIBLE_DEVICES to %s",
+                worker_index - 1,
+            )
             return
 
         # use CPU
@@ -89,6 +93,9 @@ class DefaultStrategy(Strategy):
                 thread_count = math.ceil(resource_request.cpu)
                 for thread_env in THREAD_ENVS:
                     os.environ[thread_env] = str(thread_count)
+                logger.info(
+                    "Setting up worker: set CPU thread count to %s", thread_count
+                )
                 return
             else:
                 for thread_env in THREAD_ENVS:

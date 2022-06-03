@@ -144,3 +144,16 @@ class AllowPingMiddleware:
 
 
 svc.add_asgi_middleware(AllowPingMiddleware)  # type: ignore[arg-type]
+
+
+from fastapi import FastAPI
+
+fastapi_app = FastAPI()
+
+
+@fastapi_app.get("/hello")
+def hello():
+    return {"Hello": "World"}
+
+
+svc.mount_asgi_app(fastapi_app)

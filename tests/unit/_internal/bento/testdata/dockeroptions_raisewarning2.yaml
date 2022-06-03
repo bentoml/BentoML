@@ -1,0 +1,4 @@
+distro: debian
+python_version: 3.8
+cuda_version: default
+base_image: nvidia/cuda:11.7.0-runtime-rockylinux8

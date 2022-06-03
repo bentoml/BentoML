@@ -17,8 +17,8 @@ _main() {
 
 	# Overide the BENTOML_PORT if PORT env var is present. Used for Heroku
 	if [[ -v PORT ]]; then
+		# NOTE: Yatai also set \$PORT, hence \$BENTOML_PORT will be overridden.
 		echo "\$PORT is set! Overiding \$BENTOML_PORT with \$PORT ($PORT)"
-		echo "NOTE: Yatai also set \$PORT, hence \$BENTOML_PORT will be overridden."
 		export BENTOML_PORT=$PORT
 	fi
 	exec "$@"

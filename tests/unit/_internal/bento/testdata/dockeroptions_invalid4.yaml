@@ -1,0 +1,2 @@
+distro: debian
+cuda_version: 12.0

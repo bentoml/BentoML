@@ -5,7 +5,6 @@ import logging
 import importlib
 import importlib.util
 
-from ..configuration import is_pypi_installed_bentoml
 from ..utils.tempdir import TempDirectory
 
 logger = logging.getLogger(__name__)
@@ -23,10 +22,6 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     under {bento_path}/env/python/wheels/
     """
     if str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() != "true":
-        return
-
-    if is_pypi_installed_bentoml():
-        # skip this entirely if BentoML is installed from PyPI
         return
 
     # Find bentoml module path

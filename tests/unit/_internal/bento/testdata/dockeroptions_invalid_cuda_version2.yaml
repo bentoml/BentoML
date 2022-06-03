@@ -1,0 +1,2 @@
+distro: alpine
+cuda_version: default

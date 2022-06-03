@@ -1,0 +1,7 @@
+distro: debian
+python_version: 3.8
+cuda_version: 11
+env:
+  - ENVAR=1
+system_packages:
+  - libffi-dev

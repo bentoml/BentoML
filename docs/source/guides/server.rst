@@ -34,7 +34,7 @@ For example, you can add do:
     svc.add_asgi_middleware(HTTPSRedirectMiddleware)
 
 
-Mounting WSGI based web frameworks
+Mounting apps from WSGI based web frameworks
 ----------------------------------
 
 Here’s an example of mounting Flask endpoints alongside BentoML
@@ -58,12 +58,10 @@ Here’s an example of mounting Flask endpoints alongside BentoML
     def predict(input_json):
         return {'input_received': input_json, 'foo': 'bar'}
 
-    app = svc.asgi_app
-
 
 As you can see, you can use flask annotations just as you would if you were building a standalone flask app. In order to ensure the correct coupling, the ``svc.mount_wsgi_app(flask_app)`` must be invoked.
 
-Mounting ASGI based web frameworks
+Mounting apps from ASGI based web frameworks
 ----------------------------------
 
 Here’s an example of mounting a FastAPI app alongside BentoML
@@ -87,8 +85,6 @@ Here’s an example of mounting a FastAPI app alongside BentoML
     @svc.api(input=JSON(), output=JSON())
     def predict(input_json):
         return {'input_received': input_json, 'foo': 'bar'}
-
-    app = svc.asgi_app
 
 
 The primary method to invoke is ``svc.mount_asgi_app(fastapi_app)`` in order to ensure that the fastapi endpoints are initialized

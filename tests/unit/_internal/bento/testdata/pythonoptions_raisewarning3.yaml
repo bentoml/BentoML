@@ -1,0 +1,2 @@
+no_index: True
+index_url: "https://<other api token>:@my.mirror.com/pypi/simple"

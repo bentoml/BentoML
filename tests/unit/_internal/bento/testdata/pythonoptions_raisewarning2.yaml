@@ -1,0 +1,4 @@
+no_index: True
+extra_index_url:
+  - "https://<other api token>:@my.mirror.com/pypi/simple"
+  - "https://pypi.python.org/simple"

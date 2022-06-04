@@ -1,0 +1,7 @@
+requirements_txt: ./testdata/configuration/another-requirements.txt
+packages:
+  - "numpy"
+  - "matplotlib==3.5.1"
+  - "package>=0.2,<0.3"
+  - "torchvision==0.9.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu"
+  - "git+https://github.com/bentoml/bentoml.git@main"

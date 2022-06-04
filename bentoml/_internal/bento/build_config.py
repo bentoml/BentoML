@@ -424,25 +424,55 @@ class PythonOptions:
     if TYPE_CHECKING:
         __attrs_attrs__: "t.List[Attribute[PythonOptionsAttributes]]" = []
 
-    requirements_txt: t.Optional[str] = None
-    packages: t.Optional[t.List[str]] = None
-    lock_packages: t.Optional[bool] = None
-    index_url: t.Optional[str] = None
-    no_index: t.Optional[bool] = None
-    trusted_host: t.Optional[t.List[str]] = None
-    find_links: t.Optional[t.List[str]] = None
-    extra_index_url: t.Optional[t.List[str]] = None
-    pip_args: t.Optional[str] = None
-    wheels: t.Optional[t.List[str]] = None
+    requirements_txt: t.Optional[str] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(str)),
+    )
+    packages: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(list)),
+    )
+    lock_packages: t.Optional[bool] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(bool)),
+    )
+    index_url: t.Optional[str] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(str)),
+    )
+    no_index: t.Optional[bool] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(bool)),
+    )
+    trusted_host: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(list)),
+    )
+    find_links: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(list)),
+    )
+    extra_index_url: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(list)),
+    )
+    pip_args: t.Optional[str] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(str)),
+    )
+    wheels: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(list)),
+    )
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
             logger.warning(
-                f'Build option python: requirements_txt="{self.requirements_txt}" found, this will ignore the option: packages="{self.packages}"'
+                f'Build option python: `requirements_txt="{self.requirements_txt}"` found, will ignore the option: `packages="{self.packages}"`.'
             )
         if self.no_index and (self.index_url or self.extra_index_url):
             logger.warning(
-                "Build option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
+                f'Build option python: `no_index="{self.no_index}"` found, will ignore `index_url` and `extra_index_url` option when installing PyPI packages.'
             )
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:

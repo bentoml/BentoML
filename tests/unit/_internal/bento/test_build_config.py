@@ -303,22 +303,25 @@ class TestPythonOptions:
     def test_valid_python_options(self, options: dict[str, t.Any]):
         assert PythonOptions(**options)
 
-    # @parametrize_options(PythonOptions, "invalid")
-    # def test_invalid_python_options(self, options: dict[str, t.Any]):
-    #     with pytest.raises(TypeError) as excinfo:
-    #         PythonOptions(**options)
-    #         assert "must be <class 'list'>" in str(excinfo.value)
+    @parametrize_options(PythonOptions, "invalid")
+    def test_invalid_python_options(self, options: dict[str, t.Any]):
+        with pytest.raises(TypeError) as excinfo:
+            PythonOptions(**options)
+            assert "must be <class" in str(excinfo.value)
 
-    # @parametrize_options(PythonOptions, "invalid", attribute="dependencies")
-    # def test_dependencies_validator(self, options: dict[str, t.Any]):
-    #     with pytest.raises(InvalidArgument):
-    #         PythonOptions(**options)
+    @pytest.mark.usefixtures("change_test_dir")
+    @parametrize_options(PythonOptions, "raisewarning")
+    def test_raises_warning_python_options(
+        self, options: dict[str, t.Any], caplog: LogCaptureFixture
+    ):
+        with caplog.at_level(logging.WARNING):
+            assert PythonOptions(**options)
+        assert "Build option python" in caplog.text
 
-    # @pytest.mark.usefixtures("change_test_dir")
-    # @parametrize_options(PythonOptions, "raisewarning")
-    # def test_raises_warning_python_options(
-    #     self, options: dict[str, t.Any], caplog: LogCaptureFixture
-    # ):
-    #     with caplog.at_level(logging.WARNING):
-    #         assert PythonOptions(**options)
-    #     assert "option is ignored" in caplog.text
+    @pytest.mark.usefixtures("test_fs")
+    def test_write_to_bento(self, test_fs: FS):
+        PythonOptions().with_defaults().write_to_bento(test_fs, os.getcwd())
+
+        python_dir = test_fs.opendir("/env/python")
+        assert os.path.isdir(python_dir.getsyspath("/"))
+        assert not os.path.isdir(python_dir.getsyspath("/wheels"))

@@ -1,0 +1,3 @@
+-r another-requirements.txt
+attrs>=21.1
+setup-cfg-fmt

@@ -214,7 +214,7 @@ class DockerOptions:
                 defaults["python_version"] = python_version
 
         if self.system_packages is None:
-            defaults["system_packages"] = []
+            defaults["system_packages"] = None
         if self.env is None:
             defaults["env"] = {}
         if self.cuda_version is None:
@@ -438,13 +438,11 @@ class PythonOptions:
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
             logger.warning(
-                f'Build option python: requirements_txt="{self.requirements_txt}" found,'
-                f' this will ignore the option: packages="{self.packages}"'
+                f'Build option python: requirements_txt="{self.requirements_txt}" found, this will ignore the option: packages="{self.packages}"'
             )
         if self.no_index and (self.index_url or self.extra_index_url):
             logger.warning(
-                "Build option python.no_index=True found, this will ignore index_url"
-                " and extra_index_url option when installing PyPI packages"
+                "Build option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
             )
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:

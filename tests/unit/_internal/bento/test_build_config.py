@@ -30,9 +30,20 @@ else:
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
 
+    from fs.base import FS
     from _pytest.logging import LogCaptureFixture
+    from _pytest.fixtures import FixtureRequest
     from _pytest.monkeypatch import MonkeyPatch
     from _pytest.mark.structures import MarkDecorator
+
+
+@pytest.fixture(scope="function", name="test_fs")
+def fixture_test_fs(
+    tmpdir: Path, request: FixtureRequest
+) -> t.Generator[FS, None, None]:
+    os.chdir(request.fspath.dirname)  # type: ignore (bad pytest stubs)
+    yield fs.open_fs(tmpdir.__fspath__())
+    os.chdir(request.config.invocation_dir)  # type: ignore (bad pytest stubs)
 
 
 @pytest.mark.parametrize("python_version", [3.7, "3.7.9"])
@@ -115,7 +126,6 @@ def parametrize_options(
     return pytest.mark.parametrize(str(_argvalue), testdata)
 
 
-@pytest.mark.usefixtures("propagate_logs")
 @pytest.mark.incremental
 class TestDockerOptions:
     @parametrize_options(DockerOptions, "valid")
@@ -165,7 +175,7 @@ class TestDockerOptions:
         assert filled.distro == DEFAULT_DOCKER_DISTRO
         assert not filled.dockerfile_template
 
-    @pytest.mark.usefixtures("change_test_dir")
+    @pytest.mark.usefixtures("test_fs")
     @patch("bentoml._internal.configuration.is_pypi_installed_bentoml")
     @pytest.mark.parametrize(
         "conda_option", [CondaOptions(), CondaOptions(channels=["default"])]
@@ -174,7 +184,7 @@ class TestDockerOptions:
         self,
         mock_is_pypi_installed_bentoml: MagicMock,
         conda_option: CondaOptions,
-        tmpdir: Path,
+        test_fs: FS,
         monkeypatch: MonkeyPatch,
     ):
         from bentoml._internal.bento.build_dev_bentoml_whl import BENTOML_DEV_BUILD
@@ -182,15 +192,15 @@ class TestDockerOptions:
         monkeypatch.setenv(BENTOML_DEV_BUILD, str(False))
         mock_is_pypi_installed_bentoml.return_value = True
 
-        test_fs = fs.open_fs(tmpdir.__fspath__())
         DockerOptions().with_defaults().write_to_bento(
             test_fs, os.getcwd(), conda_option.with_defaults()
         )
+        docker_fs = test_fs.opendir("/env/docker")
 
-        docker_dir = tmpdir / "env" / "docker"
-        assert os.path.isdir(docker_dir)
-        assert os.path.isfile(docker_dir / "entrypoint.sh")
-        assert not os.path.exists(docker_dir / "whl")
+        assert os.path.isdir(docker_fs.getsyspath("/"))
+        assert docker_fs.exists("Dockerfile")
+        assert docker_fs.exists("entrypoint.sh")
+        assert not os.path.exists(docker_fs.getsyspath("/whl"))
 
         DockerOptions(
             setup_script="./testdata/scripts/setup_script"
@@ -198,7 +208,7 @@ class TestDockerOptions:
             test_fs, os.getcwd(), conda_option.with_defaults()
         )
 
-        assert os.path.isfile(docker_dir / "setup_script")
+        assert docker_fs.exists("setup_script")
 
         with pytest.raises(InvalidArgument):
             DockerOptions(
@@ -222,7 +232,6 @@ class TestDockerOptions:
             assert "Invalid env file path" in str(excinfo.value)
 
 
-@pytest.mark.usefixtures("propagate_logs")
 @pytest.mark.incremental
 class TestCondaOptions:
     @parametrize_options(CondaOptions, "valid")
@@ -249,20 +258,19 @@ class TestCondaOptions:
             assert CondaOptions(**options)
         assert "option is ignored" in caplog.text
 
-    @pytest.mark.usefixtures("change_test_dir")
-    def test_write_to_bento(self, tmpdir: Path):
-        test_fs = fs.open_fs(tmpdir.__fspath__())
+    @pytest.mark.usefixtures("test_fs")
+    def test_write_to_bento(self, test_fs: FS):
         CondaOptions().with_defaults().write_to_bento(test_fs, os.getcwd())
 
-        conda_dir = tmpdir / "env" / "conda"
-        assert os.path.isdir(conda_dir)
-        assert not os.path.exists(conda_dir / "environment.yml")
+        conda_dir = test_fs.opendir("/env/conda")
+        assert os.path.isdir(conda_dir.getsyspath("/"))
+        assert not os.path.exists(conda_dir.getsyspath("/environment.yml"))
 
         CondaOptions(
             dependencies=["numpy"], pip=["aiohttp"]
         ).with_defaults().write_to_bento(test_fs, os.getcwd())
-        assert os.path.exists(conda_dir / "environment.yml")
-        with open(conda_dir / "environment.yml", "r") as f:
+        assert os.path.exists(conda_dir.getsyspath("/environment.yml"))
+        with open(conda_dir.getsyspath("/environment.yml"), "r") as f:
             assert yaml.safe_load(f) == {
                 "channels": ["defaults"],
                 "dependencies": ["numpy", {"pip": ["aiohttp"]}],
@@ -272,8 +280,8 @@ class TestCondaOptions:
             environment_yml="./testdata/configuration/example_environment.yml"
         ).with_defaults().write_to_bento(test_fs, os.getcwd())
 
-        assert os.path.exists(conda_dir / "environment.yml")
-        with open(conda_dir / "environment.yml", "r") as f1, open(
+        assert os.path.exists(conda_dir.getsyspath("/environment.yml"))
+        with open(conda_dir.getsyspath("/environment.yml"), "r") as f1, open(
             "./testdata/configuration/example_environment.yml", "r"
         ) as f2:
             assert yaml.safe_load(f1) == yaml.safe_load(f2)
@@ -287,3 +295,30 @@ class TestCondaOptions:
         with pytest.raises(InvalidArgument) as excinfo:
             bentoml_cattr.structure({"dependencies": "not a list"}, CondaOptions)
             assert "type list" in str(excinfo.value)
+
+
+@pytest.mark.incremental
+class TestPythonOptions:
+    @parametrize_options(PythonOptions, "valid")
+    def test_valid_python_options(self, options: dict[str, t.Any]):
+        assert PythonOptions(**options)
+
+    # @parametrize_options(PythonOptions, "invalid")
+    # def test_invalid_python_options(self, options: dict[str, t.Any]):
+    #     with pytest.raises(TypeError) as excinfo:
+    #         PythonOptions(**options)
+    #         assert "must be <class 'list'>" in str(excinfo.value)
+
+    # @parametrize_options(PythonOptions, "invalid", attribute="dependencies")
+    # def test_dependencies_validator(self, options: dict[str, t.Any]):
+    #     with pytest.raises(InvalidArgument):
+    #         PythonOptions(**options)
+
+    # @pytest.mark.usefixtures("change_test_dir")
+    # @parametrize_options(PythonOptions, "raisewarning")
+    # def test_raises_warning_python_options(
+    #     self, options: dict[str, t.Any], caplog: LogCaptureFixture
+    # ):
+    #     with caplog.at_level(logging.WARNING):
+    #         assert PythonOptions(**options)
+    #     assert "option is ignored" in caplog.text

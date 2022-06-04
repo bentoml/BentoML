@@ -765,8 +765,7 @@ Docker Template (Danger Zone)
 The :code:`docker_template` field gives user the full control over how the
 :code:`Dockerfile` was generated in a Bento.
 
-.. note:: 
-   If you are not sure what you are doing, then you probably won't need this. Otherwise, Refers to :ref:`Dockerfile Generation <reference/build_config:Dockerfile generation>`
+See :ref:`Dockerfile Generation <reference/build_config:Dockerfile generation>` to learn more.
 
 Docker Options Table
 """"""""""""""""""""

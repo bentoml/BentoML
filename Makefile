@@ -54,13 +54,13 @@ install-local: ## Install BentoML in editable mode
 	@pip install --editable .
 install-dev-deps: ## Install all dev dependencies
 	@echo Installing dev dependencies...
-	@pip install -r requirements/dev-requirements.txt
+	@pip install "bentoml[development]"
 install-tests-deps: ## Install all tests dependencies
 	@echo Installing tests dependencies...
-	@pip install -r requirements/tests-requirements.txt
+	@pip install "bentoml[tests]"
 install-docs-deps: ## Install documentation dependencies
 	@echo Installing docs dependencies...
-	@pip install -r requirements/docs-requirements.txt
+	@pip install "bentoml[docs]"
 
 # Docs
 watch-docs: install-docs-deps ## Build and watch documentation

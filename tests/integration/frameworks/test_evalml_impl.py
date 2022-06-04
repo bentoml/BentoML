@@ -1,7 +1,7 @@
-import evalml
 import pandas as pd
 import pytest
 
+import evalml
 from bentoml.evalml import EvalMLModel
 from tests.utils.helpers import assert_have_file_extension
 

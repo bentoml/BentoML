@@ -8,8 +8,8 @@ source ./scripts/ci/helpers.sh
 
 INFO "(pylint) Linting bentoml..."
 
-pylint --rcfile="./pyproject.toml" bentoml
+pylint --rcfile="$GIT_ROOT/pyproject.toml" bentoml
 
-INFO "(pylint) Linting tests and docker..."
+INFO "(pylint) Linting tests..."
 
-pylint --rcfile="./pyproject.toml" --disable=E0401,F0010 tests docker
+pylint --rcfile="$GIT_ROOT/pyproject.toml" --disable=E0401,F0010 tests

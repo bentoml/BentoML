@@ -115,6 +115,7 @@ length_sort = true
 force_single_line = true
 order_by_type = true
 force_alphabetical_sort_within_sections = true
+src_paths = ["bentoml", "tests"]
 skip_glob = ["typings/*", "docs/*"]
 
 [tool.pyright]

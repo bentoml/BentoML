@@ -38,14 +38,12 @@ jobs:
               - pyproject.toml
               - scripts/ci/config.yml
               - scripts/ci/run_tests.sh
-              - requirements/tests-requirements.txt
             bentoml:
               - *related
               - "bentoml/**"
               - "tests/**"
             docs:
               - *related
-              - requirements/docs-requirements.txt
               - "docs/**"
 
   codestyle_check:
@@ -85,12 +83,12 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: codestyle-${{ hashFiles('requirements/dev-requirements.txt') }}
+          key: codestyle-${{ hashFiles('setup.cfg') }}
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install -r requirements/dev-requirements.txt
+          pip install "bentoml[development]"
 
       - name: Format check
         run: make ci-format
@@ -129,12 +127,12 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-docs-${{ hashFiles('requirements/docs-requirements.txt') }}
+          key: ${{ runner.os }}-setupcfg-${{ hashFiles('setup.cfg') }}
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install -r requirements/docs-requirements.txt
+          pip install "bentoml[docs]"
 
       - name: Install libenchant
         run: |
@@ -182,12 +180,12 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install -r requirements/tests-requirements.txt
+          pip install "bentoml[tests]"
 
       - name: Run unit tests
         if: ${{ matrix.os != 'windows-latest' }}
@@ -259,12 +257,12 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
 
       - name: Install dependencies
         run: |
           pip install -e .
-          pip install -r requirements/tests-requirements.txt
+          pip install -r "bentoml[tests]"
 
       - name: Export Action Envvar
         run: export GITHUB_ACTION=true

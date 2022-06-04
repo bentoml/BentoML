@@ -14,9 +14,7 @@ exclude Makefile
 exclude MANIFEST.in
 
 # Directories to exclude in PyPI package
-prune requirements
 prune tests
-prune docker
 prune typings
 prune scripts
 prune hooks
@@ -25,8 +23,8 @@ prune .github
 
 # Patterns to exclude from any directory
 global-exclude *~
-global-exclude *.pyc
-global-exclude *.pyo
+global-exclude *.py[co]
+global-exclude tests
 global-exclude .ipynb_checkpoints
 global-exclude __pycache__
 global-exclude .DS_Store

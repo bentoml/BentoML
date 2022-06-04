@@ -15,6 +15,12 @@ TRACED_LOG_FORMAT = "[%(component)s] %(message)s (trace=%(trace_id)s,span=%(span
 SERVICE_LOG_FORMAT = "[%(component)s] %(message)s"
 DATE_FORMAT = "%x %X"
 
+COMPONENTS_NAME_MAPPING = {
+    "circus": "circus",
+    "asyncio": "asyncio",
+    "build": "pypa/build",
+}
+
 
 class TraceFilter(Filter):
     """
@@ -22,11 +28,9 @@ class TraceFilter(Filter):
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if "circus" in record.name:
-            component_name = "circus"
-        elif "asyncio" in record.name:
-            component_name = "asyncio"
-        else:
+        try:
+            component_name = COMPONENTS_NAME_MAPPING[record.name]
+        except KeyError:
             component_name = ServiceContext.component_name
 
         # make it type-safe
@@ -36,7 +40,7 @@ class TraceFilter(Filter):
         object.__setattr__(record, "request_id", ServiceContext.request_id)
         object.__setattr__(record, "component", component_name)
 
-        return Filter.filter(self, record)
+        return super().filter(record)
 
 
 class TraceFormatter(Formatter):
@@ -47,15 +51,17 @@ class TraceFormatter(Formatter):
     """
 
     def __init__(self):
-        Formatter.__init__(self, fmt=TRACED_LOG_FORMAT, datefmt=DATE_FORMAT)
+        super().__init__(fmt=TRACED_LOG_FORMAT, datefmt=DATE_FORMAT)
         self.control_formatter = Formatter(SERVICE_LOG_FORMAT, datefmt=DATE_FORMAT)
-        self.trace_formatter = Formatter(TRACED_LOG_FORMAT, datefmt=DATE_FORMAT)
+
+    @property
+    def trace_formatter(self) -> Formatter:
+        return Formatter(self._fmt, datefmt=self.datefmt)
 
     def format(self, record: logging.LogRecord) -> str:
         if record.trace_id == 0:
             return self.control_formatter.format(record)
-        else:
-            return self.trace_formatter.format(record)
+        return self.trace_formatter.format(record)
 
 
 if psutil.WINDOWS:
@@ -102,6 +108,16 @@ LOGGING_CONFIG: dict[str, t.Any] = {
             "tracebacks_show_locals": get_debug_mode(),
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },
+        "build": {
+            "level": "INFO",
+            "filters": ["tracing"],
+            "formatter": "tracing",
+            "()": "rich.logging.RichHandler",
+            "omit_repeated_times": True,
+            "rich_tracebacks": True,
+            "tracebacks_show_locals": get_debug_mode(),
+            "show_path": get_debug_mode(),  # show log line # in debug mode
+        },
     },
     "loggers": {
         "bentoml": {"handlers": ["internal"], "level": "INFO", "propagate": False},
@@ -109,6 +125,10 @@ LOGGING_CONFIG: dict[str, t.Any] = {
         "circus": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "circus.plugins": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "asyncio": {"handlers": ["internal"], "level": "INFO", "propagate": False},
+        # build logger
+        "build": {"handlers": ["build"], "level": "INFO", "propagate": False},
+        "setuptools": {"handlers": [], "level": "INFO"},
+        "setuptools.log": {"handlers": ["build"], "level": "INFO", "propagate": False},
         # uvicorn logger
         "uvicorn": {"handlers": [], "level": "INFO"},
         "uvicorn.error": {"handlers": ["uvicorn"], "level": "INFO", "propagate": False},

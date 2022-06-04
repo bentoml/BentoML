@@ -1,13 +1,13 @@
 import json
 import typing as t
 
-import h2o
 import pandas as pd
 import pytest
+
+import h2o
+import bentoml
 import h2o.model
 import h2o.automl
-
-import bentoml
 
 H2O_PORT = 54323
 

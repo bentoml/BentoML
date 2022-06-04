@@ -36,11 +36,12 @@ Instruction for installing `paddlepaddle`:
 
 if TYPE_CHECKING:
     import numpy as np
+    import paddlehub as hub
+    import paddlehub.module.module as module
+
     import paddle
     import paddle.nn
-    import paddlehub as hub
     import paddle.inference
-    import paddlehub.module.module as module
     from paddle.static import InputSpec
     from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
 

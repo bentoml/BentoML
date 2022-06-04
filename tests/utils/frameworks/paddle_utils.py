@@ -1,5 +1,6 @@
-import paddle
 import pandas as pd
+
+import paddle
 import paddle.nn as nn
 from paddle.static import InputSpec
 

@@ -4,10 +4,10 @@ import json
 
 import numpy as np
 import pandas as pd
-import xgboost as xgb
-from sklearn.datasets import load_breast_cancer
 
 import bentoml
+import xgboost as xgb
+from sklearn.datasets import load_breast_cancer
 from bentoml._internal.runner.resource import Resource
 
 from . import FrameworkTestModel

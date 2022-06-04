@@ -12,13 +12,14 @@ import os
 from argparse import ArgumentParser
 
 import torch
-import mlflow.pytorch
-import pytorch_lightning as pl
 from torch.nn import functional as F
 from torchvision import datasets
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
+
+import mlflow.pytorch
+import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.metrics.functional import accuracy

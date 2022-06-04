@@ -21,6 +21,7 @@ PYCARET_CONFIG = "pycaret_config"
 
 if TYPE_CHECKING:
     import pandas as pd
+
     import sklearn
     import xgboost
     import lightgbm

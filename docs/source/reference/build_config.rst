@@ -57,11 +57,24 @@ This next section describes the Dockerfile generation process. BentoML make uses
 of `Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_, which enable users
 to have more control on the generated Dockerfile for a Bento.
 
+.. dropdown:: About this section
+   :animate: fade-in
+
+   The following section is for **ADVANCED USERS** who wants to extends the features of a 🍱.
+   If you are not familiar with Jinja2, or you are not sure whether this is useful for you, we recommend you to skip this section. 
+   While Jinja2 is a very powerful template engine that enables BentoML to support
+   such features, we notice that this might be a little bit complicated for
+   beginners.
+
+   While this section fully exposes the generation process of the Dockerfile
+   for a Bento, our recommendation is to just keep it simple. Sometime less is
+   more 😃.
+
 .. warning::
 
     This section is not meant to be a complete reference on Jinja2. It is meant to
     give a quick overview of how Jinja2 is used in conjunction with BentoML. For
-    any reference on Jinja2 please refers to their `templates design documentation <https://jinja.palletsprojects.com/en/3.1.x/templates/>`_.
+    any reference on Jinja2 please refers to their `Templates Design Documentation <https://jinja.palletsprojects.com/en/3.1.x/templates/>`_.
 
 .. tip::
 
@@ -91,7 +104,8 @@ multiple architectures. Under the hood the generated Dockefile leverage
 .. note::
 
    Currently the only buildkit frontend that we are supporting is
-   docker/dockerfile:1.4-labs. Please contact us if you would like to use a different buildkit frontend.
+   :code:`docker/dockerfile:1.4-labs`. Please contact us if you need support for
+   different build frontend.
 
 
 Writing custom Dockerfile template
@@ -106,6 +120,7 @@ To construct a custom :code:`Dockerfile` template, users have to provide the blo
 By doing so, we ensure that the generated Dockerfile will be compatible with a Bento.
 
 .. dropdown:: About writing :code:`Dockerfile.template`
+   :icon: code
 
    The Dockerfile template is a mix between :code:`Jinja2` syntax and :code:`Dockerfile`
    syntax. BentoML set both `trim_blocks` and `lstrip_blocks` in Jinja
@@ -160,7 +175,7 @@ By doing so, we ensure that the generated Dockerfile will be compatible with a B
 
        ENV PYTHONUNBUFFERED=1
 
-       ENV PATH {{ expands_bento_path("env", "docker") }}:/usr/local/bin:$PATH
+       ENV PATH {{ expands_bento_path("env", "docker", bento_path=bento__path) }}:/usr/local/bin:$PATH
 
        {% endblock %}
 
@@ -271,13 +286,15 @@ An example of a custom Dockerfile template:
 
    .. code-block:: dockerfile
 
-       ENTRYPOINT ["/home/bentoml/bento/env/docker/entrypoint.sh"]
+       ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-       CMD ["bentoml", "serve", "/home/bentoml/bento", "--production"]
+       CMD ["bentoml", "serve", "{{ bento__path }}", "--production"]
 
    This means that if you have multiple :code:`ENTRYPOINT` instructions, you will have to
    make sure the last :code:`ENTRYPOINT` will run bentoml when using :code:`docker
-   run` on the 🍱 container. If you want to run a different command, you can use
+   run` on the 🍱 container. 
+
+   In cases where one needs to setup different :code:`ENTRYPOINT`, you can use
    the :code:`ENTRYPOINT` instruction under the :code:`SETUP_BENTO_ENTRYPOINT` block as follow:
 
    .. code-block:: jinja

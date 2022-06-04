@@ -59,6 +59,7 @@ jobs:
               - setup.cfg
               - pyproject.toml
               - scripts/ci/config.yml
+              - requirements/tests-requirements.txt
             related: &related
               - *dependencies
               - codecov.yml
@@ -239,13 +240,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-catboost
@@ -283,13 +284,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-detectron2
@@ -327,13 +328,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-easyocr
@@ -377,13 +378,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-gluon
@@ -421,13 +422,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-h2o
@@ -465,13 +466,13 @@ jobs:
   #       id: cache-pip
   #       with:
   #         path: ${{ steps.cache-dir.outputs.dir }}
-  #         key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+  #         key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
   #     - name: Install dependencies
   #       run: |
   #         pip install .
-  #         pip install "bentoml[tests]"
+  #         pip install -r requirements/tests-requirements.txt
 
   #     - name: Run tests and generate coverage report
   #       run: make tests-keras_tf1
@@ -509,13 +510,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-keras_tf2
@@ -553,13 +554,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-lightgbm
@@ -597,13 +598,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-mlflow
@@ -641,13 +642,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-onnx
@@ -687,13 +688,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-paddle
@@ -731,13 +732,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-picklable_model
@@ -775,13 +776,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-pycaret
@@ -821,13 +822,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-pytorch
@@ -865,13 +866,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-torchscript
@@ -909,13 +910,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-sklearn
@@ -953,13 +954,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-spacy
@@ -997,13 +998,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-statsmodels
@@ -1041,13 +1042,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-tf1
@@ -1085,13 +1086,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-tf2
@@ -1129,13 +1130,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-transformers
@@ -1173,13 +1174,13 @@ jobs:
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('setup.cfg') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
 
       - name: Install dependencies
         run: |
           pip install .
-          pip install "bentoml[tests]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-xgboost

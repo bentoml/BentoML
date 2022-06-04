@@ -53,15 +53,13 @@ class TraceFormatter(Formatter):
     def __init__(self):
         super().__init__(fmt=TRACED_LOG_FORMAT, datefmt=DATE_FORMAT)
         self.control_formatter = Formatter(SERVICE_LOG_FORMAT, datefmt=DATE_FORMAT)
-
-    @property
-    def trace_formatter(self) -> Formatter:
-        return Formatter(self._fmt, datefmt=self.datefmt)
+        self.trace_formatter = Formatter(TRACED_LOG_FORMAT, datefmt=DATE_FORMAT)
 
     def format(self, record: logging.LogRecord) -> str:
         if record.trace_id == 0:
             return self.control_formatter.format(record)
-        return self.trace_formatter.format(record)
+        else:
+            return self.trace_formatter.format(record)
 
 
 if psutil.WINDOWS:

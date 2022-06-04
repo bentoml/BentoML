@@ -42,7 +42,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 7. Install the BentoML development requirements:
    ```bash
-   pip install "bentoml[development]"
+   pip install -r ./requirements/dev-requirements.txt
    ```
 
 8. Test the BentoML installation either with `bash`:
@@ -246,7 +246,7 @@ python:
 
 Make sure to install all test dependencies:
 ```bash
-pip install "bentoml[tests]"
+pip install -r requirements/tests-requirements.txt
 ```
 
 ### Unit tests

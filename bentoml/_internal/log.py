@@ -18,7 +18,6 @@ DATE_FORMAT = "%x %X"
 COMPONENTS_NAME_MAPPING = {
     "circus": "circus",
     "asyncio": "asyncio",
-    "build": "pypa/build",
 }
 
 

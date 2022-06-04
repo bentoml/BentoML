@@ -52,7 +52,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             from build import ProjectBuilder
         except ModuleNotFoundError:
             raise BentoMLException(
-                f'{BENTOML_DEV_BUILD} is set to True, but `build` is not installed. Make sure to do `pip install "bentoml[development]" and try again.'
+                f'{BENTOML_DEV_BUILD} is set to True, but `build` is not installed. Make sure to do `pip install -r requirements/dev-requirements.txt` and try again.'
             )
 
         with TempDirectory() as dist_dir:

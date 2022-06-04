@@ -264,6 +264,7 @@ jobs:
         run: |
           pip install -e .
           pip install "bentoml[tests]"
+          pip install "bentoml[development]"
 
       - name: Export Action Envvar
         run: export GITHUB_ACTION=true

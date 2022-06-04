@@ -6,6 +6,7 @@ import importlib.util
 
 from ..configuration import is_pypi_installed_bentoml
 from ..utils.tempdir import TempDirectory
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,12 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         logger.info(
             "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento. The wheel is also PEP517-compatible."
         )
-        from build import ProjectBuilder
+        try:
+            from build import ProjectBuilder
+        except ModuleNotFoundError:
+            raise BentoMLException(
+                f'{BENTOML_DEV_BUILD} is set to True, but `build` is not installed. Make sure to do `pip install "bentoml[development]" and try again.'
+            )
 
         with TempDirectory() as dist_dir:
             builder = ProjectBuilder(os.path.dirname(bentoml_pyproject))

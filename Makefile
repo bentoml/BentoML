@@ -16,15 +16,9 @@ type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
 stubs-cleanup: ## Cleanup stubs
 	@./scripts/tools/stubs_cleanup.sh
-hooks: __check_defined_FORCE ## Install pre-defined hooks
+hooks: ## Install pre-defined hooks
 	@./scripts/install_hooks.sh
 
-
-__style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
-__style_name := ${__style_src:_check.sh=}
-tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
-
-ci-all: $(tools) ## Running codestyle in CI: black, isort, pylint, pyright
 
 ci-%:
 	$(eval style := $(subst ci-, ,$@))
@@ -37,7 +31,7 @@ ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 ci-lint: ci-pylint ## Running lint check in CI: pylint
 
 
-tests-%: check-defined-USE_GPU check-defined-USE_VERBOSE
+tests-%:  ## Running tests
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), -$(t)))
@@ -81,15 +75,3 @@ install-spellchecker-deps: ## Inform users to install enchant depending on their
 	@echo Make sure to install enchant from your distros package manager
 	@exit 1
 endif
-
-check_defined = $(strip $(foreach 1,$1, $(call __check_defined,$1,$(strip $(value 2)))))
-__check_defined = \
-    $(if $(value $1),, \
-        $(error Undefined $1$(if $2, ($2))$(if $(value @), \
-                required by target `$@`)))
-check-defined-% : __check_defined_FORCE
-	$(eval $@_target := $(subst check-defined-, ,$@))
-	@:$(call check_defined, $*, $@_target)
-
-.PHONY : __check_defined_FORCE
-__check_defined_FORCE:

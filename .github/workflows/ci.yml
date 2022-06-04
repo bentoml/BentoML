@@ -88,6 +88,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
+          pip install "bentoml[tests]"
           pip install "bentoml[development]"
 
       - name: Format check
@@ -262,7 +263,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e .
-          pip install -r "bentoml[tests]"
+          pip install "bentoml[tests]"
 
       - name: Export Action Envvar
         run: export GITHUB_ACTION=true

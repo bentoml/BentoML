@@ -125,10 +125,8 @@ LOGGING_CONFIG: dict[str, t.Any] = {
         "circus": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "circus.plugins": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "asyncio": {"handlers": ["internal"], "level": "INFO", "propagate": False},
-        # build logger
+        # build & setuptools logger
         "build": {"handlers": ["build"], "level": "INFO", "propagate": False},
-        "setuptools": {"handlers": [], "level": "INFO"},
-        "setuptools.log": {"handlers": ["build"], "level": "INFO", "propagate": False},
         # uvicorn logger
         "uvicorn": {"handlers": [], "level": "INFO"},
         "uvicorn.error": {"handlers": ["uvicorn"], "level": "INFO", "propagate": False},

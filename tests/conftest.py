@@ -21,11 +21,12 @@ if TYPE_CHECKING:
     from _pytest.tmpdir import TempPathFactory
     from _pytest.fixtures import FixtureRequest
 
+
 # setup @pytest.mark.incremental
 def pytest_runtest_makereport(item: Function, call: CallInfo[None]) -> None:
     if "incremental" in item.keywords:
         # call.execinfo is _pytest._code.code.ExceptionInfo
-        if call.excinfo is not None:
+        if call.excinfo is not None and call.excinfo.typename != "Skipped":
             parent = item.parent
             object.__setattr__(parent, "__previousfailed__", item)
 

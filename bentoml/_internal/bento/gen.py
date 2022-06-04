@@ -12,6 +12,7 @@ from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
 from ..utils import bentoml_cattr
+from ..utils import resolve_user_filepath
 from .docker import DistroSpec
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
@@ -186,9 +187,9 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
     if spec is None:
         raise BentoMLException("function is called before with_defaults() is invoked.")
 
-    templates_path = [fs.path.join(fs.path.dirname(__file__), "docker", "templates")]
+    templates_path = [fs.path.join(os.path.dirname(__file__), "docker", "templates")]
     if user_templates is not None:
-        dir_path = fs.path.dirname(os.path.realpath(user_templates))
+        dir_path = fs.path.dirname(resolve_user_filepath(user_templates, os.getcwd()))
         templates_path.append(dir_path)
 
     dockerfile_env = Environment(
@@ -204,8 +205,9 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
     bento_dockerfile_tmpl = dockerfile_env.get_template(j2_template)
 
     if user_templates is not None:
-        dir_path = os.path.dirname(os.path.realpath(user_templates))
-        user_templates = fs.path.relativefrom(dir_path, user_templates)
+        dir_path = fs.path.dirname(resolve_user_filepath(user_templates, os.getcwd()))
+        print(dir_path)
+        user_templates = os.path.basename(user_templates)
         template = dockerfile_env.get_template(
             user_templates,
             globals={"bento__dockerfile": bento_dockerfile_tmpl},

@@ -1,0 +1,6 @@
+dependencies:
+  - numpy=1.0
+  - pip:
+    - "more=than_one_dict"
+  - wrong_key:
+    - "foo=bar"

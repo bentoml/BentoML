@@ -279,6 +279,34 @@ bentoml_cattr.register_structure_hook(DockerOptions, _docker_options_structure_h
 
 if TYPE_CHECKING:
     CondaOptionsAttributes = t.Union[str, None, t.List[str]]
+    CondaPipType = t.Dict[t.Literal["pip"], t.List[str]]
+    DependencyType = t.List[t.Union[str, CondaPipType]]
+else:
+    DependencyType = list
+
+
+def conda_dependencies_validator(
+    _: t.Any, __: "Attribute[DependencyType]", value: DependencyType
+) -> None:
+    if not isinstance(value, list):
+        raise InvalidArgument(
+            f"Expected `conda.dependencies` to be type `list`, got type: `{type(value)}` instead"
+        )
+    else:
+        conda_pip: "t.List[CondaPipType]" = [x for x in value if isinstance(x, dict)]
+        if conda_pip:
+            try:  # need to test this since conda didn't cover this :(
+                if len(conda_pip) > 1:
+                    raise InvalidArgument(
+                        f"Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
+                    )
+                pip_list: t.List[str] = conda_pip[0]["pip"]
+                if not all(isinstance(x, str) for x in pip_list):
+                    raise InvalidArgument(f"Expected `pip` values to be type `str`")
+            except KeyError:
+                raise InvalidArgument(
+                    f"Conda dependencies can ONLY include `pip` value as a dictionary."
+                )
 
 
 @attr.frozen
@@ -288,9 +316,17 @@ class CondaOptions:
         __attrs_attrs__: "t.List[Attribute[CondaOptionsAttributes]]" = []
 
     environment_yml: t.Optional[str] = None
-    channels: t.Optional[t.List[str]] = None
-    dependencies: t.Optional[t.List[str]] = None
-    pip: t.Optional[t.List[str]] = None  # list of pip packages to install via conda
+    channels: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(list)),
+    )
+    dependencies: t.Optional[DependencyType] = attr.field(
+        default=None, validator=attr.validators.optional(conda_dependencies_validator)
+    )
+    pip: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(list)),
+    )
 
     def __attrs_post_init__(self):
         if self.environment_yml is not None:
@@ -332,17 +368,16 @@ class CondaOptions:
 
         deps_list = [] if self.dependencies is None else self.dependencies
         if self.pip is not None:
-            deps_list.append(dict(pip=self.pip))  # type: ignore
+            deps_list.append({"pip": self.pip})
 
-        if not deps_list:
-            return
+        if deps_list:
+            yaml_content = {
+                "dependencies": deps_list,
+                "channels": ["defaults"] if self.channels is None else self.channels,
+            }
 
-        yaml_content = dict(dependencies=deps_list)
-        yaml_content["channels"] = (
-            ["defaults"] if self.channels is None else self.channels
-        )
-        with bento_fs.open(fs.path.join(conda_folder, "environment_yml"), "w") as f:
-            yaml.dump(yaml_content, f)
+            with bento_fs.open(fs.path.join(conda_folder, "environment.yml"), "w") as f:
+                yaml.dump(yaml_content, f)
 
     def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
@@ -353,6 +388,32 @@ class CondaOptions:
 
         return attr.evolve(self, **defaults)
 
+
+def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOptions:
+    pip_list: t.List[str]
+    if "pip" in d:
+        pip_list = d["pip"]
+    else:
+        pip_list = []
+    if "dependencies" in d:
+        deps: DependencyType = d["dependencies"]
+        if not isinstance(deps, list):
+            raise InvalidArgument(
+                f"dependencies has to be type list, got type {type(d['dependencies'])}"
+            )
+        for dep in deps:
+            if isinstance(dep, dict):
+                assert "pip" in dep and len(dep.keys()) == 1
+                pip_from_deps = dep.pop("pip")
+                pip_list.extend(pip_from_deps)
+        deps = list(filter(lambda x: not isinstance(x, dict), deps))
+        d["dependencies"] = deps
+    d["pip"] = None if pip_list else pip_list
+
+    return CondaOptions(**d)
+
+
+bentoml_cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
 
 if TYPE_CHECKING:
     PythonOptionsAttributes = t.Union[str, None, t.List[str], bool]
@@ -543,9 +604,11 @@ class BentoBuildConfig:
     )
 
     def __attrs_post_init__(self) -> None:
-        use_conda = any(
-            val is not None for _, val in bentoml_cattr.unstructure(self.conda).items()
-        )
+        use_conda = False
+        for attr_ in [a.name for a in attr.fields(self.conda.__class__)]:
+            if getattr(self.conda, attr_) is not None:
+                use_conda = True
+                break
         use_cuda = self.docker.cuda_version is not None
 
         if use_cuda and use_conda:

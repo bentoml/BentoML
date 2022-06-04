@@ -1,0 +1,12 @@
+channels:
+  - pytorch
+  - apple
+  - conda-forge
+dependencies:
+  - _py-xgboost-mutex=2.0=cpu_0
+  - appnope=0.1.3=pyhd8ed1ab_0
+  - asttokens=2.0.5=pyhd8ed1ab_0
+  - zstd
+pip:
+  - aiofiles==0.8.0
+  - aiohttp

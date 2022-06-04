@@ -1,0 +1,4 @@
+environment_yml: ./testdata/configuration/example_environment.yml
+pip:
+  - aiofiles==0.8.0
+  - aiohttp

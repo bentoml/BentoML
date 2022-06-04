@@ -1,0 +1,3 @@
+environment_yml: ./testdata/configuration/example_environment.yml
+channels:
+  - conda-forge

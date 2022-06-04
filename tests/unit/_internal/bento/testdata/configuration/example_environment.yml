@@ -1,0 +1,13 @@
+name: example-environment
+
+dependencies:
+  - python=3.4
+  - numpy
+  - toolz
+  - matplotlib
+  - dill
+  - pandas
+  - partd
+  - bokeh
+  - pip:
+    - git+https://github.com/blaze/dask.git#egg=dask[complete]

@@ -1,0 +1,4 @@
+dependencies:
+  - numpy=1.0
+  - wrong_key:
+    - "foo=bar"

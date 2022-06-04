@@ -37,17 +37,17 @@ def clean_bentoml_version(bentoml_version: str) -> str:
     return match.group()
 
 
-def expands_bento_path(*path: str):
-    """
-    Expand a given paths with respect to :code:`BENTO_PATH`.
-    """
-    return os.path.expandvars(os.path.join(BENTO_PATH, *path))
-
-
 BENTO_UID_GID = 1034
 BENTO_USER = "bentoml"
 BENTO_HOME = f"/home/{BENTO_USER}/"
 BENTO_PATH = f"{BENTO_HOME}bento"
+
+
+def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
+    """
+    Expand a given paths with respect to :code:`BENTO_PATH`.
+    """
+    return os.path.expandvars(os.path.join(bento_path, *path))
 
 
 J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {

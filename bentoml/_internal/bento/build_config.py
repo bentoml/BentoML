@@ -55,16 +55,13 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if not isinstance(py_version, str):
         py_version = str(py_version)
 
-    print(type(py_version), py_version)
     match = re.match(r"^(\d+)\.(\d+)(?:|.(?:\d+|\w+))$", py_version)
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
             f"version must follow standard python semver format, e.g. 3.7.10 ",
         )
-    print(match)
     major, minor = match.groups()
-    print(major, minor)
     return f"{major}.{minor}"
 
 

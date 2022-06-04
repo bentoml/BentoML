@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 import logging
+from typing import final
 from typing import TYPE_CHECKING
 
 import attr
@@ -81,7 +82,10 @@ DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
 DOCKER_SUPPORTED_DISTROS = list(DOCKER_METADATA.keys())
 
 
-def get_supported_spec(spec: t.Literal["python", "miniconda", "cuda"]) -> list[str]:
+@final
+def get_supported_spec(
+    spec: str | t.Literal["python", "miniconda", "cuda"]
+) -> list[str]:
     if spec not in SUPPORTED_RELEASE_TYPES:
         raise InvalidArgument(
             f"Unknown release type: {spec}, supported spec: {SUPPORTED_RELEASE_TYPES}"

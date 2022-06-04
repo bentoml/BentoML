@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
-import tensorflow as tf
 import tensorflow_hub as hub
 
 import bentoml
+import tensorflow as tf
 from tests.utils.helpers import assert_have_file_extension
 
 if TYPE_CHECKING:

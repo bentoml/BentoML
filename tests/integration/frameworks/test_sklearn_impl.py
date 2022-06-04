@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 import joblib
 import pytest
-from sklearn.ensemble import RandomForestClassifier
 
 import bentoml
 import bentoml.models
+from sklearn.ensemble import RandomForestClassifier
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data

@@ -4,7 +4,6 @@ import tempfile
 import contextlib
 
 import fasttext
-
 from bentoml.fasttext import FastTextModel
 
 test_json: t.Dict[str, str] = {"text": "foo"}

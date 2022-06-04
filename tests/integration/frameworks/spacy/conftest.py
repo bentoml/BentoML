@@ -1,8 +1,9 @@
 import random
 import typing as t
 
-import spacy
 import pytest
+
+import spacy
 from spacy.util import minibatch
 from spacy.training import Example
 

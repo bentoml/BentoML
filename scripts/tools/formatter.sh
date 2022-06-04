@@ -8,9 +8,12 @@ source ./scripts/ci/helpers.sh
 
 INFO "(black) Formatting codebase..."
 
-black --config ./pyproject.toml bentoml/ tests/ docs/
+black --config "$GIT_ROOT/pyproject.toml" bentoml tests docs
 
 INFO "(isort) Reordering imports..."
 
-isort .
+isort "$GIT_ROOT"
 
+INFO "(setup-cfg-fmt) Format setup.cfg ..."
+
+setup-cfg-fmt "$GIT_ROOT/setup.cfg" --min-py3-version 3.7 --max-py-version 3.10

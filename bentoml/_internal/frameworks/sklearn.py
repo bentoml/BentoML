@@ -16,9 +16,8 @@ from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
     from sklearn.base import BaseEstimator
-    from sklearn.pipeline import Pipeline
-
     from bentoml.types import ModelSignature
+    from sklearn.pipeline import Pipeline
     from bentoml._internal.models.model import ModelSignaturesType
 
     from .. import external_typing as ext

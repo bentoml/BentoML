@@ -2,10 +2,10 @@ import typing as t
 
 import numpy as np
 import pytest
-import tensorflow as tf
-import tensorflow.keras as keras
 
 import bentoml
+import tensorflow as tf
+import tensorflow.keras as keras
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.tensorflow_utils import CustomLayer
 from tests.utils.frameworks.tensorflow_utils import custom_activation

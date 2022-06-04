@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 import pandas as pd
+
 from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
 

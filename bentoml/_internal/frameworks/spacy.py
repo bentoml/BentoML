@@ -24,8 +24,9 @@ from .common.model_runner import BaseModelRunner
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
-    from spacy.vocab import Vocab
     from thinc.config import Config
+
+    from spacy.vocab import Vocab
     from spacy.tokens.doc import Doc
 
     from ..models import ModelStore

@@ -277,7 +277,23 @@ An example of a custom Dockerfile template:
 
    This means that if you have multiple :code:`ENTRYPOINT` instructions, you will have to
    make sure the last :code:`ENTRYPOINT` will run bentoml when using :code:`docker
-   run` on the 🍱 container.
+   run` on the 🍱 container. If you want to run a different command, you can use
+   the :code:`ENTRYPOINT` instruction under the :code:`SETUP_BENTO_ENTRYPOINT` block as follow:
+
+   .. code-block:: jinja
+
+        {% extends bento__dockerfile %}
+        {% block SETUP_BENTO_ENTRYPOINT %}
+        {{ super() }}
+
+        ...
+        ENTRYPOINT [ "{{ bento__entrypoint }}", "python", "-m", "awslambdaric" ]
+        {% endblock %}
+
+   .. tip::
+
+        :code:`{{ bento__entrypoint }}` is the path the BentoML entrypoint,
+        nothinig special here 😏
 
    Read more about :code:`CMD` and :code:`ENTRYPOINT` interaction `here <https://docs.docker.com/engine/reference/builder/#understand-how-cmd-and-entrypoint-interact>`_.
 

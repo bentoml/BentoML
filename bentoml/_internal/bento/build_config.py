@@ -762,16 +762,13 @@ def dict_options_converter(
 @attr.define(frozen=True, on_setattr=None)
 class BentoBuildConfig:
     """
-    .. note::
-        Refers to :ref:`concepts/bento:Building Bentos` for more details.
-
     This class is intended for modeling the :code:`bentofile.yaml` file where user will
     provide all the options for building a Bento.
 
     All optional build options should be default to :code:`None` so BentoML knows
     which fields are **NOT SET** by the user provided config.
 
-    Thus, it is possible to omitted unset fields when writing a :code:`BentoBuildOptions` to
+    Thus, it is possible to omitted unset fields when writing a :code:`BentoBuildConfig` to
     a yaml file for future use. This also applies to nested options such as the
     :class:`DockerOptions` class and the :class:`PythonOptions` class.
 

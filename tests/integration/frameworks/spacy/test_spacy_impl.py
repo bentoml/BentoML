@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 
 import yaml
+import spacy
 import pytest
 
-import spacy
 import bentoml
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException

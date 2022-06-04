@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 import requests
-from PIL import Image
-
-import bentoml
 import transformers
 import transformers.pipelines
+from PIL import Image
 from transformers.trainer_utils import set_seed
+
+import bentoml
 
 if TYPE_CHECKING:
     from bentoml._internal.external_typing import transformers as ext

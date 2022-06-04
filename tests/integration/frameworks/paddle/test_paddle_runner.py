@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+import paddle.inference
 
 import bentoml
-import paddle.inference
 
 from .test_paddle_impl import test_df
 

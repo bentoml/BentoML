@@ -4,14 +4,14 @@ import numpy as np
 import pandas as pd
 import psutil
 import pytest
+import statsmodels
+from statsmodels.tsa.holtwinters import HoltWintersResults
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 import bentoml
-import statsmodels
 import bentoml.models
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
-from statsmodels.tsa.holtwinters import HoltWintersResults
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 # fmt: off
 test_df = pd.DataFrame([[0, 0, 1, 1]])

@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
+import tensorflow as tf
 
 import bentoml
-import tensorflow as tf
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.tensorflow_utils import NativeModel
 from tests.utils.frameworks.tensorflow_utils import MultiInputModel

@@ -23,9 +23,8 @@ SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
 try:
-    import onnxruntime as ort  # type: ignore
-
     import onnx  # type: ignore
+    import onnxruntime as ort  # type: ignore
 except ImportError:
     raise MissingDependencyException(
         """\
@@ -38,7 +37,6 @@ more information.
 
 if TYPE_CHECKING:
     import torch
-
     import tensorflow as tf  # type: ignore
 
     from .. import external_typing as ext

@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import psutil
 import pytest
+import tensorflow as tf
 
 import bentoml
-import tensorflow as tf
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.tensorflow_utils import NativeModel
 

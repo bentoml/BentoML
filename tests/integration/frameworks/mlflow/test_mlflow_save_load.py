@@ -4,9 +4,9 @@ from pathlib import Path
 import numpy as np
 import psutil
 import pytest
+import mlflow.sklearn
 
 import bentoml
-import mlflow.sklearn
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data

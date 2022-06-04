@@ -28,9 +28,9 @@ class TraceFilter(Filter):
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
-        try:
+        if record.name in COMPONENTS_NAME_MAPPING:
             component_name = COMPONENTS_NAME_MAPPING[record.name]
-        except KeyError:
+        else:
             component_name = ServiceContext.component_name
 
         # make it type-safe
@@ -106,16 +106,6 @@ LOGGING_CONFIG: dict[str, t.Any] = {
             "tracebacks_show_locals": get_debug_mode(),
             "show_path": get_debug_mode(),  # show log line # in debug mode
         },
-        "build": {
-            "level": "INFO",
-            "filters": ["tracing"],
-            "formatter": "tracing",
-            "()": "rich.logging.RichHandler",
-            "omit_repeated_times": True,
-            "rich_tracebacks": True,
-            "tracebacks_show_locals": get_debug_mode(),
-            "show_path": get_debug_mode(),  # show log line # in debug mode
-        },
     },
     "loggers": {
         "bentoml": {"handlers": ["internal"], "level": "INFO", "propagate": False},
@@ -123,8 +113,6 @@ LOGGING_CONFIG: dict[str, t.Any] = {
         "circus": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "circus.plugins": {"handlers": ["circus"], "level": "INFO", "propagate": False},
         "asyncio": {"handlers": ["internal"], "level": "INFO", "propagate": False},
-        # build & setuptools logger
-        "build": {"handlers": ["build"], "level": "INFO", "propagate": False},
         # uvicorn logger
         "uvicorn": {"handlers": [], "level": "INFO"},
         "uvicorn.error": {"handlers": ["uvicorn"], "level": "INFO", "propagate": False},

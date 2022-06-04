@@ -4,9 +4,10 @@ import logging
 import importlib
 import importlib.util
 
+from bentoml.exceptions import BentoMLException
+
 from ..configuration import is_pypi_installed_bentoml
 from ..utils.tempdir import TempDirectory
-from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             from build import ProjectBuilder
         except ModuleNotFoundError:
             raise BentoMLException(
-                f'{BENTOML_DEV_BUILD} is set to True, but `build` is not installed. Make sure to do `pip install -r requirements/dev-requirements.txt` and try again.'
+                f"{BENTOML_DEV_BUILD} is set to True, but `build` is not installed. Make sure to do `pip install -r requirements/dev-requirements.txt` and try again."
             )
 
         with TempDirectory() as dist_dir:

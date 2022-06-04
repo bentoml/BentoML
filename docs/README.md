@@ -30,7 +30,7 @@ git clone https://github.com/bentoml/BentoML.git && cd BentoML
 Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
 ```bash
-pip install "bentoml[docs]"
+pip install -r requirements/docs-requirements.txt
 ```
 
 Build the sphinx docs:

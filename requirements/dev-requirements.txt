@@ -7,4 +7,4 @@ yamllint
 setuptools>=62.0.0
 twine
 wheel
-backports.cached_property
+build >=0.8.0

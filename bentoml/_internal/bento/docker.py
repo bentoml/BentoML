@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 import logging
-from typing import final
+from sys import version_info
 from typing import TYPE_CHECKING
 
 import attr
@@ -12,6 +12,11 @@ from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
+
+if version_info >= (3, 8):
+    from typing import final
+else:  # pragma: no cover
+    from typing_extensions import final
 
 logger = logging.getLogger(__name__)
 

@@ -494,7 +494,6 @@ class PythonOptions:
             bento_fs.makedirs(wheels_folder, recreate=True)
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
-                print(whl_file)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
         if self.requirements_txt is not None:

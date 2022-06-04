@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 def clean_bentoml_version(bentoml_version: str) -> str:
     post_version = bentoml_version.split("+")[0]
-    match = re.match(r"^(\d+).(\d+).(\d+)(?:(a|rc)\d)", post_version)
+    match = re.match(r"^(\d+).(\d+).(\d+)(?:(a|rc)\d)*", post_version)
     if match is None:
         raise BentoMLException("Errors while parsing BentoML version.")
     return match.group()
@@ -87,8 +87,10 @@ attr.resolve_types(CustomizableEnv, globals(), locals())
 
 
 def get_template_env(
-    docker_options: DockerOptions, spec: DistroSpec
+    docker_options: DockerOptions, spec: DistroSpec | None
 ) -> dict[str, t.Any]:
+    if spec is None:
+        raise BentoMLException("Distro spec is required not to be None.")
     distro = docker_options.distro
     cuda_version = docker_options.cuda_version
     python_version = docker_options.python_version
@@ -132,6 +134,15 @@ def validate_setup_blocks(environment: Environment, dockerfile_template: str) ->
         raise BentoMLException(
             f"Unknown SETUP block in `{dockerfile_template}`: {list(filter(lambda x: x not in base_blocks, contains_bentoml_blocks))}. All supported blocks include: {', '.join(base_blocks)}"
         )
+
+
+def validate_reserved_env(dockerfile_template: str) -> bool:
+    template_file = resolve_user_filepath(dockerfile_template, os.getcwd())
+    with open(template_file, "r") as f:
+        content = f.readlines()
+
+    reserved_var = [f"__{k.name}__" for k in attr.fields(ReservedEnv)]
+    return len([i for names in reserved_var for i in content if names in i]) > 0
 
 
 def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> str:
@@ -191,6 +202,10 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
     if user_templates is not None:
         dir_path = fs.path.dirname(resolve_user_filepath(user_templates, os.getcwd()))
         templates_path.append(dir_path)
+        if validate_reserved_env(user_templates):
+            raise BentoMLException(
+                "User defined Dockerfile template contains reserved variables. These variables are internally used by BentoML and should not be accessed by users. Refers to https://docs.bentoml.org/en/latest/concepts/bento.html#docker-template-danger-zone to see which variables you can use in your custom docker templates."
+            )
 
     dockerfile_env = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
@@ -202,18 +217,15 @@ def generate_dockerfile(docker_options: DockerOptions, *, use_conda: bool) -> st
 
     j2_template = f"{spec.release_type}_{distro}.j2"
     validate_setup_blocks(dockerfile_env, j2_template)
-    bento_dockerfile_tmpl = dockerfile_env.get_template(j2_template)
+    template = dockerfile_env.get_template(j2_template)
 
     if user_templates is not None:
         dir_path = fs.path.dirname(resolve_user_filepath(user_templates, os.getcwd()))
-        print(dir_path)
         user_templates = os.path.basename(user_templates)
+        validate_setup_blocks(dockerfile_env, user_templates)
         template = dockerfile_env.get_template(
             user_templates,
-            globals={"bento__dockerfile": bento_dockerfile_tmpl},
+            globals={"bento__dockerfile": template},
         )
-        validate_setup_blocks(dockerfile_env, user_templates)
-    else:
-        template = bento_dockerfile_tmpl
 
     return template.render(**get_template_env(docker_options, spec))

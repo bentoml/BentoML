@@ -7,10 +7,10 @@ from datetime import timezone
 
 import fs
 import pytest
-import fs.base
 
 from bentoml import Tag
 from bentoml._internal.bento import Bento
+from bentoml._internal.models import ModelStore
 from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.bento import BentoApiInfo
 from bentoml._internal.bento.bento import BentoModelInfo
@@ -21,8 +21,6 @@ from bentoml._internal.bento.build_config import BentoBuildConfig
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from bentoml._internal.models import ModelStore
 
 
 def test_bento_info(tmpdir: Path):
@@ -151,7 +149,7 @@ def fs_identical(fs1: fs.base.FS, fs2: fs.base.FS):
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_bento_export(tmpdir: Path, dummy_model_store: ModelStore):
+def test_bento_export(tmpdir: "Path", dummy_model_store: "ModelStore"):
     working_dir = os.getcwd()
 
     testbento = build_test_bento(dummy_model_store)

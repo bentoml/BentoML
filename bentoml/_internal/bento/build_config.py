@@ -55,13 +55,16 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if not isinstance(py_version, str):
         py_version = str(py_version)
 
-    match = re.match(r"^(\d+).(\d+)", py_version)
+    print(type(py_version), py_version)
+    match = re.match(r"^(\d+)\.(\d+)(?:|.(?:\d+|\w+))$", py_version)
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
             f"version must follow standard python semver format, e.g. 3.7.10 ",
         )
+    print(match)
     major, minor = match.groups()
+    print(major, minor)
     return f"{major}.{minor}"
 
 
@@ -142,9 +145,6 @@ if TYPE_CHECKING:
 
 @attr.frozen
 class DockerOptions:
-    if TYPE_CHECKING:
-        __attrs_attrs__: "t.List[Attribute[DockerOptionsAttributes]]" = []
-
     distro: str = attr.field(
         default=None,
         validator=attr.validators.optional(
@@ -179,6 +179,9 @@ class DockerOptions:
             lambda _, __, value: os.path.exists(value) and os.path.isfile(value)
         ),
     )
+
+    if TYPE_CHECKING:
+        __attrs_attrs__: "t.List[Attribute[DockerOptionsAttributes]]" = []
 
     def __attrs_post_init__(self):
         if self.base_image is not None:
@@ -312,9 +315,6 @@ def conda_dependencies_validator(
 @attr.frozen
 class CondaOptions:
 
-    if TYPE_CHECKING:
-        __attrs_attrs__: "t.List[Attribute[CondaOptionsAttributes]]" = []
-
     environment_yml: t.Optional[str] = None
     channels: t.Optional[t.List[str]] = attr.field(
         default=None,
@@ -327,6 +327,9 @@ class CondaOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(list)),
     )
+
+    if TYPE_CHECKING:
+        __attrs_attrs__: "t.List[Attribute[CondaOptionsAttributes]]" = []
 
     def __attrs_post_init__(self):
         if self.environment_yml is not None:
@@ -421,9 +424,6 @@ if TYPE_CHECKING:
 
 @attr.frozen
 class PythonOptions:
-    if TYPE_CHECKING:
-        __attrs_attrs__: "t.List[Attribute[PythonOptionsAttributes]]" = []
-
     requirements_txt: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
@@ -458,12 +458,18 @@ class PythonOptions:
     )
     pip_args: t.Optional[str] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(str)),
+        validator=attr.validators.optional(
+            lambda _, __, value: isinstance(value, str)
+            and re.match(r"^(?:--)\w*", value)
+        ),
     )
     wheels: t.Optional[t.List[str]] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(list)),
     )
+
+    if TYPE_CHECKING:
+        __attrs_attrs__: "t.List[Attribute[PythonOptionsAttributes]]" = []
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
@@ -488,8 +494,10 @@ class PythonOptions:
         # Note: although wheel files outside of build_ctx will also work, we should
         # discourage users from doing that
         if self.wheels is not None:
+            bento_fs.makedirs(wheels_folder, recreate=True)
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
+                print(whl_file)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
         if self.requirements_txt is not None:
@@ -529,10 +537,13 @@ class PythonOptions:
 
         # write pip install args to a text file if applicable
         if pip_args:
-            with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
+            with bento_fs.open(fs.path.combine(py_folder, "pip_args.txt"), "w") as f:
                 f.write(" ".join(pip_args))
 
-        if self.lock_packages:
+        if self.lock_packages:  # pragma: no cover
+            # This section is not covered by tests and we relies
+            # on jazzband/pip-tools test coverage
+
             # Note: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
             # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
@@ -541,10 +552,10 @@ class PythonOptions:
             # Note: "--generate-hashes" is purposefully not used here because it will
             # break if user includes PyPI package from version control system
             pip_compile_in = bento_fs.getsyspath(
-                fs.path.join(py_folder, "requirements.txt")
+                fs.path.combine(py_folder, "requirements.txt")
             )
             pip_compile_out = bento_fs.getsyspath(
-                fs.path.join(py_folder, "requirements.lock.txt")
+                fs.path.combine(py_folder, "requirements.lock.txt")
             )
             pip_compile_args = (
                 [pip_compile_in]
@@ -603,6 +614,12 @@ def dict_options_converter(
     return _converter
 
 
+if TYPE_CHECKING:
+    BentoBuildConfigAttributes = t.Union[
+        str, None, t.List[str], t.Dict[str, t.Any], OptionsCls
+    ]
+
+
 @attr.define(frozen=True, on_setattr=None)
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
@@ -613,7 +630,7 @@ class BentoBuildConfig:
     DockerOptions class and the PythonOptions class.
     """
 
-    service: str  # Import Str of target service to build
+    service: str
     description: t.Optional[str] = None
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
@@ -630,6 +647,9 @@ class BentoBuildConfig:
         factory=CondaOptions,
         converter=dict_options_converter(CondaOptions),
     )
+
+    if TYPE_CHECKING:
+        __attrs_attrs__: "t.List[Attribute[BentoBuildConfigAttributes]]" = []
 
     def __attrs_post_init__(self) -> None:
         use_conda = False
@@ -650,7 +670,8 @@ class BentoBuildConfig:
                     f"{self.docker.distro} does not supports conda. BentoML will only support conda with the following distros: {get_supported_spec('miniconda')}."
                 )
             if use_cuda and self.docker.distro not in get_supported_spec("cuda"):
-                raise BentoMLException(
+                # This is helpful when we support more CUDA version
+                raise BentoMLException(  # pragma: no cover
                     f"{self.docker.distro} does not supports cuda. BentoML will only support cuda with the following distros: {get_supported_spec('cuda')}."
                 )
 
@@ -672,7 +693,7 @@ class BentoBuildConfig:
                     if self.docker.cuda_version != "default" and (
                         self.docker.cuda_version not in _spec.supported_cuda_versions
                     ):
-                        raise BentoMLException(
+                        raise BentoMLException(  # pragma: no cover
                             f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
                         )
 
@@ -684,7 +705,6 @@ class BentoBuildConfig:
         Returns:
             BentoBuildConfig: a new copy of self, with default values filled
         """
-
         return FilledBentoBuildConfig(
             self.service,
             self.description,
@@ -704,17 +724,7 @@ class BentoBuildConfig:
             logger.error(exc)
             raise
 
-        try:
-            return bentoml_cattr.structure(yaml_content, cls)
-        except KeyError as e:
-            if str(e) == "'service'":
-                raise InvalidArgument(
-                    'Missing required build config field "service", which'
-                    " indicates import path of target bentoml.Service instance."
-                    ' e.g.: "service: fraud_detector.py:svc"'
-                )
-            else:
-                raise
+        return bentoml_cattr.structure(yaml_content, cls)
 
     def to_yaml(self, stream: t.TextIO) -> None:
         # TODO: Save BentoBuildOptions to a yaml file

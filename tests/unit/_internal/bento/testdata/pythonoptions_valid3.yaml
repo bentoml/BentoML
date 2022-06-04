@@ -1,0 +1,3 @@
+wheels:
+  - ./testdata/wheels/quickstart.whl
+  - ./testdata/wheels/different.whl

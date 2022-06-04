@@ -1,0 +1,30 @@
+service: "service.py:svc"
+labels:
+  owner: foo
+  project: bar
+include:
+- "*.py"
+exclude:
+- tests
+- "*.go"
+python:
+  packages:
+    - scikit-learn
+    - pandas
+  requirements_txt: ~/workspace/gallery/quickstart/extra-requirements.txt
+conda:
+  dependencies:
+    - python=3.4
+    - numpy
+    - toolz
+    - matplotlib
+    - dill
+    - pandas
+    - partd
+    - bokeh
+    - pip:
+      - git+https://github.com/blaze/dask.git#egg=dask[complete]
+docker:
+  distro: "debian"
+  cuda_version: default
+  dockerfile_template: ./Dockerfile.template

@@ -1,2 +1,3 @@
 typings/**/*.pyi linguist-generated=true
+tests/unit/_internal/bento/testdata/**/*.yaml linguist-generated=true
 * text=auto eol=lf

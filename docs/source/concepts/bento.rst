@@ -800,7 +800,7 @@ This template file is a mixed between a :code:`Dockerfile` and a :code:`Jinja` t
    The template file can have extension :code:`.jinja`, :code:`.j2`, or any
    extensions that Jinja2 can understand.
 
-Then add the path to the given template file to the :code:`docker_template` field:
+Then add the path to the given template file to the :code:`docker_template` field in the :code: `bentofile.yaml`:
 
 .. code:: yaml
 

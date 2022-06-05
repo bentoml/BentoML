@@ -1,9 +1,0 @@
-requirements_txt: ./testdata/configuration/example_requirements.txt
-pip_args: "--proxy=foo --cert=bar"
-trusted_host:
-  - "pypi.python.org"
-  - "foo.cdns.com"
-find_links:
-  - https://download.pytorch.org/whl/cu80/stable.html
-extra_index_url:
-  - "https://mirror.baidu.cn/simple"

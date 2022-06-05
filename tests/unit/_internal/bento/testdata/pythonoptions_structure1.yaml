@@ -1,3 +1,0 @@
-trusted_host: https://foo:bar
-find_links: https://download.pytorch.org/whl/cu80/stable.html
-extra_index_url: https://pypi.python.org/simple

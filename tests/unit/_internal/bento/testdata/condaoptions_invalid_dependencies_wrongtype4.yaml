@@ -1,5 +1,0 @@
-dependencies:
-  - numpy=1.0
-  - pip:
-    - git+https://github.com/blaze/dask.git#egg=dask[complete]
-    - 123123

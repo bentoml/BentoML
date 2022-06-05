@@ -1,3 +1,0 @@
-base_image: nvidia/cuda:11.7.0-runtime-rockylinux8
-env:
-  FOO:

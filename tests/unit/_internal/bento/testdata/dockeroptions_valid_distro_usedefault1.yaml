@@ -1,3 +1,0 @@
-python_version: 3.8
-env:
-  - ENVAR=1

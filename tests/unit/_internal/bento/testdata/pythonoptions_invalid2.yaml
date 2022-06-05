@@ -1,4 +1,0 @@
-lock_packages: "False"
-index_url:
-  - "not string"
-  - "just input one string"

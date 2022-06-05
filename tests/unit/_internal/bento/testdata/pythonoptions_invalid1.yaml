@@ -1,6 +1,0 @@
-requirements_txt:
-  - notaccepted
-  - dont do this
-packages:
-  - matplotlib: 3.5.1
-  - packaging: ">=0.2,<0.3"

@@ -1,3 +1,0 @@
-requirements_txt: ./testdata/configuration/example_requirements.txt
-no_index: True
-index_url: http://pypi.python.org/simple

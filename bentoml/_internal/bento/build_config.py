@@ -528,6 +528,9 @@ class PythonOptions:
 
             # Note: "--generate-hashes" is purposefully not used here because it will
             # break if user includes PyPI package from version control system
+
+            # changelog: move from fs.path.join to fs.path.combine
+            # refers to https://docs.pyfilesystem.org/en/latest/reference/path.html#fs.path.combine
             pip_compile_in = bento_fs.getsyspath(
                 fs.path.combine(py_folder, "requirements.txt")
             )

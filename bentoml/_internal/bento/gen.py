@@ -94,7 +94,7 @@ cattr.register_unstructure_hook(
 
 attr.resolve_types(CustomizableEnv, globals(), locals())
 
-TEMPLATES_PATH = [fs.path.join(fs.path.dirname(__file__), "docker", "templates")]
+TEMPLATES_PATH = [fs.path.join(os.path.dirname(__file__), "docker", "templates")]
 ENVIRONMENT = Environment(
     extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
     trim_blocks=True,

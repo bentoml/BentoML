@@ -60,7 +60,7 @@ templates_path = ["_templates"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "zenburn"
-pygments_dark_style = "one-dark"
+pygments_dark_style = "monokai"
 
 myst_enable_extensions = ["colon_fence"]
 

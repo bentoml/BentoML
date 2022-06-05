@@ -26,28 +26,28 @@ Refers to `attrs.frozen() API reference <https://www.attrs.org/en/stable/api.htm
 BentoBuildConfig
 ----------------
 
-.. autoclass:: bentoml.build_utils.BentoBuildConfig
+.. autoclass:: bentoml._internal.bento.build_config.BentoBuildConfig
     :members:
 
 
 PythonOptions
 -------------
 
-.. autoclass:: bentoml.build_utils.PythonOptions
+.. autoclass:: bentoml._internal.bento.build_config.PythonOptions
     :members:
 
 
 CondaOptions
 ------------
 
-.. autoclass:: bentoml.build_utils.CondaOptions
+.. autoclass:: bentoml._internal.bento.build_config.CondaOptions
     :members:
 
 
 DockerOptions
 -------------
 
-.. autoclass:: bentoml.build_utils.DockerOptions
+.. autoclass:: bentoml._internal.bento.build_config.DockerOptions
     :members:
 
 Dockerfile generation
@@ -351,7 +351,7 @@ The following functions/class can be used to help with the Dockerfile generation
     These are already used internally by BentoML and users are **NOT EXPECTED** to use them.
     They are here so that developers can use them if needed.
 
-.. autofunction:: bentoml.build_utils.generate_dockerfile
+.. autofunction:: bentoml._internal.bento.gen.generate_dockerfile
 
-.. autoclass:: bentoml.build_utils.DistroSpec
+.. autoclass:: bentoml._internal.bento.docker.DistroSpec
     :members:

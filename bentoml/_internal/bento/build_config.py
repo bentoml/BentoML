@@ -595,7 +595,7 @@ class PythonOptions:
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         """
-        Convert all user-provided options to respective file under a bento 🍱 directory.
+        Convert all user-provided options to the respective files under a Bento directory.
 
 
         The results target will be written to :code:`env/python` under the bento directory. The directory contains:

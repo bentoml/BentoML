@@ -769,7 +769,7 @@ customize Bento's Dockerfile instruction set to suits their needs.
 Let say that you want to isolate the installation of a custom python library from a build stage to the 
 Bento utilizing `dockerfile's network modes <https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#network-modes-run---networknonehostdefault>`_. You can use the :code:`docker_template` field to do this.
 
-First, write a :code:`Dockerfile.template` file anywhere that fits your needs.
+First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml` build file.
 This template file is a mixed between a :code:`Dockerfile` and a :code:`Jinja` template file:
 
 .. code-block:: dockerfile

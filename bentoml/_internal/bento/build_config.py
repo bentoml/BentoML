@@ -329,9 +329,6 @@ class DockerOptions:
             build_ctx (:code:`str`):
                 The path to the given build context. This is the context directory of the :code:`bentofile.yaml`.
 
-                .. note ::
-
-                    :code:`build_ctx` is retrieved from :doc:`../../reference/cli` :code:`serve`.
             conda_options (:class:`CondaOptions`):
                 Given :class:`CondaOptions` instance to determine whether to support conda in the 🍱 container.
 
@@ -502,8 +499,6 @@ class CondaOptions:
 
     def with_defaults(self) -> "CondaOptions":
         """
-        Returns:
-            :class:`CondaOptions`: A new instance of :class:`CondaOptions` with default values evolve around user-provided options.
 
         .. note ::
 

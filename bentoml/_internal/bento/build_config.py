@@ -602,15 +602,6 @@ class PythonOptions:
         """
         Convert all user-provided options to respective file under a bento 🍱 directory.
 
-        Args:
-            bento_fs (:code:`fs.base.FS`):
-                The filesystem representing a bento directory.
-            build_ctx (:code:`str`):
-                The path to the given build context. This is the context directory of the :code:`bentofile.yaml`.
-
-                .. note ::
-
-                    :code:`build_ctx` is retrieved from :doc:`../../reference/cli` :code:`serve`.
 
         The results target will be written to :code:`env/python` under the bento directory. The directory contains:
             - :code:`version.txt` which contains the python version in full format: :code:`3.7.3`, :code:`3.9.0`, etc.

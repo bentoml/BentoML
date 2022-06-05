@@ -2,14 +2,9 @@ from __future__ import annotations
 
 import os
 import typing as t
-from typing import TYPE_CHECKING
-from unittest.mock import patch
 
 import psutil
 import pytest
-
-if TYPE_CHECKING:
-    from unittest.mock import MagicMock
 
 WINDOWS_PATHS = [
     r"C:\foo\bar",
@@ -38,15 +33,3 @@ def test_uri_path_conversion(example_paths: t.List[str]) -> None:
     for path in example_paths:
         restored = uri_to_path(path_to_uri(path))
         assert restored == path or restored == os.path.abspath(path)
-
-
-@patch("bentoml._internal.utils.uri.psutil.WINDOWS")
-@patch("bentoml._internal.utils.uri.psutil.POSIX")
-def test_invalid_os_support(mock_windows: MagicMock, mock_posix: MagicMock) -> None:
-    mock_windows.return_value = False
-    mock_posix.return_value = False
-
-    from bentoml._internal.utils.uri import path_to_uri
-
-    with pytest.raises(ValueError):
-        path_to_uri("?invalid\\@$/path")

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeuox pipefail
+set -Eeuo pipefail
 
 # check to see if this file is being run or sourced from another script
 _is_sourced() {
@@ -11,7 +11,6 @@ _is_sourced() {
 
 _main() {
 	# if first arg looks like a flag
-	echo "${1:0:1}"
 	if [ "${1:0:1}" = '-' ]; then
 		set -- bentoml serve --production "$@" "$BENTO_PATH"
 	fi

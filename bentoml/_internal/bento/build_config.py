@@ -298,14 +298,14 @@ def conda_dependencies_validator(
             try:  # need to test this since conda didn't cover this :(
                 if len(conda_pip) > 1:
                     raise InvalidArgument(
-                        f"Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
+                        "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
                     )
                 pip_list: t.List[str] = conda_pip[0]["pip"]
                 if not all(isinstance(x, str) for x in pip_list):
-                    raise InvalidArgument(f"Expected `pip` values to be type `str`")
+                    raise InvalidArgument("Expected `pip` values to be type `str`")
             except KeyError:
                 raise InvalidArgument(
-                    f"Conda dependencies can ONLY include `pip` value as a dictionary."
+                    "Conda dependencies can ONLY include `pip` value as a dictionary."
                 )
 
 

@@ -19,15 +19,6 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     This is for BentoML developers to create Bentos that contains the local bentoml
     build based on their development branch. To enable this behavior, one must
     set envar :code:`BENTOML_BUNDLE_LOCAL_BUILD=True` before building a Bento.
-
-    Args:
-        target_path(:code:`str`):
-            The path to the wheel file to be created.
-
-    .. note::
-        If bentoml is installed in editor mode(:code:`pip install -e`), this will build a wheel
-        distribution with the local bentoml source and add it to saved bento directory
-        under :code:`{bento_path}/env/docker/whl/`
     """
     if str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() != "true":
         return

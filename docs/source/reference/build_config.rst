@@ -227,33 +227,42 @@ The following are examples of how to use custom blocks:
 
         .. code:: jinja
 
-            {% extends bento__dockerfile %}
-            {% block SETUP_BENTO_USER %}
-            {{ super() }}
-            ENV CUSTOM_USER_VAR=foobar
-            {% endblock %}
+           {% extends bento__dockerfile %}
+           {% block SETUP_BENTO_USER %}
+           {{ super() }}
+           ENV CUSTOM_USER_VAR=foobar
+           {% endblock %}
 
     .. tab-item:: Example 2
 
         .. code:: jinja
 
-            {% extends bento__dockerfile %}
-            {% block SETUP_BENTO_COMPONENTS %}
-            RUN --mount=type=ssh git clone git@github.com:myorg/myproject.git myproject
-            {{ super() }}
-            {% endblock %}
+           {% extends bento__dockerfile %}
+           {% block SETUP_BENTO_COMPONENTS %}
+           RUN --mount=type=ssh git clone git@github.com:myorg/myproject.git myproject
+           {{ super() }}
+           {% endblock %}
 
     .. tab-item:: Example 3
 
         .. code:: jinja
 
-            {% extends bento__dockerfile %}
-            {% block SETUP_BENTO_BASE_IMAGE %}
-            FROM --platform=$BUILDPLATFORM tensorflow/tensorflow:latest-devel as tf
-            {{ super() }}
-            COPY --from=tf /tf /tf
-            ...
-            {% endblock %}
+           {% extends bento__dockerfile %}
+           {% block SETUP_BENTO_BASE_IMAGE %}
+           FROM --platform=$BUILDPLATFORM python:3.7-slim as buildstage
+           RUN mkdir /tmp/mypackage
+
+           WORKDIR /tmp/mypackage/
+           COPY mypackage .
+           RUN python setup.py sdist && mv dist/mypackage-0.0.1.tar.gz mypackage.tar.gz
+
+           {{ super() }}
+           {% endblock %}
+           {% block SETUP_BENTO_COMPONENTS %}
+           {{ super() }}
+           COPY --from=buildstage mypackage.tar.gz /tmp/wheels/
+           RUN --network=none pip install --find-links /tmp/wheels mypackage
+           {% endblock %}
 
 An example of a custom Dockerfile template:
 

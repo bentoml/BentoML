@@ -766,34 +766,16 @@ The :code:`docker_template` field gives user the full control over how the
 :code:`Dockerfile` was generated in a Bento. Users can use this field to
 customize Bento's Dockerfile instruction set to suits their needs.
 
-Let say that you want to isolate the installation of a custom python library from a build stage to the 
-Bento utilizing `dockerfile's network modes <https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#network-modes-run---networknonehostdefault>`_. You can use the :code:`docker_template` field to do this.
-
 First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml` build file.
 This template file is a mixed between a :code:`Dockerfile` and a :code:`Jinja` template file:
 
 .. code-block:: dockerfile
 
    {% extends bento__dockerfile %}
-   {% block SETUP_BENTO_BASE_IMAGE %}
-   FROM --platform=$BUILDPLATFORM python:3.7-slim as buildstage
-   RUN mkdir /tmp/mypackage
-
-   WORKDIR /tmp/mypackage/
-   COPY mypackage .
-   RUN python setup.py sdist && mv dist/mypackage-0.0.1.tar.gz mypackage.tar.gz
-
-   {{ super() }}
-   {% endblock %}
    {% block SETUP_BENTO_COMPONENTS %}
    {{ super() }}
-   COPY --from=buildstage mypackage.tar.gz /tmp/wheels/
-   RUN --network=none pip install --find-links /tmp/wheels mypackage
+   RUN echo "We are running this during bentoml containerize!"
    {% endblock %}
-
-.. note::
-
-   :bdg-warning:`Warning:` Remember to change your :code:`mypackage-0.0.1.tar.gz` to the correct tarfile name.
 
 .. note::
 

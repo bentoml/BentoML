@@ -1,10 +1,10 @@
 {% set __cached__ = [] %}
 {% set __user_defined_image__ = __options__base_image is not none %}
-{% set __python_pip_args__=expands_bento_path("env", "python", "pip_args.txt") %}
-{% set __python_requirements_lock__=expands_bento_path("env", "python", "requirements.lock.txt") %}
-{% set __python_requirements_txt__=expands_bento_path("env", "python", "requirements.txt") %}
+{% set __python_pip_args__=expands_bento_path("env", "python", "pip_args.txt", bento_path=bento__path) %}
+{% set __python_requirements_lock__=expands_bento_path("env", "python", "requirements.lock.txt", bento_path=bento__path) %}
+{% set __python_requirements_txt__=expands_bento_path("env", "python", "requirements.txt", bento_path=bento__path) %}
 {# users can use these values #}
-{% set bento__entrypoint = bento__entrypoint | default(expands_bento_path("env", "docker", "entrypoint.sh")) %}
+{% set bento__entrypoint = bento__entrypoint | default(expands_bento_path("env", "docker", "entrypoint.sh", bento_path=bento__path)) %}
 {% set bento__pip_cmd = bento__pip_cmd | default("pip") %}
 {% set bento__pypi_version = bento__pypi_version | default(clean_bentoml_version(__bentoml_version__)) %}
 # syntax = docker/dockerfile:1.4-labs
@@ -56,7 +56,7 @@ ENV PYTHONIOENCODING=UTF-8
 
 ENV PYTHONUNBUFFERED=1
 
-ENV PATH {{ expands_bento_path("env", "docker") }}:/usr/local/bin:$PATH
+ENV PATH {{ expands_bento_path("env", "docker", bento_path=bento__path) }}:/usr/local/bin:$PATH
 
 {% endblock %}
 {% block SETUP_BENTO_USER %}
@@ -88,12 +88,12 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 # Install bentoml from editable wheel
 ENV BENTOML_VERSION={{ __bentoml_version__ }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    {{ bento__pip_cmd }} install {{ expands_bento_path("env", "docker","whl", "bentoml-*.whl") }}
+    {{ bento__pip_cmd }} install --no-cache-dir {{ expands_bento_path("env", "docker", "whl", bento_path=bento__path) }}/bentoml-{{ __bentoml_version__ }}-py3-none-any.whl
 {% else %}
 # Install bentoml=={{ bento__pypi_version }}
 ENV BENTOML_VERSION={{ bento__pypi_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    {{ bento__pip_cmd }} install bentoml==${BENTOML_VERSION}
+    {{ bento__pip_cmd }} install bentoml==${BENTOML_VERSION} --no-cache-dir
 {% endif %}
 {% block SETUP_BENTO_COMPONENTS %}
 
@@ -120,17 +120,17 @@ EOF
 
 # install wheels included in Bento
 RUN bash <<EOF
-if [ -d {{ expands_bento_path("env", "python", "wheels") }} ]; then
+if [ -d {{ expands_bento_path("env", "python", "wheels", bento_path=bento__path) }} ]; then
   echo "Installing wheels.."
-  {{ bento__pip_cmd }} install {{ expands_bento_path("env", "python", "wheels", "*.whl") }}
+  {{ bento__pip_cmd }} install {{ expands_bento_path("env", "python", "wheels", "*.whl", bento_path=bento__path) }}
 fi
 EOF
 
 # Run user setup scripts if exists
 RUN bash <<EOF
-if [ -f {{ expands_bento_path("env", "docker", "setup_script") }} ]; then
-  chmod +x {{ expands_bento_path("env", "docker", "setup_script") }}
-  {{ expands_bento_path("env", "docker", "setup_script") }}
+if [ -f {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }} ]; then
+  chmod +x {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
+  {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
 fi
 EOF
 
@@ -145,5 +145,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", ".", "--production" ]
+CMD [ "bentoml", "serve", "{{ bento__path }}", "--production" ]
 {% endblock %}

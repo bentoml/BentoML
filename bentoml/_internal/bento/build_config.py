@@ -13,7 +13,7 @@ from dotenv import dotenv_values  # type: ignore
 from piptools.scripts.compile import cli as pip_compile_cli
 
 from .gen import generate_dockerfile
-from ..utils import bentoml_cattr
+from ..utils import bentoml_cattr as cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
 from .docker import DistroSpec
@@ -274,7 +274,7 @@ def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> Docker
     return DockerOptions(**d)
 
 
-bentoml_cattr.register_structure_hook(DockerOptions, _docker_options_structure_hook)
+cattr.register_structure_hook(DockerOptions, _docker_options_structure_hook)
 
 
 if TYPE_CHECKING:
@@ -413,7 +413,7 @@ def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOpt
     return CondaOptions(**d)
 
 
-bentoml_cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
+cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
 
 if TYPE_CHECKING:
     PythonOptionsAttributes = t.Union[str, None, t.List[str], bool]
@@ -593,7 +593,7 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> Python
     return PythonOptions(**d)
 
 
-bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
+cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
 OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
@@ -720,7 +720,7 @@ class BentoBuildConfig:
             logger.error(exc)
             raise
 
-        return bentoml_cattr.structure(yaml_content, cls)
+        return cattr.structure(yaml_content, cls)
 
     def to_yaml(self, stream: t.TextIO) -> None:
         # TODO: Save BentoBuildOptions to a yaml file

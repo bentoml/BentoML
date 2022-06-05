@@ -9,11 +9,9 @@ from typing import TYPE_CHECKING
 import fs
 import attr
 from jinja2 import Environment
-from jinja2.loaders import BaseLoader
 from jinja2.loaders import FileSystemLoader
-from jinja2.environment import Template
 
-from ..utils import bentoml_cattr
+from ..utils import bentoml_cattr as cattr
 from ..utils import resolve_user_filepath
 from .docker import DistroSpec
 from ...exceptions import BentoMLException
@@ -24,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
+
+    from jinja2.loaders import BaseLoader
+    from jinja2.environment import Template
 
     from .build_config import DockerOptions
 
@@ -82,12 +83,12 @@ class CustomizableEnv:
     path: str = attr.field(default=BENTO_PATH)
 
 
-bentoml_cattr.register_unstructure_hook(
+cattr.register_unstructure_hook(
     ReservedEnv, lambda rs: {f"__{k}__": v for k, v in attr.asdict(rs).items()}
 )
 attr.resolve_types(ReservedEnv, globals(), locals())
 
-bentoml_cattr.register_unstructure_hook(
+cattr.register_unstructure_hook(
     CustomizableEnv, lambda rs: {f"bento__{k}": v for k, v in attr.asdict(rs).items()}
 )
 
@@ -123,9 +124,8 @@ def validate_user_template(template: Template, loader: BaseLoader) -> None | t.N
     )
 
     # check for setup blocks
-    user_blocks = set(ctx.blocks)
     contains_bento_blocks = set(
-        filter(lambda x: x.startswith("SETUP_BENTO"), user_blocks)
+        filter(lambda x: x.startswith("SETUP_BENTO"), set(ctx.blocks))
     )
     if not contains_bento_blocks.issubset(BLOCKS):
         invalid_blocks = contains_bento_blocks - BLOCKS
@@ -154,17 +154,18 @@ def validate_user_template(template: Template, loader: BaseLoader) -> None | t.N
 
 
 def get_docker_variables(
-    docker_options: DockerOptions, spec: DistroSpec | None
+    options: DockerOptions, spec: DistroSpec | None
 ) -> dict[str, t.Any]:
     if spec is None:
-        raise BentoMLException("Distro spec is required not to be None.")
-    distro = docker_options.distro
-    cuda_version = docker_options.cuda_version
-    python_version = docker_options.python_version
+        raise BentoMLException("Distro spec is required, got None instead.")
+
+    distro = options.distro
+    cuda_version = options.cuda_version
+    python_version = options.python_version
 
     supported_architectures = spec.supported_architectures
 
-    if docker_options.base_image is None:
+    if options.base_image is None:
         if cuda_version is not None:
             base_image = spec.image.format(spec_version=cuda_version)
         else:
@@ -174,7 +175,7 @@ def get_docker_variables(
                 python_version = python_version
             base_image = spec.image.format(spec_version=python_version)
     else:
-        base_image = docker_options.base_image
+        base_image = options.base_image
         logger.info(
             f"BentoML will not install Python to custom base images; ensure the base image '{base_image}' has Python installed."
         )
@@ -182,10 +183,10 @@ def get_docker_variables(
     return {
         **{
             f"__options__{k}": v
-            for k, v in bentoml_cattr.unstructure(docker_options).items()  # type: ignore
+            for k, v in cattr.unstructure(options).items()  # type: ignore
         },
-        **bentoml_cattr.unstructure(CustomizableEnv()),  # type: ignore
-        **bentoml_cattr.unstructure(ReservedEnv(base_image, supported_architectures)),  # type: ignore
+        **cattr.unstructure(CustomizableEnv()),  # type: ignore
+        **cattr.unstructure(ReservedEnv(base_image, supported_architectures)),  # type: ignore
     }
 
 

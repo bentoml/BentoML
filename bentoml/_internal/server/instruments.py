@@ -20,20 +20,24 @@ START_TIME_VAR: "contextvars.ContextVar[float]" = contextvars.ContextVar(
 
 
 class MetricsMiddleware:
-    @inject
     def __init__(
         self,
         app: "ext.ASGIApp",
         bento_service: "Service",
+    ):
+        self.app = app
+        self.bento_service = bento_service
+        self._is_setup = False
+
+    @inject
+    def _setup(
+        self,
         metrics_client: "PrometheusClient" = Provide[
             DeploymentContainer.metrics_client
         ],
     ):
-        self.app = app
-        self.bento_service = bento_service
-
+        self.metrics_client = metrics_client
         service_name = self.bento_service.name
-
         self.metrics_request_duration = metrics_client.Histogram(
             name=service_name + "_request_duration_seconds",
             documentation=service_name + " API HTTP request duration in seconds",
@@ -50,17 +54,16 @@ class MetricsMiddleware:
             labelnames=["endpoint", "service_version"],
             multiprocess_mode="livesum",
         )
+        self._is_setup = True
 
-    @inject
     async def __call__(
         self,
         scope: "ext.ASGIScope",
         receive: "ext.ASGIReceive",
         send: "ext.ASGISend",
-        metrics_client: "PrometheusClient" = Provide[
-            DeploymentContainer.metrics_client
-        ],
     ) -> None:
+        if not self._is_setup:
+            self._setup()
         if not scope["type"].startswith("http"):
             await self.app(scope, receive, send)
             return
@@ -69,9 +72,9 @@ class MetricsMiddleware:
             from starlette.responses import Response
 
             response = Response(
-                metrics_client.generate_latest(),
+                self.metrics_client.generate_latest(),
                 status_code=200,
-                media_type=metrics_client.CONTENT_TYPE_LATEST,
+                media_type=self.metrics_client.CONTENT_TYPE_LATEST,
             )
             await response(scope, receive, send)
             return

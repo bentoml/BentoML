@@ -3,3 +3,4 @@ pydantic
 pillow
 scikit-learn
 pyarrow
+fastapi

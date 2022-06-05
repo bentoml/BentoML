@@ -44,7 +44,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             from build import ProjectBuilder
         except ModuleNotFoundError:
             raise BentoMLException(
-                f"Environment variable {BENTOML_DEV_BUILD}=True detected, which requires the `build` package. Make sure to install all dev dependencies via `pip install -r requirements/dev-requirements.txt` and try again."
+                f"Environment variable {BENTOML_DEV_BUILD}=True detected, which requires the `pypa/build` package. Make sure to install all dev dependencies via `pip install -r requirements/dev-requirements.txt` and try again."
             )
 
         with TempDirectory() as dist_dir:

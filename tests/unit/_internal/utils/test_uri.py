@@ -49,4 +49,4 @@ def test_invalid_os_support(mock_windows: MagicMock, mock_posix: MagicMock) -> N
     from bentoml._internal.utils.uri import path_to_uri
 
     with pytest.raises(ValueError):
-        path_to_uri("?invalid\\/path")
+        path_to_uri("?invalid\\@$/path")

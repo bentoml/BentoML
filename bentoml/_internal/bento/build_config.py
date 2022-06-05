@@ -66,7 +66,7 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
 
 
 def _convert_cuda_version(
-    cuda_version: t.Optional[t.Union[str, float, int]]
+    cuda_version: t.Optional[t.Union[str, int]]
 ) -> t.Optional[str]:
     if cuda_version is None or cuda_version == "":
         return None

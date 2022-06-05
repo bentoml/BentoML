@@ -1,0 +1,18 @@
+{% extends bento__dockerfile %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+
+FROM --platform=$BUILDPLATFORM python:3.7-slim as buildstage
+
+RUN mkdir /tmp/mypackage
+
+WORKDIR /tmp/mypackage/
+COPY . .
+RUN python setup.py sdist && mv dist/*.tar.gz mypackage.tar.gz
+
+{{ super() }}
+{% endblock %}
+{% block SETUP_BENTO_COMPONENTS %}
+{{ super() }}
+COPY --from=buildstage mypackage.tar.gz /tmp/wheels/
+RUN --network=none pip install --find-links /tmp/wheels mypackage
+{% endblock %}

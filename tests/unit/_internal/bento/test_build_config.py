@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import fs
+import attr
 import yaml
 import pytest
 
@@ -116,10 +117,9 @@ def parametrize_options(
         raise InvalidArgument(f"Unknown test type {test_type}")
 
     if attribute is not None:
-        assert hasattr(options_cls.__attrs_attrs__, attribute)
-        # attribute has type attr.Attribute[t.Any]
-        attr_name: str = getattr(options_cls.__attrs_attrs__, attribute).name
-        rgx = re.compile(f"^{options_cls.__name__.lower()}_{test_type}_{attr_name}*")
+        if attribute not in [a.name for a in attr.fields(options_cls)]:
+            raise InvalidArgument(f"{options_cls} has no attribute {attribute}")
+        rgx = re.compile(f"^{options_cls.__name__.lower()}_{test_type}_{attribute}*")
     else:
         rgx = re.compile(rf"^{options_cls.__name__.lower()}_{test_type}\d+")
 
@@ -352,29 +352,33 @@ class TestPythonOptions:
                 f.read()
                 == f"{version_info.major}.{version_info.minor}.{version_info.micro}"
             )
-
-        PythonOptions(
-            wheels=[
-                "./testdata/wheels/quickstart.whl",
-                "./testdata/wheels/different.whl",
-            ],
-            requirements_txt="./testdata/configuration/example_requirements.txt",
-        ).with_defaults().write_to_bento(test_fs, os.getcwd())
-
-        assert os.path.isdir(python_dir.getsyspath("/wheels"))
-        fs_identical(
-            test_fs.opendir("/env/python/wheels"), fs.open_fs("./testdata/wheels")
-        )
-        with python_dir.open("requirements.txt", "r") as f1, open(  # type: ignore
-            "./testdata/configuration/example_requirements.txt", "r"
-        ) as f2:
-            assert f1.read() == f2.read()
-
         PythonOptions(
             packages=["numpy", "pandas"], lock_packages=False
         ).with_defaults().write_to_bento(test_fs, os.getcwd())
 
         assert python_dir.exists("requirements.txt")
+
+    @pytest.mark.usefixtures("test_fs")
+    def test_wheels_include(self, test_fs: FS):
+        try:
+            wheel_fs = fs.open_fs("./testdata/wheels/", create=True)
+            wheel_fs.touch("test.whl")
+            wheel_fs.touch("another.whl")
+
+            PythonOptions(
+                wheels=[f"./testdata/wheels/{file}" for file in wheel_fs.listdir("/")],
+                requirements_txt="./testdata/configuration/example_requirements.txt",
+            ).with_defaults().write_to_bento(test_fs, os.getcwd())
+
+            python_dir = test_fs.opendir("/env/python")
+            assert os.path.isdir(python_dir.getsyspath("/wheels"))
+            fs_identical(test_fs.opendir("/env/python/wheels"), wheel_fs)
+            with python_dir.open("requirements.txt", "r") as f1, open(  # type: ignore
+                "./testdata/configuration/example_requirements.txt", "r"
+            ) as f2:
+                assert f1.read() == f2.read()
+        finally:
+            fs.open_fs("./testdata").removetree("wheels")
 
     def build_cmd_args(self, args: dict[str, str | bool | list[str]]) -> list[str]:
         result: list[str] = []

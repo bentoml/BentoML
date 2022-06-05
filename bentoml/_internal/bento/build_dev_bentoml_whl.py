@@ -47,7 +47,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     # in development mode via "pip install --editable ."
     if os.path.isfile(bentoml_pyproject):
         logger.info(
-            "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento. The wheel is also PEP517-compatible."
+            "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento."
         )
         try:
             from build import ProjectBuilder

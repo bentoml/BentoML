@@ -11,7 +11,7 @@ import attr
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
-from ..utils import bentoml_cattr as cattr
+from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .docker import DistroSpec
 from ...exceptions import BentoMLException
@@ -83,12 +83,12 @@ class CustomizableEnv:
     path: str = attr.field(default=BENTO_PATH)
 
 
-cattr.register_unstructure_hook(
+bentoml_cattr.register_unstructure_hook(
     ReservedEnv, lambda rs: {f"__{k}__": v for k, v in attr.asdict(rs).items()}
 )
 attr.resolve_types(ReservedEnv, globals(), locals())
 
-cattr.register_unstructure_hook(
+bentoml_cattr.register_unstructure_hook(
     CustomizableEnv, lambda rs: {f"bento__{k}": v for k, v in attr.asdict(rs).items()}
 )
 
@@ -183,10 +183,10 @@ def get_docker_variables(
     return {
         **{
             f"__options__{k}": v
-            for k, v in cattr.unstructure(options).items()  # type: ignore
+            for k, v in bentoml_cattr.unstructure(options).items()  # type: ignore
         },
-        **cattr.unstructure(CustomizableEnv()),  # type: ignore
-        **cattr.unstructure(ReservedEnv(base_image, supported_architectures)),  # type: ignore
+        **bentoml_cattr.unstructure(CustomizableEnv()),  # type: ignore
+        **bentoml_cattr.unstructure(ReservedEnv(base_image, supported_architectures)),  # type: ignore
     }
 
 

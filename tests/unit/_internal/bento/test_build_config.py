@@ -136,7 +136,6 @@ def parametrize_options(
     return pytest.mark.parametrize(str(_argvalue), testdata)
 
 
-@pytest.mark.incremental
 class TestDockerOptions:
     @parametrize_options(DockerOptions, "valid")
     def test_valid_docker_options(self, options: dict[str, t.Any]):
@@ -240,7 +239,6 @@ class TestDockerOptions:
             assert "Invalid env file path" in str(excinfo.value)
 
 
-@pytest.mark.incremental
 class TestCondaOptions:
     @parametrize_options(CondaOptions, "valid")
     def test_valid_conda_options(self, options: dict[str, t.Any]):
@@ -314,7 +312,6 @@ def fs_identical(fs1: FS, fs2: FS):
         assert fs1.readbytes(path) == fs2.readbytes(path)
 
 
-@pytest.mark.incremental
 class TestPythonOptions:
     @parametrize_options(PythonOptions, "valid")
     def test_valid_python_options(self, options: dict[str, t.Any]):
@@ -447,7 +444,6 @@ def test_dict_options_converter(
     assert dict_options_converter(DockerOptions)(DockerOptions()) == DockerOptions()
 
 
-@pytest.mark.incremental
 class TestBentoBuildConfig:
     @pytest.mark.usefixtures("change_test_dir")
     @parametrize_options(BentoBuildConfig, "valid")

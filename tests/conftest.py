@@ -15,31 +15,8 @@ TEST_MODEL_CONTEXT = ModelContext(
 )
 
 if TYPE_CHECKING:
-    from _pytest.nodes import Node
-    from _pytest.python import Function
-    from _pytest.runner import CallInfo
     from _pytest.tmpdir import TempPathFactory
     from _pytest.fixtures import FixtureRequest
-
-
-# setup @pytest.mark.incremental
-def pytest_runtest_makereport(item: Function, call: CallInfo[None]) -> None:
-    if "incremental" in item.keywords:
-        # call.execinfo is _pytest._code.code.ExceptionInfo
-        if call.excinfo is not None and call.excinfo.typename != "Skipped":
-            parent = item.parent
-            object.__setattr__(parent, "__previousfailed__", item)
-
-
-def pytest_runtest_setup(item: Function) -> None:
-    if "incremental" in item.keywords:
-        try:
-            previousfailed: Node = object.__getattribute__(
-                item.parent, "__previousfailed__"
-            )
-            pytest.xfail(f"previous test failed ({previousfailed.name})")
-        except AttributeError:
-            pass
 
 
 @pytest.fixture(scope="function", name="change_test_dir")

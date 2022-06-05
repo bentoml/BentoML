@@ -134,12 +134,6 @@ def _envars_validator(
         )
 
 
-if TYPE_CHECKING:
-    DockerOptionsAttributes = t.Union[
-        str, Literal["default"], t.Dict[str, t.Any], None, t.List[str]
-    ]
-
-
 @attr.frozen
 class DockerOptions:
     distro: str = attr.field(
@@ -176,9 +170,6 @@ class DockerOptions:
             lambda _, __, value: os.path.exists(value) and os.path.isfile(value)
         ),
     )
-
-    if TYPE_CHECKING:
-        __attrs_attrs__: "t.List[Attribute[DockerOptionsAttributes]]" = []
 
     def __attrs_post_init__(self):
         if self.base_image is not None:
@@ -278,7 +269,6 @@ cattr.register_structure_hook(DockerOptions, _docker_options_structure_hook)
 
 
 if TYPE_CHECKING:
-    CondaOptionsAttributes = t.Union[str, None, t.List[str]]
     CondaPipType = t.Dict[t.Literal["pip"], t.List[str]]
     DependencyType = t.List[t.Union[str, CondaPipType]]
 else:
@@ -324,9 +314,6 @@ class CondaOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(list)),
     )
-
-    if TYPE_CHECKING:
-        __attrs_attrs__: "t.List[Attribute[CondaOptionsAttributes]]" = []
 
     def __attrs_post_init__(self):
         if self.environment_yml is not None:
@@ -415,9 +402,6 @@ def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOpt
 
 cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
 
-if TYPE_CHECKING:
-    PythonOptionsAttributes = t.Union[str, None, t.List[str], bool]
-
 
 @attr.frozen
 class PythonOptions:
@@ -464,9 +448,6 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(list)),
     )
-
-    if TYPE_CHECKING:
-        __attrs_attrs__: "t.List[Attribute[PythonOptionsAttributes]]" = []
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
@@ -610,12 +591,6 @@ def dict_options_converter(
     return _converter
 
 
-if TYPE_CHECKING:
-    BentoBuildConfigAttributes = t.Union[
-        str, None, t.List[str], t.Dict[str, t.Any], OptionsCls
-    ]
-
-
 @attr.define(frozen=True, on_setattr=None)
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
@@ -643,9 +618,6 @@ class BentoBuildConfig:
         factory=CondaOptions,
         converter=dict_options_converter(CondaOptions),
     )
-
-    if TYPE_CHECKING:
-        __attrs_attrs__: "t.List[Attribute[BentoBuildConfigAttributes]]" = []
 
     def __attrs_post_init__(self) -> None:
         use_conda = False

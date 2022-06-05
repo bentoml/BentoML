@@ -287,12 +287,7 @@ class DockerOptions:
 
     def with_defaults(self) -> "DockerOptions":
         """
-        Returns:
-            :class:`DockerOptions`: A new instance of :class:`DockerOptions` with default values evolve around user-provided options.
-
-        .. note ::
-
-            BentoML will fill out the missing options with default values if user does not provide them.
+        From a user-provided :code:`DockerOptions` instance, create a new instance with default values filled.
         """
         defaults: t.Dict[str, t.Any] = {}
 
@@ -327,7 +322,7 @@ class DockerOptions:
             bento_fs (:code:`fs.base.FS`):
                 The filesystem representing a bento directory.
             build_ctx (:code:`str`):
-                The path to the given build context. This is the context directory of the :code:`bentofile.yaml`.
+                Build context is your Python project’s working directory. This is from where you start the Python interpreter during development so that your local python modules can be imported properly. Default to current directory where :code:`bentoml build` takes place.
 
             conda_options (:class:`CondaOptions`):
                 Given :class:`CondaOptions` instance to determine whether to support conda in the 🍱 container.
@@ -337,7 +332,6 @@ class DockerOptions:
             - :code:`entrypoint.sh`
             - :code:`<setup_script>.sh` [`optional`, if specified by user]
             - A wheel file of bentoml if :code:`BENTOML_BUNDLE_LOCAL_BUILD=True`
-
         """
         use_conda = any(
             val is not None
@@ -452,16 +446,6 @@ class CondaOptions:
         """
         Convert all user-provided options to respective file under a bento 🍱 directory.
 
-        Args:
-            bento_fs (:code:`fs.base.FS`):
-                The filesystem representing a bento directory.
-            build_ctx (:code:`str`):
-                The path to the given build context. This is the context directory of the :code:`bentofile.yaml`.
-
-                .. note ::
-
-                    :code:`build_ctx` is retrieved from :doc:`../../reference/cli` :code:`serve`.
-
         The results target will be written to :code:`env/conda` under the bento directory. The directory contains:
             - If users provides :code:`environment.yml`:
                 - The file will be copied to :code:`env/conda/environment.yml`.
@@ -499,10 +483,7 @@ class CondaOptions:
 
     def with_defaults(self) -> "CondaOptions":
         """
-
-        .. note ::
-
-            BentoML will fill out the missing options with default values if user does not provide them.
+        From a user-provided :code:`CondaOptions` instance, create a new instance with default values filled.
         """
         defaults: t.Dict[str, t.Any] = {}
 
@@ -596,7 +577,6 @@ class PythonOptions:
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         """
         Convert all user-provided options to the respective files under a Bento directory.
-
 
         The results target will be written to :code:`env/python` under the bento directory. The directory contains:
             - :code:`version.txt` which contains the python version in full format: :code:`3.7.3`, :code:`3.9.0`, etc.
@@ -699,16 +679,7 @@ class PythonOptions:
 
     def with_defaults(self) -> "PythonOptions":
         """
-        Returns:
-            :class:`PythonOptions`: A new instance of :class:`PythonOptions` with default values evolve around user-provided options.
-
-        .. note ::
-
-            BentoML will fill out the missing options with default values if user does not provide them.
-
-        .. note ::
-
-            BentoML will lock package from python by default unless user provides :code:`lock_packages=False`.
+        From a user-provided :code:`PythonOptions` instance, create a new instance with default values filled.
         """
         defaults: t.Dict[str, t.Any] = {}
 
@@ -757,36 +728,6 @@ class BentoBuildConfig:
     Thus, it is possible to omitted unset fields when writing a :code:`BentoBuildConfig` to
     a yaml file for future use. This also applies to nested options such as the
     :class:`DockerOptions` class and the :class:`PythonOptions` class.
-
-    Args:
-
-        service (:code:`str`):
-            The required name of the service to be built.
-
-        description (:code:`str`, `optional`):
-            An optional description of the service.
-
-        labels (:code:`dict[str, Any]`, `optional`):
-            An optional dictionary of labels to be applied to the service.
-
-        include (:code:`list[str]`, `optional`):
-            An optional list of files to include in the build. This is useful for only including necessary files for the bento.
-
-            By default if :code:`include` is not set under :code:`bentofile.yaml`, all files will be included.
-
-        exclude (:code:`list[str]`, `optional`):
-            An optional list of files to exclude from the build. This is useful for excluding unnecessary files from the bento.
-
-            By default if :code:`exclude` is not set under :code:`bentofile.yaml`, no files will be excluded.
-
-        docker (:class:`DockerOptions`, `optional`):
-            All options related to :class:`DockerOptions`.
-
-        python (:class:`PythonOptions`, `optional`):
-            All options related to :class:`PythonOptions`.
-
-        conda (:class:`CondaOptions`, `optional`):
-            All options related to :class:`CondaOptions`.
     """
 
     service: str
@@ -852,11 +793,7 @@ class BentoBuildConfig:
 
     def with_defaults(self) -> "FilledBentoBuildConfig":
         """
-        Convert from user provided options to actual build options with defaults
-        values filled in.
-
-        Returns:
-            BentoBuildConfig: a new copy of :class:`BentoBuildConfig`, with default values filled in.
+        Returns a copy of :class:`BentoBuildConfig` with default values filled in.
         """
 
         return FilledBentoBuildConfig(
@@ -872,14 +809,6 @@ class BentoBuildConfig:
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
-        """
-        Args:
-            stream (:code:`TextIO`):
-                A YAML file stream.
-
-        Returns:
-            BentoBuildConfig: a new copy of :class:`BentoBuildConfig`, with default values filled in.
-        """
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

@@ -140,9 +140,18 @@ class BentoApiSchema:
 
 
 @attr.define
+class BentoRunnerResourceSchema:
+    cpu: Optional[float]
+    nvidia_gpu: Optional[float]
+    custom_resources: Dict[str, float]
+
+
+@attr.define
 class BentoRunnerSchema:
     name: str
-    runner_type: str
+    runnable_type: Optional[str]
+    models: Optional[List[str]]
+    resource_config: Optional[BentoRunnerResourceSchema]
 
 
 @attr.define

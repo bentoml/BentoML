@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-from sys import version_info
 from typing import TYPE_CHECKING
 
 import attr
@@ -12,11 +11,6 @@ from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-
-if version_info >= (3, 8):
-    from typing import final
-else:  # pragma: no cover
-    from typing_extensions import final
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +81,7 @@ DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
 DOCKER_SUPPORTED_DISTROS = list(DOCKER_METADATA.keys())
 
 
-@final
-def get_supported_spec(
-    spec: str | t.Literal["python", "miniconda", "cuda"]
-) -> list[str]:
+def get_supported_spec(spec: t.Literal["python", "miniconda", "cuda"]) -> list[str]:
     if spec not in SUPPORTED_RELEASE_TYPES:
         raise InvalidArgument(
             f"Unknown release type: {spec}, supported spec: {SUPPORTED_RELEASE_TYPES}"

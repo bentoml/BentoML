@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 import logging
 import contextlib
@@ -217,7 +218,9 @@ def test_generate_options_no_defaults_call():
 def test_generate_dockerfile():
     res = generate_dockerfile(
         DockerOptions(
-            dockerfile_template="./testdata/configuration/Dockerfile.template"
+            dockerfile_template=os.path.join(
+                "testdata", "configuration", "Dockerfile.template"
+            )
         ).with_defaults(),
         use_conda=False,
     )

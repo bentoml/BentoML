@@ -479,7 +479,8 @@ class PythonOptions:
                 """\
 #!/usr/bin/env bash
 
-BASEDIR=$(dirname "$0")
+# https://stackoverflow.com/a/246128/8643197
+BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
 
 PIP_ARGS=(-U --force-reinstall --no-warn-script-location """
                 + args

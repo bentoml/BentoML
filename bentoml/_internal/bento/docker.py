@@ -126,25 +126,6 @@ class DistroSpec:
         cuda: bool = False,
         conda: bool = False,
     ) -> DistroSpec | None:
-        """
-        Create a DistroSpec from a distro name.
-
-        Args:
-            value (:code:`str`, `optional`):
-                The given distro. Currently supported distros are: :code:`amazonlinux`, :code:`alpine`, :code:`ubi8`, :code:`debian`.
-            cuda (:code:`bool`, `optional`, defaults to :code:`False`):
-                Whether to include cuda support.
-            conda (:code:`bool`, `optional`, defaults to :code:`False`):
-                Whether to include conda support via `miniconda`
-
-        Returns:
-            :code:`DistroSpec`: The :code:`DistroSpec` represents distros specification that BentoML supports.
-
-            .. note::
-
-                Refers to :ref:`concepts/bento:OS Distros` for the support matrix.
-        """
-
         if not value:
             return
 

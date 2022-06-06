@@ -9,6 +9,8 @@ BentoML APIs and learn about all the options they provide.
   :maxdepth: 2
 
   core
-  cli
   stores
   api_io_descriptors
+  cli
+
+

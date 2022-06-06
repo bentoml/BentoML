@@ -12,9 +12,8 @@ into this part of the documentation.
   :maxdepth: 1
   :titlesonly:
 
-  batching
   configuration
-  dockerfile_generation
+  batching
   server
   ci
   gpu

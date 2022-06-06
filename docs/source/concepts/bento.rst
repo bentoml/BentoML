@@ -787,7 +787,17 @@ Then add the path to the given template file to the :code:`docker_template` fiel
 .. code:: yaml
 
     docker:
-        docker_template: "~/workspace/Dockerfile.template"
+        docker_template: "./Dockerfile.template"
+
+.. note:: 
+
+   Although we support any local file path, it is preferred that users put the
+   template file in the project directory.
+
+   .. code:: yaml
+
+      docker:
+          docker_template: "~/workspace/Dockerfile.template"
 
 Now to see the result generated Dockerfile, do the following:
 
@@ -795,7 +805,7 @@ Now to see the result generated Dockerfile, do the following:
 
    bentoml build && cat $(bentoml get <bento> -o path)/env/docker/Dockerfile
 
-Run :code:`bentoml containerize <bento>` and congratulations, you have a new BentoML container! 🎆
+Run :code:`bentoml containerize <bento>` to confirm the generated Dockerfile work as expected.
 
 .. seealso::
 

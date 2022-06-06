@@ -134,50 +134,22 @@ By doing so, we ensure that the generated Dockerfile will be compatible with a B
 
    .. code-block:: dockerfile
 
-       {% block SETUP_BENTO_BASE_IMAGE %}
-       FROM {{ __base_image__ }} as cached
+      {% extends bento__dockerfile %}
+      {% block SETUP_BENTO_BASE_IMAGE %}
+      FROM --platform=$BUILDPLATFORM python:3.7-slim as buildstage
+      RUN mkdir /tmp/mypackage
 
-       FROM {{ __base_image__ }} as base
+      WORKDIR /tmp/mypackage/
+      COPY mypackage .
+      RUN python setup.py sdist && mv dist/mypackage-0.0.1.tar.gz mypackage.tar.gz
 
-           {% if not __user_defined_image__ %}
-               {% for key in __supported_architectures__ if key not in __cached__ %}
-                   {% if 'arm64' in key or 'aarch64' in key %}
-                   {% do __cached__.append(key) %}
-       FROM base as base-arm64
-                   {% elif 'armhf' in key or 'armel' in key %}
-                   {% do __cached__.append(key) %}
-       FROM base as base-arm
-                   {% elif 'i386' in key %}
-                   {% do __cached__.append(key) %}
-       FROM base as base-386
-                   {% else %}
-                   {% do __cached__.append(key) %}
-       FROM base as base-{{ key }}
-                   {% endif %}
-               {% endfor %}
-               {% else %}
-       # custom base_image: {{ __base_image__ }}.
-       # BentoML only support x86 architecture when using custom base_image
-       FROM base as base-amd64
-           {% endif %}
-
-       FROM base-${TARGETARCH}
-
-       ARG TARGETARCH
-
-       ARG TARGETPLATFORM
-
-       ENV LANG=C.UTF-8
-
-       ENV LC_ALL=C.UTF-8
-
-       ENV PYTHONIOENCODING=UTF-8
-
-       ENV PYTHONUNBUFFERED=1
-
-       ENV PATH {{ expands_bento_path("env", "docker", bento_path=bento__path) }}:/usr/local/bin:$PATH
-
-       {% endblock %}
+      {{ super() }}
+      {% endblock %}
+      {% block SETUP_BENTO_COMPONENTS %}
+      {{ super() }}
+      COPY --from=buildstage mypackage.tar.gz /tmp/wheels/
+      RUN --network=none pip install --find-links /tmp/wheels mypackage
+      {% endblock %}
 
    .. note::
       Notice how for all Dockerfile instruction, we consider as if the Jinja
@@ -249,19 +221,10 @@ The following are examples of how to use custom blocks:
 
            {% extends bento__dockerfile %}
            {% block SETUP_BENTO_BASE_IMAGE %}
-           FROM --platform=$BUILDPLATFORM python:3.7-slim as buildstage
-           RUN mkdir /tmp/mypackage
-
-           WORKDIR /tmp/mypackage/
-           COPY mypackage .
-           RUN python setup.py sdist && mv dist/mypackage-0.0.1.tar.gz mypackage.tar.gz
-
+           FROM --platform=$BUILDPLATFORM tensorflow/tensorflow:latest-devel as tf
            {{ super() }}
-           {% endblock %}
-           {% block SETUP_BENTO_COMPONENTS %}
-           {{ super() }}
-           COPY --from=buildstage mypackage.tar.gz /tmp/wheels/
-           RUN --network=none pip install --find-links /tmp/wheels mypackage
+           COPY --from=tf /tf /tf
+           ...
            {% endblock %}
 
 An example of a custom Dockerfile template:

@@ -8,12 +8,10 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
-from bentoml.exceptions import InvalidArgument
-from bentoml._internal.runner.batching import batch_params
-
 from ..trace import ServiceContext
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
+from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
@@ -180,14 +178,12 @@ class RunnerAppFactory(BaseAppFactory):
                 *tuple(multipart_to_payload_params(r) for r in requests)
             )
 
-            batch_dim = runner_method.config.batch_dim
+            input_batch_dim, output_batch_dim = runner_method.config.batch_dim
 
-            try:
-                batched_params, indices = batch_params(params_list, batch_dim[0])
-            except InvalidArgument as e:
-                raise InvalidArgument(
-                    f"Error while batching arguments for call to {runner_method.name}: {e.message}"
-                )
+            batched_params, indices = payload_paramss_to_batch_params(
+                params_list,
+                input_batch_dim,
+            )
 
             batch_ret = await runner_method.async_run(
                 *batched_params.args,
@@ -197,7 +193,7 @@ class RunnerAppFactory(BaseAppFactory):
             payloads = AutoContainer.batch_to_payloads(
                 batch_ret,
                 indices,
-                batch_dim=batch_dim[-1],
+                batch_dim=output_batch_dim,
             )
 
             return [

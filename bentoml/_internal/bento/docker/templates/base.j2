@@ -1,3 +1,4 @@
+{# BENTOML INTERNAL #}
 {% set __cached__ = [] %}
 {% set __user_defined_image__ = __options__base_image is not none %}
 {% set __python_pip_args__=expands_bento_path("env", "python", "pip_args.txt", bento_path=bento__path) %}
@@ -15,6 +16,7 @@
 #
 # ===========================================
 
+# Block SETUP_BENTO_BASE_IMAGE
 {% block SETUP_BENTO_BASE_IMAGE %}
 FROM {{ __base_image__ }} as cached
 
@@ -59,6 +61,8 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH {{ expands_bento_path("env", "docker", bento_path=bento__path) }}:/usr/local/bin:$PATH
 
 {% endblock %}
+
+# Block SETUP_BENTO_USER
 {% block SETUP_BENTO_USER %}
 ARG BENTO_USER={{ bento__user }}
 ARG BENTO_USER_UID={{ bento__uid_gid }}
@@ -95,6 +99,8 @@ ENV BENTOML_VERSION={{ bento__pypi_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     {{ bento__pip_cmd }} install bentoml==${BENTOML_VERSION} --no-cache-dir
 {% endif %}
+
+# Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
 
 # Install python package dependencies with pip
@@ -135,6 +141,8 @@ fi
 EOF
 
 {% endblock %}
+
+# Block SETUP_BENTO_ENTRYPOINT
 {% block SETUP_BENTO_ENTRYPOINT %}
 # Default port for BentoServer
 EXPOSE 3000

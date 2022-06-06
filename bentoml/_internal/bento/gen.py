@@ -23,9 +23,6 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
-    from jinja2.loaders import BaseLoader
-    from jinja2.environment import Template
-
     from .build_config import DockerOptions
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
@@ -101,56 +98,6 @@ ENVIRONMENT = Environment(
     lstrip_blocks=True,
     loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
 )
-
-
-def validate_user_template(template: Template, loader: BaseLoader) -> None | t.NoReturn:
-    """
-    Validate all user-defined templates in the given environment.
-    """
-    ctx = template.new_context()
-    if "bento__dockerfile" not in ctx.keys():
-        exc_info = (
-            f"User-defined template `{template}` does not contain `bento__dockerfile`. "
-            + "Make sure to add {% extends bento__dockerfile %} to the top of your dockerfile template."
-        )
-        raise BentoMLException(exc_info)
-
-    if template.name is None:
-        raise BentoMLException(
-            "Template name is invalid. Make sure to specify the correct template file under `dockerfile_template`."
-        )
-    source, filename, _ = loader.get_source(  # pragma: no cover (covered by jinja2)
-        template.environment, template.name
-    )
-
-    # check for setup blocks
-    contains_bento_blocks = set(
-        filter(lambda x: x.startswith("SETUP_BENTO"), set(ctx.blocks))
-    )
-    if not contains_bento_blocks.issubset(BLOCKS):
-        invalid_blocks = contains_bento_blocks - BLOCKS
-        raise BentoMLException(
-            f"Unknown SETUP block in `{filename}`: {list(invalid_blocks)}. All supported blocks include: {', '.join(BLOCKS)}"
-        )
-
-    # check for reserved env
-    maybe_reserved = list(
-        map(
-            lambda x: x[-1],
-            filter(
-                lambda x: x[1] == "name" and x[-1].startswith("__"),
-                template.environment.lex(source),
-            ),
-        )
-    )
-    reserved_var = [f"__{k.name}__" for k in attr.fields(ReservedEnv)]
-
-    if set(maybe_reserved).intersection(reserved_var) or any(
-        i for i in maybe_reserved if i.startswith("__options__")
-    ):
-        raise BentoMLException(
-            "User defined Dockerfile template contains reserved variables. These variables are internally used by BentoML and should not be accessed by users. Refers to https://docs.bentoml.org/en/latest/concepts/bento.html#docker-template-danger-zone to see which variables you can use in your custom docker templates."
-        )
 
 
 def get_docker_variables(
@@ -255,6 +202,5 @@ def generate_dockerfile(options: DockerOptions, *, use_conda: bool) -> str:
             user_templates,
             globals={"bento__dockerfile": template, **J2_FUNCTION},
         )
-        validate_user_template(template, loader=new_loader)
 
     return template.render(**get_docker_variables(options, spec))

@@ -219,7 +219,8 @@ jobs:
 
   catboost_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -263,7 +264,8 @@ jobs:
 
   detectron2_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron2 == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -307,7 +309,8 @@ jobs:
 
   easyocr_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.easyocr == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.easyocr == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -357,7 +360,8 @@ jobs:
 
   gluon_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.gluon == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.gluon == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -401,7 +405,8 @@ jobs:
 
   h2o_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.h2o == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.h2o == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -533,7 +538,8 @@ jobs:
 
   lightgbm_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -577,7 +583,8 @@ jobs:
 
   mlflow_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.mlflow == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.mlflow == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -667,7 +674,8 @@ jobs:
 
   paddle_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.paddle == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.paddle == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -755,7 +763,8 @@ jobs:
 
   pycaret_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pycaret == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pycaret == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -933,7 +942,8 @@ jobs:
 
   spacy_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.spacy == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.spacy == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -977,7 +987,8 @@ jobs:
 
   statsmodels_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.statsmodels == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.statsmodels == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -1021,7 +1032,8 @@ jobs:
 
   tensorflow_v1_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.tf1 == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.tf1 == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

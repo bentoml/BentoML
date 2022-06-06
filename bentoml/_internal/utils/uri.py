@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import typing as t
 import pathlib
 from urllib.parse import unquote
 from urllib.parse import urlparse

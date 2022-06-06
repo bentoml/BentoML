@@ -527,6 +527,12 @@ class PythonOptions:
 
             if :code:`lock_packages` is set to :code:`False`, then :code:`packages` won't be locked.
 
+            .. note::
+
+               One of the reasons why we lock the package by defaullt is for reproducibility and consistency between development and production environment.
+               According to `12-factor app <https://12factor.net/dependencies>`_: `A [Bento] never relies on imppplicit existence of system-wide package.` It implies
+               that a Bento's `full and explicit dependency specification is applied uniformly to both production and development.`
+
         index_url (:code:`str`, `optional`):
             Custom pip index URL. This is passed through :code:`--index-url` option of pip.
 

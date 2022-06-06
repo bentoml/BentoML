@@ -5,7 +5,7 @@
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
-[![actions_status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
+[![actions_status](https://github.com/bentoml/bentoml/workflows/CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 

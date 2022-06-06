@@ -153,7 +153,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    :target: https://pypi.org/project/BentoML
 .. |downloads| image:: https://pepy.tech/badge/bentoml
    :target: https://pepy.tech/project/bentoml
-.. |actions_status| image:: https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg
+.. |actions_status| image:: https://github.com/bentoml/bentoml/workflows/CI/badge.svg
    :target: https://github.com/bentoml/bentoml/actions
 .. |documentation_status| image:: https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square
    :target: https://docs.bentoml.org/

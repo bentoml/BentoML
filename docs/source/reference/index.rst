@@ -12,6 +12,3 @@ BentoML APIs and learn about all the options they provide.
   cli
   stores
   api_io_descriptors
-  build_config
-
-

@@ -1,74 +1,10 @@
-============
-Build Config
-============
-
-Build Config are used to represent the structure of
-a :code:`bentofile.yaml` in our Python API. 
-
-.. warning::
-
-    This page contains BentoML internal API reference. This documentation is
-    provided for developers who wants to explore BentoML internals as well as
-    extends BentoML features. 
-
-.. note::
-
-    Refers to :ref:`concepts/bento:Building Bentos` for more information about how to build a bento.
-
-BentoML under the hood utilize `attrs library <https://www.attrs.org/en/stable/index.html>`_ 
-to provide a better experience writing classes in Python. They comes with features, such as
-validation, conversion, supports for type-checking, etc. 
-
-All classes below are :code:`attrs.frozen()` class, meaning values are immutable to change.
-Refers to `attrs.frozen() API reference <https://www.attrs.org/en/stable/api.html#attr.attrs.frozen>`_.
-
-
-BentoBuildConfig
-----------------
-
-.. autoclass:: bentoml._internal.bento.build_config.BentoBuildConfig
-    :members:
-
-
-PythonOptions
--------------
-
-.. autoclass:: bentoml._internal.bento.build_config.PythonOptions
-    :members:
-
-
-CondaOptions
-------------
-
-.. autoclass:: bentoml._internal.bento.build_config.CondaOptions
-    :members:
-
-
-DockerOptions
--------------
-
-.. autoclass:: bentoml._internal.bento.build_config.DockerOptions
-    :members:
-
+=====================
 Dockerfile generation
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
-This next section describes the Dockerfile generation process. BentoML make uses
+This advanced guide describes the Dockerfile generation process. BentoML make uses
 of `Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_, which enable users
 to have more control on the generated Dockerfile for a Bento.
-
-.. dropdown:: About this section
-   :animate: fade-in
-
-   The following section is for **ADVANCED USERS** who wants to extends the features of a 🍱.
-   If you are not familiar with Jinja2, or you are not sure whether this is useful for you, we recommend you to skip this section. 
-   While Jinja2 is a very powerful template engine that enables BentoML to support
-   such features, we notice that this might be a little bit complicated for
-   beginners.
-
-   While this section fully exposes the generation process of the Dockerfile
-   for a Bento, our recommendation is to just keep it simple. Sometime less is
-   more 😃.
 
 .. warning::
 
@@ -89,7 +25,7 @@ The Dockerfile generation process is as follows:
       generate a Dockerfile from a set of Jinja templates.
 
 One of the powerful features Jinja offers is its `template inheritance <https://jinja.palletsprojects.com/en/3.1.x/templates/#template-inheritance>`_.
-This allows BentoML to enable users to fully customize how to structure a 🍱's Dockerfile.
+This allows BentoML to enable users to fully customize how to structure a Bento's Dockerfile.
 
 .. note::
 
@@ -121,6 +57,7 @@ By doing so, we ensure that the generated Dockerfile will be compatible with a B
 
 .. dropdown:: About writing :code:`Dockerfile.template`
    :icon: code
+   :open:
 
    The Dockerfile template is a mix between :code:`Jinja2` syntax and :code:`Dockerfile`
    syntax. BentoML set both `trim_blocks` and `lstrip_blocks` in Jinja
@@ -130,7 +67,8 @@ By doing so, we ensure that the generated Dockerfile will be compatible with a B
 
    Refers to `Jinja Whitespace Control <https://jinja.palletsprojects.com/en/3.1.x/templates/#whitespace-control>`_.
 
-   The following example is extracted from BentoML internal templates:
+   An example of a Dockerfile template takes advantage of multi-stage build to
+   isolate the installation of a local library :code:`mypackage`:
 
    .. code-block:: dockerfile
 
@@ -309,21 +247,11 @@ The following are the variables that users can set in their custom Dockerfile te
 If any of the aforementioned fields are set with :code:`{% set ... %}`, then we
 will use your value instead, otherwise a default value will be used.
 
-.. tip::
-    You might already noticed that there are also some variables that
-    looks like :code:`{{ __base_image__ }}`. These given fields are not meant to
-    be modified by users and should only be used for BentoML internal generation process.
 
-Support functions
-^^^^^^^^^^^^^^^^^
+.. admonition:: Help us improve the project!
 
-The following functions/class can be used to help with the Dockerfile generation process. 
-
-.. warning::
-    These are already used internally by BentoML and users are **NOT EXPECTED** to use them.
-    They are here so that developers can use them if needed.
-
-.. autofunction:: bentoml._internal.bento.gen.generate_dockerfile
-
-.. autoclass:: bentoml._internal.bento.docker.DistroSpec
-    :members:
+    Found an issue or a TODO item? You're always welcome to make contributions to the
+    project and its documentation. Check out the
+    `BentoML development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_
+    and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
+    to get started.

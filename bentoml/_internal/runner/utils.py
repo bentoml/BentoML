@@ -49,12 +49,7 @@ class Params(t.Generic[T]):
         return itertools.chain(enumerate(self.args), self.kwargs.items())
 
     @classmethod
-    def from_dict(cls, data: dict[str | int, T], ordered: bool = False) -> Params[T]:
-        if ordered:
-            return cls(
-                *(v for k, v in data.items() if isinstance(k, int)),
-                **{k: v for k, v in data.items() if isinstance(k, str)},
-            )
+    def from_dict(cls, data: dict[str | int, T]) -> Params[T]:
         return cls(
             *(data[k] for k in sorted(k for k in data if isinstance(k, int))),
             **{k: v for k, v in data.items() if isinstance(k, str)},

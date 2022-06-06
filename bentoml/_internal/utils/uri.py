@@ -10,7 +10,7 @@ from urllib.request import url2pathname
 import psutil
 
 
-def path_to_uri(path: str) -> str | t.NoReturn:
+def path_to_uri(path: str) -> str:
     """
     Convert a path to a URI.
 

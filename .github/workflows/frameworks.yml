@@ -628,7 +628,8 @@ jobs:
 
   onnx_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -1121,7 +1122,8 @@ jobs:
 
   transformers_integration_tests:
     needs: diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.transformers == 'true') || github.event_name == 'push' }}
+    if: ${{ false }}
+    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.transformers == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

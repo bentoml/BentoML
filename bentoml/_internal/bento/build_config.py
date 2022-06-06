@@ -437,11 +437,6 @@ class PythonOptions:
             # Additional user provided pip_args
             pip_args.append(self.pip_args)
 
-        # write pip install args to a text file if applicable
-        if pip_args:
-            with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
-                f.write(" ".join(pip_args))
-
         if self.lock_packages:
             # Note: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
@@ -475,6 +470,43 @@ class PythonOptions:
                 logger.error(
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
                 )
+
+        with bento_fs.open(
+            fs.path.join(py_folder, "install.sh"), "w"
+        ) as install_script:
+            args = " ".join(pip_args) if pip_args else ""
+            install_python_packages = (
+                """\
+#!/usr/bin/env bash
+
+BASEDIR=$(dirname "$0")
+
+PIP_ARGS=(-U --force-reinstall --no-warn-script-location """
+                + args
+                + """\
+)
+
+REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
+REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
+WHEELS_DIR="$BASEDIR/wheels"
+
+if [ -f "$REQUIREMENTS_LOCK" ]; then
+    echo "Installing pip packages from 'requirements.lock.txt'.."
+    pip install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
+else
+    if [ -f "$REQUIREMENTS_TXT" ]; then
+        echo "Installing pip packages from 'requirements.txt'.."
+        pip install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
+    fi
+fi
+
+if [ -d "$WHEELS_DIR" ]; then
+    echo "Installing pip packages from 'wheels'.."
+    pip install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
+fi
+                    """
+            )
+            install_script.write(install_python_packages)
 
     def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values

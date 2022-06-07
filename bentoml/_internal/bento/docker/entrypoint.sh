@@ -15,7 +15,7 @@ _main() {
 		set -- bentoml serve --production "$@" "$BENTO_PATH"
 	fi
 
-	# Overide the BENTOML_PORT if PORT env var is present. Used for Heroku
+	# Overide the BENTOML_PORT if PORT env var is present. Used for Heroku **and Yatai**
 	if [[ -v PORT ]]; then
 		echo "\$PORT is set! Overiding \$BENTOML_PORT with \$PORT ($PORT)"
 		export BENTOML_PORT=$PORT

@@ -120,10 +120,12 @@ def add_serve_command(cli: click.Group) -> None:
         if production:
             if run_with_ngrok:
                 logger.warning(
-                    "--run-with-ngrok option is not supported in production server"
+                    "'--run-with-ngrok' is not supported with '--production; ignoring"
                 )
             if reload:
-                logger.warning("--reload option is not supported in production server")
+                logger.warning(
+                    "'--reload' is not supported with '--production'; ignoring"
+                )
 
             from ..server import serve_production
 

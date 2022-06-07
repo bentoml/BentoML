@@ -288,26 +288,26 @@ def load(
 
     """
     if os.path.isdir(os.path.expanduser(bento_identifier)):
+        bento_path = os.path.abspath(os.path.expanduser(bento_identifier))
+
         if os.path.isfile(
-            os.path.expanduser(os.path.join(bento_identifier, BENTO_YAML_FILENAME))
+            os.path.expanduser(os.path.join(bento_path, BENTO_YAML_FILENAME))
         ):
             # Loading from path to a built Bento
             try:
-                svc = load_bento_dir(
-                    bento_identifier, change_global_cwd=change_global_cwd
-                )
+                svc = load_bento_dir(bento_path, change_global_cwd=change_global_cwd)
             except ImportServiceError as e:
                 raise BentoMLException(
-                    f"Failed loading Bento from directory {bento_identifier}: {e}"
+                    f"Failed loading Bento from directory {bento_path}: {e}"
                 )
             logger.info("Service loaded from Bento directory: %s", svc)
         elif os.path.isfile(
-            os.path.expanduser(os.path.join(bento_identifier, DEFAULT_BENTO_BUILD_FILE))
+            os.path.expanduser(os.path.join(bento_path, DEFAULT_BENTO_BUILD_FILE))
         ):
             # Loading from path to a project directory containing bentofile.yaml
             try:
                 with open(
-                    os.path.join(bento_identifier, DEFAULT_BENTO_BUILD_FILE),
+                    os.path.join(bento_path, DEFAULT_BENTO_BUILD_FILE),
                     "r",
                     encoding="utf-8",
                 ) as f:
@@ -322,14 +322,12 @@ def load(
                 )
             except ImportServiceError as e:
                 raise BentoMLException(
-                    f"Failed loading Bento from directory {bento_identifier}: {e}"
+                    f"Failed loading Bento from directory {bento_path}: {e}"
                 )
-            logger.info(
-                "Service loaded from project directory '%s': %s", bento_identifier, svc
-            )
+            logger.debug(f"'{svc.name}' loaded from '{bento_path}': {svc}")
         else:
             raise BentoMLException(
-                f"Failed loading service from path {bento_identifier}. When loading from a path, it must be either a Bento containing bento.yaml or a project directory containing bentofile.yaml"
+                f"Failed loading service from path {bento_path}. When loading from a path, it must be either a Bento containing bento.yaml or a project directory containing bentofile.yaml"
             )
     else:
         try:
@@ -339,12 +337,12 @@ def load(
                 working_dir=working_dir,
                 change_global_cwd=change_global_cwd,
             )
-            logger.info("Service imported from source: %s", svc)
+            logger.debug(f"'{svc.name}' imported from source: {svc}")
         except ImportServiceError as e1:
             try:
                 # Loading from local bento store by tag, e.g. "iris_classifier:latest"
                 svc = load_bento(bento_identifier, change_global_cwd=change_global_cwd)
-                logger.info("Service loaded from Bento store: %s", svc)
+                logger.debug(f"'{svc.name}' loaded from Bento store: {svc}")
             except (NotFound, ImportServiceError) as e2:
                 raise BentoMLException(
                     f"Failed to load bento or import service "

@@ -88,8 +88,8 @@ def set_debug_mode(enabled: bool) -> None:
 
     configure_logging()
 
-    logger.debug(
-        f"Setting debug mode: {'ON' if enabled else 'OFF'} for current session"
+    logger.info(
+        f"{'Enabling' if enabled else 'Disabling'} debug mode for current BentoML session"
     )
 
 

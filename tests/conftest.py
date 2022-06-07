@@ -20,7 +20,7 @@ def pytest_generate_tests(metafunc):
     from bentoml._internal.utils import analytics
 
     analytics.usage_stats.do_not_track.cache_clear()
-    analytics.usage_stats.usage_event_debugging.cache_clear()  # type: ignore
+    analytics.usage_stats.usage_event_debugging.cache_clear()
 
     os.environ["__BENTOML_DEBUG_USAGE"] = "False"
     os.environ["BENTOML_DO_NOT_TRACK"] = "True"

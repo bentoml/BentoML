@@ -52,7 +52,7 @@ def do_not_track() -> bool:  # pragma: no cover
 
 
 @lru_cache(maxsize=1)
-def usage_event_debugging() -> bool:  # pragma: no cover
+def usage_event_debugging() -> bool:
     # For BentoML developers only - debug and print event payload if turned on
     return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
 
@@ -124,7 +124,7 @@ def track_serve_init(
     production: bool,
     serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
 ) -> None:
-    if svc.bento is not None:
+    if svc.bento is not None:  # pragma: no cover
         bento = svc.bento
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
@@ -211,12 +211,12 @@ def track_serve(
         yield
         return
 
-    track_serve_init(svc, production)
+    track_serve_init(svc=svc, production=production, serve_info=serve_info)
 
     stop_event = threading.Event()
 
     @slient
-    def loop() -> t.NoReturn:  # type: ignore
+    def loop() -> None:
         while not stop_event.wait(SERVE_USAGE_TRACKING_INTERVAL_SECONDS):
             now = datetime.now(timezone.utc)
             event_properties = ServeUpdateEvent(

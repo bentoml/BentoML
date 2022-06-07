@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from uuid import uuid4
 from typing import TYPE_CHECKING
-from datetime import datetime
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -113,16 +111,13 @@ def test_send_usage_failure(
 
 @patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-@pytest.mark.parametrize(
-    "production, serve_info", [(False, uuid4().hex), (True, uuid4().hex)]
-)
+@pytest.mark.parametrize("production", [False, True])
 @pytest.mark.usefixtures("noop_service")
 def test_track_serve_init(
     mock_post: MagicMock,
     mock_do_not_track: MagicMock,
     noop_service: bentoml.Service,
     production: bool,
-    serve_info: str,
 ):
 
     mock_do_not_track.return_value = False
@@ -134,61 +129,100 @@ def test_track_serve_init(
     analytics.usage_stats.track_serve_init(
         noop_service,
         production=production,
-        serve_info=analytics.ServeInfo(
-            serve_id=serve_info, serve_started_timestamp=datetime.now()
-        ),
+        serve_info=analytics.usage_stats.get_serve_info(),
     )
 
     assert not mock_do_not_track.called
     assert mock_post.called
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
-@patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-@patch("bentoml._internal.utils.analytics.usage_stats.track_serve_init")
-@patch(
-    "bentoml._internal.utils.analytics.usage_stats.SERVE_USAGE_TRACKING_INTERVAL_SECONDS"
-)
+@patch("bentoml._internal.server.metrics.prometheus.PrometheusClient")
 @pytest.mark.parametrize(
-    "production, serve_info", [(False, uuid4().hex), (True, uuid4().hex)]
+    "mock_output",
+    [
+        b"",
+        b"""# HELP BENTOML_noop_request_total Multiprocess metric""",
+    ],
 )
+def test_get_metrics_report_filtered(
+    mock_prometheus_client: MagicMock, mock_output: bytes
+):
+    mock_prometheus_client.multiproc.return_value = False
+    mock_prometheus_client.generate_latest.return_value = mock_output
+    assert analytics.usage_stats.get_metrics_report(mock_prometheus_client) == []
+
+
+@patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 @pytest.mark.usefixtures("noop_service")
+def test_track_serve_do_not_track(
+    mock_do_not_track: MagicMock, noop_service: bentoml.Service
+):
+    mock_do_not_track.return_value = True
+    with analytics.track_serve(
+        noop_service,
+        production=False,
+        serve_info=analytics.usage_stats.get_serve_info(),
+    ) as output:
+        pass
+
+    assert not output
+    assert mock_do_not_track.called
+
+
+@patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
+@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.track_serve_init")
+@patch("bentoml._internal.utils.analytics.usage_stats.usage_event_debugging")
+@patch("bentoml._internal.server.metrics.prometheus.PrometheusClient")
 @pytest.mark.usefixtures("propagate_logs")
+@pytest.mark.usefixtures("noop_service")
 def test_track_serve(
+    mock_prometheus_client: MagicMock,
+    mock_usage_event_debugging: MagicMock,
+    mock_track_serve_init: MagicMock,
     mock_post: MagicMock,
     mock_do_not_track: MagicMock,
-    mock_track_serve_init: MagicMock,
-    mock_serve_usage_tracking_interval_seconds: MagicMock,
     noop_service: bentoml.Service,
-    production: bool,
-    serve_info: str,
     monkeypatch: MonkeyPatch,
     caplog: LogCaptureFixture,
 ):
-    import time
-    import logging
-
-    # Need to use this to catch tracking payload print.
-    logging.getLogger("bentoml").setLevel(logging.DEBUG)
-
+    mock_prometheus_client.multiproc.return_value = False
+    mock_prometheus_client.generate_latest.return_value = b"""\
+# HELP BENTOML_noop_request_total Multiprocess metric
+# TYPE BENTOML_noop_request_total counter
+BENTOML_noop_request_total{endpoint="/docs.json",http_response_code="200",service_version=""} 2.0
+BENTOML_noop_request_total{endpoint="/classify",http_response_code="200",service_version=""} 9.0
+BENTOML_noop_request_total{endpoint="/",http_response_code="200",service_version=""} 1.0
+# HELP BENTOML_noop_request_in_progress Multiprocess metric
+# TYPE BENTOML_noop_request_in_progress gauge
+BENTOML_noop_request_in_progress{endpoint="/",service_version=""} 0.0
+BENTOML_noop_request_in_progress{endpoint="/docs.json",service_version=""} 0.0
+BENTOML_noop_request_in_progress{endpoint="/classify",service_version=""} 0.0
+# HELP BENTOML_noop_request_duration_seconds Multiprocess metric
+# TYPE BENTOML_noop_request_duration_seconds histogram
+            """
     mock_do_not_track.return_value = False
-    mock_serve_usage_tracking_interval_seconds.return_value = 1
-    monkeypatch.setenv("__BENTOML_DEBUG_USAGE", "True")
+    mock_usage_event_debugging.return_value = True
 
-    mock_response = Mock()
-    mock_post.return_value = mock_response
-    mock_response.text = "sent"
+    monkeypatch.setenv("__BENTOML_DEBUG_USAGE", "True")
+    analytics.usage_stats.SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 1
 
     with caplog.at_level(logging.INFO):
         with analytics.track_serve(
             noop_service,
-            production=production,
-            serve_info=analytics.ServeInfo(
-                serve_id=serve_info, serve_started_timestamp=datetime.now()
-            ),
+            production=False,
+            metrics_client=mock_prometheus_client,
+            serve_info=analytics.usage_stats.get_serve_info(),
         ):
+            import time
+
             time.sleep(1)
             pass
 
-    assert mock_post.called
+    assert not mock_post.called
+    assert mock_do_not_track.called
     assert mock_track_serve_init.called
+
+    assert "Tracking Payload" in caplog.text
+    assert all(not x in caplog.text for x in analytics.usage_stats.EXCLUDE_PATHS)
+    assert not "static_content" in caplog.text

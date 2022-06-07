@@ -100,7 +100,7 @@ def get_payload(
 
 
 @slient
-def track(event_properties: EventMeta):
+def track(event_properties: EventMeta) -> None:
     if do_not_track():
         return
 
@@ -123,7 +123,7 @@ def track_serve_init(
     svc: Service,
     production: bool,
     serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
-):
+) -> None:
     if svc.bento is not None:
         bento = svc.bento
         event_properties = ServeInitEvent(
@@ -168,16 +168,16 @@ EXCLUDE_PATHS = {"/docs.json", "/livez", "/healthz", "/readyz"}
 
 def get_metrics_report(
     metrics_client: PrometheusClient,
-) -> t.List[t.Dict[str, t.Union[str, float]]]:
+) -> list[dict[str, str | float]]:
     metrics_text = metrics_client.generate_latest().decode("utf-8")
     if not metrics_text:
         return []
 
     metric: ext.Metric
 
-    from prometheus_client.parser import text_string_to_metric_families
+    from prometheus_client.parser import text_string_to_metric_families  # type: ignore (incomplete prometheus_client type)
 
-    for metric in text_string_to_metric_families(metrics_text):
+    for metric in text_string_to_metric_families(metrics_text):  # type: ignore (incomplete prometheus_client type)
         # Searching for the metric BENTOML_{service_name}_request of type Counter
         if (
             metric.type == "counter"

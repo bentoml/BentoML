@@ -168,10 +168,12 @@ def generate_dockerfile(
 
     .. code-block:: python
 
-        from bentoml.build_utils import generate_dockerfile
-        from bentoml.build_utils import DockerOptions
+        from bentoml._internal.bento.gen import generate_dockerfile
+        from bentoml._internal.bento.bento import BentoInfo
 
-        dockerfile = generate_dockerfile(DockerOptions().with_defaults(), use_conda=False)
+        docker_options = BentoInfo.from_yaml_file("{bento_path}/bento.yaml").docker
+        docker_options.docker_template = "./override_template.j2"
+        dockerfile = generate_dockerfile(docker_options, use_conda=False)
 
     """
     distro = options.distro

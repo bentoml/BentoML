@@ -1,5 +1,4 @@
 {# BENTOML INTERNAL #}
-{% set __cached__ = [] %}
 {% set __user_defined_image__ = __options__base_image is not none %}
 {% set __python_pip_args__=expands_bento_path("env", "python", "pip_args.txt", bento_path=bento__path) %}
 {% set __python_requirements_lock__=expands_bento_path("env", "python", "requirements.lock.txt", bento_path=bento__path) %}
@@ -23,6 +22,7 @@ FROM {{ __base_image__ }} as cached
 FROM {{ __base_image__ }} as base
 
 	{% if not __user_defined_image__ %}
+        {% set __cached__ = [] %}
 		{% for key in __supported_architectures__ if key not in __cached__ %}
 			{% if 'arm64' in key or 'aarch64' in key %}
 			{% do __cached__.append(key) %}
@@ -57,8 +57,6 @@ ENV LC_ALL=C.UTF-8
 ENV PYTHONIOENCODING=UTF-8
 
 ENV PYTHONUNBUFFERED=1
-
-ENV PATH {{ expands_bento_path("env", "docker", bento_path=bento__path) }}:/usr/local/bin:$PATH
 
 {% endblock %}
 

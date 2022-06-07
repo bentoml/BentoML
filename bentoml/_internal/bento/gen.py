@@ -4,13 +4,12 @@ import os
 import re
 import typing as t
 import logging
+from sys import version_info
 from typing import TYPE_CHECKING
 
-import fs
 import attr
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
-from sys import version_info
 
 from ..utils import resolve_user_filepath
 from .docker import DistroSpec
@@ -71,17 +70,8 @@ class ReservedEnv:
         default=str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() == "true"
     )
 
-    @classmethod
-    def todict(cls, base_image: str, supported_architectures: list[str]):
-        return {
-            f"__{k}__": v
-            for k, v in attr.asdict(
-                cls(
-                    base_image=base_image,
-                    supported_architectures=supported_architectures,
-                )
-            ).items()
-        }
+    def todict(self):
+        return {f"__{k}__": v for k, v in attr.asdict(self).items()}
 
 
 @attr.frozen(on_setattr=None, eq=False, repr=False)
@@ -91,12 +81,11 @@ class CustomizableEnv:
     home: str = attr.field(default=BENTO_HOME)
     path: str = attr.field(default=BENTO_PATH)
 
-    @classmethod
-    def todict(cls) -> dict[str, str]:
-        return {f"bento__{k}": v for k, v in attr.asdict(cls()).items()}
+    def todict(self) -> dict[str, str]:
+        return {f"bento__{k}": v for k, v in attr.asdict(self).items()}
 
 
-TEMPLATES_PATH = [fs.path.join(os.path.dirname(__file__), "docker", "templates")]
+TEMPLATES_PATH = [os.path.join(os.path.dirname(__file__), "docker", "templates")]
 ENVIRONMENT = Environment(
     extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
     trim_blocks=True,
@@ -132,12 +121,14 @@ def get_docker_variables(
 
     return {
         **{f"__options__{k}": v for k, v in attr.asdict(options).items()},
-        **CustomizableEnv.todict(),
-        **ReservedEnv.todict(base_image, spec.supported_architectures),
+        **CustomizableEnv().todict(),
+        **ReservedEnv(base_image, spec.supported_architectures).todict(),
     }
 
 
-def generate_dockerfile(options: DockerOptions, *, use_conda: bool) -> str:
+def generate_dockerfile(
+    options: DockerOptions, build_ctx: str, *, use_conda: bool
+) -> str:
     """
     Generate a Dockerfile that containerize a Bento.
 
@@ -195,8 +186,11 @@ def generate_dockerfile(options: DockerOptions, *, use_conda: bool) -> str:
     base = f"{spec.release_type}_{distro}.j2"
     template = ENVIRONMENT.get_template(base, globals=vars_)
 
+    logger.debug(
+        f"Using base Dockerfile template: {base}, and their path: {os.path.join(TEMPLATES_PATH[0], base)}"
+    )
     if user_templates is not None:
-        dir_path = fs.path.dirname(resolve_user_filepath(user_templates, os.getcwd()))
+        dir_path = os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
         user_templates = os.path.basename(user_templates)
         TEMPLATES_PATH.append(dir_path)
         new_loader = FileSystemLoader(TEMPLATES_PATH, followlinks=True)

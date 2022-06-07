@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
-import logging
 import typing as t
+import logging
 
 import pytest
 

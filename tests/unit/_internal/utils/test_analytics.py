@@ -1,23 +1,24 @@
 from __future__ import annotations
-import logging
 
+import logging
 from uuid import uuid4
 from typing import TYPE_CHECKING
 from datetime import datetime
 from unittest.mock import Mock
 from unittest.mock import patch
-from _pytest.logging import LogCaptureFixture
 
 import pytest
 from schema import Or
 from schema import And
 from schema import Schema
+from _pytest.logging import LogCaptureFixture
 
 import bentoml
 from bentoml._internal.utils import analytics
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
+
     from _pytest.monkeypatch import MonkeyPatch
 
 SCHEMA = Schema(
@@ -164,8 +165,8 @@ def test_track_serve(
     monkeypatch: MonkeyPatch,
     caplog: LogCaptureFixture,
 ):
-    import logging
     import time
+    import logging
 
     # Need to use this to catch tracking payload print.
     logging.getLogger("bentoml").setLevel(logging.DEBUG)

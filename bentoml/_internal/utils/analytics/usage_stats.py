@@ -32,8 +32,8 @@ if TYPE_CHECKING:
 
     from bentoml import Service
 
-    from ...server.metrics.prometheus import PrometheusClient
     from ...external_typing import prometheus as ext
+    from ...server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,9 @@ def get_metrics_report(
 
     metric: ext.Metric
 
-    from prometheus_client.parser import text_string_to_metric_families  # type: ignore (incomplete prometheus_client type)
+    from prometheus_client.parser import (
+        text_string_to_metric_families,  # type: ignore (incomplete prometheus_client type)
+    )
 
     for metric in text_string_to_metric_families(metrics_text):  # type: ignore (incomplete prometheus_client type)
         # Searching for the metric BENTOML_{service_name}_request of type Counter

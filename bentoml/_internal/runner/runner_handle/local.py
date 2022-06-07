@@ -13,7 +13,6 @@ from . import RunnerHandle
 if TYPE_CHECKING:
     from ..runner import Runner
     from ..runner import RunnerMethod
-    from ..runnable import Runnable
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
@@ -36,13 +35,11 @@ class LocalRunnerRef(RunnerHandle):
                 lambda arg: AutoContainer.to_payload(arg, batch_dim=inp_batch_dim)
             )
 
-            params_iter = iter(payload_params.items())
-            size = next(params_iter)[1].batch_size
-            for param in params_iter:
-                if param[1].batch_size != size:
-                    raise ValueError(
-                        "All batchable arguments must have the same batch size."
-                    )
+            if not payload_params.map(lambda i: i.batch_size).all_equal():
+                raise ValueError(
+                    "All batchable arguments must have the same batch size."
+                )
+
         return getattr(self._runnable, __bentoml_method.name)(*args, **kwargs)
 
     async def async_run_method(

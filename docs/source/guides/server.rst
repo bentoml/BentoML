@@ -35,7 +35,7 @@ For example, you can add do:
 
 
 Mounting apps from WSGI based web frameworks
-----------------------------------
+--------------------------------------------
 
 Here’s an example of mounting Flask endpoints alongside BentoML
 
@@ -62,7 +62,7 @@ Here’s an example of mounting Flask endpoints alongside BentoML
 As you can see, you can use flask annotations just as you would if you were building a standalone flask app. In order to ensure the correct coupling, the ``svc.mount_wsgi_app(flask_app)`` must be invoked.
 
 Mounting apps from ASGI based web frameworks
-----------------------------------
+--------------------------------------------
 
 Here’s an example of mounting a FastAPI app alongside BentoML
 

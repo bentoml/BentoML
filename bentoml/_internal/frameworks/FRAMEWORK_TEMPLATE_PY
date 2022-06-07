@@ -194,6 +194,3 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         add_runnable_method(method_name, options)
 
     return FrameworkRunnable
-
-
-# vim: set ft=python ts=4 sw=4 tw=4 noet :

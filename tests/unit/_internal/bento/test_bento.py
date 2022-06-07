@@ -100,6 +100,31 @@ apis:
 - name: predict
   input_type: NumpyNdarray
   output_type: NumpyNdarray
+docker:
+  distro: debian
+  python_version: '3.8'
+  cuda_version: null
+  env: {{}}
+  system_packages: []
+  setup_script: null
+  base_image: null
+  dockerfile_template: null
+python:
+  requirements_txt: null
+  packages: null
+  lock_packages: true
+  index_url: null
+  no_index: null
+  trusted_host: null
+  find_links: null
+  extra_index_url: null
+  pip_args: null
+  wheels: null
+conda:
+  environment_yml: null
+  channels: null
+  dependencies: null
+  pip: null
 """
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:

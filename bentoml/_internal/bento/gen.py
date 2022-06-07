@@ -28,8 +28,8 @@ if TYPE_CHECKING:
 
 BENTO_UID_GID = 1034
 BENTO_USER = "bentoml"
-BENTO_HOME = os.path.join("home", BENTO_USER)
-BENTO_PATH = os.path.join(BENTO_HOME, "bento")
+BENTO_HOME = f"/home/{BENTO_USER}/"
+BENTO_PATH = f"{BENTO_HOME}bento"
 BLOCKS = {
     "SETUP_BENTO_BASE_IMAGE",
     "SETUP_BENTO_USER",
@@ -51,7 +51,7 @@ def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
     """
     Expand a given paths with respect to :code:`BENTO_PATH`.
     """
-    return os.path.expandvars(os.path.join(bento_path, *path))
+    return "/".join([bento_path, *path])
 
 
 J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
@@ -87,19 +87,20 @@ class CustomizableEnv:
 
 
 def get_templates_variables(
-    options: DockerOptions, spec: DistroSpec | None
+    options: DockerOptions, use_conda: bool
 ) -> dict[str, t.Any]:
     """
     Returns a dictionary of variables to be used in BentoML base templates.
     """
-    if spec is None:
-        raise BentoMLException("Distro spec is required, got None instead.")
 
     distro = options.distro
     cuda_version = options.cuda_version
     python_version = options.python_version
 
     if options.base_image is None:
+        spec = DistroSpec.from_distro(
+            distro, cuda=cuda_version is not None, conda=use_conda
+        )
         if cuda_version is not None:
             base_image = spec.image.format(spec_version=cuda_version)
         else:
@@ -108,8 +109,10 @@ def get_templates_variables(
             else:
                 python_version = python_version
             base_image = spec.image.format(spec_version=python_version)
+        supported_architecture = spec.supported_architectures
     else:
         base_image = options.base_image
+        supported_architecture = ["amd64"]
         logger.info(
             f"BentoML will not install Python to custom base images; ensure the base image '{base_image}' has Python installed."
         )
@@ -121,7 +124,7 @@ def get_templates_variables(
     return {
         **{f"__options__{k}": v for k, v in attr.asdict(options).items()},
         **CustomizableEnv().todict(),
-        **ReservedEnv(base_image, spec.supported_architectures).todict(),
+        **ReservedEnv(base_image, supported_architecture).todict(),
     }
 
 
@@ -182,11 +185,12 @@ def generate_dockerfile(
         loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
     )
 
-    spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
-    if spec is None:
-        raise BentoMLException("function is called before with_defaults() is invoked.")
+    if options.base_image is not None:
+        base = "base.j2"
+    else:
+        spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
+        base = f"{spec.release_type}_{distro}.j2"
 
-    base = f"{spec.release_type}_{distro}.j2"
     template = ENVIRONMENT.get_template(base, globals=J2_FUNCTION)
     logger.debug(
         f"Using base Dockerfile template: {base}, and their path: {os.path.join(TEMPLATES_PATH[0], base)}"
@@ -201,7 +205,7 @@ def generate_dockerfile(
         environment = ENVIRONMENT.overlay(loader=new_loader)
         template = environment.get_template(
             user_templates,
-            globals={"bento_autotemplate": template, **J2_FUNCTION},
+            globals={"bento_auto_template": template, **J2_FUNCTION},
         )
 
-    return template.render(**get_templates_variables(options, spec))
+    return template.render(**get_templates_variables(options, use_conda=use_conda))

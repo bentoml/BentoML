@@ -1,18 +1,11 @@
-from __future__ import annotations
-
+# type: ignore[reportMissingTypeStubs]
 import os
 import sys
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 from functools import partial
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    from types import ModuleType
-
-    from ...external_typing import prometheus as ext
 
 
 class PrometheusClient:
@@ -21,7 +14,7 @@ class PrometheusClient:
         *,
         namespace: str = "",
         multiproc: bool = True,
-        multiproc_dir: str | None = None,
+        multiproc_dir: t.Optional[str] = None,
     ):
         """
         Set up multiproc_dir for prometheus to work in multiprocess mode,
@@ -36,13 +29,13 @@ class PrometheusClient:
 
         self.multiproc = multiproc
         self.namespace = namespace
-        self.multiproc_dir: str | None = multiproc_dir
-        self._registry: ext.CollectorRegistry | None = None
+        self.multiproc_dir: t.Optional[str] = multiproc_dir
+        self._registry = None
         self._imported = False
-        self._pid: int | None = None
+        self._pid: t.Optional[int] = None
 
     @property
-    def prometheus_client(self) -> ModuleType:
+    def prometheus_client(self):
         if self.multiproc and not self._imported:
             # step 1: check environment
             assert (
@@ -90,17 +83,17 @@ class PrometheusClient:
             self.prometheus_client.multiprocess.mark_process_dead(self._pid)
 
     def start_http_server(self, port: int, addr: str = "") -> None:
-        self.prometheus_client.start_http_server(  # type: ignore
+        self.prometheus_client.start_http_server(
             port=port,
             addr=addr,
             registry=self.registry,
         )
 
-    def generate_latest(self) -> bytes:
+    def generate_latest(self):
         if self.multiproc:
             registry = self.prometheus_client.CollectorRegistry()
             self.prometheus_client.multiprocess.MultiProcessCollector(registry)
-            return t.cast(bytes, self.prometheus_client.generate_latest(registry))
+            return self.prometheus_client.generate_latest(registry)
         else:
             return self.prometheus_client.generate_latest()
 

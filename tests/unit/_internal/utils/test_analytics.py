@@ -1,10 +1,12 @@
 from __future__ import annotations
+import logging
 
 from uuid import uuid4
 from typing import TYPE_CHECKING
 from datetime import datetime
 from unittest.mock import Mock
 from unittest.mock import patch
+from _pytest.logging import LogCaptureFixture
 
 import pytest
 from schema import Or
@@ -16,6 +18,7 @@ from bentoml._internal.utils import analytics
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
+    from _pytest.monkeypatch import MonkeyPatch
 
 SCHEMA = Schema(
     {
@@ -120,7 +123,6 @@ def test_track_serve_init(
     production: bool,
     serve_info: str,
 ):
-    from bentoml._internal.utils.analytics.usage_stats import ServeInfo
 
     mock_do_not_track.return_value = False
 
@@ -131,10 +133,61 @@ def test_track_serve_init(
     analytics.usage_stats.track_serve_init(
         noop_service,
         production=production,
-        serve_info=ServeInfo(
+        serve_info=analytics.ServeInfo(
             serve_id=serve_info, serve_started_timestamp=datetime.now()
         ),
     )
 
     assert not mock_do_not_track.called
     assert mock_post.called
+
+
+@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
+@patch("bentoml._internal.utils.analytics.usage_stats.track_serve_init")
+@patch(
+    "bentoml._internal.utils.analytics.usage_stats.SERVE_USAGE_TRACKING_INTERVAL_SECONDS"
+)
+@pytest.mark.parametrize(
+    "production, serve_info", [(False, uuid4().hex), (True, uuid4().hex)]
+)
+@pytest.mark.usefixtures("noop_service")
+@pytest.mark.usefixtures("propagate_logs")
+def test_track_serve(
+    mock_post: MagicMock,
+    mock_do_not_track: MagicMock,
+    mock_track_serve_init: MagicMock,
+    mock_serve_usage_tracking_interval_seconds: MagicMock,
+    noop_service: bentoml.Service,
+    production: bool,
+    serve_info: str,
+    monkeypatch: MonkeyPatch,
+    caplog: LogCaptureFixture,
+):
+    import logging
+    import time
+
+    # Need to use this to catch tracking payload print.
+    logging.getLogger("bentoml").setLevel(logging.DEBUG)
+
+    mock_do_not_track.return_value = False
+    mock_serve_usage_tracking_interval_seconds.return_value = 1
+    monkeypatch.setenv("__BENTOML_DEBUG_USAGE", "True")
+
+    mock_response = Mock()
+    mock_post.return_value = mock_response
+    mock_response.text = "sent"
+
+    with caplog.at_level(logging.INFO):
+        with analytics.track_serve(
+            noop_service,
+            production=production,
+            serve_info=analytics.ServeInfo(
+                serve_id=serve_info, serve_started_timestamp=datetime.now()
+            ),
+        ):
+            time.sleep(1)
+            pass
+
+    assert mock_post.called
+    assert mock_track_serve_init.called

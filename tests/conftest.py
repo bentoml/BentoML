@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 import typing as t
 
 import pytest
@@ -73,5 +74,15 @@ def fixture_dummy_model_store(tmpdir_factory: "pytest.TempPathFactory") -> Model
         "anothermodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
     ):
         pass
-
     return store
+
+
+@pytest.fixture(scope="function", autouse=True, name="propagate_logs")
+def fixture_propagate_logs() -> t.Generator[None, None, None]:
+    logger = logging.getLogger("bentoml")
+    # bentoml sets propagate to False by default, so we need to set it to True
+    # for pytest caplog to recognize logs
+    logger.propagate = True
+    yield
+    # restore propagate to False after tests
+    logger.propagate = False

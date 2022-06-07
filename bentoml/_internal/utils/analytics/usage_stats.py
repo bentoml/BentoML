@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from bentoml import Service
 
     from ...server.metrics.prometheus import PrometheusClient
+    from ...external_typing import prometheus as ext
 
 logger = logging.getLogger(__name__)
 
@@ -166,11 +167,13 @@ EXCLUDE_PATHS = {"/docs.json", "/livez", "/healthz", "/readyz"}
 
 
 def get_metrics_report(
-    metrics_client,
+    metrics_client: PrometheusClient,
 ) -> t.List[t.Dict[str, t.Union[str, float]]]:
-    metrics_text = metrics_client.generate_latest().decode()
+    metrics_text = metrics_client.generate_latest().decode("utf-8")
     if not metrics_text:
         return []
+
+    metric: ext.Metric
 
     from prometheus_client.parser import text_string_to_metric_families
 
@@ -201,7 +204,7 @@ def track_serve(
     production: bool,
     metrics_client: PrometheusClient = Provide[DeploymentContainer.metrics_client],
     serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
-) -> t.Generator[None, None, None]:  # pragma: no cover
+) -> t.Generator[None, None, None]:
     if do_not_track():
         yield
         return

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import sys
 import typing as t
 import logging
@@ -12,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from types import ModuleType
+
+    from ...external_typing import prometheus as ext
 
 
 class PrometheusClient:
@@ -39,7 +40,6 @@ class PrometheusClient:
         self._registry: ext.CollectorRegistry | None = None
         self._imported = False
         self._pid: int | None = None
-        self._exc_paths: list[str] = EXCLUDE_PATHS
 
     @property
     def prometheus_client(self) -> ModuleType:

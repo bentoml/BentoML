@@ -15,7 +15,6 @@ from ..utils import resolve_user_filepath
 from .docker import DistroSpec
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
-from .build_dev_bentoml_whl import BENTOML_DEV_BUILD
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +28,8 @@ if TYPE_CHECKING:
 
 BENTO_UID_GID = 1034
 BENTO_USER = "bentoml"
-BENTO_HOME = f"/home/{BENTO_USER}/"
-BENTO_PATH = f"{BENTO_HOME}bento"
+BENTO_HOME = os.path.join("home", BENTO_USER)
+BENTO_PATH = os.path.join(BENTO_HOME, "bento")
 BLOCKS = {
     "SETUP_BENTO_BASE_IMAGE",
     "SETUP_BENTO_USER",

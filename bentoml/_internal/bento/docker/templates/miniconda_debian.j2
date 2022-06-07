@@ -3,7 +3,7 @@
 {% block SETUP_BENTO_ENVARS %}
 {{ super() }}
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
+RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
 SAVED_PYTHON_VERSION={{ __python_version_full__ }}
 PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
 

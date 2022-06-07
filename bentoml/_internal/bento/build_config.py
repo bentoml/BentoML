@@ -214,7 +214,7 @@ class DockerOptions:
                     f"docker base_image {self.base_image} is used, "
                     f"'cuda_version={self.cuda_version}' option is ignored.",
                 )
-            if self.system_packages is not None:
+            if self.system_packages:
                 logger.warning(
                     f"docker base_image {self.base_image} is used, "
                     f"'system_packages={self.system_packages}' option is ignored.",

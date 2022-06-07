@@ -160,7 +160,7 @@ def _track_serve_init(
     track(event_properties)
 
 
-EXCLUDE_PATHS = {"/", "/docs.json", "/livez", "/healthz", "/readyz"}
+EXCLUDE_PATHS = {"/docs.json", "/livez", "/healthz", "/readyz"}
 
 
 def get_metrics_report(

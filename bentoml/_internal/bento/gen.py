@@ -208,7 +208,7 @@ def generate_dockerfile(
         environment = ENVIRONMENT.overlay(loader=new_loader)
         template = environment.get_template(
             user_templates,
-            globals={"bento_auto_template": template, **J2_FUNCTION},
+            globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
     return template.render(**get_templates_variables(options, use_conda=use_conda))

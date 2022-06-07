@@ -110,7 +110,7 @@ if [ -f {{ __python_requirements_lock__ }} ]; then
 else
   if [ -f {{ __python_requirements_txt__ }} ]; then
     echo "Installing pip packages from 'requirements.txt'.."
-    {{ bento__pip_cmd }} install -r {{ __python_requirements_txt__ }} $EXTRA_PIP_INSTALL_ARGS
+    {{ bento__pip_cmd }} install -r {{ __python_requirements_txt__ }} -U $EXTRA_PIP_INSTALL_ARGS
   fi
 fi
 EOF
@@ -119,7 +119,7 @@ EOF
 RUN bash <<EOF
 if [ -d {{ expands_bento_path("env", "python", "wheels", bento_path=bento__path) }} ]; then
   echo "Installing wheels.."
-  {{ bento__pip_cmd }} install {{ expands_bento_path("env", "python", "wheels", "*.whl", bento_path=bento__path) }}
+  {{ bento__pip_cmd }} install {{ expands_bento_path("env", "python", "wheels", "*.whl", bento_path=bento__path) }} -U $EXTRA_PIP_INSTALL_ARGS
 fi
 EOF
 

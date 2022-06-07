@@ -84,9 +84,12 @@ class CustomizableEnv:
         return {f"bento__{k}": v for k, v in attr.asdict(self).items()}
 
 
-def get_docker_variables(
+def get_templates_variables(
     options: DockerOptions, spec: DistroSpec | None
 ) -> dict[str, t.Any]:
+    """
+    Returns a dictionary of variables to be used in BentoML base templates.
+    """
     if spec is None:
         raise BentoMLException("Distro spec is required, got None instead.")
 
@@ -109,6 +112,10 @@ def get_docker_variables(
             f"BentoML will not install Python to custom base images; ensure the base image '{base_image}' has Python installed."
         )
 
+    # environment returns are
+    # __base_image__, __supported_architectures__, __bentoml_version__
+    # bento__uid_gid, bento__user, bento__home, bento__path
+    # __options__distros, __options__base_image, __options_env, __options_system_packages, __options_setup_script
     return {
         **{f"__options__{k}": v for k, v in attr.asdict(options).items()},
         **CustomizableEnv().todict(),
@@ -199,4 +206,4 @@ def generate_dockerfile(
             globals={"bento_autotemplate": template, **vars_},
         )
 
-    return template.render(**get_docker_variables(options, spec))
+    return template.render(**get_templates_variables(options, spec))

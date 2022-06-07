@@ -66,7 +66,7 @@ def load_model(
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
     FRAMEWORK_PY.load(bento_model.path_of(MODEL_FILENAME))

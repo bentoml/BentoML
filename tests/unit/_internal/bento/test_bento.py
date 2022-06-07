@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from sys import version_info
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
@@ -100,6 +101,31 @@ apis:
 - name: predict
   input_type: NumpyNdarray
   output_type: NumpyNdarray
+docker:
+  distro: debian
+  python_version: '{python_version}'
+  cuda_version: null
+  env: {{}}
+  system_packages: []
+  setup_script: null
+  base_image: null
+  dockerfile_template: null
+python:
+  requirements_txt: null
+  packages: null
+  lock_packages: true
+  index_url: null
+  no_index: null
+  trusted_host: null
+  find_links: null
+  extra_index_url: null
+  pip_args: null
+  wheels: null
+conda:
+  environment_yml: null
+  channels: null
+  dependencies: null
+  pip: null
 """
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:
@@ -107,6 +133,7 @@ apis:
             bentoml_version=BENTOML_VERSION,
             creation_time=bentoinfo_b.creation_time.isoformat(),
             model_creation_time=model_creation_time.isoformat(),
+            python_version=f"{version_info.major}.{version_info.minor}",
         )
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:

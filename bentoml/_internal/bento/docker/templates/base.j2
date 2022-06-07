@@ -135,6 +135,7 @@ EOF
 # Run user setup scripts if exists
 RUN bash <<EOF
 if [ -f {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }} ]; then
+  echo "Running user setup script.."
   chmod +x {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
   {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
 fi

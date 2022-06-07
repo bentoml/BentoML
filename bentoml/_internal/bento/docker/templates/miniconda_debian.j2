@@ -1,11 +1,10 @@
 {% extends "base_debian.j2" %}
-{% set __python_version_txt__=expands_bento_path("env", "python", "version.txt", bento_path=bento__path) %}
 {% set __environment_yml__=expands_bento_path("env", "conda", "environment.yml", bento_path=bento__path) %}
 {% block SETUP_BENTO_ENVARS %}
 {{ super() }}
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip bash <<EOF
-SAVED_PYTHON_VERSION=$(cat {{ __python_version_txt__ }})
+SAVED_PYTHON_VERSION={{ __python_version_full__ }}
 PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
 
 echo "Installing Python $PYTHON_VERSION with conda..."

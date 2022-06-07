@@ -6,7 +6,7 @@
 {# users can use these values #}
 {% set bento__entrypoint = bento__entrypoint | default(expands_bento_path("env", "docker", "entrypoint.sh", bento_path=bento__path)) %}
 {% set bento__pip_cmd = bento__pip_cmd | default("pip") %}
-{% set bento__pypi_version = bento__pypi_version | default(clean_bentoml_version(__bentoml_version__)) %}
+{% set bento__pypi_version = bento__pypi_version | default(__bentoml_version__) %}
 # syntax = docker/dockerfile:1.4-labs
 #
 # ===========================================
@@ -86,17 +86,10 @@ WORKDIR $BENTO_PATH
 COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 
 {% endblock %}
-{% if __is_editable__ == true %}
-# Install bentoml from editable wheel
-ENV BENTOML_VERSION={{ __bentoml_version__ }}
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    {{ bento__pip_cmd }} install --no-cache-dir {{ expands_bento_path("env", "docker", "whl", bento_path=bento__path) }}/bentoml-{{ __bentoml_version__ }}-py3-none-any.whl
-{% else %}
 # Install bentoml=={{ bento__pypi_version }}
 ENV BENTOML_VERSION={{ bento__pypi_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     {{ bento__pip_cmd }} install bentoml==${BENTOML_VERSION} --no-cache-dir
-{% endif %}
 
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}

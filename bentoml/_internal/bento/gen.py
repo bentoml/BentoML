@@ -65,9 +65,8 @@ J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
 class ReservedEnv:
     base_image: str
     supported_architectures: list[str]
-    bentoml_version: str = attr.field(default=BENTOML_VERSION)
-    is_editable: bool = attr.field(
-        default=str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() == "true"
+    bentoml_version: str = attr.field(
+        default=BENTOML_VERSION, converter=clean_bentoml_version
     )
 
     def todict(self):
@@ -83,15 +82,6 @@ class CustomizableEnv:
 
     def todict(self) -> dict[str, str]:
         return {f"bento__{k}": v for k, v in attr.asdict(self).items()}
-
-
-TEMPLATES_PATH = [os.path.join(os.path.dirname(__file__), "docker", "templates")]
-ENVIRONMENT = Environment(
-    extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
-    trim_blocks=True,
-    lstrip_blocks=True,
-    loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
-)
 
 
 def get_docker_variables(
@@ -175,6 +165,14 @@ def generate_dockerfile(
     use_cuda = options.cuda_version is not None
     user_templates = options.dockerfile_template
 
+    TEMPLATES_PATH = [os.path.join(os.path.dirname(__file__), "docker", "templates")]
+    ENVIRONMENT = Environment(
+        extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
+        trim_blocks=True,
+        lstrip_blocks=True,
+        loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
+    )
+
     spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
     if spec is None:
         raise BentoMLException("function is called before with_defaults() is invoked.")
@@ -198,7 +196,7 @@ def generate_dockerfile(
         environment = ENVIRONMENT.overlay(loader=new_loader)
         template = environment.get_template(
             user_templates,
-            globals={"bento__dockerfile": template, **vars_},
+            globals={"bento_autotemplate": template, **vars_},
         )
 
     return template.render(**get_docker_variables(options, spec))

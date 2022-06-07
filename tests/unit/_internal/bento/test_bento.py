@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from sys import version_info
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
@@ -102,7 +103,7 @@ apis:
   output_type: NumpyNdarray
 docker:
   distro: debian
-  python_version: '3.8'
+  python_version: '{python_version}'
   cuda_version: null
   env: {{}}
   system_packages: []
@@ -132,6 +133,7 @@ conda:
             bentoml_version=BENTOML_VERSION,
             creation_time=bentoinfo_b.creation_time.isoformat(),
             model_creation_time=model_creation_time.isoformat(),
+            python_version=f"{version_info.major}.{version_info.minor}",
         )
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:

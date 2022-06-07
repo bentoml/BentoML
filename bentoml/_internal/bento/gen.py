@@ -50,6 +50,7 @@ def clean_bentoml_version(bentoml_version: str) -> str:
 def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
     """
     Expand a given paths with respect to :code:`BENTO_PATH`.
+    Note on using "/": the returned path is meant to be used in the generated Dockerfile.
     """
     return "/".join([bento_path, *path])
 

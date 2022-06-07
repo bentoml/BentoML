@@ -224,5 +224,5 @@ BENTOML_noop_request_in_progress{endpoint="/classify",service_version=""} 0.0
     assert mock_track_serve_init.called
 
     assert "Tracking Payload" in caplog.text
-    assert all(not x in caplog.text for x in analytics.usage_stats.EXCLUDE_PATHS)
-    assert not "static_content" in caplog.text
+    assert not any(x in caplog.text for x in analytics.usage_stats.EXCLUDE_PATHS)
+    assert "static_content" not in caplog.text

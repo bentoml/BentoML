@@ -68,6 +68,9 @@ class ReservedEnv:
     bentoml_version: str = attr.field(
         default=BENTOML_VERSION, converter=clean_bentoml_version
     )
+    python_version_full: str = attr.field(
+        default=f"{version_info.major}.{version_info.minor}.{version_info.micro}"
+    )
 
     def todict(self):
         return {f"__{k}__": v for k, v in attr.asdict(self).items()}
@@ -113,7 +116,7 @@ def get_templates_variables(
         )
 
     # environment returns are
-    # __base_image__, __supported_architectures__, __bentoml_version__
+    # __base_image__, __supported_architectures__, __bentoml_version__, __python_version_full__
     # bento__uid_gid, bento__user, bento__home, bento__path
     # __options__distros, __options__base_image, __options_env, __options_system_packages, __options_setup_script
     return {
@@ -183,17 +186,13 @@ def generate_dockerfile(
     spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
     if spec is None:
         raise BentoMLException("function is called before with_defaults() is invoked.")
-    vars_ = {
-        "__python_version_full__": f"{version_info.major}.{version_info.minor}.{version_info.micro}",
-        **J2_FUNCTION,
-    }
 
     base = f"{spec.release_type}_{distro}.j2"
-    template = ENVIRONMENT.get_template(base, globals=vars_)
-
+    template = ENVIRONMENT.get_template(base, globals=J2_FUNCTION)
     logger.debug(
         f"Using base Dockerfile template: {base}, and their path: {os.path.join(TEMPLATES_PATH[0], base)}"
     )
+
     if user_templates is not None:
         dir_path = os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
         user_templates = os.path.basename(user_templates)
@@ -203,7 +202,7 @@ def generate_dockerfile(
         environment = ENVIRONMENT.overlay(loader=new_loader)
         template = environment.get_template(
             user_templates,
-            globals={"bento_autotemplate": template, **vars_},
+            globals={"bento_autotemplate": template, **J2_FUNCTION},
         )
 
     return template.render(**get_templates_variables(options, spec))

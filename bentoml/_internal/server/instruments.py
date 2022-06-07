@@ -38,6 +38,9 @@ class MetricsMiddleware:
     ):
         self.metrics_client = metrics_client
         service_name = self.bento_service.name
+        # a valid tag name may includes invalid characters, so we need to escape them
+        service_name = service_name.replace("-", ":").replace(".", "::")
+
         self.metrics_request_duration = metrics_client.Histogram(
             name=service_name + "_request_duration_seconds",
             documentation=service_name + " API HTTP request duration in seconds",

@@ -273,6 +273,9 @@ class Model(StoreItem):
         return self._fs.isfile(MODEL_YAML_FILENAME)
 
     def __str__(self):
+        return f'Model(tag="{self.tag}")'
+
+    def __repr__(self):
         return f'Model(tag="{self.tag}", path="{self.path}")'
 
     def to_runner(

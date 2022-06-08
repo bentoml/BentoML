@@ -196,7 +196,7 @@ def serve_production(
                     working_dir=working_dir,
                     use_sockets=True,
                     numprocesses=runner.scheduling_strategy.get_worker_count(
-                        runner.runnable_class, runner.resource_config
+                        runner.runnable_class, runner.get_effective_resource_config()
                     ),
                 )
             )
@@ -239,7 +239,8 @@ def serve_production(
                         use_sockets=True,
                         working_dir=working_dir,
                         numprocesses=runner.scheduling_strategy.get_worker_count(
-                            runner.runnable_class, runner.resource_config
+                            runner.runnable_class,
+                            runner.get_effective_resource_config(),
                         ),
                     )
                 )

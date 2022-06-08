@@ -110,7 +110,9 @@ def bentoml_build(project_path: str) -> t.Generator["Tag", None, None]:
     Build a BentoML project.
     """
     logger.info(f"Building bento: {project_path}")
-    output = subprocess.check_output(["bentoml", "build", project_path])
+    output = subprocess.check_output(
+        ["bentoml", "build", project_path], stderr=subprocess.STDOUT
+    )
     match = re.search(
         r'Bento\(tag="([A-Za-z0-9\-_\.]+:[a-z0-9]+)"\)',
         output.decode(),

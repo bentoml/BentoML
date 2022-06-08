@@ -5,6 +5,7 @@ import logging
 
 import click
 
+from ..log import configure_server_logging
 from ..configuration.containers import DeploymentContainer
 
 logger = logging.getLogger(__name__)
@@ -114,6 +115,8 @@ def add_serve_command(cli: click.Group) -> None:
         Serve from a Bento directory:
             bentoml serve ./fraud_detector_bento
         """
+        configure_server_logging()
+
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 

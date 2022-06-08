@@ -24,6 +24,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
+QUIET_ENV_VAR = "BENTOML_QUIET"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 
 
@@ -83,11 +84,6 @@ def get_bentoml_config_file_from_env() -> t.Optional[str]:
 def set_debug_mode(enabled: bool) -> None:
     os.environ[DEBUG_ENV_VAR] = str(enabled)
 
-    # reconfigure logging
-    from ..log import configure_logging
-
-    configure_logging()
-
     logger.info(
         f"{'Enabling' if enabled else 'Disabling'} debug mode for current BentoML session"
     )
@@ -96,6 +92,18 @@ def set_debug_mode(enabled: bool) -> None:
 def get_debug_mode() -> bool:
     if DEBUG_ENV_VAR in os.environ:
         return os.environ[DEBUG_ENV_VAR].lower() == "true"
+    return False
+
+
+def set_quiet_mode(enabled: bool) -> None:
+    os.environ[DEBUG_ENV_VAR] = str(enabled)
+
+    # do not log setting quiet mode
+
+
+def get_quiet_mode() -> bool:
+    if QUIET_ENV_VAR in os.environ:
+        return os.environ[QUIET_ENV_VAR].lower() == "true"
     return False
 
 

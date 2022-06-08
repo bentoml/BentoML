@@ -11,7 +11,7 @@ import psutil
 from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
-from ...log import LOGGING_CONFIG
+from ...log import SERVER_LOGGING_CONFIG
 from ...trace import ServiceContext
 
 if TYPE_CHECKING:
@@ -55,6 +55,10 @@ def main(
         working_dir: (Optional) the working directory
         worker_id: (Optional) if set, the runner will be started as a worker with the given ID
     """
+
+    from ...log import configure_server_logging
+
+    configure_server_logging()
 
     if worker_id is None:
         # Start a standalone server with a supervisor process
@@ -100,8 +104,8 @@ def main(
 
     parsed = urlparse(bind)
     uvicorn_options = {
-        "log_level": "info",
-        "log_config": LOGGING_CONFIG,
+        "log_level": SERVER_LOGGING_CONFIG["root"]["level"],
+        "log_config": SERVER_LOGGING_CONFIG,
         "workers": 1,
     }
 

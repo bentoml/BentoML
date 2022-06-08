@@ -56,7 +56,7 @@ GLOBAL_DEFAULT_MAX_BATCH_SIZE = 100
 GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
 
 
-@attr.define(slots=False, frozen=True)
+@attr.define(slots=False, frozen=True, eq=False)
 class Runner:
     runnable_class: t.Type[Runnable]
     runnable_init_params: t.Dict[str, t.Any]
@@ -175,7 +175,7 @@ class Runner:
             object.__setattr__(self, runner_method.name, runner_method)
 
     @lru_cache(maxsize=1)
-    def get_effective_resource_config(self):
+    def get_effective_resource_config(self) -> Resource:
         return (
             Resource.from_config(self.name)
             | self.resource_config

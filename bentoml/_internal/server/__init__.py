@@ -229,6 +229,7 @@ def serve_production(
                             f"fd://$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
+                            "--no-access-log",
                             "--worker-id",
                             "$(circus.wid)",
                         ],

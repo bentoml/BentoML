@@ -26,6 +26,14 @@ import click
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
 @click.option(
+    "--no-access-log",
+    required=False,
+    type=click.BOOL,
+    is_flag=True,
+    default=False,
+    help="Disable the runner server's access log",
+)
+@click.option(
     "--worker-id",
     required=False,
     type=click.INT,
@@ -39,6 +47,7 @@ def main(
     runner_name: str,
     bind: str,
     working_dir: t.Optional[str],
+    no_access_log: bool,
     worker_id: int | None,
 ) -> None:
     """
@@ -72,6 +81,7 @@ def main(
         params = ctx.params
         params["bind"] = f"fd://$(circus.sockets.{runner_name})"
         params["worker_id"] = "$(circus.wid)"
+        params["no_access_log"] = no_access_log
         watcher = Watcher(
             name=f"runner_{runner_name}",
             cmd=sys.executable,
@@ -88,6 +98,12 @@ def main(
         return
 
     import uvicorn  # type: ignore
+
+    if no_access_log:
+        from bentoml._internal.configuration.containers import DeploymentContainer
+
+        access_log_config = DeploymentContainer.runners_config.logging.access
+        access_log_config.enabled.set(False)
 
     from bentoml._internal.server.runner_app import RunnerAppFactory
 

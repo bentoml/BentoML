@@ -174,7 +174,7 @@ class Runner:
         for runner_method in self.runner_methods:
             object.__setattr__(self, runner_method.name, runner_method)
 
-    @lru_cache(size=1)
+    @lru_cache(maxsize=1)
     def get_effective_resource_config(self):
         return (
             Resource.from_config(self.name)

@@ -757,6 +757,17 @@ will build a new image on top of the base_image with the following steps:
             base_image: "my_custom_image:latest"
             setup_script: "./setup.sh"
 
+.. warning::
+    By default, BentoML supports multi-platform docker image build out-of-the-box.
+    However, when a custom :code:`base_image` is provided, the generated Dockerfile can
+    only be used for building linux/amd64 platform docker images.
+
+    If you are running BentoML from an Apple M1 device or an ARM based computer, make
+    sure to pass the :code:`--platform` parameter when containerizing a Bento. e.g.:
+
+    .. code:: bash
+
+        bentoml containerize iris_classifier:latest --platform=linux/amd64
 
 
 Docker Template (Danger Zone)

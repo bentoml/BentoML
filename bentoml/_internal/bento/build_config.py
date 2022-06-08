@@ -237,6 +237,8 @@ class DockerOptions:
             if self.python_version is None:
                 defaults["python_version"] = PYTHON_VERSION
 
+        if self.system_packages is None:
+            defaults["system_packages"] = []
         if self.env is None:
             defaults["env"] = {}
         if self.cuda_version is None:

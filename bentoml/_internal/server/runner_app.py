@@ -67,7 +67,7 @@ class RunnerAppFactory(BaseAppFactory):
             functools.partial(
                 self.runner.scheduling_strategy.setup_worker,
                 runnable_class=self.runner.runnable_class,
-                resource_request=self.runner.resource_config,
+                resource_request=self.runner.get_effective_resource_config(),
                 worker_index=self.worker_index,
             ),
         )

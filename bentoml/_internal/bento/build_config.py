@@ -214,8 +214,13 @@ class DockerOptions:
                     f"docker base_image {self.base_image} is used, "
                     f"'cuda_version={self.cuda_version}' option is ignored.",
                 )
+            if self.system_packages:
+                logger.warning(
+                    f"docker base_image {self.base_image} is used, "
+                    f"'system_packages={self.system_packages}' option is ignored.",
+                )
 
-        if self.cuda_version is not None:
+        if self.distro is not None and self.cuda_version is not None:
             supports_cuda = get_supported_spec("cuda")
             if self.distro not in supports_cuda:
                 raise BentoMLException(
@@ -255,17 +260,15 @@ class DockerOptions:
         dockerfile = fs.path.combine(docker_folder, "Dockerfile")
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
-            dockerfile.write(generate_dockerfile(self, use_conda=use_conda))
+            dockerfile.write(
+                generate_dockerfile(self, build_ctx=build_ctx, use_conda=use_conda)
+            )
 
         copy_file_to_fs_folder(
             fs.path.join(os.path.dirname(__file__), "docker", "entrypoint.sh"),
             bento_fs,
             docker_folder,
         )
-
-        # If BentoML is installed in editable mode, build bentoml whl and save to Bento
-        whl_dir = fs.path.combine(docker_folder, "whl")
-        build_bentoml_editable_wheel(bento_fs.getsyspath(whl_dir))
 
         if self.setup_script:
             try:
@@ -401,6 +404,8 @@ class PythonOptions:
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
+
+        build_bentoml_editable_wheel(bento_fs.getsyspath(wheels_folder))
 
         if self.requirements_txt is not None:
             requirements_txt_file = resolve_user_filepath(

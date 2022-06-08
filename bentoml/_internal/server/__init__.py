@@ -146,7 +146,7 @@ def serve_production(
     port: int = Provide[DeploymentContainer.api_server_config.port],
     host: str = Provide[DeploymentContainer.api_server_config.host],
     backlog: int = Provide[DeploymentContainer.api_server_config.backlog],
-    app_workers: t.Optional[int] = None,
+    api_workers: t.Optional[int] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
@@ -276,7 +276,7 @@ def serve_production(
                 "--as-worker",
             ],
             copy_env=True,
-            numprocesses=app_workers or math.ceil(query_cpu_count()),
+            numprocesses=api_workers or math.ceil(query_cpu_count()),
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,

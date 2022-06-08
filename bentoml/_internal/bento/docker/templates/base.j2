@@ -1,9 +1,8 @@
-{% set __cached__ = [] %}
-{% set __user_defined_image__ = __options__base_image is not none %}
+{# BENTOML INTERNAL #}
 {# users can use these values #}
-{% set bento__entrypoint = bento__entrypoint | default(expands_bento_path("env", "docker", "entrypoint.sh")) %}
+{% set bento__entrypoint = bento__entrypoint | default(expands_bento_path("env", "docker", "entrypoint.sh", bento_path=bento__path)) %}
 {% set bento__pip_cmd = bento__pip_cmd | default("pip") %}
-{% set bento__pypi_version = bento__pypi_version | default(clean_bentoml_version(__bentoml_version__)) %}
+{% set bento__pypi_version = bento__pypi_version | default(__bentoml_version__) %}
 # syntax = docker/dockerfile:1.4-labs
 #
 # ===========================================
@@ -12,32 +11,28 @@
 #
 # ===========================================
 
+# Block SETUP_BENTO_BASE_IMAGE
 {% block SETUP_BENTO_BASE_IMAGE %}
 FROM {{ __base_image__ }} as cached
 
 FROM {{ __base_image__ }} as base
 
-	{% if not __user_defined_image__ %}
-		{% for key in __supported_architectures__ if key not in __cached__ %}
-			{% if 'arm64' in key or 'aarch64' in key %}
-			{% do __cached__.append(key) %}
+{% set __cached__ = [] %}
+{% for key in __supported_architectures__ if key not in __cached__ %}
+  {% if 'arm64' in key or 'aarch64' in key %}
+  {% do __cached__.append(key) %}
 FROM base as base-arm64
-			{% elif 'armhf' in key or 'armel' in key %}
-			{% do __cached__.append(key) %}
+  {% elif 'armhf' in key or 'armel' in key %}
+  {% do __cached__.append(key) %}
 FROM base as base-arm
-			{% elif 'i386' in key %}
-			{% do __cached__.append(key) %}
+  {% elif 'i386' in key %}
+  {% do __cached__.append(key) %}
 FROM base as base-386
-			{% else %}
-			{% do __cached__.append(key) %}
+  {% else %}
+  {% do __cached__.append(key) %}
 FROM base as base-{{ key }}
-			{% endif %}
-		{% endfor %}
-		{% else %}
-# custom base_image: {{ __base_image__ }}.
-# BentoML only support x86 architecture when using custom base_image
-FROM base as base-amd64
-	{% endif %}
+  {% endif %}
+{% endfor %}
 
 FROM base-${TARGETARCH}
 
@@ -53,9 +48,9 @@ ENV PYTHONIOENCODING=UTF-8
 
 ENV PYTHONUNBUFFERED=1
 
-ENV PATH {{ expands_bento_path("env", "docker") }}:/usr/local/bin:$PATH
-
 {% endblock %}
+
+# Block SETUP_BENTO_USER
 {% block SETUP_BENTO_USER %}
 ARG BENTO_USER={{ bento__user }}
 ARG BENTO_USER_UID={{ bento__uid_gid }}
@@ -81,20 +76,15 @@ WORKDIR $BENTO_PATH
 COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 
 {% endblock %}
-{% if __is_editable__ == true %}
-# Install bentoml from editable wheel
-ENV BENTOML_VERSION={{ __bentoml_version__ }}
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    {{ bento__pip_cmd }} install {{ expands_bento_path("env", "docker","whl", "bentoml-*.whl") }}
-{% else %}
 # Install bentoml=={{ bento__pypi_version }}
 ENV BENTOML_VERSION={{ bento__pypi_version }}
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    {{ bento__pip_cmd }} install bentoml==${BENTOML_VERSION}
-{% endif %}
+    {{ bento__pip_cmd }} install bentoml==${BENTOML_VERSION} --no-cache-dir
+
+# Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
 
-{% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh") %}
+{% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
 # Install python package dependencies with pip
 # BentoML by default generates two requirement files:
 #  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
@@ -107,13 +97,16 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 
 # Run user setup scripts if exists
 RUN bash <<EOF
-if [ -f {{ expands_bento_path("env", "docker", "setup_script") }} ]; then
-  chmod +x {{ expands_bento_path("env", "docker", "setup_script") }}
-  {{ expands_bento_path("env", "docker", "setup_script") }}
+if [ -f {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }} ]; then
+  echo "Running user setup script.."
+  chmod +x {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
+  {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
 fi
 EOF
 
 {% endblock %}
+
+# Block SETUP_BENTO_ENTRYPOINT
 {% block SETUP_BENTO_ENTRYPOINT %}
 # Default port for BentoServer
 EXPOSE 3000
@@ -124,5 +117,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", ".", "--production" ]
+CMD [ "bentoml", "serve", "{{ bento__path }}", "--production" ]
 {% endblock %}

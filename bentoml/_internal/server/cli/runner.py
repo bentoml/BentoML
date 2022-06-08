@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import socket
 import typing as t
@@ -24,18 +26,11 @@ import click
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
 @click.option(
-    "--as-worker",
+    "--worker-id",
     required=False,
-    type=click.BOOL,
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    "--worker-index",
     type=click.INT,
-    required=False,
-    default=0,
-    help="Worker index",
+    default=None,
+    help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
 @click.pass_context
 def main(
@@ -44,8 +39,7 @@ def main(
     runner_name: str,
     bind: str,
     working_dir: t.Optional[str],
-    as_worker: bool,
-    worker_index: int,
+    worker_id: int | None,
 ) -> None:
     """
     Start a runner server.
@@ -59,10 +53,10 @@ def main(
             - file:///path/to/unix.sock
             - fd://12
         working_dir: (Optional) the working directory
-        as_worker: (Optional) if True, the runner will be started as a worker
+        worker_id: (Optional) if set, the runner will be started as a worker with the given ID
     """
 
-    if not as_worker:
+    if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
 
@@ -73,7 +67,7 @@ def main(
         circus_socket = create_circus_socket_from_uri(bind, name=runner_name)
         params = ctx.params
         params["bind"] = f"fd://$(circus.sockets.{runner_name})"
-        params["as_worker"] = True
+        params["worker_id"] = "$(circus.wid)"
         watcher = Watcher(
             name=f"runner_{runner_name}",
             cmd=sys.executable,
@@ -93,7 +87,7 @@ def main(
 
     from bentoml._internal.server.runner_app import RunnerAppFactory
 
-    ServiceContext.component_name_var.set(runner_name)
+    ServiceContext.component_name_var.set(f"{runner_name}-{worker_id}")
 
     service = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
     for runner in service.runners:
@@ -102,9 +96,7 @@ def main(
     else:
         raise ValueError(f"Runner {runner_name} not found")
 
-    app = t.cast(
-        "ASGI3Application", RunnerAppFactory(runner, worker_index=worker_index)()
-    )
+    app = t.cast("ASGI3Application", RunnerAppFactory(runner, worker_index=worker_id)())
 
     parsed = urlparse(bind)
     uvicorn_options = {

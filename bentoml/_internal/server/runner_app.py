@@ -152,15 +152,17 @@ class RunnerAppFactory(BaseAppFactory):
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 
-            middlewares.append(
-                Middleware(
-                    AccessLogMiddleware,
-                    has_request_content_length=access_log_config.request_content_length.get(),
-                    has_request_content_type=access_log_config.request_content_type.get(),
-                    has_response_content_length=access_log_config.response_content_length.get(),
-                    has_response_content_type=access_log_config.response_content_type.get(),
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                middlewares.append(
+                    Middleware(
+                        AccessLogMiddleware,
+                        has_request_content_length=access_log_config.request_content_length.get(),
+                        has_request_content_type=access_log_config.request_content_type.get(),
+                        has_response_content_length=access_log_config.response_content_length.get(),
+                        has_response_content_type=access_log_config.response_content_type.get(),
+                    )
                 )
-            )
 
         return middlewares
 

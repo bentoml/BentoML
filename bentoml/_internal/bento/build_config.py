@@ -220,7 +220,7 @@ class DockerOptions:
                     f"'system_packages={self.system_packages}' option is ignored.",
                 )
 
-        if self.cuda_version is not None:
+        if self.distro is not None and self.cuda_version is not None:
             supports_cuda = get_supported_spec("cuda")
             if self.distro not in supports_cuda:
                 raise BentoMLException(
@@ -237,8 +237,6 @@ class DockerOptions:
             if self.python_version is None:
                 defaults["python_version"] = PYTHON_VERSION
 
-        if self.system_packages is None:
-            defaults["system_packages"] = []
         if self.env is None:
             defaults["env"] = {}
         if self.cuda_version is None:

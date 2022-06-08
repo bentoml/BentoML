@@ -99,7 +99,7 @@ if [ -f {{ __python_pip_args__ }} ]; then
 fi
 if [ -f {{ __python_requirements_lock__ }} ]; then
   echo "Installing pip packages from 'requirements.lock.txt'.."
-  {{ bento__pip_cmd }} install -U -r {{ __python_requirements_lock__ }} $EXTRA_PIP_INSTALL_ARGS
+  {{ bento__pip_cmd }} install -r {{ __python_requirements_lock__ }} -U $EXTRA_PIP_INSTALL_ARGS
 else
   if [ -f {{ __python_requirements_txt__ }} ]; then
     echo "Installing pip packages from 'requirements.txt'.."

@@ -18,7 +18,21 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
-from .common.pytorch import PyTorchTensorContainer  # type: ignore
+from ..runner.container import DataContainerRegistry
+
+# NOTE: we are currently register DataContainer
+#   for each of the data container type on the module level code.
+#
+# By simply have the line below, we are already registering
+#   PyTorchTensorContainer due to Python's side-effect of imports.
+#
+# However, we will still register PyTorchTensorContainer at the end
+#   of this file for consistency. Since the map of DataContainerRegisty's
+#   single type and batch type is a dictionary of LazyType and the container
+#   itself, it would just replce the existing value.
+#
+# This operation is O(1), hence no need to worry about performance.
+from .common.pytorch import PyTorchTensorContainer
 
 MODULE_NAME = "bentoml.fastai"
 MODEL_FILENAME = "saved_model.pkl"
@@ -211,7 +225,7 @@ def save_model(
     ) as bento_model:
         from fastai.callback.schedule import ParamScheduler
 
-        # ParamScheduler is not pickable, so we need to remove it from the model.
+        # NOTE: ParamScheduler is not pickable, so we need to remove it from the model.
         cbs = list(filter(lambda x: isinstance(x, ParamScheduler), learner.cbs))
         with t.cast(t.ContextManager[Learner], learner.removed_cbs(cbs)) as filtered:
             fname = bento_model.path_of(MODEL_FILENAME)
@@ -283,3 +297,10 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         add_runnable_method(method_name, options)
 
     return FastAIRunnable
+
+
+DataContainerRegistry.register_container(
+    LazyType("torch", "Tensor"),
+    LazyType("torch", "Tensor"),
+    PyTorchTensorContainer,
+)

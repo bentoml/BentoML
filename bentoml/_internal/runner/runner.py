@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 import logging
 from typing import TYPE_CHECKING
+from functools import lru_cache
 
 import attr
 
@@ -104,14 +105,10 @@ class Runner:
         runner_init_params = {} if init_params is None else init_params
         method_configs = {} if method_configs is None else {}
         custom_resources = {} if custom_resources is None else {}
-        resource = (
-            Resource.from_config(name)
-            | Resource(
-                cpu=cpu,
-                nvidia_gpu=nvidia_gpu,
-                custom_resources=custom_resources or {},
-            )
-            | Resource.from_system()
+        resource_config = Resource(
+            cpu=cpu,
+            nvidia_gpu=nvidia_gpu,
+            custom_resources=custom_resources or {},
         )
 
         for method_name, method in runnable_class.methods.items():
@@ -143,7 +140,7 @@ class Runner:
             runnable_init_params=runner_init_params,
             name=name,
             models=models,
-            resource_config=resource,
+            resource_config=resource_config,
             runner_methods=list(runner_method_map.values()),
             scheduling_strategy=scheduling_strategy,
         )
@@ -176,6 +173,14 @@ class Runner:
         # set all run method entrypoint
         for runner_method in self.runner_methods:
             object.__setattr__(self, runner_method.name, runner_method)
+
+    @lru_cache(size=1)
+    def get_effective_resource_config(self):
+        return (
+            Resource.from_config(self.name)
+            | self.resource_config
+            | Resource.from_system()
+        )
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):

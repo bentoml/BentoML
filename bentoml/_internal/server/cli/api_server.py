@@ -101,7 +101,7 @@ def main(
 
     import uvicorn  # type: ignore
 
-    ServiceContext.component_name_var.set(f"api_server-{worker_id}")
+    ServiceContext.component_name_var.set(f"api_server:{worker_id}")
 
     if runner_map is not None:
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))

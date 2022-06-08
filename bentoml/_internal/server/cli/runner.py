@@ -107,7 +107,7 @@ def main(
 
     from bentoml._internal.server.runner_app import RunnerAppFactory
 
-    ServiceContext.component_name_var.set(f"{runner_name}-{worker_id}")
+    ServiceContext.component_name_var.set(f"{runner_name}:{worker_id}")
 
     service = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
     for runner in service.runners:

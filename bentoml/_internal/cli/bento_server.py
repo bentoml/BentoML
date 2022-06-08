@@ -40,6 +40,13 @@ def add_serve_command(cli: click.Group) -> None:
         envvar="BENTOML_HOST",
     )
     @click.option(
+        "--api-workers",
+        type=click.INT,
+        default=None,
+        help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
+        envvar="BENTOML_API_WORKERS",
+    )
+    @click.option(
         "--backlog",
         type=click.INT,
         default=DeploymentContainer.api_server_config.backlog.get(),
@@ -81,6 +88,7 @@ def add_serve_command(cli: click.Group) -> None:
         production: bool,
         port: int,
         host: t.Optional[str],
+        api_workers: t.Optional[int],
         backlog: int,
         reload: bool,
         reload_delay: float,
@@ -125,6 +133,7 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=DeploymentContainer.service_host.get() if host is None else host,
                 backlog=backlog,
+                api_workers=api_workers,
             )
         else:
             from ..server import serve_development

@@ -23,6 +23,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinx.ext.ifconfig",
@@ -39,8 +40,10 @@ extensions = [
 napoleon_include_private_with_doc = False
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
+typehints_defaults = "braces-after"
 
 autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 10
 
 ogp_site_url = "http://docs.bentoml.org"
 ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-readme-header.jpeg"

@@ -1,8 +1,0 @@
-name: generated_fastai_ci
-
-concurrency:
-  group: frameworks${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: true
-
-on:
-

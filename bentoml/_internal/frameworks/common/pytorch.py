@@ -7,7 +7,6 @@ import functools
 import itertools
 import contextlib
 from typing import TYPE_CHECKING
-import importlib.util
 
 from simple_di import inject
 from simple_di import Provide

@@ -63,7 +63,7 @@ except ImportError:  # pragma: no cover
     )
 
 try:
-    import fastai.basics  # type: ignore
+    import fastai.basics  # type: ignore # noqa
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "BentoML only supports fastai v2 onwards. Please uninstall fastai v1 and try again. Please visit https://docs.fast.ai/#Installing for more information."
@@ -78,8 +78,9 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     Get the BentoML model with the given tag.
 
     Args:
-        tag_like (``str`` ``|`` :obj:`~bentoml.Tag`):
+        :param tag_like:
             The tag of the model to retrieve from the model store.
+
     Returns:
         :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
 

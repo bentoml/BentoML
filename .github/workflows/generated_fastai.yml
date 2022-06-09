@@ -1,0 +1,17 @@
+name: fastai
+
+concurrency:
+  group: fastai_${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'requirements/**/*'
+      - 'codecov.yml'
+      - 'setup.cfg'
+      - 'pyproject.toml'
+      - '.github/workflow/generated_fastai.yml'
+

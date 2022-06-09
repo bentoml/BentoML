@@ -10,14 +10,13 @@ comment:
   show_carryforward_flags: true
 
 ignore:
-  - "bentoml/testing/**/*"
+  - "tests"
+  - "typings"
+  - "bentoml/testing"
+  - "bentoml/_internal/external_typing"
   - "bentoml/_internal/types.py"
-  - "bentoml/_internal/external_typing/**/*"
   - "bentoml/__main__.py"
-  - "bentoml/build_utils.py"
   - "bentoml/io.py"
-  - "tests/**/*"
-  - "typings/**/*"
 
 coverage:
   precision: 2
@@ -238,6 +237,7 @@ flags:
   fastai:
     carryforward: true
     paths:
+      - bentoml/fastai.py
       - bentoml/_internal/frameworks/fastai.py
   fasttext:
     carryforward: true
@@ -331,9 +331,11 @@ flags:
     carryforward: true
     paths:
       - "bentoml/**/*"
+      - "bentoml/bentos.py"
       - bentoml/models.py
   unit-tests:
     carryforward: true
     paths:
       - "bentoml/**/*"
+      - "bentoml/bentos.py"
       - bentoml/models.py

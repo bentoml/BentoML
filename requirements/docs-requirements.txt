@@ -9,6 +9,7 @@ sphinxext-opengraph
 sphinxcontrib-fulltoc
 sphinxcontrib-spelling
 sphinx-copybutton
+sphinx-autodoc-typehints
 sphinx-issues
 sphinx-design
 pyenchant

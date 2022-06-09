@@ -197,7 +197,10 @@ def test_invalid_options(options: dict[str, t.Any]):
 
 @pytest.mark.parametrize(
     "options",
-    [{"cuda_version": "default"}, {"distro": "alpine", "cuda_version": "default"}],
+    [
+        {"distro": "amazonlinux", "cuda_version": "default"},
+        {"distro": "alpine", "cuda_version": "default"},
+    ],
 )
 def test_invalid_cuda_version(options: dict[str, t.Any]):
     with pytest.raises(BentoMLException):
@@ -220,14 +223,8 @@ def test_with_defaults_distro(options: dict[str, t.Any]):
     "conda_option", [CondaOptions(), CondaOptions(channels=["default"])]
 )
 def test_docker_write_to_bento(
-    mock_is_pypi_installed_bentoml: MagicMock,
-    conda_option: CondaOptions,
-    test_fs: FS,
-    monkeypatch: MonkeyPatch,
+    mock_is_pypi_installed_bentoml: MagicMock, conda_option: CondaOptions, test_fs: FS
 ):
-    from bentoml._internal.bento.build_dev_bentoml_whl import BENTOML_DEV_BUILD
-
-    monkeypatch.setenv(BENTOML_DEV_BUILD, str(False))
     mock_is_pypi_installed_bentoml.return_value = True
 
     DockerOptions().with_defaults().write_to_bento(
@@ -393,6 +390,12 @@ def test_structure_conda_options(structure_data: dict[str, t.Any]):
         assert "type list" in str(excinfo.value)
 
 
+@pytest.mark.usefixtures("change_test_dir")
+def test_structure_conda_options_empty():
+    data = bentoml_cattr.structure({}, CondaOptions)
+    assert data == CondaOptions()
+
+
 def fs_identical(fs1: FS, fs2: FS):
     for path in fs1.walk.dirs():
         assert fs2.isdir(path)
@@ -481,6 +484,22 @@ def test_wheels_include(test_fs: FS):
             assert f1.read() == f2.read()
     finally:
         fs.open_fs("./testdata").removetree("wheels")
+
+
+@pytest.mark.usefixtures("test_fs")
+def test_wheels_include_local_bento(test_fs: FS, monkeypatch: MonkeyPatch):
+    from bentoml._internal.bento.build_dev_bentoml_whl import BENTOML_DEV_BUILD
+
+    monkeypatch.setenv(BENTOML_DEV_BUILD, "True")
+
+    PythonOptions(lock_packages=False).with_defaults().write_to_bento(
+        test_fs, os.getcwd()
+    )
+
+    python_dir = test_fs.opendir("/env/python")
+    assert os.path.isdir(python_dir.getsyspath("/"))
+    assert os.path.isdir(python_dir.getsyspath("/wheels"))
+    # assert os.path.isfile(python_dir.getsyspath("/wheels/.whl"))
 
 
 def build_cmd_args(args: dict[str, str | bool | list[str]]) -> list[str]:

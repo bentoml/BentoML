@@ -15,8 +15,15 @@ TEST_MODEL_CONTEXT = ModelContext(
 )
 
 if TYPE_CHECKING:
+    from _pytest.python import Metafunc
     from _pytest.tmpdir import TempPathFactory
     from _pytest.fixtures import FixtureRequest
+
+
+def pytest_generate_tests(metafunc: Metafunc) -> None:
+    from bentoml._internal.bento.build_dev_bentoml_whl import BENTOML_DEV_BUILD
+
+    os.environ[BENTOML_DEV_BUILD] = str(False)
 
 
 @pytest.fixture(scope="function", name="change_test_dir")

@@ -9,16 +9,12 @@ from unittest.mock import patch
 from unittest.mock import PropertyMock
 
 import pytest
-from jinja2.loaders import DictLoader
 
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
-from bentoml._internal.bento.gen import ENVIRONMENT
-from bentoml._internal.bento.gen import J2_FUNCTION
 from bentoml._internal.bento.gen import generate_dockerfile
-from bentoml._internal.bento.gen import get_docker_variables
 from bentoml._internal.bento.gen import clean_bentoml_version
-from bentoml._internal.bento.gen import validate_user_template
+from bentoml._internal.bento.gen import get_templates_variables
 from bentoml._internal.bento.docker import DistroSpec
 from bentoml._internal.bento.docker import get_supported_spec
 from bentoml._internal.bento.build_config import DockerOptions
@@ -31,14 +27,14 @@ if TYPE_CHECKING:
 
 def test_invalid_spec():
     with pytest.raises(InvalidArgument):
-        get_supported_spec("invalid_spec")
+        get_supported_spec("invalid_spec")  # type: ignore
 
 
 @pytest.mark.parametrize("distro", ["debian", "alpine"])
 def test_distro_spec(distro: str):
     assert DistroSpec.from_distro(distro)
-    assert not DistroSpec.from_distro(None)
     with pytest.raises(BentoMLException):
+        DistroSpec.from_distro("rocky")
         DistroSpec.from_distro("invalid_distro")
 
 
@@ -57,34 +53,43 @@ def test_clean_bentoml_version(version: str, expected: str):
     assert "Errors while parsing BentoML version" in str(excinfo.value)
 
 
-@contextlib.contextmanager
-def setup_mock_version_info(
-    version: tuple[int, int, int],
-) -> t.Generator[MagicMock, None, None]:
-    patcher = patch("bentoml._internal.bento.build_config.version_info")
-    mock_version_info = patcher.start()
-    try:
-        type(mock_version_info).major = PropertyMock(return_value=version[0])
-        type(mock_version_info).minor = PropertyMock(return_value=version[1])
-        type(mock_version_info).micro = PropertyMock(return_value=version[2])
-        yield mock_version_info
-    finally:
-        patcher.stop()
+if TYPE_CHECKING:
+
+    class version_info:
+        major: int
+        minor: int
+        patch: int
+
+    @contextlib.contextmanager
+    def setup_mock_version_info(
+        version: tuple[int, int, int]
+    ) -> t.Generator[version_info, None, None]:
+        ...
+
+else:
+
+    @contextlib.contextmanager
+    def setup_mock_version_info(
+        version: tuple[int, int, int],
+    ) -> t.Generator[MagicMock, None, None]:
+        patcher = patch("bentoml._internal.bento.build_config.version_info")
+        mock_version_info = patcher.start()
+        try:
+            type(mock_version_info).major = PropertyMock(return_value=version[0])
+            type(mock_version_info).minor = PropertyMock(return_value=version[1])
+            type(mock_version_info).micro = PropertyMock(return_value=version[2])
+            yield mock_version_info
+        finally:
+            patcher.stop()
 
 
 @pytest.mark.usefixtures("propagate_logs")
-def test_get_docker_variables_with_default_image(caplog: LogCaptureFixture):
-    with pytest.raises(BentoMLException) as excinfo:
-        get_docker_variables(
-            DockerOptions(base_image="bentoml/model-server:latest"), None
-        )
-    assert "Distro spec is required" in str(excinfo.value)
+def test_get_templates_variables_with_default_image(caplog: LogCaptureFixture):
 
     # with cuda
     distro = "ubi8"
     docker = DockerOptions(distro=distro, cuda_version="default").with_defaults()
-    spec = DistroSpec.from_distro(distro, cuda=True)
-    opts = get_docker_variables(docker, spec)
+    opts = get_templates_variables(docker, use_conda=False)
     assert opts["__options__distro"] == distro
     assert opts["__options__cuda_version"] == "11.6.2"
     assert not opts["__options__base_image"]
@@ -93,8 +98,7 @@ def test_get_docker_variables_with_default_image(caplog: LogCaptureFixture):
     with setup_mock_version_info((3, 8, 13)) as version_info:
         distro = "ubi8"
         docker = DockerOptions(distro=distro).with_defaults()
-        spec = DistroSpec.from_distro(distro)
-        opts = get_docker_variables(docker, spec)
+        opts = get_templates_variables(docker, use_conda=False)
         assert (
             opts["__base_image__"]
             == f"registry.access.redhat.com/ubi8/python-{version_info.major}{version_info.minor}:1"
@@ -103,115 +107,25 @@ def test_get_docker_variables_with_default_image(caplog: LogCaptureFixture):
     docker = DockerOptions(
         base_image="tensorflow/tensorflow:latest-devel-gpu"
     ).with_defaults()
-    spec = DistroSpec.from_distro("debian")
     with caplog.at_level(logging.INFO):
-        opts = get_docker_variables(docker, spec)
+        opts = get_templates_variables(docker, use_conda=False)
     assert (
         "BentoML will not install Python to custom base images; ensure the base image"
         in caplog.text
     )
 
 
-def test_invalid_user_template():
-    without_extends_block = """\
-{% block SETUP_BENTO_COMPONENTS %}
-{{ super() }}
-{% endblock %}
-    """
-    parsed = ENVIRONMENT.parse(without_extends_block, name="without_extends_block")
-    template = ENVIRONMENT.from_string(parsed)
+def test_generate_dockerfile_options_call():
     with pytest.raises(BentoMLException) as excinfo:
-        validate_user_template(template, DictLoader({}))
-    assert "does not contain `bento__dockerfile`" in str(excinfo.value)
+        generate_dockerfile(DockerOptions(), build_ctx=".", use_conda=False)
+    assert "Distro name is required, got None instead." in str(excinfo.value)
 
 
-def test_no_name_template():
-    no_name_template = """\
-{% extends bento__dockerfile %}
-{% block SETUP_BENTO_COMPONENTS %}
-{{ super() }}
-{% endblock %}
-    """
-    parsed = ENVIRONMENT.parse(no_name_template)
-    base_template = ENVIRONMENT.get_template("base.j2", globals=J2_FUNCTION)
-    template = ENVIRONMENT.from_string(
-        parsed, globals={"bento__dockerfile": base_template}
-    )
-    with pytest.raises(BentoMLException) as excinfo:
-        validate_user_template(template, DictLoader({}))
-    assert "Template name is invalid" in str(excinfo.value)
-
-
-def test_not_allowed_setup_block():
-    not_allowed = """\
-{% extends bento__dockerfile %}
-{% block SETUP_BENTO_NOT_ALLOWED %}
-RUN echo "This is not allowed"
-{% endblock %}
-    """
-    parsed = ENVIRONMENT.parse(not_allowed, name="not_allowed")
-    base_template = ENVIRONMENT.get_template("base.j2", globals=J2_FUNCTION)
-    template = ENVIRONMENT.from_string(
-        parsed, globals={"bento__dockerfile": base_template}
-    )
-    template.name = "not_allowed"  # We have to monkeypatch here for tests, FileSystemLoader will handle template name properly
-
-    with pytest.raises(BentoMLException) as excinfo:
-        validate_user_template(template, DictLoader({"not_allowed": not_allowed}))
-    assert "Unknown SETUP block in" in str(excinfo.value)
-    assert "All supported blocks include" in str(excinfo.value)
-
-
-def test_use_reserved_env():
-    forbidden = """\
-{% extends bento__dockerfile %}
-{% set __base_image__ = "bentoml/bento-server:latest" %}
-{% block SETUP_BENTO_ENTRYPOINT %}
-{{ super() }}
-RUN --network=none python -m bentoml --version
-{% endblock %}
-    """
-    parsed = ENVIRONMENT.parse(forbidden, name="forbidden")
-    base_template = ENVIRONMENT.get_template("base.j2", globals=J2_FUNCTION)
-    template = ENVIRONMENT.from_string(
-        parsed, globals={"bento__dockerfile": base_template}
-    )
-    template.name = "forbidden"
-
-    with pytest.raises(BentoMLException) as excinfo:
-        validate_user_template(template, DictLoader({"forbidden": forbidden}))
-    assert "User defined Dockerfile template contains reserved variables." in str(
-        excinfo.value
-    )
-
-    forbidden_options = """\
-{% extends bento__dockerfile %}
-{% set __options__distro = "centos" %}
-{% block SETUP_BENTO_ENTRYPOINT %}
-{{ super() }}
-RUN --network=none python -m bentoml --version
-{% endblock %}
-    """
-    parsed = ENVIRONMENT.parse(forbidden_options, name="forbidden_options")
-    base_template = ENVIRONMENT.get_template("base.j2", globals=J2_FUNCTION)
-    template = ENVIRONMENT.from_string(
-        parsed, globals={"bento__dockerfile": base_template}
-    )
-    template.name = "forbidden_options"
-
-    with pytest.raises(BentoMLException) as excinfo:
-        validate_user_template(
-            template, DictLoader({"forbidden_options": forbidden_options})
-        )
-    assert "User defined Dockerfile template contains reserved variables." in str(
-        excinfo.value
-    )
-
-
-def test_generate_options_no_defaults_call():
-    with pytest.raises(BentoMLException) as excinfo:
-        _ = generate_dockerfile(DockerOptions(), use_conda=False)
-    assert "function is called before with_defaults() is invoked." in str(excinfo.value)
+@pytest.mark.usefixtures("change_test_dir")
+def test_generate_dockerfile_with_base_image():
+    docker = DockerOptions(distro="ubi8", cuda_version="default").with_defaults()
+    res = generate_dockerfile(docker, build_ctx=".", use_conda=False)
+    assert "FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubi8" in res
 
 
 @pytest.mark.usefixtures("change_test_dir")
@@ -222,6 +136,7 @@ def test_generate_dockerfile():
                 "testdata", "configuration", "Dockerfile.template"
             )
         ).with_defaults(),
+        build_ctx=".",
         use_conda=False,
     )
     assert "# syntax = docker/dockerfile:1.4-labs\n#\n" in res

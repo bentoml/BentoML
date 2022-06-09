@@ -3,8 +3,8 @@ import re
 import sys
 import typing as t
 import logging
-from sys import version_info
 import subprocess
+from sys import version_info
 from typing import TYPE_CHECKING
 
 import fs
@@ -381,11 +381,11 @@ class CondaOptions:
 
 def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOptions:
     pip_list: t.List[str]
-    if "pip" in d:
+    if "pip" in d and d["pip"] is not None:
         pip_list = d["pip"]
     else:
         pip_list = []
-    if "dependencies" in d:
+    if "dependencies" in d and d["dependencies"] is not None:
         deps: DependencyType = d["dependencies"]
         if not isinstance(deps, list):
             raise InvalidArgument(
@@ -398,7 +398,7 @@ def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOpt
                 pip_list.extend(pip_from_deps)
         deps = list(filter(lambda x: not isinstance(x, dict), deps))
         d["dependencies"] = deps
-    d["pip"] = None if pip_list else pip_list
+    d["pip"] = None if not pip_list else pip_list
 
     return CondaOptions(**d)
 

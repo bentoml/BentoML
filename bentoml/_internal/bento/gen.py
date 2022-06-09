@@ -7,7 +7,6 @@ import logging
 from sys import version_info
 from typing import TYPE_CHECKING
 
-import fs
 import attr
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
@@ -21,9 +20,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-
-    from jinja2.loaders import BaseLoader
-    from jinja2.environment import Template
 
     from .build_config import DockerOptions
 

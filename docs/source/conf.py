@@ -40,7 +40,7 @@ extensions = [
 napoleon_include_private_with_doc = False
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
-typehints_defaults = "braces-after"
+typehints_defaults = "comma"
 
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 10

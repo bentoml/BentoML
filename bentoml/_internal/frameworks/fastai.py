@@ -18,7 +18,6 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
-from ..runner.container import DataContainerRegistry
 
 # NOTE: we are currently register DataContainer
 #   for each of the data container type on the module level code.
@@ -33,6 +32,7 @@ from ..runner.container import DataContainerRegistry
 #
 # This operation is O(1), hence no need to worry about performance.
 from .common.pytorch import PyTorchTensorContainer
+from ..runner.container import DataContainerRegistry
 
 MODULE_NAME = "bentoml.fastai"
 MODEL_FILENAME = "saved_model.pkl"
@@ -77,9 +77,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     """
     Get the BentoML model with the given tag.
 
-    Args:
-        :param tag_like:
-            The tag of the model to retrieve from the model store.
+    :param tag_like: The tag of the model to retrieve from the model store.
 
     Returns:
         :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
@@ -108,25 +106,24 @@ def load_model(
     """
     Load the :code:`fastai.learner.Learner` model instance with the given tag from the local BentoML model store.
 
-    Args:
-        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
-            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
-            instance to load the model from.
-        cpu (``bool``, `optional`, default to ``True``):
-            Whether to load the model to CPU. if true, the ``nn.Module`` is mapped to ``cpu`` via :code:`map_location` in ``torch.load``.
-            The loaded dataloader will also be converted to ``cpu``.
+    :param bento_model: Either the tag of the model to get from the store, or a BentoML `~bentoml.Model` instance to load the model from.
 
-            .. admonitions:: About :code:`cpu=True`
+    :param cpu: Whether to load the model to CPU. if true, the ``nn.Module`` is mapped to ``cpu`` via :code:`map_location` in ``torch.load``.
+                The loaded dataloader will also be converted to ``cpu``.
 
-                If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32. Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`.
-        pickle_module (``types.ModuleType``, `optional`, default to ``cloudpickle``):
-            The pickle module to use for loading the model. This is passthrough to ``torch.load``.
+                .. admonition:: About :code:`cpu=True`
+
+                    If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
+                    Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
+
+    :param pickle_module: The pickle module to use for loading the model. This is passthrough to ``torch.load``.
 
     Returns:
         :code:`fastai.learner.Learner`:
             The :code:`fastai.learner.Learner` model instance loaded from the model store or BentoML :obj:`~bentoml.Model`.
 
     Example:
+
     .. code-block:: python
 
         import bentoml
@@ -154,7 +151,7 @@ def save_model(
     name: str,
     learner: Learner,
     *,
-    pickle_module: types.ModuleType = cloudpickle,
+    pickle_module: types.ModuleType | None = None,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
@@ -163,42 +160,60 @@ def save_model(
     """
     Save a :code:`fastai.learner.Learner` model instance to the BentoML model store.
 
-    Args:
-        name (``str``):
-            The name to give to the model in the BentoML store. This must be a valid
-            :obj:`~bentoml.Tag` name.
-        model (:obj:`fastai.learner.Learner`):
-            The :code:`fastai.learner.Learner` model to be saved.
-        signatures (``dict[str, ModelSignatureDict]``, optional):
-            Signatures of predict methods to be used. If not provided, the signatures default to
-            ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
-        labels (``dict[str, str]``, `optional`):
-            A default set of management labels to be associated with the model. An example is
-            ``{"training-set": "data-1"}``.
-        custom_objects (``dict[str, Any]``, `optional`):
-            Custom objects to be saved with the model. An example is
-            ``{"my-normalizer": normalizer}``.
+    :param name: The name to give to the model in the BentoML store. This must be a valid
+                 :obj:`~bentoml.Tag` name.
+    :param learner: :obj:`~fastai.learner.Learner` to be saved.
+    :param pickle_module: The pickle module to use for exporting the model.
 
-            Custom objects are currently serialized with cloudpickle, but this implementation is
-            subject to change.
-        metadata (``dict[str, Any]``, optional):
-            Metadata to be associated with the model. An example is ``{"bias": 4}``.
+                          .. admonition:: About pickling :obj:`~fastai.learner.Learner`
 
-            Metadata is intended for display in a model management UI and therefore must be a
-            default Python type, such as :obj:`str` or :obj:`int`.
+                          If the :func:`save_model` failed while saving a given learner, then
+                          your learner contains :obj:`~fastai.callback.core.Callback` that is not pickable.
+                          This is due to all FastAI callbacks are stateful, which makes some of them not pickable.
+                          To fix this, Use :func:`Learner.remove_cbs` to remove list of training callback that fails.
 
-        ...
+    :param signatures: Signatures of predict methods to be used. If not provided, the signatures default to
+                       ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
+    :param labels: A default set of management labels to be associated with the model. An example is ``{"training-set": "data-1"}``.
+    :param custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
+                           Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
+    :param metadata: Metadata to be associated with the model. An example is ``{"bias": 4}``.
+                     Metadata is intended for display in a model management UI and therefore must be a
+                     default Python type, such as :obj:`str` or :obj:`int`.
+
     Returns:
-        :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model
-        store.
+        :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model store.
+
     Example:
+
     .. code-block:: python
-        <SAVE EXAMPLE>
+
+        from fastai.metrics import accuracy
+        from fastai.text.data import URLs
+        from fastai.text.data import untar_data
+        from fastai.text.data import TextDataLoaders
+        from fastai.text.models import AWD_LSTM
+        from fastai.text.learner import text_classifier_learner
+
+        dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid="test")
+
+        learner = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy)
+        learner.fine_tune(4, 1e-2)
+
+        # Test run the model
+        learner.model.eval()
+        learner.predict("I love that movie!")
+
+        # `Save` the model with BentoML
+        tag = bentoml.fastai.save_model("fai_learner", learner)
     """
     if isinstance(learner, nn.Module):
         raise BentoMLException(
             "bentoml.fastai.save_model() does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
         )
+    if pickle_module is None:
+        pickle_module = cloudpickle
+
     context = ModelContext(
         framework_name="fastai",
         framework_versions={

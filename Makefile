@@ -14,17 +14,14 @@ lint: ## Running lint checker: pylint
 	@./scripts/tools/linter.sh
 type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
-stubs-cleanup: ## Cleanup stubs
-	@./scripts/tools/stubs_cleanup.sh
+clean: ## Clean all generated files
+	@echo "Cleaning all generated files..."
+	@cd $(GIT_ROOT)/docs && make clean
+	@cd $(GIT_ROOT) || exit 1
+	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 hooks: __check_defined_FORCE ## Install pre-defined hooks
 	@./scripts/install_hooks.sh
 
-
-__style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
-__style_name := ${__style_src:_check.sh=}
-tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
-
-ci-all: $(tools) ## Running codestyle in CI: black, isort, pylint, pyright
 
 ci-%:
 	$(eval style := $(subst ci-, ,$@))
@@ -64,7 +61,7 @@ install-docs-deps: ## Install documentation dependencies
 
 # Docs
 watch-docs: install-docs-deps ## Build and watch documentation
-	sphinx-autobuild docs/source docs/build/html
+	sphinx-autobuild docs/source docs/build/html --watch $(GIT_ROOT)/bentoml
 spellcheck-docs: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 

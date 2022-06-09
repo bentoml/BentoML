@@ -2,7 +2,9 @@
 
 # Files to exclude in PyPI distribution
 exclude .git*
-exclude *.yml
+exclude .pep8speaks.yml
+exclude .yamllint.yml
+exclude .readthedocs.yml
 exclude CONTRIBUTING.md
 exclude GOVERNANCE.md
 exclude CODE_OF_CONDUCT.md
@@ -20,3 +22,4 @@ prune scripts
 prune hooks
 prune docs
 prune .github
+prune .DS_Store

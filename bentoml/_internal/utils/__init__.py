@@ -211,9 +211,8 @@ def copy_file_to_fs_folder(
     dst_folder_path: str = ".",
     dst_filename: t.Optional[str] = None,
 ):
-    """
-    Copy the given file at `src_path` to `dst_fs` filesystem, under its `dst_folder_path`
-    folder with `dst_filename` as file name. When `dst_filename` is None, keep the original
+    """Copy the given file at src_path to dst_fs filesystem, under its dst_folder_path
+    folder with dst_filename as file name. When dst_filename is None, keep the original
     file name.
     """
     src_path = os.path.realpath(os.path.expanduser(src_path))
@@ -224,9 +223,8 @@ def copy_file_to_fs_folder(
     fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
 
 
-def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str | t.NoReturn:
-    """
-    Resolve the abspath of a filepath provided by user, which may contain "~" or may
+def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
+    """Resolve the abspath of a filepath provided by user, which may contain "~" or may
     be a relative path base on ctx dir.
     """
     # Return if filepath exist after expanduser

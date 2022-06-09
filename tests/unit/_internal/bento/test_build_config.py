@@ -37,8 +37,8 @@ if TYPE_CHECKING:
 
     from fs.base import FS
     from _pytest.logging import LogCaptureFixture
-    from _pytest.fixtures import FixtureRequest
     from _pytest.monkeypatch import MonkeyPatch
+    from _pytest.fixtures import FixtureRequest
     from _pytest.mark.structures import MarkDecorator
 
 
@@ -235,7 +235,6 @@ def test_docker_write_to_bento(
     assert os.path.isdir(docker_fs.getsyspath("/"))
     assert docker_fs.exists("Dockerfile")
     assert docker_fs.exists("entrypoint.sh")
-    assert not os.path.exists(docker_fs.getsyspath("/whl"))
 
     DockerOptions(
         setup_script="./testdata/scripts/setup_script"
@@ -491,7 +490,6 @@ def test_wheels_include_local_bento(test_fs: FS, monkeypatch: MonkeyPatch):
     from bentoml._internal.bento.build_dev_bentoml_whl import BENTOML_DEV_BUILD
 
     monkeypatch.setenv(BENTOML_DEV_BUILD, "True")
-
     PythonOptions(lock_packages=False).with_defaults().write_to_bento(
         test_fs, os.getcwd()
     )
@@ -499,7 +497,6 @@ def test_wheels_include_local_bento(test_fs: FS, monkeypatch: MonkeyPatch):
     python_dir = test_fs.opendir("/env/python")
     assert os.path.isdir(python_dir.getsyspath("/"))
     assert os.path.isdir(python_dir.getsyspath("/wheels"))
-    # assert os.path.isfile(python_dir.getsyspath("/wheels/.whl"))
 
 
 def build_cmd_args(args: dict[str, str | bool | list[str]]) -> list[str]:

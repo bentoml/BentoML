@@ -106,7 +106,7 @@ docker:
   python_version: '{python_version}'
   cuda_version: null
   env: {{}}
-  system_packages: []
+  system_packages: null
   setup_script: null
   base_image: null
   dockerfile_template: null
@@ -164,15 +164,6 @@ def build_test_bento(model_store: ModelStore) -> Bento:
     )
 
     return Bento.create(bento_cfg, version="1.0", build_ctx="./simplebento")
-
-
-def fs_identical(fs1: fs.base.FS, fs2: fs.base.FS):
-    for path in fs1.walk.dirs():
-        assert fs2.isdir(path)
-
-    for path in fs1.walk.files():
-        assert fs2.isfile(path)
-        assert fs1.readbytes(path) == fs2.readbytes(path)
 
 
 @pytest.mark.usefixtures("change_test_dir")

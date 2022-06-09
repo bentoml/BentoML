@@ -30,6 +30,9 @@ from ..models import ModelStore
 from ..runner import Runner
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from .build_config import CondaOptions
+from .build_config import DockerOptions
+from .build_config import PythonOptions
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..runner.resource import Resource
@@ -178,7 +181,7 @@ class Bento(StoreItem):
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
         for model in models:
-            logger.info('Packing model "%s" from "%s"', model.tag, model.path)
+            logger.info(f'Packing model "{model.tag}"')
             model._save(bento_model_store)  # type: ignore[reportPrivateUsage]
 
         # Copy all files base on include and exclude, into `src` directory
@@ -257,6 +260,9 @@ class Bento(StoreItem):
                 apis=[
                     BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
                 ],
+                docker=build_config.docker,
+                python=build_config.python,
+                conda=build_config.conda,
             ),
         )
         # Create bento.yaml
@@ -410,6 +416,9 @@ class BentoInfo:
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
+    docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
+    python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
+    conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
 
     def __attrs_post_init__(self):
         # Direct set is not available when frozen=True

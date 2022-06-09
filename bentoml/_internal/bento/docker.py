@@ -121,13 +121,13 @@ class DistroSpec:
     @classmethod
     def from_distro(
         cls,
-        value: str | None,
+        value: str,
         *,
         cuda: bool = False,
         conda: bool = False,
-    ) -> DistroSpec | None:
+    ) -> DistroSpec:
         if not value:
-            return
+            raise BentoMLException("Distro name is required, got None instead.")
 
         if value not in DOCKER_METADATA:
             raise BentoMLException(

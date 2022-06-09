@@ -230,15 +230,17 @@ class ServiceAppFactory(BaseAppFactory):
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 
-            middlewares.append(
-                Middleware(
-                    AccessLogMiddleware,
-                    has_request_content_length=access_log_config.request_content_length.get(),
-                    has_request_content_type=access_log_config.request_content_type.get(),
-                    has_response_content_length=access_log_config.response_content_length.get(),
-                    has_response_content_type=access_log_config.response_content_type.get(),
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                middlewares.append(
+                    Middleware(
+                        AccessLogMiddleware,
+                        has_request_content_length=access_log_config.request_content_length.get(),
+                        has_request_content_type=access_log_config.request_content_type.get(),
+                        has_response_content_length=access_log_config.response_content_length.get(),
+                        has_response_content_type=access_log_config.response_content_type.get(),
+                    )
                 )
-            )
 
         return middlewares
 
@@ -313,13 +315,14 @@ class ServiceAppFactory(BaseAppFactory):
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 
-                if 400 <= e.error_code < 500 and e.error_code not in (401, 403):
+                status = e.error_code.value
+                if 400 <= status < 500 and status not in (401, 403):
                     response = JSONResponse(
                         content="BentoService error handling API request: %s" % str(e),
-                        status_code=e.error_code,
+                        status_code=status,
                     )
                 else:
-                    response = JSONResponse("", status_code=e.error_code)
+                    response = JSONResponse("", status_code=status)
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.

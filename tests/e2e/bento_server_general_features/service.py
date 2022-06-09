@@ -17,11 +17,11 @@ from bentoml.io import PandasDataFrame
 from bentoml._internal.types import FileLike
 from bentoml._internal.types import JSONSerializable
 
-py_model = bentoml.picklable_model.get("py_model").to_runner()
+py_model = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner()
 
 
 svc = bentoml.Service(
-    name="general",
+    name="general_workflow_service.case-1.e2e",
     runners=[py_model],
 )
 
@@ -144,3 +144,16 @@ class AllowPingMiddleware:
 
 
 svc.add_asgi_middleware(AllowPingMiddleware)  # type: ignore[arg-type]
+
+
+from fastapi import FastAPI
+
+fastapi_app = FastAPI()
+
+
+@fastapi_app.get("/hello")
+def hello():
+    return {"Hello": "World"}
+
+
+svc.mount_asgi_app(fastapi_app)

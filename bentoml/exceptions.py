@@ -9,7 +9,7 @@ class BentoMLException(Exception):
     Each custom exception should be derived from this class
     """
 
-    error_code: int = HTTPStatus.INTERNAL_SERVER_ERROR
+    error_code = HTTPStatus.INTERNAL_SERVER_ERROR
 
     def __init__(self, message: str):
         self.message = message
@@ -21,7 +21,7 @@ class StateException(Exception):
     Raise when the state of an object is not valid
     """
 
-    error_code: int = HTTPStatus.BAD_REQUEST
+    error_code = HTTPStatus.BAD_REQUEST
 
 
 class RemoteException(BentoMLException):

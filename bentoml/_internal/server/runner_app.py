@@ -8,12 +8,10 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
-from bentoml.exceptions import InvalidArgument
-from bentoml._internal.runner.batching import batch_params
-
 from ..trace import ServiceContext
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
+from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
@@ -69,7 +67,7 @@ class RunnerAppFactory(BaseAppFactory):
             functools.partial(
                 self.runner.scheduling_strategy.setup_worker,
                 runnable_class=self.runner.runnable_class,
-                resource_request=self.runner.resource_config,
+                resource_request=self.runner.get_effective_resource_config(),
                 worker_index=self.worker_index,
             ),
         )
@@ -154,15 +152,17 @@ class RunnerAppFactory(BaseAppFactory):
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 
-            middlewares.append(
-                Middleware(
-                    AccessLogMiddleware,
-                    has_request_content_length=access_log_config.request_content_length.get(),
-                    has_request_content_type=access_log_config.request_content_type.get(),
-                    has_response_content_length=access_log_config.response_content_length.get(),
-                    has_response_content_type=access_log_config.response_content_type.get(),
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                middlewares.append(
+                    Middleware(
+                        AccessLogMiddleware,
+                        has_request_content_length=access_log_config.request_content_length.get(),
+                        has_request_content_type=access_log_config.request_content_type.get(),
+                        has_response_content_length=access_log_config.response_content_length.get(),
+                        has_response_content_type=access_log_config.response_content_type.get(),
+                    )
                 )
-            )
 
         return middlewares
 
@@ -180,14 +180,12 @@ class RunnerAppFactory(BaseAppFactory):
                 *tuple(multipart_to_payload_params(r) for r in requests)
             )
 
-            batch_dim = runner_method.config.batch_dim
+            input_batch_dim, output_batch_dim = runner_method.config.batch_dim
 
-            try:
-                batched_params, indices = batch_params(params_list, batch_dim[0])
-            except InvalidArgument as e:
-                raise InvalidArgument(
-                    f"Error while batching arguments for call to {runner_method.name}: {e.message}"
-                )
+            batched_params, indices = payload_paramss_to_batch_params(
+                params_list,
+                input_batch_dim,
+            )
 
             batch_ret = await runner_method.async_run(
                 *batched_params.args,
@@ -197,7 +195,7 @@ class RunnerAppFactory(BaseAppFactory):
             payloads = AutoContainer.batch_to_payloads(
                 batch_ret,
                 indices,
-                batch_dim=batch_dim[-1],
+                batch_dim=output_batch_dim,
             )
 
             return [

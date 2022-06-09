@@ -113,7 +113,9 @@ def add_bento_management_commands(
                 "tag": str(bento.tag),
                 "path": display_path_under_home(bento.path),
                 "size": human_readable_size(calc_dir_size(bento.path)),
-                "creation_time": bento.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "creation_time": bento.info.creation_time.astimezone().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
             }
             for bento in sorted(
                 bentos, key=lambda x: x.info.creation_time, reverse=True

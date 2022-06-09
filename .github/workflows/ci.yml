@@ -265,6 +265,7 @@ jobs:
         run: |
           pip install -e .
           pip install -r requirements/tests-requirements.txt
+          pip install -r tests/e2e/bento_server_general_features/requirements.txt
 
       - name: Export Action Envvar
         run: export GITHUB_ACTION=true

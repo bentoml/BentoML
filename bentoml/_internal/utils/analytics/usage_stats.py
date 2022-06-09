@@ -160,6 +160,38 @@ def _track_serve_init(
     track(event_properties)
 
 
+EXCLUDE_PATHS = {"/docs.json", "/livez", "/healthz", "/readyz"}
+
+
+def get_metrics_report(
+    metrics_client,
+) -> t.List[t.Dict[str, t.Union[str, float]]]:
+    metrics_text = metrics_client.generate_latest().decode()
+    if not metrics_text:
+        return []
+
+    from prometheus_client.parser import text_string_to_metric_families
+
+    for metric in text_string_to_metric_families(metrics_text):
+        # Searching for the metric BENTOML_{service_name}_request of type Counter
+        if (
+            metric.type == "counter"
+            and metric.name.startswith("BENTOML_")
+            and metric.name.endswith("_request")
+        ):
+            return [
+                {**sample.labels, "value": sample.value}
+                for sample in metric.samples
+                if "endpoint" in sample.labels
+                # exclude common infra paths
+                and sample.labels["endpoint"] not in EXCLUDE_PATHS
+                # exclude static_content prefix
+                and not sample.labels["endpoint"].startswith("/static_content/")
+            ]
+
+    return []
+
+
 @inject
 @contextlib.contextmanager
 def track_serve(
@@ -185,7 +217,7 @@ def track_serve(
                 production=production,
                 triggered_at=now,
                 duration_in_seconds=(now - serve_info.serve_started_timestamp).seconds,
-                metrics=metrics_client.get_metrics_report(),
+                metrics=get_metrics_report(metrics_client),
             )
             track(event_properties)
 

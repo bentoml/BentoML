@@ -118,7 +118,9 @@ def add_model_management_commands(
                 "module": model.info.module,
                 "path": display_path_under_home(model.path),
                 "size": human_readable_size(calc_dir_size(model.path)),
-                "creation_time": model.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "creation_time": model.info.creation_time.astimezone().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
             }
             for model in sorted(
                 models, key=lambda x: x.info.creation_time, reverse=True

@@ -1,7 +1,9 @@
 import os
 import re
+import sys
 import typing as t
 import logging
+import subprocess
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
 
@@ -10,7 +12,6 @@ import attr
 import yaml
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
-from piptools.scripts.compile import cli as pip_compile_cli
 
 from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
@@ -472,10 +473,11 @@ class PythonOptions:
                 ]
             )
             logger.info("Locking PyPI package versions..")
-            click_ctx = pip_compile_cli.make_context("pip-compile", pip_compile_args)
+            cmd = [sys.executable, "-m", "piptools", "compile"]
+            cmd.extend(pip_compile_args)
             try:
-                pip_compile_cli.invoke(click_ctx)
-            except Exception as e:
+                subprocess.check_call(cmd)
+            except subprocess.CalledProcessError as e:
                 logger.error(f"Failed locking PyPI packages: {e}")
                 logger.error(
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"

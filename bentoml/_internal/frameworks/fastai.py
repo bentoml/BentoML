@@ -284,7 +284,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     self.predict_fns[method_name] = getattr(self.learner, method_name)
                 except AttributeError:
                     raise InvalidArgument(
-                        f"No method with name {method_name} found for Learner of type {self.model.__class__}"
+                        f"No method with name {method_name} found for Learner of type {self.learner.__class__}"
                     )
 
         def __del__(self):

@@ -48,6 +48,7 @@ from ..yatai_rest_api_client.schemas import BentoManifestSchema
 from ..yatai_rest_api_client.schemas import ModelManifestSchema
 from ..yatai_rest_api_client.schemas import FinishUploadBentoSchema
 from ..yatai_rest_api_client.schemas import FinishUploadModelSchema
+from ..yatai_rest_api_client.schemas import BentoRunnerResourceSchema
 from ..yatai_rest_api_client.schemas import CreateBentoRepositorySchema
 from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
 
@@ -249,7 +250,18 @@ class YataiClient:
         apis: t.Dict[str, BentoApiSchema] = {}
         models = [str(m.tag) for m in info.models]
         runners = [
-            BentoRunnerSchema(name=r.name, runner_type=r.runnable_type)
+            BentoRunnerSchema(
+                name=r.name,
+                runnable_type=r.runnable_type,
+                models=r.models,
+                resource_config=BentoRunnerResourceSchema(
+                    cpu=r.resource_config.cpu,
+                    nvidia_gpu=r.resource_config.nvidia_gpu,
+                    custom_resources=r.resource_config.custom_resources,
+                )
+                if r.resource_config
+                else None,
+            )
             for r in info.runners
         ]
         manifest = BentoManifestSchema(

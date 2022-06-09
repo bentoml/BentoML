@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import socket
 import typing as t
@@ -9,7 +11,7 @@ import psutil
 from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
-from ...log import LOGGING_CONFIG
+from ...log import SERVER_LOGGING_CONFIG
 from ...trace import ServiceContext
 
 if TYPE_CHECKING:
@@ -24,18 +26,19 @@ import click
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
 @click.option(
-    "--as-worker",
+    "--no-access-log",
     required=False,
     type=click.BOOL,
     is_flag=True,
     default=False,
+    help="Disable the runner server's access log",
 )
 @click.option(
-    "--worker-index",
-    type=click.INT,
+    "--worker-id",
     required=False,
-    default=0,
-    help="Worker index",
+    type=click.INT,
+    default=None,
+    help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
 @click.pass_context
 def main(
@@ -44,8 +47,8 @@ def main(
     runner_name: str,
     bind: str,
     working_dir: t.Optional[str],
-    as_worker: bool,
-    worker_index: int,
+    no_access_log: bool,
+    worker_id: int | None,
 ) -> None:
     """
     Start a runner server.
@@ -59,10 +62,14 @@ def main(
             - file:///path/to/unix.sock
             - fd://12
         working_dir: (Optional) the working directory
-        as_worker: (Optional) if True, the runner will be started as a worker
+        worker_id: (Optional) if set, the runner will be started as a worker with the given ID
     """
 
-    if not as_worker:
+    from ...log import configure_server_logging
+
+    configure_server_logging()
+
+    if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
 
@@ -73,7 +80,8 @@ def main(
         circus_socket = create_circus_socket_from_uri(bind, name=runner_name)
         params = ctx.params
         params["bind"] = f"fd://$(circus.sockets.{runner_name})"
-        params["as_worker"] = True
+        params["worker_id"] = "$(circus.wid)"
+        params["no_access_log"] = no_access_log
         watcher = Watcher(
             name=f"runner_{runner_name}",
             cmd=sys.executable,
@@ -91,9 +99,15 @@ def main(
 
     import uvicorn  # type: ignore
 
+    if no_access_log:
+        from bentoml._internal.configuration.containers import DeploymentContainer
+
+        access_log_config = DeploymentContainer.runners_config.logging.access
+        access_log_config.enabled.set(False)
+
     from bentoml._internal.server.runner_app import RunnerAppFactory
 
-    ServiceContext.component_name_var.set(runner_name)
+    ServiceContext.component_name_var.set(f"{runner_name}:{worker_id}")
 
     service = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
     for runner in service.runners:
@@ -102,14 +116,12 @@ def main(
     else:
         raise ValueError(f"Runner {runner_name} not found")
 
-    app = t.cast(
-        "ASGI3Application", RunnerAppFactory(runner, worker_index=worker_index)()
-    )
+    app = t.cast("ASGI3Application", RunnerAppFactory(runner, worker_index=worker_id)())
 
     parsed = urlparse(bind)
     uvicorn_options = {
-        "log_level": "info",
-        "log_config": LOGGING_CONFIG,
+        "log_level": SERVER_LOGGING_CONFIG["root"]["level"],
+        "log_config": SERVER_LOGGING_CONFIG,
         "workers": 1,
     }
 

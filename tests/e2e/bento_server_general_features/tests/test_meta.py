@@ -16,6 +16,9 @@ async def test_api_server_meta(host: str) -> None:
     assert status == 200
     status, _, _ = await async_request("GET", f"http://{host}/ping")
     assert status == 200
+    status, _, body = await async_request("GET", f"http://{host}/hello")
+    assert status == 200
+    assert b'{"Hello":"World"}' == body
     status, _, _ = await async_request("GET", f"http://{host}/docs.json")
     assert status == 200
     status, _, _ = await async_request("GET", f"http://{host}/readyz")
@@ -42,7 +45,7 @@ async def test_cors(host: str, server_config_file: str) -> None:
     if server_config_file == "server_config_cors_enabled.yml":
         assert status == 200
     else:
-        assert status == 405
+        assert status != 200
 
     status, headers, body = await async_request(
         "POST",

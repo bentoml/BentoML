@@ -1,8 +1,10 @@
 import os
 import re
+import sys
 import typing as t
 import logging
 from sys import version_info
+import subprocess
 from typing import TYPE_CHECKING
 
 import fs
@@ -10,7 +12,6 @@ import attr
 import yaml
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
-from piptools.scripts.compile import cli as pip_compile_cli
 
 from .gen import generate_dockerfile
 from ..utils import bentoml_cattr as cattr
@@ -185,8 +186,13 @@ class DockerOptions:
                 logger.warning(
                     f"docker base_image {self.base_image} is used, 'cuda_version={self.cuda_version}' option is ignored.",
                 )
+            if self.system_packages:
+                logger.warning(
+                    f"docker base_image {self.base_image} is used, "
+                    f"'system_packages={self.system_packages}' option is ignored.",
+                )
 
-        if self.cuda_version is not None:
+        if self.distro is not None and self.cuda_version is not None:
             supports_cuda = get_supported_spec("cuda")
             if self.distro not in supports_cuda:
                 raise BentoMLException(
@@ -229,18 +235,15 @@ class DockerOptions:
         dockerfile = fs.path.combine(docker_folder, "Dockerfile")
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
-            dockerfile.write(generate_dockerfile(self, use_conda=use_conda))
+            dockerfile.write(
+                generate_dockerfile(self, build_ctx=build_ctx, use_conda=use_conda)
+            )
 
         copy_file_to_fs_folder(
             fs.path.join(os.path.dirname(__file__), "docker", "entrypoint.sh"),
             bento_fs,
             docker_folder,
         )
-
-        if not is_pypi_installed_bentoml():
-            # If BentoML is installed in editable mode, build bentoml whl and save to Bento
-            whl_dir = fs.path.combine(docker_folder, "whl")
-            build_bentoml_editable_wheel(bento_fs.getsyspath(whl_dir))
 
         if self.setup_script:
             try:
@@ -477,6 +480,8 @@ class PythonOptions:
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
+        build_bentoml_editable_wheel(bento_fs.getsyspath(wheels_folder))
+
         if self.requirements_txt is not None:
             requirements_txt_file = resolve_user_filepath(
                 self.requirements_txt, build_ctx
@@ -548,10 +553,11 @@ class PythonOptions:
                 ]
             )
             logger.info("Locking PyPI package versions..")
-            click_ctx = pip_compile_cli.make_context("pip-compile", pip_compile_args)
+            cmd = [sys.executable, "-m", "piptools", "compile"]
+            cmd.extend(pip_compile_args)
             try:
-                pip_compile_cli.invoke(click_ctx)
-            except Exception as e:
+                subprocess.check_call(cmd)
+            except subprocess.CalledProcessError as e:
                 logger.error(f"Failed locking PyPI packages: {e}")
                 logger.error(
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"

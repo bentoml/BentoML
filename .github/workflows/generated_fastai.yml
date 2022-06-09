@@ -48,10 +48,6 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         python-version: [ '3.7', '3.8', '3.9', '3.10' ]
-        include:
-          os: ubuntu-latest
-          python-version: [ '3.11.0b3' ]  # EXPERIMENTAL
-          experimental: [true]
 
     name: python${{ matrix.python-version }}_intergration_tests_${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -94,7 +90,7 @@ jobs:
           fi
 
       - name: Upload test coverage to Codecov
-      - uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./fastai.general.xml,./fastai.specific.xml

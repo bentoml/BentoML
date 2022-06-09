@@ -331,11 +331,9 @@ flags:
     carryforward: true
     paths:
       - "bentoml/**/*"
-      - "bentoml/bentos.py"
       - bentoml/models.py
   unit-tests:
     carryforward: true
     paths:
       - "bentoml/**/*"
-      - "bentoml/bentos.py"
       - bentoml/models.py

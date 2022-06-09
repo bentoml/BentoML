@@ -1,4 +1,4 @@
-name: ci_fastai
+name: ci-fastai-tests
 
 concurrency:
   group: fastai_${{ github.event.pull_request.number || github.sha }}

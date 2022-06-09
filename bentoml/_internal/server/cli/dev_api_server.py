@@ -7,7 +7,7 @@ import psutil
 
 from bentoml import load
 
-from ...log import LOGGING_CONFIG
+from ...log import SERVER_LOGGING_CONFIG
 from ...trace import ServiceContext
 
 
@@ -24,7 +24,9 @@ def main(
 ):
     import uvicorn  # type: ignore
 
-    from ...configuration import get_debug_mode
+    from ...log import configure_server_logging
+
+    configure_server_logging()
 
     ServiceContext.component_name_var.set("dev_api_server")
     parsed = urlparse(bind)
@@ -32,12 +34,11 @@ def main(
     if parsed.scheme == "fd":
         fd = int(parsed.netloc)
         sock = socket.socket(fileno=fd)
-        log_level = "debug" if get_debug_mode() else "info"
         svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
         uvicorn_options = {
-            "log_level": log_level,
+            "log_level": SERVER_LOGGING_CONFIG["root"]["level"],
             "backlog": backlog,
-            "log_config": LOGGING_CONFIG,
+            "log_config": SERVER_LOGGING_CONFIG,
             "workers": 1,
             "lifespan": "on",
         }

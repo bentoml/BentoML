@@ -23,3 +23,11 @@ prune hooks
 prune docs
 prune .github
 prune .DS_Store
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .ipynb_checkpoints
+global-exclude __pycache__
+global-exclude .DS_Store

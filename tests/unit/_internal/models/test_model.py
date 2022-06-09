@@ -164,7 +164,8 @@ def test_model_creationtime():
 
     assert model_a.tag.name == "testmodel"
     assert start <= model_a.creation_time <= end
-    assert str(model_a) == f'Model(tag="{model_a.tag}", path="{model_a.path}")'
+    assert str(model_a) == f'Model(tag="{model_a.tag}")'
+    assert repr(model_a) == f'Model(tag="{model_a.tag}", path="{model_a.path}")'
 
 
 class AdditionClass:
@@ -178,8 +179,8 @@ class AdditionClass:
 add_num_1 = 5
 
 
-@pytest.fixture
-def bento_model():
+@pytest.fixture(name="bento_model")
+def fixture_bento_model():
     model = Model.create(
         "testmodel",
         module="foo",
@@ -246,17 +247,17 @@ def test_model_export_import(bento_model, tmpdir: "Path"):
 
     # can cause model.path to fail by using `from_fs`.
     with pytest.raises(fs.errors.NoSysPath):
-        str(from_fs_model)
+        assert from_fs_model.path
 
     model_store = ModelStore(tmpdir)
     from_fs_model.save(model_store)
 
-    from_fs_model_str = str(from_fs_model)
     save_path = os.path.join(
         tmpdir,
         os.path.join(from_fs_model.tag.name, from_fs_model.tag.version) + os.path.sep,
     )
-    assert from_fs_model_str == f'Model(tag="{bento_model.tag}", path="{save_path}")'
+    assert str(from_fs_model) == f'Model(tag="{bento_model.tag}")'
+    assert repr(from_fs_model) == f'Model(tag="{bento_model.tag}", path="{save_path}")'
 
 
 def test_load_bad_model(tmpdir: "Path"):

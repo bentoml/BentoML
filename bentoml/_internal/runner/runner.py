@@ -151,17 +151,17 @@ class Runner:
         #  3. otherwise, there's no default method
         if len(runner_method_map) == 1:
             default_method = next(iter(runner_method_map.values()))
-            logger.info(
+            logger.debug(
                 f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`"
             )
         elif "__call__" in runner_method_map:
             default_method = runner_method_map["__call__"]
-            logger.info(
+            logger.debug(
                 "Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`"
             )
         else:
             default_method = None
-            logger.info(
+            logger.warning(
                 f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`'
             )
 

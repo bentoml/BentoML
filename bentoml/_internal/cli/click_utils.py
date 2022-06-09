@@ -11,9 +11,11 @@ import click
 from click import ClickException
 from click.exceptions import UsageError
 
+from ..log import configure_logging
 from ...exceptions import BentoMLException
 from ..configuration import CONFIG_ENV_VAR
 from ..configuration import set_debug_mode
+from ..configuration import set_quiet_mode
 from ..configuration import load_global_config
 from ..utils.analytics import track
 from ..utils.analytics import CliEvent
@@ -88,14 +90,13 @@ class BentoMLCommandGroup(click.Group):
                 load_global_config(config)
 
             if quiet:
-                logging.getLogger("bentoml").setLevel(logging.ERROR)
+                set_quiet_mode(True)
                 if verbose:
-                    logger.warning(
-                        "The bentoml command option `--verbose/--debug` is ignored when"
-                        "the `--quiet` flag is also in use"
-                    )
+                    logger.warning("'--quiet' passed; ignoring '--verbose/--debug'")
             elif verbose:
                 set_debug_mode(True)
+
+            configure_logging()
 
             return func(*args, **kwargs)
 

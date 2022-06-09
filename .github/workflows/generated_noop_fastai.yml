@@ -1,5 +1,5 @@
 # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
-name: fastai
+name: ci_fastai
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   integration_tests_matrix:
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: false
     strategy:
       fail-fast: true
       max-parallel: 4  # since we are supporting 3.7-3.10

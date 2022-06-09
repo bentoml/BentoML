@@ -1,4 +1,4 @@
-name: fastai
+name: ci_fastai
 
 concurrency:
   group: fastai_${{ github.event.pull_request.number || github.sha }}
@@ -41,7 +41,7 @@ defaults:
 
 jobs:
   integration_tests_matrix:
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: false
     strategy:
       fail-fast: true
       max-parallel: 4  # since we are supporting 3.7-3.10

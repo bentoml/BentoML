@@ -30,7 +30,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     # Find bentoml module path
     (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations  # type: ignore # noqa
 
-    # PEP517-compatible
+    # PEP517 compatible
     bentoml_pyproject = os.path.abspath(os.path.join(module_location, "..", "pyproject.toml"))  # type: ignore
 
     # this is for BentoML developer to create Service containing custom development

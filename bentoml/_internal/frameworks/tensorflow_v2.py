@@ -52,7 +52,7 @@ API_VERSION = "v1"
 
 
 @attr.define
-class KerasOptions(ModelOptions):
+class TensorflowOptions(ModelOptions):
     """Options for the Keras model."""
 
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)

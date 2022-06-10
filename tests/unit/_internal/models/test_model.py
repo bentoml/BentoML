@@ -143,7 +143,7 @@ def test_model_info(tmpdir: "Path"):
 
     with open(model_yaml_b_filename, encoding="utf-8") as model_yaml_b:
         modelinfo_b_from_yaml = ModelInfo.from_yaml_file(model_yaml_b)
-        assert modelinfo_b_from_yaml.to_dict() == modelinfo_b.to_dict()
+        assert modelinfo_b_from_yaml == modelinfo_b
 
     # attempt to test that serialization is deterministic
     det_check_filename = os.path.join(tmpdir, "det_check.yml")
@@ -233,7 +233,7 @@ def test_model_export_import(bento_model, tmpdir: "Path"):
     from_tar_model = Model.from_fs(tar_fs)
 
     assert from_tar_model == bento_model
-    assert from_tar_model.info.to_dict() == bento_model.info.to_dict()
+    assert from_tar_model.info == bento_model.info
     assert (
         from_tar_model._fs.readtext("sys_written/file")  # type: ignore
         == sys_written_content

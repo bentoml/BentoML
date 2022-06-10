@@ -6,7 +6,6 @@ from ._internal.frameworks.tensorflow_v2 import save_model
 from ._internal.frameworks.tensorflow_v2 import get_runnable
 from ._internal.frameworks.tensorflow_v2 import TensorflowOptions as ModelOptions  # type: ignore
 
-
 logger = logging.getLogger(__name__)
 
 

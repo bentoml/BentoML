@@ -6,7 +6,6 @@ from ._internal.frameworks.transformers import save_model
 from ._internal.frameworks.transformers import get_runnable
 from ._internal.frameworks.transformers import TransformersOptions as ModelOptions  # type: ignore
 
-
 logger = logging.getLogger(__name__)
 
 

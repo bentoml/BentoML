@@ -45,10 +45,11 @@ logger = logging.getLogger(__name__)
 PYTHON_VERSION = f"{pyver.major}.{pyver.minor}"
 PYTHON_FULL_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 
-
 # Docker defaults
 DEFAULT_CUDA_VERSION = "11.6.2"
 DEFAULT_DOCKER_DISTRO = "debian"
+
+CONDA_ENV_YAML_FILE_NAME = "environment.yml"
 
 
 if PYTHON_VERSION not in SUPPORTED_PYTHON_VERSIONS:
@@ -335,31 +336,35 @@ class CondaOptions:
                 environment_yml_file,
                 bento_fs,
                 conda_folder,
-                dst_filename="environment.yml",
+                dst_filename=CONDA_ENV_YAML_FILE_NAME,
             )
+        else:
+            deps_list = [] if self.dependencies is None else self.dependencies
+            if self.pip is not None:
+                deps_list.append(dict(pip=self.pip))  # type: ignore
 
-            return
+            if not deps_list:
+                return
 
-        deps_list = [] if self.dependencies is None else self.dependencies
-        if self.pip is not None:
-            deps_list.append(dict(pip=self.pip))  # type: ignore
-
-        if not deps_list:
-            return
-
-        yaml_content = dict(dependencies=deps_list)
-        yaml_content["channels"] = (
-            ["defaults"] if self.channels is None else self.channels
-        )
-        with bento_fs.open(fs.path.join(conda_folder, "environment_yml"), "w") as f:
-            yaml.dump(yaml_content, f)
+            yaml_content = dict(dependencies=deps_list)
+            yaml_content["channels"] = self.channels
+            with bento_fs.open(
+                fs.path.join(conda_folder, CONDA_ENV_YAML_FILE_NAME), "w"
+            ) as f:
+                yaml.dump(yaml_content, f)
 
     def with_defaults(self) -> "CondaOptions":
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
-        if self.channels is not None:
-            defaults["channels"] = self.channels + ["defaults"]
+        # When `channels` field was left empty, apply the community maintained
+        # channel `conda-forge` as default
+        if (
+            (self.dependencies or self.pip)
+            and not self.channels
+            and not self.environment_yml
+        ):
+            defaults["channels"] = ["conda-forge"]
 
         return attr.evolve(self, **defaults)
 

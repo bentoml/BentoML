@@ -14,7 +14,7 @@ import fs.copy
 from dotenv import dotenv_values  # type: ignore
 
 from .gen import generate_dockerfile
-from ..utils import bentoml_cattr as cattr
+from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
 from .docker import DistroSpec
@@ -267,7 +267,7 @@ def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> Docker
     return DockerOptions(**d)
 
 
-cattr.register_structure_hook(DockerOptions, _docker_options_structure_hook)
+bentoml_cattr.register_structure_hook(DockerOptions, _docker_options_structure_hook)
 
 
 if TYPE_CHECKING:
@@ -402,7 +402,7 @@ def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOpt
     return CondaOptions(**d)
 
 
-cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
+bentoml_cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
 
 
 @attr.frozen
@@ -582,7 +582,7 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> Python
     return PythonOptions(**d)
 
 
-cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
+bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
 OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
@@ -700,7 +700,17 @@ class BentoBuildConfig:
             logger.error(exc)
             raise
 
-        return cattr.structure(yaml_content, cls)
+        try:
+            return bentoml_cattr.structure(yaml_content, cls)
+        except KeyError as e:
+            if str(e) == "'service'":
+                raise InvalidArgument(
+                    'Missing required build config field "service", which'
+                    " indicates import path of target bentoml.Service instance."
+                    ' e.g.: "service: fraud_detector.py:svc"'
+                )
+            else:
+                raise
 
     def to_yaml(self, stream: t.TextIO) -> None:
         # TODO: Save BentoBuildOptions to a yaml file

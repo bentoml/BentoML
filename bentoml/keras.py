@@ -4,9 +4,7 @@ from ._internal.frameworks.keras import get
 from ._internal.frameworks.keras import load_model
 from ._internal.frameworks.keras import save_model
 from ._internal.frameworks.keras import get_runnable
-from ._internal.frameworks.keras import KerasOptions
-
-ModelOptions = KerasOptions
+from ._internal.frameworks.keras import KerasOptions as ModelOptions  # type: ignore
 
 
 logger = logging.getLogger(__name__)

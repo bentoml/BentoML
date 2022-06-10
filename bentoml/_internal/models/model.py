@@ -577,7 +577,7 @@ class ModelInfo:
         module_name: str = yaml_content["module"]
         try:
             module = importlib.import_module(module_name)
-        except ValueError or ModuleNotFoundError as e:
+        except (ValueError, ModuleNotFoundError) as e:
             raise BentoMLException(
                 f"Module '{module_name}' defined in {MODEL_YAML_FILENAME} is not found."
             ) from e

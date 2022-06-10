@@ -37,6 +37,7 @@ jobs:
       onnxmlir: ${{ steps.filter.outputs.onnxmlir }}
       paddle: ${{ steps.filter.outputs.paddle }}
       picklable_model: ${{ steps.filter.outputs.picklable_model }}
+      fastai: ${{ steps.filter.outputs.fastai }}
       pycaret: ${{ steps.filter.outputs.pycaret }}
       pyspark_mllib: ${{ steps.filter.outputs.pyspark_mllib }}
       pytorch: ${{ steps.filter.outputs.pytorch }}
@@ -119,6 +120,11 @@ jobs:
               - bentoml/mlflow.py
               - bentoml/_internal/frameworks/mlflow.py
               - tests/integration/frameworks/mlflow
+            fastai:
+              - *runner
+              - bentoml/fastai.py
+              - bentoml/_internal/frameworks/fastai.py
+              - tests/integration/frameworks/test_fastai_impl.py
             onnx:
               - *runner
               - bentoml/onnx.py
@@ -357,6 +363,50 @@ jobs:
   # TODO: fasttext_integration_tests
 
   # TODO(aarnphm): add Trax/Flax support
+
+  fastai_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install -r requirements/tests-requirements.txt
+
+      - name: Run tests and generate coverage report
+        run: make tests-fastai
+        shell: bash
+
+      - name: Upload test coverage to Codecov
+        if: ${{ needs.diff.outputs.detectron2 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./fastai.xml
+          flags: fastai
+          verbose: true
 
   gluon_integration_tests:
     needs: diff

@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from .. import external_typing as ext
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
+    from fastai.callback.core import Callback
 
 try:
     import torch
@@ -142,7 +143,7 @@ def load_model(
     return t.cast(
         Learner,
         load_learner(
-            bento_model.path_of(MODEL_FILENAME), cpu=cpu, pickle_module=pickle_module
+            bento_model.path_of(MODEL_FILENAME), cpu=cpu, pickle_module=pickle_module  # type: ignore (bad torch type)
         ),
     )
 
@@ -223,7 +224,7 @@ def save_model(
     )
 
     if signatures is None:
-        signatures = {"predict": {"batchable": True}}
+        signatures = {"predict": {"batchable": False}}
         logger.info(
             f"Using the default model signature ({signatures}) for model {name}."
         )
@@ -242,7 +243,8 @@ def save_model(
         from fastai.callback.schedule import ParamScheduler
 
         # NOTE: ParamScheduler is not pickable, so we need to remove it from the model.
-        cbs = list(filter(lambda x: isinstance(x, ParamScheduler), learner.cbs))
+        # It is also a hyperparameter callback, hence we don't need it for serving.
+        cbs: list[Callback] = list(filter(lambda x: isinstance(x, ParamScheduler), learner.cbs))  # type: ignore (bad fastai type)
         with t.cast(t.ContextManager[Learner], learner.removed_cbs(cbs)) as filtered:
             fname = bento_model.path_of(MODEL_FILENAME)
             filtered.export(fname, pickle_module=pickle_module)

@@ -194,9 +194,7 @@ def serve_production(
                     stop_children=True,
                     working_dir=working_dir,
                     use_sockets=True,
-                    numprocesses=runner.scheduling_strategy.get_worker_count(
-                        runner.runnable_class, runner.get_effective_resource_config()
-                    ),
+                    numprocesses=runner.scheduled_worker_count,
                 )
             )
 
@@ -237,10 +235,7 @@ def serve_production(
                         stop_children=True,
                         use_sockets=True,
                         working_dir=working_dir,
-                        numprocesses=runner.scheduling_strategy.get_worker_count(
-                            runner.runnable_class,
-                            runner.get_effective_resource_config(),
-                        ),
+                        numprocesses=runner.scheduled_worker_count,
                     )
                 )
             port_stack.enter_context(

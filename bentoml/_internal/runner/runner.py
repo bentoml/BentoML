@@ -213,3 +213,17 @@ class Runner:
 
     def destroy(self):
         object.__setattr__(self, "_runner_handle", DummyRunnerHandle())
+
+    @property
+    def scheduled_worker_count(self) -> int:
+        return self.scheduling_strategy.get_worker_count(
+            self.runnable_class,
+            self.get_effective_resource_config(),
+        )
+
+    def setup_worker(self, worker_id: int) -> None:
+        self.scheduling_strategy.setup_worker(
+            self.runnable_class,
+            self.get_effective_resource_config(),
+            worker_id,
+        )

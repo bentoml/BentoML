@@ -65,10 +65,8 @@ class RunnerAppFactory(BaseAppFactory):
         on_startup.insert(
             0,
             functools.partial(
-                self.runner.scheduling_strategy.setup_worker,
-                runnable_class=self.runner.runnable_class,
-                resource_request=self.runner.get_effective_resource_config(),
-                worker_index=self.worker_index,
+                self.runner.setup_worker,
+                worker_id=self.worker_index,
             ),
         )
         return on_startup

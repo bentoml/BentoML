@@ -216,7 +216,7 @@ BENTOML_noop_request_in_progress{endpoint="/classify",service_version=""} 0.0
         ):
             import time
 
-            time.sleep(1)
+            time.sleep(2)
             pass
 
     assert not mock_post.called

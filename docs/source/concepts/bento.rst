@@ -587,23 +587,25 @@ Python Options Table
 Conda Options
 ^^^^^^^^^^^^^
 
-Conda dependencies can be specified under the :code:`conda` field. Unlike Python
-packages, BentoML does not support locking conda packages to version automatically. It
-is recommended for users to specify a version in the :code:`bentofile`:
+Conda dependencies can be specified under the :code:`conda` field. For example:
 
 .. code:: yaml
 
     ...
     conda:
-        dependencies:
-        - numpy
-        - nltk
-        - "scikit-learn==1.2.0"
         channels:
-        - "conda-forge"
+        - default
+        dependencies:
+        - h2o
+        pip:
+        - "scikit-learn==1.2.0"
 
-Optionally, you may export all dependencies from a preexisting conda environment to
-an :code:`environment.yml`, and provide this file to BentoML instead.
+When :code:`channels` filed is left unspecified, BentoML will use the community
+maintained :code:`conda-forge` channel as the default.
+
+Optionally, you can export all dependencies from a preexisting conda environment to
+an :code:`environment.yml` file, and provide this file in your :code:`bentofile.yaml`
+config:
 
 Export conda environment:
 
@@ -617,6 +619,17 @@ In your :code:`bentofile.yaml`:
 
     conda:
         environment_yml: "./environment.yml"
+
+
+.. note::
+    Unlike Python packages, BentoML does not support locking conda packages versions
+    automatically. It is recommended for users to specify a version in the config file.
+
+.. seealso::
+    When :code:`conda` options are provided, BentoML will select a docker base image
+    that comes with Miniconda pre-installed in the generated Dockerfile. Note that only
+    the :code:`debian` and :code:`alpine` distro support :code:`conda`. Learn more at
+    the Docker Options section below.
 
 
 Conda Options Table

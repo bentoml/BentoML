@@ -325,7 +325,6 @@ class CondaOptions:
                 )
 
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
-        print("Writing to bento: ", self)
         conda_folder = fs.path.join("env", "conda")
         bento_fs.makedirs(conda_folder, recreate=True)
 

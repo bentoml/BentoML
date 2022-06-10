@@ -15,7 +15,7 @@ import fs.errors
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.models import ModelContext
-from bentoml._internal.models import ModelOptions
+from bentoml._internal.models import ModelOptions as InternalModelOptions
 from bentoml._internal.models.model import Model
 from bentoml._internal.models.model import ModelInfo
 from bentoml._internal.models.model import ModelStore
@@ -33,7 +33,7 @@ TEST_PYTHON_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 expected_yaml = """\
 name: test
 version: v1
-module: testmodule
+module: test_model
 labels:
   label: stringvalue
 options:
@@ -79,10 +79,13 @@ creation_time: '{creation_time}'
 
 
 @attr.define
-class TestModelOptions(ModelOptions):
+class TestModelOptions(InternalModelOptions):
     option_a: int
     option_b: str
     option_c: list[float]
+
+
+ModelOptions = TestModelOptions
 
 
 def test_model_info(tmpdir: "Path"):
@@ -92,7 +95,7 @@ def test_model_info(tmpdir: "Path"):
         module="module",
         api_version="v1",
         labels={},
-        options=ModelOptions(),
+        options=TestModelOptions(option_a=42, option_b="foo", option_c=[0.1, 0.2]),
         metadata={},
         context=TEST_MODEL_CONTEXT,
         signatures={"predict": {"batchable": True}},
@@ -104,7 +107,7 @@ def test_model_info(tmpdir: "Path"):
     assert start <= modelinfo_a.creation_time <= end
 
     tag = Tag("test", "v1")
-    module = "testmodule"
+    module = __name__
     labels = {"label": "stringvalue"}
     options = TestModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2])
     metadata = {"a": 0.1, "b": 1, "c": np.array([2, 3, 4], dtype=np.uint32)}
@@ -184,10 +187,11 @@ add_num_1 = 5
 def bento_model():
     model = Model.create(
         "testmodel",
-        module="foo",
+        module=__name__,
         api_version="v1",
         signatures={},
         context=TEST_MODEL_CONTEXT,
+        options=TestModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2]),
         custom_objects={
             "add": AdditionClass(add_num_1),
         },

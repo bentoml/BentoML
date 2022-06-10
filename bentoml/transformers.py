@@ -4,6 +4,10 @@ from ._internal.frameworks.transformers import get
 from ._internal.frameworks.transformers import load_model
 from ._internal.frameworks.transformers import save_model
 from ._internal.frameworks.transformers import get_runnable
+from ._internal.frameworks.transformers import TransformersOptions
+
+ModelOptions = TransformersOptions
+
 
 logger = logging.getLogger(__name__)
 

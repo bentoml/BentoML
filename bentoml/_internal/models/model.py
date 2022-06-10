@@ -66,16 +66,7 @@ class ModelOptions:
         return attr.asdict(options)
 
 
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelOptions),  # type: ignore
-    lambda d, cls: attr.make_class(
-        "GeneratedModelOptions",
-        attrs={k: attr.ib() for k in d},
-        bases=(ModelOptions,),
-        repr=False,
-        frozen=True,
-    )(**d),
-)
+bentoml_cattr.register_structure_hook(ModelOptions, lambda d, cls: cls(**d))
 bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
 
 
@@ -542,9 +533,6 @@ class ModelInfo:
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
-    def parse_options(self, options_class: type[ModelOptions]) -> None:
-        object.__setattr__(self, "options", options_class.with_options(**self.options))
-
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:
         ...
@@ -584,6 +572,20 @@ class ModelInfo:
         if "context" in yaml_content and "pip_dependencies" in yaml_content["context"]:
             del yaml_content["context"]["pip_dependencies"]
             yaml_content["context"]["framework_versions"] = {}
+
+        # register hook for model options
+        module_name: str = yaml_content["module"]
+        try:
+            module = importlib.import_module(module_name)
+        except ValueError or ModuleNotFoundError as e:
+            raise BentoMLException(
+                f"Module '{module_name}' defined in {MODEL_YAML_FILENAME} is not found."
+            ) from e
+        if hasattr(module, "ModelOptions"):
+            bentoml_cattr.register_structure_hook(
+                ModelOptions,
+                lambda d, _: module.ModelOptions(**d),
+            )
 
         try:
             model_info = bentoml_cattr.structure(yaml_content, ModelInfo)

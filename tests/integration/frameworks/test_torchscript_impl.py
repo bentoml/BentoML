@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import torch
 import pytest
@@ -104,11 +106,7 @@ def test_torchscript_runner_setup_run_batch(input_data, models, test_type):
     runner = bentoml.torchscript.get(tag).to_runner(cpu=4)
 
     assert tag in [m.tag for m in runner.models]
-
-    numprocesses = runner.scheduling_strategy.get_worker_count(
-        runner.runnable_class, runner.resource_config
-    )
-    assert numprocesses == 1
+    assert runner.scheduled_worker_count == 1
 
     runner.init_local()
 
@@ -122,10 +120,11 @@ def test_torchscript_runner_setup_run_batch(input_data, models, test_type):
     "test_type",
     ["tracedmodel", "scriptedmodel", "pytorch_lightning"],
 )
-def test_torchscript_runner_setup_on_gpu(nvidia_gpu, models, test_type):
+def test_torchscript_runner_setup_on_gpu(nvidia_gpu: int, models, test_type):
     tag = models(test_type)
     runner = bentoml.pytorch.get(tag).to_runner(nvidia_gpu=nvidia_gpu)
-    numprocesses = runner.scheduling_strategy.get_worker_count(
-        runner.runnable_class, runner.resource_config
-    )
-    assert numprocesses == nvidia_gpu
+    assert runner.scheduled_worker_count == nvidia_gpu
+
+    for i in range(nvidia_gpu):
+        runner.setup_worker(i + 1)
+        assert os.environ["CUDA_VISIBLE_DEVICES"] == str(i)

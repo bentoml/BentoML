@@ -174,7 +174,7 @@ class JSON(IODescriptor[JSONType]):
                 ) from None
             try:
                 pydantic_model = self._pydantic_model.parse_raw(json_str)
-                return pydantic_model.dict()
+                return pydantic_model
             except pydantic.ValidationError as e:
                 raise BadInput(f"Json validation error: {e}") from None
         else:

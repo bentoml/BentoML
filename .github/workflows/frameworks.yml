@@ -29,7 +29,6 @@ jobs:
       fasttext: ${{ steps.filter.outputs.fasttext }}
       gluon: ${{ steps.filter.outputs.gluon }}
       h2o: ${{ steps.filter.outputs.h2o }}
-      # keras_tf1: ${{ steps.filter.outputs.keras_tf1 }}
       keras_tf2: ${{ steps.filter.outputs.keras_tf2 }}
       lightgbm: ${{ steps.filter.outputs.lightgbm }}
       mlflow: ${{ steps.filter.outputs.mlflow }}
@@ -37,7 +36,6 @@ jobs:
       onnxmlir: ${{ steps.filter.outputs.onnxmlir }}
       paddle: ${{ steps.filter.outputs.paddle }}
       picklable_model: ${{ steps.filter.outputs.picklable_model }}
-      fastai: ${{ steps.filter.outputs.fastai }}
       pycaret: ${{ steps.filter.outputs.pycaret }}
       pyspark_mllib: ${{ steps.filter.outputs.pyspark_mllib }}
       pytorch: ${{ steps.filter.outputs.pytorch }}
@@ -90,11 +88,6 @@ jobs:
               - bentoml/evalml.py
               - bentoml/_internal/frameworks/evalml.py
               - tests/integration/frameworks/test_evalml_impl.py
-            fastai:
-              - *runner
-              - bentoml/fastai.py
-              - bentoml/_internal/frameworks/fastai.py
-              - tests/integration/frameworks/test_fastai_impl.py
             fasttext:
               - *runner
               - bentoml/fasttext.py
@@ -199,12 +192,6 @@ jobs:
               - bentoml/tensorflow.py
               - bentoml/_internal/frameworks/tensorflow_v2.py
               - tests/integration/frameworks/test_tensorflow_v2_impl.py
-            # keras_tf1:
-            #   - *runner
-            #   - *tf1
-            #   - bentoml/keras.py
-            #   - bentoml/_internal/frameworks/keras.py
-            #   - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
               - *runner
               - *tf2
@@ -359,7 +346,6 @@ jobs:
           verbose: true
 
   # TODO: evalml_integration_tests:
-  # TODO: fastai_integration_tests
   # TODO: fasttext_integration_tests
 
   # TODO(aarnphm): add Trax/Flax support

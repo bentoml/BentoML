@@ -5,7 +5,7 @@ FastAI
 .. admonition:: About this page
 
    This is an API reference for FastAI in BentoML. Please refer to
-   :ref:`../.../framework/fastai` for more information about how to use FastAI
+   :ref:`fastai guides <frameworks/fastai:FastAI>` for more information about how to use FastAI
    in BentoML.
 
 

@@ -57,11 +57,6 @@ detectron2:
     - "-f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.9/index.html"
     - "detectron2"
 
-catboost:
-  <<: *tmpl
-  dependencies:
-    - "fastai>=2.6.3"
-
 easyocr:
   <<: *tmpl
   dependencies:

@@ -22,15 +22,27 @@ def fixture_change_test_dir(request: pytest.FixtureRequest):
 def fixture_dummy_model_store(tmpdir_factory: "pytest.TempPathFactory") -> ModelStore:
     store = ModelStore(tmpdir_factory.mktemp("models"))
     with bentoml.models.create(
-        "testmodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+        "testmodel",
+        module=__name__,
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
+        _model_store=store,
     ):
         pass
     with bentoml.models.create(
-        "testmodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+        "testmodel",
+        module=__name__,
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
+        _model_store=store,
     ):
         pass
     with bentoml.models.create(
-        "anothermodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+        "anothermodel",
+        module=__name__,
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
+        _model_store=store,
     ):
         pass
 

@@ -69,6 +69,17 @@ install-tests-deps: ## Install all tests dependencies
 install-docs-deps: ## Install documentation dependencies
 	@echo Installing docs dependencies...
 	@pip install -r requirements/docs-requirements.txt
+install-completion:  ## Install bentoml completion
+	@if [ ! -d "$(HOME)/bentoml/completions" ]; then\
+	    mkdir -p $(HOME)/bentoml/completions;\
+	fi
+	@if [ -d /usr/local/share/zsh/site-functions ]; then\
+	    ln $(GIT_ROOT)/completions/bentoml.zsh $(HOME)/bentoml/completions/_bentoml;\
+	    echo "In order for completion to work with zsh, make sure to add $(HOME)/bentoml/completions to your 'fpath'.";\
+	    echo "Make sure to also enable autocomplete function with autoload somewhere in your zshrc config:";\
+	    echo "  autoload -U compinit";\
+	    echo "  compinit";\
+	fi
 
 # Docs
 watch-docs: install-docs-deps ## Build and watch documentation

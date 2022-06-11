@@ -265,11 +265,38 @@ def add_bento_management_commands(cli: Group):
     @cli.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
     @click.option(
-        "-f", "--bentofile", type=click.STRING, default=DEFAULT_BENTO_BUILD_FILE
+        "-f",
+        "--bentofile",
+        type=click.STRING,
+        default=DEFAULT_BENTO_BUILD_FILE,
+        help=f"Path to bento build file, default to {DEFAULT_BENTO_BUILD_FILE}",
     )
-    @click.option("--version", type=click.STRING, default=None)
-    def build(build_ctx: str, bentofile: str, version: str) -> None:  # type: ignore (not accessed)
-        """Build a new Bento from current directory."""
+    @click.option(
+        "--version",
+        type=click.STRING,
+        default=None,
+        help="Override the default auto generated version str",
+    )
+    def build(build_ctx: str, bentofile: str, version: str) -> None:
+        """
+        Build a new Bento from current directory.
+
+        \b
+        Arguments:
+            build_ctx: Path to current build context, default to current directory where 'build' is invoked.
+
+        \b
+        Example:
+            bentoml build
+
+        \b
+        Example for specifying a 'bentofile.yaml' file:
+            bentoml build -f /path/to/bentofile.yaml
+
+        \b
+        Example for overriding the generated version for target bento:
+            bentoml build --version 1.0.0
+        """
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 

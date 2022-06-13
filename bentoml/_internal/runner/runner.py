@@ -59,9 +59,9 @@ GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
 @attr.define(slots=False, frozen=True, eq=False)
 class Runner:
     runnable_class: t.Type[Runnable]
-    runnable_init_params: t.Dict[str, t.Any]
+    runnable_init_params: dict[str, t.Any]
     name: str
-    models: t.List[Model]
+    models: list[Model]
     resource_config: Resource
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: t.Type[Strategy]
@@ -72,7 +72,7 @@ class Runner:
         self,
         runnable_class: t.Type[Runnable],
         *,
-        init_params: t.Dict[str, t.Any] | None = None,
+        runnable_init_params: t.Dict[str, t.Any] | None = None,
         name: str | None = None,
         scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
         models: t.List[Model] | None = None,
@@ -87,7 +87,7 @@ class Runner:
         """
         Args:
             runnable_class: runnable class
-            init_params: runnable init params
+            runnable_init_params: runnable init params
             name: runner name
             scheduling_strategy: scheduling strategy
             models: list of required bento models
@@ -102,7 +102,9 @@ class Runner:
         name = runnable_class.__name__ if name is None else name
         models = [] if models is None else models
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
-        runner_init_params = {} if init_params is None else init_params
+        runnable_init_params = (
+            {} if runnable_init_params is None else runnable_init_params
+        )
         method_configs = {} if method_configs is None else {}
         custom_resources = {} if custom_resources is None else {}
         resource_config = Resource(
@@ -110,6 +112,11 @@ class Runner:
             nvidia_gpu=nvidia_gpu,
             custom_resources=custom_resources or {},
         )
+
+        if runnable_class.methods is None:
+            raise ValueError(
+                f"Runnable class '{runnable_class.__name__}' has no methods!"
+            )
 
         for method_name, method in runnable_class.methods.items():
             method_max_batch_size = method_configs.get(method_name, {}).get(
@@ -137,7 +144,7 @@ class Runner:
 
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
-            runnable_init_params=runner_init_params,
+            runnable_init_params=runnable_init_params,
             name=name,
             models=models,
             resource_config=resource_config,

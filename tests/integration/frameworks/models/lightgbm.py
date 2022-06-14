@@ -18,7 +18,13 @@ cancer = load_breast_cancer()  # type: ignore (incomplete sklearn types)
 dt = lgb.basic.Dataset(cancer.data, label=cancer.target)  # type: ignore
 
 # specify parameters via map
-param = {"num_leaves": 31, "eta": 0.1, "num_iterations": 20, "objective": "softmax", "num_class": 2}
+param = {
+    "num_leaves": 31,
+    "eta": 0.1,
+    "num_iterations": 20,
+    "objective": "softmax",
+    "num_class": 2,
+}
 
 
 cancer_model = FrameworkTestModel(

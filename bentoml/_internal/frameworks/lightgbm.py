@@ -179,10 +179,14 @@ def save_model(
         try:
             model = model.booster_
         except AttributeError as e:
-            logger.error("Unable to obtain a lightgbm.basic.Booster from the specified model.")
+            logger.error(
+                "Unable to obtain a lightgbm.basic.Booster from the specified model."
+            )
             raise e
 
-    assert isinstance(model, lgb.basic.Booster), "Unable to obtain a lightgbm.basic.Booster from the specified model."
+    assert isinstance(
+        model, lgb.basic.Booster
+    ), "Unable to obtain a lightgbm.basic.Booster from the specified model."
 
     context: ModelContext = ModelContext(
         framework_name="lightgbm",

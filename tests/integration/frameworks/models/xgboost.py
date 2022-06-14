@@ -32,8 +32,8 @@ def check_model(bst: xgb.Booster, resource: Resource):
         assert config["learner"]["generic_param"]["nthread"] == str(int(resource.cpu))
 
 
-def close_to(expected: list[t.Any]):
-    def check_output(out: np.NdArray):
+def close_to(expected):
+    def check_output(out):
         return np.isclose(out, expected).all()
 
     return check_output

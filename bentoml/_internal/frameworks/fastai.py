@@ -4,7 +4,6 @@ import types
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from contextlib import ExitStack
 
 import cloudpickle
 
@@ -18,19 +17,6 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
-
-# NOTE: we are currently register DataContainer
-#   for each of the data container type on the module level code.
-#
-# By simply have the line below, we are already registering
-#   PyTorchTensorContainer due to Python's side-effect of imports.
-#
-# However, we will still register PyTorchTensorContainer at the end
-#   of this file for consistency. Since the map of DataContainerRegisty's
-#   single type and batch type is a dictionary of LazyType and the container
-#   itself, it would just replce the existing value.
-#
-# This operation is O(1), hence no need to worry about performance.
 from .common.pytorch import PyTorchTensorContainer
 from ..runner.container import DataContainerRegistry
 
@@ -42,10 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
+    from fastai.callback.core import Callback
+
     from .. import external_typing as ext
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
-    from fastai.callback.core import Callback
 
 try:
     import torch
@@ -78,7 +65,8 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     """
     Get the BentoML model with the given tag.
 
-    :param tag_like: The tag of the model to retrieve from the model store.
+    Args:
+        tag_like: The tag of the model to retrieve from the model store.
 
     Returns:
         :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
@@ -102,22 +90,20 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 def load_model(
     bento_model: str | Tag | bentoml.Model,
     cpu: bool = True,
-    pickle_module: types.ModuleType = cloudpickle,
 ) -> Learner:
     """
-    Load the :code:`fastai.learner.Learner` model instance with the given tag from the local BentoML model store.
+    Load the ``fastai.learner.Learner`` model instance with the given tag from the local BentoML model store.
 
-    :param bento_model: Either the tag of the model to get from the store, or a BentoML `~bentoml.Model` instance to load the model from.
+    Args:
+        bento_model: Either the tag of the model to get from the store, or a BentoML `~bentoml.Model` instance to load the model from.
 
-    :param cpu: Whether to load the model to CPU. if true, the ``nn.Module`` is mapped to ``cpu`` via :code:`map_location` in ``torch.load``.
-                The loaded dataloader will also be converted to ``cpu``.
+        cpu: Whether to load the model to CPU. if true, the ``nn.Module`` is mapped to ``cpu`` via :code:`map_location` in ``torch.load``.
+             The loaded dataloader will also be converted to ``cpu``.
 
-                .. admonition:: About :code:`cpu=True`
+             .. admonition:: About :code:`cpu=True`
 
-                    If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
-                    Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
-
-    :param pickle_module: The pickle module to use for loading the model. This is passthrough to ``torch.load``.
+                If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
+                Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
 
     Returns:
         :code:`fastai.learner.Learner`:
@@ -140,12 +126,7 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
-    return t.cast(
-        Learner,
-        load_learner(
-            bento_model.path_of(MODEL_FILENAME), cpu=cpu, pickle_module=pickle_module  # type: ignore (bad torch type)
-        ),
-    )
+    return t.cast(Learner, load_learner(bento_model.path_of(MODEL_FILENAME), cpu=cpu))  # type: ignore (bad torch type)
 
 
 def save_model(
@@ -161,26 +142,27 @@ def save_model(
     """
     Save a :code:`fastai.learner.Learner` model instance to the BentoML model store.
 
-    :param name: The name to give to the model in the BentoML store. This must be a valid
-                 :obj:`~bentoml.Tag` name.
-    :param learner: :obj:`~fastai.learner.Learner` to be saved.
-    :param pickle_module: The pickle module to use for exporting the model.
+    Args:
+        name: The name to give to the model in the BentoML store. This must be a valid
+                    :obj:`~bentoml.Tag` name.
+        learner: :obj:`~fastai.learner.Learner` to be saved.
+        pickle_module: The pickle module to use for exporting the model.
 
-                          .. admonition:: About pickling :obj:`~fastai.learner.Learner`
+                            .. admonition:: About pickling :obj:`~fastai.learner.Learner`
 
-                          If the :func:`save_model` failed while saving a given learner, then
-                          your learner contains :obj:`~fastai.callback.core.Callback` that is not pickable.
-                          This is due to all FastAI callbacks are stateful, which makes some of them not pickable.
-                          To fix this, Use :func:`Learner.remove_cbs` to remove list of training callback that fails.
+                            If the :func:`save_model` failed while saving a given learner, then
+                            your learner contains :obj:`~fastai.callback.core.Callback` that is not pickable.
+                            This is due to all FastAI callbacks are stateful, which makes some of them not pickable.
+                            To fix this, Use :func:`Learner.remove_cbs` to remove list of training callback that fails.
 
-    :param signatures: Signatures of predict methods to be used. If not provided, the signatures default to
-                       ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
-    :param labels: A default set of management labels to be associated with the model. An example is ``{"training-set": "data-1"}``.
-    :param custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
-                           Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
-    :param metadata: Metadata to be associated with the model. An example is ``{"bias": 4}``.
-                     Metadata is intended for display in a model management UI and therefore must be a
-                     default Python type, such as :obj:`str` or :obj:`int`.
+        signatures: Signatures of predict methods to be used. If not provided, the signatures default to
+                        ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
+        labels: A default set of management labels to be associated with the model. An example is ``{"training-set": "data-1"}``.
+        custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
+                            Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
+        metadata: Metadata to be associated with the model. An example is ``{"bias": 4}``.
+                        Metadata is intended for display in a model management UI and therefore must be a
+                        default Python type, such as :obj:`str` or :obj:`int`.
 
     Returns:
         :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model store.
@@ -245,10 +227,10 @@ def save_model(
         # NOTE: ParamScheduler is not pickable, so we need to remove it from the model.
         # It is also a hyperparameter callback, hence we don't need it for serving.
         cbs: list[Callback] = list(filter(lambda x: isinstance(x, ParamScheduler), learner.cbs))  # type: ignore (bad fastai type)
-        with t.cast(t.ContextManager[Learner], learner.removed_cbs(cbs)) as filtered:
-            fname = bento_model.path_of(MODEL_FILENAME)
-            filtered.export(fname, pickle_module=pickle_module)
-            return bento_model.tag
+        learner.remove_cbs(cbs)
+        learner.export(bento_model.path_of(MODEL_FILENAME), pickle_module=pickle_module)
+        learner.add_cbs(cbs)
+        return bento_model.tag
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
@@ -272,11 +254,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 )
             self.learner = load_model(bento_model)
             self.learner.model.train(False)  # to turn off dropout and batchnorm
-            self._no_grad_context = ExitStack()
-            if hasattr(torch, "inference_mode"):  # pytorch>=1.9
-                self._no_grad_context.enter_context(torch.inference_mode())
-            else:
-                self._no_grad_context.enter_context(torch.no_grad())
 
             self.device = "cpu"
 
@@ -288,9 +265,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     raise InvalidArgument(
                         f"No method with name {method_name} found for Learner of type {self.learner.__class__}"
                     )
-
-        def __del__(self):
-            self._no_grad_context.close()
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
@@ -317,6 +291,18 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     return FastAIRunnable
 
 
+# NOTE: we are currently register DataContainer
+#   for each of the data container type on the module level code.
+#
+# By simply have the line below, we are already registering
+#   PyTorchTensorContainer due to Python's side-effect of imports.
+#
+# However, we will still register PyTorchTensorContainer at the end
+#   of this file for consistency. Since the map of DataContainerRegisty's
+#   single type and batch type is a dictionary of LazyType and the container
+#   itself, it would just replce the existing value.
+#
+# This operation is O(1), hence no need to worry about performance.
 DataContainerRegistry.register_container(
     LazyType("torch", "Tensor"),
     LazyType("torch", "Tensor"),

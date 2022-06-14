@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from .. import external_typing as ext
 
 try:
-    import lightgbm as lgb  # type: ignore[reportMissingTypeStubs]
+    import lightgbm as lgb  # type: ignore (missing type stubs for lightgbm)
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """lightgbm is required in order to use module `bentoml.lightgbm`, install
@@ -53,7 +53,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
         import bentoml
         # target model must be from the BentoML model store
-        model = bentoml.lightgbm.get("my_lightgbm_model")
+        model = bentoml.lightgbm.get("my_lightgbm_model:latest")
     """
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
@@ -63,9 +63,9 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
-def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:
+def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # type: ignore (incomplete ligthgbm type stubs)
     """
-    Load the LightGNM model with the given tag from the local BentoML model store.
+    Load the LightGBM model with the given tag from the local BentoML model store.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -86,13 +86,13 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:
         assert isinstance(bento_model, bentoml.Model)
 
     model_file = bento_model.path_of(MODEL_FILENAME)
-    booster = lgb.basic.Booster(model_file=model_file)
-    return booster
+    booster = lgb.basic.Booster(model_file=model_file)  # type: ignore (incomplete ligthgbm type stubs)
+    return booster  # type: ignore
 
 
 def save_model(
     name: str,
-    model: lgb.basic.Booster,
+    model: lgb.basic.Booster,  # type: ignore (incomplete ligthgbm type stubs)
     *,
     signatures: dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
@@ -166,27 +166,27 @@ def save_model(
             params, lgb_train, num_boost_round=20, valid_sets=lgb_eval
         )
 
-        # `save` the booster to BentoML modelstore:
-        tag = bentoml.lightgbm.save("my_lightgbm_model", gbm, booster_params=params)
+        # save the booster to BentoML modelstore:
+        tag = bentoml.lightgbm.save_model("my_lightgbm_model", gbm, booster_params=params)
     """  # noqa: LN001
 
     # Ensure that `model` is actually the Booster object, and not for example one of the scikit-learn wrapper objects.
-    if not isinstance(model, lgb.basic.Booster):
-        # Deal with a LightGBM issue (https://github.com/microsoft/LightGBM/issues/3014)
-        if not hasattr(model, "fitted_"):
-            model.fitted_ = True
-
+    if not isinstance(model, lgb.basic.Booster):  # type: ignore (incomplete ligthgbm type stubs)
         try:
-            model = model.booster_
+            # Work around a LightGBM issue (https://github.com/microsoft/LightGBM/issues/3014)
+            # 'model.booster_' chjecks that the model has been fitted and will error otherwise.
+            if not hasattr(model, "fitted_"):  # type: ignore (incomplete ligthgbm type stubs)
+                model.fitted_ = True
+
+            model = model.booster_  # type: ignore (incomplete ligthgbm type stubs)
         except AttributeError as e:
             logger.error(
                 "Unable to obtain a lightgbm.basic.Booster from the specified model."
             )
             raise e
 
-    assert isinstance(
-        model, lgb.basic.Booster
-    ), "Unable to obtain a lightgbm.basic.Booster from the specified model."
+    if not isinstance(model, lgb.basic.Booster):  # type: ignore (incomplete ligthgbm type stubs)
+        raise ValueError(f"Given model ({model}) is not a lightgbm.basic.Booster.")
 
     context: ModelContext = ModelContext(
         framework_name="lightgbm",
@@ -222,7 +222,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
 
     class LightGBMRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False  # afaik LightGBM only supports GPU during training, not for inference.
+        SUPPORT_NVIDIA_GPU = (
+            False  # LightGBM only supports GPU during training, not for inference.
+        )
         SUPPORT_CPU_MULTI_THREADING = True
 
         def __init__(self):
@@ -232,7 +234,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
                 try:
-                    self.predict_fns[method_name] = getattr(self.model, method_name)
+                    self.predict_fns[method_name] = getattr(self.model, method_name)  # type: ignore (incomplete ligthgbm type stubs)
                 except AttributeError:
                     raise InvalidArgument(
                         f"No method with name {method_name} found for LightGBM model of type {self.model.__class__}"
@@ -244,7 +246,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             input_data: ext.NpNDArray | ext.PdDataFrame,
         ) -> ext.NpNDArray:
             res = self.predict_fns[method_name](input_data)
-            return np.asarray(res)
+            return np.asarray(res)  # type: ignore (unknown ndarray types)
 
         LightGBMRunnable.add_method(
             _run,

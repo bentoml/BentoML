@@ -26,11 +26,17 @@ param = {"max_depth": 3, "eta": 0.3, "objective": "multi:softprob", "num_class":
 
 def check_model(bst: xgb.Booster, resource: Resource):
     config = json.loads(bst.save_config())
-    print(config)
     if resource.nvidia_gpu is not None and resource.nvidia_gpu > 0:
         assert config["learner"]["generic_param"]["nthread"] == str(1)
     elif resource.cpu is not None and resource.cpu > 0:
         assert config["learner"]["generic_param"]["nthread"] == str(int(resource.cpu))
+
+
+def close_to(expected: list[t.Any]):
+    def check_output(out: np.NdArray):
+        return np.isclose(out, expected).all()
+
+    return check_output
 
 
 cancer_model = FrameworkTestModel(
@@ -42,16 +48,12 @@ cancer_model = FrameworkTestModel(
                 "predict": [
                     Input(
                         input_args=[np.array([cancer.data[0]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.87606, 0.123939]]
-                        ).all(),
+                        expected=close_to([[0.87606, 0.123939]]),
                         preprocess=xgb.DMatrix,
                     ),
                     Input(
                         input_args=[np.array([cancer.data[1]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.97558, 0.0244234]]
-                        ).all(),
+                        expected=close_to([[0.97558, 0.0244234]]),
                         preprocess=xgb.DMatrix,
                     ),
                 ],
@@ -63,16 +65,12 @@ cancer_model = FrameworkTestModel(
                 "predict": [
                     Input(
                         input_args=[pd.DataFrame([cancer.data[0]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.87606, 0.123939]]
-                        ).all(),
+                        expected=close_to([[0.87606, 0.123939]]),
                         preprocess=xgb.DMatrix,
                     ),
                     Input(
                         input_args=[pd.DataFrame([cancer.data[1]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.97558, 0.0244234]]
-                        ).all(),
+                        expected=close_to([[0.97558, 0.0244234]]),
                         preprocess=xgb.DMatrix,
                     ),
                 ],

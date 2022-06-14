@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import pickle
 import typing as t
 import logging
@@ -9,10 +8,13 @@ import itertools
 import contextlib
 from typing import TYPE_CHECKING
 
+import attr
+
 import bentoml
 from bentoml import Tag
 from bentoml import Runnable
 from bentoml.models import ModelContext
+from bentoml.models import ModelOptions
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import MissingDependencyException
 
@@ -47,6 +49,13 @@ if TYPE_CHECKING:
 
 MODULE_NAME = "bentoml.tensorflow"
 API_VERSION = "v1"
+
+
+@attr.define
+class TensorflowOptions(ModelOptions):
+    """Options for the Keras model."""
+
+    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -219,9 +228,7 @@ def get_runnable(
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.get(
-        "partial_kwargs", dict()
-    )
+    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
     class TensorflowRunnable(Runnable):
         SUPPORT_NVIDIA_GPU = True

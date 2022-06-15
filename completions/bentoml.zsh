@@ -5,15 +5,15 @@ __bentoml_override_options() {
   # setup default opts
   autoload -U is-at-least
 
-  unsetopt menu_complete
-  unsetopt flowcontrol
+  unsetopt local_options menu_complete
+  unsetopt local_options flowcontrol
   # Automatically list choices on ambiguous completion
-  setopt auto_list
-  setopt extended_glob
-  setopt globdots
-  setopt auto_menu
-  setopt complete_in_word
-  setopt always_to_end
+  setopt local_options auto_list
+  setopt local_options extended_glob
+  setopt local_options globdots
+  setopt local_options auto_menu
+  setopt local_options complete_in_word
+  setopt local_options always_to_end
 }
 
 ## short option stacking can be enabled:
@@ -503,9 +503,6 @@ __bentoml_commandgroup() {
 }
 
 _bentoml() {
-  # init override options
-  __bentoml_override_options
-
   local curcontext="$curcontext" state line help="-h --help"
   integer ret=1
 
@@ -531,5 +528,7 @@ _bentoml() {
 }
 
 if [[ "$funcstack[1]" = "_bentoml" ]]; then
+  # init override options
+  __bentoml_override_options
   _bentoml "$@"
 fi

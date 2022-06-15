@@ -62,7 +62,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -97,6 +97,11 @@ def load_model(
     """  # noqa: LN001
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
+
+    if bento_model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
+        )
 
     if "GPU" in device_name:
         physical_devices = tf.config.list_physical_devices("GPU")
@@ -268,7 +273,9 @@ def get_runnable(
                 return item
 
         def _run_method(
-            runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
+            _runnable_self: TensorflowRunnable,
+            *args: "TFArgType",
+            **kwargs: "TFArgType",
         ) -> "ext.NpNDArray":
             params = Params["TFArgType"](*args, **kwargs)
             params = params.map(_mapping)

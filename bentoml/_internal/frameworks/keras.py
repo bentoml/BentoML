@@ -59,7 +59,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -96,6 +96,11 @@ def load_model(
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
+    if bento_model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
+        )
+
     with tf.device(device_name):
         return keras.models.load_model(
             bento_model.path,
@@ -123,7 +128,7 @@ def save_model(
     Args:
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`tensorflow.keras.Model`):
+        model (:obj:`tensorflow.keras.Model` | :obj:`tensorflow.keras.engine.sequential.Sequential`):
             Instance of the Keras model to be saved to BentoML modelstore.
         tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
             Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
@@ -203,6 +208,17 @@ def save_model(
         custom_tag = bentoml.keras.save_model("custom_obj_keras", custom_objects=custom_objects)
 
     """  # noqa
+
+    if not isinstance(
+        model,
+        (
+            LazyType("tensorflow.keras.Model"),
+            LazyType("tensorflow.keras.sequential", "Sequential"),
+        ),
+    ):
+        raise TypeError(
+            f"Given model ({model}) is not a keras.model.Model or keras.engine.sequential.Sequential."
+        )
 
     context = ModelContext(
         framework_name="keras", framework_versions={"tensorflow": get_tf_version()}

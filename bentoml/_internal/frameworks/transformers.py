@@ -98,7 +98,7 @@ def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -131,7 +131,7 @@ def load_model(
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
     pipeline_task: str = bento_model.info.options.task  # type: ignore
@@ -197,9 +197,10 @@ def save_model(
         # or:
         loaded = bentoml.transformers.load_model(tag)
     """  # noqa
-    if not LazyType["ext.TransformersPipeline"](
-        "transformers.pipelines.base.Pipeline"
-    ).isinstance(pipeline):
+    if not isinstance(
+        pipeline,
+        LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),
+    ):
         raise BentoMLException(
             "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
             "To save other Transformers types like models, tokenizers, configs, feature "

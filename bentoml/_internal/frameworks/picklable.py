@@ -41,7 +41,7 @@ def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -69,8 +69,9 @@ def load_model(bento_model: str | Tag | Model) -> ModelType:
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
+
     model_file = bento_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     with open(model_file, "rb") as f:

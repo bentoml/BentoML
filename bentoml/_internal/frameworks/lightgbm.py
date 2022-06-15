@@ -58,7 +58,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -84,6 +84,11 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # 
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
         assert isinstance(bento_model, bentoml.Model)
+
+    if bento_model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
+        )
 
     model_file = bento_model.path_of(MODEL_FILENAME)
     booster = lgb.basic.Booster(model_file=model_file)  # type: ignore (incomplete ligthgbm type stubs)
@@ -186,7 +191,7 @@ def save_model(
             raise e
 
     if not isinstance(model, lgb.basic.Booster):  # type: ignore (incomplete ligthgbm type stubs)
-        raise ValueError(f"Given model ({model}) is not a lightgbm.basic.Booster.")
+        raise TypeError(f"Given model ({model}) is not a lightgbm.basic.Booster.")
 
     context: ModelContext = ModelContext(
         framework_name="lightgbm",

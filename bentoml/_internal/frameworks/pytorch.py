@@ -10,6 +10,7 @@ import cloudpickle
 import bentoml
 from bentoml import Tag
 
+from ..types import LazyType
 from ..models import Model
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
@@ -36,7 +37,7 @@ def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -69,7 +70,7 @@ def load_model(
 
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
 
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
@@ -146,6 +147,9 @@ def save_model(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """
+    if not LazyType("torch.nn.Module").isinstance(model):
+        raise TypeError(f"Given model ({model}) is not a torch.nn.Module.")
+
     context: ModelContext = ModelContext(
         framework_name="torch",
         framework_versions={"torch": get_pkg_version("torch")},

@@ -28,7 +28,7 @@ from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
 if version_info >= (3, 8):
     from typing import Literal
-else:  # pragma: no cover
+else:
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
@@ -57,7 +57,7 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if not isinstance(py_version, str):
         py_version = str(py_version)
 
-    match = re.match(r"^(\d+)\.(\d+)(?:|.(?:\d+|\w+))$", py_version)
+    match = re.match(r"^(\d+)\.(\d+)\.(\w+)?", py_version)
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
@@ -93,11 +93,7 @@ def _convert_user_envars(
         return None
 
     if isinstance(envars, list):
-        res: t.Dict[str, t.Any] = {}
-        for envar in envars:
-            k, v = envar.split("=")
-            res[k] = v
-        return res
+        return {k: v for k, v in (e.split("=") for e in envars)}
     else:
         return envars
 
@@ -108,24 +104,14 @@ def _envars_validator(
     value: t.Union[str, t.List[str], t.Dict[str, t.Any]],
 ) -> None:
     if isinstance(value, list):
-        for envar in value:  # pragma: no cover
-            #  we have tests for this cases, but pytest refuse to cover
-            envars_rgx = re.compile(r"(^[A-Z_]+\w*)(\=)(.*)")
+        for envar in value:
+            envars_rgx = re.compile(r"^[^=](\=)(.*)")
             if not envars_rgx.match(envar):
                 raise InvalidArgument(
                     "All value in `env` list must follow format ENVAR=value"
                 )
     elif isinstance(value, dict):
-        uppercase_rgx = re.compile(r"(^[A-Z_]+\w*)")
-        filter_non_envar: list[str] = []
-        for k, v in value.items():
-            if not uppercase_rgx.match(k):
-                raise InvalidArgument(
-                    "All keys in `env` dict must be UPPERCASE and start with a letter, e.g: `ENV_123: value`"
-                )
-            if not v:
-                filter_non_envar.append(k)
-
+        filter_non_envar: list[str] = list(filter(lambda x: not x, value.values()))
         if len(filter_non_envar) > 0:
             logger.warning(
                 f"`env` dict contains None value: {', '.join(filter_non_envar)}"
@@ -225,11 +211,7 @@ class DockerOptions:
     def write_to_bento(
         self, bento_fs: "FS", build_ctx: str, conda_cls: "CondaOptions"
     ) -> None:
-        use_conda = False
-        for attr_ in [a.name for a in attr.fields(conda_cls.__class__)]:
-            if getattr(conda_cls, attr_) is not None:
-                use_conda = True
-                break
+        use_conda = conda_cls.is_default()
 
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
@@ -289,18 +271,17 @@ def conda_dependencies_validator(
     else:
         conda_pip: "t.List[CondaPipType]" = [x for x in value if isinstance(x, dict)]
         if conda_pip:
-            try:  # need to test this since conda didn't cover this :(
-                if len(conda_pip) > 1:
-                    raise InvalidArgument(
-                        "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
-                    )
-                pip_list: t.List[str] = conda_pip[0]["pip"]
-                if not all(isinstance(x, str) for x in pip_list):
-                    raise InvalidArgument("Expected `pip` values to be type `str`")
-            except KeyError:
+            if len(conda_pip) > 1:
+                raise InvalidArgument(
+                    "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
+                )
+            if "pip" not in conda_pip[0]:
                 raise InvalidArgument(
                     "Conda dependencies can ONLY include `pip` value as a dictionary."
                 )
+            pip_list: t.List[str] = conda_pip[0]["pip"]
+            if not all(isinstance(x, str) for x in pip_list):
+                raise InvalidArgument("Expected `pip` values to be type `str`")
 
 
 @attr.frozen
@@ -383,6 +364,9 @@ class CondaOptions:
             defaults["channels"] = ["conda-forge"]
 
         return attr.evolve(self, **defaults)
+
+    def is_default(self) -> bool:
+        return self == CondaOptions()
 
 
 def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOptions:
@@ -529,9 +513,6 @@ class PythonOptions:
                 f.write(" ".join(pip_args))
 
         if self.lock_packages:  # pragma: no cover
-            # This section is not covered by tests and we relies
-            # on jazzband/pip-tools test coverage
-
             # Note: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
             # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
@@ -540,8 +521,6 @@ class PythonOptions:
             # Note: "--generate-hashes" is purposefully not used here because it will
             # break if user includes PyPI package from version control system
 
-            # changelog: move from fs.path.join to fs.path.combine
-            # refers to https://docs.pyfilesystem.org/en/latest/reference/path.html#fs.path.combine
             pip_compile_in = bento_fs.getsyspath(
                 fs.path.combine(py_folder, "requirements.txt")
             )
@@ -635,11 +614,7 @@ class BentoBuildConfig:
     )
 
     def __attrs_post_init__(self) -> None:
-        use_conda = False
-        for attr_ in [a.name for a in attr.fields(self.conda.__class__)]:
-            if getattr(self.conda, attr_) is not None:
-                use_conda = True
-                break
+        use_conda = self.conda.is_default()
         use_cuda = self.docker.cuda_version is not None
 
         if use_cuda and use_conda:
@@ -653,8 +628,7 @@ class BentoBuildConfig:
                     f"{self.docker.distro} does not supports conda. BentoML will only support conda with the following distros: {get_supported_spec('miniconda')}."
                 )
             if use_cuda and self.docker.distro not in get_supported_spec("cuda"):
-                # This is helpful when we support more CUDA version
-                raise BentoMLException(  # pragma: no cover
+                raise BentoMLException(
                     f"{self.docker.distro} does not supports cuda. BentoML will only support cuda with the following distros: {get_supported_spec('cuda')}."
                 )
 

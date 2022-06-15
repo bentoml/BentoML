@@ -37,8 +37,8 @@ if TYPE_CHECKING:
 
     from fs.base import FS
     from _pytest.logging import LogCaptureFixture
-    from _pytest.monkeypatch import MonkeyPatch
     from _pytest.fixtures import FixtureRequest
+    from _pytest.monkeypatch import MonkeyPatch
     from _pytest.mark.structures import MarkDecorator
 
 
@@ -153,38 +153,6 @@ def test_raises_warning_docker_options(
 def test_invalid_cuda_supports_distro():
     with pytest.raises(BentoMLException):
         DockerOptions(distro="alpine", cuda_version="11.6.2")
-
-
-@pytest.mark.parametrize(
-    "options",
-    [
-        {"env": ["foo?="]},
-        {"env": 0x12D4},
-        {"env": "notaccepted"},
-        {"env": {"foo": ""}},
-        {"env": {"foo": "bar"}},
-        {"env": {"123foo": "bar", "baz": "qux"}},
-        {"env": {"foo": "bar"}},
-        {"env": ["fOO=bar", "FOO=bar"]},
-        {"env": ["foo=bar"]},
-    ],
-)
-def test_invalid_docker_envars(options: dict[str, t.Any]):
-    with pytest.raises(InvalidArgument):
-        DockerOptions(**options)
-
-
-@pytest.mark.parametrize(
-    "options",
-    [
-        {"env": {"FOO": ""}, "base_image": "nvidia/cuda:11.7.0-runtime-rockylinux8"},
-        {"env": {"FOO": "bar", "FOO123": ""}},
-    ],
-)
-def test_raises_warning_envar(options: dict[str, t.Any], caplog: LogCaptureFixture):
-    with caplog.at_level(logging.WARNING):
-        assert DockerOptions(**options)
-    assert "dict contains None value" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -333,7 +301,7 @@ def test_conda_write_to_bento(test_fs: FS):
     assert os.path.exists(conda_dir.getsyspath("/environment.yml"))
     with open(conda_dir.getsyspath("/environment.yml"), "r") as f:
         assert yaml.safe_load(f) == {
-            "channels": ["defaults"],
+            "channels": ["conda-forge"],
             "dependencies": ["numpy", {"pip": ["aiohttp"]}],
         }
 
@@ -610,23 +578,29 @@ def test_valid_build_config_init(options: dict[str, t.Any]):
 
 @pytest.mark.usefixtures("change_test_dir")
 @pytest.mark.parametrize(
-    "options",
+    "env",
     [
-        {
-            "service": "service.py:svc",
-            "labels": {"owner": "bentoml-team", "project": "gallery"},
-            "include": ["*.py"],
-            "python": {"packages": ["scikit-learn", "pandas"]},
-            "conda": {
-                "environment_yml": "./testdata/configuration/example_environment.yml"
-            },
-            "docker": {"distro": "debian", "cuda_version": "default"},
-        }
+        {"env": {"FOO": ""}, "base_image": "nvidia/cuda:11.7.0-runtime-rockylinux8"},
+        {"env": {"FOO": "bar", "FOO123": ""}},
     ],
 )
-def test_raises_warning_build_config(
-    options: dict[str, t.Any], caplog: LogCaptureFixture
-):
+def test_envar_warning_build_config(env: dict[str, t.Any], caplog: LogCaptureFixture):
+    with caplog.at_level(logging.WARNING):
+        assert BentoBuildConfig(service="", docker=DockerOptions(env=env))
+    assert "dict contains None value" in caplog.text
+
+
+def test_ignore_conda_build_config(caplog: LogCaptureFixture):
+    options = {
+        "service": "service.py:svc",
+        "labels": {"owner": "bentoml-team", "project": "gallery"},
+        "include": ["*.py"],
+        "python": {"packages": ["scikit-learn", "pandas"]},
+        "conda": {
+            "environment_yml": "./testdata/configuration/example_environment.yml"
+        },
+        "docker": {"distro": "debian", "cuda_version": "default"},
+    }
     with caplog.at_level(logging.WARNING):
         assert BentoBuildConfig(**options)
     assert "Conda will be ignored" in caplog.text

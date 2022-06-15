@@ -81,12 +81,7 @@ def test_sklearn_runner() -> None:
     runner.init_local()
 
     assert runner.models[0].tag == tag
-    assert (
-        runner.scheduling_strategy.get_worker_count(
-            runner.runnable_class, runner.resource_config
-        )
-        == 1
-    )
+    assert runner.scheduled_worker_count == 1
 
     res = runner.run(data)
     assert (res == res_arr).all()

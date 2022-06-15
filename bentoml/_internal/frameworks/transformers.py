@@ -91,19 +91,7 @@ class TransformersOptions(ModelOptions):
         ]
     )
 
-    pipeline: bool = attr.field(
-        default=True, validator=attr.validators.instance_of(bool)
-    )
-
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
-
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
-
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return attr.asdict(options)
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -145,8 +133,6 @@ def load_model(
         raise BentoMLException(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
-
-    bento_model.info.parse_options(TransformersOptions)
 
     pipeline_task: str = bento_model.info.options.task  # type: ignore
     pipeline_kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore

@@ -1,4 +1,5 @@
 import click
+import psutil
 
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -29,6 +30,11 @@ def create_bentoml_cli():
     add_model_management_commands(cli)
     add_serve_command(cli)
     add_containerize_command(cli)
+
+    if psutil.WINDOWS:
+        import sys
+
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
 
     return cli
 

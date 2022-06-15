@@ -147,12 +147,16 @@ def test_runner_batching(
 
     bento_model = framework.get(saved_model)
 
+    ran_tests = False
+
     for config in test_model.configurations:
         runner = bento_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
         for meth, inputs in config.test_inputs.items():
             if len(inputs) < 2:
                 continue
+
+            ran_tests = True
 
             batch_dim = getattr(runner, meth).config.batch_dim
             paramss = [
@@ -174,6 +178,11 @@ def test_runner_batching(
 
         runner.destroy()
 
+    if not ran_tests:
+        pytest.skip(
+            "skipping batching tests because no configuration had multiple test inputs"
+        )
+
 
 @pytest.mark.gpus
 def test_runner_nvidia_gpu(
@@ -184,10 +193,16 @@ def test_runner_nvidia_gpu(
     gpu_resource = Resource(nvidia_gpu=1.0)
     bento_model = framework.get(saved_model)
 
+    ran_tests = False
     for config in test_model.configurations:
         model_with_options = bento_model.with_options(**config.load_kwargs)
 
         runnable = framework.get_runnable(model_with_options)
+        if not runnable.SUPPORT_NVIDIA_GPU:
+            continue
+
+        ran_tests = True
+
         runner = Runner(runnable, nvidia_gpu=1)
 
         for meth, inputs in config.test_inputs.items():
@@ -207,3 +222,8 @@ def test_runner_nvidia_gpu(
                 inp.check_output(outp)
 
             runner.destroy()
+
+    if not ran_tests:
+        pytest.skip(
+            f"no configurations for model '{test_model.name}' supported running on Nvidia GPU"
+        )

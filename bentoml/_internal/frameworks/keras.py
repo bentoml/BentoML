@@ -54,14 +54,6 @@ class KerasOptions(ModelOptions):
     include_optimizer: bool
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
-
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return attr.asdict(options)
-
 
 def get(tag_like: str | Tag) -> bentoml.Model:
     model = bentoml.models.get(tag_like)
@@ -256,9 +248,7 @@ def get_runnable(
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.get(
-        "partial_kwargs", dict()
-    )
+    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
     class KerasRunnable(Runnable):
         SUPPORT_NVIDIA_GPU = True

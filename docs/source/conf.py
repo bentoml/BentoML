@@ -41,6 +41,7 @@ napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
 autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 10
 
 ogp_site_url = "http://docs.bentoml.org"
 ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-readme-header.jpeg"

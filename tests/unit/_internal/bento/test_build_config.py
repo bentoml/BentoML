@@ -26,13 +26,6 @@ from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.bento.build_config import DEFAULT_DOCKER_DISTRO
 
 if TYPE_CHECKING:
-    ListFactory = list[str]
-    DictFactory = dict[str, t.Any]
-else:
-    ListFactory = list
-    DictFactory = dict
-
-if TYPE_CHECKING:
     from unittest.mock import MagicMock
 
     from fs.base import FS
@@ -89,19 +82,6 @@ def make_envars(factory: type, data: dict[str, str]):
         raise ValueError(f"Unknown factory {factory}")
 
 
-@pytest.mark.parametrize("factory", [ListFactory, DictFactory])
-def test_convert_envars(factory: type):
-    from bentoml._internal.bento.build_config import (
-        _convert_user_envars,  # type: ignore
-    )
-
-    data = {"TEST": "hello", "FOO": "bar"}
-    envars = make_envars(factory, data)
-
-    assert not _convert_user_envars(None)
-    assert _convert_user_envars(envars) == data
-
-
 def parametrize_options(
     options_cls: t.Type[
         DockerOptions | CondaOptions | PythonOptions | BentoBuildConfig
@@ -110,6 +90,7 @@ def parametrize_options(
     *,
     attribute: str | None = None,
     _argvalue: str | None = None,
+    _as_file_name: bool = False,
 ) -> MarkDecorator:
     if not hasattr(options_cls, "__attrs_attrs__"):
         raise ValueError(f"{options_cls} is not an attrs class")
@@ -124,11 +105,14 @@ def parametrize_options(
         rgx = re.compile(rf"^{options_cls.__name__.lower()}_{test_type}\d+")
 
     testdata_dir = Path(__file__).parent / "testdata"
-    testdata: list[dict[str, t.Any]] = []
+    testdata: list[dict[str, t.Any] | Path] = []
 
     for data in [f for f in testdata_dir.iterdir() if rgx.match(f.name)]:
-        with open(data, "r") as f:
-            testdata.append(yaml.safe_load(f))
+        if _as_file_name:
+            testdata.append(data)
+        else:
+            with open(data, "r") as f:
+                testdata.append(yaml.safe_load(f))
 
     if not _argvalue:
         _argvalue = "options"
@@ -576,20 +560,6 @@ def test_valid_build_config_init(options: dict[str, t.Any]):
     assert BentoBuildConfig(**options)
 
 
-@pytest.mark.usefixtures("change_test_dir")
-@pytest.mark.parametrize(
-    "env",
-    [
-        {"env": {"FOO": ""}, "base_image": "nvidia/cuda:11.7.0-runtime-rockylinux8"},
-        {"env": {"FOO": "bar", "FOO123": ""}},
-    ],
-)
-def test_envar_warning_build_config(env: dict[str, t.Any], caplog: LogCaptureFixture):
-    with caplog.at_level(logging.WARNING):
-        assert BentoBuildConfig(service="", docker=DockerOptions(env=env))
-    assert "dict contains None value" in caplog.text
-
-
 def test_ignore_conda_build_config(caplog: LogCaptureFixture):
     options = {
         "service": "service.py:svc",
@@ -615,6 +585,38 @@ def test_raise_exception_build_config(options: dict[str, t.Any]):
     assert "not support" in str(excinfo.value)
 
 
+def test_raise_exception_docker_env_build_config():
+    invalid = """\
+service: "service.py:svc"
+labels:
+  owner: bentoml-team
+  project: gallery
+include:
+- "*.py"
+docker:
+  env:
+    - test=foo
+    - notaccepted
+            """
+    with pytest.raises(BentoMLException) as excinfo:
+        assert BentoBuildConfig.from_yaml(BytesIO(invalid.encode("utf-8")))
+    assert "must follow" in str(excinfo.value)
+
+    invalid = """\
+service: "service.py:svc"
+labels:
+  owner: bentoml-team
+  project: gallery
+include:
+- "*.py"
+docker:
+  env: 123
+            """
+    with pytest.raises(BentoMLException) as excinfo:
+        assert BentoBuildConfig.from_yaml(BytesIO(invalid.encode("utf-8")))
+    assert "must be either a list or a dict" in str(excinfo.value)
+
+
 def test_with_defaults():
     filed = BentoBuildConfig(service="hello.py:svc").with_defaults()
     assert filed.labels == {}
@@ -634,6 +636,19 @@ def test_from_yaml():
     assert isinstance(data.include, list)
 
 
+@pytest.mark.usefixtures("change_test_dir")
+def test_envar_warning_from_yaml(caplog: LogCaptureFixture):
+    warning = """\
+service: name
+docker:
+  env:
+    FOO:
+            """
+    with caplog.at_level(logging.WARNING):
+        assert BentoBuildConfig.from_yaml(BytesIO(warning.encode("utf-8")))
+    assert "`env` dictionary contains 'None' value" in caplog.text
+
+
 def test_raise_exception_from_yaml():
     with pytest.raises(yaml.YAMLError) as excinfo:
         missed = """\
@@ -646,3 +661,25 @@ cuda_version: default
     """
         _ = BentoBuildConfig.from_yaml(BytesIO(missed.encode("utf-8")))
     assert "while scanning for the next" in str(excinfo.value)
+
+    with pytest.raises(InvalidArgument) as excinfo:
+        missed = """\
+include:
+- "*.py"
+docker:
+  distro: "debian"
+  cuda_version: default
+    """
+        _ = BentoBuildConfig.from_yaml(BytesIO(missed.encode("utf-8")))
+    assert 'Missing required build config field "service"' in str(excinfo.value)
+
+    with pytest.raises(InvalidArgument) as excinfo:
+        missed = """\
+service: ""
+include:
+- "*.py"
+docker:
+  notexists:
+    """
+        _ = BentoBuildConfig.from_yaml(BytesIO(missed.encode("utf-8")))
+    assert "got an unexpected keyword argument" in str(excinfo.value)

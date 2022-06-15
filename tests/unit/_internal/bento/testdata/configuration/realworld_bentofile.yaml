@@ -28,3 +28,6 @@ docker:
   distro: "debian"
   cuda_version: default
   dockerfile_template: ./Dockerfile.template
+  env:
+    - TEST=hello
+    - world=NOT

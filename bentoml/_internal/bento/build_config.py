@@ -86,18 +86,6 @@ def _convert_cuda_version(
     return cuda_version
 
 
-def _convert_user_envars(
-    envars: t.Optional[t.Union[t.List[str], t.Dict[str, t.Any]]]
-) -> t.Optional[t.Dict[str, t.Any]]:
-    if envars is None:
-        return None
-
-    if isinstance(envars, list):
-        return {k: v for k, v in (e.split("=") for e in envars)}
-    else:
-        return envars
-
-
 @attr.frozen
 class DockerOptions:
     distro: str = attr.field(
@@ -120,10 +108,7 @@ class DockerOptions:
             attr.validators.in_(SUPPORTED_CUDA_VERSIONS.values())
         ),
     )
-    env: t.Dict[str, t.Any] = attr.field(
-        default=None,
-        converter=_convert_user_envars,
-    )
+    env: t.Optional[t.Dict[str, t.Any]] = None
     system_packages: t.Optional[t.List[str]] = None
     setup_script: t.Optional[str] = None
     base_image: t.Optional[str] = None
@@ -172,15 +157,6 @@ class DockerOptions:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
 
-        if self.system_packages is None:
-            defaults["system_packages"] = None
-        if self.env is None:
-            defaults["env"] = {}
-        if self.cuda_version is None:
-            defaults["cuda_version"] = None
-        if self.dockerfile_template is None:
-            defaults["dockerfile_template"] = None
-
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
@@ -216,6 +192,7 @@ class DockerOptions:
 def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> DockerOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
     if "env" in d:
+        envars_rgx = re.compile(r"^[^=]+=.*")
         if isinstance(d["env"], str):
             try:
                 if not os.path.exists(d["env"]):
@@ -225,21 +202,22 @@ def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> Docker
                 raise BentoMLException(f"Invalid env file path: {d['env']}")
         elif isinstance(d["env"], list):
             for envar in d["env"]:
-                envars_rgx = re.compile(r"^[^=]+=.*")
                 if not envars_rgx.match(envar):
-                    raise InvalidArgument(
+                    raise BentoMLException(
                         "All value in `env` list must follow format ENVAR=value"
                     )
+            d["env"] = {k: v for k, v in (e.split("=") for e in d["env"])}
         elif isinstance(d["env"], dict):
-            filter_non_envar: list[str] = list(
-                filter(lambda x: not x, d["env"].values())
-            )
+            filter_non_envar: list[str] = []
+            for k, v in d["env"].items():
+                if not v:
+                    filter_non_envar.append(k)
             if len(filter_non_envar) > 0:
                 logger.warning(
                     f"`env` dictionary contains 'None' value: {', '.join(filter_non_envar)}"
                 )
         else:
-            raise InvalidArgument(
+            raise BentoMLException(
                 f"`env` must be either a list or a dict, got type {type(d['env'])} instead."
             )
 
@@ -674,15 +652,13 @@ class BentoBuildConfig:
 
         try:
             return bentoml_cattr.structure(yaml_content, cls)
-        except KeyError as e:
-            if str(e) == "'service'":
+        except TypeError as e:
+            if "missing 1 required positional argument: 'service'" in str(e):
                 raise InvalidArgument(
-                    'Missing required build config field "service", which'
-                    " indicates import path of target bentoml.Service instance."
-                    ' e.g.: "service: fraud_detector.py:svc"'
-                )
+                    'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
+                ) from e
             else:
-                raise
+                raise InvalidArgument(str(e)) from e
 
     def to_yaml(self, stream: t.TextIO) -> None:
         # TODO: Save BentoBuildOptions to a yaml file

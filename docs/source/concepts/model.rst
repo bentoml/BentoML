@@ -72,7 +72,7 @@ To load the model instance back into memory, use the framework-specific
     import bentoml
     from sklearn.base import BaseEstimator
 
-    model:BaseEstimator = bentoml.sklearn.load_model("iris_clf:latest")
+    model: BaseEstimator = bentoml.sklearn.load_model("iris_clf:latest")
 
 .. note::
     The :code:`load_model` method is only here for testing and advanced customizations.

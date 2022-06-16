@@ -629,7 +629,7 @@ In your :code:`bentofile.yaml`:
     When :code:`conda` options are provided, BentoML will select a docker base image
     that comes with Miniconda pre-installed in the generated Dockerfile. Note that only
     the :code:`debian` and :code:`alpine` distro support :code:`conda`. Learn more at
-    the Docker Options section below.
+    the :ref:`concepts/bento:Docker Options` section below.
 
 
 Conda Options Table

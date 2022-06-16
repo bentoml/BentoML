@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from fastai.callback.core import Callback
 
     from .. import external_typing as ext
+    from ..tag import Tag
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
 
@@ -193,8 +194,6 @@ def save_model(
         raise BentoMLException(
             "bentoml.fastai.save_model() does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
         )
-    if pickle_module is None:
-        pickle_module = cloudpickle
 
     context = ModelContext(
         framework_name="fastai",
@@ -222,6 +221,9 @@ def save_model(
         context=context,
     ) as bento_model:
         from fastai.callback.schedule import ParamScheduler
+
+        if pickle_module is None:
+            pickle_module = cloudpickle
 
         # NOTE: ParamScheduler is not pickable, so we need to remove it from the model.
         # It is also a hyperparameter callback, hence we don't need it for serving.

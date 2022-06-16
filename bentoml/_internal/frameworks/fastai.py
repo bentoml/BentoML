@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import cloudpickle
 
 import bentoml
-from bentoml import Tag
 
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
@@ -138,7 +137,7 @@ def save_model(
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a :code:`fastai.learner.Learner` model instance to the BentoML model store.
 
@@ -230,7 +229,7 @@ def save_model(
         learner.remove_cbs(cbs)
         learner.export(bento_model.path_of(MODEL_FILENAME), pickle_module=pickle_module)
         learner.add_cbs(cbs)
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:

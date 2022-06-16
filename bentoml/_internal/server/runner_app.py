@@ -65,10 +65,8 @@ class RunnerAppFactory(BaseAppFactory):
         on_startup.insert(
             0,
             functools.partial(
-                self.runner.scheduling_strategy.setup_worker,
-                runnable_class=self.runner.runnable_class,
-                resource_request=self.runner.resource_config,
-                worker_index=self.worker_index,
+                self.runner.setup_worker,
+                worker_id=self.worker_index,
             ),
         )
         return on_startup
@@ -152,15 +150,17 @@ class RunnerAppFactory(BaseAppFactory):
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 
-            middlewares.append(
-                Middleware(
-                    AccessLogMiddleware,
-                    has_request_content_length=access_log_config.request_content_length.get(),
-                    has_request_content_type=access_log_config.request_content_type.get(),
-                    has_response_content_length=access_log_config.response_content_length.get(),
-                    has_response_content_type=access_log_config.response_content_type.get(),
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                middlewares.append(
+                    Middleware(
+                        AccessLogMiddleware,
+                        has_request_content_length=access_log_config.request_content_length.get(),
+                        has_request_content_type=access_log_config.request_content_type.get(),
+                        has_response_content_length=access_log_config.response_content_length.get(),
+                        has_response_content_type=access_log_config.response_content_type.get(),
+                    )
                 )
-            )
 
         return middlewares
 
@@ -219,7 +219,6 @@ class RunnerAppFactory(BaseAppFactory):
         async def _run(request: Request) -> Response:
             assert self._is_ready
 
-            logger.info(request)
             params = await multipart_to_payload_params(request)
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)

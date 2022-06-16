@@ -217,7 +217,7 @@ Runner Options
 
     my_runner = bentoml.Runner(
         MyRunnable,
-        init_params={"foo": foo, "bar": bar},
+        runnable_init_params={"foo": foo, "bar": bar},
         name="custom_runner_name",
         strategy=None, # default strategy will be selected depending on the SUPPORT_NVIDIA_GPU and SUPPORT_CPU_MULTI_THREADING flag on runnable
         models=[..],

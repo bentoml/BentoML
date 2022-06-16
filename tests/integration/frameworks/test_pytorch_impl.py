@@ -86,11 +86,7 @@ def test_pytorch_runner_setup_run_batch(input_data, model_tag: Tag):
     runner = bentoml.pytorch.get(model_tag).to_runner(cpu=4)
 
     assert model_tag in [m.tag for m in runner.models]
-
-    numprocesses = runner.scheduling_strategy.get_worker_count(
-        runner.runnable_class, runner.resource_config
-    )
-    assert numprocesses == 1
+    assert runner.scheduled_worker_count == 1
 
     runner.init_local()
     res = runner.run(input_data)
@@ -101,10 +97,7 @@ def test_pytorch_runner_setup_run_batch(input_data, model_tag: Tag):
 @pytest.mark.parametrize("nvidia_gpu", [1, 2])
 def test_pytorch_runner_setup_on_gpu(nvidia_gpu: int, model_tag: Tag):
     runner = bentoml.pytorch.get(model_tag).to_runner(nvidia_gpu=nvidia_gpu)
-    numprocesses = runner.scheduling_strategy.get_worker_count(
-        runner.runnable_class, runner.resource_config
-    )
-    assert numprocesses == nvidia_gpu
+    assert runner.scheduled_worker_count == nvidia_gpu
 
 
 """

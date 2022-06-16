@@ -181,7 +181,7 @@ class Bento(StoreItem):
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
         for model in models:
-            logger.info('Packing model "%s" from "%s"', model.tag, model.path)
+            logger.info(f'Packing model "{model.tag}"')
             model._save(bento_model_store)  # type: ignore[reportPrivateUsage]
 
         # Copy all files base on include and exclude, into `src` directory

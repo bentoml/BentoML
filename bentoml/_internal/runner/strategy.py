@@ -41,7 +41,6 @@ THREAD_ENVS = [
 
 class DefaultStrategy(Strategy):
     @classmethod
-    @abc.abstractmethod
     def get_worker_count(
         cls,
         runnable_class: t.Type[Runnable],
@@ -67,7 +66,6 @@ class DefaultStrategy(Strategy):
         return 1
 
     @classmethod
-    @abc.abstractmethod
     def setup_worker(
         cls,
         runnable_class: t.Type[Runnable],

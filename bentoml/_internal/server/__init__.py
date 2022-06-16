@@ -187,17 +187,14 @@ def serve_production(
                         f"fd://$(circus.sockets.{runner.name})",
                         "--working-dir",
                         working_dir,
-                        "--as-worker",
-                        "--worker-index",
-                        "$(circus.wid)",
+                        "--worker-id",
+                        "$(CIRCUS.WID)",
                     ],
                     copy_env=True,
                     stop_children=True,
                     working_dir=working_dir,
                     use_sockets=True,
-                    numprocesses=runner.scheduling_strategy.get_worker_count(
-                        runner.runnable_class, runner.resource_config
-                    ),
+                    numprocesses=runner.scheduled_worker_count,
                 )
             )
 
@@ -230,17 +227,15 @@ def serve_production(
                             f"fd://$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
-                            "--as-worker",
-                            "--worker-index",
+                            "--no-access-log",
+                            "--worker-id",
                             "$(circus.wid)",
                         ],
                         copy_env=True,
                         stop_children=True,
                         use_sockets=True,
                         working_dir=working_dir,
-                        numprocesses=runner.scheduling_strategy.get_worker_count(
-                            runner.runnable_class, runner.resource_config
-                        ),
+                        numprocesses=runner.scheduled_worker_count,
                     )
                 )
             port_stack.enter_context(
@@ -273,7 +268,8 @@ def serve_production(
                 working_dir,
                 "--backlog",
                 f"{backlog}",
-                "--as-worker",
+                "--worker-id",
+                "$(CIRCUS.WID)",
             ],
             copy_env=True,
             numprocesses=api_workers or math.ceil(query_cpu_count()),

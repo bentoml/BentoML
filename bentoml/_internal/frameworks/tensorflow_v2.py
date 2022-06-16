@@ -208,7 +208,7 @@ def save_model(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
-        options=None,
+        options=TensorflowOptions(),
         context=context,
         labels=labels,
         custom_objects=custom_objects,

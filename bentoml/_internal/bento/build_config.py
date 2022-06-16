@@ -57,7 +57,7 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if not isinstance(py_version, str):
         py_version = str(py_version)
 
-    match = re.match(r"^(\d+)\.(\d+)(\.\w+)?", py_version)
+    match = re.match(r"^(\d+)\.(\d+)(?:\.\w+)?", py_version)
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
@@ -191,34 +191,27 @@ class DockerOptions:
 
 def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> DockerOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
-    if "env" in d:
-        envars_rgx = re.compile(r"^[^=]+=.*")
+    if "env" in d and d["env"] is not None:
         if isinstance(d["env"], str):
-            try:
-                if not os.path.exists(d["env"]):
-                    raise FileNotFoundError
-                d["env"] = dotenv_values(d["env"])
-            except FileNotFoundError:
+            if not os.path.isfile(d["env"]):
                 raise BentoMLException(f"Invalid env file path: {d['env']}")
+            d["env"] = dotenv_values(d["env"])
         elif isinstance(d["env"], list):
             for envar in d["env"]:
-                if not envars_rgx.match(envar):
+                if not envar.contains("="):
                     raise BentoMLException(
                         "All value in `env` list must follow format ENVAR=value"
                     )
             d["env"] = {k: v for k, v in (e.split("=") for e in d["env"])}
         elif isinstance(d["env"], dict):
-            filter_non_envar: list[str] = []
-            for k, v in d["env"].items():
-                if not v:
-                    filter_non_envar.append(k)
-            if len(filter_non_envar) > 0:
-                logger.warning(
-                    f"`env` dictionary contains 'None' value: {', '.join(filter_non_envar)}"
-                )
+            for v in d["env"].values():
+                if not isinstance(v, str):
+                    raise BentoMLException(
+                        "`env` dict should only have value type `str`."
+                    )
         else:
             raise BentoMLException(
-                f"`env` must be either a list or a dict, got type {type(d['env'])} instead."
+                f"`env` must be either a list, a dict, or a path to an environment file, got type {type(d['env'])} instead."
             )
 
     return DockerOptions(**d)
@@ -244,13 +237,9 @@ def conda_dependencies_validator(
     else:
         conda_pip: "t.List[CondaPipType]" = [x for x in value if isinstance(x, dict)]
         if conda_pip:
-            if len(conda_pip) > 1:
+            if len(conda_pip) > 1 or "pip" not in conda_pip[0]:
                 raise InvalidArgument(
                     "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
-                )
-            if "pip" not in conda_pip[0]:
-                raise InvalidArgument(
-                    "Conda dependencies can ONLY include `pip` value as a dictionary."
                 )
             pip_list: t.List[str] = conda_pip[0]["pip"]
             if not all(isinstance(x, str) for x in pip_list):
@@ -311,6 +300,10 @@ class CondaOptions:
         else:
             deps_list = [] if self.dependencies is None else self.dependencies
             if self.pip is not None:
+                if any(isinstance(x, dict) for x in deps_list):
+                    raise BentoMLException(
+                        "Cannot not have both 'conda.dependencies.pip' and 'conda.pip'"
+                    )
                 deps_list.append(dict(pip=self.pip))  # type: ignore
 
             if not deps_list:
@@ -340,33 +333,6 @@ class CondaOptions:
 
     def is_default(self) -> bool:
         return self == CondaOptions()
-
-
-def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOptions:
-    pip_list: t.List[str]
-    if "pip" in d and d["pip"] is not None:
-        pip_list = d["pip"]
-    else:
-        pip_list = []
-    if "dependencies" in d and d["dependencies"] is not None:
-        deps: DependencyType = d["dependencies"]
-        if not isinstance(deps, list):
-            raise InvalidArgument(
-                f"dependencies has to be type list, got type {type(d['dependencies'])}"
-            )
-        for dep in deps:
-            if isinstance(dep, dict):
-                assert "pip" in dep and len(dep.keys()) == 1
-                pip_from_deps = dep.pop("pip")
-                pip_list.extend(pip_from_deps)
-        deps = list(filter(lambda x: not isinstance(x, dict), deps))
-        d["dependencies"] = deps
-    d["pip"] = None if not pip_list else pip_list
-
-    return CondaOptions(**d)
-
-
-bentoml_cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
 
 
 @attr.frozen

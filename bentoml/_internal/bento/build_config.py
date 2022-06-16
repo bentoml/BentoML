@@ -243,8 +243,14 @@ def conda_dependencies_validator(
                 )
             pip_list: t.List[str] = conda_pip[0]["pip"]
             if not all(isinstance(x, str) for x in pip_list):
+                not_type_string = list(
+                    map(
+                        lambda x: str(type(x)),
+                        filter(lambda x: not isinstance(x, str), pip_list),
+                    )
+                )
                 raise InvalidArgument(
-                    "Expected 'conda.pip' values to be strings, got <put type or value here>."
+                    f"Expected 'conda.pip' values to be strings, got {not_type_string}"
                 )
 
 

@@ -243,7 +243,9 @@ def conda_dependencies_validator(
                 )
             pip_list: t.List[str] = conda_pip[0]["pip"]
             if not all(isinstance(x, str) for x in pip_list):
-                raise InvalidArgument("Expected 'conda.pip' values to be strings, got <put type or value here>.")
+                raise InvalidArgument(
+                    "Expected 'conda.pip' values to be strings, got <put type or value here>."
+                )
 
 
 @attr.frozen
@@ -585,7 +587,7 @@ class BentoBuildConfig:
                     if self.docker.cuda_version != "default" and (
                         self.docker.cuda_version not in _spec.supported_cuda_versions
                     ):
-                        raise BentoMLException(  # pragma: no cover
+                        raise BentoMLException(
                             f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
                         )
 

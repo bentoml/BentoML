@@ -161,9 +161,13 @@ class ServiceAppFactory(BaseAppFactory):
 
         for _, api in self.bento_service.apis.items():
             api_route_endpoint = self._create_api_endpoint(api)
+            if api.route.startswith("/"):
+                route_path = api.route
+            else:
+                route_path = f"/{api.route}"
             routes.append(
                 Route(
-                    path="/{}".format(api.route),
+                    path=route_path,
                     name=api.name,
                     endpoint=api_route_endpoint,
                     methods=api.input.HTTP_METHODS,

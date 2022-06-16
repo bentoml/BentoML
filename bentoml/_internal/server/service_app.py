@@ -165,6 +165,7 @@ class ServiceAppFactory(BaseAppFactory):
                 route_path = api.route
             else:
                 route_path = f"/{api.route}"
+
             routes.append(
                 Route(
                     path=route_path,

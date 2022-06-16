@@ -26,6 +26,8 @@ async def test_api_server_meta(host: str) -> None:
     status, _, body = await async_request("GET", f"http://{host}/metrics")
     assert status == 200
     assert body
+    status, _, body = await async_request("POST", f"http://{host}//api/v1/with_prefix")
+    assert status == 404
 
 
 @pytest.mark.asyncio

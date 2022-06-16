@@ -219,7 +219,6 @@ class RunnerAppFactory(BaseAppFactory):
         async def _run(request: Request) -> Response:
             assert self._is_ready
 
-            logger.info(request)
             params = await multipart_to_payload_params(request)
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)

@@ -44,7 +44,7 @@ CLI_LOGGING_CONFIG: dict[str, t.Any] = {
 }
 
 TRACED_LOG_FORMAT = (
-    "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
+    "%(asctime)s %(levelname_bracketed)s %(name)s %(component)s %(message)s%(trace_msg)s"
 )
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 

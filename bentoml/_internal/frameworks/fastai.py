@@ -122,7 +122,7 @@ def load_model(
         bento_model = get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
+        raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
 
@@ -268,12 +268,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
-            self: FastAIRunnable, input_data: ext.NpNDArray | torch.Tensor
+            self: FastAIRunnable,
+            input_data: ext.NpNDArray | torch.Tensor | ext.PdSeries | ext.PdDataFrame,
         ) -> torch.Tensor:
-            if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(input_data):
-                input_data = torch.tensor(input_data, device=self.device)
-            else:
-                input_data = input_data.to(self.device)
             return self.predict_fns[method_name](input_data)
 
         FastAIRunnable.add_method(

@@ -40,8 +40,9 @@ extensions = [
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
-# sphinx.autodoc_typehints
+napoleon_attr_annotations = True
 autodoc_typehints_format = "short"
+# sphinx.autodoc_typehints
 typehints_defaults = "comma"
 typehints_formatter = None
 

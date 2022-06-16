@@ -34,9 +34,11 @@ class FrameworkTestModelInput:
 
     def check_output(self, outp: t.Any):
         if isinstance(self.expected, t.Callable):
-            assert self.expected(
-                outp
-            ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"
+            result = self.expected(outp)
+            if result is not None:
+                assert (
+                    result
+                ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"
         else:
             assert (
                 outp == self.expected

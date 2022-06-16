@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
-
 import numpy as np
 import torch
 import pandas as pd
 import sklearn.datasets as datasets
 from fastai.metrics import accuracy
+from fastai.torch_core import set_seed
 from fastai.tabular.all import tabular_learner
 from fastai.tabular.all import TabularDataLoaders
 
@@ -17,6 +16,8 @@ from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.fastai
+
+set_seed(123, reproducible=True)
 
 # read in data
 iris = datasets.load_iris()
@@ -29,6 +30,11 @@ model = tabular_learner(dl, metrics=accuracy, layers=[3])
 model.fit(1)
 
 
+def expected_function(out: tuple[pd.Series, torch.Tensor, torch.Tensor]) -> None:
+    res = out[2].numpy()
+    assert np.isclose(res, [-0.35807556]).all()
+
+
 iris_model = FrameworkTestModel(
     name="iris",
     model=model,
@@ -37,36 +43,8 @@ iris_model = FrameworkTestModel(
             test_inputs={
                 "predict": [
                     Input(
-                        input_args=[np.array([iris.data[0]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.87606, 0.123939]]
-                        ).all(),
-                        preprocess=torch.tensor,
-                    ),
-                    Input(
-                        input_args=[np.array([iris.data[1]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.97558, 0.0244234]]
-                        ).all(),
-                        preprocess=torch.tensor,
-                    ),
-                ],
-            },
-        ),
-        Config(
-            test_inputs={
-                "predict": [
-                    Input(
-                        input_args=[torch.tensor([iris.data[0]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.87606, 0.123939]]
-                        ).all(),
-                    ),
-                    Input(
-                        input_args=[torch.tensor([iris.data[1]])],
-                        expected=lambda out: np.isclose(
-                            out, [[0.97558, 0.0244234]]
-                        ).all(),
+                        input_args=[X.iloc[0]],
+                        expected=expected_function,
                     ),
                 ],
             },

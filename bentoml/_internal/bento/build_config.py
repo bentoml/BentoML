@@ -451,7 +451,7 @@ class PythonOptions:
             with bento_fs.open(fs.path.combine(py_folder, "pip_args.txt"), "w") as f:
                 f.write(" ".join(pip_args))
 
-        if self.lock_packages:  # pragma: no cover
+        if self.lock_packages:
             # Note: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
             # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can

@@ -91,7 +91,7 @@ def save_model(
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
     _include_pytorch_lightning_version: bool = False,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -154,10 +154,10 @@ def save_model(
         options=None,
         context=context,
         metadata=metadata,
-    ) as _model:
-        weight_file = _model.path_of(MODEL_FILENAME)
+    ) as bento_model:
+        weight_file = bento_model.path_of(MODEL_FILENAME)
         torch.jit.save(model, weight_file)  # type: ignore
-        return _model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: Model):

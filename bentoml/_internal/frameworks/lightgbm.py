@@ -103,7 +103,7 @@ def save_model(
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a LightGBM model instance to the BentoML model store.
 
@@ -172,7 +172,7 @@ def save_model(
         )
 
         # save the booster to BentoML modelstore:
-        tag = bentoml.lightgbm.save_model("my_lightgbm_model", gbm, booster_params=params)
+        bento_model = bentoml.lightgbm.save_model("my_lightgbm_model", gbm, booster_params=params)
     """  # noqa: LN001
 
     # Ensure that `model` is actually the Booster object, and not for example one of the scikit-learn wrapper objects.
@@ -218,7 +218,7 @@ def save_model(
     ) as bento_model:
         model.save_model(bento_model.path_of(MODEL_FILENAME))
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:

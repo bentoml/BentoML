@@ -97,7 +97,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -136,12 +136,7 @@ def save_model(
         Y = iris.target
         model.fit(X, Y)
 
-        tag = bentoml.sklearn.save_model('kneighbors', model)
-
-        # load the model back:
-        loaded = bentoml.sklearn.load_model("kneighbors:latest")
-        # or:
-        loaded = bentoml.sklearn.load_model(tag)
+        bento_model = bentoml.sklearn.save_model('kneighbors', model)
     """  # noqa
     if not (
         LazyType("sklearn.base.BaseEstimator").isinstance(model)
@@ -175,7 +170,7 @@ def save_model(
 
         joblib.dump(model, bento_model.path_of(MODEL_FILENAME))
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: Model):

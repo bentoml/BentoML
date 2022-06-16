@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 from typing import TYPE_CHECKING
 
-from bentoml import Tag
+import bentoml
 
 from .torchscript import get
 from .torchscript import load_model
@@ -39,7 +39,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 

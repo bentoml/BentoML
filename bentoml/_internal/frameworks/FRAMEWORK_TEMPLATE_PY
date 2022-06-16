@@ -92,7 +92,7 @@ def save_model(
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
     # ...
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a <FRAMEWORK> model instance to the BentoML model store.
 
@@ -159,7 +159,7 @@ def save_model(
     ) as bento_model:
         model.save(bento_model.path_of(MODEL_FILENAME))
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:

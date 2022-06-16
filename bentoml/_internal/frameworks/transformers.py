@@ -152,7 +152,7 @@ def save_model(
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -190,12 +190,7 @@ def save_model(
         tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
         model = AutoModelForCausalLM.from_pretrained("distilgpt2")
         generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
-        tag = bentoml.transformers.save_model("text-generation-pipeline", generator)
-
-        # load the model back:
-        loaded = bentoml.transformers.load_model("text-generation-pipeline:latest")
-        # or:
-        loaded = bentoml.transformers.load_model(tag)
+        bento_model = bentoml.transformers.save_model("text-generation-pipeline", generator)
     """  # noqa
     if not isinstance(
         pipeline,
@@ -250,7 +245,7 @@ def save_model(
     ) as bento_model:
         pipeline.save_pretrained(bento_model.path)
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(

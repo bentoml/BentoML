@@ -121,7 +121,7 @@ def save_model(
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -198,14 +198,14 @@ def save_model(
         model = KerasSequentialModel()
 
         # `save` a given model and retrieve coresponding tag:
-        tag = bentoml.keras.save_model("keras_model", model)
+        bento_model = bentoml.keras.save_model("keras_model", model)
 
         # `save` a given model with custom objects definition:
         custom_objects = {
             "CustomLayer": CustomLayer,
             "custom_activation": custom_activation,
         },
-        custom_tag = bentoml.keras.save_model("custom_obj_keras", custom_objects=custom_objects)
+        custom_bento_model = bentoml.keras.save_model("custom_obj_keras", custom_objects=custom_objects)
 
     """  # noqa
 
@@ -254,7 +254,7 @@ def save_model(
             include_optimizer=include_optimizer,
         )
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(

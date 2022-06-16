@@ -104,7 +104,7 @@ def save_model(
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save an XGBoost model instance to the BentoML model store.
 
@@ -153,7 +153,7 @@ def save_model(
         ...
 
         # `save` the booster to BentoML modelstore:
-        tag = bentoml.xgboost.save_model("my_xgboost_model", bst, booster_params=param)
+        bento_model = bentoml.xgboost.save_model("my_xgboost_model", bst, booster_params=param)
     """  # noqa: LN001
     if not isinstance(model, xgb.core.Booster):
         raise TypeError(f"Given model ({model}) is not a xgboost.core.Booster.")
@@ -183,7 +183,7 @@ def save_model(
     ) as bento_model:
         model.save_model(bento_model.path_of(MODEL_FILENAME))  # type: ignore (incomplete XGBoost types)
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:

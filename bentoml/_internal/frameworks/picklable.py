@@ -88,7 +88,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -118,12 +118,7 @@ def save_model(
 
         import bentoml
 
-        tag = bentoml.picklable.save_model('picklable_pyobj', model)
-
-        # load the model back:
-        loaded = bentoml.picklable.load_model("picklable_pyobj:latest")
-        # or:
-        loaded = bentoml.picklable.load_model(tag)
+        bento_model = bentoml.picklable.save_model('picklable_pyobj', model)
     """  # noqa
     context = ModelContext(
         framework_name="cloudpickle",
@@ -145,12 +140,12 @@ def save_model(
         metadata=metadata,
         context=context,
         signatures=signatures,
-    ) as _model:
+    ) as bento_model:
 
-        with open(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
+        with open(bento_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:
             cloudpickle.dump(model, f)
 
-        return _model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: Model):

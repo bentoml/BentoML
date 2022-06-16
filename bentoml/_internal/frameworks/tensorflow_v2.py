@@ -124,7 +124,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
 
     """
     Save a model instance to BentoML modelstore.
@@ -179,7 +179,7 @@ def save_model(
 
         # then save the given model to BentoML modelstore:
         model = NativeModel()
-        tag = bentoml.tensorflow.save_model("native_toy", model)
+        bento_model = bentoml.tensorflow.save_model("native_toy", model)
 
     .. note::
 
@@ -223,7 +223,7 @@ def save_model(
             options=tf_save_options,
         )
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(

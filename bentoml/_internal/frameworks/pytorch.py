@@ -87,7 +87,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -171,12 +171,12 @@ def save_model(
         options=None,
         context=context,
         metadata=metadata,
-    ) as _model:
-        weight_file = _model.path_of(MODEL_FILENAME)
+    ) as bento_model:
+        weight_file = bento_model.path_of(MODEL_FILENAME)
         with open(weight_file, "wb") as file:
             torch.save(model, file, pickle_module=cloudpickle)  # type: ignore
 
-        return _model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: Model):

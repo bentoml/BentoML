@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 if version_info >= (3, 10):
     from typing import TypeAlias
-else:  # pragma: no cover
+else:
     from typing_extensions import TypeAlias
 
 logger = logging.getLogger(__name__)
@@ -57,13 +57,13 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if not isinstance(py_version, str):
         py_version = str(py_version)
 
-    match = re.match(r"^(\d+)\.(\d+)\.(\w+)?", py_version)
+    match = re.match(r"^(\d+)\.(\d+)(\.\w+)?", py_version)
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
             f"version must follow standard python semver format, e.g. 3.7.10 ",
         )
-    major, minor = match.groups()
+    major, minor = match.groups()[:2]
     return f"{major}.{minor}"
 
 
@@ -84,42 +84,6 @@ def _convert_cuda_version(
         cuda_version = SUPPORTED_CUDA_VERSIONS[cuda_version]
 
     return cuda_version
-
-
-def _convert_user_envars(
-    envars: t.Optional[t.Union[t.List[str], t.Dict[str, t.Any]]]
-) -> t.Optional[t.Dict[str, t.Any]]:
-    if envars is None:
-        return None
-
-    if isinstance(envars, list):
-        return {k: v for k, v in (e.split("=") for e in envars)}
-    else:
-        return envars
-
-
-def _envars_validator(
-    _: t.Any,
-    attribute: "Attribute[t.Union[str, t.List[str], t.Dict[str, t.Any]]]",
-    value: t.Union[str, t.List[str], t.Dict[str, t.Any]],
-) -> None:
-    if isinstance(value, list):
-        for envar in value:
-            envars_rgx = re.compile(r"^[^=](\=)(.*)")
-            if not envars_rgx.match(envar):
-                raise InvalidArgument(
-                    "All value in `env` list must follow format ENVAR=value"
-                )
-    elif isinstance(value, dict):
-        filter_non_envar: list[str] = list(filter(lambda x: not x, value.values()))
-        if len(filter_non_envar) > 0:
-            logger.warning(
-                f"`env` dict contains None value: {', '.join(filter_non_envar)}"
-            )
-    else:
-        raise InvalidArgument(
-            f"`env` must be either a list or a dict, got type {attribute.type} instead."
-        )
 
 
 @attr.frozen
@@ -144,11 +108,7 @@ class DockerOptions:
             attr.validators.in_(SUPPORTED_CUDA_VERSIONS.values())
         ),
     )
-    env: t.Dict[str, t.Any] = attr.field(
-        default=None,
-        converter=_convert_user_envars,
-        validator=attr.validators.optional(_envars_validator),
-    )
+    env: t.Optional[t.Dict[str, t.Any]] = None
     system_packages: t.Optional[t.List[str]] = None
     setup_script: t.Optional[str] = None
     base_image: t.Optional[str] = None
@@ -197,21 +157,12 @@ class DockerOptions:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
 
-        if self.system_packages is None:
-            defaults["system_packages"] = None
-        if self.env is None:
-            defaults["env"] = {}
-        if self.cuda_version is None:
-            defaults["cuda_version"] = None
-        if self.dockerfile_template is None:
-            defaults["dockerfile_template"] = None
-
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
         self, bento_fs: "FS", build_ctx: str, conda_cls: "CondaOptions"
     ) -> None:
-        use_conda = conda_cls.is_default()
+        use_conda = not conda_cls.is_default()
 
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
@@ -240,13 +191,35 @@ class DockerOptions:
 
 def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> DockerOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
-    if "env" in d and isinstance(d["env"], str):
-        try:
-            if not os.path.exists(d["env"]):
-                raise FileNotFoundError
-            d["env"] = dotenv_values(d["env"])
-        except FileNotFoundError:
-            raise BentoMLException(f"Invalid env file path: {d['env']}")
+    if "env" in d:
+        envars_rgx = re.compile(r"^[^=]+=.*")
+        if isinstance(d["env"], str):
+            try:
+                if not os.path.exists(d["env"]):
+                    raise FileNotFoundError
+                d["env"] = dotenv_values(d["env"])
+            except FileNotFoundError:
+                raise BentoMLException(f"Invalid env file path: {d['env']}")
+        elif isinstance(d["env"], list):
+            for envar in d["env"]:
+                if not envars_rgx.match(envar):
+                    raise BentoMLException(
+                        "All value in `env` list must follow format ENVAR=value"
+                    )
+            d["env"] = {k: v for k, v in (e.split("=") for e in d["env"])}
+        elif isinstance(d["env"], dict):
+            filter_non_envar: list[str] = []
+            for k, v in d["env"].items():
+                if not v:
+                    filter_non_envar.append(k)
+            if len(filter_non_envar) > 0:
+                logger.warning(
+                    f"`env` dictionary contains 'None' value: {', '.join(filter_non_envar)}"
+                )
+        else:
+            raise BentoMLException(
+                f"`env` must be either a list or a dict, got type {type(d['env'])} instead."
+            )
 
     return DockerOptions(**d)
 
@@ -614,7 +587,7 @@ class BentoBuildConfig:
     )
 
     def __attrs_post_init__(self) -> None:
-        use_conda = self.conda.is_default()
+        use_conda = not self.conda.is_default()
         use_cuda = self.docker.cuda_version is not None
 
         if use_cuda and use_conda:
@@ -626,10 +599,6 @@ class BentoBuildConfig:
             if use_conda and self.docker.distro not in get_supported_spec("miniconda"):
                 raise BentoMLException(
                     f"{self.docker.distro} does not supports conda. BentoML will only support conda with the following distros: {get_supported_spec('miniconda')}."
-                )
-            if use_cuda and self.docker.distro not in get_supported_spec("cuda"):
-                raise BentoMLException(
-                    f"{self.docker.distro} does not supports cuda. BentoML will only support cuda with the following distros: {get_supported_spec('cuda')}."
                 )
 
             _spec = DistroSpec.from_distro(
@@ -683,15 +652,13 @@ class BentoBuildConfig:
 
         try:
             return bentoml_cattr.structure(yaml_content, cls)
-        except KeyError as e:
-            if str(e) == "'service'":
+        except TypeError as e:
+            if "missing 1 required positional argument: 'service'" in str(e):
                 raise InvalidArgument(
-                    'Missing required build config field "service", which'
-                    " indicates import path of target bentoml.Service instance."
-                    ' e.g.: "service: fraud_detector.py:svc"'
-                )
+                    'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
+                ) from e
             else:
-                raise
+                raise InvalidArgument(str(e)) from e
 
     def to_yaml(self, stream: t.TextIO) -> None:
         # TODO: Save BentoBuildOptions to a yaml file

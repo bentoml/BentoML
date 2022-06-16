@@ -43,7 +43,9 @@ CLI_LOGGING_CONFIG: dict[str, t.Any] = {
     "root": {"level": logging.WARNING},
 }
 
-TRACED_LOG_FORMAT = "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
+TRACED_LOG_FORMAT = (
+    "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
+)
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 SERVER_LOGGING_CONFIG: dict[str, t.Any] = {

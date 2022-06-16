@@ -118,6 +118,16 @@ async def predict_multi_images(
     return dict(img1=img, img2=img)
 
 
+@svc.api(input=JSON(), output=JSON(), route="api/v1/test_route")
+async def test_route(obj: JSONSerializable) -> JSONSerializable:
+    return await py_model.echo_obj.async_run(obj)
+
+
+@svc.api(input=JSON(), output=JSON(), route="/api/v1/with_prefix")
+async def with_prefix(obj: JSONSerializable) -> JSONSerializable:
+    return await py_model.echo_obj.async_run(obj)
+
+
 # customise the service
 from starlette.types import Send
 from starlette.types import Scope

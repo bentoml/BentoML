@@ -63,7 +63,7 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
             f'Invalid build option: docker.python_version="{py_version}", python '
             f"version must follow standard python semver format, e.g. 3.7.10 ",
         )
-    major, minor = match.groups()[:2]
+    major, minor = match.groups()
     return f"{major}.{minor}"
 
 
@@ -232,11 +232,11 @@ def conda_dependencies_validator(
 ) -> None:
     if not isinstance(value, list):
         raise InvalidArgument(
-            f"Expected `conda.dependencies` to be type `list`, got type: `{type(value)}` instead"
+            f"Expected 'conda.dependencies' to be a list of dependencies, got a '{type(value)}' instead."
         )
     else:
         conda_pip: "t.List[CondaPipType]" = [x for x in value if isinstance(x, dict)]
-        if conda_pip:
+        if len(conda_pip) > 0:
             if len(conda_pip) > 1 or "pip" not in conda_pip[0]:
                 raise InvalidArgument(
                     "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"

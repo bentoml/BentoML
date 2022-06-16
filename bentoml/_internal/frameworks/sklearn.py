@@ -12,6 +12,7 @@ from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
+from ..types import LazyType
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
@@ -52,7 +53,7 @@ def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -81,7 +82,7 @@ def load_model(
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
     model_file = bento_model.path_of(MODEL_FILENAME)
 
@@ -96,7 +97,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -135,13 +136,16 @@ def save_model(
         Y = iris.target
         model.fit(X, Y)
 
-        tag = bentoml.sklearn.save_model('kneighbors', model)
-
-        # load the model back:
-        loaded = bentoml.sklearn.load_model("kneighbors:latest")
-        # or:
-        loaded = bentoml.sklearn.load_model(tag)
+        bento_model = bentoml.sklearn.save_model('kneighbors', model)
     """  # noqa
+    if not (
+        LazyType("sklearn.base.BaseEstimator").isinstance(model)
+        or LazyType("sklearn.pipeline.Pipeline").isinstance(model)
+    ):
+        raise TypeError(
+            f"Given model ({model}) is not a sklearn.base.BaseEstimator or sklearn.pipeline.Pipeline."
+        )
+
     context = ModelContext(
         framework_name="sklearn",
         framework_versions={"scikit-learn": get_pkg_version("scikit-learn")},
@@ -166,7 +170,7 @@ def save_model(
 
         joblib.dump(model, bento_model.path_of(MODEL_FILENAME))
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: Model):

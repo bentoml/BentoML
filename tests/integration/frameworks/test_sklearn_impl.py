@@ -2,13 +2,11 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-import joblib
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 
 import bentoml
 import bentoml.models
-from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 
@@ -59,8 +57,9 @@ def test_sklearn_save_load(metadata: t.Dict[str, t.Any]) -> None:
         return x + 1
 
     _, data = sklearn_model_data(clf=RandomForestClassifier)
-    tag = save_test_model(metadata, labels=labels, custom_objects={"func": custom_f})
-    bentomodel = bentoml.models.get(tag)
+    bentomodel = save_test_model(
+        metadata, labels=labels, custom_objects={"func": custom_f}
+    )
     assert bentomodel.info.metadata is not None
     assert_have_file_extension(bentomodel.path, ".pkl")
     for k in labels.keys():
@@ -76,11 +75,11 @@ def test_sklearn_save_load(metadata: t.Dict[str, t.Any]) -> None:
 
 def test_sklearn_runner() -> None:
     _, data = sklearn_model_data(clf=RandomForestClassifier)
-    tag = save_test_model({})
-    runner = bentoml.sklearn.get(tag).to_runner()
+    bento_model = save_test_model({})
+    runner = bento_model.to_runner()
     runner.init_local()
 
-    assert runner.models[0].tag == tag
+    assert runner.models[0].tag == bento_model.tag
     assert runner.scheduled_worker_count == 1
 
     res = runner.run(data)

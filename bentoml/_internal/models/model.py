@@ -58,16 +58,15 @@ CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 @attr.define
 class ModelOptions:
-    def with_options(self, **kwargs: t.Any) -> "ModelOptions":
+    def with_options(self, **kwargs: t.Any) -> ModelOptions:
         return attr.evolve(self, **kwargs)
 
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return attr.asdict(options)
+    def to_dict(self: ModelOptions) -> dict[str, t.Any]:
+        return attr.asdict(self)
 
 
 bentoml_cattr.register_structure_hook(ModelOptions, lambda d, cls: cls(**d))
-bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
+bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict())  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
 
 
 @attr.define(repr=False, eq=False, init=False)

@@ -543,7 +543,7 @@ class YataiClient:
                             module=info.module,
                             metadata=info.metadata,
                             context=info.context.to_dict(),
-                            options=dict(info.options),
+                            options=info.options.to_dict(),
                             api_version=info.api_version,
                             bentoml_version=info.context.bentoml_version,
                             size_bytes=calc_dir_size(model.path),

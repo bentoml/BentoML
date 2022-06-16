@@ -58,10 +58,10 @@ CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 @attr.define
 class ModelOptions:
-    def with_options(self, **kwargs: t.Any) -> "ModelOptions":
+    def with_options(self, **kwargs: t.Any) -> ModelOptions:
         return attr.evolve(self, **kwargs)
 
-    def to_dict(self) -> dict[str, t.Any]:
+    def to_dict(self: ModelOptions) -> dict[str, t.Any]:
         return attr.asdict(self)
 
 

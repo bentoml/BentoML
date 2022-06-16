@@ -25,10 +25,22 @@ def test_wrong_module_load_exc(framework: types.ModuleType):
     ) as ctx:
         tag = ctx.tag
 
+        model = ctx
+
+    with pytest.raises(
+        NotFound, match=f"Model wrong_module:.* was saved with module {__name__}, "
+    ):
+        framework.get(tag)
+
     with pytest.raises(
         NotFound, match=f"Model wrong_module:.* was saved with module {__name__}, "
     ):
         framework.load_model(tag)
+
+    with pytest.raises(
+        NotFound, match=f"Model wrong_module:.* was saved with module {__name__}, "
+    ):
+        framework.load_model(model)
 
 
 def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTestModel):
@@ -54,13 +66,11 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
         "pytest-metadata-vSW4": [0, 9, 2],
         "pytest-metadata-qJJ3": "Wy5M",
     }
-    tag = framework.save_model(
+    bento_model = framework.save_model(
         test_model.name,
         test_model.model,
         **kwargs,
     )
-
-    bento_model: bentoml.Model = framework.get(tag)
 
     meth = "pytest-signature-rjM5"
     assert bento_model.info.signatures[meth] == ModelSignature.from_dict(kwargs["signatures"][meth])  # type: ignore
@@ -70,13 +80,11 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].var_[0] == 4.75
     assert bento_model.info.metadata == kwargs["metadata"]
 
-    print(tag)
-
 
 @pytest.fixture(name="saved_model")
 def fixture_saved_model(
     framework: types.ModuleType, test_model: FrameworkTestModel
-) -> bentoml.Tag:
+) -> bentoml.Model:
     return framework.save_model(
         test_model.name, test_model.model, **test_model.save_kwargs
     )
@@ -85,24 +93,23 @@ def fixture_saved_model(
 def test_get(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     # test that the generic get API works
-    bento_model = framework.get(saved_model)
+    bento_model = framework.get(saved_model.tag)
 
+    assert bento_model == saved_model
     assert bento_model.info.name == test_model.name
 
-    bento_model_from_str = framework.get(str(saved_model))
+    bento_model_from_str = framework.get(str(saved_model.tag))
     assert bento_model == bento_model_from_str
 
 
 def test_get_runnable(
     framework: types.ModuleType,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
-    bento_model = framework.get(saved_model)
-
-    runnable = framework.get_runnable(bento_model)
+    runnable = framework.get_runnable(saved_model)
 
     assert isinstance(
         runnable, t.Type
@@ -118,7 +125,7 @@ def test_get_runnable(
 def test_load(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
@@ -137,7 +144,6 @@ def test_load(
 
 
 def test_runner_batching(
-    framework: types.ModuleType,
     test_model: FrameworkTestModel,
     saved_model: bentoml.Tag,
 ):
@@ -145,12 +151,10 @@ def test_runner_batching(
     from bentoml._internal.runner.utils import payload_paramss_to_batch_params
     from bentoml._internal.runner.container import AutoContainer
 
-    bento_model = framework.get(saved_model)
-
     ran_tests = False
 
     for config in test_model.configurations:
-        runner = bento_model.with_options(**config.load_kwargs).to_runner()
+        runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
         for meth, inputs in config.test_inputs.items():
             if len(inputs) < 2:
@@ -191,11 +195,10 @@ def test_runner_nvidia_gpu(
     saved_model: bentoml.Tag,
 ):
     gpu_resource = Resource(nvidia_gpu=1.0)
-    bento_model = framework.get(saved_model)
 
     ran_tests = False
     for config in test_model.configurations:
-        model_with_options = bento_model.with_options(**config.load_kwargs)
+        model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable = framework.get_runnable(model_with_options)
         if not runnable.SUPPORT_NVIDIA_GPU:

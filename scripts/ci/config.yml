@@ -104,7 +104,7 @@ keras_tf2:
     - "tensorflow==2.7.3"
 
 lightgbm:
-  <<: *tmpl
+  <<: *ntmpl
   dependencies:
     - "lightgbm"
 

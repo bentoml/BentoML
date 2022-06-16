@@ -107,7 +107,7 @@ jobs:
               - *runner
               - bentoml/lightgbm.py
               - bentoml/_internal/frameworks/lightgbm.py
-              - tests/integration/frameworks/test_lightgbm_impl.py
+              - tests/integration/frameworks/test_frameworks.py
             mlflow:
               - *runner
               - bentoml/mlflow.py
@@ -574,8 +574,7 @@ jobs:
 
   lightgbm_integration_tests:
     needs: diff
-    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
-    if: ${{ false }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

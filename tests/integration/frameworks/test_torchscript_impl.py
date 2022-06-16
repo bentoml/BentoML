@@ -22,7 +22,7 @@ def models():
         if "trace" in test_type:
             tracing_inp = torch.ones(5)
             model = torch.jit.trace(_model, tracing_inp)
-            tag = bentoml.torchscript.save_model(
+            bento_model = bentoml.torchscript.save_model(
                 "torchscript_test",
                 model,
                 labels=labels,
@@ -30,7 +30,7 @@ def models():
             )
         elif "script" in test_type:
             model = torch.jit.script(_model)
-            tag = bentoml.torchscript.save_model(
+            bento_model = bentoml.torchscript.save_model(
                 "torchscript_test",
                 model,
                 labels=labels,
@@ -39,13 +39,13 @@ def models():
         elif "pytorch_lightning" in test_type:
             PlLinearModel = make_pytorch_lightning_linear_model_class()
             model = PlLinearModel()
-            tag = bentoml.pytorch_lightning.save_model(
+            bento_model = bentoml.pytorch_lightning.save_model(
                 "torchscript_test",
                 model,
                 labels=labels,
                 custom_objects=custom_objects,
             )
-        return tag
+        return bento_model
 
     return _
 
@@ -61,14 +61,13 @@ def test_torchscript_save_load(test_type, models):
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = models(test_type, labels=labels, custom_objects={"func": custom_f})
-    bentomodel = bentoml.models.get(tag)
+    bentomodel = models(test_type, labels=labels, custom_objects={"func": custom_f})
     assert_have_file_extension(bentomodel.path, ".pt")
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
-    torchscript_loaded: nn.Module = bentoml.torchscript.load_model(tag)
+    torchscript_loaded: nn.Module = bentoml.torchscript.load_model(bentomodel.tag)
     assert predict_df(torchscript_loaded, test_df) == 5.0
 
 
@@ -82,8 +81,8 @@ def test_torchscript_save_load_across_devices(dev, test_type, models):
     def is_cuda(model):
         return next(model.parameters()).is_cuda
 
-    tag = models(test_type)
-    loaded = bentoml.torchscript.load_model(tag)
+    bento_model = models(test_type)
+    loaded = bentoml.torchscript.load_model(bento_model.tag)
     if dev == "cpu":
         assert not is_cuda(loaded)
     else:
@@ -102,10 +101,10 @@ def test_torchscript_save_load_across_devices(dev, test_type, models):
     ["tracedmodel", "scriptedmodel", "pytorch_lightning"],
 )
 def test_torchscript_runner_setup_run_batch(input_data, models, test_type):
-    tag = models(test_type)
-    runner = bentoml.torchscript.get(tag).to_runner(cpu=4)
+    bento_model = models(test_type)
+    runner = bento_model.to_runner(cpu=4)
 
-    assert tag in [m.tag for m in runner.models]
+    assert bento_model.tag in [m.tag for m in runner.models]
     assert runner.scheduled_worker_count == 1
 
     runner.init_local()
@@ -121,8 +120,8 @@ def test_torchscript_runner_setup_run_batch(input_data, models, test_type):
     ["tracedmodel", "scriptedmodel", "pytorch_lightning"],
 )
 def test_torchscript_runner_setup_on_gpu(nvidia_gpu: int, models, test_type):
-    tag = models(test_type)
-    runner = bentoml.pytorch.get(tag).to_runner(nvidia_gpu=nvidia_gpu)
+    bento_model = models(test_type)
+    runner = bento_model.to_runner(nvidia_gpu=nvidia_gpu)
     assert runner.scheduled_worker_count == nvidia_gpu
 
     for i in range(nvidia_gpu):

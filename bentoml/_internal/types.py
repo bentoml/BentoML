@@ -150,6 +150,9 @@ class LazyType(t.Generic[T]):
             else:
                 self.qualname: str = getattr(module_or_cls, "__name__")
 
+    def __instancecheck__(self, obj) -> "t.TypeGuard[T]":
+        return self.isinstance(obj)
+
     @classmethod
     def from_type(cls, typ_: t.Union["LazyType[T]", "t.Type[T]"]) -> "LazyType[T]":
         if isinstance(typ_, LazyType):

@@ -3,6 +3,7 @@ import re
 import typing as t
 import logging
 from sys import version_info as pyver
+from shlex import quote
 from typing import TYPE_CHECKING
 
 import fs
@@ -479,7 +480,7 @@ class PythonOptions:
         with bento_fs.open(
             fs.path.join(py_folder, "install.sh"), "w"
         ) as install_script:
-            args = " ".join(pip_args) if pip_args else ""
+            args = " ".join(map(quote, pip_args)) if pip_args else ""
             install_python_packages = (
                 """\
 #!/usr/bin/env bash

@@ -65,11 +65,11 @@ def test_service_init_checks():
         name="invalid"
     )
     with pytest.raises(ValueError) as excinfo:
-        svc = bentoml.Service(name="duplicates_runners", runners=[py_model1, py_model2])
+        _ = bentoml.Service(name="duplicates_runners", runners=[py_model1, py_model2])
     assert "Found duplicate name" in str(excinfo.value)
 
     with pytest.raises(AssertionError) as excinfo:
-        svc = bentoml.Service(name="invalid_model_type", models=[1])
+        _ = bentoml.Service(name="invalid_model_type", models=[1])
     assert "Service models list can only" in str(excinfo.value)
 
 

@@ -33,8 +33,7 @@ container image for deployment.
 Setup for the tutorial
 ----------------------
 
-There are three ways to complete this tutorial: you can either run the code in browser
-with Google Colab, or you can set up a local development environment on your computer.
+There are three ways to complete this tutorial:
 
 #. Run with Google Colab in your browser
 
@@ -57,19 +56,16 @@ with Google Colab, or you can set up a local development environment on your com
 
 #. Local Development Environment
 
-   BentoML supports Linux, Windows and MacOS. Make sure you have Python 3.7 or above
-   installed. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
-   to create an isolated local environment for installing the Python dependencies
-   required for the tutorial. However this is not required.
-
-   You may download the source code of this tutorial from `bentoml/Gallery <https://github.com/bentoml/gallery/>`_:
+   Download the source code of this tutorial from `bentoml/Gallery <https://github.com/bentoml/gallery/>`_:
 
    .. code:: bash
 
       git clone --depth=1 git@github.com:bentoml/gallery.git
       cd gallery/quickstart/
 
-   You will need Python 3.7 or above to run this tutorial.
+   BentoML supports Linux, Windows and MacOS. You will need Python 3.7 or above to run
+   this tutorial. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
+   to create an isolated local environment. However this is not required.
 
    Install all dependencies required for this tutorial:
 

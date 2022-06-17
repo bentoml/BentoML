@@ -57,7 +57,7 @@ Run :code:`bentoml containerize` to start the containerization process.
 
    .. code:: bash
 
-      bentoml containerize iris_classifier:latest --platform=linux/amd64
+      bentoml containerize --platform=linux/amd64 iris_classifier:latest
 
 
 View the built Docker image:

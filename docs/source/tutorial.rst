@@ -33,7 +33,7 @@ container image for deployment.
 Setup for the tutorial
 ----------------------
 
-There are 3 ways to complete this tutorial: you can either run the code in browser
+There are three ways to complete this tutorial: you can either run the code in browser
 with Google Colab, or you can set up a local development environment on your computer.
 
 #. Run with Google Colab in your browser
@@ -384,7 +384,7 @@ via the :code:`bentoml containerize` CLI command:
    You will need to `install Docker <https://docs.docker.com/get-docker/>`_ before
    running this command.
 
-.. dropdown:: For Mac with Apple Chip
+.. dropdown:: For Mac with Apple Silicon
    :icon: cpu
 
    Specify the :code:`--platform` to avoid potential compatibility issues with some
@@ -392,7 +392,7 @@ via the :code:`bentoml containerize` CLI command:
 
    .. code:: bash
 
-      bentoml containerize iris_classifier:latest --platform=linux/amd64
+      bentoml containerize --platform=linux/amd64 iris_classifier:latest
 
 This creates a docker image that includes the Bento, and has all its dependencies
 installed. The docker image tag will be same as the Bento tag by default:

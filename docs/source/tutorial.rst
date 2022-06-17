@@ -33,46 +33,50 @@ container image for deployment.
 Setup for the tutorial
 ----------------------
 
-There are two ways to complete this tutorial: you can either run the code in browser
+There are 3 ways to complete this tutorial: you can either run the code in browser
 with Google Colab, or you can set up a local development environment on your computer.
 
-#. Run with Google Colab
-    👉 `Open Tutorial Notebook on Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/quickstart/iris_classifier.ipynb>`_
-    side by side with this guide. As you go through this guide, you can simply run the
-    sample code from the Colab Notebook.
+#. Run with Google Colab in your browser
 
-    You will be able to try out most of the content in the tutorial on Colab besides
-    the docker container part towards the end. This is because Google Colab currently
-    does not support docker.
+   👉 `Open Tutorial Notebook on Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/quickstart/iris_classifier.ipynb>`_
+   side by side with this guide. As you go through this guide, you can simply run the
+   sample code from the Colab Notebook.
+
+   You will be able to try out most of the content in the tutorial on Colab besides
+   the docker container part towards the end. This is because Google Colab currently
+   does not support docker.
+
+#. Run the tutorial notebook from Docker
+
+   If you have Docker installed, you can run the tutorial notebook from a pre-configured
+   docker image with:
+
+   .. code:: bash
+
+      docker run -it --rm -p 8888:8888 -p 3000:3000 bentoml/quickstart:latest
 
 #. Local Development Environment
-    BentoML supports Linux, Windows and MacOS. Make sure you have Python 3.7 or above
-    installed. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
-    to create an isolated local environment for installing the Python dependencies
-    required for the tutorial. However this is not required.
 
-    You may download the source code of this tutorial from `bentoml/Gallery <https://github.com/bentoml/gallery/>`_:
+   BentoML supports Linux, Windows and MacOS. Make sure you have Python 3.7 or above
+   installed. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
+   to create an isolated local environment for installing the Python dependencies
+   required for the tutorial. However this is not required.
 
-    .. code:: bash
+   You may download the source code of this tutorial from `bentoml/Gallery <https://github.com/bentoml/gallery/>`_:
 
-        git clone --depth=1 git@github.com:bentoml/gallery.git
-        cd gallery/quickstart/
+   .. code:: bash
 
-..
-   TODO: add #. Run tutorial notebook from Docker
+      git clone --depth=1 git@github.com:bentoml/gallery.git
+      cd gallery/quickstart/
 
+   You will need Python 3.7 or above to run this tutorial.
 
-Install Dependencies
-~~~~~~~~~~~~~~~~~~~~
+   Install all dependencies required for this tutorial:
 
-You will need Python 3.7 or above to run this tutorial.
+   .. code-block:: bash
 
-Install all dependencies required for this tutorial:
-
-.. code-block:: bash
-
-    pip install --pre bentoml
-    pip install scikit-learn pandas
+       pip install --pre bentoml
+       pip install scikit-learn pandas
 
 
 Saving Models with BentoML
@@ -168,9 +172,8 @@ Run it live:
     INFO [dev_api_server] Waiting for application startup.
     INFO [dev_api_server] Application startup complete.                                                                                                                          on.py:59
 
-.. dropdown:: About the command ":code:`bentoml serve service:svc --reload`"
+.. dropdown:: About the command :code:`bentoml serve service:svc --reload`
    :icon: code
-   :color: light
 
    In the example above:
 
@@ -380,6 +383,16 @@ via the :code:`bentoml containerize` CLI command:
 .. note::
    You will need to `install Docker <https://docs.docker.com/get-docker/>`_ before
    running this command.
+
+.. dropdown:: For Mac with Apple Chip
+   :icon: cpu
+
+   Specify the :code:`--platform` to avoid potential compatibility issues with some
+   Python libraries.
+
+   .. code:: bash
+
+      bentoml containerize iris_classifier:latest --platform=linux/amd64
 
 This creates a docker image that includes the Bento, and has all its dependencies
 installed. The docker image tag will be same as the Bento tag by default:

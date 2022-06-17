@@ -18,6 +18,7 @@ things MLOps.
 ## Feature Highlights ##
 
 ✨ Model Serving the way you need it 
+- Serve ML model together with custom pre-processing and post-processing logic
 - **Online serving** via REST API or gRPC
 - **Offline scoring** on batch datasets with Apache Spark, or Dask.
 - **Stream serving** with Kafka, Beam, and Flink

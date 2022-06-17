@@ -15,29 +15,29 @@ BentoML simplifies ML model deployment and serves your models at production scal
 practitioners are contributing to the project, helping other users, and discuss all 
 things MLOps.
 
-## Feature Highlights ##
+## Why BentoML? ##
 
 ✨ Model Serving the way you need it 
-- Serve ML model together with custom pre-processing and post-processing logic
+- Define custom serving pipeline with pre-processing, post-processing and ensemble models  
 - **Online serving** via REST API or gRPC
 - **Offline scoring** on batch datasets with Apache Spark, or Dask.
 - **Stream serving** with Kafka, Beam, and Flink
 
 🍱 Easily go from training to model serving in production
-- All common ML libraries natively supported! - Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more
+- Support multiple ML frameworks natively: Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more!
 - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
-- Automatically setup Dockerfile, CUDA and python packages for model serving 
-- Designed to work with any training pipeline or experimentation platform
-
-🐍 Python-first, scales with powerful optimizations
-- Scale model inference workers separately from business logic and feature processing code
-- Adaptive batching dynamically groups inference requests for optimal performance
-- Inference graphs with multiple models automatically orchestrated with Yatai on Kubernetes
+- Integrate with any training pipeline or ML experimentation platform
 
 🚢 Deployment workflow made for production
 - 🐳 Automatically generate docker images for production deployment
 - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
 - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
+
+🐍 Python-first, scales with powerful optimizations
+- Parallelize compute-intense model inference workloads to scale separately from the serving logic
+- Adaptive batching dynamically groups inference requests for optimal performance
+- Orchestrate distributed inference graph with multiple models via Yatai on Kubernetes
+- Easily configure CUDA dependencies for running inference with GPU
 
 ## Getting Started ##
 

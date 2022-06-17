@@ -3,7 +3,6 @@ from __future__ import annotations
 import pickle
 import typing as t
 import logging
-import functools
 import itertools
 import contextlib
 from typing import TYPE_CHECKING
@@ -20,12 +19,13 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..models.model import ModelSignature
-from ..runner.utils import Params
 from ..runner.container import Payload
 from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
 from ..utils.tensorflow import get_tf_version
-from ..utils.tensorflow import hook_loaded_model
+from ..utils.tensorflow import cast_tensor_by_spec
+from ..utils.tensorflow import get_input_signatures
+from ..utils.tensorflow import get_restorable_functions
 
 logger = logging.getLogger(__name__)
 
@@ -105,11 +105,15 @@ def load_model(
 
     if "GPU" in device_name:
         physical_devices = tf.config.list_physical_devices("GPU")
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        try:
+            tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        except RuntimeError:
+            pass
 
     with tf.device(device_name):
         tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore
-        return hook_loaded_model(tf_model, MODULE_NAME)
+        return tf_model
+        # return hook_loaded_model(tf_model, MODULE_NAME)
 
 
 def save_model(
@@ -186,19 +190,23 @@ def save_model(
        :code:`bentoml.tensorflow.save_model` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
        with :code:`bentoml.tensorflow.save_model`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
 
-    """  # noqa
+    """
     context = ModelContext(
         framework_name="tensorflow",
         framework_versions={"tensorflow": get_tf_version()},
     )
 
-    # will add signatures inference from tf_signatures later
     if signatures is None:
-        signatures = {
-            "__call__": {
-                "batchable": False,
+        restorable_functions = get_restorable_functions(model)
+        if restorable_functions:
+            signatures = {
+                k: {
+                    "batchable": False,
+                }
+                for k in restorable_functions
             }
-        }
+        else:
+            signatures = {"__call__": {"batchable": False}}
 
         logger.info(
             f"Using the default model signature {signatures} for TensorFlow models."
@@ -263,23 +271,37 @@ def get_runnable(
     def _gen_run_method(runnable_self: TensorflowRunnable, method_name: str):
         raw_method = getattr(runnable_self.model, method_name)
         method_partial_kwargs = partial_kwargs.get(method_name)
-        if method_partial_kwargs:
-            raw_method = functools.partial(raw_method, **method_partial_kwargs)
-
-        def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
-            if not LazyType["tf_ext.TensorLike"]("tensorflow.Tensor").isinstance(item):
-                return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
-            else:
-                return item
 
         def _run_method(
             _runnable_self: TensorflowRunnable,
             *args: "TFArgType",
             **kwargs: "TFArgType",
         ) -> "ext.NpNDArray":
-            params = Params["TFArgType"](*args, **kwargs)
-            params = params.map(_mapping)
-            res = raw_method(*params.args, **params.kwargs)
+            try:
+                if method_partial_kwargs is None:
+                    res = raw_method(*args, **kwargs)
+                else:
+                    res = raw_method(*args, **dict(method_partial_kwargs, **kwargs))
+            except ValueError:  # try to cast to model signatures
+                sigs = get_input_signatures(raw_method)
+                if not sigs:
+                    raise
+                arg_specs, kwarg_specs = sigs[0]
+                trans_args: t.Tuple[t.Any, ...] = tuple(
+                    cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, arg_specs)  # type: ignore[arg-type]
+                )
+
+                trans_kwargs = {
+                    k: cast_tensor_by_spec(arg, kwarg_specs[k])
+                    for k, arg in kwargs.items()
+                }
+                if method_partial_kwargs is None:
+                    res = raw_method(*trans_args, **trans_kwargs)
+                else:
+                    res = raw_method(
+                        *trans_args,
+                        **dict(method_partial_kwargs, **trans_kwargs),
+                    )
             return t.cast("ext.NpNDArray", res.numpy())
 
         return _run_method

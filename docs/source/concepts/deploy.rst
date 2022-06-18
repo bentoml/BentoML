@@ -49,7 +49,7 @@ Run :code:`bentoml containerize` to start the containerization process.
     INFO [cli] Successfully built docker image "iris_classifier:ejwnswg5kw6qnuqj"
 
 
-.. dropdown:: For Mac with Apple Chip
+.. dropdown:: For Mac with Apple Silicon
    :icon: cpu
 
    Specify the :code:`--platform` to avoid potential compatibility issues with some

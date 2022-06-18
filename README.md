@@ -17,16 +17,16 @@ things MLOps.
 
 ## Why BentoML? ##
 
-✨ Model Serving the way you need it 
-- Define custom serving pipeline with pre-processing, post-processing and ensemble models  
-- **Online serving** via REST API or gRPC
-- **Offline scoring** on batch datasets with Apache Spark, or Dask.
-- **Stream serving** with Kafka, Beam, and Flink
-
 🍱 Easily go from training to model serving in production
 - Support multiple ML frameworks natively: Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more!
+- Define custom serving pipeline with pre-processing, post-processing and ensemble models
 - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
 - Integrate with any training pipeline or ML experimentation platform
+
+✨ Model Serving the way you need it 
+- **Online serving** via REST API or gRPC
+- **Offline scoring** on batch datasets with Apache Spark, or Dask
+- **Stream serving** with Kafka, Beam, and Flink
 
 🚢 Deployment workflow made for production
 - 🐳 Automatically generate docker images for production deployment

@@ -833,7 +833,7 @@ Run :code:`bentoml containerize <bento>` to confirm the generated Dockerfile wor
 
 .. seealso::
 
-    :ref:`Dockerfile Generation <guides/dockerfile_generation>` to learn more about how BentoML generates Dockerfile for Bentos.
+    :ref:`Dockerfile Generation <guides/dockerfile_generation:Dockerfile generation>` to learn more about how BentoML generates Dockerfile for Bentos.
 
 Docker Options Table
 """"""""""""""""""""

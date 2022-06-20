@@ -161,9 +161,9 @@ class DockerOptions:
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self, bento_fs: "FS", build_ctx: str, conda_cls: "CondaOptions"
+        self, bento_fs: "FS", build_ctx: str, conda_options: "CondaOptions"
     ) -> None:
-        use_conda = not conda_cls.is_default()
+        use_conda = not conda_options.is_default()
 
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)

@@ -12,7 +12,7 @@ from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
 from ...log import SERVER_LOGGING_CONFIG
-from ...trace import ServiceContext
+from ...context import component_context
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -64,11 +64,6 @@ def main(
         working_dir: (Optional) the working directory
         worker_id: (Optional) if set, the runner will be started as a worker with the given ID
     """
-
-    from ...log import configure_server_logging
-
-    configure_server_logging()
-
     if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
@@ -97,6 +92,10 @@ def main(
         arbiter.start()
         return
 
+    component_context.component_name = f"runner-{runner_name}:{worker_id}"
+    from ...log import configure_server_logging
+
+    configure_server_logging()
     import uvicorn  # type: ignore
 
     if no_access_log:
@@ -107,9 +106,16 @@ def main(
 
     from bentoml._internal.server.runner_app import RunnerAppFactory
 
-    ServiceContext.component_name_var.set(f"{runner_name}:{worker_id}")
-
     service = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
+
+    # setup context
+    if service.tag is None:
+        component_context.bento_name = f"*{service.__class__}"
+        component_context.bento_version = "not available"
+    else:
+        component_context.bento_name = service.tag.name
+        component_context.bento_version = service.tag.version
+
     for runner in service.runners:
         if runner.name == runner_name:
             break

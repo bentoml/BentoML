@@ -3,6 +3,7 @@
 
 import pytest
 
+import bentoml
 from bentoml.testing.utils import async_request
 
 

@@ -45,7 +45,7 @@ USAGE_REQUEST_TIMEOUT_SECONDS = 1
 
 
 @lru_cache(maxsize=1)
-def do_not_track() -> bool:  # pragma: no cover
+def do_not_track() -> bool:
     # Returns True if and only if the environment variable is defined and has value True.
     # The function is cached for better performance.
     return os.environ.get(BENTOML_DO_NOT_TRACK, str(False)).lower() == "true"
@@ -57,7 +57,7 @@ def usage_event_debugging() -> bool:
     return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
 
 
-def slient(func: t.Callable[P, T]) -> t.Callable[P, T]:  # pragma: no cover
+def slient(func: t.Callable[P, T]) -> t.Callable[P, T]:
     # Slient errors when tracking
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
@@ -78,7 +78,7 @@ class ServeInfo:
     serve_started_timestamp: datetime
 
 
-def get_serve_info() -> ServeInfo:  # pragma: no cover
+def get_serve_info() -> ServeInfo:
     # Returns a safe token for serve as well as timestamp of creating this token
     return ServeInfo(
         serve_id=secrets.token_urlsafe(32),
@@ -124,7 +124,7 @@ def track_serve_init(
     production: bool,
     serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
 ) -> None:
-    if svc.bento is not None:  # pragma: no cover
+    if svc.bento is not None:
         bento = svc.bento
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,

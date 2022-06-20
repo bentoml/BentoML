@@ -41,6 +41,7 @@ napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
 autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 10
 
 ogp_site_url = "http://docs.bentoml.org"
 ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-readme-header.jpeg"
@@ -97,7 +98,7 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 html_js_files = ["js/custom.js"]
 html_show_sphinx = False
-html_favicon = "_static/img/favicon-32x32.ico"
+html_favicon = "_static/img/favicon-96x96.ico"
 
 # Private dictionary for spell checker
 spelling_word_list_filename = ["bentoml_wordlist.txt"]

@@ -91,26 +91,14 @@ class TransformersOptions(ModelOptions):
         ]
     )
 
-    pipeline: bool = attr.field(
-        default=True, validator=attr.validators.instance_of(bool)
-    )
-
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
-
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
-
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return attr.asdict(options)
 
 
 def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -143,10 +131,8 @@ def load_model(
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
-
-    bento_model.info.parse_options(TransformersOptions)
 
     pipeline_task: str = bento_model.info.options.task  # type: ignore
     pipeline_kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
@@ -166,7 +152,7 @@ def save_model(
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -204,16 +190,12 @@ def save_model(
         tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
         model = AutoModelForCausalLM.from_pretrained("distilgpt2")
         generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
-        tag = bentoml.transformers.save_model("text-generation-pipeline", generator)
-
-        # load the model back:
-        loaded = bentoml.transformers.load_model("text-generation-pipeline:latest")
-        # or:
-        loaded = bentoml.transformers.load_model(tag)
+        bento_model = bentoml.transformers.save_model("text-generation-pipeline", generator)
     """  # noqa
-    if not LazyType["ext.TransformersPipeline"](
-        "transformers.pipelines.base.Pipeline"
-    ).isinstance(pipeline):
+    if not isinstance(
+        pipeline,
+        LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),
+    ):
         raise BentoMLException(
             "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
             "To save other Transformers types like models, tokenizers, configs, feature "
@@ -263,7 +245,7 @@ def save_model(
     ) as bento_model:
         pipeline.save_pretrained(bento_model.path)
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(

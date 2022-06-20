@@ -41,19 +41,31 @@ def test_models(tmpdir: "Path"):
     store = ModelStore(os.path.join(tmpdir, "models"))
 
     with bentoml.models.create(
-        "testmodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+        "testmodel",
+        module=__name__,
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
+        _model_store=store,
     ) as testmodel:
         testmodel1tag = testmodel.tag
 
     with bentoml.models.create(
-        "testmodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+        "testmodel",
+        module=__name__,
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
+        _model_store=store,
     ) as testmodel:
         testmodel2tag = testmodel.tag
         testmodel_file_content = createfile(testmodel.path_of("file"))
         testmodel_infolder_content = createfile(testmodel.path_of("folder/file"))
 
     with bentoml.models.create(
-        "anothermodel", signatures={}, context=TEST_MODEL_CONTEXT, _model_store=store
+        "anothermodel",
+        module=__name__,
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
+        _model_store=store,
     ) as anothermodel:
         anothermodeltag = anothermodel.tag
         anothermodel_file_content = createfile(anothermodel.path_of("file"))

@@ -7,7 +7,6 @@ import torch.nn as nn
 
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
-from bentoml._internal.tag import Tag
 from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
 
@@ -26,7 +25,7 @@ def model():
 
 
 @pytest.fixture(scope="module")
-def model_tag(model: nn.Module):
+def bento_model(model: nn.Module):
     labels = {"stage": "dev"}
 
     def custom_f(x: int) -> int:
@@ -46,29 +45,28 @@ def test_pytorch_save_load(model: nn.Module):
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = bentoml.pytorch.save_model(
+    bentomodel = bentoml.pytorch.save_model(
         "pytorch_test",
         model,
         labels=labels,
         custom_objects={"func": custom_f},
     )
-    bentomodel = bentoml.models.get(tag)
     assert_have_file_extension(bentomodel.path, ".pt")
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)
 
-    pytorch_loaded: nn.Module = bentoml.pytorch.load_model(tag)
+    pytorch_loaded: nn.Module = bentoml.pytorch.load_model(bentomodel.tag)
     assert predict_df(pytorch_loaded, test_df) == 5.0
 
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("dev", ["cpu", "cuda", "cuda:0"])
-def test_pytorch_save_load_across_devices(dev: str, model_tag: Tag):
+def test_pytorch_save_load_across_devices(dev: str, bento_model: bentoml.Model):
     def is_cuda(model: nn.Module) -> bool:
         return next(model.parameters()).is_cuda
 
-    loaded: nn.Module = bentoml.pytorch.load_model(model_tag, device_id=dev)
+    loaded: nn.Module = bentoml.pytorch.load_model(bento_model.tag, device_id=dev)
     if dev == "cpu":
         assert not is_cuda(loaded)
     else:
@@ -82,10 +80,10 @@ def test_pytorch_save_load_across_devices(dev: str, model_tag: Tag):
         torch.from_numpy(test_df.to_numpy().astype(np.float32)),
     ],
 )
-def test_pytorch_runner_setup_run_batch(input_data, model_tag: Tag):
-    runner = bentoml.pytorch.get(model_tag).to_runner(cpu=4)
+def test_pytorch_runner_setup_run_batch(input_data, bento_model: bentoml.Model):
+    runner = bento_model.to_runner(cpu=4)
 
-    assert model_tag in [m.tag for m in runner.models]
+    assert bento_model.tag in [m.tag for m in runner.models]
     assert runner.scheduled_worker_count == 1
 
     runner.init_local()
@@ -95,8 +93,8 @@ def test_pytorch_runner_setup_run_batch(input_data, model_tag: Tag):
 
 @pytest.mark.gpus
 @pytest.mark.parametrize("nvidia_gpu", [1, 2])
-def test_pytorch_runner_setup_on_gpu(nvidia_gpu: int, model_tag: Tag):
-    runner = bentoml.pytorch.get(model_tag).to_runner(nvidia_gpu=nvidia_gpu)
+def test_pytorch_runner_setup_on_gpu(nvidia_gpu: int, bento_model: bentoml.Model):
+    runner = bento_model.to_runner(nvidia_gpu=nvidia_gpu)
     assert runner.scheduled_worker_count == nvidia_gpu
 
 

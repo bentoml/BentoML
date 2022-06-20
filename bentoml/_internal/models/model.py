@@ -5,11 +5,11 @@ import typing as t
 import logging
 import importlib
 from sys import version_info as pyver
+from types import ModuleType
 from typing import overload
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
-from collections import UserDict
 
 import fs
 import attr
@@ -57,26 +57,13 @@ MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 
-if TYPE_CHECKING:
-    ModelOptionsSuper = UserDict[str, t.Any]
-else:
-    ModelOptionsSuper = UserDict
+@attr.define
+class ModelOptions:
+    def with_options(self, **kwargs: t.Any) -> ModelOptions:
+        return attr.evolve(self, **kwargs)
 
-
-class ModelOptions(ModelOptionsSuper):
-    @classmethod
-    def with_options(cls, **kwargs: t.Any) -> ModelOptions:
-        return cls(**kwargs)
-
-    @staticmethod
-    def to_dict(options: ModelOptions) -> dict[str, t.Any]:
-        return dict(options)
-
-
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelOptions), lambda d, cls: cls.with_options(**d)  # type: ignore
-)
-bentoml_cattr.register_unstructure_hook(ModelOptions, lambda v: v.to_dict(v))  # type: ignore  # pylint: disable=unnecessary-lambda # lambda required
+    def to_dict(self: ModelOptions) -> dict[str, t.Any]:
+        return attr.asdict(self)
 
 
 @attr.define(repr=False, eq=False, init=False)
@@ -317,8 +304,7 @@ class Model(StoreItem):
 
     def to_runnable(self) -> t.Type[Runnable]:
         if self._runnable is None:
-            module = importlib.import_module(self.info.module)
-            self._runnable = module.get_runnable(self)
+            self._runnable = self.info.imported_module.get_runnable(self)
         return self._runnable
 
     def with_options(self, **kwargs: t.Any) -> Model:
@@ -473,7 +459,7 @@ class ModelInfo:
     version: str
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
-    options: ModelOptions
+    _options: t.Dict[str, t.Any]
     # TODO: make metadata a MetadataDict; this works around a bug in attrs
     metadata: t.Dict[str, t.Any] = attr.field(
         validator=metadata_validator, converter=dict
@@ -485,18 +471,25 @@ class ModelInfo:
     api_version: str
     creation_time: datetime
 
+    _cached_module: t.Optional[ModuleType] = None
+    _cached_options: t.Optional[ModelOptions] = None
+
     def __init__(
         self,
         tag: Tag,
         module: str,
         labels: dict[str, str],
-        options: ModelOptions,
+        options: dict[str, t.Any] | ModelOptions,
         metadata: MetadataDict,
         context: ModelContext,
         signatures: ModelSignaturesType,
         api_version: str,
         creation_time: datetime | None = None,
     ):
+        if isinstance(options, ModelOptions):
+            object.__setattr__(self, "_cached_options", options)
+            options = options.to_dict()
+
         self.__attrs_init__(  # type: ignore
             tag=tag,
             name=tag.name,
@@ -542,11 +535,38 @@ class ModelInfo:
             creation_time=self.creation_time,
         )
 
+    # cached_property doesn't support __slots__ classes
+    @property
+    def imported_module(self) -> ModuleType:
+        if self._cached_module is None:
+            try:
+                object.__setattr__(
+                    self, "_cached_module", importlib.import_module(self.module)
+                )
+            except (ValueError, ModuleNotFoundError) as e:
+                raise BentoMLException(
+                    f"Module '{self.module}' defined in {MODEL_YAML_FILENAME} is not found."
+                ) from e
+        assert self._cached_module is not None
+        return self._cached_module
+
+    @property
+    def options(self) -> ModelOptions:
+        if self._cached_options is None:
+            if hasattr(self.imported_module, "ModelOptions"):
+                object.__setattr__(
+                    self,
+                    "_cached_options",
+                    self.imported_module.ModelOptions(**self._options),
+                )
+            else:
+                object.__setattr__(self, "_cached_options", ModelOptions())
+
+        assert self._cached_options is not None
+        return self._cached_options
+
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
-
-    def parse_options(self, options_class: type[ModelOptions]) -> None:
-        object.__setattr__(self, "options", options_class.with_options(**self.options))
 
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:
@@ -588,6 +608,9 @@ class ModelInfo:
             del yaml_content["context"]["pip_dependencies"]
             yaml_content["context"]["framework_versions"] = {}
 
+        # weird cattrs workaround
+        yaml_content["_options"]: t.Dict[str, t.Any] = yaml_content["options"]
+
         try:
             model_info = bentoml_cattr.structure(yaml_content, ModelInfo)
         except TypeError as e:  # pragma: no cover - simple error handling
@@ -606,7 +629,14 @@ attr.resolve_types(ModelInfo, globals(), locals())
 bentoml_cattr.register_unstructure_hook_func(
     lambda cls: issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(ModelInfo, bentoml_cattr, tag=override(omit=True)),  # type: ignore (incomplete types)
+    make_dict_unstructure_fn(  # type: ignore (incomplete types)
+        ModelInfo,
+        bentoml_cattr,
+        tag=override(omit=True),
+        _options=override(rename="options"),
+        _cached_module=override(omit=True),
+        _cached_options=override(omit=True),
+    ),
 )
 
 

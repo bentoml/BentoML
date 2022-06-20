@@ -8,7 +8,7 @@ What is Runner?
 In BentoML, Runner represents a unit of computation that can be executed on a remote
 Python worker and scales independently.
 
-Runner allow :ref:`bentoml.Service <reference/core:bentoml.Service>` to parallelize
+Runner allows :ref:`bentoml.Service <reference/core:bentoml.Service>` to parallelize
 multiple instances of a :ref:`bentoml.Runnable <reference/core:bentoml.Runnable>` class,
 each on its own Python worker. When a BentoServer is launched, a group of runner worker
 processes will be created, and :code:`run` method calls made from the
@@ -123,7 +123,7 @@ to determine the worker pool size of this runner.
 The :code:`bentoml.Runnable.method` decorator is used for creating
 :code:`RunnableMethod` - the decorated method will be exposed as the runner interface
 for accessing remotely. :code:`RunnableMethod` can be configured with a signature,
-which is defined same as the :ref:`concepts/model:Model Signatures`
+which is defined same as the :ref:`concepts/model:Model Signatures`.
 
 
 Reusable Runnable

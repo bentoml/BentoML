@@ -2,7 +2,7 @@
 Streaming Serving
 =================
 
-pache Flink DataStream
+Apache Flink DataStream
 -----------------------
 
 BentoML support stream model inferencing in 
@@ -12,7 +12,7 @@ on using runners and service APIs.
 
 Embedded Model Runners
 ^^^^^^^^^^^^^^^^^^^^^^
-In BentoML, a [Runner](https://docs.bentoml.org/en/latest/concepts/runner.html) 
+In BentoML, a :ref:`Runner <concepts/runner:Using Runners>` 
 represents a unit of computation, such as model inferencing, that can executed on either a remote runner process or an 
 embedded runner instance. If available system resources allow loading the ML model in memory, invoking runners as embedded 
 instances can typically achieve a better performance by avoiding the overhead incurred in the interprocess communication.
@@ -42,12 +42,12 @@ To integrate with Flink DataRunners API, runners can be used in `ProcessWindowFu
     class ClassifyFunction(MapFunction):
         def open(self, runtime_context: RuntimeContext):
             self.runner = bentoml.transformers.get(
-                            "text-classification:latest"
-                    ).to_runner()
+                "text-classification:latest"
+            ).to_runner()
             self.runner.init_local()
 
         def map(self, data):
-                    # transform(data)
+            # transform(data)
             return data[0], self.runner.run(data[1])
 
 The following is an end-to-end word classification example of using embedded runners in a Flink DataStream program. 
@@ -69,7 +69,7 @@ For simplicity, the input stream and output sink are abstracted out using in-mem
             self.runner.init_local()
 
         def map(self, data):
-                    # transform(data)
+            # transform(data)
             return data[0], self.runner.run(data[1])
 
 
@@ -109,21 +109,22 @@ Remote Bento Service
 
 Model runners can also be invoked remotely as a separately deployed Bento Service. Calling a remote Bento Service may be 
 preferred if the model cannot be loaded into memory of the Flink DataStream program. This options is also advantageous because 
-model runners can be scaled more easily with deployment frameworks like 
-[Yatai](https://docs.bentoml.org/en/latest/concepts/deploy.html?highlight=yatai#deploy-with-yatai).
+model runners can be scaled more easily with deployment frameworks like :ref:`Yatai <concepts/deploy:Deploy with Yatai>`.
 
 To send a prediction request to a remotely deployed Bento Service in the DataStream program, you can use any HTTP client 
 implementation of your choice inside the `MapFunction` or `ProcessWindowFunction`.
 
 
 .. code:: python
+
     class ClassifyFunction(MapFunction):
         def map(self, data):
             return requests.post(
-                            "http://127.0.0.1:3000/classify",
-                            headers={"content-type": "text/plain"},
-                            data=TEXT_INPUT
-                    ).text
+                "http://127.0.0.1:3000/classify",
+                headers={"content-type": "text/plain"},
+                data=TEXT_INPUT,
+            ).text
+
 
 Using a client with asynchronous IO support combined with Flink AsyncFunction is recommended to handle requests and responses 
 concurrent and minimize IO waiting time of calling a remote Bento Service.

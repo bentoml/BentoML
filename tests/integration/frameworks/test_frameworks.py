@@ -16,6 +16,15 @@ from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 from .models import FrameworkTestModel
 
 
+@pytest.fixture(name="saved_model")
+def fixture_saved_model(
+    framework: types.ModuleType, test_model: FrameworkTestModel
+) -> bentoml.Model:
+    return framework.save_model(
+        test_model.name, test_model.model, **test_model.save_kwargs
+    )
+
+
 def test_wrong_module_load_exc(framework: types.ModuleType):
     with bentoml.models.create(
         "wrong_module",
@@ -28,19 +37,37 @@ def test_wrong_module_load_exc(framework: types.ModuleType):
         model = ctx
 
     with pytest.raises(
-        NotFound, match=f"Model wrong_module:.* was saved with module {__name__}, "
+        NotFound, match=f"Model {tag} was saved with module {__name__}, "
     ):
         framework.get(tag)
 
     with pytest.raises(
-        NotFound, match=f"Model wrong_module:.* was saved with module {__name__}, "
+        NotFound, match=f"Model {tag} was saved with module {__name__}, "
     ):
         framework.load_model(tag)
 
     with pytest.raises(
-        NotFound, match=f"Model wrong_module:.* was saved with module {__name__}, "
+        NotFound, match=f"Model {tag} was saved with module {__name__}, "
     ):
         framework.load_model(model)
+
+
+def test_model_options_init(
+    framework: types.ModuleType, test_model: FrameworkTestModel
+):
+    if not hasattr(framework, "ModelOptions"):
+        pytest.skip(f"No ModelOptions for framework '{framework.__name__}'")
+
+    ModelOptions = framework.ModelOptions
+
+    for configuration in test_model.configurations:
+        from_kwargs = ModelOptions(**configuration.load_kwargs)
+        from_with_options = ModelOptions().with_options(**configuration.load_kwargs)
+        assert from_kwargs == from_with_options
+        assert from_kwargs.to_dict() == from_with_options.to_dict()
+
+        from_dict = ModelOptions(**from_kwargs.to_dict())
+        assert from_dict == from_kwargs
 
 
 def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTestModel):
@@ -79,15 +106,6 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].mean_[0] == 5.5
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].var_[0] == 4.75
     assert bento_model.info.metadata == kwargs["metadata"]
-
-
-@pytest.fixture(name="saved_model")
-def fixture_saved_model(
-    framework: types.ModuleType, test_model: FrameworkTestModel
-) -> bentoml.Model:
-    return framework.save_model(
-        test_model.name, test_model.model, **test_model.save_kwargs
-    )
 
 
 def test_get(

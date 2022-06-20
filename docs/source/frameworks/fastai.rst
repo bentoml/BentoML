@@ -2,7 +2,6 @@
 FastAI
 ======
 
-   *fastai simplifies training fast and accurate neural nets using modern best practices*
 
 Preface
 -------

@@ -5,6 +5,7 @@ import typing as t
 import logging
 import subprocess
 from sys import version_info
+from shlex import quote
 from typing import TYPE_CHECKING
 
 import fs
@@ -57,13 +58,13 @@ def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
     if not isinstance(py_version, str):
         py_version = str(py_version)
 
-    match = re.match(r"^(\d+)\.(\d+)(\.\w+)?", py_version)
+    match = re.match(r"^(\d+)\.(\d+)(?:\.\w+)?", py_version)
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
             f"version must follow standard python semver format, e.g. 3.7.10 ",
         )
-    major, minor = match.groups()[:2]
+    major, minor = match.groups()
     return f"{major}.{minor}"
 
 
@@ -160,9 +161,9 @@ class DockerOptions:
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self, bento_fs: "FS", build_ctx: str, conda_cls: "CondaOptions"
+        self, bento_fs: "FS", build_ctx: str, conda_options: "CondaOptions"
     ) -> None:
-        use_conda = not conda_cls.is_default()
+        use_conda = not conda_options.is_default()
 
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
@@ -191,34 +192,27 @@ class DockerOptions:
 
 def _docker_options_structure_hook(d: t.Any, _: t.Type[DockerOptions]) -> DockerOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
-    if "env" in d:
-        envars_rgx = re.compile(r"^[^=]+=.*")
+    if "env" in d and d["env"] is not None:
         if isinstance(d["env"], str):
-            try:
-                if not os.path.exists(d["env"]):
-                    raise FileNotFoundError
-                d["env"] = dotenv_values(d["env"])
-            except FileNotFoundError:
+            if not os.path.isfile(d["env"]):
                 raise BentoMLException(f"Invalid env file path: {d['env']}")
+            d["env"] = dotenv_values(d["env"])
         elif isinstance(d["env"], list):
             for envar in d["env"]:
-                if not envars_rgx.match(envar):
+                if not envar.contains("="):
                     raise BentoMLException(
                         "All value in `env` list must follow format ENVAR=value"
                     )
             d["env"] = {k: v for k, v in (e.split("=") for e in d["env"])}
         elif isinstance(d["env"], dict):
-            filter_non_envar: list[str] = []
-            for k, v in d["env"].items():
-                if not v:
-                    filter_non_envar.append(k)
-            if len(filter_non_envar) > 0:
-                logger.warning(
-                    f"`env` dictionary contains 'None' value: {', '.join(filter_non_envar)}"
-                )
+            for v in d["env"].values():
+                if not isinstance(v, str):
+                    raise BentoMLException(
+                        "`env` dict should only have value type `str`."
+                    )
         else:
             raise BentoMLException(
-                f"`env` must be either a list or a dict, got type {type(d['env'])} instead."
+                f"`env` must be either a list, a dict, or a path to an environment file, got type {type(d['env'])} instead."
             )
 
     return DockerOptions(**d)
@@ -239,22 +233,26 @@ def conda_dependencies_validator(
 ) -> None:
     if not isinstance(value, list):
         raise InvalidArgument(
-            f"Expected `conda.dependencies` to be type `list`, got type: `{type(value)}` instead"
+            f"Expected 'conda.dependencies' to be a list of dependencies, got a '{type(value)}' instead."
         )
     else:
         conda_pip: "t.List[CondaPipType]" = [x for x in value if isinstance(x, dict)]
-        if conda_pip:
-            if len(conda_pip) > 1:
+        if len(conda_pip) > 0:
+            if len(conda_pip) > 1 or "pip" not in conda_pip[0]:
                 raise InvalidArgument(
                     "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
                 )
-            if "pip" not in conda_pip[0]:
-                raise InvalidArgument(
-                    "Conda dependencies can ONLY include `pip` value as a dictionary."
-                )
             pip_list: t.List[str] = conda_pip[0]["pip"]
             if not all(isinstance(x, str) for x in pip_list):
-                raise InvalidArgument("Expected `pip` values to be type `str`")
+                not_type_string = list(
+                    map(
+                        lambda x: str(type(x)),
+                        filter(lambda x: not isinstance(x, str), pip_list),
+                    )
+                )
+                raise InvalidArgument(
+                    f"Expected 'conda.pip' values to be strings, got {not_type_string}"
+                )
 
 
 @attr.frozen
@@ -311,6 +309,10 @@ class CondaOptions:
         else:
             deps_list = [] if self.dependencies is None else self.dependencies
             if self.pip is not None:
+                if any(isinstance(x, dict) for x in deps_list):
+                    raise BentoMLException(
+                        "Cannot not have both 'conda.dependencies.pip' and 'conda.pip'"
+                    )
                 deps_list.append(dict(pip=self.pip))  # type: ignore
 
             if not deps_list:
@@ -340,33 +342,6 @@ class CondaOptions:
 
     def is_default(self) -> bool:
         return self == CondaOptions()
-
-
-def _conda_options_structure_hook(d: t.Any, _: t.Type[CondaOptions]) -> CondaOptions:
-    pip_list: t.List[str]
-    if "pip" in d and d["pip"] is not None:
-        pip_list = d["pip"]
-    else:
-        pip_list = []
-    if "dependencies" in d and d["dependencies"] is not None:
-        deps: DependencyType = d["dependencies"]
-        if not isinstance(deps, list):
-            raise InvalidArgument(
-                f"dependencies has to be type list, got type {type(d['dependencies'])}"
-            )
-        for dep in deps:
-            if isinstance(dep, dict):
-                assert "pip" in dep and len(dep.keys()) == 1
-                pip_from_deps = dep.pop("pip")
-                pip_list.extend(pip_from_deps)
-        deps = list(filter(lambda x: not isinstance(x, dict), deps))
-        d["dependencies"] = deps
-    d["pip"] = None if not pip_list else pip_list
-
-    return CondaOptions(**d)
-
-
-bentoml_cattr.register_structure_hook(CondaOptions, _conda_options_structure_hook)
 
 
 @attr.frozen
@@ -480,12 +455,7 @@ class PythonOptions:
             # Additional user provided pip_args
             pip_args.append(self.pip_args)
 
-        # write pip install args to a text file if applicable
-        if pip_args:
-            with bento_fs.open(fs.path.combine(py_folder, "pip_args.txt"), "w") as f:
-                f.write(" ".join(pip_args))
-
-        if self.lock_packages:  # pragma: no cover
+        if self.lock_packages:
             # Note: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
             # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
@@ -520,6 +490,44 @@ class PythonOptions:
                 logger.error(
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
                 )
+
+        with bento_fs.open(
+            fs.path.join(py_folder, "install.sh"), "w"
+        ) as install_script:
+            args = " ".join(map(quote, pip_args)) if pip_args else ""
+            install_python_packages = (
+                """\
+#!/usr/bin/env bash
+
+# https://stackoverflow.com/a/246128/8643197
+BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
+
+PIP_ARGS=(-U --force-reinstall --no-warn-script-location """
+                + args
+                + """\
+)
+
+REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
+REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
+WHEELS_DIR="$BASEDIR/wheels"
+
+if [ -f "$REQUIREMENTS_LOCK" ]; then
+    echo "Installing pip packages from 'requirements.lock.txt'.."
+    pip install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
+else
+    if [ -f "$REQUIREMENTS_TXT" ]; then
+        echo "Installing pip packages from 'requirements.txt'.."
+        pip install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
+    fi
+fi
+
+if [ -d "$WHEELS_DIR" ]; then
+    echo "Installing pip packages from 'wheels'.."
+    pip install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
+fi
+                    """
+            )
+            install_script.write(install_python_packages)
 
     def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values
@@ -619,7 +627,7 @@ class BentoBuildConfig:
                     if self.docker.cuda_version != "default" and (
                         self.docker.cuda_version not in _spec.supported_cuda_versions
                     ):
-                        raise BentoMLException(  # pragma: no cover
+                        raise BentoMLException(
                             f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
                         )
 

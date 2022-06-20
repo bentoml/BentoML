@@ -105,7 +105,7 @@ docker:
   distro: debian
   python_version: '{python_version}'
   cuda_version: null
-  env: {{}}
+  env: null
   system_packages: null
   setup_script: null
   base_image: null

@@ -1,6 +1,3 @@
-# pylint: disable=redefined-outer-name
-# type: ignore[no-untyped-def]
-
 from __future__ import annotations
 
 import logging

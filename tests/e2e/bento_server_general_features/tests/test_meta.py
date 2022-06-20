@@ -67,6 +67,33 @@ async def test_cors(host: str, server_config_file: str) -> None:
         assert "Content-Length" not in headers.get("Access-Control-Expose-Headers", [])
 
 
+def test_service_init_checks():
+    py_model1 = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner(
+        name="invalid"
+    )
+    py_model2 = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner(
+        name="invalid"
+    )
+    with pytest.raises(ValueError) as excinfo:
+        _ = bentoml.Service(name="duplicates_runners", runners=[py_model1, py_model2])
+    assert "Found duplicate name" in str(excinfo.value)
+
+    with pytest.raises(AssertionError) as excinfo:
+        _ = bentoml.Service(name="invalid_model_type", models=[1])
+    assert "Service models list can only" in str(excinfo.value)
+
+
+def test_dunder_string():
+    runner = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner()
+
+    svc = bentoml.Service(name="dunder_string", runners=[runner])
+
+    assert (
+        str(svc)
+        == 'bentoml.Service(name="dunder_string", runners=[py_model.case-1.e2e])'
+    )
+
+
 """
 @pytest.since_bentoml_version("0.11.0+0")
 @pytest.mark.asyncio

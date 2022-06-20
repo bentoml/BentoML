@@ -106,7 +106,7 @@ docker:
   python_version: '{python_version}'
   cuda_version: null
   env: {{}}
-  system_packages: []
+  system_packages: null
   setup_script: null
   base_image: null
   dockerfile_template: null

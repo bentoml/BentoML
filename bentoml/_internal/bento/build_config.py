@@ -481,12 +481,14 @@ class PythonOptions:
             )
             pip_compile_args = [pip_compile_in]
             pip_compile_args.extend(pip_args)
-            pip_compile_args.extend([
-                "--quiet",
-                "--allow-unsafe",
-                "--no-header",
-                f"--output-file={pip_compile_out}",
-            ])
+            pip_compile_args.extend(
+                [
+                    "--quiet",
+                    "--allow-unsafe",
+                    "--no-header",
+                    f"--output-file={pip_compile_out}",
+                ]
+            )
             logger.info("Locking PyPI package versions..")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)

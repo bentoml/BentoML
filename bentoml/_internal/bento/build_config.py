@@ -462,7 +462,7 @@ class PythonOptions:
                 pip_args.extend(["--find-links", link])
         if self.extra_index_url:
             for url in self.extra_index_url:
-                pip_args.append(["--extra-index-url", url])
+                pip_args.extend(["--extra-index-url", url])
 
         if self.lock_packages:
             # Note: "--allow-unsafe" is required for including setuptools in the
@@ -479,16 +479,14 @@ class PythonOptions:
             pip_compile_out = bento_fs.getsyspath(
                 fs.path.combine(py_folder, "requirements.lock.txt")
             )
-            pip_compile_args = (
-                [pip_compile_in]
-                + pip_args
-                + [
-                    "--quiet",
-                    "--allow-unsafe",
-                    "--no-header",
-                    f"--output-file={pip_compile_out}",
-                ]
-            )
+            pip_compile_args = [pip_compile_in]
+            pip_compile_args.extend(pip_args)
+            pip_compile_args.extend([
+                "--quiet",
+                "--allow-unsafe",
+                "--no-header",
+                f"--output-file={pip_compile_out}",
+            ])
             logger.info("Locking PyPI package versions..")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)

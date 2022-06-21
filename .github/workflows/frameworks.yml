@@ -117,7 +117,6 @@ jobs:
               - *runner
               - bentoml/fastai.py
               - bentoml/_internal/frameworks/fastai.py
-              - tests/integration/frameworks/test_fastai_impl.py
             onnx:
               - *runner
               - bentoml/onnx.py

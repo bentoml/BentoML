@@ -6,7 +6,7 @@ FastAI
 Preface
 -------
 
-In this tutorial, we will show how to train a model for sentiment analysis using with **fastai**, then we will use BentoML to save and create a prediction service.
+In this tutorial, we will show how to train a model for sentiment analysis with **fastai**, then we will use BentoML to save and create a prediction service.
 
 We will use the IMDb dataset from the paper Learning Word Vectors for Sentiment Analysis, containing a few thousand movie reviews as our dataset for this tutorial.
 
@@ -62,7 +62,7 @@ The data follows an ImageNet-style organization, in the train folder, we have tw
 
 .. note::
 
-   The data block API is an advanced from fastai, if you prefer to use other methods
+   The data block API is an advanced feature from fastai, if you prefer to use other methods
    refers to the `main tutorial <https://docs.fast.ai/tutorial.text.html#Using-the-high-level-API>`_
    for more information.
 
@@ -71,7 +71,7 @@ Then, we can define a `Learner <https://docs.fast.ai/learner.html#Learner>`_ sui
 .. code-block:: python
 
    learner = text_classifier_learner(
-        imdb_dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy
+        dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy
     )
 
 We use the `AWD LSTM <https://arxiv.org/abs/1708.02182>`_ architecture, *drop_mult* is a parameter that controls the magnitude of all dropouts in that model, and we use `accuracy <https://docs.fast.ai/metrics.html#accuracy>`_ to track down how well we are doing. We can then fine-tune our pretrained model:
@@ -130,7 +130,9 @@ for serializing the model.
 
 .. code-block:: python
 
-   bentoml.fastai.save_model("fastai_sentiment", learner, pickle_module="pickle")
+   import pickle
+   
+   bentoml.fastai.save_model("fastai_sentiment", learner, pickle_module=pickle)
 
 .. note::
 

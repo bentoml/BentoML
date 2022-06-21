@@ -516,7 +516,7 @@ set -ex
 # Parent directory https://stackoverflow.com/a/246128/8643197
 BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
 
-PIP_ARGS=("""
+PIP_ARGS=(--no-warn-script-location """
                 + args
                 + """)
 
@@ -529,16 +529,6 @@ WHEELS_DIR="$BASEDIR/wheels"
 BENTOML_VERSION=${BENTOML_VERSION:-"""
                 + CLEAN_BENTOML_VERSION
                 + """}
-
-# Install the clean BentoML version from PyPI
-pip install bentoml==$BENTOML_VERSION
-
-# Install user-provided wheels
-if [ -d "$WHEELS_DIR" ]; then
-    echo "Installing wheels packaged in Bento.."
-    pip install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
-fi
-
 # Install python packages, prefer installing the requirements.lock.txt file if it exist
 if [ -f "$REQUIREMENTS_LOCK" ]; then
     echo "Installing pip packages from 'requirements.lock.txt'.."
@@ -548,6 +538,22 @@ else
         echo "Installing pip packages from 'requirements.txt'.."
         pip install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
     fi
+fi
+
+# Install user-provided wheels
+if [ -d "$WHEELS_DIR" ]; then
+    echo "Installing wheels packaged in Bento.."
+    pip install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
+fi
+
+# Install the BentoML from PyPI if it's not already installed
+if python -c "import bentoml" &> /dev/null; then
+    existing_bentoml_version=$(python -c "import bentoml; print(bentoml.__version__)")
+    if [ "$existing_bentoml_version" != "$BENTOML_VERSION" ]; then
+        echo "WARNING: using BentoML version ${existing_bentoml_version}"
+    fi
+else
+    pip install bentoml==$BENTOML_VERSION
 fi
                     """
             )

@@ -536,7 +536,7 @@ pip install bentoml==$BENTOML_VERSION
 # Install user-provided wheels
 if [ -d "$WHEELS_DIR" ]; then
     echo "Installing wheels packaged in Bento.."
-    pip install "$WHEELS_DIR"/**/*.whl "${PIP_ARGS[@]}"
+    pip install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
 fi
 
 # Install python packages, prefer installing the requirements.lock.txt file if it exist

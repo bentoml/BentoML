@@ -398,7 +398,7 @@ class PythonOptions:
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
-        bento_fs.makedirs(py_folder, recreate=True)
+        bento_fs.makedirs(wheels_folder, recreate=True)
 
         # Save the python version of current build environment
         with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:

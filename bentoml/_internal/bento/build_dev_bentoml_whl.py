@@ -60,7 +60,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
                 ],
             )
             # copy the built wheel file to target directory
-            shutil.copytree(dist_dir, target_path)  # type: ignore
+            shutil.copytree(dist_dir, target_path, dirs_exist_ok=True)  # type: ignore
     else:
         logger.info(
             "Custom BentoML build is detected. For a Bento to use the same build at serving time, add your custom BentoML build to the pip packages list, e.g. `packages=['git+https://github.com/bentoml/bentoml.git@13dfb36']`"

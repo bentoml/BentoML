@@ -398,6 +398,9 @@ class PythonOptions:
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
+
+        build_bentoml_editable_wheel(bento_fs.getsyspath(wheels_folder))
+
         bento_fs.makedirs(wheels_folder, recreate=True)
 
         # Save the python version of current build environment
@@ -411,8 +414,6 @@ class PythonOptions:
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
-
-        build_bentoml_editable_wheel(bento_fs.getsyspath(wheels_folder))
 
         if self.requirements_txt is not None:
             requirements_txt_file = resolve_user_filepath(

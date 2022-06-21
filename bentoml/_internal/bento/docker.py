@@ -22,6 +22,7 @@ SUPPORTED_CUDA_VERSIONS = ["11.6.2"]
 # Mapping from user provided version argument to the full version target to install
 ALLOWED_CUDA_VERSION_ARGS = {
     "11": "11.6.2",
+    "11.6": "11.6.2",
     "11.6.2": "11.6.2",
 }
 
@@ -44,7 +45,7 @@ DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
     },
     "ubi8": {
         "supported_python_versions": ["3.8", "3.9"],
-        "supported_cuda_versions": list(SUPPORTED_CUDA_VERSIONS),
+        "supported_cuda_versions": SUPPORTED_CUDA_VERSIONS,
         "python": {
             "image": "registry.access.redhat.com/ubi8/python-{spec_version}:1",
             "supported_architectures": ["amd64", "arm64"],
@@ -56,7 +57,7 @@ DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
     },
     "debian": {
         "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,
-        "supported_cuda_versions": list(SUPPORTED_CUDA_VERSIONS),
+        "supported_cuda_versions": SUPPORTED_CUDA_VERSIONS,
         "python": {
             "image": "python:{spec_version}-slim",
             "supported_architectures": SUPPORTED_ARCHITECTURES,

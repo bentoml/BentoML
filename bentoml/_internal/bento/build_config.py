@@ -149,7 +149,7 @@ class DockerOptions:
         default=None,
         converter=_convert_cuda_version,
         validator=attr.validators.optional(
-            attr.validators.in_(ALLOWED_CUDA_VERSION_ARGS.keys())
+            attr.validators.in_(ALLOWED_CUDA_VERSION_ARGS)
         ),
     )
     env: t.Optional[t.Union[str, t.List[str], t.Dict[str, str]]] = attr.field(
@@ -530,7 +530,16 @@ BENTOML_VERSION=${BENTOML_VERSION:-"""
                 + CLEAN_BENTOML_VERSION
                 + """}
 
-# Prefer installing with the requirements.lock.txt file if it exist
+# Install the clean BentoML version from PyPI
+pip install bentoml==$BENTOML_VERSION
+
+# Install user-provided wheels
+if [ -d "$WHEELS_DIR" ]; then
+    echo "Installing wheels packaged in Bento.."
+    pip install "$WHEELS_DIR"/**/*.whl "${PIP_ARGS[@]}"
+fi
+
+# Install python packages, prefer installing the requirements.lock.txt file if it exist
 if [ -f "$REQUIREMENTS_LOCK" ]; then
     echo "Installing pip packages from 'requirements.lock.txt'.."
     pip install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
@@ -540,14 +549,6 @@ else
         pip install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
     fi
 fi
-
-if [ -d "$WHEELS_DIR" ]; then
-    echo "Installing wheels packaged in Bento.."
-    pip install "$WHEELS_DIR"/**/*.whl "${PIP_ARGS[@]}"
-fi
-
-# Install BentoML last - will skip if a BentoML whl file is included
-pip install bentoml==$BENTOML_VERSION
                     """
             )
             f.write(install_script_content)

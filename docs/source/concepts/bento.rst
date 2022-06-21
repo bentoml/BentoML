@@ -481,7 +481,13 @@ desired version, install from a custom PyPI source, or install from a github rep
         - "matplotlib==3.5.1"
         - "package>=0.2,<0.3"
         - "torchvision==0.9.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu"
-        - "git+https://github.com/bentoml/bentoml.git@main"
+        - "git+https://github.com/username/mylib.git@main"
+
+.. note::
+    There's no need to specify :code:`bentoml` as a dependency here since BentoML will
+    addd the current version of BentoML to the Bento's dependency list by default. User
+    can override this by specifying a different BentoML version.
+
 
 If you already have a
 `requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_
@@ -514,11 +520,18 @@ well as the :code:`requirements_txt` file if provided.
         extra_index_url:
         - "https://<other api token>:@my.mirror.com/pypi/simple"
         - "https://pypi.python.org/simple"
-        pip_args: "--proxy=.. --cert=.."
+        pip_args: "--pre -U --force-reinstall"
 
 .. note::
-    The :code:`--no-cache-dir` argument will also be applied to :code:`pip` by default
-    when installing python packages during :code:`bentoml containerize`.
+    **BentoML by default will cache pip artifacts across all local image builds to speed
+    up the build process**. If you want to force a re-download instead of using the cache,
+    you can specify the :code:`pip_args: "--no-cache-dir"` option in your
+    :code:`bentofile.yaml`, or use the :code:`--no-cache` option in
+    :code:`bentoml containerize` command, e.g.:
+
+    .. code::
+
+        bentoml containerize my_bento:latest --no-cache
 
 
 PyPI Package Locking

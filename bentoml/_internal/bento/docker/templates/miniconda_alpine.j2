@@ -14,7 +14,7 @@ if [ -f {{ __environment_yml__ }} ]; then
   # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
   # pip-installed packages to satisfy dependencies.
   echo "Updating conda base environment with environment.yml"
-  conda config --set pip_interop_enabled True || true
+  conda config --set pip_interop_enabled True
   conda env update -n base -f {{ __environment_yml__ }}
   conda clean --all
 fi

@@ -85,12 +85,6 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 {% block SETUP_BENTO_COMPONENTS %}
 
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
-# Install python package dependencies with pip
-# BentoML by default generates two requirement files:
-#  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
-#  - ./env/python/requirements.txt: all dependencies as user specified in code or requirements.txt file
-# We will try to install from  requirements.txt.lock to install package with -U,
-# else we will try to install from requirements.txt.
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
     chmod +x {{ __install_python_scripts__ }} && \
     bash {{ __install_python_scripts__ }}

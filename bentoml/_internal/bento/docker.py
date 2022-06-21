@@ -18,7 +18,13 @@ logger = logging.getLogger(__name__)
 # Python supported versions
 SUPPORTED_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 # CUDA supported versions
-SUPPORTED_CUDA_VERSIONS = {"11": "11.6.2"}
+SUPPORTED_CUDA_VERSIONS = ["11.6.2"]
+# Mapping from user provided version argument to the full version target to install
+ALLOWED_CUDA_VERSION_ARGS = {
+    "11": "11.6.2",
+    "11.6.2": "11.6.2",
+}
+
 # Supported supported_architectures
 SUPPORTED_ARCHITECTURES = ["amd64", "arm64", "ppc64le", "s390x"]
 # Supported release types
@@ -38,7 +44,7 @@ DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
     },
     "ubi8": {
         "supported_python_versions": ["3.8", "3.9"],
-        "supported_cuda_versions": list(SUPPORTED_CUDA_VERSIONS.values()),
+        "supported_cuda_versions": list(SUPPORTED_CUDA_VERSIONS),
         "python": {
             "image": "registry.access.redhat.com/ubi8/python-{spec_version}:1",
             "supported_architectures": ["amd64", "arm64"],
@@ -50,7 +56,7 @@ DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
     },
     "debian": {
         "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,
-        "supported_cuda_versions": list(SUPPORTED_CUDA_VERSIONS.values()),
+        "supported_cuda_versions": list(SUPPORTED_CUDA_VERSIONS),
         "python": {
             "image": "python:{spec_version}-slim",
             "supported_architectures": SUPPORTED_ARCHITECTURES,
@@ -97,7 +103,7 @@ class DistroSpec:
 
     supported_python_versions: t.List[str] = attr.field(
         validator=attr.validators.deep_iterable(
-            lambda _, __, value: value in SUPPORTED_PYTHON_VERSIONS,
+            member_validator=attr.validators.in_(SUPPORTED_PYTHON_VERSIONS),
             iterable_validator=attr.validators.instance_of(list),
         ),
     )
@@ -106,7 +112,7 @@ class DistroSpec:
         default=None,
         validator=attr.validators.optional(
             attr.validators.deep_iterable(
-                lambda _, __, value: value in SUPPORTED_CUDA_VERSIONS.values(),
+                member_validator=attr.validators.in_(SUPPORTED_CUDA_VERSIONS)
             )
         ),
     )
@@ -114,7 +120,7 @@ class DistroSpec:
     supported_architectures: t.List[str] = attr.field(
         default=SUPPORTED_ARCHITECTURES,
         validator=attr.validators.deep_iterable(
-            lambda _, __, value: value in SUPPORTED_ARCHITECTURES,
+            member_validator=attr.validators.in_(SUPPORTED_ARCHITECTURES)
         ),
     )
 

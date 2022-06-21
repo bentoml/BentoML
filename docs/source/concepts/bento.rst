@@ -514,11 +514,12 @@ well as the :code:`requirements_txt` file if provided.
         extra_index_url:
         - "https://<other api token>:@my.mirror.com/pypi/simple"
         - "https://pypi.python.org/simple"
-        pip_args: "--proxy=.. --cert=.."
+        pip_args: "--pre -U --force-reinstall"
 
 .. note::
-    The :code:`--no-cache-dir` argument will also be applied to :code:`pip` by default
-    when installing python packages during :code:`bentoml containerize`.
+    BentoML by default will cache pip artifacts across all local image builds to speed
+    up the build process. If you want to force a re-download instead of using the cache,
+    you can specify the :code:`pip_args: "--no-cache-dir"` option.
 
 
 PyPI Package Locking

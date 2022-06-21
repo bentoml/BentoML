@@ -197,6 +197,7 @@ class Model(StoreItem):
     ) -> Model:
         self._save(model_store)
 
+        logger.info(f"Successfully saved {self}")
         return self
 
     def _save(self, model_store: ModelStore) -> Model:
@@ -210,7 +211,6 @@ class Model(StoreItem):
             self._fs.close()
             self.__fs = out_fs
 
-        logger.info(f"Successfully saved {self}")
         return self
 
     @classmethod

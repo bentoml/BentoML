@@ -64,6 +64,7 @@ jobs:
               - codecov.yml
               - .github/workflows/frameworks.yml
               - scripts/ci/run_tests.sh
+              - tests/integration/frameworks/test_frameworks.py
             runner: &runner
               - *related
               - bentoml/_internal/runner/**

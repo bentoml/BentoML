@@ -26,6 +26,7 @@ from .docker import ALLOWED_CUDA_VERSION_ARGS
 from .docker import SUPPORTED_PYTHON_VERSIONS
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ..configuration import CLEAN_BENTOML_VERSION
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
 if version_info >= (3, 8):
@@ -451,8 +452,6 @@ class PythonOptions:
             return
 
         pip_args: t.List[str] = []
-        if self.no_index:
-            pip_args.append("--no-index")
         if self.index_url:
             pip_args.extend(["--index-url", self.index_url])
         if self.trusted_host:
@@ -501,7 +500,9 @@ class PythonOptions:
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
                 )
 
-        # apply additional user provided pip_args
+        # add additional pip args that does not apply to pip-compile
+        if self.no_index:
+            pip_args.append("--no-index")
         if self.pip_args:
             pip_args.extend(self.pip_args.split())
 
@@ -525,6 +526,9 @@ PIP_ARGS=("""
 REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
 REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
 WHEELS_DIR="$BASEDIR/wheels"
+BENTOML_VERSION=${BENTOML_VERSION:-"""
+                + CLEAN_BENTOML_VERSION
+                + """}
 
 # Prefer installing with the requirements.lock.txt file if it exist
 if [ -f "$REQUIREMENTS_LOCK" ]; then
@@ -541,6 +545,9 @@ if [ -d "$WHEELS_DIR" ]; then
     echo "Installing wheels packaged in Bento.."
     pip install "$WHEELS_DIR"/**/*.whl "${PIP_ARGS[@]}"
 fi
+
+# Install BentoML last - will skip if a BentoML whl file is included
+pip install bentoml==$BENTOML_VERSION
                     """
             )
             f.write(install_script_content)
@@ -555,6 +562,17 @@ fi
 
         return attr.evolve(self, **defaults)
 
+
+def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
+    # Allow bentofile yaml to have either a str or list of str for these options
+    for field in ["trusted_host", "find_links", "extra_index_url"]:
+        if field in d and isinstance(d[field], str):
+            d[field] = [d[field]]
+
+    return PythonOptions(**d)
+
+
+bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
 

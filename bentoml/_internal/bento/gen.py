@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import typing as t
 import logging
 from sys import version_info
@@ -13,8 +12,7 @@ from jinja2.loaders import FileSystemLoader
 
 from ..utils import resolve_user_filepath
 from .docker import DistroSpec
-from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
+from ..configuration import CLEAN_BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +37,6 @@ BLOCKS = {
 }
 
 
-def clean_bentoml_version(bentoml_version: str) -> str:
-    post_version = bentoml_version.split("+")[0]
-    match = re.match(r"^(\d+).(\d+).(\d+)(?:(a|rc)\d)*", post_version)
-    if match is None:
-        raise BentoMLException("Errors while parsing BentoML version.")
-    return match.group()
-
-
 def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
     """
     Expand a given paths with respect to :code:`BENTO_PATH`.
@@ -56,7 +46,6 @@ def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
 
 
 J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
-    "clean_bentoml_version": clean_bentoml_version,
     "expands_bento_path": expands_bento_path,
 }
 
@@ -65,9 +54,7 @@ J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
 class ReservedEnv:
     base_image: str
     supported_architectures: list[str]
-    bentoml_version: str = attr.field(
-        default=BENTOML_VERSION, converter=clean_bentoml_version
-    )
+    bentoml_version: str = attr.field(default=CLEAN_BENTOML_VERSION)
     python_version_full: str = attr.field(
         default=f"{version_info.major}.{version_info.minor}.{version_info.micro}"
     )

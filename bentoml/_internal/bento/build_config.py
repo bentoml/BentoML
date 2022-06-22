@@ -132,20 +132,20 @@ def _convert_env(
 
 @attr.frozen
 class DockerOptions:
-    distro: str = attr.field(
+    distro: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
         ),
     )
-    python_version: str = attr.field(
+    python_version: t.Optional[str] = attr.field(
         converter=_convert_python_version,
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
         ),
     )
-    cuda_version: str = attr.field(
+    cuda_version: t.Optional[str] = attr.field(
         default=None,
         converter=_convert_cuda_version,
         validator=attr.validators.optional(

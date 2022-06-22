@@ -326,7 +326,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 # However, we will still register PyTorchTensorContainer at the end
 #   of this file for consistency. Since the map of DataContainerRegisty's
 #   single type and batch type is a dictionary of LazyType and the container
-#   itself, it would just replce the existing value.
+#   itself, it would just replace the existing DataContainer.
 DataContainerRegistry.register_container(
     LazyType("torch", "Tensor"),
     LazyType("torch", "Tensor"),

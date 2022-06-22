@@ -112,7 +112,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 0 # fetch all tags and branches
 
       - name: Setup python
         uses: actions/setup-python@v2

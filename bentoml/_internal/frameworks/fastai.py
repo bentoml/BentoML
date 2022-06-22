@@ -3,6 +3,7 @@ from __future__ import annotations
 import types
 import typing as t
 import logging
+import contextlib
 from typing import TYPE_CHECKING
 
 import cloudpickle
@@ -192,7 +193,11 @@ def save_model(
     """
     if isinstance(learner, nn.Module):
         raise BentoMLException(
-            "bentoml.fastai.save_model() does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
+            "'bentoml.fastai.save_model()' does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
+        )
+    if not isinstance(learner, Learner):
+        raise BentoMLException(
+            f"'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got {type(learner)} instead."
         )
 
     context = ModelContext(
@@ -239,7 +244,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
     logger.warning(
-        "Even though fastai is supported, Runners created from FastAIRunnable will not be optimized for performance. If performance is critical to your usecase, please access the PyTorch model directly via `learn.model` and use `bentoml.pytorch.get_runnable()` instead. Note that by directly accessing PyTorch model, you are giving up all fastai's features. Refers to https://docs.bentoml.org/en/latest/frameworks/fastai.html for more information."
+        "Runners created from FastAIRunnable will not be optimized for performance. If performance is critical to your usecase, please access the PyTorch model directly via 'learn.model' and use 'bentoml.pytorch.get_runnable()' instead."
     )
 
     class FastAIRunnable(bentoml.Runnable):
@@ -255,7 +260,13 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 )
             self.learner = load_model(bento_model)
             self.learner.model.train(False)  # to turn off dropout and batchnorm
+            self._no_grad_context = contextlib.ExitStack()
+            if hasattr(torch, "inference_mode"):  # pytorch>=1.9
+                self._no_grad_context.enter_context(torch.inference_mode())
+            else:
+                self._no_grad_context.enter_context(torch.no_grad())
 
+            # TODO: support GPU and cpu=False
             self.device = "cpu"
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
@@ -266,6 +277,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     raise InvalidArgument(
                         f"No method with name {method_name} found for Learner of type {self.learner.__class__}"
                     )
+
+        def __del__(self):
+            self._no_grad_context.close()
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(

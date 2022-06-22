@@ -141,6 +141,14 @@ for serializing the model.
 
    :bdg-primary:`Our Recommendation:` ``cloudpickle`` *should be used for most cases.*
 
+.. admonition:: about :code:`save_model()` behaviour
+
+   BentoML also tries to remove some known callback that have issues with
+   serialization, such as ``ParamScheduler``. 
+
+   We found that some of given callback are only useful during training phase, not during serving, thus 
+   not affecting inference results.
+
 
 Loading a learner with BentoML
 ------------------------------

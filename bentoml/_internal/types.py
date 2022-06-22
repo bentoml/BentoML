@@ -88,7 +88,7 @@ class LazyType(t.Generic[T]):
     lazy dependencies
 
     solution:
-    >>> LazyType("numpy.ndarray").isinstance(obj)
+    >>> isinstance(obj, LazyType("numpy.ndarray"))
 
     * conflicts 2
 
@@ -99,7 +99,7 @@ class LazyType(t.Generic[T]):
     solution:
     >>> if TYPE_CHECKING:
     >>>     from numpy.typing import NDArray
-    >>> LazyType["NDArray"]("numpy.ndarray").isinstance(obj)`
+    >>> isinstance(LazyType["NDArray"]("numpy.ndarray"))
     >>> #  this will narrow the obj to NDArray with PEP-647
 
     * conflicts 3
@@ -150,11 +150,14 @@ class LazyType(t.Generic[T]):
             else:
                 self.qualname: str = getattr(module_or_cls, "__name__")
 
-    def __instancecheck__(self, obj) -> "t.TypeGuard[T]":
-        return self.isinstance(obj)
+    def __instancecheck__(self, obj: t.Any) -> t.TypeGuard[T]:
+        try:
+            return isinstance(obj, self.get_class(import_module=False))
+        except ValueError:
+            return False
 
     @classmethod
-    def from_type(cls, typ_: t.Union["LazyType[T]", "t.Type[T]"]) -> "LazyType[T]":
+    def from_type(cls, typ_: LazyType[T] | t.Type[T]) -> LazyType[T]:
         if isinstance(typ_, LazyType):
             return typ_
         return cls(typ_)
@@ -193,11 +196,8 @@ class LazyType(t.Generic[T]):
 
         return self._runtime_class
 
-    def isinstance(self, obj: t.Any) -> "t.TypeGuard[T]":
-        try:
-            return isinstance(obj, self.get_class(import_module=False))
-        except ValueError:
-            return False
+    def isinstance(self, obj: t.Any) -> t.TypeGuard[T]:
+        return isinstance(obj, self)
 
 
 if TYPE_CHECKING:

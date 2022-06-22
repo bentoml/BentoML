@@ -37,7 +37,7 @@ CLI_LOGGING_CONFIG: dict[str, t.Any] = {
         "bentoml": {
             "handlers": ["bentomlhandler", "defaulthandler"],
             "level": logging.INFO,
-            "propagate": True,
+            "propagate": False,
         },
     },
     "root": {"level": logging.WARNING},

@@ -94,7 +94,7 @@ For retrieving the model metadata or custom objects, use the :code:`get` method:
 
     my_runner: bentoml.Runner = bento_model.to_runner()
 
-:code:`bentoml.models.get` returns a :ref:`bentoml.Model </reference/core:Model>`
+:code:`bentoml.models.get` returns a :ref:`bentoml.Model <reference/core:Model>`
 instance, which is a reference to a saved model entry in the BentoML model store. The
 :code:`bentoml.Model` instance then provides access to the model info and the
 :code:`to_runner` API for creating a Runner instance from the model.

@@ -59,7 +59,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -86,6 +86,11 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.core.Booster:
         bento_model = get(bento_model)
         assert isinstance(bento_model, bentoml.Model)
 
+    if bento_model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
+        )
+
     model_file = bento_model.path_of(MODEL_FILENAME)
     booster = xgb.core.Booster(model_file=model_file)
     return booster
@@ -99,7 +104,7 @@ def save_model(
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save an XGBoost model instance to the BentoML model store.
 
@@ -148,8 +153,11 @@ def save_model(
         ...
 
         # `save` the booster to BentoML modelstore:
-        tag = bentoml.xgboost.save_model("my_xgboost_model", bst, booster_params=param)
+        bento_model = bentoml.xgboost.save_model("my_xgboost_model", bst, booster_params=param)
     """  # noqa: LN001
+    if not isinstance(model, xgb.core.Booster):
+        raise TypeError(f"Given model ({model}) is not a xgboost.core.Booster.")
+
     context: ModelContext = ModelContext(
         framework_name="xgboost",
         framework_versions={"xgboost": get_pkg_version("xgboost")},
@@ -175,7 +183,7 @@ def save_model(
     ) as bento_model:
         model.save_model(bento_model.path_of(MODEL_FILENAME))  # type: ignore (incomplete XGBoost types)
 
-        return bento_model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:

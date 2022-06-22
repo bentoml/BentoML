@@ -92,14 +92,12 @@ def test_transformers(
     expected_options: t.Dict[str, t.Any],
     input_data: t.Any,
 ):
-    tag: bentoml.Tag = bentoml.transformers.save_model(name, pipeline)
-    assert tag is not None
-    assert tag.name == name
+    saved_model = bentoml.transformers.save_model(name, pipeline)
+    assert saved_model is not None
+    assert saved_model.tag.name == name
 
-    bento_model: bentoml.Model = bentoml.transformers.get(tag).with_options(
-        **with_options
-    )
-    assert bento_model.tag == tag
+    bento_model: bentoml.Model = saved_model.with_options(**with_options)
+    assert bento_model.tag == saved_model.tag
     assert bento_model.info.context.framework_name == "transformers"
     assert bento_model.info.options.task == expected_options["task"]  # type: ignore
     assert bento_model.info.options.kwargs == expected_options["kwargs"]  # type: ignore

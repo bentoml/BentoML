@@ -29,11 +29,6 @@ from ...exceptions import BentoMLException
 from ..configuration import CLEAN_BENTOML_VERSION
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
-if version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
 if TYPE_CHECKING:
     from attr import Attribute
     from fs.base import FS
@@ -629,7 +624,7 @@ class BentoBuildConfig:
 
         if use_cuda and use_conda:
             raise BentoMLException(
-                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a docker_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
+                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
             )
 
         if self.docker.distro is not None:

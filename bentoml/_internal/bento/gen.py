@@ -35,6 +35,7 @@ BLOCKS = {
     "SETUP_BENTO_COMPONENTS",
     "SETUP_BENTO_ENTRYPOINT",
 }
+BASE_TEMPLATE_NAME = "bento_base_template"
 
 
 def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
@@ -159,7 +160,7 @@ def generate_dockerfile(
         from bentoml._internal.bento.bento import BentoInfo
 
         docker_options = BentoInfo.from_yaml_file("{bento_path}/bento.yaml").docker
-        docker_options.docker_template = "./override_template.j2"
+        docker_options.dockerfile_template = "./override_template.j2"
         dockerfile = generate_dockerfile(docker_options, use_conda=False)
 
     """
@@ -168,7 +169,7 @@ def generate_dockerfile(
     user_templates = options.dockerfile_template
 
     TEMPLATES_PATH = [os.path.join(os.path.dirname(__file__), "docker", "templates")]
-    ENVIRONMENT = Environment(
+    environment = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
         trim_blocks=True,
         lstrip_blocks=True,
@@ -181,7 +182,7 @@ def generate_dockerfile(
         spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
         base = f"{spec.release_type}_{distro}.j2"
 
-    template = ENVIRONMENT.get_template(base, globals=J2_FUNCTION)
+    template = environment.get_template(base, globals=J2_FUNCTION)
     logger.debug(
         f"Using base Dockerfile template: {base}, and their path: {os.path.join(TEMPLATES_PATH[0], base)}"
     )
@@ -192,10 +193,10 @@ def generate_dockerfile(
         TEMPLATES_PATH.append(dir_path)
         new_loader = FileSystemLoader(TEMPLATES_PATH, followlinks=True)
 
-        environment = ENVIRONMENT.overlay(loader=new_loader)
+        environment = environment.overlay(loader=new_loader)
         template = environment.get_template(
             user_templates,
-            globals={"bento_base_template": template, **J2_FUNCTION},
+            globals={BASE_TEMPLATE_NAME: template, **J2_FUNCTION},
         )
 
     return template.render(**get_templates_variables(options, use_conda=use_conda))

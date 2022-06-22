@@ -799,7 +799,7 @@ will build a new image on top of the base_image with the following steps:
 Docker Template (Danger Zone)
 """""""""""""""""""""""""""""
 
-The :code:`docker_template` field gives user the full control over how the
+The :code:`dockerfile_template` field gives user the full control over how the
 :code:`Dockerfile` was generated in a Bento. Users can use this field to
 customize Bento's Dockerfile instruction set to suits their needs.
 
@@ -819,12 +819,12 @@ This template file is a mixed between a :code:`Dockerfile` and a :code:`Jinja` t
    The template file can have extension :code:`.jinja`, :code:`.j2`, or any
    extensions that Jinja2 can understand.
 
-Then add the path to the given template file to the :code:`docker_template` field in the :code: `bentofile.yaml`:
+Then add the path to the given template file to the :code:`dockerfile_template` field in the :code: `bentofile.yaml`:
 
 .. code:: yaml
 
     docker:
-        docker_template: "./Dockerfile.template"
+        dockerfile_template: "./Dockerfile.template"
 
 .. note:: 
 
@@ -834,7 +834,7 @@ Then add the path to the given template file to the :code:`docker_template` fiel
    .. code:: yaml
 
       docker:
-          docker_template: "~/workspace/Dockerfile.template"
+          dockerfile_template: "~/workspace/Dockerfile.template"
 
 Now to see the result generated Dockerfile, do the following:
 
@@ -851,21 +851,20 @@ Run :code:`bentoml containerize <bento>` to confirm the generated Dockerfile wor
 Docker Options Table
 """"""""""""""""""""
 
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Field           | Description                                                                                                                               |
-+=================+===========================================================================================================================================+
-| distro          | The OS distribution on the Docker image, Default to :code:`debian`.                                                                       |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| python_version  | Specify which python to include on the Docker image [`3.7`, `3.8`, `3.9`, `3.10`]. Default to the Python version in build environment.    |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| cuda_version    | Specify the cuda version to install on the Docker image [:code:`11.6.2`].                                                                 |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| env             | Declare environment variables in the generated Dockerfile.                                                                                |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| setup_script    | A python or shell script that executes during docker build time.                                                                          |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| base_image      | A user-provided docker base image. This will override all other custom attributes of the image.                                           |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| docker_template | Customize the generated dockerfile by providing a jinja2 template that extends the default dockerfile.                                    |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Field               | Description                                                                                                                               |
++=====================+===========================================================================================================================================+
+| distro              | The OS distribution on the Docker image, Default to :code:`debian`.                                                                       |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| python_version      | Specify which python to include on the Docker image [`3.7`, `3.8`, `3.9`, `3.10`]. Default to the Python version in build environment.    |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| cuda_version        | Specify the cuda version to install on the Docker image [:code:`11.6.2`].                                                                 |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| env                 | Declare environment variables in the generated Dockerfile.                                                                                |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| setup_script        | A python or shell script that executes during docker build time.                                                                          |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| base_image          | A user-provided docker base image. This will override all other custom attributes of the image.                                           |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| dockerfile_template | Customize the generated dockerfile by providing a jinja2 template that extends the default dockerfile.                                    |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+

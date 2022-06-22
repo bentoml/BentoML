@@ -283,23 +283,147 @@ The following templates per distro are available for extending:
                └── python_ubi8.j2
 
 
-.. code-block:: jinja
+Adding `conda` to CUDA-based template
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    {% extends bento_auto_template %}
+.. tip::
 
-.. note::
+   :bdg-warning:`Warning:` miniconda install scripts provided by ContinuumIO (the parent company of Anaconda) supports Python 3.7 to 3.9. Make sure that you are using the correct python version under :code:`docker.python_version`.
 
-    Their might be cases where you use conda-based templates and also specify
-    cuda options in your ``bentofile.yaml``:
+If you need to use conda for CUDA images, use the following template (*partially extracted from* `ContinuumIO/docker-images <https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile>`_):
 
-    .. code-block:: yaml
+.. dropdown:: Expands
+   :icon: code
+   :class-title: sd-text-primary
 
-       docker:
-         distro: debian
-         cuda_version: 11
-         docker_template: ./template.j2  # this template.j2 extends from miniconda_debian.j2
+   .. code-block:: jinja
 
-    :bdg-warning:`Expected behaviour:` The ``cuda_version`` option will be ignored.
+      {% extends "base_debian.j2" %}
+      {# Make sure to change the correct python_version and conda version accordingly. #}
+      {# example: py38_4.10.3 #}
+      {# refers to https://repo.anaconda.com/miniconda/ for miniconda3 base #}
+      {% set conda_version="py39_4.11.0" %}
+      {% set conda_path="/opt/conda" %}
+      {% set conda_exec= [conda_path, "bin", "conda"] | join("/") %}
+      {% block SETUP_BENTO_BASE_IMAGE %}
+      FROM debian:bullseye-slim as conda-build
+
+      RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
+          --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
+          apt-get update -y && \
+          apt-get install -y --no-install-recommends --allow-remove-essential \
+                      software-properties-common \
+              bzip2 \
+              ca-certificates \
+              git \
+              libglib2.0-0 \
+              libsm6 \
+              libxext6 \
+              libxrender1 \
+              mercurial \
+              openssh-client \
+              procps \
+              subversion \
+              wget && \
+          apt-get clean
+
+      ENV PATH {{ conda_path }}/bin:$PATH
+
+      SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
+
+      ARG CONDA_VERSION={{ conda_version }}
+
+      RUN bash <<EOF
+      set -ex
+
+      UNAME_M=$(uname -m)
+
+      if [ "${UNAME_M}" = "x86_64" ]; then
+          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh";
+          SHA256SUM="4ee9c3aa53329cd7a63b49877c0babb49b19b7e5af29807b793a76bdb1d362b4";
+      elif [ "${UNAME_M}" = "s390x" ]; then
+          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-s390x.sh";
+          SHA256SUM="e5e5e89cdcef9332fe632cd25d318cf71f681eef029a24495c713b18e66a8018";
+      elif [ "${UNAME_M}" = "aarch64" ]; then
+          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh";
+          SHA256SUM="00c7127a8a8d3f4b9c2ab3391c661239d5b9a88eafe895fd0f3f2a8d9c0f4556";
+      elif [ "${UNAME_M}" = "ppc64le" ]; then
+          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-ppc64le.sh";
+          SHA256SUM="8ee1f8d17ef7c8cb08a85f7d858b1cb55866c06fcf7545b98c3b82e4d0277e66";
+      fi
+
+      wget "${MINICONDA_URL}" -O miniconda.sh -q && echo "${SHA256SUM} miniconda.sh" > shasum
+
+      if [ "${CONDA_VERSION}" != "latest" ]; then 
+          sha256sum --check --status shasum; 
+      fi
+
+      mkdir -p /opt
+      sh miniconda.sh -b -p {{ conda_path }} && rm miniconda.sh shasum
+
+      find {{ conda_path }}/ -follow -type f -name '*.a' -delete
+      find {{ conda_path }}/ -follow -type f -name '*.js.map' -delete
+      {{ conda_exec }} clean -afy
+      EOF
+
+      {{ super() }}
+
+      ENV PATH {{ conda_path }}/bin:$PATH
+
+      COPY --from=conda-build {{ conda_path }} {{ conda_path }}
+
+      RUN bash <<EOF
+      ln -s {{ conda_path }}/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+      echo ". {{ conda_path }}/etc/profile.d/conda.sh" >> ~/.bashrc
+      echo "{{ conda_exec }} activate base" >> ~/.bashrc
+      EOF
+
+      {% endblock %}
+      {% block SETUP_BENTO_ENVARS %}
+
+      SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
+
+      {{ super() }}
+
+      RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
+      SAVED_PYTHON_VERSION={{ __python_version_full__ }}
+      PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
+
+      echo "Installing Python $PYTHON_VERSION with conda..."
+      {{ conda_exec }} install -y -n base pkgs/main::python=$PYTHON_VERSION pip
+
+      if [ -f {{ __environment_yml__ }} ]; then
+      # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+      # pip-installed packages to satisfy dependencies.
+      echo "Updating conda base environment with environment.yml"
+      {{ conda_exec }} config --set pip_interop_enabled True || true
+      {{ conda_exec }} env update -n base -f {{ __environment_yml__ }}
+      {{ conda_exec }} clean --all
+      fi
+      EOF
+      {% endblock %}
+
+
+About BentoML's templates inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All internal templates are located `here <https://github.com/bentoml/BentoML/tree/main/bentoml/_internal/bento/docker/templates>`_.
+
+As you can see, the BentoML internal Dockerfile templates are organized with the format :code:`<release_type>_<distro>.j2` with:
+
++---------------+------------------------------------------+
+| Release type  | Description                              |
++===============+==========================================+
+| base          | A base setup for all supported distros.  |
++---------------+------------------------------------------+
+| cuda          | CUDA-supported templates.                |
++---------------+------------------------------------------+
+| miniconda     | Conda-supported templates.               |
++---------------+------------------------------------------+
+| python        | Python releases.                         |
++---------------+------------------------------------------+
+
+where :code:`base_<distro>.j2` is extended from `base.j2 <https://github.com/bentoml/BentoML/tree/main/bentoml/_internal/bento/docker/templates/base.j2>`_
 
 .. tip::
 

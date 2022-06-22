@@ -262,12 +262,17 @@ def get_runnable(
         def __init__(self):
             super().__init__()
 
-            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
+            available_gpus: str = os.getenv("NVIDIA_VISIBLE_DEVICES")
             if available_gpus is not None and available_gpus != "":
                 # assign GPU resources
-                kwargs = {
-                    "device": available_gpus,
-                }
+                if not available_gpus.isdigit():
+                    raise ValueError(
+                        f"Expecting numeric value for NVIDIA_VISIBLE_DEVICES, got {available_gpus}."
+                    )
+                else:
+                    kwargs = {
+                        "device": int(available_gpus),
+                    }
             else:
                 # assign CPU resources
                 kwargs = {}

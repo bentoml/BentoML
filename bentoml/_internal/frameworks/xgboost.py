@@ -12,31 +12,40 @@ from bentoml import Tag
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
+from bentoml._internal.types import LazyType
 from bentoml._internal.models.model import ModelContext
 
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
+    import types
+
+    import pandas as pd
+    import xgboost as xgb
+    from numpy.typing import NDArray
+
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
-
-    from .. import external_typing as ext
-
-try:
-    import xgboost as xgb
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        """xgboost is required in order to use module `bentoml.xgboost`, install
-        xgboost with `pip install xgboost`. For more information, refers to
-        https://xgboost.readthedocs.io/en/latest/install.html
-        """
-    )
 
 MODULE_NAME = "bentoml.xgboost"
 MODEL_FILENAME = "saved_model.ubj"
 API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
+
+
+def import_xgboost() -> types.ModuleType:
+    try:
+        import xgboost as xgb
+
+        return xgb
+    except ImportError:  # pragma: no cover
+        raise MissingDependencyException(
+            f"""xgboost is required in order to use {MODULE_NAME}. Install
+            xgboost with 'pip install xgboost'. For more information, see
+            https://xgboost.readthedocs.io/en/latest/install.html
+            """
+        )
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -90,6 +99,8 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.core.Booster:
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
+
+    xgb = import_xgboost()
 
     model_file = bento_model.path_of(MODEL_FILENAME)
     booster = xgb.core.Booster(model_file=model_file)
@@ -154,8 +165,8 @@ def save_model(
 
         # `save` the booster to BentoML modelstore:
         bento_model = bentoml.xgboost.save_model("my_xgboost_model", bst, booster_params=param)
-    """  # noqa: LN001
-    if not isinstance(model, xgb.core.Booster):
+    """
+    if not isinstance(model, LazyType["xgb.core.Booster"]("xgboost.core", "Booster")):
         raise TypeError(f"Given model ({model}) is not a xgboost.core.Booster.")
 
     context: ModelContext = ModelContext(
@@ -197,6 +208,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
         def __init__(self):
             super().__init__()
+            self.xgb = import_xgboost()
+
             self.model = load_model(bento_model)
 
             # check for resources
@@ -223,10 +236,11 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
             self: XGBoostRunnable,
-            input_data: ext.NpNDArray
-            | ext.PdDataFrame,  # TODO: add support for DMatrix
-        ) -> ext.NpNDArray:
-            dmatrix = xgb.DMatrix(input_data)
+            input_data: NDArray[t.Any] | pd.DataFrame,
+            # TODO: add support for DMatrix
+        ) -> NDArray[t.Any]:
+            print(input_data)
+            dmatrix = self.xgb.DMatrix(input_data)
 
             res = self.predict_fns[method_name](dmatrix)
             return np.asarray(res)  # type: ignore (incomplete np types)

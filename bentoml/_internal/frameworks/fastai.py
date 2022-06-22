@@ -6,6 +6,7 @@ import logging
 import contextlib
 from typing import TYPE_CHECKING
 
+import attr
 import cloudpickle
 
 import bentoml
@@ -17,6 +18,7 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
+from ..models.model import ModelOptions
 from .common.pytorch import PyTorchTensorContainer
 from ..runner.container import DataContainerRegistry
 
@@ -59,7 +61,7 @@ except ImportError:  # pragma: no cover
     )
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get"]
+__all__ = ["load_model", "save_model", "get_runnable", "get", "FastAIOptions"]
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -88,8 +90,14 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
+@attr.define
+class FastAIOptions(ModelOptions):
+    cpu: bool = attr.field(factory=bool)
+
+
 def load_model(
     bento_model: str | Tag | bentoml.Model,
+    *,
     cpu: bool = True,
 ) -> Learner:
     """
@@ -126,8 +134,11 @@ def load_model(
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
+    options_cpu = bento_model.info.options.cpu or cpu  # type: ignore (unfinished model options type)
 
-    return t.cast(Learner, load_learner(bento_model.path_of(MODEL_FILENAME), cpu=cpu))  # type: ignore (bad torch type)
+    pickle_file: str = bento_model.path_of(MODEL_FILENAME)
+    with open(pickle_file, "rb") as f:
+        return t.cast(Learner, load_learner(f, cpu=options_cpu))  # type: ignore (bad torch type)
 
 
 def save_model(
@@ -197,7 +208,7 @@ def save_model(
         )
     if not isinstance(learner, Learner):
         raise BentoMLException(
-            f"'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got {type(learner)} instead."
+            f"'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got {learner.__class__.__name__} instead."
         )
 
     context = ModelContext(
@@ -221,7 +232,7 @@ def save_model(
         api_version=API_VERSION,
         signatures=signatures,
         labels=labels,
-        options=None,
+        options=FastAIOptions(),
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
@@ -247,6 +258,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     logger.warning(
         "Runners created from FastAIRunnable will not be optimized for performance. If performance is critical to your usecase, please access the PyTorch model directly via 'learn.model' and use 'bentoml.pytorch.get_runnable()' instead."
     )
+    cpu: bool = bento_model.info.options.cpu
 
     class FastAIRunnable(bentoml.Runnable):
         SUPPORT_NVIDIA_GPU = False
@@ -259,7 +271,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 logger.debug(
                     "CUDA is available, but BentoML does not support running fastai models on GPU."
                 )
-            self.learner = load_model(bento_model)
+            self.learner = load_model(bento_model, cpu=cpu)
             self.learner.model.train(False)  # to turn off dropout and batchnorm
             self._no_grad_context = contextlib.ExitStack()
             if hasattr(torch, "inference_mode"):  # pytorch>=1.9
@@ -280,7 +292,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     )
 
         def __del__(self):
-            self._no_grad_context.close()
+            if hasattr(self, "_no_grad_context"):
+                self._no_grad_context.close()
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(

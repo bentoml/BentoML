@@ -71,8 +71,12 @@ evalml:
 fastai:
   <<: *ntmpl
   dependencies:
-    - "fastai"
+    - fastai
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
     - torch
+    - pandas
+    - scikit-learn
+
 
 fasttext:
   <<: *tmpl

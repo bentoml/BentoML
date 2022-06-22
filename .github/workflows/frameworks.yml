@@ -118,6 +118,7 @@ jobs:
               - *runner
               - bentoml/fastai.py
               - bentoml/_internal/frameworks/fastai.py
+              - tests/unit/_internal/frameworks/test_fastai.py
             onnx:
               - *runner
               - bentoml/onnx.py
@@ -385,12 +386,21 @@ jobs:
         run: make tests-fastai
         shell: bash
 
+      - name: Run unit test for fastai
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"fastai.unit.xml" --cov-report term-missing:skip-covered)
+          python -m pytest ./tests/unit/_internal/frameworks/test_fastai.py "${OPTS[@]}" || ERR=1
+          if ! test $ERR = 0; then
+            echo "unit tests for fastai failed!"
+            exit 1
+          fi
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.detectron2 == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
-          files: ./fastai.xml
+          files: ./fastai.xml,./fastai.unit.xml
           flags: fastai
           verbose: true
 

@@ -93,10 +93,6 @@ def main(
         arbiter.start()
         return
 
-    # import os
-
-    # assert os.environ.get("HTTP_PROXY")
-
     component_context.component_name = f"api_server:{worker_id}"
 
     from ...log import configure_server_logging

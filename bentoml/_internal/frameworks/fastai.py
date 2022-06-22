@@ -204,6 +204,7 @@ def save_model(
         framework_name="fastai",
         framework_versions={
             "fastai": FASTAI_VERSION,
+            "fastcore": get_pkg_version("fastcore"),
             "torch": get_pkg_version("torch"),
         },
     )

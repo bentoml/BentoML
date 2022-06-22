@@ -193,13 +193,11 @@ Using Runners
 
 .. seealso::
 
-   :ref:`Runners<concepts/runner:Using Runners>` for more information on what is
-   a Runner and how to use it.
+   :ref:`Runners' documentation<concepts/runner:Using Runners>` on Runners' concept and its usage.
 
 .. seealso::
 
-   :ref:`Runners<concepts/runner:Specifying Required Resources>` on how to
-   provide options for a runner.
+   :ref:`Specifying Runner Resources<concepts/runner:Specifying Required Resources>` on providing options for Runners.
 
 
 To use ``fastai`` runner locally, access the model via ``get`` and convert it to

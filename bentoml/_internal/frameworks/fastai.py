@@ -11,7 +11,6 @@ import cloudpickle
 
 import bentoml
 
-from ..types import LazyType
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import InvalidArgument
@@ -22,7 +21,6 @@ from ..models.model import ModelOptions
 
 # register PyTorchTensorContainer as import side effect.
 from .common.pytorch import PyTorchTensorContainer  # type: ignore # noqa
-from ..runner.container import DataContainerRegistry
 
 MODULE_NAME = "bentoml.fastai"
 MODEL_FILENAME = "saved_model.pkl"
@@ -315,15 +313,3 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         add_runnable_method(method_name, options)
 
     return FastAIRunnable
-
-
-# NOTE: we are currently register DataContainer
-#   for each of the data container type on the module level code.
-#
-# By simply have the line below, we are already registering
-#   PyTorchTensorContainer due to Python's side-effect of imports.
-#
-# However, we will still register PyTorchTensorContainer at the end
-#   of this file for consistency. Since the map of DataContainerRegisty's
-#   single type and batch type is a dictionary of LazyType and the container
-#   itself, it would just replace the existing DataContainer.

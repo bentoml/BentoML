@@ -6,9 +6,9 @@ FastAI
 Preface
 -------
 
-In this tutorial, we will show how to train a model for sentiment analysis with **fastai**, then we will use BentoML to save and create a prediction service.
+In this tutorial, we will train a model for sentiment analysis with **fastai**, then use BentoML to save and create a prediction service.
 
-We will use the IMDb dataset from the paper Learning Word Vectors for Sentiment Analysis, containing a few thousand movie reviews as our dataset for this tutorial.
+We will use the IMDb dataset from the paper "Learning Word Vectors for Sentiment Analysis", which contains several thousand movie reviews, for this tutorial.
 
 .. note::
 

@@ -8,7 +8,7 @@ Preface
 
 In this tutorial, we will show how to train a model for sentiment analysis with fastai, then we will use BentoML to save and create a prediction service.
 
-We will use the IMDb dataset from the paper `*Learning Word Vectors for Sentiment Analysis* <https://ai.stanford.edu/~ang/papers/acl11-WordVectorsSentimentAnalysis.pdf>`_, which contains several thousand movie reviews, for this tutorial.
+We will use the IMDb dataset from the paper |stanford_link|_, which contains several thousand movie reviews, for this tutorial.
 
 .. note::
 
@@ -258,3 +258,7 @@ there are two ways to include fastai as a dependency, via ``python`` or
 
    You can find more examples for fastai in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
+
+.. _stanford_link: https://ai.stanford.edu/~ang/papers/acl11-WordVectorsSentimentAnalysis.pdf
+
+.. |stanford_link| replace:: *Learning Word Vectors for Sentiment Analysis*

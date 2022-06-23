@@ -200,7 +200,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             self.model = load_model(bento_model)
 
             # check for resources
-            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
+            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES")
             if available_gpus is not None and available_gpus != "":
                 self.model.set_param({"predictor": "gpu_predictor", "gpu_id": 0})  # type: ignore (incomplete XGBoost types)
             else:

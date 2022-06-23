@@ -179,7 +179,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 # bento_model.info.options.*
             )
 
-            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
+            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES")
             if available_gpus is not None and available_gpus != "":
                 # assign GPU resources
                 ...

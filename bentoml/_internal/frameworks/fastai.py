@@ -19,7 +19,8 @@ from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 from ..models.model import ModelOptions
-from .common.pytorch import PyTorchTensorContainer
+# register PyTorchTensorContainer as import side effect.
+from .common.pytorch import PyTorchTensorContainer  # type: ignore # noqa
 from ..runner.container import DataContainerRegistry
 
 MODULE_NAME = "bentoml.fastai"
@@ -50,14 +51,14 @@ try:
     from fastai.learner import load_learner  # type: ignore
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "fastai is required in order to use module `bentoml.fastai`, install fastai with `pip install fastai`. For more information, refers to https://docs.fast.ai/#Installing."
+        "fastai is required in order to use module 'bentoml.fastai'. Install fastai with 'pip install fastai'. For more information, refer to https://docs.fast.ai/#Installing."
     )
 
 try:
     import fastai.basics  # type: ignore # noqa
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "BentoML only supports fastai v2 onwards. Please uninstall fastai v1 and try again. Please visit https://docs.fast.ai/#Installing for more information."
+        "BentoML only supports fastai v2 onwards."
     )
 
 
@@ -134,7 +135,7 @@ def load_model(
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
-    options_cpu = bento_model.info.options.cpu or cpu  # type: ignore (unfinished model options type)
+    options_cpu = cpu or bento_model.info.options.cpu  # type: ignore (unfinished model options type)
 
     pickle_file: str = bento_model.path_of(MODEL_FILENAME)
     with open(pickle_file, "rb") as f:
@@ -160,12 +161,12 @@ def save_model(
         learner: :obj:`~fastai.learner.Learner` to be saved.
         pickle_module: The pickle module to use for exporting the model.
 
-                            .. admonition:: About pickling :obj:`~fastai.learner.Learner`
+                            .. admonition:: About pickling :obj:`~fastai.learner.Learner`s
 
-                            If the :func:`save_model` failed while saving a given learner, then
-                            your learner contains :obj:`~fastai.callback.core.Callback` that is not pickable.
-                            This is due to all FastAI callbacks are stateful, which makes some of them not pickable.
-                            To fix this, Use :func:`Learner.remove_cbs` to remove list of training callback that fails.
+                            If the :func:`save_model` method failed while saving a given learner,
+                            your learner may contain a :obj:`~fastai.callback.core.Callback` that is not picklable.
+                            All FastAI callbacks are stateful, which makes some of them not picklable.
+                            Use :func:`Learner.remove_cbs` to remove unpicklable callbacks.
 
         signatures: Signatures of predict methods to be used. If not provided, the signatures default to
                         ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
@@ -327,8 +328,3 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 #   of this file for consistency. Since the map of DataContainerRegisty's
 #   single type and batch type is a dictionary of LazyType and the container
 #   itself, it would just replace the existing DataContainer.
-DataContainerRegistry.register_container(
-    LazyType("torch", "Tensor"),
-    LazyType("torch", "Tensor"),
-    PyTorchTensorContainer,
-)

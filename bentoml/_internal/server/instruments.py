@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
@@ -32,9 +32,7 @@ class MetricsMiddleware:
     @inject
     def _setup(
         self,
-        metrics_client: "PrometheusClient" = Provide[
-            DeploymentContainer.metrics_client
-        ],
+        metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
     ):
         self.metrics_client = metrics_client
         service_name = self.bento_service.name

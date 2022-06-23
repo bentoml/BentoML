@@ -98,9 +98,9 @@ def main(
     import uvicorn  # type: ignore
 
     if no_access_log:
-        from bentoml._internal.configuration.containers import DeploymentContainer
+        from bentoml._internal.configuration.containers import BentoMLContainer
 
-        access_log_config = DeploymentContainer.runners_config.logging.access
+        access_log_config = BentoMLContainer.runners_config.logging.access
         access_log_config.enabled.set(False)
 
     from bentoml._internal.server.runner_app import RunnerAppFactory

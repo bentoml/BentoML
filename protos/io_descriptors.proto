@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+/* Value represents a single instance of the supported datatypes. */
+message Value{
+	oneof types{
+		bytes b=1;
+		float f4=2;
+		double f8=3;
+		// int32 i4=4;
+		// int64 i8=5;
+		uint32 u4=6;
+		uint64 u8=7;
+		sint32 i4=8;
+		sint64 i8=9;
+		// fixed32 fixed32_array=10;
+		// fixed64 fixed64_array=11;
+		// sfixed32 sfixed32_array=12;
+		// sfixed64 sfixed64_array=13;
+		bool bool_=14;
+		string str_=15;
+		Value val_=16;
+		Array array_=17;
+		NumpyNdarray numpy_ndarray=18;
+	}
+}
+
+

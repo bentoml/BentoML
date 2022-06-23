@@ -24,4 +24,37 @@ message Value{
 	}
 }
 
+/* Array contains a dtype which identifies the type of array.
+ * The repeated field for the identified dtype contains the array. */
+message Array {
+	string dtype=1;
+	repeated bytes b=2;
+	repeated float f4=3;
+	repeated double f8=4;
+	// repeated int32 i4=5;
+	// repeated int64 i8=6;
+	repeated uint32 u4=7;
+	repeated uint64 u8=8;
+	repeated sint32 i4=9;
+	repeated sint64 i8=10;
+	// repeated fixed32 fixed32_array=11;
+	// repeated fixed64 fixed64_array=12;
+	// repeated sfixed32 sfixed32_array=13;
+	// repeated sfixed64 sfixed64_array=14;
+	repeated bool bool_=15;
+	repeated string str_=16;
+	repeated Array array_=17;
+	repeated Value tuple_=18;
+	repeated NumpyNdarray numpy_ndarray=19;
+}
+
+/* NumpyNdarray tries to mimic the behavior of numpy arrays by storing some additional information about the arrays.
+* NumpyNdarray is only to be used with python numpy arrays.*/
+message NumpyNdarray{
+	string dtype=1; // doesn't support arrays of complex dtypes
+	repeated int64 shape=2; // stored shape that is retrieved using np.shape
+	Array array=3; // supported dtype arrays are stored in a flattened format to be reshaped from server side
+	bytes byte_format=4; //unsupported arrays can be stored into byte_format
+}
+
 

@@ -14,6 +14,7 @@ import contextlib
 import subprocess
 import urllib.error
 import urllib.request
+import multiprocessing
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
@@ -62,7 +63,11 @@ async def async_request(
 
     async with aiohttp.ClientSession() as sess:
         async with sess.request(
-            method, url, data=data, headers=headers, timeout=timeout
+            method,
+            url,
+            data=data,
+            headers=headers,
+            timeout=timeout,
         ) as r:
             r_body = await r.read()
 
@@ -111,7 +116,9 @@ def bentoml_build(project_path: str) -> t.Generator["Tag", None, None]:
     """
     logger.info(f"Building bento: {project_path}")
     output = subprocess.check_output(
-        ["bentoml", "build", project_path], stderr=subprocess.STDOUT
+        ["bentoml", "build", project_path],
+        stderr=subprocess.STDOUT,
+        env=dict(os.environ, COLUMNS="200"),
     )
     match = re.search(
         r'Bento\(tag="([A-Za-z0-9\-_\.]+:[a-z0-9]+)"\)',
@@ -230,11 +237,20 @@ def run_bento_server(
     )
     try:
         host_url = f"127.0.0.1:{port}"
-        _wait_until_api_server_ready(host_url, timeout=timeout)
+        assert _wait_until_api_server_ready(host_url, timeout=timeout)
         yield host_url
     finally:
         kill_subprocess_tree(p)
         p.communicate()
+
+
+def _start_mitm_proxy(port: int) -> None:
+    import uvicorn  # type: ignore
+
+    from .utils import http_proxy_app
+
+    logger.info(f"proxy serer listen on {port}")
+    uvicorn.run(http_proxy_app, port=port)  # type: ignore
 
 
 @contextmanager
@@ -244,9 +260,25 @@ def run_bento_server_distributed(
     timeout: float = 90,
 ):
     """
-    Launch a bentoml service directly by the bentoml CLI, yields the host URL.
+    Launch a bentoml service as a simulated distributed environment(Yatai), yields the host URL.
     """
+    with reserve_free_port() as proxy_port:
+        pass
+
+    logger.warning(f"Starting proxy on port {proxy_port}")
+    proxy_process = multiprocessing.Process(
+        target=_start_mitm_proxy,
+        args=(proxy_port,),
+    )
+    proxy_process.start()
+
     my_env = os.environ.copy()
+
+    # to ensure yatai specified headers BP100
+    my_env["YATAI_BENTO_DEPLOYMENT_NAME"] = "sdfasdf"
+    my_env["YATAI_BENTO_DEPLOYMENT_NAMESPACE"] = "yatai"
+    my_env["HTTP_PROXY"] = f"http://127.0.0.1:{proxy_port}"
+
     if config_file is not None:
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
@@ -324,6 +356,8 @@ def run_bento_server_distributed(
             kill_subprocess_tree(p)
         for p in processes:
             p.communicate()
+        proxy_process.terminate()
+        proxy_process.join()
 
 
 @cached_contextmanager("{bento}, {project_path}, {config_file}, {deployment_mode}")

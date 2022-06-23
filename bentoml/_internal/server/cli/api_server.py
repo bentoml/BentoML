@@ -12,7 +12,7 @@ import psutil
 import bentoml
 
 from ...log import SERVER_LOGGING_CONFIG
-from ...trace import ServiceContext
+from ...context import component_context
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -64,12 +64,6 @@ def main(
     \b
     This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
     """
-    from ...log import configure_server_logging
-    from ...configuration.containers import DeploymentContainer
-
-    DeploymentContainer.development_mode.set(False)
-    configure_server_logging()
-
     if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
@@ -99,15 +93,29 @@ def main(
         arbiter.start()
         return
 
-    import uvicorn  # type: ignore
+    component_context.component_name = f"api_server:{worker_id}"
 
-    ServiceContext.component_name_var.set(f"api_server:{worker_id}")
+    from ...log import configure_server_logging
+    from ...configuration.containers import DeploymentContainer
+
+    DeploymentContainer.development_mode.set(False)
+    configure_server_logging()
+
+    import uvicorn  # type: ignore
 
     if runner_map is not None:
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))
     svc = bentoml.load(
         bento_identifier, working_dir=working_dir, change_global_cwd=True
     )
+
+    # setup context
+    if svc.tag is None:
+        component_context.bento_name = f"*{svc.__class__.__name__}"
+        component_context.bento_version = "not available"
+    else:
+        component_context.bento_name = svc.tag.name
+        component_context.bento_version = svc.tag.version
 
     parsed = urlparse(bind)
     uvicorn_options: dict[str, t.Any] = {

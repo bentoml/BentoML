@@ -1,14 +1,14 @@
-======
-FastAI
-======
+=======
+fast.ai
+=======
 
 
 Preface
 -------
 
-In this tutorial, we will train a model for sentiment analysis with **fastai**, then use BentoML to save and create a prediction service.
+In this tutorial, we will show how to train a model for sentiment analysis with fastai, then we will use BentoML to save and create a prediction service.
 
-We will use the IMDb dataset from the paper "Learning Word Vectors for Sentiment Analysis", which contains several thousand movie reviews, for this tutorial.
+We will use the IMDb dataset from the paper `*Learning Word Vectors for Sentiment Analysis* <https://ai.stanford.edu/~ang/papers/acl11-WordVectorsSentimentAnalysis.pdf>`_, which contains several thousand movie reviews, for this tutorial.
 
 .. note::
 
@@ -24,7 +24,7 @@ We will use the IMDb dataset from the paper "Learning Word Vectors for Sentiment
 Fine tuning the language model
 ------------------------------
 
-First, import all required components from **fastai**
+First, import all required components from fastai
 
 .. code-block:: python
 
@@ -100,7 +100,7 @@ Saving a learner with BentoML
 -----------------------------
 
    :bdg-warning:`Warning:` ``Learner`` instance is required to save with BentoML.
-   This is a design choice to preserve functionalities provided by **fastai**.
+   This is a design choice to preserve functionalities provided by fastai.
 
 .. seealso::
 
@@ -176,7 +176,7 @@ the learner on CPU.
 
 .. admonition:: About the behaviour of :code:`cpu=True`
 
-   **fastai** will determine which devices to use (GPU or CPU) via ``cpu``. The
+   fastai will determine which devices to use (GPU or CPU) via ``cpu``. The
    results will then be passed down to ``map_location`` of ``torch.load``.
    Refers to `PyTorch's documentation <https://pytorch.org/docs/stable/generated/torch.load.html#torch-load>`_
    for more information.
@@ -185,7 +185,7 @@ the learner on CPU.
    Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
 
 
-   :bdg-primary:`Remarks:` BentoML are currently only providing CPU supports for **fastai**.
+   :bdg-primary:`Remarks:` BentoML are currently only providing CPU supports for fastai.
 
 
 Using Runners
@@ -200,7 +200,7 @@ Using Runners
    :ref:`Specifying Runner Resources<concepts/runner:Specifying Required Resources>` on providing options for Runners.
 
 
-To use ``fastai`` runner locally, access the model via ``get`` and convert it to
+To use fastai runner locally, access the model via ``get`` and convert it to
 a runner:
 
 .. code-block:: python
@@ -217,12 +217,12 @@ a runner:
    type (Tabular, Text, Vision, etc.), users need to be responsible for
    processing and converting model inputs to corresponding format.
 
-.. admonition:: About adaptive batching in **fastai** 
+.. admonition:: About adaptive batching in fastai 
 
-   **fastai** doesn't have support for multiple inputs, hence adaptive batching
-   is disabled for **fastai**. Refers to :ref:`guides/batching:Adaptive Batching` for more information.
+   fastai doesn't have support for multiple inputs, hence adaptive batching
+   is disabled for fastai. Refers to :ref:`guides/batching:Adaptive Batching` for more information.
 
-Building a Service for **fastai**
+Building a Service for fastai
 ---------------------------------
 
 .. seealso::
@@ -231,7 +231,7 @@ Building a Service for **fastai**
    create a prediction service with BentoML.
 
 When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`,
-there are two ways to include ``fastai`` as a dependency, via ``python`` or
+there are two ways to include fastai as a dependency, via ``python`` or
 ``conda``:
 
 .. tab-set::
@@ -256,5 +256,5 @@ there are two ways to include ``fastai`` as a dependency, via ``python`` or
 
 .. note::
 
-   You can find more examples for **fastai** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
+   You can find more examples for fastai in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 

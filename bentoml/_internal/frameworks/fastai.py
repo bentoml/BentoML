@@ -19,6 +19,7 @@ from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 from ..models.model import ModelOptions
+
 # register PyTorchTensorContainer as import side effect.
 from .common.pytorch import PyTorchTensorContainer  # type: ignore # noqa
 from ..runner.container import DataContainerRegistry
@@ -57,9 +58,7 @@ except ImportError:  # pragma: no cover
 try:
     import fastai.basics  # type: ignore # noqa
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "BentoML only supports fastai v2 onwards."
-    )
+    raise MissingDependencyException("BentoML only supports fastai v2 onwards.")
 
 
 __all__ = ["load_model", "save_model", "get_runnable", "get", "FastAIOptions"]

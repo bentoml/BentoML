@@ -1,60 +1,49 @@
 syntax = "proto3";
 
-/* Value represents a single instance of the supported datatypes. */
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+/* Value represents a single instance of the supported datatypes. 
+ * Naming convention: Follows `numpy.dtype` where appropriate.
+ * `numpy.dtype`: https://numpy.org/doc/stable/reference/arrays.dtypes.html#specifying-and-constructing-data-types */
 message Value{
-	oneof types{
-		bytes b=1;
-		float f4=2;
-		double f8=3;
-		// int32 i4=4;
-		// int64 i8=5;
-		uint32 u4=6;
-		uint64 u8=7;
-		sint32 i4=8;
-		sint64 i8=9;
-		// fixed32 fixed32_array=10;
-		// fixed64 fixed64_array=11;
-		// sfixed32 sfixed32_array=12;
-		// sfixed64 sfixed64_array=13;
-		bool bool_=14;
-		string str_=15;
-		Value val_=16;
-		Array array_=17;
-		NumpyNdarray numpy_ndarray=18;
+	oneof dtype{
+		float f4=1;
+		double f8=2;
+		uint32 u4=3;
+		uint64 u8=4;
+		sint32 i4=5;
+		sint64 i8=6;
+		bool bool_=9;
+		string str_=10;
+		bytes bytes_=11;
+		Value value_=12;
+		Array array_=13;
+		Tuple tuple_=14;
 	}
 }
 
-/* Array contains a dtype which identifies the type of array.
- * The repeated field for the identified dtype contains the array. */
+/* Tuple represents a repeated field containing data with same or different datatypes */
+message Tuple{
+	repeated Value value_=1;
+}
+
+
+/* Array contains a dtype which identifies the type of the array.
+ * The repeated field for the identified dtype contains the array.
+ * Naming convention: Follows `numpy.dtype` where appropriate.
+ * `numpy.dtype`: https://numpy.org/doc/stable/reference/arrays.dtypes.html#specifying-and-constructing-data-types */
 message Array {
 	string dtype=1;
-	repeated bytes b=2;
-	repeated float f4=3;
-	repeated double f8=4;
-	// repeated int32 i4=5;
-	// repeated int64 i8=6;
-	repeated uint32 u4=7;
-	repeated uint64 u8=8;
-	repeated sint32 i4=9;
-	repeated sint64 i8=10;
-	// repeated fixed32 fixed32_array=11;
-	// repeated fixed64 fixed64_array=12;
-	// repeated sfixed32 sfixed32_array=13;
-	// repeated sfixed64 sfixed64_array=14;
-	repeated bool bool_=15;
-	repeated string str_=16;
-	repeated Array array_=17;
-	repeated Value tuple_=18;
-	repeated NumpyNdarray numpy_ndarray=19;
+	repeated float f4=2;
+	repeated double f8=3;
+	repeated uint32 u4=4;
+	repeated uint64 u8=5;
+	repeated sint32 i4=6;
+	repeated sint64 i8=7;
+	repeated bool bool_=10;
+	repeated string str_=11;
+	repeated bytes bytes_=12;
+	repeated Array array_=13;
+	repeated Tuple tuple_=14;
 }
-
-/* NumpyNdarray tries to mimic the behavior of numpy arrays by storing some additional information about the arrays.
-* NumpyNdarray is only to be used with python numpy arrays.*/
-message NumpyNdarray{
-	string dtype=1; // doesn't support arrays of complex dtypes
-	repeated int64 shape=2; // stored shape that is retrieved using np.shape
-	Array array=3; // supported dtype arrays are stored in a flattened format to be reshaped from server side
-	bytes byte_format=4; //unsupported arrays can be stored into byte_format
-}
-
-

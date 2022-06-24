@@ -22,6 +22,7 @@ message Value{
 		Value value_=12;
 		Array array_=13;
 		Tuple tuple_=14;
+		// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
 	}
 }
 
@@ -30,6 +31,7 @@ message Tuple{
 	repeated Value value_=1;
 }
 
+// TODO: message complex types
 
 /* Array contains a dtype which identifies the type of the array.
  * The repeated field for the identified dtype contains the array.
@@ -50,4 +52,5 @@ message Array {
 	repeated bytes bytes_=12;
 	repeated Array array_=13;
 	repeated Tuple tuple_=14;
+	// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
 }

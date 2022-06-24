@@ -126,8 +126,7 @@ def main(
 
     parsed = urlparse(bind)
     uvicorn_options = {
-        "log_level": SERVER_LOGGING_CONFIG["root"]["level"],
-        "log_config": SERVER_LOGGING_CONFIG,
+        "log_config": None,
         "workers": 1,
     }
 

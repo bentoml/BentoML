@@ -4,25 +4,30 @@ LC_ALL=C
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 
 LOCAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-VALID_BRANCH_REGEX="^(style|chore|refactor|feat|internal|bugfix|improvement|library|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$"
+VALID_BRANCH_REGEX="^(qa|style|chore|refactor|feat|internal|bugfix|improvement|library|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$"
 
 cd "$GIT_ROOT" || exit
 
+source "$GIT_ROOT"/scripts/ci/helpers.sh
+
+INFO "Running setup-cfg-fmt..."
 # format setup.cfg
 setup-cfg-fmt --max-py-version 3.10 "$GIT_ROOT/setup.cfg"
+# add setup.cfg after format
+git diff --name-status | grep setup.cfg &>/dev/null && git add setup.cfg
 
 # Run format scripts
-# ./scripts/tools/formatter.sh || exit 1
+./scripts/tools/formatter.sh || exit 1
 
+INFO "Running yamllint on github workflow..."
 for f in $(find .github/ -type f -name '*.yml'); do
-  yamllint -c "$GIT_ROOT"/.yamllint.yml "$f" || exit 1
+	yamllint -c "$GIT_ROOT"/.yamllint.yml "$f" || exit 1
 done
 
-if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]
-then
-    printf "Branch name %s doesn't follow the predefined format...\n" "$LOCAL_BRANCH"
-    printf "We aren't going to abort the commit, but we recommend that branch name should adhere to the following format:\n\t%s.\n" "$VALID_BRANCH_REGEX"
-    printf "To rename your branch to follow the format do \`git branch -m 'feature/%s'\`\n" "$LOCAL_BRANCH"
+INFO "Running branch name validation..."
+if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]; then
+	WARN "Branch name %s doesn't follow the predefined format...\n" "$LOCAL_BRANCH"
+	WARN "We aren't going to abort the commit, but we recommend that branch name should adhere to the following format:\n\t%s.\n" "$VALID_BRANCH_REGEX"
+	WARN "To rename your branch to follow the format do \`git branch -m 'feature/%s'\`\n" "$LOCAL_BRANCH"
 fi
 exit 0
-

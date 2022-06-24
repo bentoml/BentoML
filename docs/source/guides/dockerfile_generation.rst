@@ -287,7 +287,33 @@ The following templates per distro are available for extending:
 
     {% extends bento_auto_template %}
 
-By doing so, we ensure that the generated Dockerfile will be compatible with a Bento.
+.. note::
+
+    Their might be cases where you use conda-based templates and also specify
+    cuda options in your ``bentofile.yaml``:
+
+    .. code-block:: yaml
+
+       docker:
+         distro: debian
+         cuda_version: 11
+         docker_template: ./template.j2  # this template.j2 extends from miniconda_debian.j2
+
+    :bdg-warning:`Expected behaviour:` The ``cuda_version`` option will be ignored.
+
+.. tip::
+
+    BentoML also provides a Jinja2 global object called ``bento_base_template``
+    which will determine automatically which templates should be used based on
+    user docker options under :obj:`bentofile.yaml`:
+
+    .. code-block:: jinja
+
+        {% extends bento_base_template %}
+
+By either using ``bento_base_template`` or extending any of the given base
+templates, the generated Dockerfile will ensure to run any bento
+correspondingly.
 
 .. dropdown:: About writing :code:`Dockerfile.template`
    :icon: code

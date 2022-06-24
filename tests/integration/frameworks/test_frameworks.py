@@ -81,9 +81,15 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
     assert scaler.var_[0] == 4.75  # type: ignore (bad sklearn types)
 
     kwargs = test_model.save_kwargs.copy()
-    kwargs["signatures"] = {
-        "pytest-signature-rjM5": {"batchable": True, "batch_dim": (1, 0)}
-    }
+    default_meth = "pytest-signature-rjM5"
+    if test_model.model_signatures:
+        kwargs["signatures"] = test_model.model_signatures
+        meths = list(test_model.model_signatures.keys())
+    else:
+        kwargs["signatures"] = {
+            default_meth: {"batchable": True, "batch_dim": (1, 0)}
+        }
+        meths = [default_meth]
     kwargs["labels"] = {
         "pytest-label-N4nr": "pytest-label-value-4mH7",
         "pytest-label-7q72": "pytest-label-value-3mDd",
@@ -99,8 +105,9 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
         **kwargs,
     )
 
-    meth = "pytest-signature-rjM5"
-    assert bento_model.info.signatures[meth] == ModelSignature.from_dict(kwargs["signatures"][meth])  # type: ignore
+    for meth in meths:
+        assert bento_model.info.signatures[meth] == ModelSignature.from_dict(kwargs["signatures"][meth])  # type: ignore
+
     assert bento_model.info.labels == kwargs["labels"]
     # print(bento_model.custom_objects)
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].mean_[0] == 5.5
@@ -157,7 +164,10 @@ def test_load(
                     key: inp.preprocess(kwarg)
                     for key, kwarg in inp.input_kwargs.items()
                 }
-                out = getattr(model, method)(*args, **kwargs)
+                if test_model.model_method_caller:
+                    out = test_model.model_method_caller(test_model, method, args, kwargs)
+                else:
+                    out = getattr(model, method)(*args, **kwargs)
                 inp.check_output(out)
 
 

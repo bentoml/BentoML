@@ -123,7 +123,7 @@ jobs:
               - *runner
               - bentoml/onnx.py
               - bentoml/_internal/frameworks/onnx.py
-              - tests/integration/frameworks/test_onnx_impl.py
+              - tests/integration/frameworks/test_frameworks.py
             onnxmlir:
               - *runner
               - bentoml/onnxmlir.py

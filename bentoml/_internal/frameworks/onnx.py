@@ -115,7 +115,7 @@ def load_model(
             Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
             instance to load the model from.
         providers (`List[Union[str, Tuple[str, Dict[str, Any]]`, `optional`, default to :code:`None`):
-            Different providers provided by users. By default BentoML will use :func:`onnxruntime.get_available_providers`
+            Different providers provided by users. By default BentoML will use ``["CPUExecutionProvider"]``
             when loading a model.
         session_options (`onnxruntime.SessionOptions`, `optional`, default to :code:`None`):
             SessionOptions per use case. If not specified, then default to :code:`None`.
@@ -142,7 +142,7 @@ def load_model(
         if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
             raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
     else:
-        providers = ort.get_available_providers()
+        providers = ["CPUExecutionProvider"]
 
     return ort.InferenceSession(
         bento_model.path_of(MODEL_FILENAME),
@@ -295,10 +295,10 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             session_options = bento_model.info.options.session_options or ort.SessionOptions()
 
             # check for resources
-            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
-            if available_gpus is not None and available_gpus != "":
+            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES")
+            if available_gpus is not None and available_gpus not in ("", "-1"):
                 # assign GPU resources
-                providers = bento_model.info.options.providers or ort.get_available_providers()
+                providers = bento_model.info.options.providers or ['CUDAExecutionProvider', 'CPUExecutionProvider']
 
             else:
                 # assign CPU resources

@@ -11,7 +11,6 @@ import psutil
 from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
-from ...log import SERVER_LOGGING_CONFIG
 from ...context import component_context
 
 if TYPE_CHECKING:
@@ -126,8 +125,7 @@ def main(
 
     parsed = urlparse(bind)
     uvicorn_options = {
-        "log_level": SERVER_LOGGING_CONFIG["root"]["level"],
-        "log_config": SERVER_LOGGING_CONFIG,
+        "log_config": None,
         "workers": 1,
     }
 

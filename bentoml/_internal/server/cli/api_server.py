@@ -11,7 +11,6 @@ import psutil
 
 import bentoml
 
-from ...log import SERVER_LOGGING_CONFIG
 from ...context import component_context
 
 if TYPE_CHECKING:
@@ -119,9 +118,8 @@ def main(
 
     parsed = urlparse(bind)
     uvicorn_options: dict[str, t.Any] = {
-        "log_level": SERVER_LOGGING_CONFIG["root"]["level"],
         "backlog": backlog,
-        "log_config": SERVER_LOGGING_CONFIG,
+        "log_config": None,
         "workers": 1,
     }
     if psutil.WINDOWS:

@@ -11,7 +11,6 @@ import psutil
 from bentoml import load
 from bentoml._internal.utils.uri import uri_to_path
 
-from ...log import SERVER_LOGGING_CONFIG
 from ...context import component_context
 
 if TYPE_CHECKING:

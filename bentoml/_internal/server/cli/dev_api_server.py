@@ -7,7 +7,6 @@ import psutil
 
 from bentoml import load
 
-from ...log import SERVER_LOGGING_CONFIG
 from ...context import component_context
 
 
@@ -44,9 +43,8 @@ def main(
             component_context.bento_version = svc.tag.version
 
         uvicorn_options = {
-            "log_level": SERVER_LOGGING_CONFIG["root"]["level"],
             "backlog": backlog,
-            "log_config": SERVER_LOGGING_CONFIG,
+            "log_config": None,
             "workers": 1,
             "lifespan": "on",
         }

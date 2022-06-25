@@ -26,5 +26,7 @@ rules:
   indentation:
     level: warning
     indent-sequences: consistent
+    ignore: |
+      .github/workflows/codeql-analysis.yml
   line-length: disable
   truthy: disable

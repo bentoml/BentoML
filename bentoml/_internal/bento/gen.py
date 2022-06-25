@@ -160,7 +160,7 @@ def generate_dockerfile(
         from bentoml._internal.bento.bento import BentoInfo
 
         docker_options = BentoInfo.from_yaml_file("{bento_path}/bento.yaml").docker
-        docker_options.docker_template = "./override_template.j2"
+        docker_options.dockerfile_template = "./override_template.j2"
         dockerfile = generate_dockerfile(docker_options, use_conda=False)
 
     """
@@ -173,6 +173,7 @@ def generate_dockerfile(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
         trim_blocks=True,
         lstrip_blocks=True,
+        autoescape=True,  # https://docs.huihoo.com/google-ctemplate/auto_escape.html
         loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
     )
 

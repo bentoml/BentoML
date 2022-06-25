@@ -117,7 +117,7 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "PyRuntime package library must be in python path"
             )
-        return ExecutionSession(self._model_so_path, "run_main_graph")
+        return ExecutionSession(self._model_so_path)
 
     def get(self):
         if not self._inference_session:

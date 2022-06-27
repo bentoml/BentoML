@@ -143,7 +143,7 @@ def load_model(
             import cloudpickle  # type: ignore
         except ImportError:  # pragma: no cover
             raise MissingDependencyException(
-                f"Module `cloudpickle` is required in order to use to load custom pipelines."
+                "Module `cloudpickle` is required in order to use to load custom pipelines."
             )
 
         with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
@@ -296,7 +296,7 @@ def save_model(
             import cloudpickle  # type: ignore
         except ImportError:  # pragma: no cover
             raise MissingDependencyException(
-                f"Module `cloudpickle` is required in order to use to save custom pipelines."
+                "Module `cloudpickle` is required in order to use to save custom pipelines."
             )
 
         logger.info(
@@ -309,19 +309,19 @@ def save_model(
                 f"Argument `task_name` '{task_name}' does not match pipeline task name '{pipeline.task}'."
             )
 
-        if SUPPORTED_TASKS[task_name] != task_definition:
-            raise BentoMLException(
-                f"Argument `task_definition` '{task_definition}' does not match pipeline task "
-                "definition '{SUPPORTED_TASKS[task_name]}'."
-            )
-
         impl: type = task_definition["impl"]
         if type(pipeline) != impl:
             raise BentoMLException(
                 f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
             )
 
-        if task_name not in SUPPORTED_TASKS:
+        if task_name in SUPPORTED_TASKS:
+            if SUPPORTED_TASKS[task_name] != task_definition:
+                raise BentoMLException(
+                    f"Argument `task_definition` '{task_definition}' does not match pipeline task "
+                    "definition '{SUPPORTED_TASKS[task_name]}'."
+                )
+        else:
             SUPPORTED_TASKS[task_name] = task_definition
 
         options = TransformersOptions(

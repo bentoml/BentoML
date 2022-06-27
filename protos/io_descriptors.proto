@@ -3,21 +3,19 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
-/* Value represents a single instance of the supported datatypes. 
- * Naming convention: Follows `numpy.dtype` where appropriate.
- * `numpy.dtype`: https://numpy.org/doc/stable/reference/arrays.dtypes.html#specifying-and-constructing-data-types */
+/* Value represents a single instance of the supported datatypes. */
 message Value{
 	oneof dtype{
-		float f4=1;
-		double f8=2;
-		uint32 u4=3;
-		uint64 u8=4;
-		sint32 i4=5;
-		sint64 i8=6;
+		float float_=1;
+		double double_=2;
+		uint32 uint32_=3;
+		uint64 uint64_=4;
+		sint32 sint32=5;
+		sint64 sint64=6;
 		google.protobuf.Timestamp timestamp_=7;
 		google.protobuf.Duration duration_=8;
 		bool bool_=9;
-		string str_=10;
+		string string_=10;
 		bytes bytes_=11;
 		Value value_=12;
 		Array array_=13;
@@ -33,22 +31,20 @@ message Tuple{
 
 // TODO: message complex types
 
-/* Array contains a dtype which identifies the type of the array.
- * The repeated field for the identified dtype contains the array.
- * Naming convention: Follows `numpy.dtype` where appropriate.
- * `numpy.dtype`: https://numpy.org/doc/stable/reference/arrays.dtypes.html#specifying-and-constructing-data-types */
-message Array {
+/* NumpyNdarray contains a dtype which identifies the type of the array.
+ * The repeated field for the identified dtype contains the array. */
+message NumpyNdarray {
 	string dtype=1;
-	repeated float f4=2;
-	repeated double f8=3;
-	repeated uint32 u4=4;
-	repeated uint64 u8=5;
-	repeated sint32 i4=6;
-	repeated sint64 i8=7;
+	repeated float float_=2;
+	repeated double double_=3;
+	repeated uint32 uint32_=4;
+	repeated uint64 uint64_=5;
+	repeated sint32 sint32_=6;
+	repeated sint64 sint64_=7;
 	repeated google.protobuf.Timestamp timestamp_=8;
 	repeated google.protobuf.Duration duration_=9;
 	repeated bool bool_=10;
-	repeated string str_=11;
+	repeated string string_=11;
 	repeated bytes bytes_=12;
 	repeated Array array_=13;
 	repeated Tuple tuple_=14;

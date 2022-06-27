@@ -119,7 +119,7 @@ mlflow:
     python -m pip install -U scikit-learn
 
 onnx:
-  <<: *tmpl
+  <<: *ntmpl
   dependencies:
     - "onnx"
     - "onnxruntime"

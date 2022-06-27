@@ -9,6 +9,4 @@ from ._internal.frameworks.onnx import get_runnable
 logger = logging.getLogger(__name__)
 
 
-
-
 __all__ = ["load_model", "save_model", "get", "get_runnable"]

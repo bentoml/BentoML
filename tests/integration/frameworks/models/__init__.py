@@ -18,7 +18,9 @@ class FrameworkTestModel:
     # **kwargs)` format or raw model method call does not simply
     # return the outputs, then use this to override default behavior
     # when testing raw model inputs with expected outputs
-    model_method_caller: t.Callable[[FrameworkTestModel, str, list[t.Any], dict[str, t.Any]], t.Any] | None = attr.field(default=None)
+    model_method_caller: t.Callable[
+        [FrameworkTestModel, str, list[t.Any], dict[str, t.Any]], t.Any
+    ] | None = attr.field(default=None)
     # when framework has some special signatures requirements
     model_signatures: dict[str, t.Any] | None = attr.field(default=None)
 

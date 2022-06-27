@@ -1,8 +1,8 @@
 from __future__ import annotations
-import logging
-import os
 
+import os
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import attr
@@ -10,19 +10,19 @@ import numpy as np
 
 import bentoml
 from bentoml import Tag
+from bentoml.models import ModelContext
+from bentoml.models import ModelOptions
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
-from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
 
-from ..runner.utils import Params
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
+from ..runner.utils import Params
 
 if TYPE_CHECKING:
-    from bentoml.types import ModelSignatureDict
     from bentoml.types import ModelSignature
+    from bentoml.types import ModelSignatureDict
 
 
 try:
@@ -47,11 +47,14 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import torch
+
     from .. import external_typing as ext
     from ..external_typing import tensorflow as tf_ext
 
     ProvidersType = list[str | t.Tuple[str, t.Dict[str, t.Any]]]
-    ONNXArgType = t.Union["ext.NpNDArray", "ext.PdDataFrame", "torch.Tensor", "tf_ext.Tensor"]
+    ONNXArgType = t.Union[
+        "ext.NpNDArray", "ext.PdDataFrame", "torch.Tensor", "tf_ext.Tensor"
+    ]
 
 
 try:
@@ -81,14 +84,15 @@ def _yield_providers(
     else:
         yield from iterable
 
+
 def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
     return [k for i in lst for k in _yield_providers(i)]
-
 
 
 @attr.define
 class ONNXOptions(ModelOptions):
     """Options for the ONNX model"""
+
     providers: list[str] | None = attr.field(default=None)
     session_options: "ort.SessionOptions" | None = attr.field(default=None)
 
@@ -148,7 +152,7 @@ def load_model(
         bento_model.path_of(MODEL_FILENAME),
         sess_options=session_options,
         providers=providers,
-     )
+    )
 
 
 def save_model(
@@ -240,7 +244,7 @@ def save_model(
         framework_versions={
             "onnx": get_pkg_version("onnx"),
             _onnxruntime_pkg: _onnxruntime_version,
-        }
+        },
     )
 
     if signatures is None:
@@ -292,13 +296,18 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         def __init__(self):
             super().__init__()
 
-            session_options = bento_model.info.options.session_options or ort.SessionOptions()
+            session_options = (
+                bento_model.info.options.session_options or ort.SessionOptions()
+            )
 
             # check for resources
             available_gpus = os.getenv("CUDA_VISIBLE_DEVICES")
             if available_gpus is not None and available_gpus not in ("", "-1"):
                 # assign GPU resources
-                providers = bento_model.info.options.providers or ['CUDAExecutionProvider', 'CPUExecutionProvider']
+                providers = bento_model.info.options.providers or [
+                    "CUDAExecutionProvider",
+                    "CPUExecutionProvider",
+                ]
 
             else:
                 # assign CPU resources
@@ -307,7 +316,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 # CUDAExecutionProvider etc. will be available even no
                 # GPU is presented in system, which may result some
                 # error when initializing ort.InferenceSession
-                providers = bento_model.info.options.providers or ["CPUExecutionProvider"]
+                providers = bento_model.info.options.providers or [
+                    "CPUExecutionProvider"
+                ]
 
                 # set CPUExecutionProvider parallelization options
                 # TODO @larme: follow onnxruntime issue 11668 and
@@ -332,19 +343,14 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 session_options.inter_op_num_threads = thread_count
 
             self.model = load_model(
-                bento_model,
-                session_options=session_options,
-                providers=providers
+                bento_model, session_options=session_options, providers=providers
             )
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
                 self.predict_fns[method_name] = getattr(self.model, method_name)
 
-
-    def _mapping(
-        item: ONNXArgType
-    ) -> "ext.NpNDArray":
+    def _mapping(item: ONNXArgType) -> "ext.NpNDArray":
 
         # currently ort only support np.float32
         # https://onnxruntime.ai/docs/api/python/auto_examples/plot_common_errors.html
@@ -375,7 +381,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             }
             output_names = [o.name for o in self.model.get_outputs()]
             return self.predict_fns[method_name](output_names, input_names)[0]
-
 
         ONNXRunnable.add_method(
             _run,

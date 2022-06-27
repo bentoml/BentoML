@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 import tempfile
 
+import onnx
 import numpy as np
 import torch
 import torch.nn as nn
-import onnx
 import onnxruntime as ort
 
 import bentoml
@@ -22,7 +22,12 @@ framework = bentoml.onnx
 param = {"max_depth": 3, "eta": 0.3, "objective": "multi:softprob", "num_class": 2}
 
 
-def method_caller(framework_test_model: FrameworkTestModel, method: str, args: list[t.Any], kwargs: dict[str, t.Any]):
+def method_caller(
+    framework_test_model: FrameworkTestModel,
+    method: str,
+    args: list[t.Any],
+    kwargs: dict[str, t.Any],
+):
     with tempfile.NamedTemporaryFile() as temp:
         onnx.save(framework_test_model.model, temp.name)
         ort_sess = ort.InferenceSession(temp.name, providers=["CPUExecutionProvider"])
@@ -34,13 +39,11 @@ def method_caller(framework_test_model: FrameworkTestModel, method: str, args: l
             item = item.detach().to("cpu").numpy()
         return item
 
-    input_names = {
-        i.name: to_numpy(val) for i, val in zip(ort_sess.get_inputs(), args)
-    }
+    input_names = {i.name: to_numpy(val) for i, val in zip(ort_sess.get_inputs(), args)}
     output_names = [o.name for o in ort_sess.get_outputs()]
     out = getattr(ort_sess, method)(output_names, input_names)[0]
     return out
-    
+
 
 def check_model(sess: ort.InferenceSession, resource: Resource):
     if resource.nvidia_gpu is not None and resource.nvidia_gpu > 0:
@@ -59,6 +62,7 @@ def close_to(expected):
 
 
 N, D_in, H, D_out = 64, 1000, 100, 1
+
 
 class PyTorchModel(nn.Module):
     def __init__(self, D_in, H, D_out):
@@ -83,6 +87,7 @@ pytorch_input = torch.randn(N, D_in)
 pytorch_model = PyTorchModel(D_in, H, D_out)
 pytorch_expected = pytorch_model(pytorch_input).detach().to("cpu").numpy()
 
+
 def make_pytorch_onnx_model(tmpdir):
 
     input_names = ["x"]
@@ -98,8 +103,9 @@ def make_pytorch_onnx_model(tmpdir):
     onnx_model = onnx.load(model_path)
     return onnx_model
 
+
 with tempfile.TemporaryDirectory() as tmpdir:
-     pytorch_model = make_pytorch_onnx_model(tmpdir)
+    pytorch_model = make_pytorch_onnx_model(tmpdir)
 
 
 onnx_pytorch_model = FrameworkTestModel(

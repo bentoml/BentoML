@@ -86,9 +86,7 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
         kwargs["signatures"] = test_model.model_signatures
         meths = list(test_model.model_signatures.keys())
     else:
-        kwargs["signatures"] = {
-            default_meth: {"batchable": True, "batch_dim": (1, 0)}
-        }
+        kwargs["signatures"] = {default_meth: {"batchable": True, "batch_dim": (1, 0)}}
         meths = [default_meth]
     kwargs["labels"] = {
         "pytest-label-N4nr": "pytest-label-value-4mH7",
@@ -165,7 +163,9 @@ def test_load(
                     for key, kwarg in inp.input_kwargs.items()
                 }
                 if test_model.model_method_caller:
-                    out = test_model.model_method_caller(test_model, method, args, kwargs)
+                    out = test_model.model_method_caller(
+                        test_model, method, args, kwargs
+                    )
                 else:
                     out = getattr(model, method)(*args, **kwargs)
                 inp.check_output(out)

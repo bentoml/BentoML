@@ -263,7 +263,7 @@ def get_runnable(
             super().__init__()
 
             available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES")
-            if available_gpus is not None and available_gpus != "":
+            if available_gpus is not None and available_gpus not in ["", "-1"]:
                 # assign GPU resources
                 if not available_gpus.isdigit():
                     raise ValueError(

@@ -12,14 +12,12 @@ We will use the IMDb dataset from the paper |stanford_link|_, which contains sev
 
 .. note::
 
-   BentoML requires ``fastai>=2.0`` to be installed. We will not provide support
-   for fastai older than version 2 as version 2 includes a lot breaking changes
-   comparing to version 1.
+   BentoML requires fastai version 2 or higher to be installed. We do not currently support version 1.
 
 
 .. seealso::
 
-   This tutorial is extracted from `Transfer Learning with text <https://docs.fast.ai/tutorial.text.html#The-ULMFiT-approach>`_ from fastai.
+   This tutorial is based heavily on `Transfer Learning with text <https://docs.fast.ai/tutorial.text.html#The-ULMFiT-approach>`_ from fastai.
 
 Fine tuning the language model
 ------------------------------

@@ -6,9 +6,6 @@ import logging
 import contextlib
 from typing import TYPE_CHECKING
 
-import attr
-import cloudpickle
-
 import bentoml
 
 from ..utils.pkg import get_pkg_version
@@ -17,7 +14,6 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
-from ..models.model import ModelOptions
 
 # register PyTorchTensorContainer as import side effect.
 from .common.pytorch import PyTorchTensorContainer  # type: ignore # noqa
@@ -30,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
+    import fastai
+    from fastai.learner import Learner
+    from fastai.learner import load_learner  # type: ignore
     from fastai.callback.core import Callback
 
     from .. import external_typing as ext
@@ -44,22 +43,24 @@ except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "fastai requires `torch` as a dependency. Please follow PyTorch instruction at https://pytorch.org/ in order to use `fastai`."
     )
-try:
-    from fastai import __version__ as FASTAI_VERSION  # type: ignore
-    from fastai.learner import Learner
-    from fastai.learner import load_learner  # type: ignore
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "fastai is required in order to use module 'bentoml.fastai'. Install fastai with 'pip install fastai'. For more information, refer to https://docs.fast.ai/#Installing."
-    )
-
-try:
-    import fastai.basics  # type: ignore # noqa
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException("BentoML only supports fastai v2 onwards.")
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get", "FastAIOptions"]
+def _import_fastai() -> types.ModuleType:
+    try:
+        import fastai.basics  # type: ignore # noqa
+    except ImportError:  # pragma: no cover
+        raise MissingDependencyException("BentoML only supports fastai v2 onwards.")
+
+    try:
+        import fastai  # type: ignore
+    except ImportError:  # pragma: no cover
+        raise MissingDependencyException(
+            "fastai is required in order to use module 'bentoml.fastai'. Install fastai with 'pip install fastai'. For more information, refer to https://docs.fast.ai/#Installing."
+        )
+    return fastai
+
+
+__all__ = ["load_model", "save_model", "get_runnable", "get"]
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -76,9 +77,9 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
     .. code-block:: python
 
-        import bentoml
-        # target model must be from the BentoML model store
-        model = bentoml.fastai.get("fai_learner")
+       import bentoml
+       # target model must be from the BentoML model store
+       model = bentoml.fastai.get("fai_learner")
     """
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
@@ -88,29 +89,14 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
-@attr.define
-class FastAIOptions(ModelOptions):
-    cpu: bool = attr.field(factory=bool)
-
-
-def load_model(
-    bento_model: str | Tag | bentoml.Model,
-    *,
-    cpu: bool = True,
-) -> Learner:
+def load_model(bento_model: str | Tag | bentoml.Model) -> Learner:
     """
     Load the ``fastai.learner.Learner`` model instance with the given tag from the local BentoML model store.
 
+    If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32. Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
+
     Args:
         bento_model: Either the tag of the model to get from the store, or a BentoML `~bentoml.Model` instance to load the model from.
-
-        cpu: Whether to load the model to CPU. if true, the ``nn.Module`` is mapped to ``cpu`` via :code:`map_location` in ``torch.load``.
-             The loaded dataloader will also be converted to ``cpu``.
-
-             .. admonition:: About :code:`cpu=True`
-
-                If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
-                Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
 
     Returns:
         :code:`fastai.learner.Learner`:
@@ -120,11 +106,17 @@ def load_model(
 
     .. code-block:: python
 
-        import bentoml
+       import bentoml
 
-        model = bentoml.fastai.load_model("fai_learner")
-        results = model.predict({"input": "some input"})
+       model = bentoml.fastai.load_model("fai_learner")
+       results = model.predict("some input")
     """  # noqa
+
+    if not TYPE_CHECKING:
+        fastai = _import_fastai()
+        load_learner = fastai.learner.load_learner
+        Learner = fastai.learner.Learner
+
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
@@ -132,18 +124,16 @@ def load_model(
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
-    options_cpu = cpu or bento_model.info.options.cpu  # type: ignore (unfinished model options type)
 
     pickle_file: str = bento_model.path_of(MODEL_FILENAME)
     with open(pickle_file, "rb") as f:
-        return t.cast(Learner, load_learner(f, cpu=options_cpu))  # type: ignore (bad torch type)
+        return t.cast(Learner, load_learner(f, cpu=True))
 
 
 def save_model(
     name: str,
     learner: Learner,
     *,
-    pickle_module: types.ModuleType | None = None,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
@@ -152,27 +142,23 @@ def save_model(
     """
     Save a :code:`fastai.learner.Learner` model instance to the BentoML model store.
 
+    If the :func:`save_model` method failed while saving a given learner,
+    your learner may contain a :obj:`~fastai.callback.core.Callback` that is not picklable.
+    All FastAI callbacks are stateful, which makes some of them not picklable.
+    Use :func:`Learner.remove_cbs` to remove unpicklable callbacks.
+
     Args:
         name: The name to give to the model in the BentoML store. This must be a valid
-                    :obj:`~bentoml.Tag` name.
+              :obj:`~bentoml.Tag` name.
         learner: :obj:`~fastai.learner.Learner` to be saved.
-        pickle_module: The pickle module to use for exporting the model.
-
-                            .. admonition:: About pickling :obj:`~fastai.learner.Learner`s
-
-                            If the :func:`save_model` method failed while saving a given learner,
-                            your learner may contain a :obj:`~fastai.callback.core.Callback` that is not picklable.
-                            All FastAI callbacks are stateful, which makes some of them not picklable.
-                            Use :func:`Learner.remove_cbs` to remove unpicklable callbacks.
-
         signatures: Signatures of predict methods to be used. If not provided, the signatures default to
-                        ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
+                    ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
         labels: A default set of management labels to be associated with the model. An example is ``{"training-set": "data-1"}``.
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
-                            Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
+                        Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
         metadata: Metadata to be associated with the model. An example is ``{"bias": 4}``.
-                        Metadata is intended for display in a model management UI and therefore must be a
-                        default Python type, such as :obj:`str` or :obj:`int`.
+                  Metadata is intended for display in a model management UI and therefore must be a
+                  default Python type, such as :obj:`str` or :obj:`int`.
 
     Returns:
         :obj:`~bentoml.Tag`: A tag that can be used to access the saved model from the BentoML model store.
@@ -181,25 +167,29 @@ def save_model(
 
     .. code-block:: python
 
-        from fastai.metrics import accuracy
-        from fastai.text.data import URLs
-        from fastai.text.data import untar_data
-        from fastai.text.data import TextDataLoaders
-        from fastai.text.models import AWD_LSTM
-        from fastai.text.learner import text_classifier_learner
+       from fastai.metrics import accuracy
+       from fastai.text.data import URLs
+       from fastai.text.data import untar_data
+       from fastai.text.data import TextDataLoaders
+       from fastai.text.models import AWD_LSTM
+       from fastai.text.learner import text_classifier_learner
 
-        dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid="test")
+       dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid="test")
 
-        learner = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy)
-        learner.fine_tune(4, 1e-2)
+       learner = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy)
+       learner.fine_tune(4, 1e-2)
 
-        # Test run the model
-        learner.model.eval()
-        learner.predict("I love that movie!")
+       # Test run the model
+       learner.model.eval()
+       learner.predict("I love that movie!")
 
-        # `Save` the model with BentoML
-        tag = bentoml.fastai.save_model("fai_learner", learner)
+       # `Save` the model with BentoML
+       tag = bentoml.fastai.save_model("fai_learner", learner)
     """
+    if not TYPE_CHECKING:
+        fastai = _import_fastai()
+        Learner = fastai.learner.Learner
+
     if isinstance(learner, nn.Module):
         raise BentoMLException(
             "'bentoml.fastai.save_model()' does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
@@ -212,7 +202,7 @@ def save_model(
     context = ModelContext(
         framework_name="fastai",
         framework_versions={
-            "fastai": FASTAI_VERSION,
+            "fastai": get_pkg_version("fastai"),
             "fastcore": get_pkg_version("fastcore"),
             "torch": get_pkg_version("torch"),
         },
@@ -230,21 +220,19 @@ def save_model(
         api_version=API_VERSION,
         signatures=signatures,
         labels=labels,
-        options=FastAIOptions(),
+        options=None,
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
     ) as bento_model:
+        import cloudpickle
         from fastai.callback.schedule import ParamScheduler
-
-        if pickle_module is None:
-            pickle_module = cloudpickle
 
         # NOTE: ParamScheduler is not pickable, so we need to remove it from the model.
         # It is also a hyperparameter callback, hence we don't need it for serving.
         cbs: list[Callback] = list(filter(lambda x: isinstance(x, ParamScheduler), learner.cbs))  # type: ignore (bad fastai type)
         learner.remove_cbs(cbs)
-        learner.export(bento_model.path_of(MODEL_FILENAME), pickle_module=pickle_module)
+        learner.export(bento_model.path_of(MODEL_FILENAME), pickle_module=cloudpickle)
         learner.add_cbs(cbs)
         return bento_model
 
@@ -256,7 +244,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     logger.warning(
         "Runners created from FastAIRunnable will not be optimized for performance. If performance is critical to your usecase, please access the PyTorch model directly via 'learn.model' and use 'bentoml.pytorch.get_runnable()' instead."
     )
-    cpu: bool = bento_model.info.options.cpu
 
     class FastAIRunnable(bentoml.Runnable):
         SUPPORT_NVIDIA_GPU = False
@@ -269,16 +256,13 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 logger.debug(
                     "CUDA is available, but BentoML does not support running fastai models on GPU."
                 )
-            self.learner = load_model(bento_model, cpu=cpu)
-            self.learner.model.train(False)  # to turn off dropout and batchnorm
+            self.learner = load_model(bento_model)
+            self.learner.model.train(False)  # type: ignore (bad pytorch type) # to turn off dropout and batchnorm
             self._no_grad_context = contextlib.ExitStack()
             if hasattr(torch, "inference_mode"):  # pytorch>=1.9
                 self._no_grad_context.enter_context(torch.inference_mode())
             else:
                 self._no_grad_context.enter_context(torch.no_grad())
-
-            # TODO: support GPU and cpu=False
-            self.device = "cpu"
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:

@@ -19,6 +19,8 @@ from tests.utils.frameworks.pytorch_utils import LinearModel
 if TYPE_CHECKING:
     from sklearn.utils import Bunch
 
+    import bentoml._internal.external_typing as ext
+
 SEED = 123
 
 set_seed(SEED, reproducible=True)

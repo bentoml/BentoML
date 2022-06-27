@@ -210,7 +210,7 @@ def test_runner_batching(
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     gpu_resource = Resource(nvidia_gpu=1.0)
 

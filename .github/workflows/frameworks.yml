@@ -118,7 +118,7 @@ jobs:
               - *runner
               - bentoml/fastai.py
               - bentoml/_internal/frameworks/fastai.py
-              - tests/unit/_internal/frameworks/test_fastai.py
+              - tests/integration/frameworks/test_fastai_unit.py
             onnx:
               - *runner
               - bentoml/onnx.py
@@ -389,7 +389,7 @@ jobs:
       - name: Run unit test for fastai
         run: |
           OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"fastai.unit.xml" --cov-report term-missing:skip-covered)
-          python -m pytest ./tests/unit/_internal/frameworks/test_fastai.py "${OPTS[@]}" || ERR=1
+          python -m pytest ./tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}" || ERR=1
           if ! test $ERR = 0; then
             echo "unit tests for fastai failed!"
             exit 1

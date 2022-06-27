@@ -27,9 +27,12 @@ if TYPE_CHECKING:
 
     from ..external_typing import transformers as ext
 
+__all__ = ["load_model", "save_model", "get_runnable", "get"]
+
 
 MODULE_NAME = "bentoml.transformers"
 API_VERSION = "v1"
+PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
 
 
 logger = logging.getLogger(__name__)
@@ -84,13 +87,11 @@ except ImportError:  # pragma: no cover
 class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
-    task: str = attr.field(
-        validator=[
-            attr.validators.instance_of(str),
-            lambda instance, attribute, value: transformers.pipelines.check_task(value),  # type: ignore
-        ]
-    )
-
+    task: str = attr.field(validator=[attr.validators.instance_of(str)])
+    tf: t.Tuple(str) = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
+    pt: t.Tuple(str) = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
+    default: t.Dict[str, t.Any] = attr.field(factory=dict)
+    type: str = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
@@ -134,19 +135,48 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
-    pipeline_task: str = bento_model.info.options.task  # type: ignore
-    pipeline_kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
-    pipeline_kwargs.update(kwargs)
-    if len(pipeline_kwargs) > 0:
+    from transformers.pipelines import SUPPORTED_TASKS
+
+    task: str = bento_model.info.options.task  # type: ignore
+    if task not in SUPPORTED_TASKS:
+        try:
+            import cloudpickle  # type: ignore
+        except ImportError:  # pragma: no cover
+            raise MissingDependencyException(
+                f"Module `cloudpickle` is required in order to use to load custom pipelines."
+            )
+
+        with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
+            pipeline = cloudpickle.load(f)
+
+        SUPPORTED_TASKS[task] = {
+            "impl": type(pipeline),
+            "tf": tuple(
+                getattr(transformers, auto_class)  # type: ignore
+                for auto_class in bento_model.info.options.tf  # type: ignore
+            ),
+            "pt": tuple(
+                getattr(transformers, auto_class)  # type: ignore
+                for auto_class in bento_model.info.options.pt  # type: ignore
+            ),
+            "default": bento_model.info.options.default,  # type: ignore
+            "type": bento_model.info.options.type,  # type: ignore
+        }
+
+    kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
+    kwargs.update(kwargs)
+    if len(kwargs) > 0:
         logger.info(
-            f"Loading '{pipeline_task}' pipeline '{bento_model.tag}' with kwargs {pipeline_kwargs}."
+            f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {kwargs}."
         )
-    return transformers.pipeline(task=pipeline_task, model=bento_model.path, **pipeline_kwargs)  # type: ignore
+    return transformers.pipeline(task=task, model=bento_model.path, **kwargs)  # type: ignore
 
 
 def save_model(
     name: str,
     pipeline: ext.TransformersPipeline,
+    task_name: str | None = None,
+    task_definition: t.Dict[str, t.Any] | None = None,
     *,
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
@@ -160,7 +190,35 @@ def save_model(
         name (:code:`str`):
             Name for given model instance. This should pass Python identifier check.
         pipeline (:code:`Pipeline`):
-            Instance of the Transformers pipeline to be saved.
+            Instance of the Transformers pipeline to be saved. See Transformers
+            ``module src/transformers/pipelines/__init__.py`` for more details.
+        task_name (:code:`str`):
+            Name of pipeline task. If not provided, the task name will be derived from ``pipeline.task``.
+            ``task_name`` and ``task_definition`` must be both provided or both not provided.
+        task_definition (:code:`dict`):
+            Task definition for the Transformers custom pipeline. The definition is a dictionary
+            consisting of the following keys:
+
+            ``impl`` (:code:`str`): The name of the pipeline implementation module. The name should
+            be the same as the pipeline passed in the ``pipeline`` argument.
+            ``tf`` (:code:`tuple[AnyType]`): The name of the Tensorflow auto model class. One of ``tf`` and ``pt``
+            auto model class argument is required.
+            ``pt`` (:code:`tuple[AnyType]`): The name of the PyTorch auto model class. One of ``tf`` and ``pt``
+            auto model class argument is required.
+            ``default`` (:code:`Dict[str, AnyType]`): The names of the default models, tokenizers, feature extractors, etc.
+            ``type`` (:code:`str`): The type of the pipeline, e.g. ``text``, ``audio``, ``image``, ``multimodal``.
+
+            Example:
+            ``{
+                "impl": Text2TextGenerationPipeline,
+                "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
+                "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
+                "default": {"model": {"pt": "t5-base", "tf": "t5-base"}},
+                "type": "text",
+            }``
+
+            See Transformers ``module src/transformers/pipelines/__init__.py`` for more details.
+            ``task_name`` and ``task_definition`` must be both provided or both not provided.
         signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
             Methods to expose for running inference on the target model. Signatures are
              used for creating Runner instances when serving model with bentoml.Service
@@ -194,7 +252,7 @@ def save_model(
     """  # noqa
     if not isinstance(
         pipeline,
-        LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),
+        LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),  # type: ignore
     ):
         raise BentoMLException(
             "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
@@ -222,7 +280,6 @@ def save_model(
         framework_name="transformers",
         framework_versions={"transformers": get_pkg_version("transformers")},
     )
-    options = TransformersOptions(task=pipeline.task)
 
     if signatures is None:
         signatures = {
@@ -232,20 +289,88 @@ def save_model(
             f"Using the default model signature for Transformers ({signatures}) for model {name}."
         )
 
-    with bentoml.models.create(
-        name,
-        module=MODULE_NAME,
-        api_version=API_VERSION,
-        labels=labels,
-        context=context,
-        options=options,
-        signatures=signatures,
-        custom_objects=custom_objects,
-        metadata=metadata,
-    ) as bento_model:
-        pipeline.save_pretrained(bento_model.path)
+    if task_name is not None and task_definition is not None:
+        from transformers.pipelines import SUPPORTED_TASKS
 
-        return bento_model
+        try:
+            import cloudpickle  # type: ignore
+        except ImportError:  # pragma: no cover
+            raise MissingDependencyException(
+                f"Module `cloudpickle` is required in order to use to save custom pipelines."
+            )
+
+        logger.info(
+            f"Arguments `task_name` and `task_definition` are provided. Saving model with pipeline "
+            f"task name '{task_name}' and task definition '{task_definition}'."
+        )
+
+        if pipeline.task is None or pipeline.task != task_name:
+            raise BentoMLException(
+                f"Argument `task_name` '{task_name}' does not match pipeline task name '{pipeline.task}'."
+            )
+
+        if SUPPORTED_TASKS[task_name] != task_definition:
+            raise BentoMLException(
+                f"Argument `task_definition` '{task_definition}' does not match pipeline task "
+                "definition '{SUPPORTED_TASKS[task_name]}'."
+            )
+
+        impl: type = task_definition["impl"]
+        if type(pipeline) != impl:
+            raise BentoMLException(
+                f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
+            )
+
+        if task_name not in SUPPORTED_TASKS:
+            SUPPORTED_TASKS[task_name] = task_definition
+
+        options = TransformersOptions(
+            task=task_name,
+            pt=tuple(
+                auto_class.__qualname__ for auto_class in task_definition.get("pt", ())
+            ),
+            tf=tuple(
+                auto_class.__qualname__ for auto_class in task_definition.get("tf", ())
+            ),
+            default=task_definition.get("default", {}),
+            type=task_definition.get("type", "text"),
+        )
+
+        with bentoml.models.create(
+            name,
+            module=MODULE_NAME,
+            api_version=API_VERSION,
+            labels=labels,
+            context=context,
+            options=options,
+            signatures=signatures,
+            custom_objects=custom_objects,
+            metadata=metadata,
+        ) as bento_model:
+            pipeline.save_pretrained(bento_model.path)
+
+            with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "wb") as f:
+                cloudpickle.dump(pipeline, f)
+
+            return bento_model
+
+    else:
+        options = TransformersOptions(task=pipeline.task)
+
+        with bentoml.models.create(
+            name,
+            module=MODULE_NAME,
+            api_version=API_VERSION,
+            labels=labels,
+            context=context,
+            options=options,
+            signatures=signatures,
+            custom_objects=custom_objects,
+            metadata=metadata,
+        ) as bento_model:
+            pipeline.save_pretrained(bento_model.path)
+
+            return bento_model
 
 
 def get_runnable(

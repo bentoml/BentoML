@@ -279,7 +279,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return_arr = []
         [return_arr.append(i) for i in getattr(proto_arr, proto_arr.dtype)]
-        
+
         if(proto_arr.dtype == "timestamp_"):
             return_arr = [Timestamp.ToDatetime(dt) for dt in return_arr]
         elif(proto_arr.dtype == "duration_"):

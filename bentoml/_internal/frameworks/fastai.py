@@ -29,10 +29,8 @@ _TORCH_EXCEPTION_MESSAGE = "fastai requires `torch` as a dependency. Please foll
 
 if TYPE_CHECKING:
     import torch
-    import fastai
     import torch.nn as nn
-    from fastai.learner import Learner
-    from fastai.learner import load_learner  # type: ignore
+    import fastai.learner as learner_
 
     from .. import external_typing as ext
     from ..tag import Tag
@@ -45,16 +43,9 @@ else:
         "fastai.basics",
         exc_msg="BentoML only supports fastai v2 onwards.",
     )
-    fastai = LazyLoader(
-        "fastai",
-        globals(),
-        "fastai",
-        exc_msg=_FASTAI_EXCEPTION_MESSAGE,
-    )
     torch = LazyLoader("torch", globals(), "torch", exc_msg=_TORCH_EXCEPTION_MESSAGE)
     nn = LazyLoader("nn", globals(), "torch.nn", exc_msg=_TORCH_EXCEPTION_MESSAGE)
-    Learner = LazyLoader("Learner", globals(), "fastai.learner.Learner")
-    load_learner = LazyLoader("load_learner", globals(), "fastai.learner.load_learner")
+    learner_ = LazyLoader("learner_", globals(), "fastai.learner")
 
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
@@ -86,7 +77,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
-def load_model(bento_model: str | Tag | bentoml.Model) -> Learner:
+def load_model(bento_model: str | Tag | bentoml.Model) -> learner_.Learner:
     """
     Load the ``fastai.learner.Learner`` model instance with the given tag from the local BentoML model store.
 
@@ -119,12 +110,12 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> Learner:
 
     pickle_file: str = bento_model.path_of(MODEL_FILENAME)
     with open(pickle_file, "rb") as f:
-        return t.cast(Learner, load_learner(f, cpu=True))
+        return t.cast(learner_.Learner, learner_.load_learner(f, cpu=True))
 
 
 def save_model(
     name: str,
-    learner: Learner,
+    learner: learner_.Learner,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -184,7 +175,7 @@ def save_model(
         raise BentoMLException(
             "'bentoml.fastai.save_model()' does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
         )
-    if not isinstance(learner, Learner):
+    if not isinstance(learner, learner_.Learner):
         raise BentoMLException(
             f"'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got {learner.__class__.__name__} instead."
         )

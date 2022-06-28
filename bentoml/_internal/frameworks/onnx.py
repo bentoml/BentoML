@@ -266,6 +266,12 @@ def save_model(
     if not isinstance(model, onnx.ModelProto):
         raise TypeError(f"Given model ({model}) is not a onnx.ModelProto.")
 
+    if len(model.graph.output) > 1:
+        logger.warning(
+            "The onnx model you want to save has more than one "
+            "output. bentoml.onnx runner will only return the first output."
+        )
+
     options = ONNXOptions()
 
     with bentoml.models.create(

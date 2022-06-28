@@ -191,10 +191,11 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class XGBoostRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True
-        SUPPORT_CPU_MULTI_THREADING = True
-
+    class XGBoostRunnable(
+        bentoml.Runnable,
+        supported_resources={"nvidia.com/gpu"},
+        supports_multi_threading=True,
+    ):
         def __init__(self):
             super().__init__()
             self.model = load_model(bento_model)

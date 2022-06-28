@@ -395,10 +395,11 @@ def get_runnable(
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class TransformersRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
-
+    class TransformersRunnable(
+        bentoml.Runnable,
+        supported_resources={"nvidia.com/gpu"},
+        supports_multi_threading=True,
+    ):
         def __init__(self):
             super().__init__()
 

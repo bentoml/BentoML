@@ -81,7 +81,7 @@ def test_pytorch_save_load_across_devices(dev: str, bento_model: bentoml.Model):
     ],
 )
 def test_pytorch_runner_setup_run_batch(input_data, bento_model: bentoml.Model):
-    runner = bento_model.to_runner(cpu=4)
+    runner = bento_model.to_runner()
 
     assert bento_model.tag in [m.tag for m in runner.models]
     assert runner.scheduled_worker_count == 1

@@ -72,11 +72,11 @@ analysis with a pre-trained model:
     from statistics import mean
 
 
-    class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
-
-        SUPPORT_NVIDIA_GPU = False
-        SUPPORT_CPU_MULTI_THREADING = False
-
+    class NLTKSentimentAnalysisRunnable(
+        bentoml.Runnable,
+        supported_resources=[],
+        supports_multi_threading=False,
+    ):
         def __init__(self):
             nltk.download('vader_lexicon')
             nltk.download('punkt')
@@ -114,11 +114,13 @@ Send a test request:
     {"is_positive":true}%
 
 
-The :code:`SUPPORT_NVIDIA_GPU` and :code:`SUPPORT_CPU_MULTI_THREADING` class attribute indicates
-whether or not this Runnable class implementation supports using GPU or utilizes multi
-threading. Since NLTK library doesn't support utilizing GPU nor multi-cpu-core natively,
-they are both set to False. This information is used by the BentoServer scheduler
-to determine the worker pool size of this runner.
+The :code:`supported_resources` class parameter indicates which resources this Runnable class
+implementation supports. The only currently pre-defined resource is ``"nvidia.com/gpu"``.
+:code:`supports_multi_threading` indicates whether or not the runner supports CPU multi-threading.
+Since the NLTK library doesn't support utilizing GPU or multiple CPU cores natively, no resources
+are specified, and ``supports_multi_threading`` is set to False. This is the default configuration.
+This information is used by the BentoServer scheduler to determine the worker pool size of this
+runner.
 
 The :code:`bentoml.Runnable.method` decorator is used for creating
 :code:`RunnableMethod` - the decorated method will be exposed as the runner interface
@@ -138,10 +140,11 @@ and used in the same service. For example:
     import bentoml
     import torch
 
-    class MyModelRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True
-        SUPPORT_CPU_MULTI_THREADING = True
-
+    class MyModelRunnable(
+        bentoml.Runnable
+        supported_resources={"nvidia.com/gpu"},
+        supports_multi_threading=True
+    ):
         def __init__(self, model_file):
             self.model = torch.load_model(model_file)
 
@@ -190,10 +193,7 @@ Custom Model Runner
 
     bento_model = bentoml.pytorch.get("fraud_detect:latest")
 
-    class MyPytorchRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False
-        SUPPORT_CPU_MULTI_THREADING = True
-
+    class MyPytorchRunnable(bentoml.Runnable, supports_multi_threading=True):
         def __init__(self):
             self.model = torch.load_model(bento_model.path)
 
@@ -219,7 +219,7 @@ Runner Options
         MyRunnable,
         runnable_init_params={"foo": foo, "bar": bar},
         name="custom_runner_name",
-        strategy=None, # default strategy will be selected depending on the SUPPORT_NVIDIA_GPU and SUPPORT_CPU_MULTI_THREADING flag on runnable
+        strategy=None, # default strategy will be selected depending on the 'supported_resources' and 'supports_multi_threading' parameters of runnables
         models=[..],
 
         # below are also configurable via config file:

@@ -43,7 +43,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
+def partial_class(
+    cls: type[bentoml.Runnable], *args: t.Any, **kwargs: t.Any
+) -> type[bentoml.Runnable]:
     class NewClass(cls):
         def __init__(self, *inner_args: t.Any, **inner_kwargs: t.Any) -> None:
             functools.partial(cls.__init__, *args, **kwargs)(
@@ -53,10 +55,11 @@ def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
     return NewClass
 
 
-class PytorchModelRunnable(bentoml.Runnable):
-    SUPPORT_NVIDIA_GPU = True
-    SUPPORT_CPU_MULTI_THREADING = True
-
+class PytorchModelRunnable(
+    bentoml.Runnable,
+    supported_resources={"nvidia.com/gpu"},
+    supports_multi_threading=True,
+):
     def __init__(
         self,
         bento_model: Model,

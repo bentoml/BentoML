@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package bentoml.protos;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+// Tuple represents a repeated field containing data with same or different datatypes.
+message Tuple {
+  repeated Value value = 1;
+}
+
+// Value represents a single instance of the supported datatypes.
+// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64.
+message Value {
+  oneof value {
+    float float_value = 1;
+    double double_value = 2;
+    bytes bytes_value = 3;
+    bool bool_value = 4;
+    string string_value = 5;
+    uint32 uint32_value = 6;
+    sint32 sint32_value = 7;
+    google.protobuf.Timestamp timestamp_value = 8;
+    google.protobuf.Duration duration_value = 9;
+    Array array_value = 10;
+    Tuple tuple_value = 11;
+    uint64 uint64_value = 12;
+    sint64 sint64_value = 13;
+  }
+}
+
+// TODO: message complex types
+
+// Array contains a dtype which identifies the type of the array.
+// Repeated field for the identified dtype contains the array.
+// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
+message Array {
+  repeated float float_value = 1;
+  repeated double double_value = 2;
+  repeated bytes bytes_value = 3;
+  repeated bool bool_value = 4;
+  repeated string string_value = 5;
+  repeated uint32 uint32_value = 6;
+  repeated sint32 sint32_value = 7;
+  repeated google.protobuf.Timestamp timestamp_value = 8;
+  repeated google.protobuf.Duration duration_value = 9;
+  repeated Array array_value = 10;
+  repeated Tuple tuple_value = 11;
+  repeated uint64 uint64_value = 12;
+  repeated sint64 sint64_value = 13;
+}

@@ -57,7 +57,7 @@ class ResourceMeta(ABCMeta):
             assert issubclass(res, Resource)
             _RESOURCE_REGISTRY[resource_id] = res
 
-        return res  # pylint: disable=useless-super-delegation (???)
+        return res
 
 
 class Resource(t.Generic[T], metaclass=ResourceMeta, resource_id=""):

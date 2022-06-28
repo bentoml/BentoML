@@ -11,8 +11,8 @@ message Value{
 		double double_=2;
 		uint32 uint32_=3;
 		uint64 uint64_=4;
-		sint32 sint32=5;
-		sint64 sint64=6;
+		sint32 sint32_=5;
+		sint64 sint64_=6;
 		google.protobuf.Timestamp timestamp_=7;
 		google.protobuf.Duration duration_=8;
 		bool bool_=9;

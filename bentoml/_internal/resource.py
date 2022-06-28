@@ -99,7 +99,10 @@ class CpuResource(Resource[float], resource_id="cpu"):
         if milli_match:
             return float(milli_match[1]) / 1000.0
 
-        raise BentoMLConfigException(f"Invalid CPU resource limit '{spec}'. ")
+        try:
+            return float(spec)
+        except ValueError:
+            raise BentoMLConfigException(f"Invalid CPU resource limit '{spec}'. ")
 
     @classmethod
     def from_system(cls) -> float:
@@ -124,10 +127,9 @@ def query_cgroup_cpu_count() -> float:
     cgroup_root = "/sys/fs/cgroup/"
     cfs_quota_us_file = os.path.join(cgroup_root, "cpu", "cpu.cfs_quota_us")
     cfs_period_us_file = os.path.join(cgroup_root, "cpu", "cpu.cfs_period_us")
-    shares_file = os.path.join(cgroup_root, "cpu", "cpu.shares")
     cpu_max_file = os.path.join(cgroup_root, "cpu.max")
 
-    quota, shares = None, None
+    quota = None
 
     if os.path.exists(cfs_quota_us_file) and os.path.exists(cfs_period_us_file):
         try:
@@ -154,22 +156,12 @@ def query_cgroup_cpu_count() -> float:
     elif quota == 0:
         quota = 1
 
-    if os.path.exists(shares_file):
-        try:
-            shares = _read_cgroup_file(shares_file) / float(1024)
-        except FileNotFoundError as err:
-            logger.warning(f"Caught exception while getting CPU shares: {err}")
-
     os_cpu_count = float(os.cpu_count() or 1.0)
 
     limit_count = math.inf
 
-    if quota and shares:
-        limit_count = min(quota, shares)
-    elif quota:
+    if quota:
         limit_count = quota
-    elif shares:
-        limit_count = shares
 
     return float(min(limit_count, os_cpu_count))
 

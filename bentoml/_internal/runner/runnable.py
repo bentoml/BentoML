@@ -53,7 +53,11 @@ class RunnableMeta(ABCMeta, t.Type[t.Any]):
                     f"class {name}(Runnable, supported_resources={supported_resources}):\n"
                     "    ..."
                 )
-            else:
+            elif (
+                attr_dict["SUPPORT_NVIDIA_GPU"]
+                != "nvidia.com/gpu"
+                in supported_resources
+            ):
                 logger.warning(
                     f"Deprecated 'SUPPORT_NVIDIA_GPU' is being ignored in favor of 'supported_resources' for {name}."
                 )

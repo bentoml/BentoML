@@ -34,47 +34,40 @@ are provided:
 Building binary into Bentos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let's start with an example that builds an `Ingress <https://github.com/kubernetes/ingress-nginx>`_ binary into a Bento.
+Let's start with an example that builds a `custom Tensorflow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento.
+
+.. seealso::
+
+   |zero_out|_
+
+.. _zero_out: https://www.tensorflow.org/guide/create_op#define_the_op_interface
+
+.. |super_tag| replace:: :code:`zero_out.cc` implementation details
+
+.. note::
+
+   Currently building tensorflow custom op is ONLY supported on x86_64 architectures.
 
 Define the following :code:`Dockerfile.template`:
 
 .. code-block:: Dockerfile
-
    {% extends bento_base_template %}
+   {# change the value of tf_image to #}
+   {# tensorflow/tensorflow:nightly-custom-op-gpu-ubuntu16 #}
+   {# if your op supports GPU kernel #}
+   {% set tf_image = tensorflow/tensorflow:nightly-custom-op-ubuntu16 %}
    {% block SETUP_BENTO_BASE_IMAGE %}
 
-   ARG ARCH=amd64
-
-   FROM golang:alpine as build-stage
-
-   ARG ARCH
+   FROM --platform=linux/amd64 {{ tf_image }} as build-stage
 
    WORKDIR /tmp
 
-   RUN --mount=type=cache,target=/var/cache/apk \
-       apk --update add bash build-base git
+   COPY ./zero_out.cc .
 
-   SHELL [ "/bin/bash", "-exo", "pipefail", "-c" ]
-
-   RUN git clone --depth 1 https://github.com/kubernetes/ingress-nginx.git
-
-   WORKDIR /tmp/ingress-nginx
-
-   RUN --mount=type=cache,target=/root/.cache/go-build \
-       PKG=k8s.io/ingress-nginx \
-       ARCH=${ARCH} \
-       COMMIT_SHA=$(git rev-parse --short HEAD) \
-       REPO_INFO=$(git config --get remote.origin.url) \
-       TAG="0.0.0" \
-       ./build/build.sh
-
-   WORKDIR /tmp/ingress-nginx/rootfs/bin/${ARCH}
 
    {{ super() }}
 
-   ARG ARCH
-
-   COPY --from=build-stage /tmp/ingress-nginx/rootfs/bin/${ARCH}/ /usr/local/bin
+   COPY --from=build-stage /tmp/zero_out.so /usr/local/bin
 
    {% endblock %}
 
@@ -82,9 +75,10 @@ Then add the following to your :code:`bentofile.yaml`:
 
 .. code-block:: yaml
 
+   python:
+     packages:
+     - tensorflow
    docker:
-     system_packages:
-       - nginx
      dockerfile_template: ./Dockerfile.template
 
 Proceed to build your Bento with :code:`bentoml build` and containerize with :code:`bentoml containerize`:
@@ -102,7 +96,7 @@ Proceed to build your Bento with :code:`bentoml build` and containerize with :co
 
    .. code-block:: yaml
 
-      bentoml containerize --progress plain <bento>:<tag>`
+      bentoml containerize --progress plain <bento>:<tag>
 
 Access AWS credentials during image build
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

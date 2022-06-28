@@ -853,15 +853,18 @@ will build a new image on top of the base_image with the following steps:
         bentoml containerize iris_classifier:latest --platform=linux/amd64
 
 
-Docker Template (Danger Zone)
-"""""""""""""""""""""""""""""
+Dockerfile Template (Beta)
+""""""""""""""""""""""""""
 
 The :code:`dockerfile_template` field gives user the full control over how the
-:code:`Dockerfile` was generated in a Bento. Users can use this field to
-customize Bento's Dockerfile instruction set to suits their needs.
+:code:`Dockerfile` was generated in a Bento. Users can extend the template used for
+generating Dockerfile in a Bento, to suits their needs.
 
-First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml` build file.
-This template file is a mixed between a :code:`Dockerfile` and a :code:`Jinja` template file:
+First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml`
+build file. This file should follow the
+`Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ template language, and extend
+BentoML's base template and blocks. The template should render a valid
+`Dockerfile https://docs.docker.com/engine/reference/builder/`_. For example:
 
 .. code-block:: dockerfile
 
@@ -871,35 +874,27 @@ This template file is a mixed between a :code:`Dockerfile` and a :code:`Jinja` t
    RUN echo "We are running this during bentoml containerize!"
    {% endblock %}
 
-.. note::
-
-   The template file can have extension :code:`.jinja`, :code:`.j2`, or any
-   extensions that Jinja2 can understand.
-
-Then add the path to the given template file to the :code:`dockerfile_template` field in the :code: `bentofile.yaml`:
+Then add the path to the given template file to the :code:`dockerfile_template` field in
+your :code: `bentofile.yaml`:
 
 .. code:: yaml
 
     docker:
         dockerfile_template: "./Dockerfile.template"
 
-.. note:: 
+Now run :code:`bentoml build` to build a new Bento, it will contain a Dockerfile
+generated with the custom template. To confirm the generated Dockerfile work as
+expected, run :code:`bentoml containerize <bento>` to build a docker image with it.
 
-   Although we support any local file path, it is preferred that users put the
-   template file in the project directory.
+.. dropdown:: View the generated Dockerfile content
+    :icon: code
 
-   .. code:: yaml
+    During development and debugging, you may want to see the generated Dockerfile
+    after a Bento is built. Here's shortcut for that:
 
-      docker:
-          dockerfile_template: "~/workspace/Dockerfile.template"
+    .. code-block:: bash
 
-Now to see the result generated Dockerfile, do the following:
-
-.. code-block:: bash
-
-   bentoml build && cat $(bentoml get <bento> -o path)/env/docker/Dockerfile
-
-Run :code:`bentoml containerize <bento>` to confirm the generated Dockerfile work as expected.
+        cat $(bentoml get MY_BENTO_NAME:latest -o path)/env/docker/Dockerfile
 
 .. seealso::
 

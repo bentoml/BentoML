@@ -73,7 +73,8 @@ fastai:
   dependencies:
     - fastai
     - "-f https://download.pytorch.org/whl/torch_stable.html"
-    - torch
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
     - pandas
     - scikit-learn
 

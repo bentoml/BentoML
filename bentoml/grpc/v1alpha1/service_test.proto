@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package bentoml.testing.v1alpha1;
+
+option cc_enable_arenas = true;
+option go_package = "github.com/bentoml/testing/v1alpha1";
+option optimize_for = SPEED;
+option py_generic_services = true;
+
+// Represents a request for TestService.
+message ExecuteRequest {
+  string input = 1;
+}
+
+// Represents a response from TestService.
+message ExecuteResponse {
+  string output = 1;
+}
+
+// Use for testing interceptors per RPC call.
+service TestService {
+  // Unary API
+  rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+}

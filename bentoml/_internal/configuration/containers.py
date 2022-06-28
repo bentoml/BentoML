@@ -93,7 +93,7 @@ RUNNER_CFG_SCHEMA = {
 
 SCHEMA = Schema(
     {
-        "bento_server": {
+        "api_server": {
             "port": And(int, _larger_than_zero),
             "host": And(str, _is_ip_address),
             "backlog": And(int, _larger_than(64)),
@@ -280,7 +280,7 @@ BentoMLContainer = BentoMLContainerClass()
 class DeploymentContainerClass:
     bentoml_container = BentoMLContainer
     config = bentoml_container.config
-    api_server_config = config.bento_server
+    api_server_config = config.api_server
     runners_config = config.runners
     development_mode = providers.Static(True)
 

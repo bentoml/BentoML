@@ -1,4 +1,4 @@
-bento_server:
+api_server:
   cors:  # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
     enabled: True
     access_control_allow_origin: "*"

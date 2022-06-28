@@ -856,9 +856,9 @@ will build a new image on top of the base_image with the following steps:
 Dockerfile Template (Beta)
 """"""""""""""""""""""""""
 
-The :code:`dockerfile_template` field gives user the full control over how the
-:code:`Dockerfile` was generated in a Bento. Users can extend the template used for
-generating Dockerfile in a Bento, to suits their needs.
+The :code:`dockerfile_template` field gives the user full control over how the
+:code:`Dockerfile` is generated for a Bento by extending the template used by
+BentoML.
 
 First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml`
 build file. This file should follow the
@@ -874,7 +874,7 @@ BentoML's base template and blocks. The template should render a valid
    RUN echo "We are running this during bentoml containerize!"
    {% endblock %}
 
-Then add the path to the given template file to the :code:`dockerfile_template` field in
+Then add the path to your template file to the :code:`dockerfile_template` field in
 your :code: `bentofile.yaml`:
 
 .. code:: yaml
@@ -882,23 +882,23 @@ your :code: `bentofile.yaml`:
     docker:
         dockerfile_template: "./Dockerfile.template"
 
-Now run :code:`bentoml build` to build a new Bento, it will contain a Dockerfile
-generated with the custom template. To confirm the generated Dockerfile work as
+Now run :code:`bentoml build` to build a new Bento. It will contain a Dockerfile
+generated with the custom template. To confirm the generated Dockerfile works as
 expected, run :code:`bentoml containerize <bento>` to build a docker image with it.
 
 .. dropdown:: View the generated Dockerfile content
     :icon: code
 
-    During development and debugging, you may want to see the generated Dockerfile
-    after a Bento is built. Here's shortcut for that:
+    During development and debugging, you may want to see the generated Dockerfile.
+    Here's shortcut for that:
 
     .. code-block:: bash
 
-        cat $(bentoml get MY_BENTO_NAME:latest -o path)/env/docker/Dockerfile
+        cat "$(bentoml get MY_BENTO_NAME:latest -o path)/env/docker/Dockerfile"
 
 .. seealso::
 
-   :ref:`Bento Containerization <guides/containerization:Containerization>` to learn more about how BentoML containerize a Bento.
+   :ref:`Bento Containerization <guides/containerization:Containerization>`: more information about how BentoML containerizes a Bento.
 
 Docker Options Table
 """"""""""""""""""""

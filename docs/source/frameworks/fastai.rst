@@ -164,9 +164,9 @@ To load the learner back to memory, use ``load_model``:
 
 .. code-block:: python
 
-   learner = bentoml.fastai.load_model("fastai_sentiment")
+   learner = bentoml.fastai.load_model("fastai_sentiment:latest")
 
-Proceed to then test the learner with prediction inputs:
+You can then proceed to test the learner with prediction inputs:
 
 .. code-block:: python
 
@@ -179,8 +179,8 @@ Proceed to then test the learner with prediction inputs:
    GPU, you should get the ``PyTorch`` model from ``learner.model`` and then use
    ``bentoml.pytorch`` instead.
 
-   Additionallly, if the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
-   Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
+   Additionally, if the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
+   See `mixed precision <https://docs.fast.ai/callback.fp16.html>`_ to learn more about mixed precision.
 
 
 Using Runners
@@ -188,11 +188,11 @@ Using Runners
 
 .. seealso::
 
-   :ref:`Runners' documentation<concepts/runner:Using Runners>` on Runners' concept and its usage.
+   :ref:`The general Runner documentation<concepts/runner:Using Runners>`: general information about the Runner concept and their usage.
 
 .. seealso::
 
-   :ref:`Specifying Runner Resources<concepts/runner:Specifying Required Resources>` on providing options for Runners.
+   :ref:`Specifying Runner Resources<concepts/runner:Specifying Required Resources>`: more information about Runner options.
 
 
 To use fastai runner locally, access the model via ``get`` and convert it to
@@ -206,11 +206,9 @@ a runner:
 
    runner.predict.run("I really liked that movie!")
 
-.. note::
+.. tip::
 
-   Since fastai contains different implementation for different ``Learner``
-   type (Tabular, Text, Vision, etc.), users need to be responsible for
-   processing and converting model inputs to corresponding format.
+   ``runner.predict.run`` should generally be a drop-in replacement for ``learner.predict`` regardless of your learner type.
 
 .. admonition:: About adaptive batching in fastai
 
@@ -222,8 +220,7 @@ Building a Service for fastai
 
 .. seealso::
 
-   :ref:`Building a Service <concepts/service:Service and APIs>` for how to
-   create a prediction service with BentoML.
+   :ref:`Building a Service <concepts/service:Service and APIs>`: more information on creating a prediction service with BentoML.
 
 When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`,
 there are two ways to include fastai as a dependency, via ``python`` or

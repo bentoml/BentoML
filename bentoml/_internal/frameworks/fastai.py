@@ -227,9 +227,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         "Runners created from FastAIRunnable will not be optimized for performance. If performance is critical to your usecase, please access the PyTorch model directly via 'learn.model' and use 'bentoml.pytorch.get_runnable()' instead."
     )
 
-    class FastAIRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False
-        SUPPORT_CPU_MULTI_THREADING = True
+    class FastAIRunnable(bentoml.Runnable, supports_multi_threading=True):
+        # fastai only supports GPU during training, not for inference.
 
         def __init__(self):
             super().__init__()

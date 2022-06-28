@@ -76,7 +76,13 @@ JSONSerializable = t.NewType("JSONSerializable", object)
 T = t.TypeVar("T")
 
 
-class LazyType(t.Generic[T]):
+if TYPE_CHECKING:
+    LazyTypeSuper = t.Type
+else:
+    LazyTypeSuper = t.Generic
+
+
+class LazyType(LazyTypeSuper[T]):
     """
     LazyType provides solutions for several conflicts when applying lazy dependencies,
         type annotations and runtime class checking.
@@ -127,7 +133,7 @@ class LazyType(t.Generic[T]):
     def __init__(self, module_or_cls: str) -> None:
         """LazyType("numpy.ndarray")"""
 
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
         self,
         module_or_cls: str | t.Type[T],
         qualname: str | None = None,
@@ -150,7 +156,7 @@ class LazyType(t.Generic[T]):
             else:
                 self.qualname: str = getattr(module_or_cls, "__name__")
 
-    def __instancecheck__(self, obj) -> "t.TypeGuard[T]":
+    def __instancecheck__(self, obj: t.Any) -> bool:
         return self.isinstance(obj)
 
     @classmethod

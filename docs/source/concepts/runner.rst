@@ -116,7 +116,9 @@ Send a test request:
 
 The :code:`supported_resources` class parameter indicates which resources this Runnable class
 implementation supports. The only currently pre-defined resource is ``"nvidia.com/gpu"``.
-:code:`supports_multi_threading` indicates whether or not the runner supports CPU multi-threading.
+
+The :code:`supports_multi_threading` class parameter indicates whether or not the runner supports CPU multi-threading.
+
 Since the NLTK library doesn't support utilizing GPU or multiple CPU cores natively, no resources
 are specified, and ``supports_multi_threading`` is set to False. This is the default configuration.
 This information is used by the BentoServer scheduler to determine the worker pool size of this

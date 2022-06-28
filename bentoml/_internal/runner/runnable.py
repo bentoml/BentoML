@@ -25,7 +25,7 @@ RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
 
 
 class RunnableMeta(ABCMeta, t.Type[t.Any]):
-    supported_resources: set[str]
+    supported_resources: Set[str]
     supports_multi_threading: bool
 
     methods: dict[str, RunnableMethod[t.Any, t.Any, t.Any]] | None = None

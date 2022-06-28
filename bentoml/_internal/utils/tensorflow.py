@@ -237,7 +237,7 @@ def get_arg_names(func: "tf_ext.DecoratedFunction") -> t.Optional[t.List[str]]:
 def get_restorable_functions(
     m: "tf_ext.Trackable",
 ) -> t.Dict[str, "tf_ext.RestoredFunction"]:
-    function_map = {k: getattr(m, k) for k in dir(m)}
+    function_map = {k: getattr(m, k, None) for k in dir(m)}
     return {
         k: v
         for k, v in function_map.items()

@@ -6,7 +6,7 @@ This guide describes the containerization process and how users can
 define a custom Dockerfile templates to customize Bento container. 
 
 
-.. warning::
+.. note::
 
     BentoML make uses of `Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ to enable custom Dockerfile template.
 
@@ -28,7 +28,7 @@ To focus on how to create a custom Dockerfile template, the following examples
 are provided:
 
 1. :ref:`guides/containerization:Building binary into Bentos`
-2. :ref:`guides/containerization:Providing AWS credentials to Bentos`
+2. :ref:`guides/containerization:Access AWS credentials during image build`
 3. :ref:`guides/containerization:Installing custom CUDA version with conda`
 
 Building binary into Bentos
@@ -93,7 +93,7 @@ Proceed to build your Bento with :code:`bentoml build` and containerize with :co
 
    bentoml build
 
-   bentoml containerize <bento>:<tag>`
+   bentoml containerize <bento>:<tag>
 
 .. tip:: 
 
@@ -104,8 +104,8 @@ Proceed to build your Bento with :code:`bentoml build` and containerize with :co
 
       bentoml containerize --progress plain <bento>:<tag>`
 
-Providing AWS credentials to Bentos
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Access AWS credentials during image build
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We will now demonstrate how to provide AWS credentials to a Bento via two approaches:
 

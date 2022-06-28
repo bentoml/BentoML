@@ -186,6 +186,8 @@ def save_model(
        # `Save` the model with BentoML
        tag = bentoml.fastai.save_model("fai_learner", learner)
     """
+    import cloudpickle
+
     if not TYPE_CHECKING:
         fastai = _import_fastai()
         Learner = fastai.learner.Learner
@@ -225,15 +227,7 @@ def save_model(
         metadata=metadata,
         context=context,
     ) as bento_model:
-        import cloudpickle
-        from fastai.callback.schedule import ParamScheduler
-
-        # NOTE: ParamScheduler is not pickable, so we need to remove it from the model.
-        # It is also a hyperparameter callback, hence we don't need it for serving.
-        cbs: list[Callback] = list(filter(lambda x: isinstance(x, ParamScheduler), learner.cbs))  # type: ignore (bad fastai type)
-        learner.remove_cbs(cbs)
         learner.export(bento_model.path_of(MODEL_FILENAME), pickle_module=cloudpickle)
-        learner.add_cbs(cbs)
         return bento_model
 
 

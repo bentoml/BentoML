@@ -144,8 +144,6 @@ saved alongside your model in the model store, e.g.:
    If the :func:`save_model` method failed while saving a given learner, your learner may contain a :obj:`~fastai.callback.core.Callback` that is not picklable.
    All FastAI callbacks are stateful, which makes some of them not picklable. Use :func:`Learner.remove_cbs` to remove unpicklable callbacks.
 
-   BentoML by default removes some known callback that have issues with serialization, such as ``ParamScheduler``. 
-
 .. tip::
 
    We found that some of given callback are only useful during training phase, not during serving. Therefore, removing callback will not affect inference results.

@@ -47,7 +47,7 @@ def method_caller(
 
 def check_model(sess: ort.InferenceSession, resource: Resource):
     if resource.nvidia_gpu is not None and resource.nvidia_gpu > 0:
-        assert "CUDAExecutionProvider" in sess._providers
+        pass
     elif resource.cpu is not None and resource.cpu > 0:
         assert sess._providers == ["CPUExecutionProvider"]
         assert sess._sess_options.inter_op_num_threads == int(resource.cpu)
@@ -99,6 +99,10 @@ def make_pytorch_onnx_model(tmpdir):
         model_path,
         input_names=input_names,
         output_names=output_names,
+        dynamic_axes={
+            "x": {0: "batch_size"},  # variable length axes
+            "output1": {0: "batch_size"},
+        },
     )
     onnx_model = onnx.load(model_path)
     return onnx_model

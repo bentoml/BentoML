@@ -173,7 +173,6 @@ def generate_dockerfile(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
         trim_blocks=True,
         lstrip_blocks=True,
-        autoescape=True,  # https://docs.huihoo.com/google-ctemplate/auto_escape.html
         loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
     )
 

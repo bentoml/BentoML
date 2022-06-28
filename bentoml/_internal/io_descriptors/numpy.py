@@ -237,6 +237,68 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         else:
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
+    def handle_tuple(self,proto_tuple):
+        """
+        Convert given protobuf tuple to a tuple list
+        """
+        import io_descriptors_pb2
+        from google.protobuf.timestamp_pb2 import Timestamp
+        from google.protobuf.duration_pb2 import Duration
+
+        tuple_arr=[]
+        [tuple_arr.append(i) for i in getattr(proto_tuple,"value_")]
+        
+        if(not tuple_arr):
+            raise ValueError("Provided tuple is either empty or invalid.")
+        
+        return_arr=[]
+
+        for i in range(len(tuple_arr)):
+            val=getattr(tuple_arr[i],tuple_arr[i].WhichOneof("dtype"))
+            
+            if(tuple_arr[i].WhichOneof("dtype")=="timestamp_"):
+                val=Timestamp.ToDatetime(val)
+            elif(tuple_arr[i].WhichOneof("dtype")=="duration_"):
+                val=Duration.ToTimedelta(val)
+
+            if(type(val)==io_descriptors_pb2.NumpyNdarray):
+                val=self.proto_to_arr(val)
+            elif(type(val)==io_descriptors_pb2.Tuple):
+                val=self.handle_tuple(val)
+            return_arr.append(val)
+        
+        return return_arr
+
+    def proto_to_arr(self,proto_arr):
+        """
+        Convert given protobuf array to python list
+        """
+        import io_descriptors_pb2
+        from google.protobuf.timestamp_pb2 import Timestamp
+        from google.protobuf.duration_pb2 import Duration
+
+        return_arr=[]
+        [return_arr.append(i) for i in getattr(proto_arr,proto_arr.dtype)]
+        
+        if(proto_arr.dtype=="timestamp_"):
+            return_arr=[Timestamp.ToDatetime(dt) for dt in return_arr]
+        elif(proto_arr.dtype=="duration_"):
+            return_arr=[Duration.ToTimedelta(td) for td in return_arr]
+        
+        if(not return_arr):
+            raise ValueError("Provided array is either empty or invalid")
+
+        for i in range(len(return_arr)):
+            if(type(return_arr[i])==io_descriptors_pb2.NumpyNdarray):
+                return_arr[i]=self.proto_to_arr(return_arr[i])
+            elif(type(return_arr[i])==io_descriptors_pb2.Tuple):
+                return_arr[i]=self.handle_tuple(return_arr[i])
+        return return_arr
+
+    async def from_grpc_request(self, request):
+        #TODO
+        ...
+
     @classmethod
     def from_sample(
         cls,

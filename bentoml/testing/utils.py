@@ -52,11 +52,15 @@ async def async_request(
     from starlette.datastructures import Headers
 
     async with aiohttp.ClientSession() as sess:
-        async with sess.request(
-            method, url, data=data, headers=headers, timeout=timeout
-        ) as r:
-            r_body = await r.read()
-
+        try:
+            async with sess.request(
+                method, url, data=data, headers=headers, timeout=timeout
+            ) as r:
+                r_body = await r.read()
+        except Exception:
+            raise RuntimeError(
+                "Unable to reach host."
+            ) from None  # suppress exception trace
     if assert_status is not None:
         if callable(assert_status):
             assert assert_status(r.status), f"{r.status} {repr(r_body)}"
@@ -102,7 +106,9 @@ async def http_proxy_app(scope: Scope, receive: Receive, send: Send):
             while True:
                 request_message = await receive()
                 assert request_message["type"] == "http.request"
-                bodys.append(request_message.get("body"))
+                request_body = request_message.get("body")
+                assert isinstance(request_body, bytes)
+                bodys.append(request_body)
                 if not request_message["more_body"]:
                     break
 

@@ -11,7 +11,7 @@ from abc import abstractmethod
 
 import psutil
 
-from ..exceptions import BentoMLException
+from ..exceptions import BentoMLConfigException
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ T = t.TypeVar("T")
 
 def get_resource(resources: dict[str, t.Any], resource_kind: str) -> t.Any:
     if resource_kind not in _RESOURCE_REGISTRY:
-        raise BentoMLException(f"Unknown resource kind '{resource_kind}'.")
+        raise BentoMLConfigException(f"Unknown resource kind '{resource_kind}'.")
 
     resource: t.Type[Resource[t.Any]] = _RESOURCE_REGISTRY[resource_kind]
 
@@ -99,7 +99,7 @@ class CpuResource(Resource[float], resource_id="cpu"):
         if milli_match:
             return float(milli_match[1]) / 1000.0
 
-        raise BentoMLException(f"Invalid CPU resource limit '{spec}'. ")
+        raise BentoMLConfigException(f"Invalid CPU resource limit '{spec}'. ")
 
     @classmethod
     def from_system(cls) -> float:

@@ -143,9 +143,9 @@ and used in the same service. For example:
     import torch
 
     class MyModelRunnable(
-        bentoml.Runnable
+        bentoml.Runnable,
         supported_resources={"nvidia.com/gpu"},
-        supports_multi_threading=True
+        supports_multi_threading=True),
     ):
         def __init__(self, model_file):
             self.model = torch.load_model(model_file)

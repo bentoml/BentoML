@@ -102,11 +102,11 @@ def _wait_until_api_server_ready(
             logger.info(f"[{e}]retrying to connect to the host {host_url}...")
             logger.error(e)
             time.sleep(check_interval)
-    else:
-        logger.info(
-            f"Timed out waiting {timeout} seconds for Server {host_url} to be ready, "
-        )
-        return False
+
+    logger.info(
+        f"Timed out waiting {timeout} seconds for Server {host_url} to be ready, "
+    )
+    return False
 
 
 @cached_contextmanager("{project_path}")

@@ -3,19 +3,18 @@ from __future__ import annotations
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from functools import lru_cache
 
 import attr
 
 from ..types import ParamSpec
 from ..utils import first_not_none
-from .resource import Resource
 from .runnable import Runnable
 from .strategy import Strategy
 from .strategy import DefaultStrategy
 from ...exceptions import StateException
 from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..models import Model
@@ -51,18 +50,13 @@ class RunnerMethod(t.Generic[T, P, R]):
         )
 
 
-# TODO: Move these to the default configuration file and allow user override
-GLOBAL_DEFAULT_MAX_BATCH_SIZE = 100
-GLOBAL_DEFAULT_MAX_LATENCY_MS = 10000
-
-
 @attr.define(slots=False, frozen=True, eq=False)
 class Runner:
     runnable_class: t.Type[Runnable]
     runnable_init_params: dict[str, t.Any]
     name: str
     models: list[Model]
-    resource_config: Resource
+    resource_config: dict[str, t.Any]
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: t.Type[Strategy]
 
@@ -76,10 +70,6 @@ class Runner:
         name: str | None = None,
         scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
         models: t.List[Model] | None = None,
-        cpu: int
-        | None = None,  # TODO: support str and float type here? e.g "500m" or "0.5"
-        nvidia_gpu: int | None = None,
-        custom_resources: t.Dict[str, float] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: t.Dict[str, t.Dict[str, int]] | None = None,
@@ -91,27 +81,24 @@ class Runner:
             name: runner name
             scheduling_strategy: scheduling strategy
             models: list of required bento models
-            cpu: cpu resource
-            nvidia_gpu: nvidia gpu resource
-            custom_resources: custom resources
             max_batch_size: max batch size config for micro batching
             max_latency_ms: max latency config for micro batching
             method_configs: per method configs
         """
-
         name = runnable_class.__name__ if name is None else name
+
+        runners_config = BentoMLContainer.config.runners.get()
+        if name in runners_config:
+            config = runners_config[name]
+        else:
+            config = runners_config
+
         models = [] if models is None else models
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runnable_init_params = (
             {} if runnable_init_params is None else runnable_init_params
         )
-        method_configs = {} if method_configs is None else {}
-        custom_resources = {} if custom_resources is None else {}
-        resource_config = Resource(
-            cpu=cpu,
-            nvidia_gpu=nvidia_gpu,
-            custom_resources=custom_resources or {},
-        )
+        method_configs = {} if method_configs is None else method_configs
 
         if runnable_class.methods is None:
             raise ValueError(
@@ -119,12 +106,18 @@ class Runner:
             )
 
         for method_name, method in runnable_class.methods.items():
-            method_max_batch_size = method_configs.get(method_name, {}).get(
-                "max_batch_size"
-            )
-            method_max_latency_ms = method_configs.get(method_name, {}).get(
-                "max_latency_ms"
-            )
+            if not config["batching"]["enabled"]:
+                method.config.batchable = False
+
+            method_max_batch_size = None
+            method_max_latency_ms = None
+            if method_name in method_configs:
+                method_max_batch_size = method_configs[method_name].get(
+                    "max_batch_size"
+                )
+                method_max_latency_ms = method_configs[method_name].get(
+                    "max_latency_ms"
+                )
 
             runner_method_map[method_name] = RunnerMethod(
                 runner=self,
@@ -133,12 +126,12 @@ class Runner:
                 max_batch_size=first_not_none(
                     method_max_batch_size,
                     max_batch_size,
-                    default=GLOBAL_DEFAULT_MAX_BATCH_SIZE,
+                    default=config["batching"]["max_batch_size"],
                 ),
                 max_latency_ms=first_not_none(
                     method_max_latency_ms,
                     max_latency_ms,
-                    default=GLOBAL_DEFAULT_MAX_LATENCY_MS,
+                    default=config["batching"]["max_latency_ms"],
                 ),
             )
 
@@ -147,7 +140,7 @@ class Runner:
             runnable_init_params=runnable_init_params,
             name=name,
             models=models,
-            resource_config=resource_config,
+            resource_config=config["resources"],
             runner_methods=list(runner_method_map.values()),
             scheduling_strategy=scheduling_strategy,
         )
@@ -180,14 +173,6 @@ class Runner:
         # set all run method entrypoint
         for runner_method in self.runner_methods:
             object.__setattr__(self, runner_method.name, runner_method)
-
-    @lru_cache(maxsize=1)
-    def get_effective_resource_config(self) -> Resource:
-        return (
-            Resource.from_config(self.name)
-            | self.resource_config
-            | Resource.from_system()
-        )
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):
@@ -225,12 +210,12 @@ class Runner:
     def scheduled_worker_count(self) -> int:
         return self.scheduling_strategy.get_worker_count(
             self.runnable_class,
-            self.get_effective_resource_config(),
+            self.resource_config,
         )
 
     def setup_worker(self, worker_id: int) -> None:
         self.scheduling_strategy.setup_worker(
             self.runnable_class,
-            self.get_effective_resource_config(),
+            self.resource_config,
             worker_id,
         )

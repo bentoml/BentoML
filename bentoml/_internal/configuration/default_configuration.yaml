@@ -5,10 +5,6 @@ bento_server:
   workers: 1
   timeout: 60
   max_request_size: 20971520
-  batch_options:
-    enabled: True
-    max_batch_size: 10000
-    max_latency_ms: 10000
   ngrok:
     enabled: False
   metrics:
@@ -31,6 +27,11 @@ bento_server:
     access_control_expose_headers: Null
 
 runners:
+  batching:
+    enabled: True
+    max_batch_size: 100
+    max_latency_ms: 10000
+  resources: ~
   logging:
     access:
       enabled: True

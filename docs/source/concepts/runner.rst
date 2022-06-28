@@ -225,9 +225,6 @@ Runner Options
         # below are also configurable via config file:
 
         # default configs:
-        cpu=4,
-        nvidia_gpu=1
-        custom_resources={..} # reserved API for supporting custom accelerators, a custom scheduling strategy will be needed to support new hardware types
         max_batch_size=..  # default max batch size will be applied to all run methods, unless override in the runnable_method_configs
         max_latency_ms=.. # default max latency will be applied to all run methods, unless override in the runnable_method_configs
 

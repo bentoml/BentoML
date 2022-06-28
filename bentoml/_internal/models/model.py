@@ -268,9 +268,6 @@ class Model(StoreItem):
     def to_runner(
         self,
         name: str = "",
-        cpu: int | None = None,
-        nvidia_gpu: int | None = None,
-        custom_resources: dict[str, float] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
@@ -280,9 +277,6 @@ class Model(StoreItem):
 
         Args:
             name:
-            cpu:
-            nvidia_gpu:
-            custom_resources:
             max_batch_size:
             max_latency_ms:
             runnable_method_configs:
@@ -294,9 +288,6 @@ class Model(StoreItem):
             self.to_runnable(),
             name=name if name != "" else self.tag.name,
             models=[self],
-            cpu=cpu,
-            nvidia_gpu=nvidia_gpu,
-            custom_resources=custom_resources,
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
             method_configs=method_configs,

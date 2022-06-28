@@ -47,11 +47,11 @@ class ResourceMeta(ABCMeta):
         cls,
         name: str,
         bases: tuple[type],
-        clsdict: dict[t.Any, t.Any],
+        attr_dict: dict[t.Any, t.Any],
         *,
         resource_id: str,
     ):
-        res = super().__new__(cls, name, bases, clsdict)
+        res = super().__new__(cls, name, bases, attr_dict)
         if resource_id != "":
             # register the class with RESOURCE_REGISTRY
             assert issubclass(res, Resource)

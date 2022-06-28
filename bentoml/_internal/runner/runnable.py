@@ -34,17 +34,17 @@ class RunnableMeta(ABCMeta, t.Type[t.Any]):
         cls,
         name: str,
         bases: t.Tuple[type, ...],
-        instDict: dict[t.Any, t.Any],
+        attr_dict: dict[t.Any, t.Any],
         *,
         supported_resources: Set[str] | None = None,
         supports_multi_threading: bool | None = None,
         **_kwargs: t.Any,
     ) -> RunnableMeta:
-        res = super().__new__(cls, name, bases, instDict)
+        res = super().__new__(cls, name, bases, attr_dict)
 
-        if "SUPPORT_NVIDIA_GPU" in instDict:
+        if "SUPPORT_NVIDIA_GPU" in attr_dict:
             if supported_resources is None:
-                if instDict["SUPPORT_NVIDIA_GPU"]:
+                if attr_dict["SUPPORT_NVIDIA_GPU"]:
                     supported_resources = {"nvidia.com/gpu"}
                 else:
                     supported_resources = set()
@@ -80,15 +80,15 @@ class RunnableMeta(ABCMeta, t.Type[t.Any]):
 
         res.supported_resources = supported_resources
 
-        if "SUPPORT_CPU_MULTI_THREADING" in instDict:
+        if "SUPPORT_CPU_MULTI_THREADING" in attr_dict:
             if supports_multi_threading is None:
                 logger.warning(
                     f"{name} is using deprecated 'SUPPORT_CPU_MULTI_THREADING'. Please convert to using 'supports_multi_threading':\n"
                     f"class {name}(Runnable, supports_multi_threading=True):\n"
                     "    ..."
                 )
-                supports_multi_threading = instDict["SUPPORT_CPU_MULTI_THREADING"]
-            elif instDict["SUPPORT_CPU_MULTI_THREADING"] != supports_multi_threading:
+                supports_multi_threading = attr_dict["SUPPORT_CPU_MULTI_THREADING"]
+            elif attr_dict["SUPPORT_CPU_MULTI_THREADING"] != supports_multi_threading:
                 logger.warning(
                     f"Deprecated 'SUPPORT_CPU_MULTI_THREADING' is being ignored in favor of 'supports_multi_threading' for {name}"
                 )

@@ -373,7 +373,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         else:
             raise TypeError(
                 f"`run` of {self.__class__.__name__} only takes "
-                "`numpy.ndarray` or `pd.DataFrame` as input parameters"
+                "`numpy.ndarray` or `pd.DataFrame`, `tf.Tensor`, or `torch.Tensor` as input parameters"
             )
         return item
 

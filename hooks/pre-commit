@@ -17,7 +17,7 @@ setup-cfg-fmt --max-py-version 3.10 "$GIT_ROOT/setup.cfg"
 git diff --name-status | grep setup.cfg &>/dev/null && git add setup.cfg
 
 # Run format scripts
-./scripts/tools/formatter.sh && git add . || exit 1
+./scripts/tools/formatter.sh || exit 1
 
 INFO "Running yamllint on github workflow..."
 for f in $(find .github -type f -name '*.yml'); do

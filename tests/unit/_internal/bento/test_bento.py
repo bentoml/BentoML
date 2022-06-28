@@ -17,7 +17,6 @@ from bentoml._internal.bento.bento import BentoApiInfo
 from bentoml._internal.bento.bento import BentoModelInfo
 from bentoml._internal.bento.bento import BentoRunnerInfo
 from bentoml._internal.configuration import BENTOML_VERSION
-from bentoml._internal.runner.resource import Resource
 from bentoml._internal.bento.build_config import BentoBuildConfig
 
 if TYPE_CHECKING:
@@ -52,7 +51,7 @@ def test_bento_info(tmpdir: Path):
         name="runner_a",
         runnable_type="test_runnable_a",
         models=["runner_a_model"],
-        resource_config=Resource(cpu=2),
+        resource_config={"cpu": 2},
     )
     runners = [runner_a]
     api_predict = BentoApiInfo(

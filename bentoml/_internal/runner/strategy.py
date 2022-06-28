@@ -6,8 +6,9 @@ import math
 import typing as t
 import logging
 
-from .resource import Resource
 from .runnable import Runnable
+from ..resource import get_resource
+from ..resource import system_resources
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class Strategy(abc.ABC):
     def get_worker_count(
         cls,
         runnable_class: t.Type[Runnable],
-        resource_request: Resource,
+        resource_request: dict[str, t.Any],
     ) -> int:
         ...
 
@@ -27,7 +28,7 @@ class Strategy(abc.ABC):
     def setup_worker(
         cls,
         runnable_class: t.Type[Runnable],
-        resource_request: Resource,
+        resource_request: dict[str, t.Any],
         worker_index: int,
     ) -> None:
         ...
@@ -46,39 +47,50 @@ class DefaultStrategy(Strategy):
     def get_worker_count(
         cls,
         runnable_class: t.Type[Runnable],
-        resource_request: Resource,
+        resource_request: dict[str, t.Any] | None,
     ) -> int:
+        if resource_request is None:
+            resource_request = system_resources()
+
         # use nvidia gpu
+        nvidia_gpus = get_resource(resource_request, "nvidia.com/gpu")
         if (
-            resource_request.nvidia_gpu is not None
-            and resource_request.nvidia_gpu > 0
-            and runnable_class.SUPPORT_NVIDIA_GPU
+            nvidia_gpus is not None
+            and nvidia_gpus > 0
+            and "nvidia.com/gpu" in runnable_class.supported_resources
         ):
-            return math.ceil(resource_request.nvidia_gpu)
+            return math.ceil(nvidia_gpus)
 
         # use CPU
-        if resource_request.cpu is not None and resource_request.cpu > 0:
-            if runnable_class.SUPPORT_CPU_MULTI_THREADING:
+        cpus = get_resource(resource_request, "cpu")
+        if cpus is not None and cpus > 0:
+            if runnable_class.supports_multi_threading:
                 return 1
 
-            return math.ceil(resource_request.cpu)
+            return math.ceil(cpus)
 
-        # this would not be reached by user since we always read system resource as default
-        logger.warning("No resource request found, always use single worker")
+        # this should not be reached by user since we always read system resource as default
+        logger.warning(
+            "No resource request found, falling back to using a single worker"
+        )
         return 1
 
     @classmethod
     def setup_worker(
         cls,
         runnable_class: t.Type[Runnable],
-        resource_request: Resource,
+        resource_request: dict[str, t.Any] | None,
         worker_index: int,
     ) -> None:
+        if resource_request is None:
+            resource_request = system_resources()
+
         # use nvidia gpu
+        nvidia_gpus = get_resource(resource_request, "nvidia.com/gpu")
         if (
-            resource_request.nvidia_gpu is not None
-            and resource_request.nvidia_gpu > 0
-            and runnable_class.SUPPORT_NVIDIA_GPU
+            nvidia_gpus is not None
+            and nvidia_gpus > 0
+            and "nvidia.com/gpu" in runnable_class.supported_resources
         ):
             os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index - 1)
             logger.info(
@@ -88,10 +100,11 @@ class DefaultStrategy(Strategy):
             return
 
         # use CPU
-        if resource_request.cpu is not None and resource_request.cpu > 0:
+        cpus = get_resource(resource_request, "cpu")
+        if cpus is not None and cpus > 0:
             os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # disable gpu
-            if runnable_class.SUPPORT_CPU_MULTI_THREADING:
-                thread_count = math.ceil(resource_request.cpu)
+            if runnable_class.supports_multi_threading:
+                thread_count = math.ceil(cpus)
                 for thread_env in THREAD_ENVS:
                     os.environ[thread_env] = str(thread_count)
                 logger.info(

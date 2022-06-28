@@ -10,7 +10,7 @@ from bentoml.exceptions import NotFound
 from bentoml._internal.models.model import ModelContext
 from bentoml._internal.models.model import ModelSignature
 from bentoml._internal.runner.runner import Runner
-from bentoml._internal.runner.resource import Resource
+from bentoml._internal.runner.strategy import DefaultStrategy
 from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 
 from .models import FrameworkTestModel
@@ -152,7 +152,8 @@ def test_load(
 ):
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
-        configuration.check_model(model, Resource())
+
+        configuration.check_model(model, {})
 
 
 def test_runner_batching(
@@ -209,30 +210,31 @@ def test_runner_nvidia_gpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    gpu_resource = Resource(nvidia_gpu=1.0)
+    gpu_resource = {"nvidia.com/gpu": 1.0}
 
     ran_tests = False
     for config in test_model.configurations:
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
-        runnable = framework.get_runnable(model_with_options)
-        if not runnable.SUPPORT_NVIDIA_GPU:
+        runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
+        if "nvidia.com/gpu" not in runnable.supported_resources:
             continue
 
         ran_tests = True
 
-        runner = Runner(runnable, nvidia_gpu=1)
+        runner = Runner(runnable)
 
         for meth, inputs in config.test_inputs.items():
-            # TODO: use strategies to initialize GPU
-            # strategy = DefaultStrategy()
-            # strategy.setup_worker(runnable, gpu_resource)
+            strategy = DefaultStrategy()
+            strategy.setup_worker(runnable, gpu_resource, 0)
 
             runner.init_local()
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
-            if hasattr(runnable, "model") and runnable.model is not None:
+            if (
+                hasattr(runnable, "model") and runnable.model is not None
+            ):  # TODO: add a get_model to test models
                 config.check_model(runnable.model, gpu_resource)
 
             for inp in inputs:

@@ -108,6 +108,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
 def load_model(
     bento_model: str | Tag | bentoml.Model,
+    *,
     providers: ProvidersType | None = None,
     session_options: "ort.SessionOptions" | None = None,
 ) -> "ort.InferenceSession":

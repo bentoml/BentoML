@@ -71,7 +71,6 @@ def _is_ip_address(addr: str) -> bool:
 
 RUNNER_CFG_SCHEMA = {
     Optional("batching"): {
-        # for review: should we allow configuring batching per-method as well as per-runner?
         Optional("enabled"): bool,
         Optional("max_batch_size"): And(int, _larger_than_zero),
         Optional("max_latency_ms"): And(int, _larger_than_zero),

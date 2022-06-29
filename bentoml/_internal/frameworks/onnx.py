@@ -57,22 +57,6 @@ if TYPE_CHECKING:
     ]
 
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-# prefer "onnxruntime-gpu" over "onnxruntime" for framework versioning
-_PACKAGE = ["onnxruntime-gpu", "onnxruntime"]
-for p in _PACKAGE:
-    try:
-        _onnxruntime_version = get_pkg_version(p)
-        _onnxruntime_pkg = p
-        break
-    except importlib_metadata.PackageNotFoundError:
-        pass
-
-
 # helper methods
 def _yield_providers(
     iterable: t.Sequence[t.Any],
@@ -240,6 +224,22 @@ def save_model(
         bento_model = bentoml.onnx.save_model("onnx_model", model_path, signatures={"run": "batchable": True})
 
     """
+
+    try:
+        import importlib.metadata as importlib_metadata
+    except ImportError:
+        import importlib_metadata
+
+    # prefer "onnxruntime-gpu" over "onnxruntime" for framework versioning
+    _PACKAGE = ["onnxruntime-gpu", "onnxruntime"]
+    for p in _PACKAGE:
+        try:
+            _onnxruntime_version = get_pkg_version(p)
+            _onnxruntime_pkg = p
+            break
+        except importlib_metadata.PackageNotFoundError:
+            pass
+
     context = ModelContext(
         framework_name="onnx",
         framework_versions={

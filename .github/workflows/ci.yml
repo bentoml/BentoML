@@ -4,10 +4,7 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-      - runners-1.0
+  pull_request
   schedule:
     - cron: '0 0 * * 1/2'
 

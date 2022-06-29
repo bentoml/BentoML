@@ -245,8 +245,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.timestamp_pb2 import Timestamp
         from google.protobuf.duration_pb2 import Duration
 
-        tuple_arr = []
-        [tuple_arr.append(i) for i in getattr(proto_tuple, "value_")]
+        tuple_arr = [i for i in getattr(proto_tuple, "value_")]
 
         if(not tuple_arr):
             raise ValueError("Provided tuple is either empty or invalid.")
@@ -261,9 +260,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             elif(tuple_arr[i].WhichOneof("dtype") == "duration_"):
                 val = Duration.ToTimedelta(val)
 
-            if(type(val) == io_descriptors_pb2.NumpyNdarray):
+            if isinstance(val, io_descriptors_pb2.NumpyNdarray):
                 val = self.proto_to_arr(val)
-            elif(type(val) == io_descriptors_pb2.Tuple):
+            elif isinstance(val, io_descriptors_pb2.Tuple):
                 val = self.handle_tuple(val)
             return_arr.append(val)
 
@@ -277,8 +276,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.timestamp_pb2 import Timestamp
         from google.protobuf.duration_pb2 import Duration
 
-        return_arr = []
-        [return_arr.append(i) for i in getattr(proto_arr, proto_arr.dtype)]
+        return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
 
         if(proto_arr.dtype == "timestamp_"):
             return_arr = [Timestamp.ToDatetime(dt) for dt in return_arr]
@@ -289,9 +287,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             raise ValueError("Provided array is either empty or invalid")
 
         for i in range(len(return_arr)):
-            if(type(return_arr[i]) == io_descriptors_pb2.NumpyNdarray):
+            if isinstance(return_arr[i], io_descriptors_pb2.NumpyNdarray):
                 return_arr[i] = self.proto_to_arr(return_arr[i])
-            elif(type(return_arr[i]) == io_descriptors_pb2.Tuple):
+            elif isinstance(return_arr[i], io_descriptors_pb2.Tuple):
                 return_arr[i] = self.handle_tuple(return_arr[i])
 
         return return_arr

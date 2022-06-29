@@ -195,7 +195,7 @@ def save_model(
 
         ...
     Returns:
-        :obj:`~bentoml.Model`: A tag that can be used to access the saved model from the BentoML model
+        A BentoML model containing the saved ONNX model instance.
         store.
     Example:
     .. code-block:: python

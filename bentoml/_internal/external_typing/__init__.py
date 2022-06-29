@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     NpNDArray = _NDArray[t.Any]
 
     from xgboost import DMatrix
+    from catboost import Pool as CbPool
 
     from .starlette import ASGIApp
     from .starlette import ASGISend
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
         "PlasmaClient",
         # xgboost
         "DMatrix",
+        "CbPool",
         # numpy
         "NpNDArray",
         "NpGeneric",

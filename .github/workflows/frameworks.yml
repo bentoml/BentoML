@@ -73,7 +73,7 @@ jobs:
               - *runner
               - bentoml/catboost.py
               - bentoml/_internal/frameworks/catboost.py
-              - tests/integration/frameworks/test_catboost_impl.py
+              - tests/integration/frameworks/test_frameworks.py
             detectron2:
               - *runner
               - bentoml/detectron.py
@@ -213,8 +213,7 @@ jobs:
 
   catboost_integration_tests:
     needs: diff
-    if: ${{ false }}
-    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

@@ -44,7 +44,7 @@ general_features_sync:
     - "Pillow"
 
 catboost:
-  <<: *tmpl
+  <<: *ntmpl
   dependencies:
     - "catboost"
 

@@ -255,6 +255,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         for i in range(len(tuple_arr)):
             val = getattr(tuple_arr[i], tuple_arr[i].WhichOneof("dtype"))
 
+            if not val:
+                raise ValueError("Provided protobuf tuple is missing a value.")
+
             if(tuple_arr[i].WhichOneof("dtype") == "timestamp_"):
                 val = Timestamp.ToDatetime(val)
             elif(tuple_arr[i].WhichOneof("dtype") == "duration_"):

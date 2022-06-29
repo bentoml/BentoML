@@ -2,94 +2,92 @@
 Customize Logging
 =================
 
-BentoML provides a powerful and detailed logging pattern out of the box. Request logs for webservices are logged along with requests to each of the model runner services. We use `RichHandler <https://rich.readthedocs.io/en/stable/logging.html>`_ to provide appropriate color coding to the logs in order to make them more easily read.
+BentoML provides a powerful and detailed logging pattern out of the box. Request logs for
+webservices are logged along with requests to each of the model runner services.
 
-.. image:: ../_static/img/bentoml-logs.png
-
-The log format is as follows:
+The request log format is as follows:
 
 .. parsed-literal::
 
-    [component] ClientIP:ClientPort (scheme,method,path,type,length) (status,type,length) Latency (trace,span,sampled)
+    time [LEVEL] [component] ClientIP:ClientPort (scheme,method,path,type,length) (status,type,length) Latency (trace,span,sampled)
 
-- `component` is the BentoML module which is logging the message
-- `ClientIP/ClientPort` is the client information who is making the request
-- Request `scheme` is the protocol that the client is using to send the request
-- Request `method` is the type of request that the client is issuing
-- Request `path` is the uri which is being invoked
-- Request `type` is the content type of the incoming call
-- Request `length` is the size of the payload of the incoming request
-- Response `status` is the numeric status being returned to the client
-- Response `type` is the content type of the response being returned
-- Response `length` is content length of the payload being returned
-- `Latency` is the time it took to execute this request
-- `Traces` are the OpenTelemetry specific parameters
+For example, a log message might look like:
+
+.. parsed-literal:
+
+    2022-06-28T18:07:35-0700 [INFO] [api_server] 127.0.0.1:37386 (scheme=http,method=POST,path=/classify,type=application/json,length=20) (status=200,type=application/json,length=3) 0.005ms (trace=67131233608323295915755120473254509377,span=4151694932783368069,sampled=0)
 
 OpenTelemetry Compatible
 ------------------------
 
-The BentoML logging system implements the `OpenTelemetry <https://opentelemetry.io/docs/>`_ standard for `http <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md>`_ throughout the call stack to provide for maximum debuggability. Propogation of the OpenTelemetry parameters follows the standard provided `here <https://opentelemetry.lightstep.com/core-concepts/context-propagation/>`_
+The BentoML logging system implements the `OpenTelemetry <https://opentelemetry.io/docs/>`_ standard
+for `http <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md>`_
+throughout the call stack to provide for maximum debuggability. Propogation of the OpenTelemetry
+parameters follows the standard provided
+`here <https://opentelemetry.lightstep.com/core-concepts/context-propagation/>`_
 
-The following are parameters which are provided in the logs as well for correlation back to particular requests.
+The following are parameters which are provided in the logs as well for correlation back to
+particular requests.
 
-- `trace_id` is the id of a trace which tracks “the progression of a single request, as it is handled by services that make up an application” - `OpenTelemetry Basic Documentation <https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/basics>`_
-- `span_id is` the id of a span which is contained within a trace. “A span is the building block of a trace and is a named, timed operation that represents a piece of the workflow in the distributed system. Multiple spans are pieced together to create a trace.” - `OpenTelemetry Span Documentation <https://opentelemetry.lightstep.com/spans/>`_
-- `sampled is` the number of times this trace has been sampled. “Sampling is a mechanism to control the noise and overhead introduced by OpenTelemetry by reducing the number of samples of traces collected and sent to the backend.” - `OpenTelemetry SDK Documentation <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md>`_
-
-Exception Logging
------------------
-
-
-Any time an error is thrown, `RichHandler <https://rich.readthedocs.io/en/stable/logging.html>`_ will log the exception stack in it’s own nicely designed format for maximum readability.
-
-.. image:: ../_static/img/bentoml-logs-exception.png
+- `trace` is the id of a trace which tracks “the progression of a single request, as it is handled
+    by services that make up an application” -
+    `OpenTelemetry Basic Documentation <https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/basics>`_
+- `span is` the id of a span which is contained within a trace. “A span is the building block of a
+    trace and is a named, timed operation that represents a piece of the workflow in the distributed
+    system. Multiple spans are pieced together to create a trace.” -
+    `OpenTelemetry Span Documentation <https://opentelemetry.lightstep.com/spans/>`_
+- `sampled is` the number of times this trace has been sampled. “Sampling is a mechanism to control
+    the noise and overhead introduced by OpenTelemetry by reducing the number of samples of traces
+    collected and sent to the backend.” -
+    `OpenTelemetry SDK Documentation <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md>`_
 
 Logging Configuration
 ---------------------
 
-Logs can be configured by setting the appropriate flags in the bento configuration file for both web requests and model serving requests. Read more about how to use a bento configuration file here in the - :ref:`Configuration Guide <configuration-page>`
+Access logs can be configured by setting the appropriate flags in the bento configuration file for
+both web requests and model serving requests. Read more about how to use a bento configuration file
+here in the - :ref:`Configuration Guide <configuration-page>`
+
+To configure other logs, use the
+`default python logging configuration <https://docs.python.org/3/howto/logging.html>`_. All BentoML
+logs are logged under the ``"bentoml"`` namespace.
 
 Web Service Request Logging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For web requests, logging can be enabled and disabled using the `logging.access` parameter at the top level of the bentofile.yaml.
+For web requests, logging can be enabled and disabled using the `logging.access` parameter at the
+top level of the bentofile.yaml.
 
 .. code-block:: yaml
 
     logging:
       access:
           enabled: False
+          # whether to log the size of the request body
           request_content_length: True
+          # whether to log the content type of the request
           request_content_type: True
+          # whether to log the content length of the response
           response_content_length: True
+          # whether to log the content type of the response
           response_content_type: True
 
-In addition we provide the following parameters that can enabled or disabled in each log line. Each of these parameters comes from the http headers in the requests and response.
-
-- `request_content_length` is the size of the content that is being received
-- `request_content_type` is the type of content in the request
-- `response_content_length` is the content length of the data that is being returned in the response
-- `response_content_type` is the type of data being returned in the response
 
 Model Runner Request Logging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Depending on how you’ve configured BentoML, the webserver may be separated from the model runner. In either case, we have special logging that is enabled specifically on the model side of the request. You may configure the runner access logs under the runners parameter at the top level of the bentofile.yaml
+Depending on how you've configured BentoML, the webserver may be separated from the model runner.
+In either case, we have special logging that is enabled specifically on the model side of the
+request. You may configure the runner access logs under the runners parameter at the top level of
+your ``bentofile.yaml``
 
 .. code-block:: python
 
     runners:
         logging:
           access:
-              enabled: False
-              request_content_length: True
-              request_content_type: True
-              response_content_length: True
-              response_content_type: True
+              enabled: True
+              ...
 
-Each additional parameter may be configured to be shown or not:
-
-- `request_content_length` is the size of the content that is being received coming from the web service
-- `request_content_type` is the type of content in the request coming from the web service
-- `response_content_length` is the content length of the data that is being returned in the response to the webservice
-- `response_content_type` is the type of data being returned in the response to the webservice
+The available configuration options are identical to the webserver request logging options above.
+These logs are disabled by default in order to prevent double logging of requests.

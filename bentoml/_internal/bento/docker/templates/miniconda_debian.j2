@@ -4,6 +4,8 @@
 {{ super() }}
 
 RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
+set -euxo pipefail
+
 SAVED_PYTHON_VERSION={{ __python_version_full__ }}
 PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
 

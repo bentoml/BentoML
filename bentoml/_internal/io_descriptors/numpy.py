@@ -312,7 +312,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         res: "ext.NpNDArray"
         try:
-            res = np.array(self.proto_to_arr(request), dtype = self._dtype)  # type: ignore[arg-type]
+            res = np.array(self.proto_to_arr(request), dtype=self._dtype)  # type: ignore[arg-type]
         except ValueError:
             res = np.array(self.proto_to_arr(request))  # type: ignore[arg-type]
         res = self._verify_ndarray(res, BadInput)

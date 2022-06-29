@@ -235,9 +235,10 @@ def run_bento_server(
         env=my_env,
         encoding="utf-8",
     )
+
     try:
         host_url = f"127.0.0.1:{port}"
-        assert _wait_until_api_server_ready(host_url, timeout=timeout)
+        assert _wait_until_api_server_ready(host_url, timeout=timeout, popen=p)
         yield host_url
     finally:
         kill_subprocess_tree(p)
@@ -401,7 +402,7 @@ def host_bento(
 
         if deployment_mode == "docker":
             image_tag = clean_context.enter_context(bentoml_containerize(bento_tag))
-            with run_bento_server_in_docker(
+            with run_bento_server_in_docker(  # pylint: disable=not-context-manager # cached_contextmanager not detected by pylint
                 image_tag,
                 config_file,
             ) as host:

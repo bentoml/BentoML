@@ -81,11 +81,11 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
     assert scaler.var_[0] == 4.75  # type: ignore (bad sklearn types)
 
     kwargs = test_model.save_kwargs.copy()
-    default_meth = "pytest-signature-rjM5"
     if test_model.model_signatures:
         kwargs["signatures"] = test_model.model_signatures
         meths = list(test_model.model_signatures.keys())
     else:
+        default_meth = "pytest-signature-rjM5"
         kwargs["signatures"] = {default_meth: {"batchable": True, "batch_dim": (1, 0)}}
         meths = [default_meth]
     kwargs["labels"] = {

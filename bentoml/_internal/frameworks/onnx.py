@@ -66,7 +66,7 @@ except ImportError:
 _PACKAGE = ["onnxruntime-gpu", "onnxruntime"]
 for p in _PACKAGE:
     try:
-        _onnxruntime_version = importlib_metadata.version(p)
+        _onnxruntime_version = get_pkg_version(p)
         _onnxruntime_pkg = p
         break
     except importlib_metadata.PackageNotFoundError:

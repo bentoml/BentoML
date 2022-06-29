@@ -5,9 +5,7 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
-      - runners-1.0
+    types: [opened, reopened, synchronized]
   schedule:
     - cron: "0 0 * * 1/2"
 

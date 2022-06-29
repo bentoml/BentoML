@@ -70,7 +70,7 @@ def _is_ip_address(addr: str) -> bool:
 
 
 RUNNER_CFG_SCHEMA = {
-    "batching": {
+    Optional("batching"): {
         # for review: should we allow configuring batching per-method as well as per-runner?
         Optional("enabled"): bool,
         Optional("max_batch_size"): And(int, _larger_than_zero),
@@ -79,14 +79,14 @@ RUNNER_CFG_SCHEMA = {
     # note there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration
     Optional("resources"): Or({Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
-    "logging": {
+    Optional("logging"): {
         # TODO add logging level configuration
-        "access": {
-            "enabled": bool,
-            "request_content_length": Or(bool, None),
-            "request_content_type": Or(bool, None),
-            "response_content_length": Or(bool, None),
-            "response_content_type": Or(bool, None),
+        Optional("access"): {
+            Optional("enabled"): bool,
+            Optional("request_content_length"): Or(bool, None),
+            Optional("request_content_type"): Or(bool, None),
+            Optional("response_content_length"): Or(bool, None),
+            Optional("response_content_type"): Or(bool, None),
         },
     },
 }
@@ -105,11 +105,11 @@ SCHEMA = Schema(
             "logging": {
                 # TODO add logging level configuration
                 "access": {
-                    Optional("enabled", default=True): bool,
+                    "enabled": bool,
                     "request_content_length": Or(bool, None),
                     "request_content_type": Or(bool, None),
                     "response_content_length": Or(bool, None),
-                    Optional("response_content_type", default=None): bool,
+                    "response_content_type": Or(bool, None),
                 },
             },
             "cors": {

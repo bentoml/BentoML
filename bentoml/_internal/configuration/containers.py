@@ -122,7 +122,7 @@ SCHEMA = Schema(
                 "access_control_expose_headers": Or([str], str, None),
             },
         },
-        Optional("runners"): {
+        "runners": {
             **RUNNER_CFG_SCHEMA,
             Optional(str): RUNNER_CFG_SCHEMA,  # type: ignore (incomplete schema typing)
         },

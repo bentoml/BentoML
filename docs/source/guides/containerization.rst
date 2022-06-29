@@ -8,11 +8,11 @@ define a custom Dockerfile templates to customize Bento container.
 
 .. note::
 
-    BentoML make uses of `Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ to enable custom Dockerfile template.
+   BentoML make uses of `Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ to enable custom Dockerfile template.
 
-    However, This section is not meant to be a complete reference on Jinja2.
-    It is meant to give a quick overview of how Jinja2 is used in conjunction with BentoML.
-    For any reference on Jinja2 please refers to their `Templates Design Documentation <https://jinja.palletsprojects.com/en/3.1.x/templates/>`_.
+   However, This section is not meant to be a complete reference on Jinja2.
+   It is meant to give a quick overview of how Jinja2 is used in conjunction with BentoML.
+   For any reference on Jinja2 please refers to their `Templates Design Documentation <https://jinja.palletsprojects.com/en/3.1.x/templates/>`_.
 
 Why do you need this?
 ---------------------
@@ -51,30 +51,41 @@ Let's start with an example that builds a `custom Tensorflow op <https://www.ten
 Define the following :code:`Dockerfile.template`:
 
 .. code-block:: Dockerfile
+
    {% extends bento_base_template %}
-   {# change the value of tf_image to #}
-   {# tensorflow/tensorflow:nightly-custom-op-gpu-ubuntu16 #}
-   {# if your op supports GPU kernel #}
-   {% set tf_image = tensorflow/tensorflow:nightly-custom-op-ubuntu16 %}
    {% block SETUP_BENTO_BASE_IMAGE %}
-
-   FROM --platform=linux/amd64 {{ tf_image }} as build-stage
-
-   WORKDIR /tmp
-
-   COPY ./zero_out.cc .
-
 
    {{ super() }}
 
-   COPY --from=build-stage /tmp/zero_out.so /usr/local/bin
+   WORKDIR /tmp
+
+   SHELL [ "bash", "-exo", "pipefail", "-c" ]
+
+   COPY ./src/tfops/zero_out.cc .
+
+   RUN pip3 install tensorflow
+   RUN bash <<EOF
+   set -ex
+
+   TF_CFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
+   TF_LFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') )
+
+   g++ --std=c++14 -shared zero_out.cc -o zero_out.so -fPIC ${TF_CFLAGS[@]} ${TF_LFLAGS[@]} -I$(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include());') -D_GLIBCXX_USE_CXX11_ABI=0 -O2
+   EOF
 
    {% endblock %}
+   {% block SETUP_BENTO_COMPONENTS %}
+   {{ super() }}
+   RUN stat /usr/lib/zero_out.so
+   {% endblock %}
+
 
 Then add the following to your :code:`bentofile.yaml`:
 
 .. code-block:: yaml
 
+   include:
+     - "zero_out.cc"
    python:
      packages:
      - tensorflow
@@ -246,7 +257,7 @@ templates environment to :code:`True`.
 
 .. seealso::
 
-    `Jinja Whitespace Control <https://jinja.palletsprojects.com/en/3.1.x/templates/#whitespace-control>`_.
+   `Jinja Whitespace Control <https://jinja.palletsprojects.com/en/3.1.x/templates/#whitespace-control>`_.
 
 
 An example of a Dockerfile template takes advantage of multi-stage build to
@@ -272,6 +283,7 @@ isolate the installation of a local library :code:`mypackage`:
    {% endblock %}
 
 .. note::
+
    Notice how for all Dockerfile instruction, we consider as if the Jinja
    logics aren't there 🚀.
 

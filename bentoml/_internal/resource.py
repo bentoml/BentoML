@@ -6,7 +6,7 @@ import math
 import typing as t
 import logging
 import functools
-from abc import ABCMeta
+from abc import ABC
 from abc import abstractmethod
 
 import psutil
@@ -42,25 +42,10 @@ def system_resources() -> dict[str, t.Any]:
     return res
 
 
-class ResourceMeta(ABCMeta):
-    def __new__(  # pylint: disable=arguments-differ # we don't want to be generic
-        cls,
-        name: str,
-        bases: tuple[type],
-        attr_dict: dict[t.Any, t.Any],
-        *,
-        resource_id: str,
-    ):
-        res = super().__new__(cls, name, bases, attr_dict)
-        if resource_id != "":
-            # register the class with RESOURCE_REGISTRY
-            assert issubclass(res, Resource)
-            _RESOURCE_REGISTRY[resource_id] = res
+class Resource(t.Generic[T], ABC):
+    def __init_subclass__(cls, *, resource_id: str):  # pylint: disable=arguments-differ
+        _RESOURCE_REGISTRY[resource_id] = cls
 
-        return res
-
-
-class Resource(t.Generic[T], metaclass=ResourceMeta, resource_id=""):
     @classmethod
     @abstractmethod
     def from_spec(cls, spec: t.Any) -> T:

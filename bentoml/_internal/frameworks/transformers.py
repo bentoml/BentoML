@@ -88,8 +88,22 @@ class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
     task: str = attr.field(validator=[attr.validators.instance_of(str)])
-    tf: t.Tuple(str) = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
-    pt: t.Tuple(str) = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
+    tf: t.Tuple[str] = attr.field(
+        validator=[
+            attr.validators.deep_iterable(
+                member_validator=attr.validators.instance_of(str)
+            )
+        ],  # type: ignore
+        factory=(tuple),
+    )
+    pt: t.Tuple[str] = attr.field(
+        validator=[
+            attr.validators.deep_iterable(
+                member_validator=attr.validators.instance_of(str)
+            )
+        ],  # type: ignore
+        factory=(tuple),
+    )
     default: t.Dict[str, t.Any] = attr.field(factory=dict)
     type: str = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
@@ -191,10 +205,11 @@ def save_model(
             Name for given model instance. This should pass Python identifier check.
         pipeline (:code:`Pipeline`):
             Instance of the Transformers pipeline to be saved. See Transformers
-            ``module src/transformers/pipelines/__init__.py`` for more details.
+            ``module src/transformers/pipelines/__init__.py`` for more details,
+            https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/__init__.py#L129.
         task_name (:code:`str`):
             Name of pipeline task. If not provided, the task name will be derived from ``pipeline.task``.
-            ``task_name`` and ``task_definition`` must be both provided or both not provided.
+            Both arguments ``task_name`` and ``task_definition`` must be provided to set save a custom pipeline.
         task_definition (:code:`dict`):
             Task definition for the Transformers custom pipeline. The definition is a dictionary
             consisting of the following keys:

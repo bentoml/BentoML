@@ -4,6 +4,8 @@
 
 RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
     --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt bash <<EOF
+set -euxo pipefail
+
 apt-get update -y
 apt-get install -y --no-install-recommends --allow-remove-essential \
 		software-properties-common curl

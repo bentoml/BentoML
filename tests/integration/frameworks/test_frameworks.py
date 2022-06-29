@@ -141,7 +141,7 @@ def test_get_runnable(
         runnable, bentoml.Runnable
     ), "get_runnable for {bento_model.info.name} doesn't return a subclass of bentoml.Runnable"
     assert (
-        len(runnable.methods) > 0
+        len(runnable.bentoml_runnable_methods__) > 0
     ), "get_runnable for {bento_model.info.name} gives a runnable with no methods"
 
 
@@ -217,7 +217,7 @@ def test_runner_nvidia_gpu(
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
-        if "nvidia.com/gpu" not in runnable.supported_resources:
+        if "nvidia.com/gpu" not in runnable.SUPPORTED_RESOURCES:
             continue
 
         ran_tests = True

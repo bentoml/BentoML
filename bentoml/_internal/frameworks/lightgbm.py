@@ -226,8 +226,10 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class LightGBMRunnable(bentoml.Runnable, supports_multi_threading=True):
+    class LightGBMRunnable(bentoml.Runnable):
         # LightGBM only supports GPU during training, not for inference.
+        SUPPORTED_RESOURCES = ()
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

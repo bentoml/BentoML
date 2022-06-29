@@ -100,12 +100,12 @@ class Runner:
         )
         method_configs = {} if method_configs is None else method_configs
 
-        if runnable_class.methods is None:
+        if runnable_class.bentoml_runnable_methods__ is None:
             raise ValueError(
                 f"Runnable class '{runnable_class.__name__}' has no methods!"
             )
 
-        for method_name, method in runnable_class.methods.items():
+        for method_name, method in runnable_class.bentoml_runnable_methods__.items():
             if not config["batching"]["enabled"]:
                 method.config.batchable = False
 

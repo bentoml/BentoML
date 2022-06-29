@@ -57,14 +57,14 @@ class DefaultStrategy(Strategy):
         if (
             nvidia_gpus is not None
             and nvidia_gpus > 0
-            and "nvidia.com/gpu" in runnable_class.supported_resources
+            and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
             return math.ceil(nvidia_gpus)
 
         # use CPU
         cpus = get_resource(resource_request, "cpu")
         if cpus is not None and cpus > 0:
-            if runnable_class.supports_multi_threading:
+            if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
                 return 1
 
             return math.ceil(cpus)
@@ -90,7 +90,7 @@ class DefaultStrategy(Strategy):
         if (
             nvidia_gpus is not None
             and nvidia_gpus > 0
-            and "nvidia.com/gpu" in runnable_class.supported_resources
+            and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
             os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index - 1)
             logger.info(
@@ -103,7 +103,7 @@ class DefaultStrategy(Strategy):
         cpus = get_resource(resource_request, "cpu")
         if cpus is not None and cpus > 0:
             os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # disable gpu
-            if runnable_class.supports_multi_threading:
+            if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
                 thread_count = math.ceil(cpus)
                 for thread_env in THREAD_ENVS:
                     os.environ[thread_env] = str(thread_count)

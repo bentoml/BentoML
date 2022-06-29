@@ -266,11 +266,10 @@ def get_runnable(
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
-    class KerasRunnable(
-        Runnable,
-        supported_resources={"nvidia.com/gpu"},
-        supports_multi_threading=True,
-    ):
+    class KerasRunnable(Runnable):
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
+
         def __init__(self):
             super().__init__()
             if len(tf.config.list_physical_devices("GPU")) > 0:

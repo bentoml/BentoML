@@ -178,7 +178,10 @@ def get_runnable(bento_model: Model):
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class SklearnRunnable(bentoml.Runnable, supports_multi_threading=True):
+    class SklearnRunnable(bentoml.Runnable):
+        SUPPORTED_RESOURCES = ()
+        SUPPORTS_CPU_MULTI_THREADING = True
+
         def __init__(self):
             super().__init__()
             self.model = load_model(bento_model)

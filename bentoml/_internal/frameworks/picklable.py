@@ -154,6 +154,9 @@ def get_runnable(bento_model: Model):
     """
 
     class PicklableRunnable(bentoml.Runnable):
+        SUPPORTED_RESOURCES = ()
+        SUPPORTS_CPU_MULTI_THREADING = False
+
         def __init__(self):
             super().__init__()
             self.model = load_model(bento_model)

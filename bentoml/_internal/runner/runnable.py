@@ -2,20 +2,19 @@ from __future__ import annotations
 
 import typing as t
 import logging
-from abc import ABCMeta
 from typing import overload
 from typing import TYPE_CHECKING
-from collections.abc import Set
 
 import attr
 
 from ..types import LazyType
 from ..types import ParamSpec
+from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from ..types import AnyType
 
-T = t.TypeVar("T", bound="RunnableMeta")
+T = t.TypeVar("T", bound="Runnable")
 P = ParamSpec("P")
 R = t.TypeVar("R")
 
@@ -24,105 +23,35 @@ logger = logging.getLogger(__name__)
 RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
 
 
-class RunnableMeta(ABCMeta, t.Type[t.Any]):
-    supported_resources: Set[str]
-    supports_multi_threading: bool
+class Runnable:
+    SUPPORTED_RESOURCES: set[str]
+    SUPPORT_CPU_MULTI_THREADING: bool
 
-    methods: dict[str, RunnableMethod[t.Any, t.Any, t.Any]] | None = None
+    bentoml_runnable_methods__: dict[
+        str, RunnableMethod[t.Any, t.Any, t.Any]
+    ] | None = None
 
-    def __new__(
-        cls,
-        name: str,
-        bases: t.Tuple[type, ...],
-        attr_dict: dict[t.Any, t.Any],
-        *,
-        supported_resources: Set[str] | None = None,
-        supports_multi_threading: bool | None = None,
-        **_kwargs: t.Any,
-    ) -> RunnableMeta:
-        res = super().__new__(cls, name, bases, attr_dict)
+    def __setattr__(self, attr_name: str, value: t.Any):
+        if attr_name in ("SUPPORTED_RESOURCES", "SUPPORT_CPU_MULTI_THREADING"):
+            # TODO: add link to custom runner documentation
+            raise BentoMLException(
+                f"{attr_name} should not be set at runtime; the change will not be reflected in the scheduling strategy. Instead, create separate Runnables with different supported resource configurations."
+            )
 
-        if "SUPPORT_NVIDIA_GPU" in attr_dict:
-            if supported_resources is None:
-                if attr_dict["SUPPORT_NVIDIA_GPU"]:
-                    supported_resources = {"nvidia.com/gpu"}
-                else:
-                    supported_resources = set()
-                logger.warning(
-                    f"{name} is using deprecated 'SUPPORT_NVIDIA_GPU'. Please convert to using 'supported_resources':\n"
-                    f"class {name}(Runnable, supported_resources={supported_resources}):\n"
-                    "    ..."
-                )
-            elif (
-                attr_dict["SUPPORT_NVIDIA_GPU"]
-                != "nvidia.com/gpu"
-                in supported_resources
-            ):
-                logger.warning(
-                    f"Deprecated 'SUPPORT_NVIDIA_GPU' is being ignored in favor of 'supported_resources' for {name}."
-                )
+        super().__setattr__(attr_name, value)
 
-        if supported_resources is None:
-            # attempt to get supported_resources from a superclass
-            found_base = None
-            for base in bases:
-                if isinstance(base, RunnableMeta):
-                    if (
-                        supported_resources is not None
-                        and base.supported_resources != supported_resources
-                    ):
-                        # we've already set supported_resources
-                        raise TypeError(
-                            f"Base classes for {name} '{found_base}' and '{base}' have conflicting values for 'supported_resources' ({supported_resources} and {base.supported_resources}, respectively). Please specify 'supported_resources' manually."
-                        )
+    def __getattribute__(self, item: str) -> t.Any:
+        if item in ["add_method", "method"]:
+            # TODO: add link to custom runner documentation
+            raise BentoMLException(
+                f"{item} should not be used at runtime; instead, use {type(self).__name__}.{item} where you define the class."
+            )
 
-                    found_base = base
-                    supported_resources = base.supported_resources
+        return super().__getattribute__(item)
 
-            if supported_resources is None:
-                supported_resources = set()
-
-        res.supported_resources = supported_resources
-
-        if "SUPPORT_CPU_MULTI_THREADING" in attr_dict:
-            if supports_multi_threading is None:
-                logger.warning(
-                    f"{name} is using deprecated 'SUPPORT_CPU_MULTI_THREADING'. Please convert to using 'supports_multi_threading':\n"
-                    f"class {name}(Runnable, supports_multi_threading=True):\n"
-                    "    ..."
-                )
-                supports_multi_threading = attr_dict["SUPPORT_CPU_MULTI_THREADING"]
-            elif attr_dict["SUPPORT_CPU_MULTI_THREADING"] != supports_multi_threading:
-                logger.warning(
-                    f"Deprecated 'SUPPORT_CPU_MULTI_THREADING' is being ignored in favor of 'supports_multi_threading' for {name}"
-                )
-
-        if supports_multi_threading is None:
-            # attempt to get supports_multi_threading from a superclass
-            found_base = None
-            for base in bases:
-                if isinstance(base, RunnableMeta):
-                    if (
-                        supports_multi_threading is not None
-                        and base.supports_multi_threading != supports_multi_threading
-                    ):
-                        # we've already set supported_resources
-                        raise TypeError(
-                            f"Base classes for {name} '{found_base}' and '{base}' have conflicting values for 'supports_multi_threading' ({supports_multi_threading} and {base.supports_multi_threading}, respectively). Please specify 'supports_multi_threading' manually."
-                        )
-
-                    found_base = base
-                    supports_multi_threading = base.supports_multi_threading
-
-            if supports_multi_threading is None:
-                supports_multi_threading = False
-
-        res.supports_multi_threading = supports_multi_threading
-
-        return res
-
+    @classmethod
     def add_method(
-        self: RunnableMeta,
+        cls: t.Type[T],
         method: t.Callable[t.Concatenate[T, P], t.Any],
         name: str,
         *,
@@ -131,15 +60,15 @@ class RunnableMeta(ABCMeta, t.Type[t.Any]):
         input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
         output_spec: LazyType[t.Any] | None = None,
     ):
-        meth: RunnableMethod[T, P, t.Any] = Runnable.method(
+        meth = Runnable.method(
             method,
             batchable=batchable,
             batch_dim=batch_dim,
             input_spec=input_spec,
             output_spec=output_spec,
         )
-        setattr(self, name, meth)
-        meth.__set_name__(self, name)
+        setattr(cls, name, meth)
+        meth.__set_name__(cls, name)
 
     @overload
     @staticmethod
@@ -196,10 +125,6 @@ class RunnableMeta(ABCMeta, t.Type[t.Any]):
         return method_decorator
 
 
-class Runnable(metaclass=RunnableMeta):
-    pass
-
-
 @attr.define
 class RunnableMethod(t.Generic[T, P, R]):
     func: t.Callable[t.Concatenate[T, P], R]
@@ -213,9 +138,9 @@ class RunnableMethod(t.Generic[T, P, R]):
         return method
 
     def __set_name__(self, owner: t.Any, name: str):
-        if owner.methods is None:
-            owner.methods = {}
-        owner.methods[name] = self
+        if owner.bentoml_runnable_methods__ is None:
+            owner.bentoml_runnable_methods__ = {}
+        owner.bentoml_runnable_methods__[name] = self
 
 
 @attr.define

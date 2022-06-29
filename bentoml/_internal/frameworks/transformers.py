@@ -396,7 +396,7 @@ def get_runnable(
     """
 
     class TransformersRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ("nvidia.com/gpu",)
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):

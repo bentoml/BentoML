@@ -246,7 +246,7 @@ def get_runnable(
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
     class TensorflowRunnable(Runnable):
-        SUPPORTED_RESOURCES = ("nvidia.com/gpu",)
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):

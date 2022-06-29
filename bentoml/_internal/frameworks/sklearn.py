@@ -179,7 +179,7 @@ def get_runnable(bento_model: Model):
     """
 
     class SklearnRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ()
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):

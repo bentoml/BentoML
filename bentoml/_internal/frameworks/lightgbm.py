@@ -228,7 +228,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
     class LightGBMRunnable(bentoml.Runnable):
         # LightGBM only supports GPU during training, not for inference.
-        SUPPORTED_RESOURCES = ()
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):

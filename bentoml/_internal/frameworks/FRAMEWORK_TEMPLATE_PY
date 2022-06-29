@@ -168,7 +168,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
 
     class FrameworkRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ()
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True  # type: ignore
 
         def __init__(self):

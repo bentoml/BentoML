@@ -387,10 +387,11 @@ jobs:
         shell: bash
 
       - name: Run unit test for fastai
+        shell: bash
         run: |
           OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"fastai.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}" || ERR=1
-          if ! test $ERR = 0; then
+          if [ $ERR -eq 1 ]; then
             echo "unit tests for fastai failed!"
             exit 1
           fi

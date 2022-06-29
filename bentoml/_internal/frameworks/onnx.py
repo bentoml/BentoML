@@ -111,7 +111,7 @@ def load_model(
     *,
     providers: ProvidersType | None = None,
     session_options: "ort.SessionOptions" | None = None,
-) -> "ort.InferenceSession":
+) -> ort.InferenceSession:
     """
     Load the onnx model with the given tag from the local BentoML model store.
 

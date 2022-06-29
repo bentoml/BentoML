@@ -247,7 +247,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         tuple_arr = [i for i in getattr(proto_tuple, "value_")]
 
-        if(not tuple_arr):
+        if not tuple_arr:
             raise ValueError("Provided tuple is either empty or invalid.")
 
         return_arr = []
@@ -258,9 +258,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             if not val:
                 raise ValueError("Provided protobuf tuple is missing a value.")
 
-            if(tuple_arr[i].WhichOneof("dtype") == "timestamp_"):
+            if tuple_arr[i].WhichOneof("dtype") == "timestamp_":
                 val = Timestamp.ToDatetime(val)
-            elif(tuple_arr[i].WhichOneof("dtype") == "duration_"):
+            elif tuple_arr[i].WhichOneof("dtype") == "duration_":
                 val = Duration.ToTimedelta(val)
 
             if isinstance(val, io_descriptors_pb2.NumpyNdarray):
@@ -281,12 +281,12 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
 
-        if(proto_arr.dtype == "timestamp_"):
+        if proto_arr.dtype == "timestamp_":
             return_arr = [Timestamp.ToDatetime(dt) for dt in return_arr]
-        elif(proto_arr.dtype == "duration_"):
+        elif proto_arr.dtype == "duration_":
             return_arr = [Duration.ToTimedelta(td) for td in return_arr]
 
-        if(not return_arr):
+        if not return_arr:
             raise ValueError("Provided array is either empty or invalid")
 
         for i in range(len(return_arr)):
@@ -297,7 +297,26 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return return_arr
 
-    # TODO async def from_grpc_request(self, request): ...
+    async def from_grpc_request(self, request, context):
+        """
+        Process incoming protobuf request and convert it to `numpy.ndarray`
+
+        Args:
+            request (`io_descriptors_pb2.NumpyNdarray`):
+                Incoming Requests
+        Returns:
+            a `numpy.ndarray` object. This can then be used
+             inside users defined logics.
+        """
+        import numpy as np
+
+        res: "ext.NpNDArray"
+        try:
+            res = np.array(self.proto_to_arr(request), dtype = self._dtype)  # type: ignore[arg-type]
+        except ValueError:
+            res = np.array(self.proto_to_arr(request))  # type: ignore[arg-type]
+        res = self._verify_ndarray(res, BadInput)
+        return res
 
     @classmethod
     def from_sample(

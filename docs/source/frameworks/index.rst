@@ -44,10 +44,6 @@ repository.
         :link: /frameworks/xgboost
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/fastai`
-        :link: /frameworks/fastai
-        :link-type: doc
-
 
 The following frameworks are supported in BentoML prior to 1.0.0 release and is still
 being migrated to the new API design. Before they are officially supported in BentoML
@@ -59,6 +55,7 @@ from these ML libraries with BentoML.
 - EasyOCR
 - EvalML
 - FastText
+- FastAI
 - Gluon
 - H2O
 - LightGBM
@@ -97,6 +94,5 @@ from these ML libraries with BentoML.
   sklearn
   tensorflow
   transformers
-  fastai
   xgboost
 

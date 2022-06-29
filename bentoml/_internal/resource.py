@@ -30,7 +30,9 @@ def get_resource(resources: dict[str, t.Any], resource_kind: str) -> t.Any:
         if resources[resource_kind] == "system":
             return resource.from_system()
         else:
-            return resource.from_spec(resources[resource_kind])
+            res = resource.from_spec(resources[resource_kind])
+            resource.validate(res)
+            return res
     else:
         return None
 
@@ -59,6 +61,13 @@ class Resource(t.Generic[T], ABC):
     def from_system(cls) -> T:
         """
         Infer resource value from the system.
+        """
+
+    @classmethod
+    @abstractmethod
+    def validate(cls, val: T):
+        """
+        Validate that the resources are available on the current system.
         """
 
 
@@ -95,6 +104,17 @@ class CpuResource(Resource[float], resource_id="cpu"):
             return query_cgroup_cpu_count()
         else:
             return float(query_os_cpu_count())
+
+    @classmethod
+    def validate(cls, val: float):
+        if val < 0:
+            raise BentoMLConfigException(
+                f"Invalid negative CPU resource limit '{val}'."
+            )
+        if not math.isclose(val, cls.from_system()) and val > cls.from_system():
+            raise BentoMLConfigException(
+                f"CPU resource limit {val} is greater than the system available: {cls.from_system()}"
+            )
 
 
 @functools.lru_cache(maxsize=1)
@@ -195,13 +215,20 @@ class NvidiaGpuResource(Resource[int], resource_id="nvidia.com/gpu"):
     @classmethod
     def from_spec(cls, spec: t.Any) -> int:
         if not isinstance(spec, (int, str)):
-            raise TypeError("nvidia.com/gpu must be int or str")
+            raise TypeError("NVidia GPU resource limit must be int or str")
 
         if isinstance(spec, int):
             return spec
-        return int(spec)
+
+        try:
+            return int(spec)
+        except ValueError:
+            raise BentoMLConfigException(
+                f"Invalid NVidia GPU resource limit '{spec}'. "
+            )
 
     @classmethod
+    @functools.lru_cache(maxsize=1)
     def from_system(cls) -> int:
         """
         query nvidia gpu count, available on Windows and Linux
@@ -219,6 +246,15 @@ class NvidiaGpuResource(Resource[int], resource_id="nvidia.com/gpu"):
                 pynvml.nvmlShutdown()
             except Exception:  # pylint: disable=broad-except
                 pass
+
+    @classmethod
+    def validate(cls, val: int):
+        if val < -1:
+            raise BentoMLConfigException(f"Invalid negative GPU resource limit {val}.")
+        if val > cls.from_system():
+            raise BentoMLConfigException(
+                f"GPU resource limit {val} is greater than the system available: {cls.from_system()}"
+            )
 
 
 def get_gpu_memory(dev: int) -> t.Tuple[float, float]:

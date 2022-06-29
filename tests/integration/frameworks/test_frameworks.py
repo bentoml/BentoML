@@ -236,7 +236,7 @@ def test_runner_nvidia_gpu(
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
             if hasattr(runnable, "model") and runnable.model is not None:
-                config.check_model(runner, gpu_resource)
+                config.check_model(runnable.model, gpu_resource)
 
             for inp in inputs:
                 outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)

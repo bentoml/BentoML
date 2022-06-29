@@ -9,6 +9,7 @@ from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
 from . import RunnerHandle
+from ...context import component_context
 from ..container import Payload
 from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
@@ -32,7 +33,7 @@ class RemoteRunnerClient(RunnerHandle):
     def __init__(self, runner: Runner):  # pylint: disable=super-init-not-called
         self._runner = runner
         self._conn: BaseConnector | None = None
-        self._client: ClientSession | None = None
+        self._client_cache: ClientSession | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._addr: str | None = None
 
@@ -77,7 +78,8 @@ class RemoteRunnerClient(RunnerHandle):
                 raise ValueError(f"Unsupported bind scheme: {parsed.scheme}")
         return self._conn
 
-    def _get_client(
+    @property
+    def _client(
         self,
         timeout_sec: float | None = None,
     ) -> ClientSession:
@@ -85,8 +87,8 @@ class RemoteRunnerClient(RunnerHandle):
 
         if (
             self._loop is None
-            or self._client is None
-            or self._client.closed
+            or self._client_cache is None
+            or self._client_cache.closed
             or self._loop.is_closed()
         ):
             import yarl
@@ -103,7 +105,7 @@ class RemoteRunnerClient(RunnerHandle):
             else:
                 DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=5 * 60)
                 timeout = DEFAULT_TIMEOUT
-            self._client = aiohttp.ClientSession(
+            self._client_cache = aiohttp.ClientSession(
                 trace_configs=[
                     create_trace_config(
                         # Remove all query params from the URL attribute on the span.
@@ -117,8 +119,9 @@ class RemoteRunnerClient(RunnerHandle):
                 connector_owner=False,
                 timeout=timeout,
                 loop=self._loop,
+                trust_env=True,
             )
-        return self._client
+        return self._client_cache
 
     async def async_run_method(
         self,
@@ -143,11 +146,17 @@ class RemoteRunnerClient(RunnerHandle):
                 )
 
         multipart = payload_params_to_multipart(payload_params)
-        client = self._get_client()
         path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
-        async with client.post(
+        async with self._client.post(
             f"{self._addr}/{path}",
             data=multipart,
+            headers={
+                "Bento-Name": component_context.bento_name,
+                "Bento-Version": component_context.bento_version,
+                "Runner-Name": self._runner.name,
+                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+            },
         ) as resp:
             body = await resp.read()
 

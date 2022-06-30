@@ -7,8 +7,7 @@ import psutil
 
 from bentoml import load
 
-from ...log import LOGGING_CONFIG
-from ...trace import ServiceContext
+from ...context import component_context
 
 
 @click.command()
@@ -22,22 +21,30 @@ def main(
     working_dir: t.Optional[str],
     backlog: int,
 ):
-    import uvicorn  # type: ignore
+    component_context.component_name = "dev_api_server"
 
-    from ...configuration import get_debug_mode
+    from ...log import configure_server_logging
 
-    ServiceContext.component_name_var.set("dev_api_server")
+    configure_server_logging()
+
     parsed = urlparse(bind)
 
     if parsed.scheme == "fd":
         fd = int(parsed.netloc)
         sock = socket.socket(fileno=fd)
-        log_level = "debug" if get_debug_mode() else "info"
         svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
+
+        # setup context
+        if svc.tag is None:
+            component_context.bento_name = f"*{svc.__class__.__name__}"
+            component_context.bento_version = "not available"
+        else:
+            component_context.bento_name = svc.tag.name
+            component_context.bento_version = svc.tag.version
+
         uvicorn_options = {
-            "log_level": log_level,
             "backlog": backlog,
-            "log_config": LOGGING_CONFIG,
+            "log_config": None,
             "workers": 1,
             "lifespan": "on",
         }
@@ -46,6 +53,8 @@ def main(
             import asyncio
 
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
+
+        import uvicorn  # type: ignore
 
         config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
         uvicorn.Server(config).run(sockets=[sock])

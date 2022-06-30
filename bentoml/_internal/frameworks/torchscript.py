@@ -4,8 +4,6 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import torch
-
 import bentoml
 from bentoml import Tag
 
@@ -15,7 +13,6 @@ from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
-from .common.pytorch import torch
 
 if TYPE_CHECKING:
     from ..models.model import ModelSignaturesType
@@ -35,7 +32,7 @@ except ImportError:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 MODULE_NAME = "bentoml.torchscript"
-MODEL_FILENAME = "savd_model.pt"
+MODEL_FILENAME = "saved_model.pt"
 API_VERSION = "v1"
 
 
@@ -43,7 +40,7 @@ def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -78,7 +75,7 @@ def load_model(
 
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {bentoml_model} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bentoml_model} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
     model: torch.ScriptModule = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage]
@@ -94,7 +91,7 @@ def save_model(
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
     _include_pytorch_lightning_version: bool = False,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -125,6 +122,8 @@ def save_model(
 
         TODO(jiang)
     """
+    if not isinstance(model, (torch.ScriptModule, torch.jit.ScriptModule)):
+        raise TypeError(f"Given model ({model}) is not a torch.ScriptModule.")
 
     if _include_pytorch_lightning_version:
         framework_versions = {
@@ -155,10 +154,10 @@ def save_model(
         options=None,
         context=context,
         metadata=metadata,
-    ) as _model:
-        weight_file = _model.path_of(MODEL_FILENAME)
+    ) as bento_model:
+        weight_file = bento_model.path_of(MODEL_FILENAME)
         torch.jit.save(model, weight_file)  # type: ignore
-        return _model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: Model):

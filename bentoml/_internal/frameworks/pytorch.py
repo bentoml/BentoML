@@ -10,6 +10,7 @@ import cloudpickle
 import bentoml
 from bentoml import Tag
 
+from ..types import LazyType
 from ..models import Model
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
@@ -36,7 +37,7 @@ def get(tag_like: str | Tag) -> Model:
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
 
@@ -69,7 +70,7 @@ def load_model(
 
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
         raise BentoMLException(
-            f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, failed loading with {MODULE_NAME}."
+            f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
 
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
@@ -86,7 +87,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-) -> Tag:
+) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
@@ -146,6 +147,9 @@ def save_model(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """
+    if not LazyType("torch.nn.Module").isinstance(model):
+        raise TypeError(f"Given model ({model}) is not a torch.nn.Module.")
+
     context: ModelContext = ModelContext(
         framework_name="torch",
         framework_versions={"torch": get_pkg_version("torch")},
@@ -167,12 +171,12 @@ def save_model(
         options=None,
         context=context,
         metadata=metadata,
-    ) as _model:
-        weight_file = _model.path_of(MODEL_FILENAME)
+    ) as bento_model:
+        weight_file = bento_model.path_of(MODEL_FILENAME)
         with open(weight_file, "wb") as file:
             torch.save(model, file, pickle_module=cloudpickle)  # type: ignore
 
-        return _model.tag
+        return bento_model
 
 
 def get_runnable(bento_model: Model):

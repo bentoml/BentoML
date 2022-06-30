@@ -1,8 +1,5 @@
-from typing import Any
-from typing import List
-from typing import Union
-from typing import Callable
-from typing import Optional
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -18,6 +15,8 @@ from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
 from bentoml._internal.frameworks.tensorflow_v2 import TensorflowTensorContainer
 
 if TYPE_CHECKING:
+    from typing import Callable
+
     from bentoml._internal.external_typing import tensorflow as tf_ext
 
 MODEL_NAME = __name__.split(".")[-1]
@@ -64,10 +63,9 @@ def test_tensorflow_v2_save_load(
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = bentoml.tensorflow.save_model(
+    bentomodel = bentoml.tensorflow.save_model(
         MODEL_NAME, mcls, labels=labels, custom_objects={"func": custom_f}
     )
-    bentomodel = bentoml.models.get(tag)
     assert_have_file_extension(bentomodel.path, ".pb")
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
@@ -83,10 +81,10 @@ def test_tensorflow_v2_save_load(
 
 def test_tensorflow_v2_setup_run_batch():
     model_class = NativeModel()
-    tag = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
-    runner = bentoml.tensorflow.get(tag).to_runner()
+    bento_model = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
+    runner = bento_model.to_runner()
 
-    assert tag in [model.tag for model in runner.models]
+    assert bento_model.tag in [model.tag for model in runner.models]
     runner.init_local()
     assert runner.run(native_data) == np.array([[15.0]])
 
@@ -94,8 +92,8 @@ def test_tensorflow_v2_setup_run_batch():
 @pytest.mark.gpus
 def test_tensorflow_v2_setup_on_gpu():
     model_class = NativeModel()
-    tag = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
-    runner = bentoml.tensorflow.get(tag).to_runner(nvidia_gpu=1)
+    bento_model = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
+    runner = bento_model.to_runner(nvidia_gpu=1)
     runner.init_local()
     # assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
     assert runner.run(native_tensor) == np.array([[15.0]])
@@ -103,21 +101,13 @@ def test_tensorflow_v2_setup_on_gpu():
 
 def test_tensorflow_v2_multi_args():
     model_class = MultiInputModel()
-    tag = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
+    bento_model = bentoml.tensorflow.save_model(MODEL_NAME, model_class)
 
     partial_kwargs1 = {"__call__": {"factor": tf.constant(3.0, dtype=tf.float64)}}
-    runner1 = (
-        bentoml.tensorflow.get(tag)
-        .with_options(partial_kwargs=partial_kwargs1)
-        .to_runner()
-    )
+    runner1 = bento_model.with_options(partial_kwargs=partial_kwargs1).to_runner()
 
     partial_kwargs2 = {"__call__": {"factor": tf.constant(2.0, dtype=tf.float64)}}
-    runner2 = (
-        bentoml.tensorflow.get(tag)
-        .with_options(partial_kwargs=partial_kwargs2)
-        .to_runner()
-    )
+    runner2 = bento_model.with_options(partial_kwargs=partial_kwargs2).to_runner()
 
     runner1.init_local()
     runner2.init_local()

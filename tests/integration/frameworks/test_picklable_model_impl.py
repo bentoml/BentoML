@@ -25,7 +25,7 @@ def save_test_model(
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> "Tag":
     model_to_save = MyCoolModel()
-    tag = bentoml.picklable_model.save_model(
+    bento_model = bentoml.picklable_model.save_model(
         "test_picklable_model",
         model_to_save,
         signatures={
@@ -36,7 +36,7 @@ def save_test_model(
         labels=labels,
         custom_objects=custom_objects,
     )
-    return tag
+    return bento_model
 
 
 @pytest.mark.parametrize(
@@ -52,8 +52,9 @@ def test_picklable_model_save_load(
     def custom_f(x: int) -> int:
         return x + 1
 
-    tag = save_test_model(metadata, labels=labels, custom_objects={"func": custom_f})
-    bentomodel = bentoml.models.get(tag)
+    bentomodel = save_test_model(
+        metadata, labels=labels, custom_objects={"func": custom_f}
+    )
     assert bentomodel.info.metadata is not None
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
@@ -65,21 +66,21 @@ def test_picklable_model_save_load(
 
 
 def test_picklable_runner() -> None:
-    tag = save_test_model({})
-    runner = bentoml.picklable_model.get(tag).to_runner()
+    bento_model = save_test_model({})
+    runner = bento_model.to_runner()
     runner.init_local()
 
-    assert runner.models[0].tag == tag
+    assert runner.models[0].tag == bento_model.tag
     assert runner.predict.run(3) == np.array([9])
     assert runner.batch_predict.run([3, 9]) == [9, 81]
 
 
 def test_picklable_model_default_signature() -> None:
-    tag = bentoml.picklable_model.save_model(
+    bento_model = bentoml.picklable_model.save_model(
         "test_pickle_model", lambda x: x**2, metadata={}
     )
-    runner = bentoml.picklable_model.get(tag).to_runner()
+    runner = bento_model.to_runner()
     runner.init_local()
 
-    assert runner.models[0].tag == tag
+    assert runner.models[0].tag == bento_model.tag
     assert runner.run(3) == np.array([9])

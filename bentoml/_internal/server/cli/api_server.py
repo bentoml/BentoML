@@ -11,8 +11,7 @@ import psutil
 
 import bentoml
 
-from ...log import LOGGING_CONFIG
-from ...trace import ServiceContext
+from ...context import component_context
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -43,12 +42,11 @@ import click
     help="Working directory for the API server",
 )
 @click.option(
-    "--as-worker",
+    "--worker-id",
     required=False,
-    type=click.BOOL,
-    is_flag=True,
-    default=False,
-    help="If True, start the server as a bare worker. Otherwise start a standalone server with a supervisor process.",
+    type=click.INT,
+    default=None,
+    help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
 @click.pass_context
 def main(
@@ -58,18 +56,14 @@ def main(
     runner_map: str | None,
     backlog: int,
     working_dir: str | None,
-    as_worker: bool,
+    worker_id: int | None,
 ):
     """
     Start BentoML API server.
     \b
     This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
     """
-    from ...configuration.containers import DeploymentContainer
-
-    DeploymentContainer.development_mode.set(False)
-
-    if not as_worker:
+    if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
 
@@ -82,7 +76,7 @@ def main(
         circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
         params = ctx.params
         params["bind"] = "fd://$(circus.sockets._bento_api_server)"
-        params["as_worker"] = True
+        params["worker_id"] = "$(circus.wid)"
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,
@@ -98,22 +92,34 @@ def main(
         arbiter.start()
         return
 
+    component_context.component_name = f"api_server:{worker_id}"
+
+    from ...log import configure_server_logging
+    from ...configuration.containers import DeploymentContainer
+
+    DeploymentContainer.development_mode.set(False)
+    configure_server_logging()
+
     import uvicorn  # type: ignore
 
-    ServiceContext.component_name_var.set("api_server")
-
-    log_level = "info"
     if runner_map is not None:
         DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))
     svc = bentoml.load(
         bento_identifier, working_dir=working_dir, change_global_cwd=True
     )
 
+    # setup context
+    if svc.tag is None:
+        component_context.bento_name = f"*{svc.__class__.__name__}"
+        component_context.bento_version = "not available"
+    else:
+        component_context.bento_name = svc.tag.name
+        component_context.bento_version = svc.tag.version
+
     parsed = urlparse(bind)
     uvicorn_options: dict[str, t.Any] = {
-        "log_level": log_level,
         "backlog": backlog,
-        "log_config": LOGGING_CONFIG,
+        "log_config": None,
         "workers": 1,
     }
     if psutil.WINDOWS:

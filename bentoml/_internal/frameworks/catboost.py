@@ -1,296 +1,281 @@
+from __future__ import annotations
+
+import os
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
+import attr
 import numpy as np
-from simple_di import inject
-from simple_di import Provide
 
 import bentoml
 from bentoml import Tag
+from bentoml.models import ModelOptions
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..models import SAVE_NAMESPACE
 from ..utils.pkg import get_pkg_version
-from .common.model_runner import BaseModelRunner
-from ..configuration.containers import BentoMLContainer
-
-try:
-    import catboost as cbt
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        """catboost is required in order to use module `bentoml.catboost`, install
-        catboost with `pip install catboost`. For more information, refers to
-        https://catboost.ai/docs/concepts/python-installation.html
-        """
-    )
+from ..models.model import ModelContext
 
 if TYPE_CHECKING:
-    from .. import external_typing as ext
-    from ..models import ModelStore
+    from bentoml.types import ModelSignature
+    from bentoml.types import ModelSignatureDict
 
-    CatBoostModel = t.Union[
-        cbt.core.CatBoost,
-        cbt.core.CatBoostClassifier,
-        cbt.core.CatBoostRegressor,
-    ]
+    from .. import external_typing as ext
+
+try:
+    import catboost as cb
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        '"catboost" is required in order to use module `bentoml.catboost`, install '
+        "catboost with `pip install catboost`. For more information, refers to "
+        "https://catboost.ai/en/docs/concepts/installation"
+    )
 
 MODULE_NAME = "bentoml.catboost"
+MODEL_FILENAME = "saved_model.cbm"
+DEFAULT_MODEL_TRAINING_CLASS_NAME = "CatBoost"
+API_VERSION = "v1"
 
-# TODO: support cbt.Pool runner io container
-
-CATBOOST_EXT = "cbm"
-
-
-def _get_model_info(
-    tag: Tag,
-    model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-    model_store: "ModelStore",
-) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
-    model = model_store.get(tag)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {tag} was saved with module {model.info.module}, failed loading with {MODULE_NAME}."
-        )
-
-    model_file = model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
-    _model_params: t.Dict[str, t.Union[str, int]] = (
-        dict() if not model_params else model_params
-    )
-    for key, value in model.info.options.items():
-        if key not in _model_params:
-            _model_params[key] = value  # pragma: no cover
-
-    return model, model_file, _model_params
+logger = logging.getLogger(__name__)
 
 
-def _load_helper(
-    model_file: str,
-    model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
-) -> "CatBoostModel":
-    if model_params is not None:
-        model_type = model_params["model_type"]
-
-        if model_type == "classifier":
-            model = cbt.core.CatBoostClassifier()
-        elif model_type == "regressor":
-            model = cbt.core.CatBoostRegressor()
-        else:
-            model = cbt.core.CatBoost()
-    else:
-        model = cbt.core.CatBoost()
-
-    _m: "CatBoostModel" = model.load_model(model_file)
-    return _m
-
-
-@inject
-def load(
-    tag: t.Union[str, Tag],
-    model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "CatBoostModel":
+def get(tag_like: str | Tag) -> bentoml.Model:
     """
-    Load a CatBoost model from BentoML local modelstore with given name.
+    Get the BentoML model with the given tag.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): Parameters for
-            a CatBoost model. Following parameters can be specified:
-                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        tag_like (``str`` ``|`` :obj:`~bentoml.Tag`):
+            The tag of the model to retrieve from the model store.
 
     Returns:
-        :obj:`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.core.CatBoostRegressor]`: one of :code:`catboost.core.CatBoostClassifier`,
-        :code:`catboost.core.CatBoostRegressor` or :code:`catboost.core.CatBoost` from BentoML modelstore.
+        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
 
-    Examples:
+    Example:
 
     .. code-block:: python
 
         import bentoml
-        booster = bentoml.catboost.load("my_model:latest", model_params=dict(model_type="classifier"))
-    """  # noqa
-
-    _, _model_file, _model_params = _get_model_info(tag, model_params, model_store)
-
-    return _load_helper(_model_file, _model_params)
-
-
-def save(
-    name: str,
-    model: "CatBoostModel",
-    *,
-    model_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]] = None,
-    model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
-    model_pool: t.Optional["cbt.core.Pool"] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
-) -> Tag:
+        # target model must be from the BentoML model store
+        model = bentoml.catboost.get("my_catboost_model")
     """
-    Save a model instance to BentoML modelstore.
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
+        )
+    return model
+
+
+def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
+    """
+    Load the CatBoost model with the given tag from the local BentoML model store.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.CatBoostRegressor]`):
-            Instance of model to be saved
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
-            Parameters for a CatBoost model. Following parameters can be specified:
-                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-        model_export_parameters (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`):
-            Export parameters for given model.
-        model_pool (:code:`cbt.core.Pool`, `optional`, default to :code:`None`):
-            CatBoost data pool for given model.
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
-            user-defined additional python objects to be saved alongside the model,
-            e.g. a tokenizer instance, preprocessor function, model configuration json
-        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
+            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
+            instance to load the model from.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~catboost.CatBoost`: The CatBoost model loaded from the model store or BentoML :obj:`~bentoml.Model`.
 
-    Examples:
+    Example:
 
     .. code-block:: python
 
-        from sklearn.datasets import load_breast_cancer
+        import bentoml
+        # target model must be from the BentoML model store
+        booster = bentoml.catboost.load_model("my_catboost_model")
+    """  # noqa: LN001
+    if not isinstance(bento_model, bentoml.Model):
+        bento_model = get(bento_model)
 
-        import catboost as cbt
+    if bento_model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
+        )
 
-        # read in data
-        cancer = load_breast_cancer()
-        X = cancer.data
-        y = cancer.target
+    model_file = bento_model.path_of(MODEL_FILENAME)
+    cb_class_name: str = bento_model.info.options.training_class_name  # type: ignore
+    cb_class: t.Type[cb.CatBoost] = getattr(cb, cb_class_name)
+    if not issubclass(cb_class, cb.CatBoost):
+        raise BentoMLException(f"{cb_class_name} is not a valid CatBoost class.")
+    cb_instance = cb_class()
+    booster: cb.CatBoost = cb_instance.load_model(fname=model_file)
+    return booster
 
-        # create and train model
-        model = cbt.CatBoostClassifier(iterations=2,
+
+@attr.define
+class CatBoostOptions(ModelOptions):
+    training_class_name: str = attr.field(factory=str)
+
+
+def save_model(
+    name: str,
+    model: cb.CatBoost,
+    *,
+    signatures: dict[str, ModelSignatureDict] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+) -> bentoml.Model:
+    """
+    Save an CatBoost model instance to the BentoML model store.
+
+    Args:
+        name:
+            The name to give to the model in the BentoML store. This must be a valid
+            :obj:`~bentoml.Tag` name.
+        model:
+            The CatBoost model to be saved.
+        signatures:
+            Signatures of predict methods to be used. If not provided, the signatures default to
+            ``{"predict": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more
+            details.
+        labels:
+            A default set of management labels to be associated with the model. An example is
+            ``{"training-set": "data-1"}``.
+        custom_objects:
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``.
+
+            Custom objects are currently serialized with cloudpickle, but this implementation is
+            subject to change.
+        metadata:
+            Metadata to be associated with the model. An example is ``{"max_depth": 2}``.
+
+            Metadata is intended for display in model management UI and therefore must be a default
+            Python type, such as ``str`` or ``int``.
+
+    Returns:
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the
+        user-defined model's name, and a generated `version` by BentoML.
+
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+        import numpy as np
+
+        from catboost import CatBoostClassifier, Pool
+
+        # initialize data
+        train_data = np.random.randint(0, 100, size=(100, 10))
+
+        train_labels = np.random.randint(0, 2, size=(100))
+
+        test_data = catboost_pool = Pool(train_data, train_labels)
+
+        model = CatBoostClassifier(iterations=2,
                                    depth=2,
                                    learning_rate=1,
                                    loss_function='Logloss',
                                    verbose=True)
+        # train the model
+        model.fit(train_data, train_labels)
 
-        model.fit(X, y)
-        ...
+        # save the model to the BentoML model store
+        bento_model = bentoml.catboost.save_model("my_catboost_model", model)
+    """  # noqa: LN001
+    if not isinstance(model, cb.CatBoost):
+        raise TypeError(f"Given model ({model}) is not a catboost.CatBoost.")
 
-        tag = bentoml.catboost.save("my_catboost_model", model, model_params=dict(model_type="classifier"))
+    context: ModelContext = ModelContext(
+        framework_name="catboost",
+        framework_versions={"catboost": get_pkg_version("catboost")},
+    )
 
-        # load the booster back:
-        loaded = bentoml.catboost.load("my_catboost_model:latest")
-        # or:
-        loaded = bentoml.catboost.load(tag)
+    if signatures is None:
+        logger.info(
+            'Using default model signature `{"predict": {"batchable": False}}` for CatBoost model'
+        )
+        signatures = {
+            "predict": {"batchable": False},
+        }
 
-    """  # noqa
-    if not model_params:
-        model_params = {}
+    options = CatBoostOptions(
+        training_class_name=model.__class__.__name__,
+    )
 
-    if "model_type" not in model_params:
-        model_params["model_type"] = "classifier"
-
-    context = {
-        "framework_name": "catboost",
-        "pip_dependencies": [f"catboost=={get_pkg_version('catboost')}"],
-    }
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
+        api_version=API_VERSION,
+        signatures=signatures,
         labels=labels,
         custom_objects=custom_objects,
-        options=model_params,
         metadata=metadata,
         context=context,
-    ) as _model:
-        path = _model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
-        format_ = CATBOOST_EXT
-        model.save_model(
-            path,
-            format=format_,
-            export_parameters=model_export_parameters,
-            pool=model_pool,
+        options=options,
+    ) as bento_model:
+        model.save_model(bento_model.path_of(MODEL_FILENAME))  # type: ignore (incomplete CatBoost types)
+
+        return bento_model
+
+
+def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
+    """
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
+    """
+
+    class CatBoostRunnable(bentoml.Runnable):
+        SUPPORT_NVIDIA_GPU = True
+        SUPPORT_CPU_MULTI_THREADING = True
+
+        predict_params: t.Dict[str, t.Any]
+
+        def __init__(self):
+            super().__init__()
+            self.model = load_model(bento_model)
+
+            self.predict_params = {
+                "task_type": "CPU",
+            }
+
+            # check for resources
+            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
+            if available_gpus not in ("", "-1"):
+                self.predict_params["task_type"] = "GPU"
+            else:
+                nthreads = os.getenv("OMP_NUM_THREADS")
+                if nthreads is not None and nthreads != "":
+                    nthreads = max(int(nthreads), 1)
+                else:
+                    nthreads = -1
+                self.predict_params["thread_count"] = nthreads
+
+            self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
+            for method_name in bento_model.info.signatures:
+                try:
+                    self.predict_fns[method_name] = getattr(self.model, method_name)
+                except AttributeError:
+                    raise InvalidArgument(
+                        f"No method with name {method_name} found for CatBoost model of type {self.model.__class__}"
+                    )
+
+    def add_runnable_method(method_name: str, options: ModelSignature):
+        def _run(
+            self: CatBoostRunnable,
+            input_data: ext.NpNDArray | ext.CbPool | ext.PdDataFrame,
+        ) -> ext.NpNDArray:
+            if not isinstance(input_data, cb.Pool):
+                input_data = cb.Pool(input_data)
+            res = self.predict_fns[method_name](input_data, **self.predict_params)
+            return np.asarray(res)  # type: ignore (incomplete np types)
+
+        CatBoostRunnable.add_method(
+            _run,
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
         )
 
-        return _model.tag
+    for method_name, options in bento_model.info.signatures.items():
+        add_runnable_method(method_name, options)
 
-
-class _CatBoostRunner(BaseModelRunner):
-    @inject
-    def __init__(
-        self,
-        tag: t.Union[str, Tag],
-        predict_fn_name: str,
-        model_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
-        name: t.Optional[str] = None,
-    ):
-        super().__init__(tag=tag, name=name)
-        self._predict_fn_name = predict_fn_name
-        self._model_params = model_params
-        self._model: "CatBoostModel"
-        self._predict_fn: t.Any = None
-
-    @property
-    def num_replica(self) -> int:
-        return max(round(self.resource_quota.cpu), 1)
-
-    def _setup(self) -> None:
-        self._model = load(
-            self._tag, model_params=self._model_params, model_store=self.model_store
-        )
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
-
-    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
-        self,
-        inputs: t.Union["ext.NpNDArray", "ext.PdDataFrame", cbt.Pool],
-    ) -> "ext.NpNDArray":
-        res = self._predict_fn(inputs)
-        return t.cast("ext.NpNDArray", np.asarray(res))
-
-
-def load_runner(
-    tag: t.Union[str, Tag],
-    predict_fn_name: str = "predict",
-    *,
-    model_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    name: t.Optional[str] = None,
-) -> "_CatBoostRunner":
-    """
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.catboost.load_runner` implements a Runner class that
-    wrap around a CatBoost model, which optimize it for the BentoML runtime.
-
-    Args:
-        tag (:code:`Union[str, Tag]`):
-            Tag of a saved model in BentoML local modelstore.
-        predict_fn_name (:code:`str`, default to :code:`predict`):
-            Options for inference functions. `predict` are the default function.
-        model_params (:code:`Dict[str, Union[str, Any]]`, `optional`, default to :code:`None`): Parameters for
-            a CatBoost model. Following parameters can be specified:
-                - model_type(:code:`str`): :obj:`classifier` (`CatBoostClassifier`) or :obj:`regressor` (`CatBoostRegressor`)
-
-    Returns:
-        :obj:`~bentoml._internal.runner.Runner`: Runner instances for :mod:`bentoml.catboost` model
-
-    Examples:
-
-    .. code-block:: python
-
-        import catboost as cbt
-        import pandas as pd
-
-        input_data = pd.read_csv("/path/to/csv")
-        runner = bentoml.catboost.load_runner("my_model:latest"")
-        runner.run(cbt.Pool(input_data))
-    """
-    return _CatBoostRunner(
-        tag=tag,
-        predict_fn_name=predict_fn_name,
-        model_params=model_params,
-        name=name,
-    )
+    return CatBoostRunnable

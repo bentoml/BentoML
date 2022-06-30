@@ -5,7 +5,7 @@ import bentoml.picklable_model
 
 def train():
     bentoml.picklable_model.save_model(
-        "py_model",
+        "py_model.case-1.e2e",
         PickleModel(),
         signatures={
             "predict_file": {"batchable": True},

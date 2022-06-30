@@ -161,9 +161,14 @@ class ServiceAppFactory(BaseAppFactory):
 
         for _, api in self.bento_service.apis.items():
             api_route_endpoint = self._create_api_endpoint(api)
+            if api.route.startswith("/"):
+                route_path = api.route
+            else:
+                route_path = f"/{api.route}"
+
             routes.append(
                 Route(
-                    path="/{}".format(api.route),
+                    path=route_path,
                     name=api.name,
                     endpoint=api_route_endpoint,
                     methods=api.input.HTTP_METHODS,
@@ -210,10 +215,6 @@ class ServiceAppFactory(BaseAppFactory):
             if span is not None:
                 trace_context.request_id = span.context.span_id
 
-        def client_response_hook(span: Span, _message: t.Any) -> None:
-            if span is not None:
-                del trace_context.request_id
-
         middlewares.append(
             Middleware(
                 otel_asgi.OpenTelemetryMiddleware,
@@ -221,7 +222,6 @@ class ServiceAppFactory(BaseAppFactory):
                 default_span_details=None,
                 server_request_hook=None,
                 client_request_hook=client_request_hook,
-                client_response_hook=client_response_hook,
                 tracer_provider=DeploymentContainer.tracer_provider.get(),
             )
         )
@@ -230,15 +230,17 @@ class ServiceAppFactory(BaseAppFactory):
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 
-            middlewares.append(
-                Middleware(
-                    AccessLogMiddleware,
-                    has_request_content_length=access_log_config.request_content_length.get(),
-                    has_request_content_type=access_log_config.request_content_type.get(),
-                    has_response_content_length=access_log_config.response_content_length.get(),
-                    has_response_content_type=access_log_config.response_content_type.get(),
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                middlewares.append(
+                    Middleware(
+                        AccessLogMiddleware,
+                        has_request_content_length=access_log_config.request_content_length.get(),
+                        has_request_content_type=access_log_config.request_content_type.get(),
+                        has_response_content_length=access_log_config.response_content_length.get(),
+                        has_response_content_type=access_log_config.response_content_type.get(),
+                    )
                 )
-            )
 
         return middlewares
 
@@ -313,13 +315,14 @@ class ServiceAppFactory(BaseAppFactory):
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 
-                if 400 <= e.error_code < 500 and e.error_code not in (401, 403):
+                status = e.error_code.value
+                if 400 <= status < 500 and status not in (401, 403):
                     response = JSONResponse(
                         content="BentoService error handling API request: %s" % str(e),
-                        status_code=e.error_code,
+                        status_code=status,
                     )
                 else:
-                    response = JSONResponse("", status_code=e.error_code)
+                    response = JSONResponse("", status_code=status)
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.

@@ -332,7 +332,7 @@ def build(
         build_ctx=build_ctx,
     ).save(_bento_store)
     logger.info(BENTOML_FIGLET)
-    logger.info('Successfully built %s at "%s"', bento, bento.path)
+    logger.info(f"Successfully built {bento}")
     return bento
 
 
@@ -372,7 +372,7 @@ def build_bentofile(
         build_ctx=build_ctx,
     ).save(_bento_store)
     logger.info(BENTOML_FIGLET)
-    logger.info('Successfully built %s at "%s"', bento, bento.path)
+    logger.info(f"Successfully built {bento}")
     return bento
 
 

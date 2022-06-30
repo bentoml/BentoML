@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 import logging
 from abc import ABC
+from abc import abstractmethod
 from typing import overload
 from typing import TYPE_CHECKING
 
@@ -28,6 +29,10 @@ class Runnable(ABC):
     SUPPORT_CPU_MULTI_THREADING: bool
 
     methods: dict[str, RunnableMethod[t.Any, t.Any, t.Any]] | None = None
+
+    @abstractmethod
+    def __init__(self, **kwargs: t.Any):
+        ...
 
     @classmethod
     def add_method(

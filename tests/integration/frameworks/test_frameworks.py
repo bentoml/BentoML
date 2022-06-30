@@ -16,6 +16,15 @@ from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 from .models import FrameworkTestModel
 
 
+@pytest.fixture(name="saved_model")
+def fixture_saved_model(
+    framework: types.ModuleType, test_model: FrameworkTestModel
+) -> bentoml.Model:
+    return framework.save_model(
+        test_model.name, test_model.model, **test_model.save_kwargs
+    )
+
+
 def test_wrong_module_load_exc(framework: types.ModuleType):
     with bentoml.models.create(
         "wrong_module",
@@ -25,10 +34,40 @@ def test_wrong_module_load_exc(framework: types.ModuleType):
     ) as ctx:
         tag = ctx.tag
 
+        model = ctx
+
     with pytest.raises(
-        NotFound, match=f"Model wrong_module:.* was saved with module {__name__}, "
+        NotFound, match=f"Model {tag} was saved with module {__name__}, "
+    ):
+        framework.get(tag)
+
+    with pytest.raises(
+        NotFound, match=f"Model {tag} was saved with module {__name__}, "
     ):
         framework.load_model(tag)
+
+    with pytest.raises(
+        NotFound, match=f"Model {tag} was saved with module {__name__}, "
+    ):
+        framework.load_model(model)
+
+
+def test_model_options_init(
+    framework: types.ModuleType, test_model: FrameworkTestModel
+):
+    if not hasattr(framework, "ModelOptions"):
+        pytest.skip(f"No ModelOptions for framework '{framework.__name__}'")
+
+    ModelOptions = framework.ModelOptions
+
+    for configuration in test_model.configurations:
+        from_kwargs = ModelOptions(**configuration.load_kwargs)
+        from_with_options = ModelOptions().with_options(**configuration.load_kwargs)
+        assert from_kwargs == from_with_options
+        assert from_kwargs.to_dict() == from_with_options.to_dict()
+
+        from_dict = ModelOptions(**from_kwargs.to_dict())
+        assert from_dict == from_kwargs
 
 
 def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTestModel):
@@ -42,9 +81,13 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
     assert scaler.var_[0] == 4.75  # type: ignore (bad sklearn types)
 
     kwargs = test_model.save_kwargs.copy()
-    kwargs["signatures"] = {
-        "pytest-signature-rjM5": {"batchable": True, "batch_dim": (1, 0)}
-    }
+    if test_model.model_signatures:
+        kwargs["signatures"] = test_model.model_signatures
+        meths = list(test_model.model_signatures.keys())
+    else:
+        default_meth = "pytest-signature-rjM5"
+        kwargs["signatures"] = {default_meth: {"batchable": True, "batch_dim": (1, 0)}}
+        meths = [default_meth]
     kwargs["labels"] = {
         "pytest-label-N4nr": "pytest-label-value-4mH7",
         "pytest-label-7q72": "pytest-label-value-3mDd",
@@ -54,55 +97,42 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
         "pytest-metadata-vSW4": [0, 9, 2],
         "pytest-metadata-qJJ3": "Wy5M",
     }
-    tag = framework.save_model(
+    bento_model = framework.save_model(
         test_model.name,
         test_model.model,
         **kwargs,
     )
 
-    bento_model: bentoml.Model = framework.get(tag)
+    for meth in meths:
+        assert bento_model.info.signatures[meth] == ModelSignature.from_dict(kwargs["signatures"][meth])  # type: ignore
 
-    meth = "pytest-signature-rjM5"
-    assert bento_model.info.signatures[meth] == ModelSignature.from_dict(kwargs["signatures"][meth])  # type: ignore
     assert bento_model.info.labels == kwargs["labels"]
     # print(bento_model.custom_objects)
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].mean_[0] == 5.5
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].var_[0] == 4.75
     assert bento_model.info.metadata == kwargs["metadata"]
 
-    print(tag)
-
-
-@pytest.fixture(name="saved_model")
-def fixture_saved_model(
-    framework: types.ModuleType, test_model: FrameworkTestModel
-) -> bentoml.Tag:
-    return framework.save_model(
-        test_model.name, test_model.model, **test_model.save_kwargs
-    )
-
 
 def test_get(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     # test that the generic get API works
-    bento_model = framework.get(saved_model)
+    bento_model = framework.get(saved_model.tag)
 
+    assert bento_model == saved_model
     assert bento_model.info.name == test_model.name
 
-    bento_model_from_str = framework.get(str(saved_model))
+    bento_model_from_str = framework.get(str(saved_model.tag))
     assert bento_model == bento_model_from_str
 
 
 def test_get_runnable(
     framework: types.ModuleType,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
-    bento_model = framework.get(saved_model)
-
-    runnable = framework.get_runnable(bento_model)
+    runnable = framework.get_runnable(saved_model)
 
     assert isinstance(
         runnable, t.Type
@@ -118,7 +148,7 @@ def test_get_runnable(
 def test_load(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
@@ -132,27 +162,33 @@ def test_load(
                     key: inp.preprocess(kwarg)
                     for key, kwarg in inp.input_kwargs.items()
                 }
-                out = getattr(model, method)(*args, **kwargs)
+                if test_model.model_method_caller:
+                    out = test_model.model_method_caller(
+                        test_model, method, args, kwargs
+                    )
+                else:
+                    out = getattr(model, method)(*args, **kwargs)
                 inp.check_output(out)
 
 
 def test_runner_batching(
-    framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     from bentoml._internal.runner.utils import Params
     from bentoml._internal.runner.utils import payload_paramss_to_batch_params
     from bentoml._internal.runner.container import AutoContainer
 
-    bento_model = framework.get(saved_model)
+    ran_tests = False
 
     for config in test_model.configurations:
-        runner = bento_model.with_options(**config.load_kwargs).to_runner()
+        runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
         for meth, inputs in config.test_inputs.items():
             if len(inputs) < 2:
                 continue
+
+            ran_tests = True
 
             batch_dim = getattr(runner, meth).config.batch_dim
             paramss = [
@@ -174,20 +210,30 @@ def test_runner_batching(
 
         runner.destroy()
 
+    if not ran_tests:
+        pytest.skip(
+            "skipping batching tests because no configuration had multiple test inputs"
+        )
+
 
 @pytest.mark.gpus
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     gpu_resource = Resource(nvidia_gpu=1.0)
-    bento_model = framework.get(saved_model)
 
+    ran_tests = False
     for config in test_model.configurations:
-        model_with_options = bento_model.with_options(**config.load_kwargs)
+        model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable = framework.get_runnable(model_with_options)
+        if not runnable.SUPPORT_NVIDIA_GPU:
+            continue
+
+        ran_tests = True
+
         runner = Runner(runnable, nvidia_gpu=1)
 
         for meth, inputs in config.test_inputs.items():
@@ -200,10 +246,15 @@ def test_runner_nvidia_gpu(
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
             if hasattr(runnable, "model") and runnable.model is not None:
-                config.check_model(runner, gpu_resource)
+                config.check_model(runnable.model, gpu_resource)
 
             for inp in inputs:
                 outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
                 inp.check_output(outp)
 
             runner.destroy()
+
+    if not ran_tests:
+        pytest.skip(
+            f"no configurations for model '{test_model.name}' supported running on Nvidia GPU"
+        )

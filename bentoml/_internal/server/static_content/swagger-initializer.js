@@ -1,11 +1,10 @@
 window.onload = function() {
-  //<editor-fold desc="Changeable Configuration Block">
-
-  // the following lines will be replaced by docker/configurator, when it runs in a docker-container
+  // SwaggerUI Configurations
   window.ui = SwaggerUIBundle({
     url: "/docs.json",
     dom_id: '#swagger-ui',
     deepLinking: true,
+    validatorUrl: null,
     presets: [
       SwaggerUIBundle.presets.apis,
       SwaggerUIStandalonePreset
@@ -15,6 +14,4 @@ window.onload = function() {
     ],
     layout: "StandaloneLayout"
   });
-
-  //</editor-fold>
 };

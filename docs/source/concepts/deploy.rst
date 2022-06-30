@@ -49,7 +49,18 @@ Run :code:`bentoml containerize` to start the containerization process.
     INFO [cli] Successfully built docker image "iris_classifier:ejwnswg5kw6qnuqj"
 
 
-Built Docker images are stored to the local Docker repository.
+.. dropdown:: For Mac with Apple Silicon
+   :icon: cpu
+
+   Specify the :code:`--platform` to avoid potential compatibility issues with some
+   Python libraries.
+
+   .. code:: bash
+
+      bentoml containerize --platform=linux/amd64 iris_classifier:latest
+
+
+View the built Docker image:
 
 .. code:: bash
 
@@ -58,7 +69,7 @@ Built Docker images are stored to the local Docker repository.
     REPOSITORY          TAG                 IMAGE ID       CREATED         SIZE
     iris_classifier     ejwnswg5kw6qnuqj    669e3ce35013   1 minutes ago   1.12GB
 
-We can run the generated docker image with :code:`docker run` commnad:
+Run the generated docker image:
 
 .. code:: bash
 

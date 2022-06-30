@@ -1,5 +1,6 @@
 # Docs dependencies
 -r tests-requirements.txt
+setuptools>=62.0.0
 sphinx==4.5.0
 myst-parser
 sphinx-click>=3.0.2

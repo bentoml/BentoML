@@ -11,9 +11,11 @@ import click
 from click import ClickException
 from click.exceptions import UsageError
 
+from ..log import configure_logging
 from ...exceptions import BentoMLException
 from ..configuration import CONFIG_ENV_VAR
 from ..configuration import set_debug_mode
+from ..configuration import set_quiet_mode
 from ..configuration import load_global_config
 from ..utils.analytics import track
 from ..utils.analytics import CliEvent
@@ -88,14 +90,13 @@ class BentoMLCommandGroup(click.Group):
                 load_global_config(config)
 
             if quiet:
-                logging.getLogger("bentoml").setLevel(logging.ERROR)
+                set_quiet_mode(True)
                 if verbose:
-                    logger.warning(
-                        "The bentoml command option `--verbose/--debug` is ignored when"
-                        "the `--quiet` flag is also in use"
-                    )
+                    logger.warning("'--quiet' passed; ignoring '--verbose/--debug'")
             elif verbose:
                 set_debug_mode(True)
+
+            configure_logging()
 
             return func(*args, **kwargs)
 
@@ -213,7 +214,13 @@ class BentoMLCommandGroup(click.Group):
 
 
 def is_valid_bento_tag(value: str) -> bool:
-    return re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is not None
+    try:
+        from ..tag import Tag
+
+        Tag.from_str(value)
+        return True
+    except ValueError:
+        return False
 
 
 def is_valid_bento_name(value: str) -> bool:

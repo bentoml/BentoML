@@ -7,6 +7,7 @@ from datetime import datetime
 from datetime import timezone
 
 import fs
+import attr
 import numpy as np
 import pytest
 import fs.errors
@@ -14,7 +15,7 @@ import fs.errors
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.models import ModelContext
-from bentoml._internal.models import ModelOptions
+from bentoml._internal.models import ModelOptions as InternalModelOptions
 from bentoml._internal.models.model import Model
 from bentoml._internal.models.model import ModelInfo
 from bentoml._internal.models.model import ModelStore
@@ -32,7 +33,7 @@ TEST_PYTHON_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 expected_yaml = """\
 name: test
 version: v1
-module: testmodule
+module: test_model
 labels:
   label: stringvalue
 options:
@@ -77,10 +78,14 @@ creation_time: '{creation_time}'
 """
 
 
-class TestModelOption(ModelOptions):
+@attr.define
+class TestModelOptions(InternalModelOptions):
     option_a: int
     option_b: str
     option_c: list[float]
+
+
+ModelOptions = TestModelOptions
 
 
 def test_model_info(tmpdir: "Path"):
@@ -90,7 +95,7 @@ def test_model_info(tmpdir: "Path"):
         module="module",
         api_version="v1",
         labels={},
-        options=ModelOptions(),
+        options=TestModelOptions(option_a=42, option_b="foo", option_c=[0.1, 0.2]),
         metadata={},
         context=TEST_MODEL_CONTEXT,
         signatures={"predict": {"batchable": True}},
@@ -102,9 +107,9 @@ def test_model_info(tmpdir: "Path"):
     assert start <= modelinfo_a.creation_time <= end
 
     tag = Tag("test", "v1")
-    module = "testmodule"
+    module = __name__
     labels = {"label": "stringvalue"}
-    options = TestModelOption(option_a=1, option_b="foo", option_c=[0.1, 0.2])
+    options = TestModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2])
     metadata = {"a": 0.1, "b": 1, "c": np.array([2, 3, 4], dtype=np.uint32)}
     # TODO: add test cases for input_spec and output_spec
     signatures = {
@@ -164,7 +169,8 @@ def test_model_creationtime():
 
     assert model_a.tag.name == "testmodel"
     assert start <= model_a.creation_time <= end
-    assert str(model_a) == f'Model(tag="{model_a.tag}", path="{model_a.path}")'
+    assert str(model_a) == f'Model(tag="{model_a.tag}")'
+    assert repr(model_a) == f'Model(tag="{model_a.tag}", path="{model_a.path}")'
 
 
 class AdditionClass:
@@ -178,14 +184,15 @@ class AdditionClass:
 add_num_1 = 5
 
 
-@pytest.fixture
-def bento_model():
+@pytest.fixture(name="bento_model")
+def fixture_bento_model():
     model = Model.create(
         "testmodel",
-        module="foo",
+        module=__name__,
         api_version="v1",
         signatures={},
         context=TEST_MODEL_CONTEXT,
+        options=TestModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2]),
         custom_objects={
             "add": AdditionClass(add_num_1),
         },
@@ -246,17 +253,17 @@ def test_model_export_import(bento_model, tmpdir: "Path"):
 
     # can cause model.path to fail by using `from_fs`.
     with pytest.raises(fs.errors.NoSysPath):
-        str(from_fs_model)
+        assert from_fs_model.path
 
     model_store = ModelStore(tmpdir)
     from_fs_model.save(model_store)
 
-    from_fs_model_str = str(from_fs_model)
     save_path = os.path.join(
         tmpdir,
         os.path.join(from_fs_model.tag.name, from_fs_model.tag.version) + os.path.sep,
     )
-    assert from_fs_model_str == f'Model(tag="{bento_model.tag}", path="{save_path}")'
+    assert str(from_fs_model) == f'Model(tag="{bento_model.tag}")'
+    assert repr(from_fs_model) == f'Model(tag="{bento_model.tag}", path="{save_path}")'
 
 
 def test_load_bad_model(tmpdir: "Path"):

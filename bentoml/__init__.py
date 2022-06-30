@@ -6,10 +6,6 @@ from ._internal.configuration import load_global_config
 # Inject dependencies and configurations
 load_global_config()
 
-from ._internal.log import configure_logging  # noqa: E402
-
-configure_logging()
-
 # Model management APIs
 from . import models
 
@@ -41,6 +37,7 @@ if TYPE_CHECKING:
     from bentoml import gluon
     from bentoml import keras
     from bentoml import spacy
+    from bentoml import fastai
     from bentoml import mlflow
     from bentoml import paddle
     from bentoml import easyocr
@@ -66,6 +63,7 @@ else:
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
     easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
     flax = _LazyLoader("bentoml.flax", globals(), "bentoml.flax")
+    fastai = _LazyLoader("bentoml.fastai", globals(), "bentoml.fastai")
     gluon = _LazyLoader("bentoml.gluon", globals(), "bentoml.gluon")
     h2o = _LazyLoader("bentoml.h2o", globals(), "bentoml.h2o")
     lightgbm = _LazyLoader("bentoml.lightgbm", globals(), "bentoml.lightgbm")
@@ -95,6 +93,8 @@ else:
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
+    del _LazyLoader
+
 __all__ = [
     "__version__",
     "Context",
@@ -120,6 +120,7 @@ __all__ = [
     "detectron",
     "easyocr",
     "flax",
+    "fastai",
     "gluon",
     "h2o",
     "lightgbm",

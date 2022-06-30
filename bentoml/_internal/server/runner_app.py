@@ -8,7 +8,7 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
-from ..trace import ServiceContext
+from ..context import trace_context
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..runner.utils import payload_paramss_to_batch_params
@@ -65,10 +65,8 @@ class RunnerAppFactory(BaseAppFactory):
         on_startup.insert(
             0,
             functools.partial(
-                self.runner.scheduling_strategy.setup_worker,
-                runnable_class=self.runner.runnable_class,
-                resource_request=self.runner.resource_config,
-                worker_index=self.worker_index,
+                self.runner.setup_worker,
+                worker_id=self.worker_index,
             ),
         )
         return on_startup
@@ -130,11 +128,7 @@ class RunnerAppFactory(BaseAppFactory):
         def client_request_hook(span: Span, _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
                 span_id: int = span.context.span_id
-                ServiceContext.request_id_var.set(span_id)
-
-        def client_response_hook(span: Span, _message: t.Any) -> None:
-            if span is not None:
-                ServiceContext.request_id_var.set(None)
+                trace_context.request_id = span_id
 
         middlewares.append(
             Middleware(
@@ -143,7 +137,6 @@ class RunnerAppFactory(BaseAppFactory):
                 default_span_details=None,
                 server_request_hook=None,
                 client_request_hook=client_request_hook,
-                client_response_hook=client_response_hook,
                 tracer_provider=DeploymentContainer.tracer_provider.get(),
             )
         )
@@ -152,15 +145,17 @@ class RunnerAppFactory(BaseAppFactory):
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 
-            middlewares.append(
-                Middleware(
-                    AccessLogMiddleware,
-                    has_request_content_length=access_log_config.request_content_length.get(),
-                    has_request_content_type=access_log_config.request_content_type.get(),
-                    has_response_content_length=access_log_config.response_content_length.get(),
-                    has_response_content_type=access_log_config.response_content_type.get(),
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                middlewares.append(
+                    Middleware(
+                        AccessLogMiddleware,
+                        has_request_content_length=access_log_config.request_content_length.get(),
+                        has_request_content_type=access_log_config.request_content_type.get(),
+                        has_response_content_length=access_log_config.response_content_length.get(),
+                        has_response_content_type=access_log_config.response_content_type.get(),
+                    )
                 )
-            )
 
         return middlewares
 
@@ -219,7 +214,6 @@ class RunnerAppFactory(BaseAppFactory):
         async def _run(request: Request) -> Response:
             assert self._is_ready
 
-            logger.info(request)
             params = await multipart_to_payload_params(request)
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)

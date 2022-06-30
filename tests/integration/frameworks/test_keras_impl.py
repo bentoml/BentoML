@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import typing as t
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
-import tensorflow as tf
-import tensorflow.keras as keras
 
 import bentoml
 from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.tensorflow_utils import CustomLayer
 from tests.utils.frameworks.tensorflow_utils import custom_activation
 from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
+
+if TYPE_CHECKING:
+    import tensorflow.keras as keras
+
 
 MODEL_NAME = __name__.split(".")[-1]
 
@@ -44,18 +49,18 @@ def test_keras_save_load(
     model: "keras.Model",
     kwargs: t.Dict[str, t.Any],
 ) -> None:
-    tag = bentoml.keras.save_model(MODEL_NAME, model, **kwargs)
-    bento_model = bentoml.keras.get(tag)
+    bento_model = bentoml.keras.save_model(MODEL_NAME, model, **kwargs)
+    assert bento_model == bentoml.keras.get(bento_model.tag)
     assert_have_file_extension(bento_model.path, ".pb")
-    loaded = bentoml.keras.load_model(tag)
+    loaded = bentoml.keras.load_model(bento_model.tag)
     predict_assert_equal(loaded)
 
 
 @pytest.mark.parametrize("signatures", [None, {"__call__": {"batchable": True}}])
 def test_keras_run(signatures) -> None:
     model = KerasSequentialModel()
-    tag = bentoml.keras.save_model(MODEL_NAME, model, signatures=signatures)
-    runner = bentoml.keras.get(tag).to_runner()
+    bento_model = bentoml.keras.save_model(MODEL_NAME, model, signatures=signatures)
+    runner = bento_model.to_runner()
     runner.init_local()
 
     # keras model's `__call__` will return a Tensor instead of

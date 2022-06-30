@@ -1,7 +1,10 @@
 import os
+import re
 import typing as t
 import logging
 from functools import lru_cache
+
+from bentoml.exceptions import BentoMLException
 
 try:
     import importlib.metadata as importlib_metadata
@@ -24,6 +27,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
+QUIET_ENV_VAR = "BENTOML_QUIET"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 
 
@@ -39,8 +43,18 @@ def expand_env_var(env_var: str) -> str:
             env_var = interpolated
 
 
+def clean_bentoml_version(bentoml_version: str) -> str:
+    post_version = bentoml_version.split("+")[0]
+    match = re.match(r"^(\d+)\.(\d+)\.(\d+)(?:(a|rc)\d)*", post_version)
+    if match is None:
+        raise BentoMLException("Errors while parsing BentoML version.")
+    return match.group()
+
+
 # Find BentoML version managed by setuptools_scm
 BENTOML_VERSION: str = importlib_metadata.version("bentoml")
+# Get clean BentoML version indicating latest PyPI release. E.g. 1.0.0.post => 1.0.0
+CLEAN_BENTOML_VERSION: str = clean_bentoml_version(BENTOML_VERSION)
 
 
 @lru_cache(maxsize=1)
@@ -83,19 +97,26 @@ def get_bentoml_config_file_from_env() -> t.Optional[str]:
 def set_debug_mode(enabled: bool) -> None:
     os.environ[DEBUG_ENV_VAR] = str(enabled)
 
-    # reconfigure logging
-    from ..log import configure_logging
-
-    configure_logging()
-
-    logger.debug(
-        f"Setting debug mode: {'ON' if enabled else 'OFF'} for current session"
+    logger.info(
+        f"{'Enabling' if enabled else 'Disabling'} debug mode for current BentoML session"
     )
 
 
 def get_debug_mode() -> bool:
     if DEBUG_ENV_VAR in os.environ:
         return os.environ[DEBUG_ENV_VAR].lower() == "true"
+    return False
+
+
+def set_quiet_mode(enabled: bool) -> None:
+    os.environ[DEBUG_ENV_VAR] = str(enabled)
+
+    # do not log setting quiet mode
+
+
+def get_quiet_mode() -> bool:
+    if QUIET_ENV_VAR in os.environ:
+        return os.environ[QUIET_ENV_VAR].lower() == "true"
     return False
 
 

@@ -43,7 +43,8 @@ def parse_delete_targets_argument_callback(
             is_valid_bento_tag(delete_target) or is_valid_bento_name(delete_target)
         ):
             raise click.BadParameter(
-                "Bad formatting. Please present a valid bento bundle name or "
+                f"Bad formatting: `{delete_target}`. Please present a valid bento"
+                " bundle name or "
                 '"name:version" tag. For list of bento bundles, separate delete '
                 'targets by ",", for example: "my_service:v1,my_service:v2,'
                 'classifier"'
@@ -113,7 +114,9 @@ def add_bento_management_commands(
                 "tag": str(bento.tag),
                 "path": display_path_under_home(bento.path),
                 "size": human_readable_size(calc_dir_size(bento.path)),
-                "creation_time": bento.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "creation_time": bento.info.creation_time.astimezone().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
             }
             for bento in sorted(
                 bentos, key=lambda x: x.info.creation_time, reverse=True

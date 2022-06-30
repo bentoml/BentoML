@@ -100,7 +100,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
                 from bentoml.io import NumpyNdarray
 
-                @svc.api(input=inp(shape=(3,1), enforce_shape=True), output=NumpyNdarray())
+                @svc.api(input=NumpyNdarray(shape=(3,1), enforce_shape=True), output=NumpyNdarray())
                 def predict(input_array: np.ndarray) -> np.ndarray:
                     # input_array will have shape (3,1)
                     result = await runner.run(input_array)

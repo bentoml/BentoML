@@ -5,7 +5,9 @@ import typing as t
 import logging
 import importlib
 import importlib.util
+from typing import Iterable
 from typing import TYPE_CHECKING
+from functools import lru_cache
 
 import attr
 
@@ -19,6 +21,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
+from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
@@ -38,7 +41,8 @@ PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
 logger = logging.getLogger(__name__)
 
 
-def _check_flax_supported() -> None:  # pragma: no cover
+@lru_cache(maxsize=1)
+def _check_flax_supported() -> None | tuple[str, str]:
     _supported: bool = get_pkg_version("transformers").startswith("4")
 
     if not _supported:
@@ -61,6 +65,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
                 f"Jax version {_jax_version}, "
                 f"Flax version {_flax_version} available."
             )
+            return _jax_version, _flax_version
         else:
             logger.warning(
                 "No versions of Flax or Jax are found under "
@@ -70,40 +75,49 @@ def _check_flax_supported() -> None:  # pragma: no cover
             )
 
 
-try:
+if TYPE_CHECKING:
     import transformers
-
+    import transformers.utils.import_utils as import_utils
+else:
+    _exc_msg = "transformers is required in order to use module 'bentoml.transformers'. Install transformers with 'pip install transformers'."
+    transformers = LazyLoader(
+        "transformers", globals(), "transformers", exc_msg=_exc_msg
+    )
+    import_utils = LazyLoader(
+        "import_utils", globals(), "transformers.utils.import_utils"
+    )
     _check_flax_supported()
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "transformers is required in order to use module `bentoml.transformers`. "
-        "Install transformers with `pip install transformers`."
+
+
+@attr.define
+class PipelineTask:
+    tf: t.Tuple[str] = attr.field(  # type: ignore (unfinished attr type)
+        validator=attr.validators.deep_iterable(
+            attr.validators.instance_of(str),
+        ),  # type: ignore (unfinished attr type)
+        factory=tuple,
+    )
+    pt: t.Tuple[str] = attr.field(  # type: ignore (unfinished attr type)
+        validator=attr.validators.deep_iterable(
+            attr.validators.instance_of(str),
+        ),  # type: ignore (unfinished attr type)
+        factory=tuple,
+    )
+    default: t.Dict[str, t.Any] = attr.field(factory=dict)
+    type: str = attr.field(
+        validator=attr.validators.and_(
+            attr.validators.instance_of(str),
+            attr.validators.in_(("audio", "image", "multimodal", "text")),
+        ),
+        default=None,
     )
 
 
 @attr.define
-class TransformersOptions(ModelOptions):
+class TransformersOptions(PipelineTask, ModelOptions):
     """Options for the Transformers model."""
 
-    task: str = attr.field(validator=[attr.validators.instance_of(str)])
-    tf: t.Tuple[str] = attr.field(
-        validator=[
-            attr.validators.deep_iterable(
-                member_validator=attr.validators.instance_of(str)
-            )
-        ],  # type: ignore
-        factory=(tuple),
-    )
-    pt: t.Tuple[str] = attr.field(
-        validator=[
-            attr.validators.deep_iterable(
-                member_validator=attr.validators.instance_of(str)
-            )
-        ],  # type: ignore
-        factory=(tuple),
-    )
-    default: t.Dict[str, t.Any] = attr.field(factory=dict)
-    type: str = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
+    task: str = attr.field(validator=attr.validators.instance_of(str), default=None)
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
@@ -114,6 +128,24 @@ def get(tag_like: str | Tag) -> Model:
             f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
         )
     return model
+
+
+def _get_auto_class(
+    val: str | Iterable[str],
+) -> t.Generator[ext.BaseAutoModelClass, None, None]:
+    if isinstance(val, str):
+        if not hasattr(transformers, val):
+            raise BentoMLException(
+                f"Given {val} is neither exists nor valid transformers.AutoModel"
+            )
+        yield getattr(transformers, val)
+    elif isinstance(val, Iterable):
+        for v in val:
+            yield from _get_auto_class(v)
+    else:
+        raise BentoMLException(
+            f"Unsupported type {type(val)}. Only support str | Iterable[str]."
+        )
 
 
 def load_model(
@@ -139,6 +171,8 @@ def load_model(
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """  # noqa
+    from transformers.pipelines import SUPPORTED_TASKS
+
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
@@ -147,13 +181,12 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
-    from transformers.pipelines import SUPPORTED_TASKS
-
     task: str = bento_model.info.options.task  # type: ignore
+
     if task not in SUPPORTED_TASKS:
         try:
-            import cloudpickle  # type: ignore
-        except ImportError:  # pragma: no cover
+            import cloudpickle
+        except ImportError:
             raise MissingDependencyException(
                 "Module `cloudpickle` is required in order to use to load custom pipelines."
             )
@@ -161,35 +194,35 @@ def load_model(
         with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
             pipeline = cloudpickle.load(f)
 
-        SUPPORTED_TASKS[task] = {
+        task_defintion: dict[str, t.Any] = {
             "impl": type(pipeline),
-            "tf": tuple(
-                getattr(transformers, auto_class)  # type: ignore
-                for auto_class in bento_model.info.options.tf  # type: ignore
-            ),
-            "pt": tuple(
-                getattr(transformers, auto_class)  # type: ignore
-                for auto_class in bento_model.info.options.pt  # type: ignore
-            ),
-            "default": bento_model.info.options.default,  # type: ignore
-            "type": bento_model.info.options.type,  # type: ignore
+            "tf": tuple(_get_auto_class(bento_model.info.options.tf)),  # type: ignore (bentoml.Model doesn't support ForwardRef)
+            "pt": tuple(_get_auto_class(bento_model.info.options.pt)),  # type: ignore (bentoml.Model doesn't support ForwardRef)
+            "default": bento_model.info.options.default,  # type: ignore (bentoml.Model doesn't support ForwardRef)
+            "type": bento_model.info.options.type,  # type: ignore (bentoml.Model doesn't support ForwardRef)
         }
 
-    kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
-    kwargs.update(kwargs)
-    if len(kwargs) > 0:
-        logger.info(
-            f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {kwargs}."
-        )
-    return transformers.pipeline(task=task, model=bento_model.path, **kwargs)  # type: ignore
+        try:
+            from transformers.pipelines import PIPELINE_REGISTRY
+
+            PIPELINE_REGISTRY.register_pipeline(task, task_defintion)
+        except ImportError:
+            SUPPORTED_TASKS[task] = task_defintion
+
+        kwargs.update(bento_model.info.options.kwargs)  # type: ignore (bentoml.Model doesn't support ForwardRef)
+        if len(kwargs) > 0:
+            logger.info(
+                f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {kwargs}."
+            )
+    return transformers.pipeline(task=task, model=bento_model.path, **kwargs)
 
 
 def save_model(
     name: str,
     pipeline: ext.TransformersPipeline,
+    *,
     task_name: str | None = None,
     task_definition: t.Dict[str, t.Any] | None = None,
-    *,
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
@@ -288,10 +321,30 @@ def save_model(
             ```
             """
         )
+    try:
+        import cloudpickle
+    except ImportError:
+        raise MissingDependencyException(
+            "Module `cloudpickle` is required in order to use to save custom pipelines."
+        )
+
+    library_versions: dict[str, str] = {}
+    if _check_flax_supported():
+        jax_versions = _check_flax_supported()
+        if jax_versions is not None and isinstance(jax_versions, tuple):
+            library_versions["jax"] = jax_versions[0]
+            library_versions["flax"] = jax_versions[1]
+    if import_utils.is_torch_available():
+        library_versions["torch"] = get_pkg_version("torch")
+    if import_utils.is_tf_available():
+        library_versions["tensorflow"] = get_pkg_version("tensorflow")
 
     context = ModelContext(
         framework_name="transformers",
-        framework_versions={"transformers": get_pkg_version("transformers")},
+        framework_versions={
+            "transformers": get_pkg_version("transformers"),
+            **library_versions,
+        },
     )
 
     if signatures is None:
@@ -303,39 +356,42 @@ def save_model(
         )
 
     if task_name is not None and task_definition is not None:
-        from transformers.pipelines import SUPPORTED_TASKS
-
         try:
-            import cloudpickle  # type: ignore
-        except ImportError:  # pragma: no cover
-            raise MissingDependencyException(
-                "Module `cloudpickle` is required in order to use to save custom pipelines."
+            from transformers.pipelines import PIPELINE_REGISTRY
+
+            PIPELINE_REGISTRY.register_pipeline(task_name, task_definition)
+        except ImportError:
+            from transformers.pipelines import TASK_ALIASES
+            from transformers.pipelines import SUPPORTED_TASKS
+
+            logger.info(
+                f"Arguments `task_name` and `task_definition` are provided. Saving model with pipeline "
+                f"task name '{task_name}' and task definition '{task_definition}'."
             )
 
-        logger.info(
-            f"Arguments `task_name` and `task_definition` are provided. Saving model with pipeline "
-            f"task name '{task_name}' and task definition '{task_definition}'."
-        )
-
-        if pipeline.task is None or pipeline.task != task_name:
-            raise BentoMLException(
-                f"Argument `task_name` '{task_name}' does not match pipeline task name '{pipeline.task}'."
-            )
-
-        impl: type = task_definition["impl"]
-        if type(pipeline) != impl:
-            raise BentoMLException(
-                f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
-            )
-
-        if task_name in SUPPORTED_TASKS:
-            if SUPPORTED_TASKS[task_name] != task_definition:
+            if pipeline.task is None or pipeline.task != task_name:
                 raise BentoMLException(
-                    f"Argument `task_definition` '{task_definition}' does not match pipeline task "
-                    "definition '{SUPPORTED_TASKS[task_name]}'."
+                    f"Argument `task_name` '{task_name}' does not match pipeline task name '{pipeline.task}'."
                 )
-        else:
-            SUPPORTED_TASKS[task_name] = task_definition
+
+            impl: type = task_definition["impl"]
+            if type(pipeline) != impl:
+                raise BentoMLException(
+                    f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
+                )
+            if task_name in TASK_ALIASES:
+                raise BentoMLException(
+                    f"'{task_name}' is an alias to '{TASK_ALIASES[task_name]}'. Use '{TASK_ALIASES[task_name]}' instead."
+                )
+
+            if task_name in SUPPORTED_TASKS:
+                if SUPPORTED_TASKS[task_name] != task_definition:
+                    raise BentoMLException(
+                        f"Argument `task_definition` '{task_definition}' does not match pipeline task "
+                        "definition '{SUPPORTED_TASKS[task_name]}'."
+                    )
+            else:
+                SUPPORTED_TASKS[task_name] = task_definition
 
         options = TransformersOptions(
             task=task_name,
@@ -364,9 +420,6 @@ def save_model(
 
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "wb") as f:
                 cloudpickle.dump(pipeline, f)
-
-            return bento_model
-
     else:
         options = TransformersOptions(task=pipeline.task)
 
@@ -383,7 +436,7 @@ def save_model(
         ) as bento_model:
             pipeline.save_pretrained(bento_model.path)
 
-            return bento_model
+    return bento_model
 
 
 def get_runnable(
@@ -400,7 +453,7 @@ def get_runnable(
         def __init__(self):
             super().__init__()
 
-            available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES")
+            available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES", "")
             if available_gpus is not None and available_gpus not in ("", "-1"):
                 # assign GPU resources
                 if not available_gpus.isdigit():

@@ -114,7 +114,8 @@ Send a test request:
 
 
 The constant attribute ``SUPPORTED_RESOURCES`` indicates which resources this Runnable class
-implementation supports. The only currently pre-defined resource is ``"nvidia.com/gpu"``.
+implementation supports. The only currently pre-defined resources are ``"cpu"`` and
+``"nvidia.com/gpu"``.
 
 The constant attribute ``SUPPORTS_CPU_MULTI_THREADING`` indicates whether or not the runner supports
 CPU multi-threading.

@@ -214,6 +214,48 @@ def test_runner_batching(
         )
 
 
+def test_runner_cpu_multi_threading(
+    framework: types.ModuleType,
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    resource_cfg = {"cpu": 2.0}
+
+    ran_tests = False
+    for config in test_model.configurations:
+        model_with_options = saved_model.with_options(**config.load_kwargs)
+
+        runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
+
+        ran_tests = True
+
+        runner = Runner(runnable)
+
+        for meth, inputs in config.test_inputs.items():
+            strategy = DefaultStrategy()
+            strategy.setup_worker(runnable, resource_cfg, 0)
+
+            runner.init_local()
+
+            runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+            runnable = runner_handle._runnable
+            if (
+                hasattr(runnable, "model") and runnable.model is not None
+            ):  # TODO: add a get_model to test models
+                config.check_model(runnable.model, resource_cfg)
+
+            for inp in inputs:
+                outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
+                inp.check_output(outp)
+
+            runner.destroy()
+
+    if not ran_tests:
+        pytest.skip(
+            f"no configurations for model '{test_model.name}' supported multiple CPU threads"
+        )
+
+
 @pytest.mark.gpus
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,

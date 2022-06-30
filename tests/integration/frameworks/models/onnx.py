@@ -46,17 +46,17 @@ def method_caller(
     return out
 
 
-def check_runner(runner: Runner):
-    from bentoml._internal.resource import NvidiaGpuResource
+def check_model(model: bentoml.Model, resource_cfg: dict[str, t.Any]):
+    from bentoml._internal.resource import get_resource
 
-    if NvidiaGpuResource.from_system():
+    if get_resource(resource_cfg, "nvidia.com/gpu"):
         pass
-    else:
-        runner.setup_worker(1)
-        assert runner.scheduled_worker_count == 1
-        assert runner.model._providers == ["CPUExecutionProvider"]
-        assert runner.model._sess_options.inter_op_num_threads == int(resource.cpu)
-        assert runner.model._sess_options.intra_op_num_threads == int(resource.cpu)
+    elif get_resource(resource_cfg, "cpu"):
+        cpus = round(get_resource(resource_cfg, "cpu"))
+        # runner.setup_worker(1)
+        assert model._providers == ["CPUExecutionProvider"]
+        assert model._sess_options.inter_op_num_threads == cpus
+        assert model._sess_options.intra_op_num_threads == cpus
 
 
 def close_to(expected):
@@ -132,7 +132,7 @@ onnx_pytorch_model = FrameworkTestModel(
                     ),
                 ],
             },
-            check_runner=check_runner,
+            check_model=check_model,
         ),
     ],
 )

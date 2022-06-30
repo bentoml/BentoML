@@ -32,7 +32,7 @@ class Runnable:
     ] | None = None
 
     def __setattr__(self, attr_name: str, value: t.Any):
-        if attr_name in ("SUPPORTED_RESOURCES", "SUPPORT_CPU_MULTI_THREADING"):
+        if attr_name in ("SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"):
             # TODO: add link to custom runner documentation
             raise BentoMLException(
                 f"{attr_name} should not be set at runtime; the change will not be reflected in the scheduling strategy. Instead, create separate Runnables with different supported resource configurations."

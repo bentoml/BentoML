@@ -465,7 +465,21 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             raise ValueError("Entered invalid array of inconsistent shape.")
 
         return return_arr
+    
+    async def to_grpc_response(self, obj):
+        """
+        Process given objects and convert it to grpc protobuf response.
 
+        Args:
+            obj (`np.ndarray`):
+                `np.ndarray` that will be serialized to protobuf
+        Returns:
+            `io_descriptor_pb2.NumpyNdarray`:
+                Protobuf representation of given `np.ndarray`
+        """
+        obj = self._verify_ndarray(obj, InternalServerError)
+        return arr_to_proto(obj)
+    
     @classmethod
     def from_sample(
         cls,

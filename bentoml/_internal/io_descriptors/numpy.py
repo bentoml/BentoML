@@ -363,6 +363,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         """
         import datetime
 
+        import numpy as np
         import io_descriptors_pb2
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
@@ -379,12 +380,16 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     f'Invalid datatype "{type(item).__name__}" within tuple.'
                 )
             elif dtype == "timestamp_":
+                if isinstance(item, np.datetime64):
+                    item = item.astype(datetime.datetime)
                 if isinstance(item, datetime.date):
                     item = datetime.datetime(item.year, item.month, item.day)
                 t = Timestamp()
                 t.FromDatetime(item)
                 tuple_arr.append(io_descriptors_pb2.Value(**{"timestamp_": t}))
             elif dtype == "duration_":
+                if isinstance(item, np.timedelta64):
+                    item = item.astype(datetime.timedelta)
                 d = Duration()
                 d.FromTimedelta(item)
                 tuple_arr.append(io_descriptors_pb2.Value(**{"duration_": d}))
@@ -406,6 +411,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         """
         import datetime
 
+        import numpy as np
         import io_descriptors_pb2
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
@@ -422,7 +428,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         if dtype == "timestamp_":
             timestamp_arr = []
             for dt in arr:
-                if type(dt) == datetime.date:
+                if isinstance(dt, np.datetime64):
+                    dt = dt.astype(datetime.datetime)
+                if isinstance(dt, datetime.date):
                     dt = datetime.datetime(dt.year, dt.month, dt.day)
                 t = Timestamp()
                 t.FromDatetime(dt)
@@ -433,6 +441,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         elif dtype == "duration_":
             duration_arr = []
             for td in arr:
+                if isinstance(td, np.timedelta64):
+                    td = td.astype(datetime.timedelta)
                 d = Duration()
                 d.FromTimedelta(td)
                 duration_arr.append(d)

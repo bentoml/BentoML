@@ -11,7 +11,6 @@ import torch.nn as nn
 import onnxruntime as ort
 
 import bentoml
-from bentoml._internal.runner.resource import Resource
 
 from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
@@ -46,7 +45,7 @@ def method_caller(
     return out
 
 
-def check_model(sess: ort.InferenceSession, resource: Resource):
+def check_model(sess: ort.InferenceSession, resource):
     if resource.nvidia_gpu is not None and resource.nvidia_gpu > 0:
         pass
     elif resource.cpu is not None and resource.cpu > 0:

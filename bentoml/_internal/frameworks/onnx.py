@@ -274,8 +274,7 @@ def save_model(
 
     if len(model.graph.output) > 1:
         logger.warning(
-            "The onnx model you want to save has more than one "
-            "output. bentoml.onnx runner will only return the first output."
+            "The model you are attempting to save has more than one output. The ONNX runner will only return the first output."
         )
 
     options = ONNXOptions()

@@ -116,7 +116,6 @@ def load_model(
     with tf.device(device_name):
         tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore
         return tf_model
-        # return hook_loaded_model(tf_model, MODULE_NAME)
 
 
 def save_model(

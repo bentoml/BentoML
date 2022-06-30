@@ -215,10 +215,6 @@ class ServiceAppFactory(BaseAppFactory):
             if span is not None:
                 trace_context.request_id = span.context.span_id
 
-        def client_response_hook(span: Span, _message: t.Any) -> None:
-            if span is not None:
-                del trace_context.request_id
-
         middlewares.append(
             Middleware(
                 otel_asgi.OpenTelemetryMiddleware,
@@ -226,7 +222,6 @@ class ServiceAppFactory(BaseAppFactory):
                 default_span_details=None,
                 server_request_hook=None,
                 client_request_hook=client_request_hook,
-                client_response_hook=client_response_hook,
                 tracer_provider=DeploymentContainer.tracer_provider.get(),
             )
         )

@@ -37,7 +37,7 @@ def validate_tag_str(value: str):
         errors.append(tag_invalid_error_msg)
 
     if errors:
-        raise InvalidArgument(f"{value} is not a valid tag: " + ", and ".join(errors))
+        raise ValueError(f"{value} is not a valid tag: " + ", and ".join(errors))
 
 
 @attr.define(slots=True)

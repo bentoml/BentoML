@@ -4,7 +4,8 @@ import typing as t
 import logging
 import logging.config
 
-from .trace import ServiceContext
+from .context import trace_context
+from .context import component_context
 from .configuration import get_debug_mode
 from .configuration import get_quiet_mode
 
@@ -95,12 +96,12 @@ def configure_logging():
 def trace_record_factory(*args: t.Any, **kwargs: t.Any):
     record = default_factory(*args, **kwargs)
     record.levelname_bracketed = f"[{record.levelname}]"  # type: ignore (adding fields to record)
-    record.component = f"[{ServiceContext.component_name}]"  # type: ignore (adding fields to record)
-    if ServiceContext.trace_id == 0:
+    record.component = f"[{component_context.component_name}]"  # type: ignore (adding fields to record)
+    if trace_context.trace_id == 0:
         record.trace_msg = ""  # type: ignore (adding fields to record)
     else:
-        record.trace_msg = f" (trace={ServiceContext.trace_id},span={ServiceContext.span_id},sampled={ServiceContext.sampled})"  # type: ignore (adding fields to record)
-    record.request_id = ServiceContext.request_id  # type: ignore (adding fields to record)
+        record.trace_msg = f" (trace={trace_context.trace_id},span={trace_context.span_id},sampled={trace_context.sampled})"  # type: ignore (adding fields to record)
+    record.request_id = trace_context.request_id  # type: ignore (adding fields to record)
 
     return record
 

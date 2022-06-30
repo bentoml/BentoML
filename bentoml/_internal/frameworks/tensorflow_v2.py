@@ -284,7 +284,7 @@ def get_runnable(
                     res = raw_method(*args, **kwargs)
                 else:
                     res = raw_method(*args, **dict(method_partial_kwargs, **kwargs))
-            except ValueError: 
+            except ValueError:
                 # Tensorflow performs type checking implicitly if users decorate with `tf.function
                 # or provide `tf_signatures` when calling `save_model()`. Type checking and
                 # casting is deferred to after the `ValueError` is raised to optimize performance.

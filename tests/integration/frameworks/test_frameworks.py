@@ -156,6 +156,16 @@ def test_load(
         configuration.check_model(model, {})
 
 
+def test_runner(
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    for config in test_model.configurations:
+        runner = saved_model.with_options(**config.load_kwargs).to_runner()
+        runner.init_local()
+        config.check_runner(runner, {})
+
+
 def test_runner_batching(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,

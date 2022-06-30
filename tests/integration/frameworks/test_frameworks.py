@@ -173,7 +173,7 @@ def test_load(
 
 def test_runner_batching(
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     from bentoml._internal.runner.utils import Params
     from bentoml._internal.runner.utils import payload_paramss_to_batch_params
@@ -220,7 +220,7 @@ def test_runner_batching(
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     gpu_resource = Resource(nvidia_gpu=1.0)
 

@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 # type: ignore[no-untyped-def]
 
 import io
@@ -9,27 +8,8 @@ import numpy as np
 import pytest
 import aiohttp
 
-from bentoml.io import PandasDataFrame
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form
-
-
-@pytest.fixture()
-def img_file(tmpdir):
-    import PIL.Image
-
-    img_file_ = tmpdir.join("test_img.bmp")
-    img = PIL.Image.fromarray(np.random.randint(255, size=(10, 10, 3)).astype("uint8"))
-    img.save(str(img_file_))
-    return str(img_file_)
-
-
-@pytest.fixture()
-def bin_file(tmpdir):
-    bin_file_ = tmpdir.join("bin_file.bin")
-    with open(bin_file_, "wb") as of:
-        of.write("â".encode("gb18030"))
-    return str(bin_file_)
 
 
 @pytest.mark.asyncio

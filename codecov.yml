@@ -238,6 +238,7 @@ flags:
   fastai:
     carryforward: true
     paths:
+      - bentoml/fastai.py
       - bentoml/_internal/frameworks/fastai.py
   fasttext:
     carryforward: true

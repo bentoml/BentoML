@@ -163,7 +163,7 @@ def test_load(
 
 def test_runner_batching(
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     from bentoml._internal.runner.utils import Params
     from bentoml._internal.runner.utils import payload_paramss_to_batch_params
@@ -210,7 +210,7 @@ def test_runner_batching(
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
-    saved_model: bentoml.Tag,
+    saved_model: bentoml.Model,
 ):
     gpu_resource = Resource(nvidia_gpu=1.0)
 
@@ -236,7 +236,7 @@ def test_runner_nvidia_gpu(
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
             if hasattr(runnable, "model") and runnable.model is not None:
-                config.check_model(runner, gpu_resource)
+                config.check_model(runnable.model, gpu_resource)
 
             for inp in inputs:
                 outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)

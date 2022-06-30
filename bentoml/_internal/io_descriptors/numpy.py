@@ -242,8 +242,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         Convert given protobuf tuple to a tuple list
         """
         import io_descriptors_pb2
-        from google.protobuf.timestamp_pb2 import Timestamp
         from google.protobuf.duration_pb2 import Duration
+        from google.protobuf.timestamp_pb2 import Timestamp
 
         tuple_arr = [i for i in getattr(proto_tuple, "value_")]
 
@@ -276,8 +276,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         Convert given protobuf array to python list
         """
         import io_descriptors_pb2
-        from google.protobuf.timestamp_pb2 import Timestamp
         from google.protobuf.duration_pb2 import Duration
+        from google.protobuf.timestamp_pb2 import Timestamp
 
         return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
 

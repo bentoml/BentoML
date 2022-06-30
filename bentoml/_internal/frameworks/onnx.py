@@ -27,17 +27,22 @@ if TYPE_CHECKING:
 
 try:
     import onnx
-    import onnxruntime as ort
 except ImportError:  # pragma: no cover (trivial error checking)
     raise MissingDependencyException(
         """onnx is required in order to use module `bentoml.onnx`, install
         onnx with `pip install onnx`. For more information, refer to
-        https://onnx.ai/get-started.html
-        `onnxruntime` or `onnxruntime-gpu` is also required by `bentoml.onnx`.
-        Refer to https://onnxruntime.ai/ for more information.
-        """
+        https://onnx.ai/get-started.html"""
     )
 
+try:
+    import onnxruntime as ort
+except ImportError:  # pragma: no cover (trivial error checking)
+    raise MissingDependencyException(
+        """`onnxruntime` or `onnxruntime-gpu` is required by `bentoml.onnx`,
+        install onnxruntime or onnxruntime-gpu with `pip install onnxruntime`
+        or `pip install onnxruntime-gpu`. For more information, refer to
+        https://onnxruntime.ai/"""
+    )
 
 MODULE_NAME = "bentoml.onnx"
 MODEL_FILENAME = "saved_model.onnx"
@@ -46,10 +51,10 @@ API_VERSION = "v1"
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import torch
+    import torch  # noqa
 
     from .. import external_typing as ext
-    from ..external_typing import tensorflow as tf_ext
+    from ..external_typing import tensorflow as tf_ext  # noqa
 
     ProvidersType = list[str | t.Tuple[str, t.Dict[str, t.Any]]]
     ONNXArgType = t.Union[
@@ -373,7 +378,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             item = item.numpy().astype(np.float32, copy=False)
         else:
             raise TypeError(
-                f"`run` of {self.__class__.__name__} only takes "
+                "`run` of ONNXRunnable only takes "
                 "`numpy.ndarray` or `pd.DataFrame`, `tf.Tensor`, or `torch.Tensor` as input parameters"
             )
         return item

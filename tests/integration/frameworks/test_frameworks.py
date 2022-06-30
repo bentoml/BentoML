@@ -152,23 +152,7 @@ def test_load(
 ):
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
-
         configuration.check_model(model, Resource())
-
-        for method, inps in configuration.test_inputs.items():
-            for inp in inps:
-                args = [inp.preprocess(arg) for arg in inp.input_args]
-                kwargs = {
-                    key: inp.preprocess(kwarg)
-                    for key, kwarg in inp.input_kwargs.items()
-                }
-                if test_model.model_method_caller:
-                    out = test_model.model_method_caller(
-                        test_model, method, args, kwargs
-                    )
-                else:
-                    out = getattr(model, method)(*args, **kwargs)
-                inp.check_output(out)
 
 
 def test_runner_batching(
@@ -185,6 +169,9 @@ def test_runner_batching(
         runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
         for meth, inputs in config.test_inputs.items():
+            if not getattr(runner, meth).config.batchable:
+                continue
+
             if len(inputs) < 2:
                 continue
 

@@ -1152,7 +1152,7 @@ jobs:
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: make tests-tf2
+        run: make tests-tensorflow_v2
         shell: bash
 
       - name: Upload test coverage to Codecov

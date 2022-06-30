@@ -455,7 +455,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         return_arr = []
         is_tuple = False
         for i in range(len(arr)):
-            print(arr[i])
             if not all(isinstance(x, type(arr[i][0])) for x in arr[i]):
                 is_tuple = True
                 val = self.create_tuple_proto(arr[i])

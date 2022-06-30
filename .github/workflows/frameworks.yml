@@ -123,7 +123,7 @@ jobs:
               - *runner
               - bentoml/onnx.py
               - bentoml/_internal/frameworks/onnx.py
-              - tests/integration/frameworks/test_onnx_impl.py
+              - tests/integration/frameworks/test_frameworks.py
             onnxmlir:
               - *runner
               - bentoml/onnxmlir.py
@@ -673,8 +673,7 @@ jobs:
 
   onnx_integration_tests:
     needs: diff
-    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
-    if: ${{ false }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

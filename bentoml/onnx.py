@@ -1,7 +1,12 @@
-raise NotImplementedError(
-    f"""\
-Support for "{__name__}" is temporarily unavailable as BentoML transition to the new \
-design in version 1.0.0 release. Before this module is officially implemented in \
-BentoML, users may use Custom Runner as a workaround. Learn more at http://docs.bentoml.org
-"""
-)
+import logging
+
+from ._internal.frameworks.onnx import get
+from ._internal.frameworks.onnx import load_model
+from ._internal.frameworks.onnx import save_model
+from ._internal.frameworks.onnx import ONNXOptions as ModelOptions  # type: ignore # noqa
+from ._internal.frameworks.onnx import get_runnable
+
+logger = logging.getLogger(__name__)
+
+
+__all__ = ["load_model", "save_model", "get", "get_runnable"]

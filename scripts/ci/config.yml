@@ -244,4 +244,3 @@ tensorflow_v2:
   <<: *ntmpl
   dependencies:
     - "tensorflow"
-    #- "tensorflow_text"

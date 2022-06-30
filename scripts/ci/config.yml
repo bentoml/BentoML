@@ -206,15 +206,7 @@ tf1:
   override_name_or_path: test_tensorflow_v1_impl.py
   dependencies:
     - "tensorflow==1.15"
-    - "tensorflow_hub"
 
-tf2:
-  <<: *tmpl
-  override_name_or_path: test_tensorflow_v2_impl.py
-  dependencies:
-    - "tensorflow_text"
-    - "tensorflow_hub"
-    - "tensorflow"
 
 torchscript:
   <<: *tmpl
@@ -247,3 +239,8 @@ xgboost:
   <<: *ntmpl
   dependencies:
     - "xgboost"
+
+tensorflow_v2:
+  <<: *ntmpl
+  dependencies:
+    - "tensorflow"

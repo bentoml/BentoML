@@ -65,6 +65,10 @@ BentoML detected that {name} is being used to pack a Keras API
 def hook_loaded_model(
     tf_model: "tf_ext.AutoTrackable", module_name: str
 ) -> "tf_ext.AutoTrackable":
+    """
+    deprecated: bentoml now requires signatures before saving a tf model
+    reserve for now because tensorflow v1 has not been adopted yet
+    """
     tf_function_wrapper.hook_loaded_model(tf_model)
     logger.warning(TF_FUNCTION_WARNING)
     # pretty format loaded model
@@ -230,10 +234,10 @@ def get_arg_names(func: "tf_ext.DecoratedFunction") -> t.Optional[t.List[str]]:
     return list()
 
 
-def get_restored_functions(
+def get_restorable_functions(
     m: "tf_ext.Trackable",
 ) -> t.Dict[str, "tf_ext.RestoredFunction"]:
-    function_map = {k: getattr(m, k) for k in dir(m)}
+    function_map = {k: getattr(m, k, None) for k in dir(m)}
     return {
         k: v
         for k, v in function_map.items()
@@ -306,7 +310,7 @@ def pretty_format_function(
 def pretty_format_restored_model(model: "tf_ext.AutoTrackable") -> str:
     part_functions = ""
 
-    restored_functions = get_restored_functions(model)
+    restored_functions = get_restorable_functions(model)
     for name, func in restored_functions.items():
         part_functions += pretty_format_function(func, "model", name)
         part_functions += "\n"
@@ -352,6 +356,11 @@ def cast_tensor_by_spec(
 
 
 class tf_function_wrapper:  # pragma: no cover
+    """
+    deprecated: bentoml now requires signatures before saving a tf model
+    reserve for now because tensorflow v1 has not been adopted yet
+    """
+
     def __init__(
         self,
         origin_func: t.Callable[..., t.Any],
@@ -398,7 +407,7 @@ class tf_function_wrapper:  # pragma: no cover
 
     @classmethod
     def hook_loaded_model(cls, loaded_model: t.Any) -> None:
-        funcs = get_restored_functions(loaded_model)
+        funcs = get_restorable_functions(loaded_model)
         for k, func in funcs.items():
             arg_names = get_arg_names(func)
             sigs = get_input_signatures(func)

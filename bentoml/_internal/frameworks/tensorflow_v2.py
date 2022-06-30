@@ -291,17 +291,14 @@ def get_runnable(
                     cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, arg_specs)  # type: ignore[arg-type]
                 )
 
+                if method_partial_kwargs is not None:
+                    kwargs = dict(method_partial_kwargs, **kwargs)
+
                 trans_kwargs = {
                     k: cast_tensor_by_spec(arg, kwarg_specs[k])
                     for k, arg in kwargs.items()
                 }
-                if method_partial_kwargs is None:
-                    res = raw_method(*trans_args, **trans_kwargs)
-                else:
-                    res = raw_method(
-                        *trans_args,
-                        **dict(method_partial_kwargs, **trans_kwargs),
-                    )
+                res = raw_method(*trans_args, **trans_kwargs)
             return t.cast("ext.NpNDArray", res.numpy())
 
         return _run_method

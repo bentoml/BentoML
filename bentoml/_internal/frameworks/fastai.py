@@ -220,8 +220,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
     class FastAIRunnable(bentoml.Runnable):
         # fastai only supports GPU during training, not for inference.
-        SUPPORT_NVIDIA_GPU = False  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

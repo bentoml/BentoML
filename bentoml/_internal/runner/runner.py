@@ -102,7 +102,8 @@ class Runner:
 
         if name is None:
             name = runnable_class.__name__
-        elif not validate_tag_str(name):
+        
+        if not validate_tag_str(name):
             # TODO: link to tag validation documentation
             raise ValueError(
                 f"Runner name '{name}' is not valid; it must be a valid BentoML Tag name."

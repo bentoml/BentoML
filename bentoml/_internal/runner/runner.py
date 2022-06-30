@@ -7,6 +7,7 @@ from functools import lru_cache
 
 import attr
 
+from ..tag import validate_tag_str
 from ..types import ParamSpec
 from ..utils import first_not_none
 from .resource import Resource
@@ -99,7 +100,16 @@ class Runner:
             method_configs: per method configs
         """
 
-        name = runnable_class.__name__ if name is None else name
+        if name is None:
+            name = runnable_class.__name__
+
+        try:
+            validate_tag_str(name)
+        except ValueError as e:
+            # TODO: link to tag validation documentation
+            raise ValueError(
+                f"Runner name '{name}' is not valid; it must be a valid BentoML Tag name."
+            ) from e
         models = [] if models is None else models
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runnable_init_params = (

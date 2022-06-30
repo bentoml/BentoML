@@ -103,11 +103,13 @@ class Runner:
         if name is None:
             name = runnable_class.__name__
 
-        if not validate_tag_str(name):
+        try:
+            validate_tag_str(name)
+        except ValueError as e:
             # TODO: link to tag validation documentation
             raise ValueError(
                 f"Runner name '{name}' is not valid; it must be a valid BentoML Tag name."
-            )
+            ) from e
         models = [] if models is None else models
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runnable_init_params = (

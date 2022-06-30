@@ -102,7 +102,7 @@ class Runner:
 
         if name is None:
             name = runnable_class.__name__
-        
+
         if not validate_tag_str(name):
             # TODO: link to tag validation documentation
             raise ValueError(

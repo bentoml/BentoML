@@ -452,20 +452,18 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             else:
                 val = self.arr_to_proto(arr[i])
             return_arr.append(val)
-        try:
-            if is_tuple:
-                return_arr = io_descriptors_pb2.NumpyNdarray(
-                    dtype="tuple_", tuple_=return_arr
-                )
-            else:
-                return_arr = io_descriptors_pb2.NumpyNdarray(
-                    dtype="array_", array_=return_arr
-                )
-        except:
-            raise ValueError("Entered invalid array of inconsistent shape.")
+
+        if is_tuple:
+            return_arr = io_descriptors_pb2.NumpyNdarray(
+                dtype="tuple_", tuple_=return_arr
+            )
+        else:
+            return_arr = io_descriptors_pb2.NumpyNdarray(
+                dtype="array_", array_=return_arr
+            )
 
         return return_arr
-    
+
     async def to_grpc_response(self, obj):
         """
         Process given objects and convert it to grpc protobuf response.
@@ -478,8 +476,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 Protobuf representation of given `np.ndarray`
         """
         obj = self._verify_ndarray(obj, InternalServerError)
-        return arr_to_proto(obj)
-    
+        return self.arr_to_proto(obj)
+
     @classmethod
     def from_sample(
         cls,

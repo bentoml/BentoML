@@ -167,6 +167,7 @@ def test_runnable(
         runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
         runnable = runner_handle._runnable
         config.check_runnable(runnable, Resource())
+        runner.destroy()
 
 
 def test_runner_batching(

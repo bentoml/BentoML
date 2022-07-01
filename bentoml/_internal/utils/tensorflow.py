@@ -163,6 +163,45 @@ def normalize_spec(value: t.Any) -> "tf_ext.TypeSpec":
     raise BentoMLException(f"Unknown type for tensor spec, got{type(value)}.")
 
 
+def cast_py_args_to_tf_function_args(
+    signature: list["tf_ext.TensorSpec"],
+    *args: t.Any,
+    **kwargs: t.Any,
+) -> tuple[t.Any, ...]:
+    """
+    Cast python arguments (args, kwargs) to tensorflow function arguments.
+
+    Args:
+        signature (:code:`list[tf.TensorSpec]`):
+            signature of the tensorflow function.
+        *args (:code:`t.Any`):
+            positional arguments of the Python function.
+        **kwargs (:code:`t.Any`):
+            keyword arguments of the Python function.
+    """
+    import inspect
+
+    parameters = [
+        inspect.Parameter(
+            name=s.name,
+            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        )
+        for s in signature
+    ]
+    func_sig = inspect.Signature(parameters=parameters)
+    bound_args = func_sig.bind(*args, **kwargs)
+    if len(bound_args.arguments) != len(signature):
+        raise ValueError(
+            f"Expected {len(signature)} arguments, got {len(bound_args.arguments)}"
+        )
+
+    trans_args: t.Tuple[t.Any, ...] = tuple(
+        cast_tensor_by_spec(arg, spec)
+        for arg, spec in zip(bound_args.arguments.values(), signature)
+    )
+    return trans_args
+
+
 def get_input_signatures_v2(
     func: "tf_ext.RestoredFunction",
 ) -> t.List[t.List["tf_ext.TensorSpec"]]:

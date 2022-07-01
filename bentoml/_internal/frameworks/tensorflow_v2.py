@@ -23,9 +23,9 @@ from ..runner.container import Payload
 from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
 from ..utils.tensorflow import get_tf_version
-from ..utils.tensorflow import cast_tensor_by_spec
 from ..utils.tensorflow import get_input_signatures_v2
 from ..utils.tensorflow import get_restorable_functions
+from ..utils.tensorflow import cast_py_args_to_tf_function_args
 
 logger = logging.getLogger(__name__)
 
@@ -292,28 +292,14 @@ def get_runnable(
                 if not sigs:
                     raise
 
-                arg_specs: t.List["tf_ext.TensorSpec"] = sigs[0]
-
-                import inspect
-
-                parameters = [
-                    inspect.Parameter(
-                        name=s.name,
-                        kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                try:
+                    casted_args = cast_py_args_to_tf_function_args(
+                        sigs[0], *args, **kwargs
                     )
-                    for s in arg_specs
-                ]
-                signature = inspect.Signature(parameters=parameters)
-                bound_args = signature.bind(*args, **kwargs)
-                if len(bound_args.arguments) != len(arg_specs):
+                except ValueError:
                     raise
 
-                trans_args: t.Tuple[t.Any, ...] = tuple(
-                    cast_tensor_by_spec(arg, spec)
-                    for arg, spec in zip(bound_args.arguments.values(), arg_specs)
-                )
-
-                res = raw_method(*trans_args)
+                res = raw_method(*casted_args)
             return t.cast("ext.NpNDArray", res.numpy())
 
         return _run_method

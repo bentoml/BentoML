@@ -201,7 +201,8 @@ jobs:
               - *tf2
               - bentoml/keras.py
               - bentoml/_internal/frameworks/keras.py
-              - tests/integration/frameworks/test_keras_impl.py
+              - tests/integration/frameworks/models/keras.py
+              - tests/integration/frameworks/test_frameworks.py
             transformers:
               - *runner
               - bentoml/transformers.py

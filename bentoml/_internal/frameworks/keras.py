@@ -51,7 +51,7 @@ API_VERSION = "v1"
 class KerasOptions(ModelOptions):
     """Options for the Keras model."""
 
-    include_optimizer: bool
+    include_optimizer: bool = False
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 

@@ -375,9 +375,9 @@ signature during :code:`save_model`:
     runner.classify.run( MODEL_INPUT )
 
 
-A special case to noice is for the Python magic method name :code:`__call__`. Similar to
-the Python language convention, the call to :code`runner.run` will be applied to the
-model's :code:`__call__` method:
+A special case here is Python's magic method :code:`__call__`. Similar to the
+Python language convention, the call to :code:`runner.run` will be applied to
+the model's :code:`__call__` method:
 
 .. code-block:: python
    :emphasize-lines: 4-8,13

@@ -166,7 +166,7 @@ def normalize_spec(value: t.Any) -> "tf_ext.TypeSpec":
 
 
 def cast_py_args_to_tf_function_args(
-    signature: list["tf_ext.TensorSpec"],
+    signature: list[tf_ext.TensorSpec],
     *args: t.Any,
     **kwargs: t.Any,
 ) -> tuple[t.Any, ...]:
@@ -205,8 +205,8 @@ def cast_py_args_to_tf_function_args(
 
 
 def get_input_signatures_v2(
-    func: "tf_ext.RestoredFunction",
-) -> t.List[t.List["tf_ext.TensorSpec"]]:
+    func: tf_ext.RestoredFunction,
+) -> list[list[tf_ext.TensorSpec]]:
     if hasattr(func, "concrete_functions") and func.concrete_functions:
         # tensorflow will generate concrete_functions:
         # 1. from input_signature specified in tf.function, or
@@ -223,8 +223,8 @@ def get_input_signatures_v2(
 
 
 def get_input_signatures(
-    func: "tf_ext.DecoratedFunction",
-) -> t.List[t.Tuple["tf_ext.InputSignature", ...]]:
+    func: tf_ext.DecoratedFunction,
+) -> list[tuple[tf_ext.InputSignature, ...]]:
     if hasattr(func, "function_spec"):  # RestoredFunction
         func_spec: "tf_ext.FunctionSpec" = getattr(func, "function_spec")
         input_spec: "tf_ext.TensorSignature" = getattr(func_spec, "input_signature")
@@ -260,10 +260,8 @@ def get_input_signatures(
 
 
 def get_output_signature(
-    func: "tf_ext.DecoratedFunction",
-) -> t.Union[
-    "tf_ext.ConcreteFunction", t.Tuple[t.Any, ...], t.Dict[str, "tf_ext.TypeSpec"]
-]:
+    func: tf_ext.DecoratedFunction,
+) -> tf_ext.ConcreteFunction | t.Tuple[t.Any, ...] | dict[str, tf_ext.TypeSpec]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
         concrete_function_wrapper: "tf_ext.ConcreteFunction" = getattr(

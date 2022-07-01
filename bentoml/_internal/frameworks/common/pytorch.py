@@ -54,8 +54,8 @@ def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
 
 
 class PytorchModelRunnable(bentoml.Runnable):
-    SUPPORT_NVIDIA_GPU = True
-    SUPPORT_CPU_MULTI_THREADING = True
+    SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+    SUPPORTS_CPU_MULTI_THREADING = True
 
     def __init__(
         self,

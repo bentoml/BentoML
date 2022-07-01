@@ -179,8 +179,8 @@ def get_runnable(bento_model: Model):
     """
 
     class SklearnRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

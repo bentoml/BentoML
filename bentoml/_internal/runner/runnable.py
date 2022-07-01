@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-from abc import ABC
-from abc import abstractmethod
 from typing import overload
 from typing import TYPE_CHECKING
 
@@ -11,6 +9,7 @@ import attr
 
 from ..types import LazyType
 from ..types import ParamSpec
+from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from ..types import AnyType
@@ -24,15 +23,31 @@ logger = logging.getLogger(__name__)
 RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
 
 
-class Runnable(ABC):
-    SUPPORT_NVIDIA_GPU: bool
-    SUPPORT_CPU_MULTI_THREADING: bool
+class Runnable:
+    SUPPORTED_RESOURCES: tuple[str, ...]
+    SUPPORTS_CPU_MULTI_THREADING: bool
 
-    methods: dict[str, RunnableMethod[t.Any, t.Any, t.Any]] | None = None
+    bentoml_runnable_methods__: dict[
+        str, RunnableMethod[t.Any, t.Any, t.Any]
+    ] | None = None
 
-    @abstractmethod
-    def __init__(self, **kwargs: t.Any):
-        ...
+    def __setattr__(self, attr_name: str, value: t.Any):
+        if attr_name in ("SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"):
+            # TODO: add link to custom runner documentation
+            raise BentoMLException(
+                f"{attr_name} should not be set at runtime; the change will not be reflected in the scheduling strategy. Instead, create separate Runnables with different supported resource configurations."
+            )
+
+        super().__setattr__(attr_name, value)
+
+    def __getattribute__(self, item: str) -> t.Any:
+        if item in ["add_method", "method"]:
+            # TODO: add link to custom runner documentation
+            raise BentoMLException(
+                f"{item} should not be used at runtime; instead, use {type(self).__name__}.{item} where you define the class."
+            )
+
+        return super().__getattribute__(item)
 
     @classmethod
     def add_method(
@@ -123,12 +138,12 @@ class RunnableMethod(t.Generic[T, P, R]):
         return method
 
     def __set_name__(self, owner: t.Any, name: str):
-        if owner.methods is None:
-            owner.methods = {}
-        owner.methods[name] = self
+        if owner.bentoml_runnable_methods__ is None:
+            owner.bentoml_runnable_methods__ = {}
+        owner.bentoml_runnable_methods__[name] = self
 
 
-@attr.define()
+@attr.define
 class RunnableMethodConfig:
     batchable: bool
     batch_dim: tuple[int, int]

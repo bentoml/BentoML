@@ -35,7 +35,6 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
-from ..runner.resource import Resource
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -346,7 +345,7 @@ class BentoRunnerInfo:
     name: str
     runnable_type: str
     models: t.List[str] = attr.field(factory=list)
-    resource_config: t.Optional[Resource] = attr.field(default=None)
+    resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
     @classmethod
     def from_runner(cls, r: Runner) -> "BentoRunnerInfo":

@@ -154,8 +154,8 @@ def get_runnable(bento_model: Model):
     """
 
     class PicklableRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = False  # type: ignore
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = False
 
         def __init__(self):
             super().__init__()

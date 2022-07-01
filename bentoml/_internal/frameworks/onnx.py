@@ -301,8 +301,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
 
     class ONNXRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

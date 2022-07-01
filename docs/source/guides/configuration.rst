@@ -26,7 +26,7 @@ Remaining properties will take their defaults values.
 .. code-block:: yaml
     :caption: BentoML Configuration
 
-    bento_server:
+    api_server:
         port: 6000
         timeout: 120
         backlog: 1024

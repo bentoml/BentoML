@@ -13,12 +13,13 @@ from schema import Use
 from schema import Schema
 from schema import Optional
 from schema import SchemaError
-from deepmerge import always_merger
 from simple_di import Provide
 from simple_di import providers
+from deepmerge.merger import Merger
 
 from . import expand_env_var
 from ..utils import validate_or_create_dir
+from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
@@ -28,6 +29,15 @@ if TYPE_CHECKING:
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 
+
+config_merger = Merger(
+    # merge dicts
+    [(dict, "merge")],
+    # override all other types
+    ["override"],
+    # override conflicting types
+    ["override"],
+)
 
 LOGGER = logging.getLogger(__name__)
 SYSTEM_HOME = os.path.expanduser("~")
@@ -59,20 +69,36 @@ def _is_ip_address(addr: str) -> bool:
         return False
 
 
+RUNNER_CFG_SCHEMA = {
+    Optional("batching"): {
+        Optional("enabled"): bool,
+        Optional("max_batch_size"): And(int, _larger_than_zero),
+        Optional("max_latency_ms"): And(int, _larger_than_zero),
+    },
+    # note there is a distinction between being unset and None here; if set to 'None'
+    # in configuration for a specific runner, it will override the global configuration
+    Optional("resources"): Or({Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
+    Optional("logging"): {
+        # TODO add logging level configuration
+        Optional("access"): {
+            Optional("enabled"): bool,
+            Optional("request_content_length"): Or(bool, None),
+            Optional("request_content_type"): Or(bool, None),
+            Optional("response_content_length"): Or(bool, None),
+            Optional("response_content_type"): Or(bool, None),
+        },
+    },
+}
+
 SCHEMA = Schema(
     {
-        "bento_server": {
+        "api_server": {
             "port": And(int, _larger_than_zero),
             "host": And(str, _is_ip_address),
             "backlog": And(int, _larger_than(64)),
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),
-            "batch_options": {
-                Optional("enabled", default=True): bool,
-                "max_batch_size": Or(And(int, _larger_than_zero), None),
-                "max_latency_ms": Or(And(int, _larger_than_zero), None),
-            },
             "ngrok": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},
             "logging": {
@@ -96,16 +122,8 @@ SCHEMA = Schema(
             },
         },
         "runners": {
-            "logging": {
-                # TODO add logging level configuration
-                "access": {
-                    "enabled": bool,
-                    "request_content_length": Or(bool, None),
-                    "request_content_type": Or(bool, None),
-                    "response_content_length": Or(bool, None),
-                    "response_content_type": Or(bool, None),
-                },
-            },
+            **RUNNER_CFG_SCHEMA,
+            Optional(str): RUNNER_CFG_SCHEMA,  # type: ignore (incomplete schema typing)
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
@@ -164,15 +182,36 @@ class BentoMLConfiguration:
                 )
             with open(override_config_file, "rb") as f:
                 override_config = yaml.safe_load(f)
-            always_merger.merge(self.config, override_config)
+            config_merger.merge(self.config, override_config)
+
+            for key in self.config["runners"]:
+                if key not in ["batching", "resources", "logging"]:
+                    runner_cfg = self.config["runners"][key]
+
+                    # key is a runner name
+                    override_resources = False
+                    resource_cfg = None
+                    if "resources" in runner_cfg:
+                        override_resources = True
+                        resource_cfg = runner_cfg["resources"]
+                        if resource_cfg == "system":
+                            resource_cfg = system_resources()
+
+                    self.config["runners"][key] = config_merger.merge(
+                        self.config["runners"], runner_cfg
+                    )
+
+                    if override_resources:
+                        # we don't want to merge resource configuration, override
+                        # it with previous resource config if it was set
+                        self.config["runners"][key]["resources"] = resource_cfg
 
             if validate_schema:
                 try:
                     SCHEMA.validate(self.config)
                 except SchemaError as e:
                     raise BentoMLConfigException(
-                        "Configuration after user override does not conform to"
-                        " the required schema."
+                        "Invalid configuration file was given."
                     ) from e
 
     def override(self, keys: t.List[str], value: t.Any):
@@ -240,7 +279,7 @@ BentoMLContainer = BentoMLContainerClass()
 class DeploymentContainerClass:
     bentoml_container = BentoMLContainer
     config = bentoml_container.config
-    api_server_config = config.bento_server
+    api_server_config = config.api_server
     runners_config = config.runners
     development_mode = providers.Static(True)
 
@@ -337,25 +376,31 @@ class DeploymentContainerClass:
         )
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:
-            from opentelemetry.exporter.zipkin.json import ZipkinExporter
+            # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
+            from opentelemetry.exporter.zipkin.json import (
+                ZipkinExporter,  # type: ignore (no opentelemetry types)
+            )
 
-            exporter = ZipkinExporter(
+            exporter = ZipkinExporter(  # type: ignore (no opentelemetry types)
                 endpoint=zipkin_server_url,
             )
-            provider.add_span_processor(BatchSpanProcessor(exporter))
+            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
             return provider
         elif (
             tracer_type == "jaeger"
             and jaeger_server_address is not None
             and jaeger_server_port is not None
         ):
-            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+            # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
+            from opentelemetry.exporter.jaeger.thrift import (
+                JaegerExporter,  # type: ignore (no opentelemetry types)
+            )
 
-            exporter = JaegerExporter(
+            exporter = JaegerExporter(  # type: ignore (no opentelemetry types)
                 agent_host_name=jaeger_server_address,
                 agent_port=jaeger_server_port,
             )
-            provider.add_span_processor(BatchSpanProcessor(exporter))
+            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
             return provider
         else:
             return provider

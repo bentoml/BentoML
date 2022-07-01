@@ -15,9 +15,9 @@ from simple_di import Provide
 from bentoml import load
 
 from ..utils import reserve_free_port
+from ..resource import CpuResource
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
-from ..runner.resource import query_cpu_count
 from ..utils.analytics import track_serve
 from ..configuration.containers import DeploymentContainer
 
@@ -272,7 +272,7 @@ def serve_production(
                 "$(CIRCUS.WID)",
             ],
             copy_env=True,
-            numprocesses=api_workers or math.ceil(query_cpu_count()),
+            numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,

@@ -102,7 +102,7 @@ def test_torchscript_save_load_across_devices(dev, test_type, models):
 )
 def test_torchscript_runner_setup_run_batch(input_data, models, test_type):
     bento_model = models(test_type)
-    runner = bento_model.to_runner(cpu=4)
+    runner = bento_model.to_runner()
 
     assert bento_model.tag in [m.tag for m in runner.models]
     assert runner.scheduled_worker_count == 1

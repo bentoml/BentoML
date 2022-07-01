@@ -90,7 +90,11 @@ else:
 
 
 @attr.define
-class PipelineTask:
+class TransformersOptions(ModelOptions):
+    """Options for the Transformers model."""
+
+    task: str = attr.field(validator=attr.validators.instance_of(str))
+
     tf: t.Tuple[str] = attr.field(  # type: ignore (unfinished attr type)
         validator=attr.validators.deep_iterable(
             attr.validators.instance_of(str),
@@ -112,12 +116,6 @@ class PipelineTask:
         default=None,
     )
 
-
-@attr.define
-class TransformersOptions(PipelineTask, ModelOptions):
-    """Options for the Transformers model."""
-
-    task: str = attr.field(validator=attr.validators.instance_of(str), default=None)
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 

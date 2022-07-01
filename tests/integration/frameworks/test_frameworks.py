@@ -141,7 +141,7 @@ def test_get_runnable(
         runnable, bentoml.Runnable
     ), "get_runnable for {bento_model.info.name} doesn't return a subclass of bentoml.Runnable"
     assert (
-        len(runnable.bentoml_runnable_methods__) > 0
+        len(runnable.methods) > 0
     ), "get_runnable for {bento_model.info.name} gives a runnable with no methods"
 
 
@@ -226,8 +226,8 @@ def test_runner_cpu_multi_threading(
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
-        if "cpu" not in runnable.SUPPORTED_DEVICES:
-            continue
+        # if "cpu" not in runnable.SUPPORTED_DEVICES:
+        #     continue
 
         ran_tests = True
 
@@ -270,7 +270,7 @@ def test_runner_cpu(
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
-        if not runnable.SUPPORTS_CPU_MULTI_THREADING:
+        if not runnable.SUPPORT_CPU_MULTI_THREADING:
             continue
 
         ran_tests = True
@@ -315,7 +315,7 @@ def test_runner_nvidia_gpu(
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
-        if "nvidia.com/gpu" not in runnable.SUPPORTED_RESOURCES:
+        if runnable.SUPPORT_NVIDIA_GPU:
             continue
 
         ran_tests = True

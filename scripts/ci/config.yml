@@ -243,7 +243,7 @@ torchscript:
     - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
     - "psutil"
 
-torchlightning:
+pytorch_lightning:
   <<: *ntmpl
   dependencies:
     - "-f https://download.pytorch.org/whl/torch_stable.html"

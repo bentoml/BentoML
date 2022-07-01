@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import numpy as np
 import torch
-import pandas as pd
 import torch.nn
 import pytorch_lightning as pl
 
@@ -12,14 +10,11 @@ from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
 
-framework = bentoml.torchlightning
+framework = bentoml.pytorch_lightning
 
 
 from .torchscript import test_y
 from .torchscript import test_x_list
-
-if torch.cuda.is_available():
-    torch_x_list.append(torch.Tensor(test_x_nda, device="cuda"))
 
 
 def generate_models():
@@ -37,7 +32,7 @@ def generate_models():
 
 models = [
     FrameworkTestModel(
-        name="torchscript",
+        name="pytorch_lightning",
         model=model,
         configurations=[
             Config(

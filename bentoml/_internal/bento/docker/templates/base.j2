@@ -13,30 +13,7 @@
 {% block SETUP_BENTO_BASE_IMAGE %}
 FROM {{ __base_image__ }} as cached
 
-FROM {{ __base_image__ }} as base
-
-{% set __cached__ = [] %}
-{% for key in __supported_architectures__ if key not in __cached__ %}
-  {% if 'arm64' in key or 'aarch64' in key %}
-  {% do __cached__.append(key) %}
-FROM base as base-arm64
-  {% elif 'armhf' in key or 'armel' in key %}
-  {% do __cached__.append(key) %}
-FROM base as base-arm
-  {% elif 'i386' in key %}
-  {% do __cached__.append(key) %}
-FROM base as base-386
-  {% else %}
-  {% do __cached__.append(key) %}
-FROM base as base-{{ key }}
-  {% endif %}
-{% endfor %}
-
-FROM base-${TARGETARCH}
-
-ARG TARGETARCH
-
-ARG TARGETPLATFORM
+FROM {{ __base_image__ }}
 
 ENV LANG=C.UTF-8
 

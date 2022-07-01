@@ -10,6 +10,7 @@ from bentoml.exceptions import NotFound
 from bentoml._internal.models.model import ModelContext
 from bentoml._internal.models.model import ModelSignature
 from bentoml._internal.runner.runner import Runner
+from bentoml._internal.runner.resource import Resource
 from bentoml._internal.runner.strategy import DefaultStrategy
 from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 
@@ -153,17 +154,19 @@ def test_load(
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
 
-        configuration.check_model(model, {})
+        configuration.check_model(model, Resource())
 
 
-def test_runner(
+def test_runnable(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
     for config in test_model.configurations:
         runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
-        config.check_runner(runner, {})
+        runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+        runnable = runner_handle._runnable
+        config.check_runnable(runnable, Resource())
 
 
 def test_runner_batching(
@@ -219,7 +222,7 @@ def test_runner_cpu_multi_threading(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    resource_cfg = {"cpu": 2.0}
+    resource_cfg = Resource(cpu=2.0)
 
     ran_tests = False
     for config in test_model.configurations:
@@ -241,6 +244,7 @@ def test_runner_cpu_multi_threading(
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
+            config.check_runnable(runnable, resource_cfg)
             if (
                 hasattr(runnable, "model") and runnable.model is not None
             ):  # TODO: add a get_model to test models
@@ -263,7 +267,7 @@ def test_runner_cpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    resource_cfg = {"cpu": 1.0}
+    resource_cfg = Resource(cpu=1.0)
 
     ran_tests = False
     for config in test_model.configurations:
@@ -285,6 +289,7 @@ def test_runner_cpu(
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
+            config.check_runnable(runnable, resource_cfg)
             if (
                 hasattr(runnable, "model") and runnable.model is not None
             ):  # TODO: add a get_model to test models
@@ -308,7 +313,7 @@ def test_runner_nvidia_gpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    gpu_resource = {"nvidia.com/gpu": 1.0}
+    gpu_resource = Resource(nvidia_gpu=1.0)
 
     ran_tests = False
     for config in test_model.configurations:
@@ -330,6 +335,7 @@ def test_runner_nvidia_gpu(
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
+            config.check_runnable(runnable, gpu_resource)
             if (
                 hasattr(runnable, "model") and runnable.model is not None
             ):  # TODO: add a get_model to test models

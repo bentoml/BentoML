@@ -24,7 +24,7 @@ from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import cast_tensor_by_spec
-from ..utils.tensorflow import get_input_signatures
+from ..utils.tensorflow import get_input_signatures_v2
 from ..utils.tensorflow import get_restorable_functions
 
 logger = logging.getLogger(__name__)
@@ -279,31 +279,41 @@ def get_runnable(
             *args: "TFArgType",
             **kwargs: "TFArgType",
         ) -> "ext.NpNDArray":
+            if method_partial_kwargs is not None:
+                kwargs = dict(method_partial_kwargs, **kwargs)
+
             try:
-                if method_partial_kwargs is None:
-                    res = raw_method(*args, **kwargs)
-                else:
-                    res = raw_method(*args, **dict(method_partial_kwargs, **kwargs))
+                res = raw_method(*args, **kwargs)
             except ValueError:
                 # Tensorflow performs type checking implicitly if users decorate with `tf.function
                 # or provide `tf_signatures` when calling `save_model()`. Type checking and
                 # casting is deferred to after the `ValueError` is raised to optimize performance.
-                sigs = get_input_signatures(raw_method)
+                sigs = get_input_signatures_v2(raw_method)
                 if not sigs:
                     raise
-                arg_specs, kwarg_specs = sigs[0]
+
+                arg_specs: t.List["tf_ext.TensorSpec"] = sigs[0]
+
+                import inspect
+
+                parameters = [
+                    inspect.Parameter(
+                        name=s.name,
+                        kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for s in arg_specs
+                ]
+                signature = inspect.Signature(parameters=parameters)
+                bound_args = signature.bind(*args, **kwargs)
+                if len(bound_args.arguments) != len(arg_specs):
+                    raise
+
                 trans_args: t.Tuple[t.Any, ...] = tuple(
-                    cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, arg_specs)  # type: ignore[arg-type]
+                    cast_tensor_by_spec(arg, spec)
+                    for arg, spec in zip(bound_args.arguments.values(), arg_specs)
                 )
 
-                if method_partial_kwargs is not None:
-                    kwargs = dict(method_partial_kwargs, **kwargs)
-
-                trans_kwargs = {
-                    k: cast_tensor_by_spec(arg, kwarg_specs[k])
-                    for k, arg in kwargs.items()
-                }
-                res = raw_method(*trans_args, **trans_kwargs)
+                res = raw_method(*trans_args)
             return t.cast("ext.NpNDArray", res.numpy())
 
         return _run_method

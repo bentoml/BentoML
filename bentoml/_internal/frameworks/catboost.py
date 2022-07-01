@@ -231,10 +231,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             super().__init__()
             self.model = load_model(bento_model)
 
-            self.predict_params = {
-                "task_type": "CPU",
-            }
-
             # check for resources
             available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
             if available_gpus not in ("", "-1"):
@@ -249,6 +245,10 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
+
+                if method_name == "predict":
+                    self.predict_params = {"task_type": "CPU"}
+
                 try:
                     self.predict_fns[method_name] = getattr(self.model, method_name)
                 except AttributeError:

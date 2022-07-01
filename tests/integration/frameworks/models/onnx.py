@@ -11,7 +11,6 @@ import torch.nn as nn
 import onnxruntime as ort
 
 import bentoml
-from bentoml._internal.runner.runner import Runner
 
 from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input

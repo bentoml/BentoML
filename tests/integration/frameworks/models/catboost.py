@@ -32,7 +32,7 @@ def generator_accurate_to(
     expected, accuracy: float
 ) -> t.Callable[[ext.NpNdArray], bool]:
     def check(out):
-        score = metrics.accuracy_score(expected, next(out))
+        score = metrics.accuracy_score(expected, out)
         return score >= accuracy
 
     return check

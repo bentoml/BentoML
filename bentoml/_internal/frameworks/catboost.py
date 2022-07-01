@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import types
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -269,6 +270,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     params_["task_type"] = "CPU"
 
             res = self.predict_fns[method_name](input_data, **params_)
+            if isinstance(res, types.GeneratorType):
+                # staged_predict cases
+                return np.asarray(next(res))
             return np.asarray(res)  # type: ignore (incomplete np types)
 
         CatBoostRunnable.add_method(

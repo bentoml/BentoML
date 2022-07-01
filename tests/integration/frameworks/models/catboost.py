@@ -52,7 +52,7 @@ classification_model = FrameworkTestModel(
     save_kwargs={
         "signatures": {
             "predict": {"batchable": False},
-            # TODO: staged_predict is not supported by catboost yet
+            # TODO: staged_predict is not supported by bentoml.catboost yet
         }
     },
     model=CatBoostClassifier().fit(X_train, y_train),

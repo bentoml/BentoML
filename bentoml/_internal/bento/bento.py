@@ -11,7 +11,6 @@ import fs
 import attr
 import yaml
 import fs.osfs
-import pathspec
 import fs.errors
 import fs.mirror
 from fs.copy import copy_file
@@ -34,6 +33,7 @@ from .build_config import CondaOptions
 from .build_config import DockerOptions
 from .build_config import PythonOptions
 from .build_config import BentoBuildConfig
+from .build_config import BentoPatternSpec
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
@@ -154,9 +154,6 @@ class Bento(StoreItem):
             build_config.service, working_dir=build_ctx, change_global_cwd=True
         )
 
-        # Apply default build options
-        build_config = build_config.with_defaults()
-
         tag = Tag(svc.name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -183,46 +180,32 @@ class Bento(StoreItem):
             logger.info(f'Packing model "{model.tag}"')
             model._save(bento_model_store)  # type: ignore[reportPrivateUsage]
 
+        # Apply default build options
+        build_config = build_config.with_defaults()
+        # create ignore specs
+        specs = BentoPatternSpec(build_config)
+
         # Copy all files base on include and exclude, into `src` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]
         if len(relpaths) != 0:
             raise InvalidArgument(
                 "Paths outside of the build context directory cannot be included; use a symlink or copy those files into the working directory manually."
             )
-
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", build_config.include)
-        exclude_spec = pathspec.PathSpec.from_lines(
-            "gitwildmatch", build_config.exclude
-        )
-        exclude_specs: t.List[t.Tuple[str, pathspec.PathSpec]] = []
         bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
         target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
 
         for dir_path, _, files in ctx_fs.walk():
-            for ignore_file in [f for f in files if f.name == ".bentoignore"]:
-                exclude_specs.append(
-                    (
-                        dir_path,
-                        pathspec.PathSpec.from_lines(
-                            "gitwildmatch", ctx_fs.open(ignore_file.make_path(dir_path))
-                        ),
-                    )
-                )
-
-            cur_exclude_specs: t.List[t.Tuple[str, pathspec.PathSpec]] = []
-            for ignore_path, _spec in exclude_specs:
-                if fs.path.isparent(ignore_path, dir_path):
-                    cur_exclude_specs.append((ignore_path, _spec))
-
             for f in files:
-                _path = fs.path.combine(dir_path, f.name).lstrip("/")
-                if spec.match_file(_path) and not exclude_spec.match_file(_path):
-                    if not any(
-                        _spec.match_file(fs.path.relativefrom(ignore_path, _path))
-                        for ignore_path, _spec in cur_exclude_specs
-                    ):
-                        target_fs.makedirs(dir_path, recreate=True)
-                        copy_file(ctx_fs, _path, target_fs, _path)
+                path = fs.path.combine(dir_path, f.name).lstrip("/")
+                if specs.includes(
+                    path,
+                    recurse_exclude_spec=filter(
+                        lambda s: fs.path.isparent(s[0], dir_path),
+                        specs.from_path(build_ctx),
+                    ),
+                ):
+                    target_fs.makedirs(dir_path, recreate=True)
+                    copy_file(ctx_fs, path, target_fs, path)
 
         build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
         build_config.python.write_to_bento(bento_fs, build_ctx)

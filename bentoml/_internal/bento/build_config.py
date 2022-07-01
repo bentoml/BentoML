@@ -13,6 +13,7 @@ import attr
 import yaml
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
+from pathspec import PathSpec
 
 from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
@@ -28,11 +29,6 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..configuration import CLEAN_BENTOML_VERSION
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
-
-if version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 if TYPE_CHECKING:
     from attr import Attribute
@@ -701,6 +697,54 @@ class BentoBuildConfig:
         # TODO: Save BentoBuildOptions to a yaml file
         # This is reserved for building interactive build file creation CLI
         raise NotImplementedError
+
+
+@attr.define(frozen=True, init=False)
+class BentoPatternSpec:
+    _include: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    _exclude: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    # we want to ignore .git folder in cases the .git folder is very large.
+    git: PathSpec = attr.field(
+        default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
+    )
+
+    def __init__(self, build_config: "FilledBentoBuildConfig") -> None:
+        return self.__attrs_init__(build_config.include, build_config.exclude)  # type: ignore (unfinished __attr_init__ type)
+
+    def includes(
+        self,
+        path: str,
+        *,
+        recurse_exclude_spec: t.Iterable[t.Tuple[str, PathSpec]] | None = None,
+    ) -> bool:
+        # to determine whether a path is included or not.
+        # NOTE that if dir_path is not None, then we also need to pass in ctx_fs
+        #  in order to create .bentoignore spec.
+        to_include = (
+            self._include.match_file(path)
+            and not self._exclude.match_file(path)
+            and not self.git.match_file(path)
+        )
+        if to_include:
+            if recurse_exclude_spec is not None:
+                return not any(
+                    ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                    for ignore_parent, ignore_spec in recurse_exclude_spec
+                )
+        return False
+
+    def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
+        """
+        yield (parent, exclude_spec) from .bentoignore file of a given path
+        """
+        fs_ = fs.open_fs(path)
+        for file in fs_.walk.files(filter=[".bentoignore"]):
+            dir_path = "".join(fs.path.parts(file)[:-1])
+            yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 
 class FilledBentoBuildConfig(BentoBuildConfig):

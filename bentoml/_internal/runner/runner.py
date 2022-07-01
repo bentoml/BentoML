@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import attr
 
+from ..tag import validate_tag_str
 from ..types import ParamSpec
 from ..utils import first_not_none
 from .runnable import Runnable
@@ -85,7 +86,17 @@ class Runner:
             max_latency_ms: max latency config for micro batching
             method_configs: per method configs
         """
-        name = runnable_class.__name__ if name is None else name
+
+        if name is None:
+            name = runnable_class.__name__
+
+        try:
+            validate_tag_str(name)
+        except ValueError as e:
+            # TODO: link to tag validation documentation
+            raise ValueError(
+                f"Runner name '{name}' is not valid; it must be a valid BentoML Tag name."
+            ) from e
 
         runners_config = BentoMLContainer.config.runners.get()
         if name in runners_config:

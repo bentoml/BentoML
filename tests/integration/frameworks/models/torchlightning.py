@@ -12,7 +12,7 @@ from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
 
-framework = bentoml.torcglightning
+framework = bentoml.torchlightning
 
 
 from .torchscript import test_y

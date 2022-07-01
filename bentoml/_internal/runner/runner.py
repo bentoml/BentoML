@@ -103,8 +103,13 @@ class Runner:
         if name is None:
             name = runnable_class.__name__
 
+        lname = name.lower()
+
+        if name != lname:
+            logger.warning(f"Converting runner name '{name}' to lowercase: '{lname}'")
+
         try:
-            validate_tag_str(name)
+            validate_tag_str(lname)
         except ValueError as e:
             # TODO: link to tag validation documentation
             raise ValueError(
@@ -155,7 +160,7 @@ class Runner:
         self.__attrs_init__(  # type: ignore
             runnable_class=runnable_class,
             runnable_init_params=runnable_init_params,
-            name=name,
+            name=lname,
             models=models,
             resource_config=resource_config,
             runner_methods=list(runner_method_map.values()),

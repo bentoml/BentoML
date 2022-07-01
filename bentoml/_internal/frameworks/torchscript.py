@@ -90,6 +90,7 @@ def save_model(
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
     _framework_name: str = "torchscript",
+    _module_name: str = MODULE_NAME,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -145,7 +146,7 @@ def save_model(
 
     with bentoml.models.create(
         name,
-        module=MODULE_NAME,
+        module=_module_name,
         api_version=API_VERSION,
         labels=labels,
         signatures=signatures,

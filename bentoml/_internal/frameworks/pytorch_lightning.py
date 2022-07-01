@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING
 import bentoml
 from bentoml import Tag
 
-from .torchscript import get
-from .torchscript import load_model
 from .torchscript import save_model as script_save_model
-from .torchscript import get_runnable
 from .torchscript import MODEL_FILENAME
 from ...exceptions import NotFound
 from ...exceptions import MissingDependencyException
@@ -34,6 +31,15 @@ MODULE_NAME = "bentoml.pytorch_lightning"
 
 
 __all__ = ["save_model", "load_model", "get_runnable", "get"]
+
+
+def get(tag_like: str | Tag) -> Model:
+    model = bentoml.models.get(tag_like)
+    if model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
+        )
+    return model
 
 
 def load_model(
@@ -168,4 +174,29 @@ def save_model(
         custom_objects=custom_objects,
         metadata=metadata,
         _framework_name="pytorch_lightning",
+        _module_name=MODULE_NAME,
+    )
+
+
+def get_runnable(bento_model: Model):
+    """
+    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
+    """
+    from .common.pytorch import partial_class
+    from .common.pytorch import PytorchModelRunnable
+    from .common.pytorch import make_pytorch_runnable_method
+
+    for method_name, options in bento_model.info.signatures.items():
+        PytorchModelRunnable.add_method(
+            make_pytorch_runnable_method(method_name),
+            name=method_name,
+            batchable=options.batchable,
+            batch_dim=options.batch_dim,
+            input_spec=options.input_spec,
+            output_spec=options.output_spec,
+        )
+    return partial_class(
+        PytorchModelRunnable,
+        bento_model=bento_model,
+        loader=load_model,
     )

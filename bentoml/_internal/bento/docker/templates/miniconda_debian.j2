@@ -4,7 +4,7 @@
 {% block SETUP_BENTO_ENVARS %}
 {{ super() }}
 
-{{ common.conda_install_python(__python_version_full__) }}
+{{ common.conda_install_python(__python_version__) }}
 
 {{ common.conda_setup_pip_interop(__environment_yml__) }}
 {% endblock %}

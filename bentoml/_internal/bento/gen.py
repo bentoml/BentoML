@@ -55,8 +55,8 @@ class ReservedEnv:
     base_image: str
     supported_architectures: list[str]
     bentoml_version: str = attr.field(default=CLEAN_BENTOML_VERSION)
-    python_version_full: str = attr.field(
-        default=f"{version_info.major}.{version_info.minor}.{version_info.micro}"
+    python_version: str = attr.field(
+        default=f"{version_info.major}.{version_info.minor}"
     )
 
     def todict(self):

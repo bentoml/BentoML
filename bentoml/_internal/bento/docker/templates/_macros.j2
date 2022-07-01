@@ -1,13 +1,10 @@
-{%- macro conda_install_python(python_version_full) -%}
+{%- macro conda_install_python(python_version) -%}
 
 RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
 set -euxo pipefail
 
-SAVED_PYTHON_VERSION={{ python_version_full }}
-PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
-
 echo "Installing Python $PYTHON_VERSION with conda..."
-conda install -y -n base pkgs/main::python=$PYTHON_VERSION pip
+conda install -y -n base pkgs/main::python={{ python_version }} pip
 EOF
 
 {%- endmacro -%}

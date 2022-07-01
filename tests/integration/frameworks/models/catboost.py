@@ -65,7 +65,7 @@ classification_model = FrameworkTestModel(
                         expected=accurate_to(y_test, 0.9466),
                     ),
                 ],
-                # TODO: staged_predict is not supported by catboost yet
+                # TODO: staged_predict is not supported by bentoml.catboost yet
             },
         ),
     ],

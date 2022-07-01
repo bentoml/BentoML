@@ -230,12 +230,11 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         def __init__(self):
             super().__init__()
             self.model = load_model(bento_model)
+            self.predict_params = {}
 
             # check for resources
-            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
-            if available_gpus not in ("", "-1"):
-                self.predict_params["task_type"] = "GPU"
-            else:
+            self.available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
+            if self.available_gpus in ("", "-1"):
                 nthreads = os.getenv("OMP_NUM_THREADS")
                 if nthreads is not None and nthreads != "":
                     nthreads = max(int(nthreads), 1)
@@ -244,11 +243,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 self.predict_params["thread_count"] = nthreads
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
-            for method_name in bento_model.info.signatures:
-                # `task_type` argument is only supported for the `predict` method
-                if method_name == "predict":
-                    self.predict_params = {"task_type": "CPU"}
 
+            for method_name in bento_model.info.signatures:
                 try:
                     self.predict_fns[method_name] = getattr(self.model, method_name)
                 except AttributeError:
@@ -261,9 +257,18 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             self: CatBoostRunnable,
             input_data: ext.NpNDArray | ext.CbPool | ext.PdDataFrame,
         ) -> ext.NpNDArray:
+            params_ = self.predict_params.copy()
+
             if not isinstance(input_data, cb.Pool):
                 input_data = cb.Pool(input_data)
-            res = self.predict_fns[method_name](input_data, **self.predict_params)
+
+            if method_name == "predict":
+                if self.available_gpus not in ("", "-1"):
+                    params_["task_type"] = "GPU"
+                else:
+                    params_["task_type"] = "CPU"
+
+            res = self.predict_fns[method_name](input_data, **params_)
             return np.asarray(res)  # type: ignore (incomplete np types)
 
         CatBoostRunnable.add_method(

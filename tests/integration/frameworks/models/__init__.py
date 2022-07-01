@@ -31,6 +31,7 @@ class FrameworkTestModelConfiguration:
 
     load_kwargs: dict[str, t.Any] = attr.Factory(dict)
     check_model: t.Callable[[t.Any, Resource], None] = lambda _, __: None
+    check_runnable: t.Callable[[t.Any, Resource], None] = lambda _, __: None
 
 
 @attr.define

@@ -12,10 +12,10 @@ pipeline, invoking a :code:`save_model` call, as demonstrated in the
 
 .. code:: python
 
-    bentoml.sklearn.save_model("iris_clf", clf)
+   bentoml.sklearn.save_model("iris_clf", clf)
 
-    # INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for sklearn model
-    # INFO  [cli] Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj", path="~/bentoml/models/iris_clf/2uo5fkgxj27exuqj/")
+   # INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for sklearn model
+   # INFO  [cli] Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj", path="~/bentoml/models/iris_clf/2uo5fkgxj27exuqj/")
 
 .. seealso::
    It is also possible to **use pre-trained models** directly with BentoML, without

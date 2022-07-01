@@ -275,14 +275,14 @@ def test_runner_cpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    resource_cfg = Resource(cpu=1.0)
+    resource_cfg = {"cpu": 1.0}
 
     ran_tests = False
     for config in test_model.configurations:
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
-        if not runnable.SUPPORT_CPU_MULTI_THREADING:
+        if not runnable.SUPPORTS_CPU_MULTI_THREADING:
             continue
 
         ran_tests = True

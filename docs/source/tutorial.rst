@@ -24,6 +24,7 @@ container image for deployment.
 
 
 .. note::
+
     You might be tempted to skip this tutorial because you are not using scikit-learn,
     but give it a chance. The concepts you will learn in the tutorial are fundamental to
     model serving with any ML framework using BentoML, and mastering it will give you a
@@ -71,8 +72,8 @@ There are three ways to complete this tutorial:
 
    .. code-block:: bash
 
-      pip install --pre bentoml
-      pip install scikit-learn pandas
+       pip install --pre bentoml
+       pip install scikit-learn pandas
 
 
 Saving Models with BentoML
@@ -140,34 +141,34 @@ a file :code:`service.py` with:
 
 .. code:: python
 
-   import numpy as np
-   import bentoml
-   from bentoml.io import NumpyNdarray
+    import numpy as np
+    import bentoml
+    from bentoml.io import NumpyNdarray
 
-   iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
+    iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
-   svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+    svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-   @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-   def classify(input_series: np.ndarray) -> np.ndarray:
-       result = iris_clf_runner.predict.run(input_series)
-       return result
+    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+    def classify(input_series: np.ndarray) -> np.ndarray:
+        result = iris_clf_runner.predict.run(input_series)
+        return result
 
 
 Run it live:
 
 .. code:: bash
 
-   > bentoml serve service:svc --reload
+    > bentoml serve service:svc --reload
 
-   2022-07-01T14:19:12-0700 [INFO] [] Starting development BentoServer from "service:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)
-   2022-07-01 14:19:12 circus[10959] [INFO] Loading the plugin...
-   2022-07-01 14:19:12 circus[10959] [INFO] Endpoint: 'tcp://127.0.0.1:52870'
-   2022-07-01 14:19:12 circus[10959] [INFO] Pub/sub: 'tcp://127.0.0.1:52871'
-   2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
-   2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
-   2022-07-01 14:19:12 bentoml._internal.utils.circus[10959] [INFO] Watching directories: /Users/aarnphm/workspace/bentoml/bentoml_playground
-   2022-07-01 14:19:12 circus[10959] [INFO] Starting
+    2022-07-01T14:19:12-0700 [INFO] [] Starting development BentoServer from "service:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)
+    2022-07-01 14:19:12 circus[10959] [INFO] Loading the plugin...
+    2022-07-01 14:19:12 circus[10959] [INFO] Endpoint: 'tcp://127.0.0.1:52870'
+    2022-07-01 14:19:12 circus[10959] [INFO] Pub/sub: 'tcp://127.0.0.1:52871'
+    2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
+    2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
+    2022-07-01 14:19:12 bentoml._internal.utils.circus[10959] [INFO] Watching directories: /Users/aarnphm/workspace/bentoml/bentoml_playground
+    2022-07-01 14:19:12 circus[10959] [INFO] Starting
 
 .. dropdown:: About the command :code:`bentoml serve service:svc --reload`
    :icon: code
@@ -320,31 +321,31 @@ Next, run the :code:`bentoml build` CLI command from the same directory:
 
 .. code:: bash
 
-   > bentoml build
+    > bentoml build
 
-   Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/Users/aarnphm/workspace/bentoml/bentoml_playground"
-   Packing model "iris_clf:zy3dfgxzqkjrlgxi"
-   BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento.
-   Locking PyPI package versions..
-
-   ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-   ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-   ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-   ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-   ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-   ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-
-   Successfully built Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")
+    Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/Users/aarnphm/workspace/bentoml/bentoml_playground"
+    Packing model "iris_clf:zy3dfgxzqkjrlgxi"
+    BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento.
+    Locking PyPI package versions..
+ 
+    ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+    ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+    ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+    ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+    ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+    ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+ 
+    Successfully built Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")
 
 🎉 You've just created your first Bento, and it is now ready for serving in production!
 For starters, you can now serve it with the :code:`bentoml serve` CLI command:
 
 .. code:: bash
 
-   > bentoml serve iris_classifier:latest --production
+    > bentoml serve iris_classifier:latest --production
 
-   2022-07-01T14:48:47-0700 [INFO] [] Starting production BentoServer from "iris_classifier:latest" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
-   2022-07-01T14:48:49-0700 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 10
+    2022-07-01T14:48:47-0700 [INFO] [] Starting production BentoServer from "iris_classifier:latest" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+    2022-07-01T14:48:49-0700 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 10
 
 
 .. note::
@@ -370,12 +371,13 @@ via the :code:`bentoml containerize` CLI command:
 
 .. code:: bash
 
-   > bentoml containerize iris_classifier:latest
+    > bentoml containerize iris_classifier:latest
 
-   Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
-   Successfully built docker image "iris_classifier:6otbsmxzq6lwbgxi"
+    Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
+    Successfully built docker image "iris_classifier:6otbsmxzq6lwbgxi"
 
 .. note::
+
    You will need to `install Docker <https://docs.docker.com/get-docker/>`_ before
    running this command.
 
@@ -404,16 +406,16 @@ Run the docker image to start the BentoServer:
 
 .. code:: bash
 
-   docker run -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi
+    docker run -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi
 
-   2022-07-01T21:57:47+0000 [INFO] [] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
-   2022-07-01T21:57:47+0000 [INFO] [] Starting production BentoServer from "/home/bentoml/bento" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
-   2022-07-01T21:57:48+0000 [INFO] [api_server:1] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
-   2022-07-01T21:57:48+0000 [INFO] [runner-iris_clf:1] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
-   2022-07-01T21:57:48+0000 [INFO] [api_server:2] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
-   2022-07-01T21:57:48+0000 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 4
-   2022-07-01T21:57:48+0000 [INFO] [api_server:3] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
-   2022-07-01T21:57:48+0000 [INFO] [api_server:4] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:47+0000 [INFO] [] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:47+0000 [INFO] [] Starting production BentoServer from "/home/bentoml/bento" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+    2022-07-01T21:57:48+0000 [INFO] [api_server:1] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [runner-iris_clf:1] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [api_server:2] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 4
+    2022-07-01T21:57:48+0000 [INFO] [api_server:3] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [api_server:4] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
 
 
 Most of the deployment tools built on top of BentoML uses Docker under the hood, it is

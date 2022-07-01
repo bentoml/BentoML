@@ -21,7 +21,7 @@ def generate_models():
     class LightningLinearModel(pl.LightningModule):
         def __init__(self):
             super().__init__()
-            self.linear = nn.Linear(5, 1, bias=False)
+            self.linear = torch.nn.Linear(5, 1, bias=False)
             torch.nn.init.ones_(self.linear.weight)
 
         def forward(self, x):

@@ -207,16 +207,6 @@ tf1:
     - "tensorflow==1.15"
 
 
-torchscript:
-  <<: *tmpl
-  dependencies:
-    - "-f https://download.pytorch.org/whl/torch_stable.html"
-    - "torch==1.11.0+cpu"
-    - "torchvision==0.12.0+cpu"
-    - "pytorch_lightning==1.6.3"
-    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
-    - "psutil"
-
 transformers:
   <<: *tmpl
   dependencies:
@@ -243,3 +233,13 @@ tensorflow_v2:
   <<: *ntmpl
   dependencies:
     - "tensorflow"
+
+torchscript:
+  <<: *ntmpl
+  dependencies:
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.11.0+cpu"
+    - "torchvision==0.12.0+cpu"
+    - "pytorch_lightning==1.6.3"
+    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
+    - "psutil"

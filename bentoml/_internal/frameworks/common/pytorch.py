@@ -89,14 +89,21 @@ class PytorchModelRunnable(bentoml.Runnable):
 def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:
     def _run(
         self: PytorchModelRunnable,
-        *args: ext.NpNDArray | torch.Tensor,
-        **kwargs: ext.NpNDArray | torch.Tensor,
+        *args: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
+        **kwargs: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
     ) -> torch.Tensor:
-        params = Params[t.Union["ext.NpNDArray", torch.Tensor]](*args, **kwargs)
+        params = Params(
+            *args,
+            **kwargs,
+        )
 
-        def _mapping(item: t.Union["ext.NpNDArray", torch.Tensor]) -> torch.Tensor:
+        def _mapping(
+            item: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
+        ) -> torch.Tensor:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return torch.Tensor(item, device=self.device_id)
+            if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
+                return torch.Tensor(item.to_numpy(), device=self.device_id)
             else:
                 return item.to(self.device_id)  # type: ignore # the overhead is trivial if it is already on the right device
 

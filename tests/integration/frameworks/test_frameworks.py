@@ -155,17 +155,6 @@ def test_load(
         configuration.check_model(model, {})
 
 
-def test_runner(
-    test_model: FrameworkTestModel,
-    saved_model: bentoml.Model,
-):
-    for config in test_model.configurations:
-        runner = saved_model.with_options(**config.load_kwargs).to_runner()
-        runner.init_local()
-        config.check_runner(runner, {})
-        runner.destroy()
-
-
 def test_runnable(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
@@ -323,7 +312,7 @@ def test_runner_nvidia_gpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    gpu_resource = {"nvidia.com/gpu": 1.0}
+    resource_cfg = {"nvidia.com/gpu": 1.0}
 
     ran_tests = False
     for config in test_model.configurations:
@@ -339,18 +328,18 @@ def test_runner_nvidia_gpu(
 
         for meth, inputs in config.test_inputs.items():
             strategy = DefaultStrategy()
-            strategy.setup_worker(runnable, gpu_resource, 0)
+            strategy.setup_worker(runnable, resource_cfg, 0)
 
             runner.init_local()
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
 
-            config.check_runnable(runnable, gpu_resource)
+            config.check_runnable(runnable, resource_cfg)
             if (
                 hasattr(runnable, "model") and runnable.model is not None
             ):  # TODO: add a get_model to test models
-                config.check_model(runnable.model, gpu_resource)
+                config.check_model(runnable.model, resource_cfg)
 
             for inp in inputs:
                 outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)

@@ -111,3 +111,6 @@ tests/integration/data
 typings
 bentoml/_version.py
 typings
+
+# test files
+catboost_info

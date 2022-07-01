@@ -167,5 +167,5 @@ def save_model(
         labels=labels,
         custom_objects=custom_objects,
         metadata=metadata,
-        _include_pytorch_lightning_version=True,
+        _framework_name="pytorch_lightning",
     )

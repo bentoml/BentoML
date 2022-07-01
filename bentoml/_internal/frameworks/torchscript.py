@@ -89,7 +89,7 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-    _include_pytorch_lightning_version: bool = False,
+    _framework_name: str = "torchscript",
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -124,7 +124,7 @@ def save_model(
     if not isinstance(model, (torch.ScriptModule, torch.jit.ScriptModule)):
         raise TypeError(f"Given model ({model}) is not a torch.ScriptModule.")
 
-    if _include_pytorch_lightning_version:
+    if _framework_name == "pytorch_lightning":
         framework_versions = {
             "torch": get_pkg_version("torch"),
             "pytorch_lightning": get_pkg_version("pytorch_lightning"),
@@ -133,7 +133,7 @@ def save_model(
         framework_versions = {"torch": get_pkg_version("torch")}
 
     context: ModelContext = ModelContext(
-        framework_name="torchscript",
+        framework_name=_framework_name,
         framework_versions=framework_versions,
     )
 

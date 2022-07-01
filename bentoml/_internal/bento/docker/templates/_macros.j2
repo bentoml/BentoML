@@ -1,0 +1,31 @@
+{%- macro conda_install_python(python_version_full) -%}
+
+RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
+set -euxo pipefail
+
+SAVED_PYTHON_VERSION={{ python_version_full }}
+PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
+
+echo "Installing Python $PYTHON_VERSION with conda..."
+conda install -y -n base pkgs/main::python=$PYTHON_VERSION pip
+EOF
+
+{%- endmacro -%}
+
+
+{%- macro conda_setup_pip_interop(environment_yml) -%}
+
+RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
+set -euxo pipefail
+
+if [ -f {{ environment_yml }} ]; then
+  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # pip-installed packages to satisfy dependencies.
+  echo "Updating conda base environment with environment.yml"
+  conda config --set pip_interop_enabled True
+  conda env update -n base -f {{ environment_yml }}
+  conda clean --all
+fi
+EOF
+
+{%- endmacro -%}

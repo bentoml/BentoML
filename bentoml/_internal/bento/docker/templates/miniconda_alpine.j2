@@ -1,24 +1,10 @@
+{% import '_macros.j2' as common %}
 {% extends "base_alpine.j2" %}
 {% set __environment_yml__=expands_bento_path("env", "conda", "environment.yml", bento_path=bento__path) %}
 {% block SETUP_BENTO_ENVARS %}
 {{ super() }}
 
-RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
-set -euxo pipefail
+{{ common.conda_install_python(__python_version_full__) }}
 
-SAVED_PYTHON_VERSION={{ __python_version_full__ }}
-PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
-
-echo "Installing Python $PYTHON_VERSION with conda..."
-conda install -y -n base pkgs/main::python=$PYTHON_VERSION pip
-
-if [ -f {{ __environment_yml__ }} ]; then
-  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
-  # pip-installed packages to satisfy dependencies.
-  echo "Updating conda base environment with environment.yml"
-  conda config --set pip_interop_enabled True
-  conda env update -n base -f {{ __environment_yml__ }}
-  conda clean --all
-fi
-EOF
+{{ common.conda_setup_pip_interop(__environment_yml__) }}
 {% endblock %}

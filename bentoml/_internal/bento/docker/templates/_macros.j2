@@ -1,4 +1,5 @@
-{%- macro conda_instalation(python_version, environment_yml) -%}
+{%- macro setup_conda(python_version, bento_path) -%}
+{% set environment_yml=expands_bento_path("env", "conda", "environment.yml", bento_path=bento_path) %}
 
 RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
 set -euxo pipefail

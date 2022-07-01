@@ -1,8 +1,7 @@
 {% import '_macros.j2' as common %}
 {% extends "base_debian.j2" %}
-{% set __environment_yml__=expands_bento_path("env", "conda", "environment.yml", bento_path=bento__path) %}
 {% block SETUP_BENTO_COMPONENTS %}
 {{ super() }}
 
-{{ common.conda_instalation(__python_version__, __environment_yml__) }}
+{{ common.setup_conda(__python_version__, bento__path) }}
 {% endblock %}

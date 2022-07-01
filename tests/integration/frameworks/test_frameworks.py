@@ -227,8 +227,8 @@ def test_runner_cpu_multi_threading(
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
-        # if "cpu" not in runnable.SUPPORTED_DEVICES:
-        #     continue
+        if "cpu" not in runnable.SUPPORTED_RESOURCES:
+            continue
 
         ran_tests = True
 

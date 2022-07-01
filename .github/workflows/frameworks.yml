@@ -73,6 +73,7 @@ jobs:
               - *runner
               - bentoml/catboost.py
               - bentoml/_internal/frameworks/catboost.py
+              - tests/integration/frameworks/models/catboost.py
               - tests/integration/frameworks/test_frameworks.py
             detectron2:
               - *runner
@@ -108,6 +109,7 @@ jobs:
               - *runner
               - bentoml/lightgbm.py
               - bentoml/_internal/frameworks/lightgbm.py
+              - tests/integration/frameworks/models/lightgbm.py
               - tests/integration/frameworks/test_frameworks.py
             mlflow:
               - *runner
@@ -123,6 +125,7 @@ jobs:
               - *runner
               - bentoml/onnx.py
               - bentoml/_internal/frameworks/onnx.py
+              - tests/integration/frameworks/models/onnx.py
               - tests/integration/frameworks/test_frameworks.py
             onnxmlir:
               - *runner
@@ -208,6 +211,7 @@ jobs:
               - *runner
               - bentoml/xgboost.py
               - bentoml/_internal/frameworks/xgboost.py
+              - tests/integration/frameworks/models/xgboost.py
               - tests/integration/frameworks/test_frameworks.py
 
 

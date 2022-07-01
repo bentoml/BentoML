@@ -1,0 +1,24 @@
+{%- macro setup_conda(python_version, bento_path) -%}
+{% set environment_yml=expands_bento_path("env", "conda", "environment.yml", bento_path=bento_path) %}
+
+RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
+set -euxo pipefail
+
+echo "Installing Python $PYTHON_VERSION with conda..."
+conda install -y -n base pkgs/main::python={{ python_version }} pip
+EOF
+
+RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
+set -euxo pipefail
+
+if [ -f {{ environment_yml }} ]; then
+  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+  # pip-installed packages to satisfy dependencies.
+  echo "Updating conda base environment with environment.yml"
+  conda config --set pip_interop_enabled True
+  conda env update -n base -f {{ environment_yml }}
+  conda clean --all
+fi
+EOF
+
+{%- endmacro -%}

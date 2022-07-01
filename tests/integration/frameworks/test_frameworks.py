@@ -152,7 +152,6 @@ def test_load(
 ):
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
-
         configuration.check_model(model, {})
 
 
@@ -164,6 +163,19 @@ def test_runner(
         runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
         config.check_runner(runner, {})
+
+
+def test_runnable(
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    for config in test_model.configurations:
+        runner = saved_model.with_options(**config.load_kwargs).to_runner()
+        runner.init_local()
+        runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+        runnable = runner_handle._runnable
+        config.check_runnable(runnable, {})
+        runner.destroy()
 
 
 def test_runner_batching(
@@ -220,12 +232,13 @@ def test_runner_cpu_multi_threading(
     saved_model: bentoml.Model,
 ):
     resource_cfg = {"cpu": 2.0}
-
     ran_tests = False
     for config in test_model.configurations:
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
         runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
+        # if "cpu" not in runnable.SUPPORTED_DEVICES:
+        #     continue
 
         ran_tests = True
 
@@ -239,6 +252,53 @@ def test_runner_cpu_multi_threading(
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
+            config.check_runnable(runnable, resource_cfg)
+            if (
+                hasattr(runnable, "model") and runnable.model is not None
+            ):  # TODO: add a get_model to test models
+                config.check_model(runnable.model, resource_cfg)
+
+            for inp in inputs:
+                outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
+                inp.check_output(outp)
+
+            runner.destroy()
+
+    if not ran_tests:
+        pytest.skip(
+            f"no configurations for model '{test_model.name}' supported multiple CPU threads"
+        )
+
+
+def test_runner_cpu(
+    framework: types.ModuleType,
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    resource_cfg = Resource(cpu=1.0)
+
+    ran_tests = False
+    for config in test_model.configurations:
+        model_with_options = saved_model.with_options(**config.load_kwargs)
+
+        runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
+        if not runnable.SUPPORT_CPU_MULTI_THREADING:
+            continue
+
+        ran_tests = True
+
+        runner = Runner(runnable)
+
+        for meth, inputs in config.test_inputs.items():
+            strategy = DefaultStrategy()
+            strategy.setup_worker(runnable, resource_cfg, 0)
+
+            runner.init_local()
+
+            runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+            runnable = runner_handle._runnable
+            config.check_runnable(runnable, resource_cfg)
+
             if (
                 hasattr(runnable, "model") and runnable.model is not None
             ):  # TODO: add a get_model to test models
@@ -284,6 +344,8 @@ def test_runner_nvidia_gpu(
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
+
+            config.check_runnable(runnable, gpu_resource)
             if (
                 hasattr(runnable, "model") and runnable.model is not None
             ):  # TODO: add a get_model to test models

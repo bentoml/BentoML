@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 import logging
 import importlib.util
@@ -163,9 +165,66 @@ def normalize_spec(value: t.Any) -> "tf_ext.TypeSpec":
     raise BentoMLException(f"Unknown type for tensor spec, got{type(value)}.")
 
 
+def cast_py_args_to_tf_function_args(
+    signature: list[tf_ext.TensorSpec],
+    *args: t.Any,
+    **kwargs: t.Any,
+) -> tuple[t.Any, ...]:
+    """
+    Cast python arguments (args, kwargs) to tensorflow function arguments.
+
+    Args:
+        signature (:code:`list[tf.TensorSpec]`):
+            signature of the tensorflow function.
+        *args (:code:`t.Any`):
+            positional arguments of the Python function.
+        **kwargs (:code:`t.Any`):
+            keyword arguments of the Python function.
+    """
+    import inspect
+
+    parameters = [
+        inspect.Parameter(
+            name=s.name,
+            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        )
+        for s in signature
+    ]
+    func_sig = inspect.Signature(parameters=parameters)
+    bound_args = func_sig.bind(*args, **kwargs)
+    if len(bound_args.arguments) != len(signature):
+        raise ValueError(
+            f"Expected {len(signature)} arguments, got {len(bound_args.arguments)}"
+        )
+
+    trans_args: t.Tuple[t.Any, ...] = tuple(
+        cast_tensor_by_spec(arg, spec)
+        for arg, spec in zip(bound_args.arguments.values(), signature)
+    )
+    return trans_args
+
+
+def get_input_signatures_v2(
+    func: tf_ext.RestoredFunction,
+) -> list[list[tf_ext.TensorSpec]]:
+    if hasattr(func, "concrete_functions") and func.concrete_functions:
+        # tensorflow will generate concrete_functions:
+        # 1. from input_signature specified in tf.function, or
+        # 2. automatically from training data
+        return [
+            s for conc in func.concrete_functions for s in get_input_signatures_v2(conc)
+        ]
+
+    if hasattr(func, "structured_input_signature") and func.structured_input_signature:
+        # for concrete_functions
+        return [func.structured_input_signature[0]]
+
+    return []
+
+
 def get_input_signatures(
-    func: "tf_ext.DecoratedFunction",
-) -> t.Tuple["tf_ext.InputSignature"]:
+    func: tf_ext.DecoratedFunction,
+) -> list[tuple[tf_ext.InputSignature, ...]]:
     if hasattr(func, "function_spec"):  # RestoredFunction
         func_spec: "tf_ext.FunctionSpec" = getattr(func, "function_spec")
         input_spec: "tf_ext.TensorSignature" = getattr(func_spec, "input_signature")
@@ -201,10 +260,8 @@ def get_input_signatures(
 
 
 def get_output_signature(
-    func: "tf_ext.DecoratedFunction",
-) -> t.Union[
-    "tf_ext.ConcreteFunction", t.Tuple[t.Any, ...], t.Dict[str, "tf_ext.TypeSpec"]
-]:
+    func: tf_ext.DecoratedFunction,
+) -> tf_ext.ConcreteFunction | t.Tuple[t.Any, ...] | dict[str, tf_ext.TypeSpec]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
         concrete_function_wrapper: "tf_ext.ConcreteFunction" = getattr(

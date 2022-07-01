@@ -74,7 +74,7 @@ def load_model(
 
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
-            f"Model {bentoml_model} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
+            f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
     model: torch.ScriptModule = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage]

@@ -4,12 +4,16 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import bentoml
+from bentoml import Tag
 
 from .torchscript import get
 from .torchscript import load_model
 from .torchscript import save_model as script_save_model
 from .torchscript import get_runnable
+from .torchscript import MODEL_FILENAME
+from ...exceptions import NotFound
 from ...exceptions import MissingDependencyException
+from ..models.model import Model
 
 if TYPE_CHECKING:
     from ..models.model import ModelSignaturesType
@@ -21,6 +25,7 @@ Then run `pip install pytorch_lightning`
 """
 
 try:
+    import torch
     import pytorch_lightning as pl
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_IMPORT_ERROR)
@@ -29,6 +34,43 @@ MODULE_NAME = "bentoml.pytorch_lightning"
 
 
 __all__ = ["save_model", "load_model", "get_runnable", "get"]
+
+
+def load_model(
+    bentoml_model: str | Tag | Model,
+    device_id: t.Optional[str] = "cpu",
+) -> torch.ScriptModule:
+    """
+    Load a model from BentoML local modelstore with given name.
+
+    Args:
+        tag (:code:`Union[str, Tag]`):
+            Tag of a saved model in BentoML local modelstore.
+        device_id (:code:`str`, `optional`):
+            Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
+        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+
+    Returns:
+        :obj:`torch.ScriptModule`: an instance of :obj:`torch.ScriptModule` from BentoML modelstore.
+
+    Examples:
+
+    .. code-block:: python
+
+        import bentoml
+        lit = bentoml.torchscript.load_model('lit_classifier:latest', device_id="cuda:0")
+    """
+    if isinstance(bentoml_model, (str, Tag)):
+        bentoml_model = get(bentoml_model)
+
+    if bentoml_model.info.module not in (MODULE_NAME, __name__):
+        raise NotFound(
+            f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
+        )
+    weight_file = bentoml_model.path_of(MODEL_FILENAME)
+    model: torch.ScriptModule = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage]
+    return model
 
 
 def save_model(

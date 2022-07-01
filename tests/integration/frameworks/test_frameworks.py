@@ -163,6 +163,7 @@ def test_runner(
         runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
         config.check_runner(runner, {})
+        runner.destroy()
 
 
 def test_runnable(

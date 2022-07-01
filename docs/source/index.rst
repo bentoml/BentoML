@@ -150,7 +150,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    reference/index
    faq
    Community <https://l.linklyhq.com/l/ktOX>
-   Github <https://github.com/bentoml/BentoML>
+   GitHub <https://github.com/bentoml/BentoML>
 
 .. spelling::
 

@@ -16,6 +16,7 @@ import fs.errors
 import fs.mirror
 from fs.copy import copy_file
 from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 from simple_di import inject
 from simple_di import Provide
@@ -92,9 +93,9 @@ python:
 @attr.define(repr=False, auto_attribs=False)
 class Bento(StoreItem):
     _tag: Tag = attr.field()
-    __fs: "FS" = attr.field()
+    __fs: FS = attr.field()
 
-    _info: "BentoInfo"
+    _info: BentoInfo
 
     _model_store: ModelStore
     _doc: t.Optional[str] = None
@@ -104,7 +105,7 @@ class Bento(StoreItem):
         return "bento"
 
     @__fs.validator  # type:ignore # attrs validators not supported by pyright
-    def check_fs(self, _attr: t.Any, new_fs: "FS"):
+    def check_fs(self, _attr: t.Any, new_fs: FS):
         try:
             new_fs.makedir("models", recreate=True)
         except fs.errors.ResourceReadOnly:
@@ -125,11 +126,11 @@ class Bento(StoreItem):
         return self._tag
 
     @property
-    def _fs(self) -> "FS":
+    def _fs(self) -> FS:
         return self.__fs
 
     @property
-    def info(self) -> "BentoInfo":
+    def info(self) -> BentoInfo:
         return self._info
 
     @classmethod
@@ -270,7 +271,7 @@ class Bento(StoreItem):
         return res
 
     @classmethod
-    def from_fs(cls, item_fs: "FS") -> "Bento":
+    def from_fs(cls, item_fs: FS) -> Bento:
         try:
             with item_fs.open(BENTO_YAML_FILENAME, "r", encoding="utf-8") as bento_yaml:
                 info = BentoInfo.from_yaml_file(bento_yaml)
@@ -340,55 +341,47 @@ class BentoStore(Store[Bento]):
         super().__init__(base_path, Bento)
 
 
-@attr.define(frozen=True, on_setattr=None)
+@attr.frozen
 class BentoRunnerInfo:
     name: str
     runnable_type: str
-    models: t.List[str] = attr.field(factory=list)
-    resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    models: list[str] = attr.field(factory=list)
+    resource_config: dict[str, t.Any] | None = attr.field(default=None)
 
     @classmethod
-    def from_runner(cls, r: Runner) -> "BentoRunnerInfo":
-        # Add runner default resource quota and batching config here
+    def from_runner(cls, r: Runner) -> BentoRunnerInfo:
+        # TODO: Add runner default resource quota and batching config here
         return cls(
-            name=r.name,  # type: ignore
-            runnable_type=r.runnable_class.__name__,  # type: ignore
-            models=[str(model.tag) for model in r.models],  # type: ignore
-            resource_config=r.resource_config,  # type: ignore
+            name=r.name,
+            runnable_type=r.runnable_class.__name__,
+            models=[str(model.tag) for model in r.models],
+            resource_config=r.resource_config,
         )
 
 
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(BentoRunnerInfo, globals(), locals())
-
-
-@attr.define(frozen=True, on_setattr=None)
+@attr.frozen
 class BentoApiInfo:
     name: str
     input_type: str
     output_type: str
 
     @classmethod
-    def from_inference_api(cls, api: "InferenceAPI") -> "BentoApiInfo":
+    def from_inference_api(cls, api: InferenceAPI) -> BentoApiInfo:
         return cls(
-            name=api.name,  # type: ignore
-            input_type=api.input.__class__.__name__,  # type: ignore
-            output_type=api.output.__class__.__name__,  # type: ignore
+            name=api.name,
+            input_type=api.input.__class__.__name__,
+            output_type=api.output.__class__.__name__,
         )
 
 
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(BentoApiInfo, globals(), locals())
-
-
-@attr.define(frozen=True, on_setattr=None)
+@attr.frozen
 class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
     module: str
     creation_time: datetime
 
     @classmethod
-    def from_bento_model(cls, bento_model: "Model") -> "BentoModelInfo":
+    def from_bento_model(cls, bento_model: Model) -> BentoModelInfo:
         return cls(
             tag=bento_model.tag,
             module=bento_model.info.module,
@@ -396,25 +389,21 @@ class BentoModelInfo:
         )
 
 
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(BentoModelInfo, globals(), locals())
-
-
-@attr.define(repr=False, frozen=True, on_setattr=None)
+@attr.frozen(repr=False)
 class BentoInfo:
     tag: Tag
     service: str = attr.field(
         converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
-    )  # type: ignore[reportPrivateUsage]
-    name: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
-    version: str = attr.field(init=False)  # converted from tag in __attrs_post_init__
+    )
+    name: str = attr.field(init=False)
+    version: str = attr.field(init=False)
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    labels: t.Dict[str, t.Any] = attr.field(factory=dict)
-    models: t.List[BentoModelInfo] = attr.field(factory=list)
-    runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
-    apis: t.List[BentoApiInfo] = attr.field(factory=list)
+    labels: dict[str, t.Any] = attr.field(factory=dict)
+    models: list[BentoModelInfo] = attr.field(factory=list)
+    runners: list[BentoRunnerInfo] = attr.field(factory=list)
+    apis: list[BentoApiInfo] = attr.field(factory=list)
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
     conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
@@ -427,13 +416,13 @@ class BentoInfo:
         self.validate()
 
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
+        return bentoml_cattr.unstructure(self)
 
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
 
     @classmethod
-    def from_yaml_file(cls, stream: t.IO[t.Any]) -> "BentoInfo":
+    def from_yaml_file(cls, stream: t.IO[t.Any]) -> BentoInfo:
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -470,9 +459,7 @@ class BentoInfo:
                         models,
                     )
                 )
-
         try:
-            # type: ignore[attr-defined]
             return bentoml_cattr.structure(yaml_content, cls)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")
@@ -482,13 +469,19 @@ class BentoInfo:
         ...
 
 
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(BentoInfo, globals(), locals())
-
+bentoml_cattr.register_structure_hook_func(
+    lambda cls: issubclass(cls, BentoInfo),
+    make_dict_structure_fn(
+        BentoInfo,
+        bentoml_cattr,
+        name=override(omit=True),
+        version=override(omit=True),
+    ),
+)
 bentoml_cattr.register_unstructure_hook(
     BentoInfo,
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),  # type: ignore
+    make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),
 )
 
 

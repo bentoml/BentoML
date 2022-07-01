@@ -19,6 +19,7 @@ import fs.mirror
 import cloudpickle  # type: ignore (no cloudpickle types)
 from fs.base import FS
 from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 from simple_di import inject
 from simple_di import Provide
@@ -41,11 +42,12 @@ if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
 
-    class ModelSignatureDict(t.TypedDict, total=False):
-        batch_dim: tuple[int, int] | int
-        batchable: bool
-        input_spec: tuple[AnyType] | AnyType | None
-        output_spec: AnyType | None
+
+class ModelSignatureDict(t.TypedDict, total=False):
+    batchable: bool
+    batch_dim: tuple[int, int] | int | None
+    input_spec: tuple[AnyType] | AnyType | None
+    output_spec: AnyType | None
 
 else:
     ModelSignaturesDict = dict
@@ -320,7 +322,7 @@ class ModelStore(Store[Model]):
 @attr.frozen
 class ModelContext:
     framework_name: str
-    framework_versions: t.Dict[str, str]
+    framework_versions: dict[str, str]
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     python_version: str = attr.field(default=PYTHON_VERSION)
 
@@ -331,11 +333,7 @@ class ModelContext:
         return bentoml_cattr.structure(data, ModelContext)
 
     def to_dict(self: ModelContext) -> dict[str, str | dict[str, str]]:
-        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
-
-
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(ModelContext, globals(), locals())
+        return bentoml_cattr.unstructure(self)
 
 
 @attr.frozen
@@ -364,24 +362,28 @@ class ModelSignature:
             If there are multiple arguments to the predict method and there is only one batch
             dimension supplied, all arguments will use that batch dimension.
 
-            Example: .. code-block:: python
-                # Save two models with `predict` method that supports taking input batches on the
-                dimension 0 and the other on dimension 1: bentoml.pytorch.save_model("demo0",
-                model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
-                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable":
-                True, "batch_dim": 1}})
+            Example:
 
-                # if the following calls are batched, the input to the actual predict method on the
-                # model.predict method would be [[1, 2], [3, 4], [5, 6]] runner0 =
-                bentoml.pytorch.get("demo0:latest").to_runner() runner0.init_local()
-                runner0.predict.run(np.array([[1, 2], [3, 4]])) runner0.predict.run(np.array([[5,
-                6]]))
+                .. code-block:: python
 
-                # if the following calls are batched, the input to the actual predict method on the
-                # model.predict would be [[1, 2, 5], [3, 4, 6]] runner1 =
-                bentoml.pytorch.get("demo1:latest").to_runner() runner1.init_local()
-                runner1.predict.run(np.array([[1, 2], [3, 4]])) runner1.predict.run(np.array([[5],
-                [6]]))
+                    # Save two models with `predict` method that supports taking input batches on the
+                    dimension 0 and the other on dimension 1:
+
+                    bentoml.pytorch.save_model("demo0", model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                    bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable": True, "batch_dim": 1}})
+
+                    # if the following calls are batched, the input to the actual predict method on the
+                    # model.predict method would be [[1, 2], [3, 4], [5, 6]]
+                    runner0 = bentoml.pytorch.get("demo0:latest").to_runner() runner0.init_local()
+                    runner0.predict.run(np.array([[1, 2], [3, 4]]))
+                    runner0.predict.run(np.array([[5, 6]]))
+
+                    # if the following calls are batched, the input to the actual predict method on the
+                    # model.predict would be [[1, 2, 5], [3, 4, 6]]
+                    runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
+                    runner1.init_local()
+                    runner1.predict.run(np.array([[1, 2], [3, 4]]))
+                    runner1.predict.run(np.array([[5], [6]]))
 
             Expert API:
 
@@ -396,18 +398,14 @@ class ModelSignature:
     """
 
     batchable: bool = False
-    batch_dim: t.Tuple[int, int] = (0, 0)
+    batch_dim: tuple[int, int] = (0, 0)
     # TODO: define input/output spec struct
     input_spec: t.Any = None
     output_spec: t.Any = None
 
     @staticmethod
     def from_dict(data: ModelSignatureDict) -> ModelSignature:
-        if "batch_dim" in data and isinstance(data["batch_dim"], int):
-            formated_data = dict(data, batch_dim=(data["batch_dim"], data["batch_dim"]))
-        else:
-            formated_data = data
-        return bentoml_cattr.structure(formated_data, ModelSignature)
+        return bentoml_cattr.structure(data, ModelSignature)
 
     @staticmethod
     def convert_signatures_dict(
@@ -419,17 +417,19 @@ class ModelSignature:
         }
 
 
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(ModelSignature, globals(), locals())
+ModelSignaturesType = dict[str, ModelSignature] | dict[str, ModelSignatureDict]
 
 
-if TYPE_CHECKING:
-    ModelSignaturesType: t.TypeAlias = (
-        dict[str, ModelSignature] | dict[str, ModelSignatureDict]
-    )
+def model_signature_decoder(data: t.Any, _: t.Type[ModelSignature]) -> ModelSignature:
+    if "batch_dim" in data and isinstance(data["batch_dim"], int):
+        current_batch_dim = data["batch_dim"]
+        data["batch_dim"] = (current_batch_dim, current_batch_dim)
+    return ModelSignature(**data)
 
 
-def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]:
+def model_signature_unstructure_hook(
+    model_signature: ModelSignature,
+) -> dict[str, t.Any]:
     encoded: dict[str, t.Any] = {
         "batchable": model_signature.batchable,
     }
@@ -443,7 +443,10 @@ def model_signature_encoder(model_signature: ModelSignature) -> dict[str, t.Any]
     return encoded
 
 
-bentoml_cattr.register_unstructure_hook(ModelSignature, model_signature_encoder)
+bentoml_cattr.register_structure_hook(ModelSignature, model_signature_decoder)
+bentoml_cattr.register_unstructure_hook(
+    ModelSignature, model_signature_unstructure_hook
+)
 
 
 @attr.define(repr=False, eq=False, frozen=True)
@@ -452,21 +455,18 @@ class ModelInfo:
     name: str
     version: str
     module: str
-    labels: t.Dict[str, str] = attr.field(validator=label_validator)
-    _options: t.Dict[str, t.Any]
-    # TODO: make metadata a MetadataDict; this works around a bug in attrs
-    metadata: t.Dict[str, t.Any] = attr.field(
-        validator=metadata_validator, converter=dict
-    )
+    labels: dict[str, str] = attr.field(validator=label_validator)
+    _options: dict[str, t.Any]
+    metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
     context: ModelContext = attr.field()
-    signatures: t.Dict[str, ModelSignature] = attr.field(
+    signatures: dict[str, ModelSignature] = attr.field(
         converter=ModelSignature.convert_signatures_dict
     )
     api_version: str
     creation_time: datetime
 
-    _cached_module: t.Optional[ModuleType] = None
-    _cached_options: t.Optional[ModelOptions] = None
+    _cached_module: ModuleType | None = None
+    _cached_options: ModelOptions | None = None
 
     def __init__(
         self,
@@ -484,6 +484,9 @@ class ModelInfo:
             object.__setattr__(self, "_cached_options", options)
             options = options.to_dict()
 
+        if creation_time is None:
+            creation_time = datetime.now(timezone.utc)
+
         self.__attrs_init__(  # type: ignore
             tag=tag,
             name=tag.name,
@@ -495,7 +498,7 @@ class ModelInfo:
             context=context,
             signatures=signatures,
             api_version=api_version,
-            creation_time=creation_time or datetime.now(timezone.utc),
+            creation_time=creation_time,
         )
         self.validate()
 
@@ -573,8 +576,8 @@ class ModelInfo:
     def dump(self, stream: io.StringIO | None = None) -> io.BytesIO | None:
         return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore (bad yaml types)
 
-    @staticmethod
-    def from_yaml_file(stream: t.IO[t.Any]):
+    @classmethod
+    def from_yaml_file(cls, stream: t.IO[t.Any]) -> ModelInfo:
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:  # pragma: no cover - simple error handling
@@ -583,12 +586,8 @@ class ModelInfo:
 
         if not isinstance(yaml_content, dict):
             raise BentoMLException(f"malformed {MODEL_YAML_FILENAME}")
-
         yaml_content["tag"] = str(
-            Tag(
-                t.cast(str, yaml_content["name"]),
-                t.cast(str, yaml_content["version"]),
-            )
+            Tag(t.cast(str, yaml_content["name"]), t.cast(str, yaml_content["version"]))
         )
         del yaml_content["name"]
         del yaml_content["version"]
@@ -602,11 +601,8 @@ class ModelInfo:
             del yaml_content["context"]["pip_dependencies"]
             yaml_content["context"]["framework_versions"] = {}
 
-        # weird cattrs workaround
-        yaml_content["_options"] = t.cast(t.Dict[str, t.Any], yaml_content["options"])
-
         try:
-            model_info = bentoml_cattr.structure(yaml_content, ModelInfo)
+            model_info = bentoml_cattr.structure(yaml_content, cls)
         except TypeError as e:  # pragma: no cover - simple error handling
             raise BentoMLException(f"unexpected field in {MODEL_YAML_FILENAME}: {e}")
         return model_info
@@ -617,13 +613,20 @@ class ModelInfo:
         ...
 
 
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(ModelInfo, globals(), locals())
-
+bentoml_cattr.register_structure_hook_func(
+    lambda cls: issubclass(cls, ModelInfo),
+    make_dict_structure_fn(
+        ModelInfo,
+        bentoml_cattr,
+        name=override(omit=True),
+        version=override(omit=True),
+        _options=override(rename="options"),
+    ),
+)
 bentoml_cattr.register_unstructure_hook_func(
     lambda cls: issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(  # type: ignore (incomplete types)
+    make_dict_unstructure_fn(
         ModelInfo,
         bentoml_cattr,
         tag=override(omit=True),

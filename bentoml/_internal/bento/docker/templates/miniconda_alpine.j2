@@ -1,7 +1,6 @@
 {% import '_macros.j2' as common %}
 {% extends "base_alpine.j2" %}
 {% block SETUP_BENTO_COMPONENTS %}
-{{ super() }}
-
 {{ common.setup_conda(__python_version__, bento__path) }}
+{{ super() }}
 {% endblock %}

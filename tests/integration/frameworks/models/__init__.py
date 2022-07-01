@@ -26,15 +26,10 @@ class FrameworkTestModel:
 @attr.define
 class FrameworkTestModelConfiguration:
     test_inputs: dict[str, list[FrameworkTestModelInput]]
-
     load_kwargs: dict[str, t.Any] = attr.Factory(dict)
-# <<<<<<< HEAD
     check_model: t.Callable[[t.Any, dict[str, t.Any]], None] = lambda _, __: None
     check_runner: t.Callable[[t.Any, dict[str, t.Any]], None] = lambda _, __: None
-# =======
-#     check_model: t.Callable[[t.Any, Resource], None] = lambda _, __: None
     check_runnable: t.Callable[[t.Any, dict[str, t.Any]], None] = lambda _, __: None
-# >>>>>>> main
 
 
 @attr.define

@@ -245,7 +245,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
-
+                # `task_type` argument is only supported for the `predict` method
                 if method_name == "predict":
                     self.predict_params = {"task_type": "CPU"}
 

@@ -157,7 +157,7 @@ jobs:
               - bentoml/pytorch.py
               - bentoml/_internal/frameworks/common/pytorch.py
               - bentoml/_internal/frameworks/pytorch.py
-              - tests/integration/frameworks/test_pytorch_impl.py
+              - tests/integration/frameworks/test_frameworks.py
             torchscript:
               - *runner
               - bentoml/torchscript.py

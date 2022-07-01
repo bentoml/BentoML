@@ -1,102 +1,11 @@
-# import math
-
-import numpy as np
 import torch
 import pytest
-import torch.nn as nn
-
-import bentoml
-from tests.utils.helpers import assert_have_file_extension
 from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
 
-# from tests.utils.frameworks.pytorch_utils import ExtendedModel
-from tests.utils.frameworks.pytorch_utils import test_df
-from tests.utils.frameworks.pytorch_utils import predict_df
-from tests.utils.frameworks.pytorch_utils import LinearModel
 
 # TODO: signatures
 # TODO: to_payload with plasma
-
-
-@pytest.fixture(scope="module")
-def model():
-    return LinearModel()
-
-
-@pytest.fixture(scope="module")
-def bento_model(model: nn.Module):
-    labels = {"stage": "dev"}
-
-    def custom_f(x: int) -> int:
-        return x + 1
-
-    return bentoml.pytorch.save_model(
-        "pytorch_test",
-        model,
-        labels=labels,
-        custom_objects={"func": custom_f},
-    )
-
-
-def test_pytorch_save_load(model: nn.Module):
-    labels = {"stage": "dev"}
-
-    def custom_f(x: int) -> int:
-        return x + 1
-
-    bentomodel = bentoml.pytorch.save_model(
-        "pytorch_test",
-        model,
-        labels=labels,
-        custom_objects={"func": custom_f},
-    )
-    assert_have_file_extension(bentomodel.path, ".pt")
-    for k in labels.keys():
-        assert labels[k] == bentomodel.info.labels[k]
-    assert bentomodel.custom_objects["func"](3) == custom_f(3)
-
-    pytorch_loaded: nn.Module = bentoml.pytorch.load_model(bentomodel.tag)
-    assert predict_df(pytorch_loaded, test_df) == 5.0
-
-
-@pytest.mark.gpus
-@pytest.mark.parametrize("dev", ["cpu", "cuda", "cuda:0"])
-def test_pytorch_save_load_across_devices(dev: str, bento_model: bentoml.Model):
-    def is_cuda(model: nn.Module) -> bool:
-        return next(model.parameters()).is_cuda
-
-    loaded: nn.Module = bentoml.pytorch.load_model(bento_model.tag, device_id=dev)
-    if dev == "cpu":
-        assert not is_cuda(loaded)
-    else:
-        assert is_cuda(loaded)
-
-
-@pytest.mark.parametrize(
-    "input_data",
-    [
-        test_df.to_numpy().astype(np.float32),
-        torch.from_numpy(test_df.to_numpy().astype(np.float32)),
-    ],
-)
-def test_pytorch_runner_setup_run_batch(input_data, bento_model: bentoml.Model):
-    runner = bento_model.to_runner()
-
-    assert bento_model.tag in [m.tag for m in runner.models]
-    assert runner.scheduled_worker_count == 1
-
-    runner.init_local()
-    res = runner.run(input_data)
-    assert res.unsqueeze(dim=0).item() == 5.0
-
-
-@pytest.mark.gpus
-@pytest.mark.parametrize("nvidia_gpu", [1, 2])
-def test_pytorch_runner_setup_on_gpu(nvidia_gpu: int, bento_model: bentoml.Model):
-    runner = bento_model.to_runner(nvidia_gpu=nvidia_gpu)
-    assert runner.scheduled_worker_count == nvidia_gpu
-
 
 """
 @pytest.mark.parametrize(

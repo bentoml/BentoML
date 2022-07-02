@@ -312,7 +312,7 @@ def test_runner_nvidia_gpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    resource_cfg = {"nvidia.com/gpu": 1.0}
+    resource_cfg = {"nvidia.com/gpu": 1}
 
     ran_tests = False
     for config in test_model.configurations:

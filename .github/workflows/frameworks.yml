@@ -120,6 +120,8 @@ jobs:
               - *runner
               - bentoml/fastai.py
               - bentoml/_internal/frameworks/fastai.py
+              - bentoml/_internal/frameworks/common/pytorch.py
+              - tests/integration/frameworks/test_frameworks.py
               - tests/integration/frameworks/test_fastai_unit.py
             onnx:
               - *runner
@@ -157,6 +159,7 @@ jobs:
               - bentoml/pytorch.py
               - bentoml/_internal/frameworks/common/pytorch.py
               - bentoml/_internal/frameworks/pytorch.py
+              - tests/integration/frameworks/test_pytorch_unit.py
               - tests/integration/frameworks/test_frameworks.py
             torchscript:
               - *runner
@@ -401,7 +404,7 @@ jobs:
           fi
 
       - name: Upload test coverage to Codecov
-        if: ${{ needs.diff.outputs.detectron2 == 'true' }}
+        if: ${{ needs.diff.outputs.fastai == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
@@ -893,12 +896,22 @@ jobs:
         run: make tests-pytorch
         shell: bash
 
+      - name: Run unit test for pytorch
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"pytorch.unit.xml" --cov-report term-missing:skip-covered)
+          python -m pytest ./tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for pytorch failed!"
+            exit 1
+          fi
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
-          files: ./pytorch.xml
+          files: ./pytorch.xml,./pytorch.unit.xml
           flags: pytorch
           verbose: true
 

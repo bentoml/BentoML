@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import torch
-import pandas as pd
 import torch.nn
 
 import bentoml

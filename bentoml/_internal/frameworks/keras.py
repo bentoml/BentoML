@@ -51,7 +51,7 @@ API_VERSION = "v1"
 class KerasOptions(ModelOptions):
     """Options for the Keras model."""
 
-    include_optimizer: bool
+    include_optimizer: bool = False
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
@@ -279,10 +279,6 @@ def get_runnable(
                 self.device_name = "/device:GPU:0"
             else:
                 self.device_name = "/device:CPU:0"
-                if "BENTOML_NUM_THREAD" in os.environ:
-                    num_threads = int(os.environ["BENTOML_NUM_THREAD"])
-                    tf.config.threading.set_inter_op_parallelism_threads(num_threads)
-                    tf.config.threading.set_intra_op_parallelism_threads(num_threads)
 
             self.model = load_model(bento_model, device_name=self.device_name)
             self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}

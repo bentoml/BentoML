@@ -95,13 +95,13 @@ class TransformersOptions(ModelOptions):
 
     task: str = attr.field(validator=attr.validators.instance_of(str))
 
-    tf: t.Tuple[str] = attr.field(  # type: ignore (unfinished attr type)
+    tf: t.Tuple[str] = attr.field(
         validator=attr.validators.deep_iterable(
             attr.validators.instance_of(str),
         ),  # type: ignore (unfinished attr type)
         factory=tuple,
     )
-    pt: t.Tuple[str] = attr.field(  # type: ignore (unfinished attr type)
+    pt: t.Tuple[str] = attr.field(
         validator=attr.validators.deep_iterable(
             attr.validators.instance_of(str),
         ),  # type: ignore (unfinished attr type)
@@ -134,7 +134,7 @@ def _get_auto_class(
     if isinstance(val, str):
         if not hasattr(transformers, val):
             raise BentoMLException(
-                f"Given {val} is neither exists nor valid transformers.AutoModel"
+                f"Given {val} is neither exists nor a valid Transformers AutoModel. For more information, please see https://huggingface.co/docs/transformers/model_doc/auto"
             )
         yield getattr(transformers, val)
     elif isinstance(val, Iterable):

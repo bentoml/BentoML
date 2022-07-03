@@ -102,7 +102,6 @@ managing all your trained models locally as well as accessing them for serving.
    # Save model to the BentoML local model store
    bentoml.sklearn.save_model("iris_clf", clf)
    print(f"Model saved: {saved_model}")
-   print(f"Model saved: {saved_model}")
 
    # Model saved: Model(tag="iris_clf:zy3dfgxzqkjrlgxi")
 
@@ -169,7 +168,7 @@ Run it live:
     2022-07-01 14:19:12 circus[10959] [INFO] Pub/sub: 'tcp://127.0.0.1:52871'
     2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
     2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
-    2022-07-01 14:19:12 bentoml._internal.utils.circus[10959] [INFO] Watching directories: /Users/aarnphm/workspace/bentoml/bentoml_playground
+    2022-07-01 14:19:12 bentoml._internal.utils.circus[10959] [INFO] Watching directories: /home/user/gallery/quickstart
     2022-07-01 14:19:12 circus[10959] [INFO] Starting
 
 .. dropdown:: About the command :code:`bentoml serve service:svc --reload`
@@ -325,7 +324,7 @@ Next, run the :code:`bentoml build` CLI command from the same directory:
 
     > bentoml build
 
-    Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/Users/aarnphm/workspace/bentoml/bentoml_playground"
+    Building BentoML service "iris_classifier:dpijemevl6nlhlg6" from build context "/home/user/gallery/quickstart"
     Packing model "iris_clf:zy3dfgxzqkjrlgxi"
     BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento.
     Locking PyPI package versions..
@@ -373,10 +372,10 @@ via the :code:`bentoml containerize` CLI command:
 
 .. code:: bash
 
-    > bentoml containerize iris_classifier:latest
+   > bentoml containerize iris_classifier:latest
 
-    Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
-    Successfully built docker image "iris_classifier:6otbsmxzq6lwbgxi"
+   Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
+   Successfully built docker image "iris_classifier:6otbsmxzq6lwbgxi"
 
 .. note::
 

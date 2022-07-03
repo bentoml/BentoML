@@ -1231,7 +1231,7 @@ jobs:
       - name: Run tensorflow_v2 without eager execution
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-eager-execution)
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-tf-eager-execution)
           python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for tensorflow_v2 failed!"

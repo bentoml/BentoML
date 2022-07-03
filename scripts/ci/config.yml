@@ -208,15 +208,15 @@ tf1:
 
 
 transformers:
-  <<: *tmpl
+  <<: *ntmpl
   dependencies:
     - "transformers"
     - "tensorflow_hub"
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.11.0"
-    - "jax==0.2.19"
-    - "jaxlib==0.1.70"
-    - "flax==0.3.4"
+    - "jax"
+    - "jaxlib"
+    - "flax"
     - "tensorflow"
     - "importlib_metadata"
     - "Pillow==8.4.0"

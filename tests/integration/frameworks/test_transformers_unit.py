@@ -6,33 +6,24 @@ import pytest
 import requests
 from PIL import Image
 from transformers import pipeline
-from transformers import Pipeline
-from transformers import AutoTokenizer
-from transformers import AutoModelForCausalLM
-from transformers import TFAutoModelForCausalLM
-from transformers import AutoModelForSequenceClassification
 from transformers.pipelines import SUPPORTED_TASKS
 from transformers.trainer_utils import set_seed
+from transformers.pipelines.base import Pipeline
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+from transformers.models.auto.modeling_auto import AutoModelForSequenceClassification
+from transformers.models.auto.modeling_tf_auto import TFAutoModelForCausalLM
+from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 import bentoml
 
 if TYPE_CHECKING:
+    from transformers.utils.generic import ModelOutput
+    from transformers.tokenization_utils_base import BatchEncoding
+
     from bentoml._internal.external_typing import transformers as ext
 
 
 set_seed(124)
-
-
-def tf_gpt2_pipeline():
-    model = TFAutoModelForCausalLM.from_pretrained("gpt2")
-    tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    return pipeline(task="text-generation", model=model, tokenizer=tokenizer)
-
-
-def pt_gpt2_pipeline():
-    model = AutoModelForCausalLM.from_pretrained("gpt2", from_tf=False)
-    tokenizer = AutoTokenizer.from_pretrained("gpt2", from_tf=False)
-    return pipeline(task="text-generation", model=model, tokenizer=tokenizer)
 
 
 @pytest.mark.parametrize(
@@ -109,29 +100,26 @@ def test_transformers(
     assert output_data is not None
 
 
-class MyPipeline(Pipeline):
-    def _sanitize_parameters(self, **kwargs):
-        preprocess_kwargs = {}
-        if "maybe_arg" in kwargs:
-            preprocess_kwargs["maybe_arg"] = kwargs["maybe_arg"]
+class CustomPipeline(Pipeline):
+    def _sanitize_parameters(self, **kwargs: t.Any) -> tuple[AnyDict, AnyDict, AnyDict]:
+        preprocess_kwargs: AnyDict = {}
+        if "dummy_arg" in kwargs:
+            preprocess_kwargs["dummy_arg"] = kwargs["dummy_arg"]
         return preprocess_kwargs, {}, {}
 
-    def preprocess(self, text, maybe_arg=2):
-        input_ids = self.tokenizer(text, return_tensors="pt")
-        return input_ids
+    def preprocess(self, text: str, dummy_arg: int = 2) -> BatchEncoding | None:
+        if self.tokenizer:
+            input_ids = self.tokenizer(text, return_tensors="pt")
+            return input_ids
 
-    def _forward(self, model_inputs):
-        outputs = self.model(**model_inputs)
-        return outputs
-
-    def postprocess(self, model_outputs):
-        return model_outputs["logits"].softmax(-1).numpy()
+    def postprocess(self, model_outputs: ModelOutput, **parameters: AnyDict) -> t.Any:
+        return outputs["logits"].softmax(-1).numpy()  # type: ignore (unfinished transformers type)
 
 
 def test_custom_pipeline():
     TASK_NAME: str = "my-classification-task"
     TASK_DEFINITION: t.Dict[str, t.Any] = {
-        "impl": MyPipeline,
+        "impl": CustomPipeline,
         "tf": (),
         "pt": (AutoModelForSequenceClassification,),
         "default": {},

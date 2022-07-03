@@ -1283,12 +1283,22 @@ jobs:
         run: make tests-transformers
         shell: bash
 
+      - name: Run unit test for transformers
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"transformers.unit.xml" --cov-report term-missing:skip-covered)
+          python -m pytest ./tests/integration/frameworks/test_transformers_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for transformers failed!"
+            exit 1
+          fi
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
-          files: ./transformers.xml
+          files: ./transformers.xml,./transformers.unit.xml
           flags: transformers
           verbose: true
 

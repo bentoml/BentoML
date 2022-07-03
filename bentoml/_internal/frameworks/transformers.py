@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
-    from ..external_typing import transformers as ext
+    from ..external_typing import transformers as transformers_ext
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
 
@@ -130,7 +130,7 @@ def get(tag_like: str | Tag) -> Model:
 
 def _get_auto_class(
     val: str | Iterable[str],
-) -> t.Generator[ext.BaseAutoModelClass, None, None]:
+) -> t.Generator[transformers_ext.BaseAutoModelClass, None, None]:
     if isinstance(val, str):
         if not hasattr(transformers, val):
             raise BentoMLException(
@@ -149,7 +149,7 @@ def _get_auto_class(
 def load_model(
     bento_model: str | Tag | Model,
     **kwargs: t.Any,
-) -> ext.TransformersPipeline:
+) -> transformers_ext.TransformersPipeline:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
@@ -217,7 +217,7 @@ def load_model(
 
 def save_model(
     name: str,
-    pipeline: ext.TransformersPipeline,
+    pipeline: transformers_ext.TransformersPipeline,
     *,
     task_name: str | None = None,
     task_definition: t.Dict[str, t.Any] | None = None,

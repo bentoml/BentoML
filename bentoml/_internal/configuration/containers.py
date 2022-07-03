@@ -282,7 +282,7 @@ class _BentoMLContainerClass:
     def session_id() -> str:
         return uuid.uuid1().hex
 
-    api_server_config = config.bento_server
+    api_server_config = config.api_server
     runners_config = config.runners
 
     development_mode = providers.Static(True)
@@ -298,21 +298,21 @@ class _BentoMLContainerClass:
     @staticmethod
     def access_control_options(
         allow_origins: t.List[str] = Provide[
-            config.bento_server.cors.access_control_allow_origin
+            config.api_server.cors.access_control_allow_origin
         ],
         allow_credentials: t.List[str] = Provide[
-            config.bento_server.cors.access_control_allow_credentials
+            config.api_server.cors.access_control_allow_credentials
         ],
         expose_headers: t.List[str] = Provide[
-            config.bento_server.cors.access_control_expose_headers
+            config.api_server.cors.access_control_expose_headers
         ],
         allow_methods: t.List[str] = Provide[
-            config.bento_server.cors.access_control_allow_methods
+            config.api_server.cors.access_control_allow_methods
         ],
         allow_headers: t.List[str] = Provide[
-            config.bento_server.cors.access_control_allow_headers
+            config.api_server.cors.access_control_allow_headers
         ],
-        max_age: int = Provide[config.bento_server.cors.access_control_max_age],
+        max_age: int = Provide[config.api_server.cors.access_control_max_age],
     ) -> t.Dict[str, t.Union[t.List[str], int]]:
         kwargs = dict(
             allow_origins=allow_origins,
@@ -328,10 +328,10 @@ class _BentoMLContainerClass:
 
     api_server_workers = providers.Factory[int](
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-        config.bento_server.workers,
+        config.api_server.workers,
     )
-    service_port = config.bento_server.port
-    service_host = config.bento_server.host
+    service_port = config.api_server.port
+    service_host = config.api_server.host
 
     prometheus_multiproc_dir = providers.Factory[str](
         os.path.join,
@@ -343,7 +343,7 @@ class _BentoMLContainerClass:
     @staticmethod
     def metrics_client(
         multiproc_dir: str = Provide[prometheus_multiproc_dir],
-        namespace: str = Provide[config.bento_server.metrics.namespace],
+        namespace: str = Provide[config.api_server.metrics.namespace],
     ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 

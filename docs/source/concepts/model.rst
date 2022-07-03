@@ -180,7 +180,6 @@ stages. For example:
 
     > bentoml models import ./iris_clf-2uo5fkgxj27exuqj.bentomodel
 
-    Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj")
     Model(tag="iris_clf:2uo5fkgxj27exuqj") imported
 
 .. note::

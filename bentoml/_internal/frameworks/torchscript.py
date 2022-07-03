@@ -9,25 +9,13 @@ from bentoml import Tag
 
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
-from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
+from .common.pytorch import torch
 
 if TYPE_CHECKING:
     from ..models.model import ModelSignaturesType
 
-
-_PL_IMPORT_ERROR = f"""\
-`torch` is required in order to use module `{__name__}`\n
-Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
-Then run `pip install torch`
-"""
-
-
-try:
-    import torch
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(_PL_IMPORT_ERROR)
 
 logger = logging.getLogger(__name__)
 MODULE_NAME = "bentoml.torchscript"

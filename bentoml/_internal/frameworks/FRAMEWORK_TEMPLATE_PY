@@ -23,10 +23,9 @@ try:
     import FRAMEWORK_PY
 except ImportError:  # pragma: no cover (trivial error checking)
     raise MissingDependencyException(
-        """FRAMEWORK_PY is required in order to use module `bentoml.lightgbm`, install
-        FRAMEWORK_PY with `pip install FRAMEWORK_PY`. For more information, refer to
-        <FRAMEWORK INSTALL URL>
-        """
+        "`FRAMEWORK_PY` is required in order to use module `bentoml.lightgbm`, install "
+        "FRAMEWORK_PY with `pip install FRAMEWORK_PY`. For more information, refer to "
+        "<FRAMEWORK INSTALL URL>"
     )
 
 

@@ -25,10 +25,9 @@ try:
     import lightgbm as lgb  # type: ignore (missing type stubs for lightgbm)
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """lightgbm is required in order to use module `bentoml.lightgbm`, install
-        lightgbm with `pip install lightgbm`. For more information, refer to
-        https://github.com/microsoft/LightGBM/tree/master/python-package
-        """
+        "lightgbm is required in order to use module `bentoml.lightgbm`, install "
+        "lightgbm with `pip install lightgbm`. For more information, refer to "
+        "https://github.com/microsoft/LightGBM/tree/master/python-package"
     )
 
 MODULE_NAME = "bentoml.lightgbm"

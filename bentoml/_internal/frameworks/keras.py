@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 import logging
 import functools
@@ -35,12 +34,9 @@ try:
     import tensorflow.keras as keras
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-        `tensorflow` is required to use `bentoml.keras`, since
-        we will use Tensorflow as Keras backend.\n
-        Instruction: Refers to https://www.tensorflow.org/install for
-        more information of your use case.
-        """
+        "Tensorflow is required in order to use module `bentoml.keras`, since BentoML "
+        "uses Tensorflow as Keras backend. Install Tensorflow with `pip install "
+        "tensorflow`. For more information, refer to https://www.tensorflow.org/install"
     )
 
 MODULE_NAME = "bentoml.keras"

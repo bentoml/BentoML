@@ -33,10 +33,9 @@ try:
     import tensorflow as tf  # type: ignore
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-    `tensorflow` is required in order to use `bentoml.tensorflow`.
-    Instruction: `pip install tensorflow`
-    """
+        "`tensorflow` is required in order to use module `bentoml.tensorflow`, install "
+        "tensorflow with `pip install tensorflow`. For more information, refer to "
+        "https://www.tensorflow.org/install"
     )
 
 

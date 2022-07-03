@@ -11,21 +11,19 @@ from .torchscript import MODEL_FILENAME
 from ...exceptions import NotFound
 from ...exceptions import MissingDependencyException
 from ..models.model import Model
+from .common.pytorch import torch
 
 if TYPE_CHECKING:
     from ..models.model import ModelSignaturesType
 
-_IMPORT_ERROR = f"""\
-`pytorch_lightning` and `torch` is required in order to use module `{__name__}`\n
-Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
-Then run `pip install pytorch_lightning`
-"""
-
 try:
-    import torch
     import pytorch_lightning as pl
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException(_IMPORT_ERROR)
+    raise MissingDependencyException(
+        "`pytorch_lightning` is required in order to use module "
+        "`bentoml.pytorch_lightning`, install python-lightning with: "
+        "`pip install pytorch-lightning`"
+    )
 
 MODULE_NAME = "bentoml.pytorch_lightning"
 

@@ -26,11 +26,10 @@ try:
     import torch
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-        torch is required in order to use module `bentoml.pytorch`,
-        `bentoml.torchscript` and `bentoml.pytorch_lightning`.
-        Instruction: Refers to https://pytorch.org/get-started/locally/
-        to setup PyTorch correctly.  """  # noqa
+        "`torch` is required in order to use module `bentoml.pytorch`, "
+        "`bentoml.torchscript` or `bentoml.pytorch_lightning`. Install torch with `pip "
+        "install torch`. For more information, refer to "
+        "https://pytorch.org/get-started/locally/"
     )
 
 if TYPE_CHECKING:

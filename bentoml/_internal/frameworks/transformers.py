@@ -76,10 +76,8 @@ try:
     _check_flax_supported()
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-        transformers is required in order to use module `bentoml.transformers`.
-        Instruction: Install transformers with `pip install transformers`.
-        """
+        "transformers is required in order to use module `bentoml.transformers`. "
+        "Install transformers with `pip install transformers`."
     )
 
 

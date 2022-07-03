@@ -40,8 +40,8 @@ except ImportError:  # pragma: no cover (trivial error checking)
     raise MissingDependencyException(
         "`onnxruntime` or `onnxruntime-gpu` is required by `bentoml.onnx`, "
         "install onnxruntime or onnxruntime-gpu with `pip install onnxruntime` "
-        " or `pip install onnxruntime-gpu`. For more information, refer to "
-        " https://onnxruntime.ai/"
+        "or `pip install onnxruntime-gpu`. For more information, refer to "
+        "https://onnxruntime.ai/"
     )
 
 MODULE_NAME = "bentoml.onnx"

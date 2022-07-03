@@ -10,7 +10,6 @@ import tensorflow as tf
 from bentoml._internal.types import LazyType
 from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.runner.container import DataContainerRegistry
-from bentoml._internal.frameworks.tensorflow_v2 import TensorflowTensorContainer
 
 if TYPE_CHECKING:
     from bentoml._internal.external_typing import tensorflow as ext
@@ -38,6 +37,11 @@ def assert_tensor_equal(t1: ext.TensorLike, t2: ext.TensorLike) -> None:
 
 @pytest.mark.parametrize("batch_axis", [0, 1])
 def test_tensorflow_container(batch_axis: int):
+    if not tf.executing_eagerly():
+        pytest.skip("This test requires eager execution")
+
+    from bentoml._internal.frameworks.tensorflow_v2 import TensorflowTensorContainer
+
     one_batch: ext.TensorLike = tf.reshape(tf.convert_to_tensor(np.arange(6)), (2, 3))
     batch_list: list[ext.TensorLike] = [one_batch, one_batch + 1]
     merged_batch = tf.concat(batch_list, batch_axis)
@@ -70,9 +74,14 @@ def test_tensorflow_container(batch_axis: int):
 
 
 @requires_disable_eager_execution
-def test_disable_eager_execution():
+def test_register_container():
 
     assert not tf.executing_eagerly()
+
+    from bentoml._internal.frameworks.tensorflow_v2 import (  # type: ignore # noqa: F401
+        TensorflowTensorContainer,
+    )
+
     assert (
         LazyType("tensorflow.python.framework.ops", "Tensor")
         not in DataContainerRegistry.CONTAINER_BATCH_TYPE_MAP

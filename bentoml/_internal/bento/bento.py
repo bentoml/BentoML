@@ -198,7 +198,7 @@ class Bento(StoreItem):
         for dir_path, _, files in ctx_fs.walk():
             for f in files:
                 path = fs.path.combine(dir_path, f.name).lstrip("/")
-                if specs.includes(path, dir_path=dir_path, ctx_fs=ctx_fs):
+                if specs.includes(path, current_dir=dir_path, ctx_fs=ctx_fs):
                     target_fs.makedirs(dir_path, recreate=True)
                     copy_file(ctx_fs, path, target_fs, path)
 

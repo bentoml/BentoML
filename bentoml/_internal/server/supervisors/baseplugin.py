@@ -5,6 +5,7 @@ import typing as t
 import logging
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import fs
 from circus.plugins import CircusPlugin
@@ -12,13 +13,12 @@ from circus.plugins import CircusPlugin
 from bentoml.exceptions import BentoMLException
 
 from ...utils.pkg import source_locations
-from ...bento.bento import Bento
 from ...configuration import is_pypi_installed_bentoml
 from ...bento.build_config import IgnoreSpec
 from ...bento.build_config import BentoBuildConfig
 
 if TYPE_CHECKING:
-    from fs.info import Info
+    from fs.base import FS
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class ReloaderPlugin(CircusPlugin):
     A circus plugin that reloads the BentoService when the service code changes.
 
     A child class should implement the following methods:
-        - is_modified()
+        - has_modification()
         - handle_stop()
         - _post_restart() (optional)
 
@@ -64,9 +64,12 @@ class ReloaderPlugin(CircusPlugin):
 
         logger.info(f"Watching directories: {watch_dirs}")
         self.watch_dirs = watch_dirs
+        self.watch_fs = [fs.open_fs(d) for d in self.watch_dirs]
 
-    def watch_files(self, dir_: str) -> bool:
-        # Returns a generator of (file_dir, file_name) for all files in watch_dirs.
+    def file_changed(self, path: str | Path) -> bool:
+        # returns True if file with 'path' has changed, else False
+        if isinstance(path, Path):
+            path = path.__fspath__()
 
         bentofile_path = os.path.join(self.working_dir, "bentofile.yaml")
         if not os.path.exists(bentofile_path):
@@ -78,14 +81,15 @@ class ReloaderPlugin(CircusPlugin):
             with open(bentofile_path, "r") as f:
                 build_config = BentoBuildConfig.from_yaml(f).with_defaults()
 
-        specs = IgnoreSpec(build_config)
-
-        ctx_fs = fs.open_fs(dir_)
-
-        return False
+        return any(
+            IgnoreSpec(build_config).includes(
+                path, current_dir=os.path.dirname(path), ctx_fs=ctx_fs
+            )
+            for ctx_fs in self.watch_fs
+        )
 
     @abstractmethod
-    def is_modified(self) -> bool:
+    def has_modification(self) -> bool:
         # returns True if file changed, False otherwise
         raise NotImplementedError("'is_modified()' is not implemented.")
 
@@ -100,7 +104,7 @@ class ReloaderPlugin(CircusPlugin):
         pass
 
     def look_after(self):
-        if self.is_modified():
+        if self.has_modification():
             logger.warning(f"{self.__class__.__name__} detected changes. Reloading...")
             self.call("restart", name="*")
             if hasattr(self, "_post_restart"):

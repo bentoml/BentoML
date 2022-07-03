@@ -37,13 +37,10 @@ class WatchFilesPlugin(ReloaderPlugin):
             rust_timeout=self.reload_delay,
         )
 
-    def is_modified(self) -> bool:
+    def has_modification(self) -> bool:
         for changes in self.file_changes:
             uniq_paths = {Path(c[1]) for c in changes}
-            watch_files = [os.path.join(dir_, p) for dir_, p in self.watch_files()]
-            filtered = [c for c in uniq_paths if c.__fspath__() in watch_files]
-            # logger.info(f"watch: {watch_files}")
-            # logger.info(f"filtered: {filtered}")
+            filtered = [c for c in uniq_paths if self.file_changed(c)]
             if filtered:
                 change_type, path = self._display_path(changes)
                 logger.warning(f"{change_type.upper()}: {path}")

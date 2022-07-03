@@ -751,27 +751,29 @@ class IgnoreSpec:
         self,
         path: str,
         *,
-        dir_path: t.Optional[str] = None,
+        current_dir: t.Optional[str] = None,
         ctx_fs: t.Optional["FS"] = None,
     ) -> bool:
         # to determine whether a path is included or not.
-        include = (
+        # NOTE that if dir_path is not None, then we also need to pass in ctx_fs
+        #  in order to create .bentoignore spec.
+        to_include = (
             self._include.match_file(path)
             and not self._exclude.match_file(path)
             and not self.gitdir.match_file(path)
         )
-        if include:
-            if dir_path and ctx_fs:
+        if to_include:
+            if current_dir and ctx_fs:
                 recursive_exclude_specs = [
                     i
                     for i in self._bentoignore(ctx_fs, _internal=True)
-                    if fs.path.isparent(i[0], dir_path)
+                    if fs.path.isparent(i[0], current_dir)
                 ]
                 return not any(
                     exclude_spec.match_file(fs.path.relativefrom(ignore_parent, path))
                     for ignore_parent, exclude_spec in recursive_exclude_specs
                 )
-        return include
+        return to_include
 
     def _bentoignore(
         self, fs_: "FS", *, _internal: bool = False

@@ -27,7 +27,7 @@ class StatsPlugin(ReloaderPlugin):
 
         return ioloop.PeriodicCallback(self.look_after, self.reload_delay * 1000)
 
-    def is_modified(self) -> bool:
+    def has_modification(self) -> bool:
         for file in self.file_changes():
             try:
                 mtime = file.stat().st_mtime

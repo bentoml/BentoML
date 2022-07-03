@@ -43,7 +43,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
+def partial_class(
+    cls: t.Type[PytorchModelRunnable], *args: t.Any, **kwargs: t.Any
+) -> type:
     class NewClass(cls):
         def __init__(self, *inner_args: t.Any, **inner_kwargs: t.Any) -> None:
             functools.partial(cls.__init__, *args, **kwargs)(
@@ -92,10 +94,7 @@ def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tens
         *args: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
         **kwargs: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
     ) -> torch.Tensor:
-        params = Params(
-            *args,
-            **kwargs,
-        )
+        params = Params(*args, **kwargs)
 
         def _mapping(
             item: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,

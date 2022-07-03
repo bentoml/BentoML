@@ -1239,7 +1239,7 @@ jobs:
           fi
 
       - name: Upload test coverage to Codecov
-        if: ${{ needs.diff.outputs.tensorflow_v2 == 'true' }}
+        if: ${{ needs.diff.outputs.tf2 == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./

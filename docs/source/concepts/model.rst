@@ -15,7 +15,7 @@ pipeline, invoking a :code:`save_model` call, as demonstrated in the
     saved_model = bentoml.sklearn.save_model("iris_clf", clf)
     print(f"Model saved: {saved_model}")
 
-    # Model saved: Model(tag="iris_clf:d2f2vuxzrsetzgxi")
+    # Model saved: Model(tag="iris_clf:2uo5fkgxj27exuqj")
 
 .. seealso::
 
@@ -174,14 +174,14 @@ stages. For example:
 
     > bentoml models export iris_clf:latest .
 
-    Model(tag="iris_clf:d2f2vuxzrsetzgxi") exported to ~/workspace/iris_clf-d2f2vuxzrsetzgxi.bentomodel
+    Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ~/workspace/iris_clf-2uo5fkgxj27exuqj.bentomodel
 
 .. code:: bash
 
     > bentoml models import ./iris_clf-2uo5fkgxj27exuqj.bentomodel
 
-    Successfully saved Model(tag="iris_clf:d2f2vuxzrsetzgxi")
-    Model(tag="iris_clf:d2f2vuxzrsetzgxi") imported
+    Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj")
+    Model(tag="iris_clf:2uo5fkgxj27exuqj") imported
 
 .. note::
 

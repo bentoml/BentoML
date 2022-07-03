@@ -174,7 +174,7 @@ stages. For example:
 
     > bentoml models export iris_clf:latest .
 
-    Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ~/workspace/iris_clf-2uo5fkgxj27exuqj.bentomodel
+    Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ./iris_clf-2uo5fkgxj27exuqj.bentomodel
 
 .. code:: bash
 

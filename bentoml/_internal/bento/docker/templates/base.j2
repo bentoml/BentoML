@@ -57,7 +57,7 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% block SETUP_BENTO_COMPONENTS %}
 
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
-{{ common.run_script(__install_python_scripts__, "install.sh to install python packages", additional_run_arg="--mount=type=cache,mode=0777,target=/root/.cache/pip") }}
+{{ common.run_script(__install_python_scripts__, "install.sh to install python packages", run_args="--mount=type=cache,mode=0777,target=/root/.cache/pip") }}
 
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
 {{ common.run_script(__setup_script__, "user setup scripts") }}

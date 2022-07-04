@@ -23,7 +23,7 @@ EOF
 
 {%- endmacro -%}
 
-{%- macro run_script(path, echo_msg, additional_run_arg="") -%}
+{%- macro run_script(path, echo_msg, run_args="") -%}
 # Running {{ echo_msg }} if exists
 RUN {{ additional_run_arg }} bash <<EOF
 set -euxo pipefail

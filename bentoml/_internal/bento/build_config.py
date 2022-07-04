@@ -433,7 +433,6 @@ class PythonOptions:
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
         pip_compile_compat: t.List[str] = []
-        pip_args: t.List[str] = []
         if self.index_url:
             pip_compile_compat.extend(["--index-url", self.index_url])
         if self.trusted_host:
@@ -447,6 +446,7 @@ class PythonOptions:
                 pip_compile_compat.extend(["--extra-index-url", url])
 
         # add additional pip args that does not apply to pip-compile
+        pip_args: t.List[str] = []
         pip_args.extend(pip_compile_compat)
         if self.no_index:
             pip_args.append("--no-index")

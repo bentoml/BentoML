@@ -43,7 +43,7 @@ def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> No
     for item in items:
         if "gpus" in item.keywords:
             item.add_marker(skip_gpus)
-        elif "requires_eager_execution" in item.keywords:
+        if "requires_eager_execution" in item.keywords:
             item.add_marker(requires_eager_execution)
 
 

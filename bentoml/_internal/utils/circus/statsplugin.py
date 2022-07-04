@@ -5,6 +5,8 @@ import logging
 from typing import TYPE_CHECKING
 from pathlib import Path
 
+import fs
+
 from .baseplugin import ReloaderPlugin
 
 logger = logging.getLogger(__name__)
@@ -53,4 +55,13 @@ class StatsPlugin(ReloaderPlugin):
         self.watcher.stop()
 
     def file_changes(self) -> t.Generator[Path, None, None]:
-        yield from [Path(dir_, p) for dir_, p in self.watch_files()]
+        for dir_ in self.watch_dirs:
+            ctx_fs = fs.open_fs(dir_)
+            for dir_path, _, files in ctx_fs.walk():
+                yield from map(
+                    Path,
+                    filter(
+                        self.should_include,
+                        [ctx_fs.getsyspath(f.make_path(dir_path)) for f in files],
+                    ),
+                )

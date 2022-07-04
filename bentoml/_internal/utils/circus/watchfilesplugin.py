@@ -7,12 +7,19 @@ from pathlib import Path
 from threading import Event
 from threading import Thread
 
-from watchfiles import watch
+from bentoml.exceptions import MissingDependencyException
 
 from .baseplugin import ReloaderPlugin
 
 if TYPE_CHECKING:
     from watchfiles.main import FileChange
+
+try:
+    from watchfiles import watch
+except ImportError:
+    raise MissingDependencyException(
+        "'watchefiles' is required to use with '--reload-backend=watchfiles'. Install watchfiles with `pip install 'bentoml[watchfiles]'`"
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +46,7 @@ class WatchFilesPlugin(ReloaderPlugin):
     def has_modification(self) -> bool:
         for changes in self.file_changes:
             uniq_paths = {Path(c[1]) for c in changes}
-            filtered = [c for c in uniq_paths if self.file_changed(c)]
+            filtered = [c for c in uniq_paths if self.should_include(c)]
             if filtered:
                 change_type, path = self._display_path(changes)
                 logger.warning(f"{change_type.upper()}: {path}")

@@ -8,26 +8,17 @@ from pathlib import Path
 from unittest import skipUnless
 from unittest.mock import patch
 
-import fs
 import pytest
-from watchfiles.main import Change
 from circus.tests.support import TestCircus
 
 from bentoml._internal.utils.pkg import source_locations
-from bentoml._internal.server.supervisors.watchfilesplugin import WatchFilesPlugin
+from bentoml._internal.utils.circus.watchfilesplugin import WatchFilesPlugin
 
 if TYPE_CHECKING:
     from unittest import TestCase
     from unittest.mock import MagicMock
 
-    from fs.info import Info
     from watchfiles.main import FileChange
-
-
-def walk_fs(root: Path) -> t.Generator[Info, None, None]:
-    fs_ = fs.open_fs(root.__fspath__())
-    for _, _, files in fs_.walk():
-        yield from files
 
 
 def requires_watchfiles(test_case: t.Type[TestCase]) -> t.Callable[..., t.Any]:
@@ -92,6 +83,8 @@ class TestWatchFilesPlugin(TestCircus):
         return call_mock
 
     def test_look_after_trigger_restart(self) -> None:
+        from watchfiles.main import Change
+
         file = self.reload_directory.joinpath("file.txt").__fspath__()
 
         call_mock = self.setup_call_mock(watcher_name="reloader")
@@ -105,6 +98,8 @@ class TestWatchFilesPlugin(TestCircus):
             self.assertIn("ADDED", log.output[0])
 
     def test_look_after_trigger_restart_on_deletion(self):
+        from watchfiles.main import Change
+
         file = self.reload_directory.joinpath("train.py").__fspath__()
 
         call_mock = self.setup_call_mock(watcher_name="reloader")

@@ -5,7 +5,6 @@ import typing as t
 import logging
 from abc import abstractmethod
 from pathlib import Path
-from functools import lru_cache
 
 import fs
 from circus.plugins import CircusPlugin
@@ -63,14 +62,9 @@ class ReloaderPlugin(CircusPlugin):
         logger.info(f"Watching directories: {watch_dirs}")
         self.watch_dirs = watch_dirs
 
-        self.create_spec(_internal=True)
+        self.create_spec()
 
-    @lru_cache(maxsize=1)
-    def create_spec(self, *, _internal: bool = False) -> None:
-        if not _internal:
-            raise BentoMLException(
-                "'create_spec()' is internal function and should not used directly."
-            )
+    def create_spec(self) -> None:
         bentofile_path = os.path.join(self.working_dir, "bentofile.yaml")
         if not os.path.exists(bentofile_path):
             # if bentofile.yaml is not found, by default we will assume to watch all files
@@ -80,11 +74,10 @@ class ReloaderPlugin(CircusPlugin):
             # respect bentofile.yaml include and exclude
             with open(bentofile_path, "r") as f:
                 build_config = BentoBuildConfig.from_yaml(f).with_defaults()
-        self.build_config = build_config
 
         self.bento_spec = BentoPatternSpec(build_config)
 
-    def file_changed(self, path: str | Path) -> bool:
+    def should_include(self, path: str | Path) -> bool:
         # returns True if file with 'path' has changed, else False
         if isinstance(path, Path):
             path = path.__fspath__()
@@ -110,6 +103,10 @@ class ReloaderPlugin(CircusPlugin):
     def watcher(self) -> t.Any:
         raise NotImplementedError("'watcher()' is not implemented.")
 
+    @abstractmethod
+    def handle_stop(self) -> None:
+        raise NotImplementedError("'handle_stop()' is not implemented.")
+
     def _post_restart(self):
         # _post_restart callback is only called after restart if file changes are detected.
         # this hook is optional.
@@ -128,10 +125,6 @@ class ReloaderPlugin(CircusPlugin):
                 f"'start()' callback is required for {self.watcher.__class__.__name__}."
             )
         self.watcher.start()
-
-    @abstractmethod
-    def handle_stop(self) -> None:
-        raise NotImplementedError("'handle_stop()' is not implemented.")
 
     def handle_recv(self, data: t.Any):
         pass

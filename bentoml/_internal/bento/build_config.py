@@ -736,7 +736,7 @@ class BentoPatternSpec:
         converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
     )
     # we want to ignore .git folder in cases the .git folder is very large.
-    __git: PathSpec = attr.field(
+    git: PathSpec = attr.field(
         default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
     )
 
@@ -759,7 +759,7 @@ class BentoPatternSpec:
         to_include = (
             self._include.match_file(path)
             and not self._exclude.match_file(path)
-            and not self.__git.match_file(path)
+            and not self.git.match_file(path)
         )
         if to_include:
             if recurse_exclude_spec is not None:

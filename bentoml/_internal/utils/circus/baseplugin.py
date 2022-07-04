@@ -4,8 +4,8 @@ import os
 import typing as t
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 from pathlib import Path
+from functools import lru_cache
 
 import fs
 from circus.plugins import CircusPlugin
@@ -14,28 +14,26 @@ from bentoml.exceptions import BentoMLException
 
 from ...utils.pkg import source_locations
 from ...configuration import is_pypi_installed_bentoml
-from ...bento.build_config import IgnoreSpec
 from ...bento.build_config import BentoBuildConfig
-
-if TYPE_CHECKING:
-    from fs.base import FS
+from ...bento.build_config import BentoPatternSpec
 
 logger = logging.getLogger(__name__)
 
 
 class ReloaderPlugin(CircusPlugin):
     """
-    A circus plugin that reloads the BentoService when the service code changes.
+    A Circus plugin that reloads the BentoService whenever the service code changes.
 
     A child class should implement the following methods:
         - has_modification()
         - handle_stop()
-        - _post_restart() (optional)
+        - property watcher()
 
-    A child class should also implement the following property:
-        - watcher
+    An optional '_post_restart' hook can be implemented. Note that this will only be called after
+    'self.call("restart", name="*")'.
 
-    Note that _post_restart() is only called after restart if file changes are detected.
+    This plugin provides `file_changed(path)` to detect whether a file has changed.
+    It will respect the 'include' and 'exclude' in bentofile.yaml as well as '.bentoignore'.
     """
 
     name = "bento_file_watcher"
@@ -64,13 +62,15 @@ class ReloaderPlugin(CircusPlugin):
 
         logger.info(f"Watching directories: {watch_dirs}")
         self.watch_dirs = watch_dirs
-        self.watch_fs = [fs.open_fs(d) for d in self.watch_dirs]
 
-    def file_changed(self, path: str | Path) -> bool:
-        # returns True if file with 'path' has changed, else False
-        if isinstance(path, Path):
-            path = path.__fspath__()
+        self.create_spec(_internal=True)
 
+    @lru_cache(maxsize=1)
+    def create_spec(self, *, _internal: bool = False) -> None:
+        if not _internal:
+            raise BentoMLException(
+                "'create_spec()' is internal function and should not used directly."
+            )
         bentofile_path = os.path.join(self.working_dir, "bentofile.yaml")
         if not os.path.exists(bentofile_path):
             # if bentofile.yaml is not found, by default we will assume to watch all files
@@ -80,12 +80,24 @@ class ReloaderPlugin(CircusPlugin):
             # respect bentofile.yaml include and exclude
             with open(bentofile_path, "r") as f:
                 build_config = BentoBuildConfig.from_yaml(f).with_defaults()
+        self.build_config = build_config
+
+        self.bento_spec = BentoPatternSpec(build_config)
+
+    def file_changed(self, path: str | Path) -> bool:
+        # returns True if file with 'path' has changed, else False
+        if isinstance(path, Path):
+            path = path.__fspath__()
 
         return any(
-            IgnoreSpec(build_config).includes(
-                path, current_dir=os.path.dirname(path), ctx_fs=ctx_fs
+            self.bento_spec.includes(
+                path,
+                recurse_exclude_spec=filter(
+                    lambda s: fs.path.isparent(s[0], os.path.dirname(path)),
+                    self.bento_spec.from_path(dirs),
+                ),
             )
-            for ctx_fs in self.watch_fs
+            for dirs in self.watch_dirs
         )
 
     @abstractmethod

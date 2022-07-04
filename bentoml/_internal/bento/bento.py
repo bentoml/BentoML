@@ -30,11 +30,11 @@ from ..models import ModelStore
 from ..runner import Runner
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from .build_config import IgnoreSpec
 from .build_config import CondaOptions
 from .build_config import DockerOptions
 from .build_config import PythonOptions
 from .build_config import BentoBuildConfig
+from .build_config import BentoPatternSpec
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
@@ -184,7 +184,7 @@ class Bento(StoreItem):
         # Apply default build options
         build_config = build_config.with_defaults()
         # create ignore specs
-        specs = IgnoreSpec(build_config)
+        specs = BentoPatternSpec(build_config)
 
         # Copy all files base on include and exclude, into `src` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]
@@ -198,7 +198,13 @@ class Bento(StoreItem):
         for dir_path, _, files in ctx_fs.walk():
             for f in files:
                 path = fs.path.combine(dir_path, f.name).lstrip("/")
-                if specs.includes(path, current_dir=dir_path, ctx_fs=ctx_fs):
+                if specs.includes(
+                    path,
+                    recurse_exclude_spec=filter(
+                        lambda s: fs.path.isparent(s[0], dir_path),
+                        specs.from_path(build_ctx),
+                    ),
+                ):
                     target_fs.makedirs(dir_path, recreate=True)
                     copy_file(ctx_fs, path, target_fs, path)
 

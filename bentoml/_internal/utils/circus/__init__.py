@@ -1,17 +1,28 @@
 from __future__ import annotations
 
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
+
+from .baseplugin import ReloaderPlugin
 
 if TYPE_CHECKING:
     from circus.arbiter import Arbiter
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
+    ServiceReloaderPlugin: t.Type[ReloaderPlugin]
+else:
+    try:
+        from .watchfilesplugin import WatchFilesPlugin as ServiceReloaderPlugin
+    except ImportError:
+        from .statsplugin import StatsPlugin as ServiceReloaderPlugin
 
-logger = logging.getLogger(__name__)
+__all__ = [
+    "ServiceReloaderPlugin",
+    "create_circus_socket_from_uri",
+    "create_standalone_arbiter",
+]
 
 
 def create_circus_socket_from_uri(
@@ -19,7 +30,7 @@ def create_circus_socket_from_uri(
 ) -> CircusSocket:
     from circus.sockets import CircusSocket
 
-    from .uri import uri_to_path
+    from ..uri import uri_to_path
 
     parsed = urlparse(uri)
     if parsed.scheme in ("file", "unix"):
@@ -44,7 +55,7 @@ def create_circus_socket_from_uri(
 def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbiter:
     from circus.arbiter import Arbiter
 
-    from . import reserve_free_port
+    from .. import reserve_free_port
 
     with reserve_free_port() as endpoint_port:
         with reserve_free_port() as pubsub_port:

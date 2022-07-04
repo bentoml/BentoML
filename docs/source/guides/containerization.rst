@@ -1,9 +1,12 @@
-================
-Containerization
-================
+=================
+Custom Dockerfile
+=================
 
-This guide describes the containerization process and how users can
-define a custom Dockerfile templates to customize Bento container. 
+This guides describes how to customize the Dockerfile generated for containerizing a Bento, by extending BentoML's built-in templates. This is an advanced feature for user to customize container environment that are not directly supported in BentoML.
+
+.. seealso::
+
+   :ref:`concepts/bento:Docker Options` doc to learn about basic options for configuring the Bento generated container image.
 
 
 .. note::
@@ -14,8 +17,8 @@ define a custom Dockerfile templates to customize Bento container.
    It is meant to give a quick overview of how Jinja2 is used in conjunction with BentoML.
    For any reference on Jinja2 please refers to their `Templates Design Documentation <https://jinja.palletsprojects.com/en/3.1.x/templates/>`_.
 
-Why do you need this?
----------------------
+Why you may need this?
+----------------------
 
 1. If you want to customize the containerization process of your Bento.
 2. If you need a certain tools, configs, prebuilt binaries that is available across all your Bento generated container images.
@@ -27,12 +30,11 @@ How it works
 To focus on how to create a custom Dockerfile template, the following examples
 are provided:
 
-1. :ref:`guides/containerization:Building binary into Bentos`
+1. :ref:`guides/containerization:Building Tensorflow custom op`
 2. :ref:`guides/containerization:Access AWS credentials during image build`
-3. :ref:`guides/containerization:Installing custom CUDA version with conda`
 
-Building binary into Bentos
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Tensorflow custom op
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let's start with an example that builds a `custom Tensorflow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento.
 
@@ -206,40 +208,6 @@ containerize`:
 .. seealso::
 
    `Mounting Secrets <https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#run---mounttypesecret>`_
-
-Installing custom CUDA version with conda
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Lastly, we will also demonstrate how you can install custom cuda version via
-conda.
-
-Add the following to your :code:`bentofile.yaml`:
-
-.. code-block:: yaml
-
-   conda:
-     channels:
-     - conda-forge
-     - nvidia
-     - defaults
-     dependencies:
-     - cudatoolkit-dev=10.1
-     - cudnn=7.6.4
-     - cxx-compiler=1.0
-     - mpi4py=3.0 # installs cuda-aware openmpi
-     - matplotlib=3.2
-     - networkx=2.4
-     - numba=0.48
-     - pandas=1.0
-
-Then proceed with :code:`bentoml build` and :code:`bentoml containerize`
-respectively:
-
-.. code-block:: bash
-
-   bentoml build
-
-   bentoml containerize <bento>:<tag>
 
 Writing :code:`dockerfile_template`
 -----------------------------------

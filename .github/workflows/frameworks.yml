@@ -199,7 +199,8 @@ jobs:
               - *runner
               - bentoml/tensorflow.py
               - bentoml/_internal/frameworks/tensorflow_v2.py
-              - tests/integration/frameworks/test_tensorflow_v2_impl.py
+              - tests/integration/frameworks/models/tensorflow_v2.py
+              - tests/integration/frameworks/tensorflow_v2_unit.py
             keras_tf2:
               - *runner
               - *tf2
@@ -1218,12 +1219,32 @@ jobs:
         run: make tests-tensorflow_v2
         shell: bash
 
+      - name: Run unit test for tensorflow_v2
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.xml" --cov-report term-missing:skip-covered)
+          python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for tensorflow_v2 failed!"
+            exit 1
+          fi
+
+      - name: Run tensorflow_v2 without eager execution
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-tf-eager-execution)
+          python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for tensorflow_v2 failed!"
+            exit 1
+          fi
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
-          files: ./tf2.xml
+          files: ./tf2.xml,./tf2.unit.xml,./tf2.unit.no_eager.xml
           flags: tensorflow
           verbose: true
 

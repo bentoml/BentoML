@@ -751,7 +751,7 @@ class BentoPatternSpec:
         self,
         path: str,
         *,
-        recurse_exclude_spec: t.Iterable[tuple[str, PathSpec]] | None = None,
+        recurse_exclude_spec: t.Iterable[t.Tuple[str, PathSpec]] | None = None,
     ) -> bool:
         # to determine whether a path is included or not.
         # NOTE that if dir_path is not None, then we also need to pass in ctx_fs
@@ -769,7 +769,7 @@ class BentoPatternSpec:
                 )
         return False
 
-    def from_path(self, path: str) -> t.Generator[tuple[str, PathSpec], None, None]:
+    def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
         """
         yield (parent, exclude_spec) from .bentoignore file of a given path
         """

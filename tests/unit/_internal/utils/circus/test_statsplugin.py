@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -52,28 +51,25 @@ class TestStatsPlugin(TestCircus):
         ]
         return call_mock
 
+    def setup_modified_mock(self) -> None:
+        patcher = patch.object(StatsPlugin, "has_modification")
+        modi_mock = patcher.start()
+        self.addCleanup(patcher.stop)
+        modi_mock.return_value = True
+
     def test_look_after_trigger_restart(self) -> None:
         file = self.reload_directory.joinpath("file.txt").__fspath__()
 
         call_mock = self.setup_call_mock(watcher_name="reloader")
         plugin = self.make_plugin(StatsPlugin, **self.plugin_kwargs)
-        Path(file).touch()
-
-        with self.assertLogs("bentoml", level=logging.WARNING) as log:
-            with Path(file).open("w") as f:
-                f.write("xff")
-            plugin.look_after()
-            call_mock.assert_called_with("restart", name="*")
-            self.assertIn("Detected change", log.output[0])
-
-    def test_look_after_trigger_restart_on_deletion(self):
-        file = self.reload_directory.joinpath("train.py").__fspath__()
-
-        call_mock = self.setup_call_mock(watcher_name="reloader")
-        plugin = self.make_plugin(StatsPlugin, **self.plugin_kwargs)
-        os.remove(file)
+        self.setup_modified_mock()  # mimic behaviour of file change
 
         with self.assertLogs("bentoml", level=logging.WARNING) as log:
             plugin.look_after()
+            Path(file).touch()
+
             call_mock.assert_called_with("restart", name="*")
-            self.assertIn("Detected change", log.output[0])
+            self.assertEqual(
+                "WARNING:bentoml._internal.utils.circus.baseplugin:StatsPlugin detected changes. Reloading...",
+                log.output[0],
+            )

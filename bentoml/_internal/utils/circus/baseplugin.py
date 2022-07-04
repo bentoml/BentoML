@@ -61,6 +61,7 @@ class ReloaderPlugin(CircusPlugin):
 
         logger.info(f"Watching directories: {watch_dirs}")
         self.watch_dirs = watch_dirs
+        logger.debug(f"Using {self.__class__.__qualname__} as reloader plugin.")
 
         self.create_spec()
 

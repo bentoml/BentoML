@@ -13,6 +13,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
+from bentoml.exceptions import BentoMLException
 
 from ..utils import reserve_free_port
 from ..resource import CpuResource
@@ -98,23 +99,18 @@ def serve_development(
         )
         try:
             if reload_backend not in ["default", "watchfiles", "auto"]:
-                raise ValueError(
+                raise BentoMLException(
                     f"reload_backend must be one of ['default', 'watchfiles', 'auto']. Got {reload_backend}"
                 )
             if reload_backend == "default":
-                from ..utils.circus.statsplugin import StatsPlugin
-
-                reloader = f"{StatsPlugin.__module__}.{StatsPlugin.__qualname__}"
+                from ..utils.circus.statsplugin import StatsPlugin as _reloader
             elif reload_backend == "watchfiles":
-                from ..utils.circus.watchfilesplugin import WatchFilesPlugin
-
-                reloader = (
-                    f"{WatchFilesPlugin.__module__}.{WatchFilesPlugin.__qualname__}"
+                from ..utils.circus.watchfilesplugin import (
+                    WatchFilesPlugin as _reloader,
                 )
             else:
-                from ..utils.circus import ServiceReloaderPlugin
-
-                reloader = f"{ServiceReloaderPlugin.__module__}.{ServiceReloaderPlugin.__qualname__}"
+                from ..utils.circus import ServiceReloaderPlugin as _reloader
+            reloader = f"{_reloader.__module__}.{_reloader.__qualname__}"
         except ImportError:
             # backward compatibility for BentoML 1.0.0rc adopters
             reloader = "bentoml._internal.utils.circus.BentoChangeReloader"

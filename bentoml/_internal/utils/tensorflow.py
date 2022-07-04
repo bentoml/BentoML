@@ -2,18 +2,16 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import importlib.util
 from typing import TYPE_CHECKING
+from functools import lru_cache
 
 from bentoml.exceptions import BentoMLException
 
+from .pkg import find_spec
+from .pkg import get_pkg_version
+from .pkg import PackageNotFoundError
 from ..types import LazyType
 from .lazy_loader import LazyLoader
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
 
 if TYPE_CHECKING:
     import tensorflow as tf
@@ -87,11 +85,12 @@ def is_gpu_available() -> bool:
         return tf.test.is_gpu_available()
 
 
+@lru_cache(maxsize=1)
 def get_tf_version() -> str:
     # courtesy of huggingface/transformers
 
     _tf_version = ""
-    _tf_available = importlib.util.find_spec("tensorflow") is not None
+    _tf_available = find_spec("tensorflow") is not None
     if _tf_available:
         candidates = (
             "tensorflow",
@@ -108,9 +107,9 @@ def get_tf_version() -> str:
         # For the metadata, we have to look for both tensorflow and tensorflow-cpu
         for pkg in candidates:
             try:
-                _tf_version = importlib_metadata.version(pkg)
+                _tf_version = get_pkg_version(pkg)
                 break
-            except importlib_metadata.PackageNotFoundError:
+            except PackageNotFoundError:
                 pass
     return _tf_version
 

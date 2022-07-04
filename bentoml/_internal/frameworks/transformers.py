@@ -21,14 +21,16 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
-from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
+from ..utils.tensorflow import get_tf_version
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignature
-    from bentoml.types import ModelSignatureDict
 
-    from ..external_typing import transformers as transformers_ext
+    from ..models.model import ModelSignaturesType
+    from ..external_typing import transformers as ext
+
+    AutoClassGenerator = t.Generator[t.Type[ext.BaseAutoModelClass], None, None]
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
 
@@ -75,46 +77,65 @@ def _check_flax_supported() -> None | tuple[str, str]:
             )
 
 
-if TYPE_CHECKING:
+try:
+    # no need to do lazy loading for transformers, since we will
+    # always check for flax supported version of transformers, which
+    # requires transformers to be imported.
     import transformers
     import transformers.utils.import_utils as import_utils
-else:
-    _exc_msg = "transformers is required in order to use module 'bentoml.transformers'. Install transformers with 'pip install transformers'."
-    transformers = LazyLoader(
-        "transformers", globals(), "transformers", exc_msg=_exc_msg
-    )
-    import_utils = LazyLoader(
-        "import_utils", globals(), "transformers.utils.import_utils"
-    )
+    from transformers.pipelines import TASK_ALIASES
+    from transformers.pipelines import SUPPORTED_TASKS
+
     _check_flax_supported()
+except ImportError:
+    raise MissingDependencyException(
+        "transformers is required in order to use module 'bentoml.transformers'. Install transformers with 'pip install transformers'."
+    )
+
+
+def task_default_converter(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | None]]:
+    for k, v in dct.items():
+        if isinstance(v, list):
+            dct[k] = tuple(v)  # type: ignore
+    return dct
 
 
 @attr.define
-class TransformersOptions(ModelOptions):
-    """Options for the Transformers model."""
+class PipelineConfiguration:
+    # TODO: remove factory when classmethod from_options() is added
+    task: str = attr.field(validator=attr.validators.instance_of(str), factory=str)
 
-    task: str = attr.field(validator=attr.validators.instance_of(str))
-
-    tf: t.Tuple[str] = attr.field(
-        validator=attr.validators.deep_iterable(
-            attr.validators.instance_of(str),
-        ),  # type: ignore (unfinished attr type)
+    tf: t.Optional[t.Tuple[str]] = attr.field(
+        validator=attr.validators.optional(  # type: ignore (unfinished attr.validators type)
+            attr.validators.deep_iterable(attr.validators.instance_of(str))
+        ),
+        converter=tuple,
         factory=tuple,
     )
-    pt: t.Tuple[str] = attr.field(
-        validator=attr.validators.deep_iterable(
-            attr.validators.instance_of(str),
-        ),  # type: ignore (unfinished attr type)
+    pt: t.Optional[t.Tuple[str]] = attr.field(
+        validator=attr.validators.optional(  # type: ignore (unfinished attr.validators type)
+            attr.validators.deep_iterable(attr.validators.instance_of(str))
+        ),
+        converter=tuple,
         factory=tuple,
     )
-    default: t.Dict[str, t.Any] = attr.field(factory=dict)
-    type: str = attr.field(
-        validator=attr.validators.and_(
-            attr.validators.instance_of(str),
-            attr.validators.in_(("audio", "image", "multimodal", "text")),
+    default: t.Optional[t.Dict[str, t.Any]] = attr.field(
+        factory=dict, converter=task_default_converter
+    )
+    type: t.Optional[str] = attr.field(
+        validator=attr.validators.optional(
+            attr.validators.and_(
+                attr.validators.instance_of(str),
+                attr.validators.in_(("audio", "image", "multimodal", "text")),
+            )
         ),
         default=None,
     )
+
+
+@attr.define
+class TransformersOptions(PipelineConfiguration, ModelOptions):
+    """Options for the Transformers model."""
 
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
@@ -128,13 +149,11 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
-def _get_auto_class(
-    val: str | Iterable[str],
-) -> t.Generator[transformers_ext.BaseAutoModelClass, None, None]:
+def _get_auto_class(val: str | Iterable[str]) -> AutoClassGenerator:
     if isinstance(val, str):
         if not hasattr(transformers, val):
             raise BentoMLException(
-                f"Given {val} is neither exists nor a valid Transformers AutoModel. For more information, please see https://huggingface.co/docs/transformers/model_doc/auto"
+                f"Given {val} is neither exists nor a valid Transformers auto class. For more information, please see https://huggingface.co/docs/transformers/model_doc/auto"
             )
         yield getattr(transformers, val)
     elif isinstance(val, Iterable):
@@ -149,7 +168,7 @@ def _get_auto_class(
 def load_model(
     bento_model: str | Tag | Model,
     **kwargs: t.Any,
-) -> transformers_ext.TransformersPipeline:
+) -> ext.TransformersPipeline:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
@@ -169,13 +188,11 @@ def load_model(
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """  # noqa
-    from transformers.pipelines import SUPPORTED_TASKS
-
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
+        raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
@@ -217,11 +234,11 @@ def load_model(
 
 def save_model(
     name: str,
-    pipeline: transformers_ext.TransformersPipeline,
+    pipeline: ext.TransformersPipeline,
     *,
     task_name: str | None = None,
     task_definition: t.Dict[str, t.Any] | None = None,
-    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
+    signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
@@ -294,10 +311,9 @@ def save_model(
         generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
         bento_model = bentoml.transformers.save_model("text-generation-pipeline", generator)
     """  # noqa
-    if not isinstance(
-        pipeline,
-        LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),  # type: ignore
-    ):
+    if not LazyType["ext.TransformersPipeline"](
+        "transformers.pipelines.base.Pipeline"
+    ).isinstance(pipeline):
         raise BentoMLException(
             "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
             "To save other Transformers types like models, tokenizers, configs, feature "
@@ -335,7 +351,7 @@ def save_model(
     if import_utils.is_torch_available():
         library_versions["torch"] = get_pkg_version("torch")
     if import_utils.is_tf_available():
-        library_versions["tensorflow"] = get_pkg_version("tensorflow")
+        library_versions["tensorflow"] = get_tf_version()
 
     context = ModelContext(
         framework_name="transformers",
@@ -346,50 +362,47 @@ def save_model(
     )
 
     if signatures is None:
-        signatures = {
-            "__call__": {"batchable": False},
-        }
+        signatures = {"__call__": {"batchable": False}}
         logger.info(
             f"Using the default model signature for Transformers ({signatures}) for model {name}."
         )
 
     if task_name is not None and task_definition is not None:
+        logger.info(
+            f"Arguments `task_name` and `task_definition` are provided. Saving model with pipeline "
+            f"task name '{task_name}' and task definition '{task_definition}'."
+        )
+
+        if task_name in TASK_ALIASES:
+            task_name = TASK_ALIASES[task_name]
+
+        if task_name in SUPPORTED_TASKS:
+            if SUPPORTED_TASKS[task_name] != task_definition:
+                raise BentoMLException(
+                    f"Argument `task_definition` '{task_definition}' does not match pipeline task definition '{SUPPORTED_TASKS[task_name]}'."
+                )
+        if pipeline.task in TASK_ALIASES:
+            compare_task = TASK_ALIASES[pipeline.task]
+        else:
+            compare_task = pipeline.task
+
+        if pipeline.task is None or compare_task != task_name:
+            raise BentoMLException(
+                f"Argument `task_name` '{task_name}' does not match pipeline task name '{pipeline.task}'."
+            )
+
+        impl: type = task_definition["impl"]
+        if type(pipeline) != impl:
+            raise BentoMLException(
+                f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
+            )
+
         try:
             from transformers.pipelines import PIPELINE_REGISTRY
 
             PIPELINE_REGISTRY.register_pipeline(task_name, task_definition)
         except ImportError:
-            from transformers.pipelines import TASK_ALIASES
-            from transformers.pipelines import SUPPORTED_TASKS
-
-            logger.info(
-                f"Arguments `task_name` and `task_definition` are provided. Saving model with pipeline "
-                f"task name '{task_name}' and task definition '{task_definition}'."
-            )
-
-            if pipeline.task is None or pipeline.task != task_name:
-                raise BentoMLException(
-                    f"Argument `task_name` '{task_name}' does not match pipeline task name '{pipeline.task}'."
-                )
-
-            impl: type = task_definition["impl"]
-            if type(pipeline) != impl:
-                raise BentoMLException(
-                    f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
-                )
-            if task_name in TASK_ALIASES:
-                raise BentoMLException(
-                    f"'{task_name}' is an alias to '{TASK_ALIASES[task_name]}'. Use '{TASK_ALIASES[task_name]}' instead."
-                )
-
-            if task_name in SUPPORTED_TASKS:
-                if SUPPORTED_TASKS[task_name] != task_definition:
-                    raise BentoMLException(
-                        f"Argument `task_definition` '{task_definition}' does not match pipeline task "
-                        "definition '{SUPPORTED_TASKS[task_name]}'."
-                    )
-            else:
-                SUPPORTED_TASKS[task_name] = task_definition
+            SUPPORTED_TASKS[task_name] = task_definition
 
         options = TransformersOptions(
             task=task_name,

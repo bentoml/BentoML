@@ -10,6 +10,7 @@ except ImportError:
     import importlib_metadata
     from importlib_metadata import PackageNotFoundError
 
+# importlib will also be included here as a side-import
 import importlib.util
 
 from packaging.version import Version
@@ -19,9 +20,11 @@ __all__ = [
     "pkg_version_info",
     "get_pkg_version",
     "source_locations",
+    "find_spec",
 ]
 
 get_pkg_version = importlib_metadata.version
+find_spec = importlib.util.find_spec
 
 
 def pkg_version_info(pkg_name: str | ModuleType) -> tuple[int, int, int]:

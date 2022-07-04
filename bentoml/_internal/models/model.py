@@ -66,6 +66,8 @@ class ModelOptions:
     def with_options(self, **kwargs: t.Any) -> ModelOptions:
         return attr.evolve(self, **kwargs)
 
+    # NOTE: attr.asdict() presents a problem if attribute is a tuple, the serialized result would be a list.
+    # In these cases, the framework should override to_dict().
     def to_dict(self: ModelOptions) -> dict[str, t.Any]:
         return attr.asdict(self)
 

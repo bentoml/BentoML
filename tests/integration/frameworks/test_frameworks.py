@@ -61,6 +61,7 @@ def test_model_options_init(
     ModelOptions = framework.ModelOptions
 
     for configuration in test_model.configurations:
+        print(configuration.load_kwargs)
         from_kwargs = ModelOptions(**configuration.load_kwargs)
         from_with_options = ModelOptions().with_options(**configuration.load_kwargs)
         assert from_kwargs == from_with_options

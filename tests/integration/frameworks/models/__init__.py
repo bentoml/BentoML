@@ -42,6 +42,7 @@ class FrameworkTestModelInput:
     def check_output(self, outp: t.Any):
         if isinstance(self.expected, t.Callable):
             result = self.expected(outp)
+            print(result)
             if result is not None:
                 assert (
                     result

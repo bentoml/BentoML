@@ -741,17 +741,13 @@ class BentoPatternSpec:
     )
 
     def __init__(self, build_config: "FilledBentoBuildConfig") -> None:
-        if not build_config.include or not build_config.exclude:
-            raise BentoMLException(
-                "To use IgnoreSpec, make sure to call build_config.with_defaults() first."
-            )
         return self.__attrs_init__(build_config.include, build_config.exclude)  # type: ignore (unfinished __attr_init__ type)
 
     def includes(
         self,
         path: str,
         *,
-        recurse_exclude_spec: t.Iterable[t.Tuple[str, PathSpec]] | None = None,
+        recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
     ) -> bool:
         # to determine whether a path is included or not.
         # NOTE that if dir_path is not None, then we also need to pass in ctx_fs

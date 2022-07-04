@@ -67,10 +67,10 @@ import bentoml
 
 model = train(...)
 
-bentoml.pytorch.save_model("fraud_detect", model)
+saved_model = bentoml.pytorch.save_model("fraud_detect", model)
+print(f"Model saved: {saved_model}")
 
-# INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for pytorch model
-# INFO  [cli] Successfully saved Model(tag="fraud_detect:3qee3zd7lc4avuqj", path="~/bentoml/models/fraud_detect/3qee3zd7lc4avuqj/")
+# Model saved: Model(tag="fraud_detect:3qee3zd7lc4avuqj", path="~/bentoml/models/fraud_detect/3qee3zd7lc4avuqj/")
 ```
 
 BentoML saves the model artifact files in a local model store, a long with necessary metadata. 
@@ -164,18 +164,18 @@ Build a `Bento` using the `bentofile.yaml` specification from current directory:
 ```bash
 > bentoml build
 
-INFO [cli] Building BentoML service "pytorch_mnist:4mymorgurocxjuqj" from build context "~/workspace/gallery/pytorch_mnist"
-INFO [cli] Packing model "demo_mnist:7drxqvwsu6zq5uqj" from "~/bentoml/models/demo_mnist/7drxqvwsu6zq5uqj"
-INFO [cli] Locking PyPI package versions..
-INFO [cli]
-           ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-           ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-           ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-           ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-           ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-           ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+# Building BentoML service "pytorch_mnist:4mymorgurocxjuqj" from build context "~/workspace/gallery/pytorch_mnist"
+# Packing model "demo_mnist:7drxqvwsu6zq5uqj" from "~/bentoml/models/demo_mnist/7drxqvwsu6zq5uqj"
+# Locking PyPI package versions..
 
-INFO [cli] Successfully built Bento(tag="pytorch_mnist:4mymorgurocxjuqj") at "~/bentoml/bentos/pytorch_mnist/4mymorgurocxjuqj/"
+# ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+# ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+# ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+# ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+# ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+# ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+
+# Successfully built Bento(tag="pytorch_mnist:4mymorgurocxjuqj") at "~/bentoml/bentos/pytorch_mnist/4mymorgurocxjuqj/"
 ```
 The Bento with `tag="pytorch_mnist:4mymorgurocxjuqj"` is now created in the local `Bento` store. It is an archive containing all the source code, model files, and dependency specs - anything that is required for reproducing the model in an identical environment for serving in production.
 
@@ -186,7 +186,7 @@ Generate a docker image from the Bento and run a docker container locally for se
 ```bash
 > bentoml containerize pytorch_mnist:4mymorgurocxjuqj
 
-INFO [cli] Successfully built docker image "pytorch_mnist:4mymorgurocxjuqj"
+Successfully built docker image "pytorch_mnist:4mymorgurocxjuqj"
 
 > docker run --gpus all -p 3000:3000 pytorch_mnist:4mymorgurocxjuqj
 ```

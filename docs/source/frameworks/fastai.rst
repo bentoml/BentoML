@@ -75,7 +75,16 @@ Saving a learner with BentoML
    :bdg-warning:`Warning:` `Learner <https://docs.fast.ai/learner.html#Learner>`_ instance is required to save with BentoML.
    This is a design choice to preserve functionalities provided by fastai.
 
-.. seealso::
+To quickly save the trained learner, use ``save_model``:
+
+.. code-block:: python
+
+   bentoml.fastai.save_model("fastai_sentiment", learner)
+
+   # output:
+   # Model(tag="fastai_sentiment:5bakmghqpk4z3gxi", path="~/bentoml/models/fastai_sentiment/5bakmghqpk4z3gxi/")
+
+.. note::
 
    If you want to use the PyTorch model components of fastai ``Learner``s with BentoML, refer to the :ref:`PyTorch Framework Guide<frameworks/pytorch:PyTorch>`.
 
@@ -86,67 +95,6 @@ Saving a learner with BentoML
       import bentoml
 
       bentoml.pytorch.save_model("my_pytorch_model", learner.model)
-
-To quickly save the trained learner, use ``save_model``:
-
-.. code-block:: python
-
-   bentoml.fastai.save_model("fastai_sentiment", learner)
-
-   # output:
-   # Model(tag="fastai_sentiment:5bakmghqpk4z3gxi", path="~/bentoml/models/fastai_sentiment/5bakmghqpk4z3gxi/")
-
-.. seealso::
-   It is also possible to **use pre-trained models** directly with BentoML, without
-   saving it to the model store first. Check out the
-   :ref:`Custom Runner <concepts/runner:Custom Runner>` example to learn more.
-
-.. tip::
-
-   If you have an existing model saved to file on disk, you will need to load the model
-   in a python session first and then use BentoML's framework specific
-   :code:`save_model` method to put it into the BentoML model store.
-
-   We recommend **always save the model with BentoML as soon as it finished training and
-   validation**. By putting the :code:`save_model` call to the end of your training
-   pipeline, all your finalized models can be managed in one place and ready for
-   inference.
-
-Optionally, you may attach custom labels, metadata, or :code:`custom_objects` to be
-saved alongside your model in the model store, e.g.:
-
-.. code:: python
-
-    bentoml.fastai.save_model(
-        "fastai_sentiment",       # model name in the local model store
-        learner,                  # model instance being saved
-        labels={                  # user-defined labels for managing models in Yatai
-            "owner": "nlp_team",
-            "stage": "dev",
-        },
-        metadata={                # user-defined additional metadata
-            "dataset_version": "20210820",
-        },
-        custom_objects={          # save additional user-defined python objects
-            "tokenizer": tokenizer,
-        }
-    )
-
-- **labels**: user-defined labels for managing models, e.g. :code:`team=nlp`, :code:`stage=dev`.
-- **metadata**: user-defined metadata for storing model training context information or model evaluation metrics, e.g. dataset version, training parameters, model scores.
-- **custom_objects**: user-defined additional python objects, e.g. a tokenizer instance, preprocessor function, model configuration json, serialized with cloudpickle. Custom objects will be serialized with `cloudpickle <https://github.com/cloudpipe/cloudpickle>`_.
-
-.. note::
-
-   By default, BentoML uses ``cloudpickle`` for learner serialization. The key difference from Python's ``pickle`` is that 
-   ``cloudpickle`` has the capability to serialize functions and so it can directly serialize members of the object without reference to its type.
-
-   If the :func:`save_model` method failed while saving a given learner, your learner may contain a :obj:`~fastai.callback.core.Callback` that is not picklable.
-   All FastAI callbacks are stateful, which makes some of them not picklable. Use :func:`Learner.remove_cbs` to remove unpicklable callbacks.
-
-.. tip::
-
-   We found that some of given callback are only useful during training phase, not during serving. Therefore, removing callback will not affect inference results.
 
 
 Loading a learner with BentoML

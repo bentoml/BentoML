@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import requests
@@ -166,6 +165,7 @@ image_classification: list[FrameworkTestModel] = [
 ]
 
 custom_task = "custom-text-classification"
+
 
 # save_kwargs
 def create_save_kwargs() -> AnyDict:

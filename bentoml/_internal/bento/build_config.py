@@ -719,7 +719,7 @@ class BentoPatternSpec:
         self,
         path: str,
         *,
-        recurse_exclude_spec: t.Iterable[t.Tuple[str, PathSpec]] | None = None,
+        recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
     ) -> bool:
         # to determine whether a path is included or not.
         # NOTE that if dir_path is not None, then we also need to pass in ctx_fs

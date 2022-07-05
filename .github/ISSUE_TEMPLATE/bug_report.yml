@@ -8,8 +8,8 @@ body:
     attributes:
       label: Is there an existing issue for this?
       description: |
-        Please search to see if an issue already exists for the bug you encountered. Please see [Searching Issues and Pull Request](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests)
-        for how to use the GitHub search bar and filters.
+        Please search to see if an issue already exists for the bug you encountered.
+        Please see [Searching Issues and Pull Request](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
       options:
       - label: I have searched the existing issues
         required: true
@@ -30,8 +30,8 @@ body:
       description: |
         Please provide a code sample or a code snipet to reproduce said problem. If you have code snippets, error messages, stack trace please also provide them here.
 
-        **IMPORTANT**: make sure to use [code tag](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks#syntax-highlighting)
-        to correctly format your code. Screenshot is helpful but don't use it for code snippets as it doesn't allow others to copy-and-paste your code.
+        **IMPORTANT**: make sure to use [code tag](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks#syntax-highlighting) to correctly format your code.
+        Screenshot is helpful but don't use it for code snippets as it doesn't allow others to copy-and-paste your code.
 
         To give us more information for diagnosing the issue, make sure to enable debug logging:
 

@@ -124,6 +124,12 @@ def _convert_env(
 
 @attr.frozen
 class DockerOptions:
+
+    # For validating user defined bentofile.yaml.
+    __forbid_extra_keys__ = True
+    # always omit config values in case of default values got changed in future BentoML releases
+    __omit_if_default__ = False
+
     distro: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(
@@ -260,6 +266,11 @@ def conda_dependencies_validator(
 @attr.frozen
 class CondaOptions:
 
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
+
     environment_yml: t.Optional[str] = None
     channels: t.Optional[t.List[str]] = attr.field(
         default=None,
@@ -358,6 +369,12 @@ class CondaOptions:
 
 @attr.frozen
 class PythonOptions:
+
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
+
     requirements_txt: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
@@ -607,6 +624,11 @@ class BentoBuildConfig:
     a yaml file for future use. This also applies to nested options such as the
     DockerOptions class and the PythonOptions class.
     """
+
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
 
     service: str
     description: t.Optional[str] = None

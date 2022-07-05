@@ -390,13 +390,20 @@ class BentoModelInfo:
 
 @attr.frozen(repr=False)
 class BentoInfo:
+
+    # for backward compatibility in case new fields are added to BentoInfo.
+    __forbid_extra_keys__ = False
+    # omit field in yaml file if it is not provided by the user.
+    __omit_if_default__ = True
+
     tag: Tag
     service: str = attr.field(
         converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
     )
     name: str = attr.field(init=False)
     version: str = attr.field(init=False)
-    bentoml_version: str = attr.field(default=BENTOML_VERSION)
+    # using factory explicitly instead of default because omit_if_default is enabled for BentoInfo
+    bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
     labels: t.Dict[str, t.Any] = attr.field(factory=dict)

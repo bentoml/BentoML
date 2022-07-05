@@ -321,8 +321,10 @@ class ModelStore(Store[Model]):
 class ModelContext:
     framework_name: str
     framework_versions: t.Dict[str, str]
-    bentoml_version: str = attr.field(default=BENTOML_VERSION)
-    python_version: str = attr.field(default=PYTHON_VERSION)
+
+    # using factory explicitly instead of default because omit_if_default is enabled in ModelInfo
+    bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
+    python_version: str = attr.field(factory=lambda: PYTHON_VERSION)
 
     @staticmethod
     def from_dict(data: dict[str, str | dict[str, str]] | ModelContext) -> ModelContext:
@@ -440,6 +442,12 @@ bentoml_cattr.register_unstructure_hook(
 
 @attr.define(repr=False, eq=False, frozen=True)
 class ModelInfo:
+
+    # for backward compatibility in case new fields are added to BentoInfo.
+    __forbid_extra_keys__ = False
+    # omit field in yaml file if it is not provided by the user.
+    __omit_if_default__ = True
+
     tag: Tag
     name: str
     version: str

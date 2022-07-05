@@ -60,7 +60,7 @@ Web Service Request Logging
 """""""""""""""""""""""""""
 
 For web requests, logging can be enabled and disabled using the `logging.access` parameter at the
-top level of the bentofile.yaml.
+top level of the ``bentoml_configuration.yml``.
 
 .. code-block:: yaml
 
@@ -83,7 +83,7 @@ Model Runner Request Logging
 Depending on how you've configured BentoML, the webserver may be separated from the model runner.
 In either case, we have special logging that is enabled specifically on the model side of the
 request. You may configure the runner access logs under the runners parameter at the top level of
-your ``bentofile.yaml``
+your ``bentoml_configuration.yml``:
 
 .. code-block:: yaml
 
@@ -107,10 +107,10 @@ When using BentoML as a library, BentoML does not configure any logs. By default
     import logging
 
     ch = logging.StreamHandler()
-    ch.setLevel(DEBUG)
-
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
 
     bentoml_logger = logging.getLogger("bentoml")
     bentoml_logger.addHandler(ch)
+    bentoml_logger.setLevel(logging.DEBUG)
+

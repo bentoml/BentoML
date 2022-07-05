@@ -3,19 +3,19 @@ Tutorial: Intro to BentoML
 ==========================
 
 BentoML is a python-first, efficient and flexible framework for machine learning model
-serving. It lets data scientists to save and version trained models in a standardize
+serving. It lets data scientists save and version trained models in a standardized
 format and unifies how a saved model can be accessed for serving. This enables ML
 engineers to easily use the saved models for building online prediction services or
 batch inference jobs.
 
-BentoML also helps with defining the APIs, environments and dependencies for running a
-model, providing a build tool that encapsulates all model artifacts, source code and
+BentoML also helps with defining the APIs, environments, and dependencies for running a
+model, providing a build tool that encapsulates all model artifacts, source code, and
 dependencies into a self-contained format :code:`Bento`, which is designed to be DevOps
 friendly and ready for production deployment - just like docker but designed for ML
 models.
 
-What are we building
---------------------
+What are we building?
+---------------------
 
 In this tutorial, we will focus on online model serving with BentoML, using a
 classification model trained with Scikit-Learn and the Iris dataset. By the end of this
@@ -80,7 +80,7 @@ Saving Models with BentoML
 --------------------------
 
 To begin with BentoML, you will need to save your trained models with BentoML API in
-its model store(a local directory managed by BentoML). The model store is used for
+its model store (a local directory managed by BentoML). The model store is used for
 managing all your trained models locally as well as accessing them for serving.
 
 .. code-block:: python
@@ -225,7 +225,7 @@ Using Models in a Service
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this example, :code:`bentoml.sklearn.get` creates a reference to the saved model
-in the model store, and :code:`to_runner` create a Runner instance from the model.
+in the model store, and :code:`to_runner` creates a Runner instance from the model.
 The Runner abstraction gives BentoServer more flexibility in terms of how to schedule
 the inference computation, how to dynamically batch inference calls and better take
 advantage of all hardware resource available.
@@ -265,7 +265,7 @@ the API function being decorated, takes a :code:`numpy.ndarray` as input, and re
    a shape for input/output validation. Learn more about them in
    :doc:`reference/api_io_descriptors`.
 
-Inside the API function, user can define any business logic, feature fetching, and
+Inside the API function, users can define any business logic, feature fetching, and
 feature transformation code. Model inference calls are made directly through runner
 objects, that are passed into :code:`bentoml.Service(name=.., runners=[..])` call when
 creating the service object.
@@ -315,7 +315,7 @@ To build a Bento, first create a :code:`bentofile.yaml` file in your project dir
 
    BentoML provides lots of build options in :code:`bentofile.yaml` for customizing the
    Python dependencies, cuda installation, docker image distro, etc. Read more about it
-   in :doc:`concepts/bento` page.
+   on the :doc:`concepts/bento` page.
 
 
 Next, run the :code:`bentoml build` CLI command from the same directory:
@@ -357,7 +357,7 @@ For starters, you can now serve it with the :code:`bentoml serve` CLI command:
    always using this exact model version, wherever it is deployed.
 
 
-Bento is the unit of deployment in BentoML, one of the most important artifact to keep
+Bento is the unit of deployment in BentoML, one of the most important artifacts to keep
 track of in your model deployment workflow. BentoML provides CLI commands and APIs for
 managing Bentos and moving them around, see the :ref:`concepts/bento:Managing Bentos`
 section to learn more.
@@ -418,7 +418,7 @@ Run the docker image to start the BentoServer:
     2022-07-01T21:57:48+0000 [INFO] [api_server:4] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
 
 
-Most of the deployment tools built on top of BentoML uses Docker under the hood, it is
+Most of the deployment tools built on top of BentoML use Docker under the hood. It is
 recommended to test out serving from a containerized Bento docker image first, before
 moving to a production deployment. This helps verify the correctness of all the docker
 and dependency configs specified in the :code:`bentofile.yaml`.
@@ -430,8 +430,8 @@ Deploying Bentos
 BentoML standardizes the saved model format, service API definition and the Bento build
 process, which opens up many different deployment options for ML teams.
 
-The Bento we built and the docker image created in the previous steps, are designed to
-be DevOps friendly and ready for deployment in production environment. If your team
+The Bento we built and the docker image created in the previous steps are designed to
+be DevOps friendly and ready for deployment in a production environment. If your team
 has existing infrastructure for running docker, it's likely that the Bento generated
 docker images can be directly deployed to your infrastructure without any modification.
 
@@ -440,9 +440,9 @@ docker images can be directly deployed to your infrastructure without any modifi
    To streamline the deployment process, BentoServer follows most common best practices
    found in a backend service: it provides
    :doc:`health check and prometheus metrics <guides/monitoring>`
-   endpoint for monitoring out-of-the-box; It provides configurable
+   endpoints for monitoring out-of-the-box; It provides configurable
    :doc:`distributed tracing <guides/tracing>` and :doc:`logging <guides/logging>` for
-   performance analysis and debugging; And it can be easily
+   performance analysis and debugging; and it can be easily
    :doc:`integrated with other tools <integrations/index>` that are commonly used by
    Data Engineers and DevOps engineers.
 

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import stat
 import typing as t
 import logging
 import subprocess
+from shutil import which
 from typing import TYPE_CHECKING
 
 from ..types import PathType
@@ -11,10 +13,11 @@ from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
+    F = t.Callable[P, t.Any]
 
 logger = logging.getLogger(__name__)
 
-DOCKER_BUILDX_CMD = ["docker", "buildx"]
+DOCKER_BUILDX_CMD = ["buildx"]
 
 # https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
 UNAME_M_TO_PLATFORM_MAPPING = {
@@ -26,12 +29,33 @@ UNAME_M_TO_PLATFORM_MAPPING = {
     "mips64": "linux/mips64le",
 }
 
+DOCKER_SOCKET = "/var/run/docker.sock"
 
+
+def requires_docker(f: F[P]) -> F[P]:
+    @functools.wraps(f)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+        docker_cmd = which("docker")
+        if not docker_cmd:
+            raise BentoMLException(
+                "Docker is not installed. See https://www.docker.com/get-started/ for instructions on how to install Docker."
+            )
+        if not stat.S_ISSOCK(os.stat(DOCKER_SOCKET).st_mode):
+            raise BentoMLException(
+                f"Cannot connect to the Docker daemon at {DOCKER_SOCKET}. Is the docker daemon running?"
+            )
+        kwargs.setdefault("_docker_binary", docker_cmd)
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+@functools.lru_cache(maxsize=1)
 def health() -> None:
     """
     Check whether buildx is available in given system.
     """
-    cmds = DOCKER_BUILDX_CMD + ["--help"]
+    cmds = ["docker", *DOCKER_BUILDX_CMD, "--help"]
     try:
         output = subprocess.check_output(cmds)
         assert "buildx" in output.decode("utf-8")
@@ -43,8 +67,8 @@ def health() -> None:
 
 def lists() -> list[str]:
     # Should only be used for testing purposes.
-    cmds = DOCKER_BUILDX_CMD + ["ls"]
-    proc = subprocess.run(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cmds = ["docker", *DOCKER_BUILDX_CMD, "ls"]
+    proc = subprocess.run(cmds, capture_output=True)
     stream = proc.stdout.decode("utf-8")
 
     if len(stream) != 0 and stream[-1] == "\n":
@@ -60,7 +84,7 @@ def use(
     builder: str, default: bool = False, global_: bool = False
 ) -> None:  # pragma: no cover
     # Should only be used for testing purposes.
-    cmds = DOCKER_BUILDX_CMD + ["use"]
+    cmds = ["docker", *DOCKER_BUILDX_CMD, "use"]
     if default:
         cmds.append("--default")
     if global_:
@@ -300,6 +324,7 @@ def build(
 def run_docker_cmd(
     cmds: list[str],
     *,
+    _docker_cmd: str = "docker",
     env: dict[str, str] | None = None,
     cwd: PathType | None = None,
 ) -> None:
@@ -307,4 +332,6 @@ def run_docker_cmd(
     if env is not None:
         subprocess_env.update(env)
 
-    subprocess.check_output(list(map(str, cmds)), env=subprocess_env, cwd=cwd)
+    subprocess.check_output(
+        [_docker_cmd] + list(map(str, cmds)), env=subprocess_env, cwd=cwd
+    )

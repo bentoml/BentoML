@@ -1,7 +1,15 @@
-raise NotImplementedError(
-    f"""\
-Support for "{__name__}" is temporarily unavailable as BentoML transition to the new \
-design in version 1.0.0 release. Before this module is officially implemented in \
-BentoML, users may use Custom Runner as a workaround. Learn more at http://docs.bentoml.org
-"""
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from ._internal.frameworks.onnxmlir import get
+from ._internal.frameworks.onnxmlir import load_model
+from ._internal.frameworks.onnxmlir import save_model
+from ._internal.frameworks.onnxmlir import get_runnable
+from ._internal.frameworks.onnxmlir import ONNXMLirOptions as ModelOptions  # type: ignore (unused imports)
+
+if TYPE_CHECKING:
+    from ._internal.frameworks.onnxmlir import ExecutionSession
+
+
+__all__ = ["load_model", "save_model", "get", "get_runnable", "ExecutionSession"]

@@ -737,15 +737,72 @@ For advanced Docker customization, you can also use a :code:`setup_script` to in
 arbitrary user provided script during the image build process. For example, with NLP
 projects you can pre-download NLTK data in the image with:
 
+In your :code:`bentofile.yaml`:
+
 .. code:: yaml
 
+    ...
+    python:
+        packages:
+            - nltk
     docker:
         setup_script: "./setup.sh"
 
+In the :code:`setup.sh` file:
+
 .. code:: bash
 
-   # setup.sh
-   python -m nltk.downloader all
+    #!/bin/bash
+    set -euxo pipefail
+
+    echo "Downloading NLTK data.."
+    python -m nltk.downloader all
+
+Now build a new bento and then run `bentoml containerize MY_BENTO --progress plain` to
+view the docker image build progress. The newly built docker image will contain
+pre-downloaded NLTK dataset.
+
+.. tip::
+
+    When working with bash scripts, it is recommended to add :code:`set -euxo pipefail`
+    to the beginning. Especially when `set -e` is missing, the script will fail silently
+    without raising an exception during :code:`bentoml containerize`. Learn more about
+    `Bash Set builtin <https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html>`_.
+
+It is also possible to provide a Python script for initializing the docker image. Here's
+an example:
+
+In :code:`bentofile.yaml`:
+
+.. code:: yaml
+
+    ...
+    python:
+        packages:
+            - nltk
+    docker:
+        setup_script: "./setup.py"
+
+In the :code:`setup.py` file:
+
+.. code:: python
+
+    #!/usr/bin/env python
+
+    import nltk
+
+    print("Downloading NLTK data..")
+    nltk.download('treebank')
+
+.. note::
+
+    Pay attention to :code:`#!/bin/bash` and :code:`#!/usr/bin/env python` in the
+    first line of the example scripts above. They are known as `Shebang <https://en.wikipedia.org/wiki/Shebang_(Unix)>`_
+    and they are required in a setup script provided to BentoML.
+
+Setup script is always executed after the specified Python packages, conda dependencies,
+and system packages are installed. Thus user can import and utilize those libraries in
+their setup script for the initialization process.
 
 
 Custom Base Image (Advanced)

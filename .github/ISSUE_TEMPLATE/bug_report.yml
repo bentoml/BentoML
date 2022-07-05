@@ -1,0 +1,158 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve bentoml.
+title: "bug: "
+labels: ["bug"]
+assignees:
+body:
+  - type: checkboxes
+    id: issue-already-exists
+    attributes:
+      label: Is there an existing issue for this?
+      description: |
+        Please search to see if an issue already exists for the bug you encountered. Please see [Searching Issues and Pull Request](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests)
+        for how to use the GitHub search bar and filters.
+      options:
+      - label: I have searched the existing issues
+        required: true
+  - type: textarea
+    id: describe-the-bugs
+    validations:
+      required: true
+    attributes:
+      label: Describe the bug
+      description: Please provide a clear and concise description about the problem you ran into.
+      placeholder: I ran into ... while using ...
+  - type: textarea
+    id: to-reproduce
+    validations:
+      required: true
+    attributes:
+      label: To reproduce
+      description: |
+        Please provide a code sample or a code snipet to reproduce said problem. If you have code snippets, error messages, stack trace please also provide them here.
+
+        **IMPORTANT**: make sure to use [code tag](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks#syntax-highlighting)
+        to correctly format your code. Screenshot is helpful but don't use it for code snippets as it doesn't allow others to copy-and-paste your code.
+
+        To give us more information for diagnosing the issue, make sure to enable debug logging:
+
+          Enable via environment variable, e.g.:
+          ```bash
+          BENTOML_DEBUG=TRUE bentoml serve ...
+          ```
+
+          Or set debug logging in your Python code:
+          ```python
+          import logging
+
+          bentoml_logger = logging.getLogger("bentoml")
+          benotml_logger.setLevel(logging.DEBUG)
+          ```
+
+          For BentoML CLI commands, simply add the `--verbose` flag, e.g.:
+          ```bash
+          bentoml serve service.py:svc --verbose
+          ```
+      placeholder: |
+        Steps to reproduce the behaviour:
+
+          1. Provide '...'
+          2. Run '...'
+          3. See error
+  - type: textarea
+    id: expected-behavior
+    validations:
+      required: true
+    attributes:
+      label: Expected behavior
+      description: "A clear and concise description of what you would expect to happen."
+  - type: textarea
+    id: environment-info
+    attributes:
+      label: Environment
+      description: |
+        Please share your environment with us. This includes your OS, BentoML version,
+        Python Version, whether you are using conda or not, etc.
+      placeholder: |
+        - OS: [e.g. MacOS 10.14.3]
+        - Python version: [e.g. Python 3.7.13, 3.10.2]
+        - BentoML version: [e.g. 1.0.0rc1, from source, etc.]
+    validations:
+      required: true
+  - type: textarea
+    id: who-can-help
+    attributes:
+      label: Who can help?
+      description: |
+        Feel free to ping any of the BentoML members for help on your issue, but don't ping more than three people 😊.
+        If you know how to use git blame, that is probably the easiest way, otherwise, below is a guide for **who to tag**.
+
+        Documentation: `@parano`, `@ssheng`, `@timliubentoml`
+
+        Framework Implementation:
+
+          - PyTorch: `@larme`, `@bojiang`
+          - Tensorflow: `@larme`, `@bojiang`
+          - Keras: `@larme`, `@aarnphm`
+          - scikit-learn: `@parano`
+          - Transformers: `@ssheng`, `@aarnphm`
+          - ONNX: `@larme`
+          - LightGBM: `@mqk`
+          - XGBoost: `@sauyon`
+          - Pickable Model: `@timliubentoml`, `@bojiang`, `@larme`
+          - PyTorch Lightning: `@bojiang`, `@larme`
+          - CatBoost: `@yetone`, `@aarnphm`
+          - fastai: `@aarnphm`
+
+          If the frameworks you are looking for is not in the list, ping either `@parano` or `@aarnphm` for more information and
+          we can either redirect to the contributor or provide supports.
+          Note that we will have discussion as a team to determine whether it is the optimal decision to provide first-class support
+          for a given framework.
+
+        BentoML internals:
+
+          - Configuration and logging: `@sauyon`, `@ssheng`
+          - Build config de/serialization: `@parano`, `@sauyon`, `@aarnphm`
+          - Containerization and templates: `@aarnphm`
+          - Yatai client: `@yetone`
+          - Bento API Server and Runners: `@parano`, `@bojiang`, `@sauyon`
+          - IO descriptors: `@aarnphm`, `@parano`
+          - CLI improvements: `@parano`, `@aarnphm`
+
+        For gallery projects, please ping any of the members/contributors directly. For example:
+
+          - [`gallery/kfserving`](https://github.com/bentoml/gallery/tree/main/kfserving): `@parano`
+          - [`gallery/inference_graph`](https://github.com/bentoml/gallery/tree/main/inference_graph): `@ssheng`
+
+        For Yatai-related issues that is not related to Yatai client, please open a ticket at [Yatai issue tracker](https://github.com/bentoml/Yatai/issues)
+        and then ping `@yubozhao` or `@yetone` for supports.
+
+        For bentoctl-related issues, please one a ticket at [bentoctl issue tracker](https://github.com/bentoml/bentoctl/issues) or at corresponding bentoctl's operator.
+        You can then ping `@jjmachan` or `@yubozhao` for supports.
+
+        A list of bentoctl's supported operators:
+          - [AWS EC2](https://github.com/bentoml/aws-ec2-deploy)
+          - [AWS Sagemaker](https://github.com/bentoml/aws-sagemaker-deploy)
+          - [AWS Lambda](https://github.com/bentoml/aws-lambda-deploy)
+          - [Google Compute Engine](https://github.com/bentoml/google-compute-engine-deploy)
+          - [Google Cloud Run](https://github.com/bentoml/google-cloud-run-deploy)
+          - [Azure Container Instances](https://github.com/bentoml/azure-container-instances-deploy)
+          - [Azure Function](https://github.com/bentoml/azure-functions-deploy)
+          - [Heroku](https://github.com/bentoml/heroku-deploy)
+      placeholder: "@username can help me with ..."
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need additional information and context?
+      placeholder: ex. email@example.com or via community slack (attach slack archive link here)
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/bentoml/BentoML/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

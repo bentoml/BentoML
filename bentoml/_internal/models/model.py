@@ -18,9 +18,9 @@ import fs.errors
 import fs.mirror
 import cloudpickle  # type: ignore (no cloudpickle types)
 from fs.base import FS
-from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
-from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
@@ -42,12 +42,11 @@ if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
 
-
-class ModelSignatureDict(t.TypedDict, total=False):
-    batchable: bool
-    batch_dim: tuple[int, int] | int | None
-    input_spec: tuple[AnyType] | AnyType | None
-    output_spec: AnyType | None
+    class ModelSignatureDict(t.TypedDict, total=False):
+        batchable: bool
+        batch_dim: tuple[int, int] | int | None
+        input_spec: tuple[AnyType] | AnyType | None
+        output_spec: AnyType | None
 
 else:
     ModelSignaturesDict = dict
@@ -134,8 +133,9 @@ class Model(StoreItem):
     def __hash__(self) -> int:
         return hash(self._tag)
 
-    @staticmethod
+    @classmethod
     def create(
+        cls,
         name: str,
         *,
         module: str,
@@ -177,7 +177,7 @@ class Model(StoreItem):
 
         model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
 
-        res = Model(
+        return cls(
             tag,
             model_fs,
             ModelInfo(
@@ -193,8 +193,6 @@ class Model(StoreItem):
             custom_objects=custom_objects,
             _internal=True,
         )
-
-        return res
 
     @inject
     def save(
@@ -322,7 +320,7 @@ class ModelStore(Store[Model]):
 @attr.frozen
 class ModelContext:
     framework_name: str
-    framework_versions: dict[str, str]
+    framework_versions: t.Dict[str, str]
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     python_version: str = attr.field(default=PYTHON_VERSION)
 
@@ -398,14 +396,18 @@ class ModelSignature:
     """
 
     batchable: bool = False
-    batch_dim: tuple[int, int] = (0, 0)
+    batch_dim: t.Tuple[int, int] = (0, 0)
     # TODO: define input/output spec struct
     input_spec: t.Any = None
     output_spec: t.Any = None
 
-    @staticmethod
-    def from_dict(data: ModelSignatureDict) -> ModelSignature:
-        return bentoml_cattr.structure(data, ModelSignature)
+    @classmethod
+    def from_dict(cls, data: ModelSignatureDict) -> ModelSignature:
+        if "batch_dim" in data and isinstance(data["batch_dim"], int):
+            formated_data = dict(data, batch_dim=(data["batch_dim"], data["batch_dim"]))
+        else:
+            formated_data = data
+        return bentoml_cattr.structure(formated_data, cls)
 
     @staticmethod
     def convert_signatures_dict(
@@ -417,14 +419,8 @@ class ModelSignature:
         }
 
 
-ModelSignaturesType = dict[str, ModelSignature] | dict[str, ModelSignatureDict]
-
-
-def model_signature_decoder(data: t.Any, _: t.Type[ModelSignature]) -> ModelSignature:
-    if "batch_dim" in data and isinstance(data["batch_dim"], int):
-        current_batch_dim = data["batch_dim"]
-        data["batch_dim"] = (current_batch_dim, current_batch_dim)
-    return ModelSignature(**data)
+if TYPE_CHECKING:
+    ModelSignaturesType = dict[str, ModelSignature] | dict[str, ModelSignatureDict]
 
 
 def model_signature_unstructure_hook(
@@ -443,7 +439,6 @@ def model_signature_unstructure_hook(
     return encoded
 
 
-bentoml_cattr.register_structure_hook(ModelSignature, model_signature_decoder)
 bentoml_cattr.register_unstructure_hook(
     ModelSignature, model_signature_unstructure_hook
 )
@@ -455,18 +450,18 @@ class ModelInfo:
     name: str
     version: str
     module: str
-    labels: dict[str, str] = attr.field(validator=label_validator)
-    _options: dict[str, t.Any]
+    labels: t.Dict[str, str] = attr.field(validator=label_validator)
+    _options: t.Dict[str, t.Any]
     metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
     context: ModelContext = attr.field()
-    signatures: dict[str, ModelSignature] = attr.field(
+    signatures: t.Dict[str, ModelSignature] = attr.field(
         converter=ModelSignature.convert_signatures_dict
     )
     api_version: str
     creation_time: datetime
 
-    _cached_module: ModuleType | None = None
-    _cached_options: ModelOptions | None = None
+    _cached_module: t.Optional[ModuleType] = None
+    _cached_options: t.Optional[ModelOptions] = None
 
     def __init__(
         self,

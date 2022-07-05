@@ -52,12 +52,22 @@ if TYPE_CHECKING:
 else:
     PathType = t.Union[str, os.PathLike]
 
-ValueType = (
-    str | bytes | bool | int | float | complex | datetime | date | time | timedelta
-)
-MetadataType = ValueType | list[ValueType] | dict[str, ValueType] | tuple[ValueType]
+ValueType = t.Union[
+    str, bytes, bool, int, float, complex, datetime, date, time, timedelta
+]
+MetadataType = t.Union[
+    ValueType,
+    t.List[ValueType],
+    t.Dict[str, ValueType],
+    t.Dict[t.Union[str, float, int], ValueType],
+    t.Tuple[ValueType],
+]
 
-MetadataDict = dict[str, MetadataType]
+if TYPE_CHECKING:
+    MetadataDict = t.Dict[str, MetadataType]
+else:
+    # NOTE: remove this when registering hook for MetadataType
+    MetadataDict = dict
 
 JSONSerializable = t.NewType("JSONSerializable", object)
 

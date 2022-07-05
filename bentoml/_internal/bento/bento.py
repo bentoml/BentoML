@@ -15,9 +15,9 @@ import pathspec
 import fs.errors
 import fs.mirror
 from fs.copy import copy_file
-from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
-from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
@@ -345,8 +345,8 @@ class BentoStore(Store[Bento]):
 class BentoRunnerInfo:
     name: str
     runnable_type: str
-    models: list[str] = attr.field(factory=list)
-    resource_config: dict[str, t.Any] | None = attr.field(default=None)
+    models: t.List[str] = attr.field(factory=list)
+    resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
     @classmethod
     def from_runner(cls, r: Runner) -> BentoRunnerInfo:
@@ -400,10 +400,10 @@ class BentoInfo:
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    labels: dict[str, t.Any] = attr.field(factory=dict)
-    models: list[BentoModelInfo] = attr.field(factory=list)
-    runners: list[BentoRunnerInfo] = attr.field(factory=list)
-    apis: list[BentoApiInfo] = attr.field(factory=list)
+    labels: t.Dict[str, t.Any] = attr.field(factory=dict)
+    models: t.List[BentoModelInfo] = attr.field(factory=list)
+    runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
+    apis: t.List[BentoApiInfo] = attr.field(factory=list)
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
     conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())

@@ -3,17 +3,16 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 
+from attr import fields
+from cattr.gen import override
+from cattr.gen import AttributeOverride
+
 from .pkg import pkg_version_info
 
-cattr_major_minor = pkg_version_info("cattrs")
-if cattr_major_minor[:2] <= (22, 2):
-    from cattr import GenConverter as Converter
-else:
+if pkg_version_info("cattrs")[:2] >= (22, 2):
     from cattr import Converter
-
-from attr import fields
-from cattr import override  # type: ignore
-from cattr.gen import AttributeOverride
+else:
+    from cattr import GenConverter as Converter
 
 bentoml_cattr = Converter(forbid_extra_keys=True)
 

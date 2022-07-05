@@ -52,15 +52,20 @@ if TYPE_CHECKING:
 else:
     PathType = t.Union[str, os.PathLike]
 
-ValueType = t.Union[
-    str, bytes, bool, int, float, complex, datetime, date, time, timedelta
-]
-MetadataType = t.Union[
-    ValueType,
-    t.List[ValueType],
-    t.Dict[str, ValueType],
-    t.Dict[t.Union[str, float, int], ValueType],
-    t.Tuple[ValueType],
+MetadataType: t.TypeAlias = t.Union[
+    str,
+    bytes,
+    bool,
+    int,
+    float,
+    complex,
+    datetime,
+    date,
+    time,
+    timedelta,
+    t.List["MetadataType"],
+    t.Tuple["MetadataType"],
+    t.Dict[str, "MetadataType"],
 ]
 
 if TYPE_CHECKING:

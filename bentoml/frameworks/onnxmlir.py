@@ -93,8 +93,8 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
         self._model_so_path = None
 
     def _saved_model_file_path(self, base_path):
-        self._model_so_path = os.path.join(base_path, self.name + '.so')
-        return os.path.join(base_path, self.name + '.so')
+        self._model_so_path = os.path.join(base_path, self.name + ".so")
+        return os.path.join(base_path, self.name + ".so")
 
     def pack(self, onnxmlir_model_so, metadata=None):
         # pylint:disable=arguments-renamed

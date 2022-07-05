@@ -16,7 +16,7 @@ else:
     bentoml_cattr = Converter(forbid_extra_keys=True)
 
 from attr import fields
-from cattr import override  # type: ignore
+from cattr.gen import override
 from cattr.gen import AttributeOverride
 
 

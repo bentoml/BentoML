@@ -18,9 +18,9 @@ import fs.errors
 import fs.mirror
 import cloudpickle  # type: ignore (no cloudpickle types)
 from fs.base import FS
-from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
-from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 

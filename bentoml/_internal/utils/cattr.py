@@ -9,7 +9,7 @@ from cattr.gen import AttributeOverride
 
 from .pkg import pkg_version_info
 
-if pkg_version_info("cattrs")[:2] >= (22, 2):
+if pkg_version_info("cattrs") >= (22, 2):
     from cattr import Converter
 else:
     from cattr import GenConverter as Converter

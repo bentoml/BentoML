@@ -43,38 +43,5 @@ Fixes # (issue)
 Feel free to tag members/contributors who can help review your PR.
 <!--
 Feel free to ping any of the BentoML members for help on your issue, but don't ping more than three people 😊.
-If you know how to use git blame, that is probably the easiest way, otherwise, below is a guide for **who to tag**.
-
-Documentation: `@parano`, `@ssheng`, `@timliubentoml`
-
-Framework Implementation:
-
-- PyTorch: `@larme`, `@bojiang`
-- Tensorflow: `@larme`, `@bojiang`
-- Keras: `@larme`, `@aarnphm`
-- scikit-learn: `@parano`
-- Transformers: `@ssheng`, `@aarnphm`
-- ONNX: `@larme`
-- LightGBM: `@mqk`
-- XGBoost: `@sauyon`
-- Pickable Model: `@timliubentoml`, `@bojiang`, `@larme`
-- PyTorch Lightning: `@bojiang`, `@larme`
-- CatBoost: `@yetone`, `@aarnphm`
-- fastai: `@aarnphm`
-
-BentoML internals:
-
-- Configuration and logging: `@sauyon`, `@ssheng`
-- Build config de/serialization: `@parano`, `@sauyon`, `@aarnphm`
-- Containerization and templates: `@aarnphm`
-- Yatai client: `@yetone`
-- Bento API Server and Runners: `@parano`, `@bojiang`, `@sauyon`
-- IO descriptors: `@aarnphm`, `@parano`
-- CLI improvements: `@parano`, `@aarnphm`
-
-For Yatai-related issues that is not related to Yatai client, please open a ticket at [Yatai issue tracker](https://github.com/bentoml/Yatai/issues)
-and then ping `@yubozhao` or `@yetone` for supports.
-
-For bentoctl-related issues, please one a ticket at [bentoctl issue tracker](https://github.com/bentoml/bentoctl/issues) or at corresponding bentoctl's operator.
-You can then ping `@jjmachan` or `@yubozhao` for supports.
+If you know how to use git blame, that is probably the easiest way.
 -->

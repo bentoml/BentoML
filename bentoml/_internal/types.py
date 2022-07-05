@@ -52,13 +52,10 @@ if TYPE_CHECKING:
 else:
     PathType = t.Union[str, os.PathLike]
 
-ValueType = t.Union[
-    str, bytes, bool, int, float, complex, datetime, date, time, timedelta
-]
-MetadataType = t.Union[
-    ValueType, list[ValueType], dict[str, ValueType], tuple[ValueType]
-]
-
+ValueType = (
+    str | bytes | bool | int | float | complex | datetime | date | time | timedelta
+)
+MetadataType = ValueType | list[ValueType] | dict[str, ValueType] | tuple[ValueType]
 MetadataDict = dict[str, MetadataType]
 
 JSONSerializable = t.NewType("JSONSerializable", object)

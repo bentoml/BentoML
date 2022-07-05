@@ -3,21 +3,17 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 
-from .pkg import pkg_version_info
-
-cattr_major_minor = pkg_version_info("cattrs")
-if cattr_major_minor[:2] <= (22, 2):
-    from cattr import Converter
-
-    bentoml_cattr = Converter()
-else:
-    from cattr import Converter
-
-    bentoml_cattr = Converter(forbid_extra_keys=True)
-
 from attr import fields
+from cattr import Converter
 from cattr.gen import override
 from cattr.gen import AttributeOverride
+
+from .pkg import pkg_version_info
+
+if pkg_version_info("cattrs")[:2] <= (22, 2):
+    bentoml_cattr = Converter()
+else:
+    bentoml_cattr = Converter(forbid_extra_keys=True)
 
 
 def omit_if_init_false(cls: t.Any) -> dict[str, AttributeOverride]:

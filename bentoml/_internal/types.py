@@ -50,7 +50,7 @@ JSON_CHARSET = "utf-8"
 if TYPE_CHECKING:
     PathType = str | os.PathLike[str]
 else:
-    PathType = str | os.PathLike
+    PathType = t.Union[str, os.PathLike]
 
 ValueType = (
     str | bytes | bool | int | float | complex | datetime | date | time | timedelta

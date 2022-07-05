@@ -360,28 +360,22 @@ class ModelSignature:
             If there are multiple arguments to the predict method and there is only one batch
             dimension supplied, all arguments will use that batch dimension.
 
-            Example:
-
-                .. code-block:: python
-
-                    # Save two models with `predict` method that supports taking input batches on the
-                    dimension 0 and the other on dimension 1:
-
-                    bentoml.pytorch.save_model("demo0", model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
-                    bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable": True, "batch_dim": 1}})
-
-                    # if the following calls are batched, the input to the actual predict method on the
-                    # model.predict method would be [[1, 2], [3, 4], [5, 6]]
-                    runner0 = bentoml.pytorch.get("demo0:latest").to_runner() runner0.init_local()
-                    runner0.predict.run(np.array([[1, 2], [3, 4]]))
-                    runner0.predict.run(np.array([[5, 6]]))
-
-                    # if the following calls are batched, the input to the actual predict method on the
-                    # model.predict would be [[1, 2, 5], [3, 4, 6]]
-                    runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
-                    runner1.init_local()
-                    runner1.predict.run(np.array([[1, 2], [3, 4]]))
-                    runner1.predict.run(np.array([[5], [6]]))
+            Example: .. code-block:: python
+                # Save two models with `predict` method that supports taking input batches on the
+                dimension 0 and the other on dimension 1: bentoml.pytorch.save_model("demo0",
+                model_0, signatures={"predict": {"batchable": True, "batch_dim": 0}})
+                bentoml.pytorch.save_model("demo1", model_1, signatures={"predict": {"batchable":
+                True, "batch_dim": 1}})
+                # if the following calls are batched, the input to the actual predict method on the
+                # model.predict method would be [[1, 2], [3, 4], [5, 6]] runner0 =
+                bentoml.pytorch.get("demo0:latest").to_runner() runner0.init_local()
+                runner0.predict.run(np.array([[1, 2], [3, 4]])) runner0.predict.run(np.array([[5,
+                6]]))
+                # if the following calls are batched, the input to the actual predict method on the
+                # model.predict would be [[1, 2, 5], [3, 4, 6]] runner1 =
+                bentoml.pytorch.get("demo1:latest").to_runner() runner1.init_local()
+                runner1.predict.run(np.array([[1, 2], [3, 4]])) runner1.predict.run(np.array([[5],
+                [6]]))
 
             Expert API:
 

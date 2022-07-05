@@ -1,6 +1,5 @@
 # Dev dependencies
 -r tests-requirements.txt
--r docs-requirements.txt
 attrs>=21.1
 GitPython>=2.0
 setup-cfg-fmt

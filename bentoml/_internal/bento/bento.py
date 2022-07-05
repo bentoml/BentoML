@@ -350,7 +350,6 @@ class BentoRunnerInfo:
 
     @classmethod
     def from_runner(cls, r: Runner) -> BentoRunnerInfo:
-        # TODO: Add runner default resource quota and batching config here
         return cls(
             name=r.name,
             runnable_type=r.runnable_class.__name__,

@@ -1,9 +1,14 @@
+from __future__ import annotations
+
+import json
+
 import click
 import psutil
 
 from bentoml import __version__ as BENTOML_VERSION
 
 from .yatai import add_login_command
+from ..utils import console
 from .click_utils import BentoMLCommandGroup
 from .bento_server import add_serve_command
 from .containerize import add_containerize_command
@@ -18,6 +23,19 @@ def create_bentoml_cli():
     @click.version_option(BENTOML_VERSION, "-v", "--version")  # type: ignore
     def cli():
         """BentoML CLI"""
+
+    @cli.command()
+    def env() -> None:  # type: ignore # noqa
+        """Provide BentoML's environment information. Mainly used for debugging purposes and issues tracking."""
+        from platform import platform
+        from platform import python_version
+
+        info = {
+            "Python version": python_version(),
+            "BentoML version": BENTOML_VERSION,
+            "Platform info": platform(),
+        }
+        console.print_json(json.dumps(info, indent=2))
 
     # Add top-level CLI commands
     add_login_command(cli)

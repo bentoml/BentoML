@@ -48,10 +48,6 @@ repository.
         :link: /frameworks/fastai
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/lightgbm`
-        :link: /frameworks/lightgbm
-        :link-type: doc
-
 
 The following frameworks are supported in BentoML prior to 1.0.0 release and is still
 being migrated to the new API design. Before they are officially supported in BentoML

@@ -197,10 +197,7 @@ def save_model(
         )
     batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
     if len(batchable_enabled_signatures) > 0:
-        batchable_dict: dict[str, ModelSignatureDict | ModelSignature] = {
-            k: v for k, v in signatures.items() if k in batchable_enabled_signatures
-        }
-        message = f"Batchable signatures are not supported for fastai models. The following {batchable_enabled_signatures} signatures have batchable sets to 'True'. Consider to use PyTorch layer from {learner.__name__} with 'learner.model' and bentoml.pytorch.save_model({name}, learner, signatures={batchable_dict})' instead."
+        message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.org/en/latest/frameworks/fastai.html."
         raise BentoMLException(message)
 
     with bentoml.models.create(

@@ -2,24 +2,22 @@
 fast.ai
 =======
 
-.. note::
+fastai is a popular deep learning library which provides high-level components for practioners to get state-of-the-art results in standard deep learning domains, as well as low-level components
+for researchers to build new approaches. To learn more about fastai, visit their `documentation <docs.fast.ai>`_.
 
-   BentoML requires fastai version 2 or higher to be installed. We do not currently support version 1.
+BentoML provides native support for `fastai <https://github.com/fastai/fastai>`_, and this guide provides an overview of how to use BentoML with fastai.
 
-fastai is a deep learning library which provides both high-level components for practioners to get SOTA results in standard deep learning domains, and low-level components
-for researchers to build new approaches. The abstractions can be achieved by leveraging the flexibility of the PyTorch library and its ecosystem (PyTorch Lightning, Catalyst, etc.)
+Compatibility 
+-------------
 
-fastai also provides a great sets of `documentation <docs.fast.ai>`_ and
-`migration guides <https://docs.fast.ai/#Migrating-from-other-libraries>`_ from
-PyTorch-related library.
+BentoML requires fastai **version 2** or higher to be installed. 
 
+We do not currently support version 1. If you are using fastai version 1, consider using :ref:`concepts/runner:Custom Runner`
 
-Fine tuning the language model
-------------------------------
+Saving a trained fastai learner
+--------------------------------
 
-.. seealso::
-
-   This section is based heavily on `Transfer Learning with text <https://docs.fast.ai/tutorial.text.html#The-ULMFiT-approach>`_ from fastai.
+This example is based on `Transfer Learning with text <https://docs.fast.ai/tutorial.text.html#The-ULMFiT-approach>`_ from fastai.
 
 .. code-block:: python
 
@@ -65,92 +63,21 @@ Fine tuning the language model
    # ('pos', TensorText(1), TensorText([0.1216, 0.8784]))
 
 
-Saving a learner with BentoML
------------------------------
-
-   :bdg-warning:`Warning:` `Learner <https://docs.fast.ai/learner.html#Learner>`_ instance is required to save with BentoML.
-   This is a design choice to preserve functionalities provided by fastai.
-
-To save the trained learner, use ``save_model``:
+After training, use :obj:`~bentoml.fastai.save_model` to save the `Learner <https://docs.fast.ai/learner.html#Learner>`_ instance to BentoML model store.
 
 .. code-block:: python
 
    bentoml.fastai.save_model("fastai_sentiment", learner)
 
-   # output:
-   # Model(tag="fastai_sentiment:5bakmghqpk4z3gxi", path="~/bentoml/models/fastai_sentiment/5bakmghqpk4z3gxi/")
-
-.. note::
-
-   If you want to use the PyTorch model components of fastai ``Learner``s with BentoML, refer to the :ref:`PyTorch Framework Guide<frameworks/pytorch:PyTorch>`.
-
-   To get the PyTorch model, access it via ``learner.model``:
-
-   .. code-block:: python
-
-      import bentoml
-
-      bentoml.pytorch.save_model("my_pytorch_model", learner.model)
 
 
-Loading a learner with BentoML
-------------------------------
-
-To load the learner back to memory, use ``load_model``:
+To verify that the saved learner can be loaded properly:
 
 .. code-block:: python
 
    learner = bentoml.fastai.load_model("fastai_sentiment:latest")
 
-You can then proceed to test the learner with prediction inputs:
-
-.. code-block:: python
-
    learner.predict("I really liked that movie!")
-
-.. warning::
-
-   We recommend users to to use ``load_model`` inside a :obj:`bentoml.Service`.
-
-   You should always use ``bentoml.models.get("model:tag").to_runner()`` to get
-   a :obj:`bentoml.Runner` instead. See also :ref:`Runners <concepts/runner:Using Runners>` for more information.
-
-
-.. admonition:: About the behaviour of :code:`load_model()`
-
-   Since fastai doesn't provide a good support for GPU during inference, BentoML
-   by default will only support CPU inference for fastai. If you want to use
-   GPU, you should get the ``PyTorch`` model from ``learner.model`` and then use
-   ``bentoml.pytorch`` instead.
-
-   Additionally, if the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
-   See `mixed precision <https://docs.fast.ai/callback.fp16.html>`_ to learn more about mixed precision.
-
-
-Using Runners
--------------
-
-.. seealso::
-
-   :ref:`The general Runner documentation<concepts/runner:Using Runners>`: general information about the Runner concept and their usage.
-
-   :ref:`Specifying Runner Resources<concepts/runner:Specifying Required Resources>`: more information about Runner options.
-
-.. tip::
-
-   ``runner.predict.run`` should generally be a drop-in replacement for ``learner.predict`` regardless of your learner type.
-
-   A fastai :~obj:`bentoml.Runner` is a wrapper around a fastai :~obj:`Learner`
-   object. This means that a fastai runner will receive the same inputs type as
-   the given learner.
-
-   i.e: `Tabular runner <https://docs.fast.ai/tabular.learner.html>`_ will
-   accept a :obj:`DataFrame` input. Text runner will accept a :obj:`str` input,
-   etc.
-
-   Note that fast.ai doesn't provide support for batched inputs and multiple
-   input types, hence :code:`batchable` should always be set to ``False``.
-
 
 
 Building a Service for fastai
@@ -203,3 +130,67 @@ there are two ways to include fastai as a dependency, via ``python`` or
            - fastchan
            dependencies:
            - fastai
+
+
+Using Runners
+-------------
+
+.. seealso::
+
+   :ref:`The general Runner documentation<concepts/runner:Using Runners>`: general information about the Runner concept and their usage.
+
+   :ref:`Specifying Runner Resources<concepts/runner:Specifying Required Resources>`: more information about Runner options.
+
+
+``runner.predict.run`` should generally be a drop-in replacement for ``learner.predict`` regardless of your learner type.
+
+A fastai :obj:`~bentoml.Runner` is a wrapper around a fastai :~obj:`Learner`
+object. This means that a fastai runner will receive the same inputs type as
+the given learner.
+
+i.e: `Tabular learner <https://docs.fast.ai/tabular.learner.html>`_ will
+accept a :obj:`DataFrame` input. Text learner will accept a :obj:`str` input, etc.
+
+
+Using PyTorch layer
+-------------------
+
+Since fastai is built on top of PyTorch, it is also possible to use PyTorch
+models from within a fastai learner directly for inference. Note that by using
+the PyTorch layer, you will not be able to use the fastai :~obj:`Learner`'s
+features such as :code:`.predict()`, :code:`.fit()`, etc.
+
+To get the PyTorch model, access it via ``learner.model``:
+
+.. code-block:: python
+
+   import bentoml
+
+   bentoml.pytorch.save_model(
+      "my_pytorch_model", learner.model, signatures={"__call__": {"batchable": True}}
+   )
+
+Learn more about using PyTorch with BentoML :ref:`here <frameworks/pytorch:PyTorch>`.
+
+Using GPU
+---------
+
+Since fastai doesn't provide a good support for GPU during inference, BentoML
+by default will only support CPU inference for fastai. If you want to use
+GPU, you should get the ``PyTorch`` model from ``learner.model`` and then use
+``bentoml.pytorch`` instead.
+
+Additionally, if the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
+See `mixed precision <https://docs.fast.ai/callback.fp16.html>`_ to learn more about mixed precision.
+
+If you need to use GPU for inference, you can :ref:`use the PyTorch layer <frameworks/fastai:Using PyTorch layer>`.
+
+Adaptive batching 
+~~~~~~~~~~~~~~~~~
+
+Note that fast.ai doesn't support for batched inputs for inference, hence
+adaptive batching is not available for fastai models in BentoML.
+
+The default signature has :code:`batchable` set to :code:`False`.
+
+If you need to use adaptive batching for inference, you can :ref:`use the PyTorch layer <frameworks/fastai:Using PyTorch layer>`.

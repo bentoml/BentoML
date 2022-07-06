@@ -12,7 +12,7 @@ import pytest
 from circus.tests.support import TestCircus
 
 from bentoml._internal.utils.pkg import source_locations
-from bentoml._internal.utils.circus.watchfilesplugin import WatchFilesPlugin
+from bentoml._internal.utils.circus.watchfilesplugin import ServiceReloaderPlugin
 
 if TYPE_CHECKING:
     from unittest import TestCase
@@ -30,7 +30,7 @@ def requires_watchfiles(test_case: t.Type[TestCase]) -> t.Callable[..., t.Any]:
 
 @pytest.mark.usefixtures("reload_directory")
 @requires_watchfiles
-class TestWatchFilesPlugin(TestCircus):
+class TestServiceReloaderPlugin(TestCircus):
     reload_directory: Path
 
     def setUp(self) -> None:
@@ -43,28 +43,28 @@ class TestWatchFilesPlugin(TestCircus):
 
     def test_logging_info(self) -> None:
         with self.assertLogs("bentoml", level=logging.INFO) as log:
-            self.make_plugin(WatchFilesPlugin, **self.plugin_kwargs)
+            self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
             self.assertIn("adding source root", log.output[0])
             self.assertIn("Watching directories", log.output[1])
 
     def test_reloader_params_is_required(self) -> None:
-        self.assertRaises(AssertionError, self.make_plugin, WatchFilesPlugin)  # type: ignore (unfinished circus type)
+        self.assertRaises(AssertionError, self.make_plugin, ServiceReloaderPlugin)  # type: ignore (unfinished circus type)
 
     def test_default_timeout(self) -> None:
-        plugin = self.make_plugin(WatchFilesPlugin, **self.plugin_kwargs)
+        plugin = self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
         self.assertEqual(plugin.reload_delay, 0)
 
     def test_ignore_timeout(self) -> None:
         with self.assertLogs("bentoml", level=logging.DEBUG) as log:
             plugin = self.make_plugin(
-                WatchFilesPlugin, **self.plugin_kwargs, reload_delay=10
+                ServiceReloaderPlugin, **self.plugin_kwargs, reload_delay=10
             )
-            self.assertIn("ignored when using", log.output[-1])
-            self.assertEqual(plugin.reload_delay, 0)
+            self.assertIn("as reloader plugin", log.output[-1])
+            self.assertEqual(plugin.reload_delay, 10)
 
     def setup_watch_mock(self, watch_return: set[FileChange]) -> MagicMock:
         # changes: 1 -> added, 2 -> modified, 3 -> deleted
-        patcher = patch(f"{WatchFilesPlugin.__module__}.watch")
+        patcher = patch(f"{ServiceReloaderPlugin.__module__}.watch")
         watch_mock = patcher.start()
         self.addCleanup(patcher.stop)
         # return value {(<Change.added: 1>, 'path/to/file.txt'), ...}
@@ -72,7 +72,7 @@ class TestWatchFilesPlugin(TestCircus):
         return watch_mock
 
     def setup_call_mock(self, watcher_name: str) -> MagicMock:
-        patcher = patch.object(WatchFilesPlugin, "call")
+        patcher = patch.object(ServiceReloaderPlugin, "call")
         call_mock = patcher.start()
         self.addCleanup(patcher.stop)
         call_mock.side_effect = [
@@ -89,7 +89,7 @@ class TestWatchFilesPlugin(TestCircus):
 
         call_mock = self.setup_call_mock(watcher_name="reloader")
         self.setup_watch_mock(watch_return={(Change(1), file)})
-        plugin = self.make_plugin(WatchFilesPlugin, **self.plugin_kwargs)
+        plugin = self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
         Path(file).touch()
 
         with self.assertLogs("bentoml", level=logging.WARNING) as log:
@@ -104,7 +104,7 @@ class TestWatchFilesPlugin(TestCircus):
 
         call_mock = self.setup_call_mock(watcher_name="reloader")
         self.setup_watch_mock(watch_return={(Change(3), file)})
-        plugin = self.make_plugin(WatchFilesPlugin, **self.plugin_kwargs)
+        plugin = self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
         os.remove(file)
 
         with self.assertLogs("bentoml", level=logging.WARNING) as log:

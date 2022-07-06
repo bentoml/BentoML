@@ -15,7 +15,6 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
-from bentoml.exceptions import BentoMLException
 
 from ..utils import reserve_free_port
 from ..resource import CpuResource
@@ -53,7 +52,6 @@ def serve_development(
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
-    reload_delay: int = 0,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -112,7 +110,6 @@ def serve_development(
             {
                 "use": reloader,
                 "working_dir": working_dir,
-                "reload_delay": reload_delay,
                 "bentoml_home": bentoml_home,
             },
         ]

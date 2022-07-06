@@ -37,7 +37,6 @@ class ServiceReloaderPlugin(CircusPlugin):
         self.name = self.config.get("name")
         self.bentoml_home = self.config["bentoml_home"]
         self.working_dir = self.config["working_dir"]
-        self.reload_delay = int(self.config.get("reload_delay", 0))
 
         # a list of folders to watch for changes
         watch_dirs = [self.working_dir, os.path.join(self.bentoml_home, "models")]
@@ -63,7 +62,7 @@ class ServiceReloaderPlugin(CircusPlugin):
             watch_filter=None,
             yield_on_timeout=True,  # NOTE: stop hanging on our tests, doesn't affect the behaviour
             stop_event=self.exit_event,
-            rust_timeout=self.reload_delay,
+            rust_timeout=0,  # NOTE: we should set reload_delay to 0 to avoid unnecessary logs
         )
 
     def create_spec(self) -> None:

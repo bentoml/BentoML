@@ -40,6 +40,7 @@ def close_to(expected: float) -> Callable[[tuple[Any, Any, ext.NpNDArray]], np.b
 iris_model = FrameworkTestModel(
     name="iris",
     model=tabular_model(),
+    model_signatures={"predict": {"batchable": False}},
     configurations=[
         Config(
             test_inputs={
@@ -59,6 +60,7 @@ iris_model = FrameworkTestModel(
 linear_regression = FrameworkTestModel(
     name="iris",
     model=custom_model(),
+    model_signatures={"predict": {"batchable": False}},
     configurations=[
         Config(
             test_inputs={
@@ -73,3 +75,5 @@ linear_regression = FrameworkTestModel(
     ],
 )
 models: list[FrameworkTestModel] = [iris_model, linear_regression]
+
+skip_batchable_test = True

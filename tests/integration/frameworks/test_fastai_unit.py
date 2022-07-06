@@ -19,6 +19,7 @@ from fastcore.foundation import L
 from fastai.data.transforms import Transform
 
 import bentoml
+from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.fastai_utils import custom_model
 from tests.utils.frameworks.pytorch_utils import LinearModel
@@ -69,7 +70,7 @@ def test_raise_exceptions():
     with pytest.raises(
         BentoMLException,
         match=re.escape(
-            f"'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got {ForbiddenType.__class__.__name__} instead."
+            "'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got module instead."
         ),
     ):
         bentoml.fastai.save_model("invalid_learner", ForbiddenType)  # type: ignore (testing exception)
@@ -91,7 +92,25 @@ def test_cuda_available(
     type(mock_C)._cudart = PropertyMock(return_value=type)
     with caplog.at_level(logging.DEBUG):
         model = bentoml.fastai.save_model("tabular_learner", learner)
-        runnable = model.to_runnable()
-        runnable()
+        _ = model.to_runnable()()
 
     assert "CUDA is available" in caplog.text
+
+
+def test_batchable_exception():
+    with pytest.raises(
+        BentoMLException, match="Batchable signatures are not supported *"
+    ):
+        bentoml.fastai.save_model(
+            "learner", mock_learner, signatures={"predict": {"batchable": True}}
+        )
+
+
+def test_raise_attribute_runnable_error():
+    with pytest.raises(
+        InvalidArgument, match="No method with name not_exist found for Learner of *"
+    ):
+        model = bentoml.fastai.save_model(
+            "tabular_learner", learner, signatures={"not_exist": {"batchable": False}}
+        )
+        _ = model.to_runnable()()

@@ -75,5 +75,3 @@ linear_regression = FrameworkTestModel(
     ],
 )
 models: list[FrameworkTestModel] = [iris_model, linear_regression]
-
-skip_batchable_test = True

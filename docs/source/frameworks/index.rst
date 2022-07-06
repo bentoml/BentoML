@@ -61,6 +61,7 @@ from these ML libraries with BentoML.
 - FastText
 - Gluon
 - H2O
+- LightGBM
 - MLFlow
 - ONNX
 - ONNX-MLIR

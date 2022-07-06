@@ -47,7 +47,7 @@ else:
     )
     torch = LazyLoader("torch", globals(), "torch", exc_msg=_TORCH_EXCEPTION_MESSAGE)
     nn = LazyLoader("nn", globals(), "torch.nn", exc_msg=_TORCH_EXCEPTION_MESSAGE)
-    _ = LazyLoader("learner", globals(), "fastai.learner")
+    fastai.learner = LazyLoader("fastai.learner", globals(), "fastai.learner")
     Learner = LazyLoader("Learner", globals(), "fastai.learner.Learner")
     load_learner = LazyLoader("load_learner", globals(), "fastai.learner.load_learner")
 

@@ -12,7 +12,7 @@ Compatibility
 
 BentoML requires fastai **version 2** or higher to be installed. 
 
-We do not currently support version 1. If you are using fastai version 1, consider using :ref:`concepts/runner:Custom Runner`
+BentoML does not support fastai version 1. If you are using fastai version 1, consider using :ref:`concepts/runner:Custom Runner`
 
 Saving a trained fastai learner
 --------------------------------

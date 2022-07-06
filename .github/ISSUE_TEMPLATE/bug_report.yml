@@ -24,14 +24,13 @@ body:
   - type: textarea
     id: to-reproduce
     validations:
-      required: true
+      required: false
     attributes:
       label: To reproduce
       description: |
         Please provide a code sample or a code snipet to reproduce said problem. If you have code snippets, error messages, stack trace please also provide them here.
 
-        **IMPORTANT**: make sure to use [code tag](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks#syntax-highlighting) to correctly format your code.
-        Screenshot is helpful but don't use it for code snippets as it doesn't allow others to copy-and-paste your code.
+        **IMPORTANT**: make sure to use [code tag](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks#syntax-highlighting) to correctly format your code. Screenshot is helpful but don't use it for code snippets as it doesn't allow others to copy-and-paste your code.
 
         To give us more information for diagnosing the issue, make sure to enable debug logging:
 
@@ -61,7 +60,7 @@ body:
   - type: textarea
     id: expected-behavior
     validations:
-      required: true
+      required: false
     attributes:
       label: Expected behavior
       description: "A clear and concise description of what you would expect to happen."
@@ -70,19 +69,18 @@ body:
     attributes:
       label: Environment
       description: |
-        Please share your environment with us. This includes your OS, BentoML version,
-        Python Version, whether you are using conda or not, etc.
+        Please share your environment with us. This includes your OS, BentoML version, Python Version, whether you are using conda or not, etc.
       placeholder: |
         - OS: [e.g. MacOS 10.14.3]
         - Python version: [e.g. Python 3.7.13, 3.10.2]
         - BentoML version: [e.g. 1.0.0rc1, from source, etc.]
     validations:
       required: true
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/bentoml/BentoML/blob/main/CODE_OF_CONDUCT.md)
-      options:
-        - label: I agree to follow this project's Code of Conduct
-          required: true
+  # - type: checkboxes
+  #   id: terms
+  #   attributes:
+  #     label: Code of Conduct
+  #     description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/bentoml/BentoML/blob/main/CODE_OF_CONDUCT.md)
+  #     options:
+  #       - label: I agree to follow this project's Code of Conduct
+  #         required: true

@@ -11,7 +11,7 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
-DEFAULT_RELOAD_DELAY = 0.25
+DEFAULT_RELOAD_DELAY = 0
 
 
 def add_serve_command(cli: click.Group) -> None:
@@ -64,16 +64,10 @@ def add_serve_command(cli: click.Group) -> None:
     )
     @click.option(
         "--reload-delay",
-        type=click.FLOAT,
+        type=click.INT,
         help="Delay in seconds between each check if the Service needs to be reloaded",
         show_default=True,
         default=DEFAULT_RELOAD_DELAY,
-    )
-    @click.option(
-        "--reload-backend",
-        type=click.Choice(["auto", "default", "watchfiles"]),
-        help="Determine a reload backend. Default to 'auto'.",
-        default="auto",
     )
     @click.option(
         "--working-dir",
@@ -90,8 +84,7 @@ def add_serve_command(cli: click.Group) -> None:
         api_workers: t.Optional[int],
         backlog: int,
         reload: bool,
-        reload_delay: float,
-        reload_backend: str,
+        reload_delay: int,
         working_dir: str,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
@@ -156,5 +149,4 @@ def add_serve_command(cli: click.Group) -> None:
                 host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,
                 reload_delay=reload_delay,
-                reload_backend=reload_backend,
             )

@@ -4,19 +4,19 @@ import typing as t
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from .baseplugin import ReloaderPlugin
+from bentoml.exceptions import MissingDependencyException
+
+try:
+    from .watchfilesplugin import ServiceReloaderPlugin
+except ImportError:
+    raise MissingDependencyException(
+        "watchfiles is required to use '--reload'. Install with `pip install 'bentoml[watchfiles]'`."
+    )
 
 if TYPE_CHECKING:
     from circus.arbiter import Arbiter
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
-
-    ServiceReloaderPlugin: t.Type[ReloaderPlugin]
-else:
-    try:
-        from .watchfilesplugin import WatchFilesPlugin as ServiceReloaderPlugin
-    except ImportError:
-        from .statsplugin import StatsPlugin as ServiceReloaderPlugin
 
 __all__ = [
     "ServiceReloaderPlugin",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -7,40 +8,91 @@ from pathlib import Path
 from threading import Event
 from threading import Thread
 
-from bentoml.exceptions import MissingDependencyException
+import fs
+from watchfiles import watch
+from circus.plugins import CircusPlugin
 
-from .baseplugin import ReloaderPlugin
+from ...utils.pkg import source_locations
+from ...configuration import is_pypi_installed_bentoml
+from ...bento.build_config import BentoBuildConfig
+from ...bento.build_config import BentoPatternSpec
 
 if TYPE_CHECKING:
     from watchfiles.main import FileChange
 
-try:
-    from watchfiles import watch
-except ImportError:
-    raise MissingDependencyException(
-        "'watchfiles' is required to use with '--reload-backend=watchfiles'. Install watchfiles with `pip install 'bentoml[watchfiles]'`"
-    )
 
 logger = logging.getLogger(__name__)
 
 
-class WatchFilesPlugin(ReloaderPlugin):
+class ServiceReloaderPlugin(CircusPlugin):
+    name = "service_reloader"
+    config: dict[str, str]
+
     def __init__(self, *args: t.Any, **config: t.Any):
+        assert "working_dir" in config, "`working_dir` is required"
+
         super().__init__(*args, **config)
 
-        # NOTE: we ignore --reload-delay for watchfiles as we rely on 'rust_timeout'
-        logger.debug("'--reload-delay' will be ignored when using 'watchfiles'.")
-        self.reload_delay = 0
+        # circus/plugins/__init__.py:282 -> converts all given configs to dict[str, str]
+        self.name = self.config.get("name")
+        self.bentoml_home = self.config["bentoml_home"]
+        self.working_dir = self.config["working_dir"]
+        self.reload_delay = int(self.config.get("reload_delay", 0))
+
+        # a list of folders to watch for changes
+        watch_dirs = [self.working_dir, os.path.join(self.bentoml_home, "models")]
+
+        if not is_pypi_installed_bentoml():
+            # bentoml src from this __file__
+            logger.info(
+                "BentoML is installed via development mode, adding source root to 'watch_dirs'"
+            )
+            watch_dirs.append(t.cast(str, source_locations("bentoml")))
+
+        logger.info(f"Watching directories: {watch_dirs}")
+        self.watch_dirs = watch_dirs
+        logger.debug(f"Using {self.__class__.__qualname__} as reloader plugin.")
+
+        self.create_spec()
 
         # a thread to restart circus
-        self.should_exit = Event()
+        self.exit_event = Event()
 
         self.file_changes = watch(
             *self.watch_dirs,
             watch_filter=None,
             yield_on_timeout=True,  # NOTE: stop hanging on our tests, doesn't affect the behaviour
-            stop_event=self.should_exit,
+            stop_event=self.exit_event,
             rust_timeout=self.reload_delay,
+        )
+
+    def create_spec(self) -> None:
+        bentofile_path = os.path.join(self.working_dir, "bentofile.yaml")
+        if not os.path.exists(bentofile_path):
+            # if bentofile.yaml is not found, by default we will assume to watch all files
+            # via BentoBuildConfig.with_defaults()
+            build_config = BentoBuildConfig(service="").with_defaults()
+        else:
+            # respect bentofile.yaml include and exclude
+            with open(bentofile_path, "r") as f:
+                build_config = BentoBuildConfig.from_yaml(f).with_defaults()
+
+        self.bento_spec = BentoPatternSpec(build_config)
+
+    def should_include(self, path: str | Path) -> bool:
+        # returns True if file with 'path' has changed, else False
+        if isinstance(path, Path):
+            path = path.__fspath__()
+
+        return any(
+            self.bento_spec.includes(
+                path,
+                recurse_exclude_spec=filter(
+                    lambda s: fs.path.isparent(s[0], os.path.dirname(path)),
+                    self.bento_spec.from_path(dirs),
+                ),
+            )
+            for dirs in self.watch_dirs
         )
 
     def has_modification(self) -> bool:
@@ -48,20 +100,28 @@ class WatchFilesPlugin(ReloaderPlugin):
             uniq_paths = {Path(c[1]) for c in changes}
             filtered = [c for c in uniq_paths if self.should_include(c)]
             if filtered:
-                change_type, path = self._display_path(changes)
+                change_type, path = self.display_path(changes)
                 logger.warning(f"{change_type.upper()}: {path}")
                 return True
         return False
 
-    @property
-    def watcher(self) -> Thread:
-        return Thread(target=self.look_after)
+    def look_after(self):
+        if self.has_modification():
+            logger.warning(f"{self.__class__.__name__} detected changes. Reloading...")
+            self.call("restart", name="*")
+
+    def handle_init(self):
+        self.watcher = Thread(target=self.look_after)
+        self.watcher.start()
+
+    def handle_recv(self, data: t.Any):
+        pass
 
     def handle_stop(self) -> None:
         self.watcher.join()
-        self.should_exit.set()
+        self.exit_event.set()
 
-    def _display_path(self, change: set[FileChange]) -> tuple[str, str]:
+    def display_path(self, change: set[FileChange]) -> tuple[str, str]:
         type_change, path = change.pop()
         try:
             return (

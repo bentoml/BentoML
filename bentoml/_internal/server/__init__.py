@@ -53,8 +53,7 @@ def serve_development(
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
-    reload_delay: float = 0.25,
-    reload_backend: t.Literal["default", "watchfiles", "auto"] = "auto",
+    reload_delay: int = 0,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -100,19 +99,9 @@ def serve_development(
             "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
         )
         try:
-            if reload_backend not in ["default", "watchfiles", "auto"]:
-                raise BentoMLException(
-                    f"reload_backend must be one of ['default', 'watchfiles', 'auto']. Got {reload_backend}"
-                )
-            if reload_backend == "default":
-                from ..utils.circus.statsplugin import StatsPlugin as _reloader
-            elif reload_backend == "watchfiles":
-                from ..utils.circus.watchfilesplugin import (
-                    WatchFilesPlugin as _reloader,
-                )
-            else:
-                from ..utils.circus import ServiceReloaderPlugin as _reloader
-            reloader = f"{_reloader.__module__}.{_reloader.__qualname__}"
+            from ..utils.circus import ServiceReloaderPlugin as reloader_plugin
+
+            reloader = f"{reloader_plugin.__module__}.{reloader_plugin.__qualname__}"
         except ImportError:
             # backward compatibility for BentoML 1.0.0rc adopters
             reloader = "bentoml._internal.utils.circus.BentoChangeReloader"

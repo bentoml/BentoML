@@ -158,7 +158,7 @@ Using PyTorch layer
 Since fastai is built on top of PyTorch, it is also possible to use PyTorch
 models from within a fastai learner directly for inference. Note that by using
 the PyTorch layer, you will not be able to use the fastai :~obj:`Learner`'s
-features such as :code:`.predict()`, :code:`.fit()`, etc.
+features such as :code:`.predict()`, :code:`.get_preds()`, etc.
 
 To get the PyTorch model, access it via ``learner.model``:
 
@@ -176,9 +176,7 @@ Using GPU
 ---------
 
 Since fastai doesn't provide a good support for GPU during inference, BentoML
-by default will only support CPU inference for fastai. If you want to use
-GPU, you should get the ``PyTorch`` model from ``learner.model`` and then use
-``bentoml.pytorch`` instead.
+by default will only support CPU inference for fastai.
 
 Additionally, if the model uses ``mixed_precision``, then the loaded model will also be converted to FP32.
 See `mixed precision <https://docs.fast.ai/callback.fp16.html>`_ to learn more about mixed precision.

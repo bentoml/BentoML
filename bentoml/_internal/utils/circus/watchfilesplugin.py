@@ -18,7 +18,7 @@ try:
     from watchfiles import watch
 except ImportError:
     raise MissingDependencyException(
-        "'watchefiles' is required to use with '--reload-backend=watchfiles'. Install watchfiles with `pip install 'bentoml[watchfiles]'`"
+        "'watchfiles' is required to use with '--reload-backend=watchfiles'. Install watchfiles with `pip install 'bentoml[watchfiles]'`"
     )
 
 logger = logging.getLogger(__name__)

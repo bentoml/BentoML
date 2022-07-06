@@ -59,10 +59,6 @@ Fine tuning the language model
    # epoch     train_loss  valid_loss  accuracy  time
    # 0         0.453252    0.395130    0.822080  36:45
 
-We can then test out prediction:
-
-.. code-block:: python
-
    learner.predict("I really liked that movie!")
 
    # output:
@@ -75,7 +71,7 @@ Saving a learner with BentoML
    :bdg-warning:`Warning:` `Learner <https://docs.fast.ai/learner.html#Learner>`_ instance is required to save with BentoML.
    This is a design choice to preserve functionalities provided by fastai.
 
-To quickly save the trained learner, use ``save_model``:
+To save the trained learner, use ``save_model``:
 
 .. code-block:: python
 
@@ -100,14 +96,6 @@ To quickly save the trained learner, use ``save_model``:
 Loading a learner with BentoML
 ------------------------------
 
-.. warning::
-
-   We recommend users to to use ``load_model`` inside a :obj:`bentoml.Service`.
-
-   You should always use ``bentoml.models.get("model:tag").to_runner()`` to get
-   a :obj:`bentoml.Runner` instead. See also :ref:`Runners <concepts/runner:Using Runners>`_ for more information.
-
-
 To load the learner back to memory, use ``load_model``:
 
 .. code-block:: python
@@ -119,6 +107,14 @@ You can then proceed to test the learner with prediction inputs:
 .. code-block:: python
 
    learner.predict("I really liked that movie!")
+
+.. warning::
+
+   We recommend users to to use ``load_model`` inside a :obj:`bentoml.Service`.
+
+   You should always use ``bentoml.models.get("model:tag").to_runner()`` to get
+   a :obj:`bentoml.Runner` instead. See also :ref:`Runners <concepts/runner:Using Runners>` for more information.
+
 
 .. admonition:: About the behaviour of :code:`load_model()`
 
@@ -138,30 +134,24 @@ Using Runners
 
    :ref:`The general Runner documentation<concepts/runner:Using Runners>`: general information about the Runner concept and their usage.
 
-.. seealso::
-
    :ref:`Specifying Runner Resources<concepts/runner:Specifying Required Resources>`: more information about Runner options.
-
-
-To use fastai runner locally, access the model via ``get`` and convert it to
-a runner:
-
-.. code-block:: python
-
-   runner = bentoml.fastai.get("fastai_sentiment").to_runner()
-
-   runner.init_local()
-
-   runner.predict.run("I really liked that movie!")
 
 .. tip::
 
    ``runner.predict.run`` should generally be a drop-in replacement for ``learner.predict`` regardless of your learner type.
 
-.. admonition:: About adaptive batching in fastai
+   A fastai :~obj:`bentoml.Runner` is a wrapper around a fastai :~obj:`Learner`
+   object. This means that a fastai runner will receive the same inputs type as
+   the given learner.
 
-   fastai doesn't have support for multiple inputs, hence adaptive batching
-   is disabled for fastai. Refers to :ref:`guides/batching:Adaptive Batching` for more information.
+   i.e: `Tabular runner <https://docs.fast.ai/tabular.learner.html>`_ will
+   accept a :obj:`DataFrame` input. Text runner will accept a :obj:`str` input,
+   etc.
+
+   Note that fast.ai doesn't provide support for batched inputs and multiple
+   input types, hence :code:`batchable` should always be set to ``False``.
+
+
 
 Building a Service for fastai
 -----------------------------
@@ -169,6 +159,27 @@ Building a Service for fastai
 .. seealso::
 
    :ref:`Building a Service <concepts/service:Service and APIs>`: more information on creating a prediction service with BentoML.
+
+.. code-block:: python
+
+   import bentoml
+
+   import numpy as np
+
+   from bentoml.io import Text
+   from bentoml.io import NumpyNdarray
+
+   runner = bentoml.fastai.get("fastai_sentiment:latest").to_runner()
+
+   fastsvc = bentoml.Service("fast_sentiment", runners=[runner])
+
+
+   @fastsvc.api(input=Text(), output=NumpyNdarray())
+   def classify_text(text: str) -> np.ndarray:
+      # returns sentiment score of a given text
+      res = runner.predict.run(text)
+      return np.asarray(res[-1])
+
 
 When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`,
 there are two ways to include fastai as a dependency, via ``python`` or

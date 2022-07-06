@@ -194,6 +194,11 @@ def save_model(
         logger.info(
             f"Using the default model signature ({signatures}) for model {name}."
         )
+    batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
+    if len(batchable_enabled_signatures) > 0:
+        logger.warning(
+            f"Batchable signatures are not supported for fastai models. Set the following {batchable_enabled_signatures} signatures to {'batchable': False}."
+        )
 
     with bentoml.models.create(
         name,

@@ -1,6 +1,6 @@
-=========================
-Framework-specific Guides
-=========================
+================
+Framework Guides
+================
 
 Here are the all of the supported ML frameworks for BentoML. You can find the official
 BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__

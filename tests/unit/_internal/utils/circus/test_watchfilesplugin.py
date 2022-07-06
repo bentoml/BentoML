@@ -40,6 +40,7 @@ class TestServiceReloaderPlugin(TestCircus):
             "working_dir": self.reload_directory.__fspath__(),
             "bentoml_home": self.reload_directory.__fspath__(),
         }
+        self.mock_bentoml_install_from_source()
 
     def test_logging_info(self) -> None:
         with self.assertLogs("bentoml", level=logging.INFO) as log:
@@ -50,17 +51,12 @@ class TestServiceReloaderPlugin(TestCircus):
     def test_reloader_params_is_required(self) -> None:
         self.assertRaises(AssertionError, self.make_plugin, ServiceReloaderPlugin)  # type: ignore (unfinished circus type)
 
-    def test_default_timeout(self) -> None:
-        plugin = self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
-        self.assertEqual(plugin.reload_delay, 0)
-
-    def test_ignore_timeout(self) -> None:
-        with self.assertLogs("bentoml", level=logging.DEBUG) as log:
-            plugin = self.make_plugin(
-                ServiceReloaderPlugin, **self.plugin_kwargs, reload_delay=10
-            )
-            self.assertIn("as reloader plugin", log.output[-1])
-            self.assertEqual(plugin.reload_delay, 10)
+    def mock_bentoml_install_from_source(self) -> MagicMock:
+        patcher = patch("bentoml._internal.configuration.is_pypi_installed_bentoml")
+        pypi_mock = patcher.start()
+        self.addCleanup(patcher.stop)
+        pypi_mock.return_value = False
+        return pypi_mock
 
     def setup_watch_mock(self, watch_return: set[FileChange]) -> MagicMock:
         # changes: 1 -> added, 2 -> modified, 3 -> deleted

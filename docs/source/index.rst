@@ -145,6 +145,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    concepts/index
    frameworks/index
    guides/index
+   integrations/index
    yatai/index
    bentoctl/index
    reference/index

@@ -47,6 +47,9 @@ if TYPE_CHECKING:
         input_spec: tuple[AnyType] | AnyType | None
         output_spec: AnyType | None
 
+else:
+    ModelSignaturesDict = dict
+
 
 T = t.TypeVar("T")
 

@@ -146,8 +146,8 @@ A fastai :obj:`~bentoml.Runner` is a wrapper around a fastai :~obj:`Learner`
 object. This means that a fastai runner will receive the same inputs type as
 the given learner.
 
-i.e: `Tabular learner <https://docs.fast.ai/tabular.learner.html>`_ will
-accept a :obj:`DataFrame` input. Text learner will accept a :obj:`str` input, etc.
+For example, Runner created from a `Tabular learner <https://docs.fast.ai/tabular.learner.html>`_ model will
+accept a :obj:`pandas.DataFrame` as input, where as a Text learner based runner will accept a :obj:`str` as input.
 
 
 Using PyTorch layer

@@ -90,7 +90,6 @@ from these ML libraries with BentoML.
   :hidden:
 
   picklable
-  lightgbm
   pytorch
   pytorch_lightning
   keras

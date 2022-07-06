@@ -23,7 +23,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
-    "sphinx_autodoc_typehints",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinx.ext.ifconfig",
@@ -41,10 +40,9 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 napoleon_attr_annotations = True
+autodoc_typehints = "signature"
 autodoc_typehints_format = "short"
-# sphinx.autodoc_typehints
-typehints_defaults = "comma"
-typehints_formatter = None
+autodoc_typehints_description_target = "documented"
 
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 10
@@ -57,10 +55,6 @@ ogp_use_first_image = True
 issues_default_group_project = "bentoml/bentoml"
 
 todo_include_todos = True
-
-autodoc_typehints = "description"
-autodoc_typehints_format = "short"
-autodoc_typehints_description_target = "documented"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -133,4 +127,5 @@ autodoc_mock_imports = [
     "transformers",
     "transformers.file_utils",
     "xgboost",
+    "bentoml._internal.models.model.ModelSignatureDict",
 ]

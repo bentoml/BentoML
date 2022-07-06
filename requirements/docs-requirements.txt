@@ -10,10 +10,8 @@ sphinxext-opengraph
 sphinxcontrib-fulltoc
 sphinxcontrib-spelling
 sphinx-copybutton
-sphinx-autodoc-typehints
 sphinx-issues
 sphinx-design
 pyenchant
-mock
-Jinja2<3.1
+Jinja2>=3.1
 sphinx-autobuild

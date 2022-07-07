@@ -1,5 +1,6 @@
 {# BENTOML INTERNAL #}
 {# users can use these values #}
+{% import '_macros.j2' as common %}
 {% set bento__entrypoint = bento__entrypoint | default(expands_bento_path("env", "docker", "entrypoint.sh", bento_path=bento__path)) %}
 # syntax = docker/dockerfile:1.4-labs
 #
@@ -56,20 +57,10 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% block SETUP_BENTO_COMPONENTS %}
 
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-    chmod +x {{ __install_python_scripts__ }} && \
-    bash {{ __install_python_scripts__ }}
+{{ common.run_script(__install_python_scripts__, "install.sh to install python packages", run_args="--mount=type=cache,mode=0777,target=/root/.cache/pip") }}
 
-# Run user setup scripts if exists
-RUN bash <<EOF
-set -euxo pipefail
-
-if [ -f {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }} ]; then
-  echo "Running user setup script.."
-  chmod +x {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
-  {{ expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) }}
-fi
-EOF
+{% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
+{{ common.run_script(__setup_script__, "user setup scripts") }}
 
 {% endblock %}
 

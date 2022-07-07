@@ -154,7 +154,7 @@ class EventMeta(ABC):
 
 @attr.define
 class CliEvent(EventMeta):
-    cmd_group: str | None
+    cmd_group: t.Optional[str]
     cmd_name: str
     duration_in_ms: float = attr.field(default=0)
     error_type: t.Optional[str] = attr.field(default=None)

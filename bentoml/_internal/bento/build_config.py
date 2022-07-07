@@ -600,8 +600,6 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 
 if TYPE_CHECKING:
     OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions]
-else:
-    OptionsCls = type
 
 
 def dict_options_converter(

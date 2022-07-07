@@ -11,6 +11,7 @@ BentoML APIs and learn about all the options they provide.
   core
   stores
   api_io_descriptors
+  frameworks/index
   cli
 
 

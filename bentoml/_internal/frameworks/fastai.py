@@ -30,7 +30,7 @@ _TORCH_EXCEPTION_MESSAGE = "fastai requires `torch` as a dependency. Please foll
 if TYPE_CHECKING:
     import torch
     import torch.nn as nn
-    import fastai.learner as learner_
+    import fastai.learner as learner
 
     from .. import external_typing as ext
     from ..tag import Tag
@@ -45,7 +45,7 @@ else:
     )
     torch = LazyLoader("torch", globals(), "torch", exc_msg=_TORCH_EXCEPTION_MESSAGE)
     nn = LazyLoader("nn", globals(), "torch.nn", exc_msg=_TORCH_EXCEPTION_MESSAGE)
-    learner_ = LazyLoader("learner_", globals(), "fastai.learner")
+    learner = LazyLoader("learner", globals(), "fastai.learner")
 
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
@@ -77,7 +77,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
-def load_model(bento_model: str | Tag | bentoml.Model) -> learner_.Learner:
+def load_model(bento_model: str | Tag | bentoml.Model) -> learner.Learner:
     """
     Load the ``fastai.learner.Learner`` model instance with the given tag from the local BentoML model store.
 
@@ -110,12 +110,12 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> learner_.Learner:
 
     pickle_file: str = bento_model.path_of(MODEL_FILENAME)
     with open(pickle_file, "rb") as f:
-        return t.cast(learner_.Learner, learner_.load_learner(f, cpu=True))
+        return t.cast(learner.Learner, learner.load_learner(f, cpu=True))
 
 
 def save_model(
     name: str,
-    learner: learner_.Learner,
+    learner_: learner.Learner,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -171,11 +171,11 @@ def save_model(
     """
     import cloudpickle
 
-    if isinstance(learner, nn.Module):
+    if isinstance(learner_, nn.Module):
         raise BentoMLException(
             "'bentoml.fastai.save_model()' does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
         )
-    if not isinstance(learner, learner_.Learner):
+    if not isinstance(learner_, learner.Learner):
         raise BentoMLException(
             f"'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got {learner.__class__.__name__} instead."
         )
@@ -194,6 +194,10 @@ def save_model(
         logger.info(
             f"Using the default model signature ({signatures}) for model {name}."
         )
+    batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
+    if len(batchable_enabled_signatures) > 0:
+        message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.org/en/latest/frameworks/fastai.html."
+        raise BentoMLException(message)
 
     with bentoml.models.create(
         name,
@@ -206,7 +210,7 @@ def save_model(
         metadata=metadata,
         context=context,
     ) as bento_model:
-        learner.export(bento_model.path_of(MODEL_FILENAME), pickle_module=cloudpickle)
+        learner_.export(bento_model.path_of(MODEL_FILENAME), pickle_module=cloudpickle)
         return bento_model
 
 

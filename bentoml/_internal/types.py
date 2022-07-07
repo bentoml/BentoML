@@ -204,6 +204,8 @@ if TYPE_CHECKING:
     from types import UnionType
 
     AnyType: t.TypeAlias = t.Type[t.Any] | UnionType | LazyType[t.Any]
+else:
+    AnyType = t.Any
 
 
 def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:

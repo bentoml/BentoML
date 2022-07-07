@@ -95,15 +95,15 @@ def main(
     component_context.component_name = f"api_server:{worker_id}"
 
     from ...log import configure_server_logging
-    from ...configuration.containers import DeploymentContainer
+    from ...configuration.containers import BentoMLContainer
 
-    DeploymentContainer.development_mode.set(False)
+    BentoMLContainer.development_mode.set(False)
     configure_server_logging()
 
     import uvicorn  # type: ignore
 
     if runner_map is not None:
-        DeploymentContainer.remote_runner_mapping.set(json.loads(runner_map))
+        BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
     svc = bentoml.load(
         bento_identifier, working_dir=working_dir, change_global_cwd=True
     )

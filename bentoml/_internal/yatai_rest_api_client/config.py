@@ -7,19 +7,22 @@ from pathlib import Path
 import attr
 import yaml
 import cattr
+from simple_di import inject
+from simple_di import Provide
 
 from bentoml.exceptions import YataiRESTApiClientError
 
 from .yatai import YataiRESTApiClient
-from ..configuration.containers import BENTOML_HOME
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 default_context_name = "default"
 
 
-def get_config_path() -> Path:
-    return Path(BENTOML_HOME) / ".yatai.yaml"
+@inject
+def get_config_path(bentoml_home: str = Provide[BentoMLContainer.bentoml_home]) -> Path:
+    return Path(bentoml_home) / ".yatai.yaml"
 
 
 @attr.define

@@ -10,7 +10,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from ..types import LazyType
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
@@ -119,7 +119,7 @@ class NdarrayContainer(
         cls,
         batch: ext.NpNDArray,
         batch_dim: int,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
@@ -139,7 +139,7 @@ class NdarrayContainer(
     def from_payload(
         cls,
         payload: Payload,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> ext.NpNDArray:
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
@@ -156,7 +156,7 @@ class NdarrayContainer(
         batch: ext.NpNDArray,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> list[Payload]:
 
         batches = cls.batch_to_batches(batch, indices, batch_dim)
@@ -172,7 +172,7 @@ class NdarrayContainer(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> t.Tuple["ext.NpNDArray", list[int]]:
         batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
@@ -207,7 +207,7 @@ class DMatrixContainer(
         cls,
         batch: ext.DMatrix,
         batch_dim: int,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         raise NotImplementedError
 
@@ -216,7 +216,7 @@ class DMatrixContainer(
     def from_payload(
         cls,
         payload: Payload,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> ext.DMatrix:
         raise NotImplementedError
 
@@ -227,7 +227,7 @@ class DMatrixContainer(
         batch: ext.DMatrix,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> list[Payload]:
         raise NotImplementedError
 
@@ -237,7 +237,7 @@ class DMatrixContainer(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> tuple[ext.DMatrix, list[int]]:
         raise NotImplementedError
 
@@ -285,7 +285,7 @@ class PandasDataFrameContainer(
         cls,
         batch: ext.PdDataFrame | ext.PdSeries,
         batch_dim: int,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         import pandas as pd
 
@@ -314,7 +314,7 @@ class PandasDataFrameContainer(
     def from_payload(
         cls,
         payload: Payload,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> ext.PdDataFrame:
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
@@ -331,7 +331,7 @@ class PandasDataFrameContainer(
         batch: ext.PdDataFrame,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> list[Payload]:
 
         batches = cls.batch_to_batches(batch, indices, batch_dim)
@@ -347,7 +347,7 @@ class PandasDataFrameContainer(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> tuple[ext.PdDataFrame, list[int]]:
         batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)

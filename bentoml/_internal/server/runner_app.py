@@ -15,7 +15,7 @@ from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -137,11 +137,11 @@ class RunnerAppFactory(BaseAppFactory):
                 default_span_details=None,
                 server_request_hook=None,
                 client_request_hook=client_request_hook,
-                tracer_provider=DeploymentContainer.tracer_provider.get(),
+                tracer_provider=BentoMLContainer.tracer_provider.get(),
             )
         )
 
-        access_log_config = DeploymentContainer.runners_config.logging.access
+        access_log_config = BentoMLContainer.runners_config.logging.access
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 

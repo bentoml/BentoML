@@ -19,7 +19,7 @@ from ..resource import CpuResource
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
 from ..utils.analytics import track_serve
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,7 @@ SCRIPT_NGROK = "bentoml._internal.server.cli.ngrok"
 
 @inject
 def ensure_prometheus_dir(
-    prometheus_multiproc_dir: str = Provide[
-        DeploymentContainer.prometheus_multiproc_dir
-    ],
+    prometheus_multiproc_dir: str = Provide[BentoMLContainer.prometheus_multiproc_dir],
     clean: bool = True,
 ):
     if os.path.exists(prometheus_multiproc_dir):
@@ -48,9 +46,9 @@ def ensure_prometheus_dir(
 def serve_development(
     bento_identifier: str,
     working_dir: str,
-    port: int = Provide[DeploymentContainer.api_server_config.port],
-    host: str = Provide[DeploymentContainer.api_server_config.host],
-    backlog: int = Provide[DeploymentContainer.api_server_config.backlog],
+    port: int = Provide[BentoMLContainer.api_server_config.port],
+    host: str = Provide[BentoMLContainer.api_server_config.host],
+    backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
@@ -143,9 +141,9 @@ MAX_AF_UNIX_PATH_LENGTH = 103
 def serve_production(
     bento_identifier: str,
     working_dir: str,
-    port: int = Provide[DeploymentContainer.api_server_config.port],
-    host: str = Provide[DeploymentContainer.api_server_config.host],
-    backlog: int = Provide[DeploymentContainer.api_server_config.backlog],
+    port: int = Provide[BentoMLContainer.api_server_config.port],
+    host: str = Provide[BentoMLContainer.api_server_config.host],
+    backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: t.Optional[int] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))

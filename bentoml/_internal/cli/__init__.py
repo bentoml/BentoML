@@ -1,27 +1,24 @@
 from __future__ import annotations
 
-import typing as t
-from gettext import gettext
-
-
 import os
 import sys
+import shutil
+import typing as t
 import platform
+from gettext import gettext
+
 import click
 import psutil
 
 from bentoml import __version__ as BENTOML_VERSION
-import shutil
-
-from ..utils.pkg import get_pkg_version
 
 from .yatai import add_login_command
+from ..utils.pkg import get_pkg_version
 from .click_utils import BentoMLCommandGroup
 from .bento_server import add_serve_command
 from .containerize import add_containerize_command
 from .bento_management import add_bento_management_commands
 from .model_management import add_model_management_commands
-
 
 FC = t.TypeVar("FC", bound=t.Union[t.Callable[..., t.Any], click.Command])
 

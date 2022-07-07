@@ -113,7 +113,7 @@ def add_serve_command(cli: click.Group) -> None:
 
         from ..context import component_context
 
-        component_context.component_name = "supervisor"
+        component_context.component_name = "cli"
 
         if production:
             if reload:

@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
 SCRIPT_API_SERVER = "bentoml._internal.server.cli.api_server"
 SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
-SCRIPT_NGROK = "bentoml._internal.server.cli.ngrok"
 
 
 @inject
@@ -49,7 +48,6 @@ def serve_development(
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
 ) -> None:
@@ -60,20 +58,6 @@ def serve_development(
     from circus.watcher import Watcher  # type: ignore
 
     watchers: t.List[Watcher] = []
-    if with_ngrok:
-        watchers.append(
-            Watcher(
-                name="ngrok",
-                cmd=sys.executable,
-                args=[
-                    "-m",
-                    SCRIPT_NGROK,
-                ],
-                copy_env=True,
-                stop_children=True,
-                working_dir=working_dir,
-            )
-        )
 
     circus_sockets: t.List[CircusSocket] = []
     circus_sockets.append(

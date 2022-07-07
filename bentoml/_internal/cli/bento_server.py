@@ -76,14 +76,6 @@ def add_serve_command(cli: click.Group) -> None:
         default=".",
         show_default=True,
     )
-    @click.option(
-        "--run-with-ngrok",  # legacy option
-        "--ngrok",
-        is_flag=True,
-        default=False,
-        help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, only available in dev mode",
-        show_default=True,
-    )
     def serve(
         bento: str,
         production: bool,
@@ -94,7 +86,6 @@ def add_serve_command(cli: click.Group) -> None:
         reload: bool,
         reload_delay: float,
         working_dir: str,
-        run_with_ngrok: bool,
     ) -> None:
         """Start BentoServer from BENTO
 
@@ -121,10 +112,6 @@ def add_serve_command(cli: click.Group) -> None:
             sys.path.insert(0, working_dir)
 
         if production:
-            if run_with_ngrok:
-                logger.warning(
-                    "'--run-with-ngrok' is not supported with '--production; ignoring"
-                )
             if reload:
                 logger.warning(
                     "'--reload' is not supported with '--production'; ignoring"
@@ -146,7 +133,6 @@ def add_serve_command(cli: click.Group) -> None:
             serve_development(
                 bento,
                 working_dir=working_dir,
-                with_ngrok=run_with_ngrok,
                 port=port,
                 host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,

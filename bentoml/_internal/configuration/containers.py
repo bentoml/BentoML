@@ -88,7 +88,6 @@ SCHEMA = Schema(
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),
-            "ngrok": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},
             "logging": {
                 # TODO add logging level configuration

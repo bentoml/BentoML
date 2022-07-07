@@ -36,10 +36,9 @@ except ImportError:  # pragma: no cover
         from sklearn.utils._joblib import parallel_backend
     except ImportError:
         raise MissingDependencyException(
-            """sklearn is required in order to use the module `bentoml.sklearn`, install
-             sklearn with `pip install sklearn`. For more information, refer to
-             https://scikit-learn.org/stable/install.html
-            """
+            "sklearn is required in order to use the module `bentoml.sklearn`, install "
+            "sklearn with `pip install sklearn`. For more information, refer to "
+            "https://scikit-learn.org/stable/install.html"
         )
 
 MODULE_NAME = "bentoml.sklearn"
@@ -179,8 +178,8 @@ def get_runnable(bento_model: Model):
     """
 
     class SklearnRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

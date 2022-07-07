@@ -9,6 +9,8 @@ SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 
 # Install helpers
 RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum bash <<EOF
+set -euxo pipefail
+
 yum upgrade -y
 yum install -y amazon-linux-extras curl ca-certificates gcc gcc-c++ make bash shadow-utils
 

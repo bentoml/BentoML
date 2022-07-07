@@ -28,7 +28,7 @@ Here's an example using PyTorch with BentoML:
     model = NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
 
     # save the model to model store:
-    tag = bentoml.pytorch.save_model("ngrams", )
+    tag = bentoml.pytorch.save_model("ngrams", model)
 
     # get a BentoModel (a reference to model in model store) by tag:
     metadata = bentoml.models.get(tag)

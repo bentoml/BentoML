@@ -25,10 +25,9 @@ try:
     import lightgbm as lgb  # type: ignore (missing type stubs for lightgbm)
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """lightgbm is required in order to use module `bentoml.lightgbm`, install
-        lightgbm with `pip install lightgbm`. For more information, refer to
-        https://github.com/microsoft/LightGBM/tree/master/python-package
-        """
+        "lightgbm is required in order to use module `bentoml.lightgbm`, install "
+        "lightgbm with `pip install lightgbm`. For more information, refer to "
+        "https://github.com/microsoft/LightGBM/tree/master/python-package"
     )
 
 MODULE_NAME = "bentoml.lightgbm"
@@ -227,10 +226,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
 
     class LightGBMRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = (
-            False  # LightGBM only supports GPU during training, not for inference.
-        )
-        SUPPORT_CPU_MULTI_THREADING = True
+        # LightGBM only supports GPU during training, not for inference.
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

@@ -8,7 +8,6 @@ import fs
 import attr
 
 from .utils import bentoml_cattr
-from ..exceptions import InvalidArgument
 from ..exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -30,14 +29,17 @@ def validate_tag_str(value: str):
         * May contain dashes (`-`), underscores (`_`) dots (`.`), or alphanumerics
           between.
     """
-    errors = []
+    errors: list[str] = []
     if len(value) > tag_max_length:
         errors.append(tag_max_length_error_msg)
     if tag_regex.match(value) is None:
         errors.append(tag_invalid_error_msg)
 
     if errors:
-        raise InvalidArgument(f"{value} is not a valid tag: " + ", and ".join(errors))
+        # TODO: link to tag documentation
+        raise ValueError(
+            f"{value} is not a valid BentoML tag: " + ", and ".join(errors)
+        )
 
 
 @attr.define(slots=True)
@@ -48,7 +50,7 @@ class Tag:
     def __init__(self, name: str, version: t.Optional[str] = None):
         lname = name.lower()
         if name != lname:
-            logger.warning(f"converting {name} to lowercase: {lname}")
+            logger.warning(f"converting '{name}' to lowercase: '{lname}'")
 
         validate_tag_str(lname)
 
@@ -57,7 +59,7 @@ class Tag:
         if version is not None:
             lversion = version.lower()
             if version != lversion:
-                logger.warning(f"converting {version} to lowercase: {lversion}")
+                logger.warning(f"converting '{version}' to lowercase: '{lversion}'")
             validate_tag_str(lversion)
             self.version = lversion
         else:
@@ -133,4 +135,4 @@ class Tag:
 attr.resolve_types(Tag, globals(), locals())
 
 bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
-bentoml_cattr.register_unstructure_hook(Tag, lambda tag: str(tag))
+bentoml_cattr.register_unstructure_hook(Tag, str)

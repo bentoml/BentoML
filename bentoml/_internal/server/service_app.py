@@ -16,7 +16,7 @@ from ..context import InferenceApiContext as Context
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 from ..io_descriptors.multipart import Multipart
 
 if TYPE_CHECKING:
@@ -81,13 +81,13 @@ class ServiceAppFactory(BaseAppFactory):
         self,
         bento_service: Service,
         enable_access_control: bool = Provide[
-            DeploymentContainer.api_server_config.cors.enabled
+            BentoMLContainer.api_server_config.cors.enabled
         ],
         access_control_options: dict[str, list[str] | int] = Provide[
-            DeploymentContainer.access_control_options
+            BentoMLContainer.access_control_options
         ],
         enable_metrics: bool = Provide[
-            DeploymentContainer.api_server_config.metrics.enabled
+            BentoMLContainer.api_server_config.metrics.enabled
         ],
     ) -> None:
         self.bento_service = bento_service
@@ -215,10 +215,6 @@ class ServiceAppFactory(BaseAppFactory):
             if span is not None:
                 trace_context.request_id = span.context.span_id
 
-        def client_response_hook(span: Span, _message: t.Any) -> None:
-            if span is not None:
-                del trace_context.request_id
-
         middlewares.append(
             Middleware(
                 otel_asgi.OpenTelemetryMiddleware,
@@ -226,12 +222,11 @@ class ServiceAppFactory(BaseAppFactory):
                 default_span_details=None,
                 server_request_hook=None,
                 client_request_hook=client_request_hook,
-                client_response_hook=client_response_hook,
-                tracer_provider=DeploymentContainer.tracer_provider.get(),
+                tracer_provider=BentoMLContainer.tracer_provider.get(),
             )
         )
 
-        access_log_config = DeploymentContainer.api_server_config.logging.access
+        access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 
@@ -252,7 +247,7 @@ class ServiceAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> list[t.Callable[[], None]]:
         on_startup = [self.bento_service.on_asgi_app_startup]
-        if DeploymentContainer.development_mode.get():
+        if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(functools.partial(runner.init_local, quiet=True))
         else:

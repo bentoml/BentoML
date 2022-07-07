@@ -9,26 +9,13 @@ from bentoml import Tag
 
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
+from .common.pytorch import torch
 
 if TYPE_CHECKING:
     from ..models.model import ModelSignaturesType
 
-
-_PL_IMPORT_ERROR = f"""\
-`torch` is required in order to use module `{__name__}`\n
-Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
-Then run `pip install torch`
-"""
-
-
-try:
-    import torch
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(_PL_IMPORT_ERROR)
 
 logger = logging.getLogger(__name__)
 MODULE_NAME = "bentoml.torchscript"
@@ -74,8 +61,8 @@ def load_model(
         bentoml_model = get(bentoml_model)
 
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
-            f"Model {bentoml_model} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
+        raise NotFound(
+            f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
     model: torch.ScriptModule = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage]
@@ -90,7 +77,8 @@ def save_model(
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
-    _include_pytorch_lightning_version: bool = False,
+    _framework_name: str = "torchscript",
+    _module_name: str = MODULE_NAME,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -125,7 +113,7 @@ def save_model(
     if not isinstance(model, (torch.ScriptModule, torch.jit.ScriptModule)):
         raise TypeError(f"Given model ({model}) is not a torch.ScriptModule.")
 
-    if _include_pytorch_lightning_version:
+    if _framework_name == "pytorch_lightning":
         framework_versions = {
             "torch": get_pkg_version("torch"),
             "pytorch_lightning": get_pkg_version("pytorch_lightning"),
@@ -134,7 +122,7 @@ def save_model(
         framework_versions = {"torch": get_pkg_version("torch")}
 
     context: ModelContext = ModelContext(
-        framework_name="torchscript",
+        framework_name=_framework_name,
         framework_versions=framework_versions,
     )
 
@@ -146,7 +134,7 @@ def save_model(
 
     with bentoml.models.create(
         name,
-        module=MODULE_NAME,
+        module=_module_name,
         api_version=API_VERSION,
         labels=labels,
         signatures=signatures,

@@ -6,7 +6,7 @@ import logging
 import click
 
 from ..log import configure_server_logging
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=DeploymentContainer.service_port.get(),
+        default=BentoMLContainer.service_port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -50,7 +50,7 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=DeploymentContainer.api_server_config.backlog.get(),
+        default=BentoMLContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
     )
@@ -76,14 +76,6 @@ def add_serve_command(cli: click.Group) -> None:
         default=".",
         show_default=True,
     )
-    @click.option(
-        "--run-with-ngrok",  # legacy option
-        "--ngrok",
-        is_flag=True,
-        default=False,
-        help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, only available in dev mode",
-        show_default=True,
-    )
     def serve(
         bento: str,
         production: bool,
@@ -94,7 +86,6 @@ def add_serve_command(cli: click.Group) -> None:
         reload: bool,
         reload_delay: float,
         working_dir: str,
-        run_with_ngrok: bool,
     ) -> None:
         """Start BentoServer from BENTO
 
@@ -121,10 +112,6 @@ def add_serve_command(cli: click.Group) -> None:
             sys.path.insert(0, working_dir)
 
         if production:
-            if run_with_ngrok:
-                logger.warning(
-                    "'--run-with-ngrok' is not supported with '--production; ignoring"
-                )
             if reload:
                 logger.warning(
                     "'--reload' is not supported with '--production'; ignoring"
@@ -136,7 +123,7 @@ def add_serve_command(cli: click.Group) -> None:
                 bento,
                 working_dir=working_dir,
                 port=port,
-                host=DeploymentContainer.service_host.get() if host is None else host,
+                host=BentoMLContainer.service_host.get() if host is None else host,
                 backlog=backlog,
                 api_workers=api_workers,
             )
@@ -146,7 +133,6 @@ def add_serve_command(cli: click.Group) -> None:
             serve_development(
                 bento,
                 working_dir=working_dir,
-                with_ngrok=run_with_ngrok,
                 port=port,
                 host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,

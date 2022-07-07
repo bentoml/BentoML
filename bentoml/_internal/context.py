@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 import contextvars
 from abc import ABC
@@ -140,11 +141,10 @@ class InferenceApiContext:
             )
 
 
-class ServiceTraceContext:
-    def __init__(self) -> None:
-        self._request_id_var = contextvars.ContextVar(
-            "_request_id_var", default=t.cast("t.Optional[int]", None)
-        )
+class _ServiceTraceContext:
+    _request_id_var = contextvars.ContextVar(
+        "_request_id_var", default=t.cast("t.Optional[int]", None)
+    )
 
     @property
     def trace_id(self) -> t.Optional[int]:
@@ -154,6 +154,15 @@ class ServiceTraceContext:
         if span is None:
             return None
         return span.get_span_context().trace_id
+
+    @property
+    def sampled(self) -> int:
+        from opentelemetry import trace  # type: ignore
+
+        span = trace.get_current_span()
+        if span is None:
+            return 0
+        return 1 if span.get_span_context().trace_flags.sampled else 0
 
     @property
     def span_id(self) -> t.Optional[int]:
@@ -175,9 +184,29 @@ class ServiceTraceContext:
     def request_id(self, request_id: t.Optional[int]) -> None:
         self._request_id_var.set(request_id)
 
-    @request_id.deleter
-    def request_id(self) -> None:
-        self._request_id_var.set(None)
+
+class _ComponentContext:
+    _component_name: str | None = None
+    bento_name: str
+    bento_version: str | None
+
+    @property
+    def component_name(self) -> str:
+        return self._component_name if self._component_name is not None else ""
+
+    @component_name.setter
+    def component_name(self, component_name: str) -> None:
+        assert self._component_name is None, "component_name should not be set twice"
+        self._component_name = component_name
+
+    @property
+    def yatai_bento_deployment_name(self) -> str:
+        return os.environ.get("YATAI_BENTO_DEPLOYMENT_NAME", "")
+
+    @property
+    def yatai_bento_deployment_namespace(self) -> str:
+        return os.environ.get("YATAI_BENTO_DEPLOYMENT_NAMESPACE", "")
 
 
-trace_context = ServiceTraceContext()
+trace_context = _ServiceTraceContext()
+component_context = _ComponentContext()

@@ -214,7 +214,13 @@ class BentoMLCommandGroup(click.Group):
 
 
 def is_valid_bento_tag(value: str) -> bool:
-    return re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is not None
+    try:
+        from ..tag import Tag
+
+        Tag.from_str(value)
+        return True
+    except ValueError:
+        return False
 
 
 def is_valid_bento_name(value: str) -> bool:

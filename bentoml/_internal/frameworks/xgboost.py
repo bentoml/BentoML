@@ -26,10 +26,9 @@ try:
     import xgboost as xgb
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """xgboost is required in order to use module `bentoml.xgboost`, install
-        xgboost with `pip install xgboost`. For more information, refers to
-        https://xgboost.readthedocs.io/en/latest/install.html
-        """
+        "xgboost is required in order to use module `bentoml.xgboost`, install "
+        "xgboost with `pip install xgboost`. For more information, refers to "
+        "https://xgboost.readthedocs.io/en/latest/install.html"
     )
 
 MODULE_NAME = "bentoml.xgboost"
@@ -192,16 +191,16 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
 
     class XGBoostRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True
-        SUPPORT_CPU_MULTI_THREADING = True
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()
             self.model = load_model(bento_model)
 
             # check for resources
-            available_gpus = os.getenv("NVIDIA_VISIBLE_DEVICES")
-            if available_gpus is not None and available_gpus != "":
+            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES")
+            if available_gpus is not None and available_gpus not in ("", "-1"):
                 self.model.set_param({"predictor": "gpu_predictor", "gpu_id": 0})  # type: ignore (incomplete XGBoost types)
             else:
                 nthreads = os.getenv("OMP_NUM_THREADS")

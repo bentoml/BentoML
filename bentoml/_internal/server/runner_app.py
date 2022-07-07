@@ -8,14 +8,14 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
-from ..trace import ServiceContext
+from ..context import trace_context
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import multipart_to_payload_params
 from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -128,11 +128,7 @@ class RunnerAppFactory(BaseAppFactory):
         def client_request_hook(span: Span, _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
                 span_id: int = span.context.span_id
-                ServiceContext.request_id_var.set(span_id)
-
-        def client_response_hook(span: Span, _message: t.Any) -> None:
-            if span is not None:
-                ServiceContext.request_id_var.set(None)
+                trace_context.request_id = span_id
 
         middlewares.append(
             Middleware(
@@ -141,12 +137,11 @@ class RunnerAppFactory(BaseAppFactory):
                 default_span_details=None,
                 server_request_hook=None,
                 client_request_hook=client_request_hook,
-                client_response_hook=client_response_hook,
-                tracer_provider=DeploymentContainer.tracer_provider.get(),
+                tracer_provider=BentoMLContainer.tracer_provider.get(),
             )
         )
 
-        access_log_config = DeploymentContainer.runners_config.logging.access
+        access_log_config = BentoMLContainer.runners_config.logging.access
         if access_log_config.enabled.get():
             from .access import AccessLogMiddleware
 

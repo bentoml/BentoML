@@ -4,8 +4,6 @@ import typing as t
 
 import attr
 
-from bentoml._internal.runner.resource import Resource
-
 
 @attr.define
 class FrameworkTestModel:
@@ -14,14 +12,23 @@ class FrameworkTestModel:
     configurations: list[FrameworkTestModelConfiguration]
 
     save_kwargs: dict[str, t.Any] = attr.Factory(dict)
+    # when raw model method call is not simply `method(*args,
+    # **kwargs)` format or raw model method call does not simply
+    # return the outputs, then use this to override default behavior
+    # when testing raw model inputs with expected outputs
+    model_method_caller: t.Callable[
+        [FrameworkTestModel, str, list[t.Any], dict[str, t.Any]], t.Any
+    ] | None = attr.field(default=None)
+    # when framework has some special signatures requirements
+    model_signatures: dict[str, t.Any] | None = attr.field(default=None)
 
 
 @attr.define
 class FrameworkTestModelConfiguration:
     test_inputs: dict[str, list[FrameworkTestModelInput]]
-
     load_kwargs: dict[str, t.Any] = attr.Factory(dict)
-    check_model: t.Callable[[t.Any, Resource], None] = lambda _, __: None
+    check_model: t.Callable[[t.Any, dict[str, t.Any]], None] = lambda _, __: None
+    check_runnable: t.Callable[[t.Any, dict[str, t.Any]], None] = lambda _, __: None
 
 
 @attr.define
@@ -34,9 +41,11 @@ class FrameworkTestModelInput:
 
     def check_output(self, outp: t.Any):
         if isinstance(self.expected, t.Callable):
-            assert self.expected(
-                outp
-            ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"
+            result = self.expected(outp)
+            if result is not None:
+                assert (
+                    result
+                ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"
         else:
             assert (
                 outp == self.expected

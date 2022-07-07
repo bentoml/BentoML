@@ -140,11 +140,10 @@ Using Runners
    See :ref:`concepts/runner:Using Runners` doc for a general introduction to the Runner concept and its usage.
 
 
-``runner.predict.run`` is generally a drop-in replacement for ``learner.predict`` regardless of the learner type.
-
-A fastai :obj:`~bentoml.Runner` is a wrapper around a fastai :~obj:`Learner`
-object. This means that a fastai runner will receive the same inputs type as
+``runner.predict.run`` is generally a drop-in replacement for ``learner.predict`` regardless of the learner type 
+for executing the prediction in the model runner. A fastai runner will receive the same inputs type as 
 the given learner.
+
 
 For example, Runner created from a `Tabular learner <https://docs.fast.ai/tabular.learner.html>`_ model will
 accept a :obj:`pandas.DataFrame` as input, where as a Text learner based runner will accept a :obj:`str` as input.

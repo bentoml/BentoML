@@ -1,34 +1,118 @@
-=================
-Custom Dockerfile
-=================
+================
+Containerization
+================
 
-This guides describes how to customize the Dockerfile generated for containerizing a Bento, by extending BentoML's built-in templates. This is an advanced feature for user to customize container environment that are not directly supported in BentoML.
+This guides describes advanced containerization options 
+provided by BentoML:
 
-.. seealso::
+- :ref:`Using base image <guides/containerization:Custom Base Image>`
+- :ref:`Using dockerfile template <guides/containerization:Dockerfile Template>`
 
-   :ref:`concepts/bento:Docker Options` doc to learn about basic options for configuring the Bento generated container image.
-
-
-.. note::
-
-   BentoML make uses of `Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ to enable custom Dockerfile template.
-
-   However, This section is not meant to be a complete reference on Jinja2.
-   It is meant to give a quick overview of how Jinja2 is used in conjunction with BentoML.
-   For any reference on Jinja2 please refers to their `Templates Design Documentation <https://jinja.palletsprojects.com/en/3.1.x/templates/>`_.
+This is an advanced feature for user to customize container environment that are not directly supported in BentoML.
+For basic containerizing options, see :ref:`Docker Options <concepts/bento:Docker Options>`.
 
 Why you may need this?
 ----------------------
 
-1. If you want to customize the containerization process of your Bento.
-2. If you need a certain tools, configs, prebuilt binaries that is available across all your Bento generated container images.
-3. A big difference with :ref:`base image <concepts/bento:Docker Options Table>` features is that you don't have to setup a custom base image and then push it to a remote registry.
+- If you want to customize the containerization process of your Bento.
+- If you need a certain tools, configs, prebuilt binaries that is available across all your Bento generated container images.
+- A big difference with :ref:`base image <concepts/bento:Docker Options Table>` features is that you don't have to setup a custom base image and then push it to a remote registry.
 
-How it works
-------------
+Custom Base Image
+-----------------
 
-To focus on how to create a custom Dockerfile template, the following examples
-are provided:
+If none of the provided distros work for your use case, e.g. if your infrastructure
+requires all docker images to be derived from the same base image with certain security
+fixes and libraries, you can config BentoML to use your base image instead:
+
+.. code:: yaml
+
+    docker:
+        base_image: "my_custom_image:latest"
+
+When a :code:`base_image` is provided, **all other docker options will be ignored**,
+(distro, cuda_version, system_packages, python_version). :code:`bentoml containerize`
+will build a new image on top of the base_image with the following steps:
+
+- setup env vars
+- run the :code:`setup_script` if provided
+- install the required Python packages
+- copy over the Bento file
+- setup the entrypoint command for serving.
+
+
+.. note::
+
+    :bdg-warning:`Warning:` user must ensure that the provided base image has desired
+    Python version installed. If the base image you have doesn't have Python, you may
+    install python via a :code:`setup_script`. The implementation of the script depends
+    on the base image distro or the package manager available.
+
+    .. code:: yaml
+
+        docker:
+            base_image: "my_custom_image:latest"
+            setup_script: "./setup.sh"
+
+.. warning::
+
+    By default, BentoML supports multi-platform docker image build out-of-the-box.
+    However, when a custom :code:`base_image` is provided, the generated Dockerfile can
+    only be used for building linux/amd64 platform docker images.
+
+    If you are running BentoML from an Apple M1 device or an ARM based computer, make
+    sure to pass the :code:`--platform` parameter when containerizing a Bento. e.g.:
+
+    .. code:: bash
+
+        bentoml containerize iris_classifier:latest --platform=linux/amd64
+
+
+Dockerfile Template
+-------------------
+
+The :code:`dockerfile_template` field gives the user full control over how the
+:code:`Dockerfile` is generated for a Bento by extending the template used by
+BentoML.
+
+First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml`
+build file. This file should follow the
+`Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ template language, and extend
+BentoML's base template and blocks. The template should render a valid
+`Dockerfile https://docs.docker.com/engine/reference/builder/`_. For example:
+
+.. code-block:: dockerfile
+
+   {% extends bento_base_template %}
+   {% block SETUP_BENTO_COMPONENTS %}
+   {{ super() }}
+   RUN echo "We are running this during bentoml containerize!"
+   {% endblock %}
+
+Then add the path to your template file to the :code:`dockerfile_template` field in
+your :code: `bentofile.yaml`:
+
+.. code:: yaml
+
+    docker:
+        dockerfile_template: "./Dockerfile.template"
+
+Now run :code:`bentoml build` to build a new Bento. It will contain a Dockerfile
+generated with the custom template. To confirm the generated Dockerfile works as
+expected, run :code:`bentoml containerize <bento>` to build a docker image with it.
+
+.. dropdown:: View the generated Dockerfile content
+    :icon: code
+
+    During development and debugging, you may want to see the generated Dockerfile.
+    Here's shortcut for that:
+
+    .. code-block:: bash
+
+        cat "$(bentoml get MY_BENTO_NAME:latest -o path)/env/docker/Dockerfile"
+
+Examples
+--------
 
 1. :ref:`guides/containerization:Building Tensorflow custom op`
 2. :ref:`guides/containerization:Access AWS credentials during image build`
@@ -36,19 +120,12 @@ are provided:
 Building Tensorflow custom op
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let's start with an example that builds a `custom Tensorflow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento.
-
-.. seealso::
-
-   |zero_out|_
+Let's start with an example that builds a `custom Tensorflow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento. based on |zero_out|_:
 
 .. _zero_out: https://www.tensorflow.org/guide/create_op#define_the_op_interface
 
-.. |super_tag| replace:: :code:`zero_out.cc` implementation details
+.. |zero_out| replace:: :code:`zero_out.cc` implementation details
 
-.. note::
-
-   Currently building tensorflow custom op is ONLY supported on x86_64 architectures.
 
 Define the following :code:`Dockerfile.template`:
 
@@ -116,13 +193,13 @@ Access AWS credentials during image build
 
 We will now demonstrate how to provide AWS credentials to a Bento via two approaches:
 
-1. :ref:`guides/containerization:Using :code:`ARG``.
-2. :ref:`guides/containerization:Using Docker's :code:`RUN --mount``.
+1. :ref:`guides/containerization:Using environment variables`.
+2. :ref:`guides/containerization:Mount credentials from host`.
 
 .. note::
 
    :bdg-info:`Remarks:` We recommend for most cases 
-   to use the second option (:ref:`guides/containerization:Using Docker's :code:`RUN --mount``)
+   to use the second option (:ref:`guides/containerization:Mount credentials from host`)
    as it prevents any securities leak.
 
    By default BentoML uses the latest `dockerfile frontend <https://hub.docker.com/r/docker/dockerfile>`_ which
@@ -139,12 +216,8 @@ For both examples, you will need to add the following to your :code:`bentofile.y
      dockerfile_template: ./Dockerfile.template
 
 
-Using :code:`ARG`
-^^^^^^^^^^^^^^^^^
-
-.. note::
-
-   Courtesy of the works from `Mission Lane <https://www.missionlane.com/>`_ Engineering Team.
+Using environment variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Define the following :code:`Dockerfile.template`:
 
@@ -171,16 +244,12 @@ pass :code:`AWS_SECRET_ACCESS_KEY` and :code:`AWS_ACCESS_KEY_ID` as arguments to
 
 .. code-block:: bash
 
-   bentoml containerize --build-arg AWS_SECRET_ACCESS_KEY=<secret_access_key> --build-arg AWS_ACCESS_KEY_ID=<access_key_id> <bento>:<tag>
+   bentoml containerize --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                        --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                        <bento>:<tag>
 
-.. note::
-
-   We recommend not to do this practice as anyone whos has access to the
-   history of the computer running the aboved command can access the AWS credentials. Instead
-   use :ref:`guides/containerization:Using Docker's :code:`RUN --mount``.
-
-Using Docker's :code:`RUN --mount`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Mount credentials from host
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Define the following :code:`Dockerfile.template`:
 
@@ -267,6 +336,12 @@ This allows BentoML to enable users to fully customize how to structure a Bento'
    To use a custom Dockerfile template, users have to provide a file with a format
    that follows the Jinja2 template syntax. The template file should have
    extensions of :code:`.j2`, :code:`.template`, :code:`.jinja`.
+
+.. note::
+
+   This section is not meant to be a complete reference on Jinja2.
+   For any advanced features from on Jinja2, please refers to their `Templates Design Documentation <https://jinja.palletsprojects.com/en/3.1.x/templates/>`_.
+
 
 To construct a custom :code:`Dockerfile` template, users have to provide an `extends block <https://jinja.palletsprojects.com/en/3.1.x/templates/#extends>`_ at the beginning of the Dockerfile template :code:`Dockerfile.template` followed by the given base template name :code:`bento_base_template`:
 

@@ -838,104 +838,17 @@ Setup script is always executed after the specified Python packages, conda depen
 and system packages are installed. Thus user can import and utilize those libraries in
 their setup script for the initialization process.
 
+Advanced Options
+""""""""""""""""
 
-Custom Base Image (Advanced)
-""""""""""""""""""""""""""""
+For advanced customization for generating docker images, see :ref:`Advanced Containerization <guides/containerization:Containerization>`:
 
-If none of the provided distros work for your use case, e.g. if your infrastructure
-requires all docker images to be derived from the same base image with certain security
-fixes and libraries, you can config BentoML to use your base image instead:
-
-.. code:: yaml
-
-    docker:
-        base_image: "my_custom_image:latest"
-
-When a :code:`base_image` is provided, **all other docker options will be ignored**,
-(distro, cuda_version, system_packages, python_version). :code:`bentoml containerize`
-will build a new image on top of the base_image with the following steps:
-
-- setup env vars
-- run the :code:`setup_script` if provided
-- install the required Python packages
-- copy over the Bento file
-- setup the entrypoint command for serving.
-
-
-.. note::
-    :bdg-warning:`Warning:` user must ensure that the provided base image has desired
-    Python version installed. If the base image you have doesn't have Python, you may
-    install python via a :code:`setup_script`. The implementation of the script depends
-    on the base image distro or the package manager available.
-
-    .. code:: yaml
-
-        docker:
-            base_image: "my_custom_image:latest"
-            setup_script: "./setup.sh"
-
-.. warning::
-    By default, BentoML supports multi-platform docker image build out-of-the-box.
-    However, when a custom :code:`base_image` is provided, the generated Dockerfile can
-    only be used for building linux/amd64 platform docker images.
-
-    If you are running BentoML from an Apple M1 device or an ARM based computer, make
-    sure to pass the :code:`--platform` parameter when containerizing a Bento. e.g.:
-
-    .. code:: bash
-
-        bentoml containerize iris_classifier:latest --platform=linux/amd64
-
-
-Dockerfile Template (Beta)
-""""""""""""""""""""""""""
-
-The :code:`dockerfile_template` field gives the user full control over how the
-:code:`Dockerfile` is generated for a Bento by extending the template used by
-BentoML.
-
-First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml`
-build file. This file should follow the
-`Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ template language, and extend
-BentoML's base template and blocks. The template should render a valid
-`Dockerfile https://docs.docker.com/engine/reference/builder/`_. For example:
-
-.. code-block:: dockerfile
-
-   {% extends bento_base_template %}
-   {% block SETUP_BENTO_COMPONENTS %}
-   {{ super() }}
-   RUN echo "We are running this during bentoml containerize!"
-   {% endblock %}
-
-Then add the path to your template file to the :code:`dockerfile_template` field in
-your :code: `bentofile.yaml`:
-
-.. code:: yaml
-
-    docker:
-        dockerfile_template: "./Dockerfile.template"
-
-Now run :code:`bentoml build` to build a new Bento. It will contain a Dockerfile
-generated with the custom template. To confirm the generated Dockerfile works as
-expected, run :code:`bentoml containerize <bento>` to build a docker image with it.
-
-.. dropdown:: View the generated Dockerfile content
-    :icon: code
-
-    During development and debugging, you may want to see the generated Dockerfile.
-    Here's shortcut for that:
-
-    .. code-block:: bash
-
-        cat "$(bentoml get MY_BENTO_NAME:latest -o path)/env/docker/Dockerfile"
-
-.. seealso::
-
-   :ref:`Bento Custom Dockerfile <guides/containerization:Custom Dockerfile>`: more information about how BentoML containerizes a Bento.
+1. :ref:`Using base image <guides/containerization:Custom Base Image>`
+2. :ref:`Using dockerfile template <guides/containerization:Dockerfile Template>`
 
 Docker Options Table
 """"""""""""""""""""
+
 
 +---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | Field               | Description                                                                                                                               |

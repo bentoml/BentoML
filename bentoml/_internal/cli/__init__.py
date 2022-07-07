@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import json
+import typing as t
+from gettext import gettext
 
 import click
 import psutil
@@ -8,34 +9,55 @@ import psutil
 from bentoml import __version__ as BENTOML_VERSION
 
 from .yatai import add_login_command
-from ..utils import console
 from .click_utils import BentoMLCommandGroup
 from .bento_server import add_serve_command
 from .containerize import add_containerize_command
 from .bento_management import add_bento_management_commands
 from .model_management import add_model_management_commands
 
+FC = t.TypeVar("FC", bound=t.Union[t.Callable[..., t.Any], click.Command])
+
+
+def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
+    """Add a ``--env`` option which immediately prints environment info for debugging purposes.
+
+    :param param_decls: One or more option names. Defaults to the single
+        value ``"--help"``.
+    :param kwargs: Extra arguments are passed to :func:`option`.
+    """
+
+    def callback(ctx: click.Context, params: click.Parameter, value: t.Any) -> None:
+        if not value or ctx.resilient_parsing:
+            return
+
+        import platform
+
+        info = {
+            "Python version": platform.python_version(),
+            "BentoML version": BENTOML_VERSION,
+            "Platform info": platform.platform(),
+        }
+        click.echo("\n".join([f"{k}: {v}" for k, v in info.items()]))
+        ctx.exit()
+
+    param_decls = ("--env",)
+
+    kwargs.setdefault("is_flag", True)
+    kwargs.setdefault("expose_value", False)
+    kwargs.setdefault("is_eager", True)
+    kwargs.setdefault("help", gettext("Print environment info and exit"))
+    kwargs["callback"] = callback
+    return click.option(*param_decls, **kwargs)
+
 
 def create_bentoml_cli():
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
     @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
-    @click.version_option(BENTOML_VERSION, "-v", "--version")  # type: ignore
+    @click.version_option(BENTOML_VERSION, "-v", "--version")
+    @env_option()
     def cli():
         """BentoML CLI"""
-
-    @cli.command()
-    def env() -> None:  # type: ignore # noqa
-        """Provide BentoML's environment information. Mainly used for debugging purposes and issues tracking."""
-        from platform import platform
-        from platform import python_version
-
-        info = {
-            "Python version": python_version(),
-            "BentoML version": BENTOML_VERSION,
-            "Platform info": platform(),
-        }
-        console.print_json(json.dumps(info, indent=2))
 
     # Add top-level CLI commands
     add_login_command(cli)

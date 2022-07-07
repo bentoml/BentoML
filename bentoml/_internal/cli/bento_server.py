@@ -111,10 +111,6 @@ def add_serve_command(cli: click.Group) -> None:
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
-        from ..context import component_context
-
-        component_context.component_name = "cli"
-
         if production:
             if reload:
                 logger.warning(

@@ -92,7 +92,7 @@ def in_notebook() -> bool:
     try:
         from IPython import get_ipython
 
-        if "IPKernelApp" not in get_ipython().config:  # type: ignore (bad ipython type)
+        if "IPKernelApp" not in get_ipython().config:  # pragma: no cover
             return False
     except ImportError:
         return False
@@ -154,7 +154,7 @@ class EventMeta(ABC):
 
 @attr.define
 class CliEvent(EventMeta):
-    cmd_group: t.Optional[str]
+    cmd_group: str
     cmd_name: str
     duration_in_ms: float = attr.field(default=0)
     error_type: t.Optional[str] = attr.field(default=None)

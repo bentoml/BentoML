@@ -6,6 +6,11 @@ import logging
 
 import click
 
+from bentoml.bentos import containerize as containerize_bento
+
+from ..utils import kwargs_transformers
+from ..utils.docker import validate_tag
+
 logger = logging.getLogger("bentoml")
 
 
@@ -20,9 +25,6 @@ def containerize_transformer(
 
 
 def add_containerize_command(cli: click.Group) -> None:
-    from ..utils import kwargs_transformers
-    from ..utils.docker import validate_tag
-
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
@@ -267,8 +269,6 @@ def add_containerize_command(cli: click.Group) -> None:
                 )
             else:
                 load = True
-
-        from bentoml.bentos import containerize as containerize_bento
 
         exit_code = not containerize_bento(
             bento_tag,

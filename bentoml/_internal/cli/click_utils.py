@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 import re
 import time
@@ -13,8 +11,12 @@ import click
 from click import ClickException
 from click.exceptions import UsageError
 
+from ..log import configure_logging
 from ...exceptions import BentoMLException
 from ..configuration import CONFIG_ENV_VAR
+from ..configuration import set_debug_mode
+from ..configuration import set_quiet_mode
+from ..configuration import load_global_config
 from ..utils.analytics import track
 from ..utils.analytics import CliEvent
 from ..utils.analytics import cli_events_map
@@ -32,11 +34,6 @@ if TYPE_CHECKING:
 
     WrappedCLI = t.Callable[P, ClickFunctionWrapper[t.Any]]
 
-    from ..utils.analytics.cli_events import AnalyticCliProtocol
-
-    class PartialProtocol(t.Protocol[P]):
-        __call__: t.Callable[P, AnalyticCliProtocol]
-
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +47,8 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_common_params(
-        func: t.Callable[P, t.Any],
-    ) -> WrappedCLI[bool, bool, t.Optional[str]]:
+        func: "t.Callable[P, t.Any]",
+    ) -> "WrappedCLI[bool, bool, t.Optional[str]]":
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
 
         @click.option(
@@ -85,27 +82,19 @@ class BentoMLCommandGroup(click.Group):
         def wrapper(
             quiet: bool,
             verbose: bool,
-            config: str | None,
-            *args: P.args,
-            **kwargs: P.kwargs,
+            config: t.Optional[str],
+            *args: "P.args",
+            **kwargs: "P.kwargs",
         ) -> t.Any:
             if config:
-                from ..configuration import load_global_config
-
                 load_global_config(config)
 
             if quiet:
-                from ..configuration import set_quiet_mode
-
                 set_quiet_mode(True)
                 if verbose:
                     logger.warning("'--quiet' passed; ignoring '--verbose/--debug'")
             elif verbose:
-                from ..configuration import set_debug_mode
-
                 set_debug_mode(True)
-
-            from ..log import configure_logging
 
             configure_logging()
 
@@ -115,14 +104,14 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_track_usage(
+        func: t.Union["t.Callable[P, t.Any]", "ClickFunctionWrapper[t.Any]"],
         cmd_group: click.Group,
-        func: t.Callable[P, t.Any] | ClickFunctionWrapper[t.Any],
         **kwargs: t.Any,
-    ) -> WrappedCLI[bool]:
+    ):
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
-        def wrapper(do_not_track: bool, *args: P.args, **kwargs: P.kwargs) -> t.Any:
+        def wrapper(do_not_track: bool, *args: "P.args", **kwargs: "P.kwargs") -> t.Any:
             if do_not_track:
                 os.environ[BENTOML_DO_NOT_TRACK] = str(True)
                 return func(*args, **kwargs)
@@ -133,14 +122,14 @@ class BentoMLCommandGroup(click.Group):
                 cmd_group.name in cli_events_map
                 and command_name in cli_events_map[cmd_group.name]
             ):
-                get_tracking_event: PartialProtocol[t.Any] = functools.partial(
+                get_tracking_event = functools.partial(
                     cli_events_map[cmd_group.name][command_name],
                     cmd_group.name,
                     command_name,
                 )
             else:
 
-                def get_tracking_event(_: t.Any) -> CliEvent:
+                def get_tracking_event(ret: t.Any) -> CliEvent:
                     return CliEvent(
                         cmd_group=cmd_group.name,
                         cmd_name=command_name,
@@ -166,14 +155,14 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def raise_click_exception(
+        func: t.Union["t.Callable[P, t.Any]", "ClickFunctionWrapper[t.Any]"],
         cmd_group: click.Group,
-        func: t.Callable[P, t.Any] | ClickFunctionWrapper[t.Any],
         **kwargs: t.Any,
-    ) -> ClickFunctionWrapper[t.Any]:
+    ) -> "ClickFunctionWrapper[t.Any]":
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+        def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
             try:
                 return func(*args, **kwargs)
             except BentoMLException as err:
@@ -184,31 +173,31 @@ class BentoMLCommandGroup(click.Group):
 
     def command(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> t.Callable[[t.Callable[P, t.Any]], click.Command]:
+    ) -> "t.Callable[[t.Callable[P, t.Any]], click.Command]":
         if "context_settings" not in kwargs:
             kwargs["context_settings"] = {}
         kwargs["context_settings"]["max_content_width"] = 120
 
-        def wrapper(func: t.Callable[P, t.Any]) -> click.Command:
+        def wrapper(func: "t.Callable[P, t.Any]") -> click.Command:
             # add common parameters to command.
-            params = BentoMLCommandGroup.bentoml_common_params(func)
+            func = BentoMLCommandGroup.bentoml_common_params(func)
             # Send tracking events before command finish.
-            track = BentoMLCommandGroup.bentoml_track_usage(self, params, **kwargs)
+            func = BentoMLCommandGroup.bentoml_track_usage(func, self, **kwargs)
             # If BentoMLException raise ClickException instead before exit.
-            exc_han = BentoMLCommandGroup.raise_click_exception(self, track, **kwargs)
+            func = BentoMLCommandGroup.raise_click_exception(func, self, **kwargs)
 
             # move common parameters to end of the parameters list
-            exc_han.__click_params__ = (
-                exc_han.__click_params__[-self.NUMBER_OF_COMMON_PARAMS :]
-                + exc_han.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
+            func.__click_params__ = (
+                func.__click_params__[-self.NUMBER_OF_COMMON_PARAMS :]
+                + func.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
             )
-            return super(BentoMLCommandGroup, self).command(*args, **kwargs)(exc_han)
+            return super(BentoMLCommandGroup, self).command(*args, **kwargs)(func)
 
         return wrapper
 
     def resolve_command(
-        self, ctx: click.Context, args: list[str]
-    ) -> tuple[str | None, click.Command | None, list[str]]:
+        self, ctx: click.Context, args: t.List[str]
+    ) -> t.Tuple[str, click.Command, t.List[str]]:
         try:
             return super(BentoMLCommandGroup, self).resolve_command(ctx, args)
         except UsageError as e:

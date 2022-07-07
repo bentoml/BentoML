@@ -19,7 +19,6 @@ from datetime import timedelta
 import fs
 import attr
 import fs.copy
-from rich.console import Console
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -47,7 +46,6 @@ _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 __all__ = [
     "bentoml_cattr",
-    "console",
     "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
@@ -56,8 +54,6 @@ __all__ = [
     "validate_or_create_dir",
     "display_path_under_home",
 ]
-
-console = Console()
 
 
 @overload

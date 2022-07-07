@@ -1,11 +1,11 @@
-from __future__ import annotations
-
+# type: ignore[reportUnusedFunction]
 import sys
 import typing as t
 import logging
 
 import click
 
+from ..log import configure_server_logging
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=".",
         show_default=True,
     )
-    def serve(  # type: ignore (not used warning)
+    def serve(
         bento: str,
         production: bool,
         port: int,
@@ -109,8 +109,6 @@ def add_serve_command(cli: click.Group) -> None:
             - when specified, respect :obj:`include` and :obj:`exclude` under :obj:`bentofile.yaml` as well as the :obj:`.bentoignore` file in `--working-dir`, for code and file changes
             - all model store changes will also trigger a restart (new model saved or existing model removed)
         """
-        from ..log import configure_server_logging
-
         configure_server_logging()
 
         if sys.path[0] != working_dir:

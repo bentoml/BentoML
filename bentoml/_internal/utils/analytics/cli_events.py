@@ -1,28 +1,18 @@
-from __future__ import annotations
-
 import typing as t
 from typing import TYPE_CHECKING
 
+from .. import calc_dir_size
 from .schemas import BentoBuildEvent
 
 if TYPE_CHECKING:
-    from .schemas import EventMeta
     from ...bento.bento import Bento
-
-    class AnalyticCliProtocol(t.Protocol):
-        def __call__(
-            self, cmd_group: str, cmd_name: str, return_value: t.Any
-        ) -> EventMeta:
-            ...
 
 
 def _cli_bentoml_build_event(
     cmd_group: str,
     cmd_name: str,
-    return_value: Bento | None,
+    return_value: "t.Optional[Bento]",
 ) -> BentoBuildEvent:  # pragma: no cover
-    from .. import calc_dir_size
-
     if return_value is not None:
         bento = return_value
         return BentoBuildEvent(
@@ -43,6 +33,4 @@ def _cli_bentoml_build_event(
         )
 
 
-cli_events_map: dict[str, dict[str, AnalyticCliProtocol]] = {
-    "cli": {"build": _cli_bentoml_build_event}
-}
+cli_events_map = {"cli": {"build": _cli_bentoml_build_event}}

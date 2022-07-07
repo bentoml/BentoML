@@ -69,7 +69,7 @@ body:
     attributes:
       label: Environment
       description: |
-        Please share your environment with us. This includes your OS, BentoML version, Python Version, whether you are using conda or not, etc.
+        Please share your environment with us. You should run `bentoml --env` and paste the result here.
       placeholder: |
         - OS: [e.g. MacOS 10.14.3]
         - Python version: [e.g. Python 3.7.13, 3.10.2]

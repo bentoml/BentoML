@@ -539,13 +539,14 @@ If you need to use conda for CUDA images, use the following template ( *partiall
 
    .. code-block:: jinja
 
-      {% extends "base_debian.j2" %}
+      {% import '_macros.j2' as common %}
+      {% extends bento_base_template %}
       {# Make sure to change the correct python_version and conda version accordingly. #}
       {# example: py38_4.10.3 #}
       {# refers to https://repo.anaconda.com/miniconda/ for miniconda3 base #}
       {% set conda_version="py39_4.11.0" %}
       {% set conda_path="/opt/conda" %}
-      {% set conda_exec= [conda_path, "bin", "conda"] | join("/") %}
+      {% set conda_exec=[conda_path, "bin", "conda"] | join("/") %}
       {% block SETUP_BENTO_BASE_IMAGE %}
       FROM debian:bullseye-slim as conda-build
 
@@ -623,23 +624,6 @@ If you need to use conda for CUDA images, use the following template ( *partiall
       {% block SETUP_BENTO_ENVARS %}
 
       SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
-
       {{ super() }}
-
-      RUN --mount=type=cache,mode=0777,target=/opt/conda/pkgs bash <<EOF
-      SAVED_PYTHON_VERSION={{ __python_version_full__ }}
-      PYTHON_VERSION=${SAVED_PYTHON_VERSION%.*}
-
-      echo "Installing Python $PYTHON_VERSION with conda..."
-      {{ conda_exec }} install -y -n base pkgs/main::python=$PYTHON_VERSION pip
-
-      if [ -f {{ __environment_yml__ }} ]; then
-      # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
-      # pip-installed packages to satisfy dependencies.
-      echo "Updating conda base environment with environment.yml"
-      {{ conda_exec }} config --set pip_interop_enabled True || true
-      {{ conda_exec }} env update -n base -f {{ __environment_yml__ }}
-      {{ conda_exec }} clean --all
-      fi
-      EOF
+      {{ common.setup_conda(__python_version__, bento__path, conda_path=conda_path) }}
       {% endblock %}

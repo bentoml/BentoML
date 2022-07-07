@@ -106,7 +106,7 @@ class Multipart(IODescriptor[t.Any]):
                 |                                                                |
                 |   +--------------------------------------------------------+   |
                 |   |                                                        |   |
-                |   |    Multipart(arr=NumpyNdarray(), annotations=JSON()    |   |
+                |   |    Multipart(arr=NumpyNdarray(), annotations=JSON())   |   |
                 |   |                                                        |   |
                 |   +----------------+-----------------------+---------------+   |
                 |                    |                       |                   |

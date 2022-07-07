@@ -9,13 +9,20 @@ from threading import Event
 from threading import Thread
 
 import fs
-from watchfiles import watch
 from circus.plugins import CircusPlugin
 
 from ...utils.pkg import source_locations
+from ....exceptions import MissingDependencyException
 from ...configuration import is_pypi_installed_bentoml
 from ...bento.build_config import BentoBuildConfig
 from ...bento.build_config import BentoPatternSpec
+
+try:
+    from watchfiles import watch
+except ImportError:
+    raise MissingDependencyException(
+        "watchfiles is required to use '--reload'. Install with `pip install 'bentoml[watchfiles]'`."
+    )
 
 if TYPE_CHECKING:
     from watchfiles.main import FileChange

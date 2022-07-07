@@ -96,19 +96,12 @@ def serve_development(
         logger.debug(
             "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
         )
-        try:
-            from ..utils.circus import ServiceReloaderPlugin as reloader_plugin
-
-            reloader = f"{reloader_plugin.__module__}.{reloader_plugin.__qualname__}"
-        except ImportError:
-            # backward compatibility for BentoML 1.0.0rc adopters
-            reloader = "bentoml._internal.utils.circus.BentoChangeReloader"
 
         # initialize dictionary with {} is faster than using dict()
         plugins = [
             # reloader plugin
             {
-                "use": reloader,
+                "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
                 "working_dir": working_dir,
                 "bentoml_home": bentoml_home,
             },

@@ -6,7 +6,7 @@ ONNX
 Preface
 -------
 
-ONNX is an open format built to represent machine learning models. ONNX provides `high interoperability <https://onnx.ai/supported-tools.html#buildModel>`_  among various frameworks, as well as enable machine learning practitioners to maximize models' performance across `different hardware <https://onnx.ai/supported-tools.html#deployModel>`_. 
+ONNX is an open format built to represent machine learning models. ONNX provides `high interoperability <https://onnx.ai/supported-tools.html#buildModel>`_  among various frameworks, as well as enable machine learning practitioners to maximize models' performance across `different hardware <https://onnx.ai/supported-tools.html#deployModel>`_.
 
 Due to its high interoperability among frameworks, we recommend you to check out the framework integration with ONNX as it will contain specific recommendation and requirements for that given framework.
 
@@ -32,10 +32,6 @@ Converting model frameworks to ONNX format
    BentoML currently only support `ONNX Runtime
    <https://onnxruntime.ai>`_ as ONNX backend. BentoML requires either
    ``onnxruntime>=1.9`` or ``onnxruntime-gpu>=1.9`` to be installed.
-
-
-Train a model and export it to ONNX format
-------------------------------------------
 
 .. tab:: PyTorch
 
@@ -215,6 +211,15 @@ Building a Service for **ONNX**
        sr_arr = np.squeeze(sr_arr) # remove batch_size, color_channel dims
        sr_img = PIL_Image.fromarray(np.uint8(sr_arr * 255) , 'L')
        return sr_img
+
+.. note::
+
+   In above codes we use ``runner.run.run(input_data)`` to do
+   inference. The first ``run`` is referring to
+   ``onnxruntime.InferenceSession``'s ``run`` method, while the second
+   ``run`` is BentoML's naming convention for doing runner inference
+   for a model method. For example, for a Keras model with ``predict``
+   method, we will call ``runner.predict.run(input_data)``.
 
 
 Using Runners

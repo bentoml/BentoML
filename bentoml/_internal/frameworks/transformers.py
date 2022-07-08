@@ -153,7 +153,7 @@ def _get_auto_class(val: str | Iterable[str]) -> AutoClassGenerator:
     if isinstance(val, str):
         if not hasattr(transformers, val):
             raise BentoMLException(
-                f"Given {val} is neither exists nor a valid Transformers auto class. For more information, please see https://huggingface.co/docs/transformers/model_doc/auto"
+                f"Given {val} is not a valid Transformers auto class. For more information, please see https://huggingface.co/docs/transformers/model_doc/auto"
             )
         yield getattr(transformers, val)
     elif isinstance(val, Iterable):

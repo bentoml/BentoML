@@ -6,22 +6,10 @@ ONNX
 Preface
 -------
 
-In this tutorial, we will show how to train a model with PyTorch
-TensorFlow and Scikit Learn, then we will convert resulting model to
-ONNX format, use BentoML to save it and create a prediction service.
-
-.. note::
-
-   BentoML currently only support `ONNX Runtime
-   <https://onnxruntime.ai>`_ as ONNX backend. BentoML requires either
-   ``onnxruntime>=1.9`` or ``onnxruntime-gpu>=1.9`` to be installed.
-
-.. seealso::
-
-   ONNX support multiple machine learning frameworks and each
-   framework may have unique requirements/recommendations for
-   converting its own model format to ONNX format. Please refer to
-   resources listed below for in-depth knowledge of each framework.
+ONNX support multiple machine learning frameworks and each framework
+may have unique requirements/recommendations for converting its own
+model format to ONNX format. Please refer to resources listed below
+for in-depth knowledge of each framework.
 
 .. tab:: PyTorch
 
@@ -30,11 +18,22 @@ ONNX format, use BentoML to save it and create a prediction service.
 
 .. tab:: TensorFlow
 
-   TODO
+   - `tensorflow-onnx (tf2onnx) <https://github.com/onnx/tensorflow-onnx>`_ documentation.
 
 .. tab:: Scikit Learn
 
    TODO
+
+In this tutorial, we will show how to train a model (or use a
+pretrained model) with PyTorch TensorFlow and Scikit Learn, then we
+will convert resulting model to ONNX format, use BentoML to save it
+and create a prediction service.
+
+.. note::
+
+   BentoML currently only support `ONNX Runtime
+   <https://onnxruntime.ai>`_ as ONNX backend. BentoML requires either
+   ``onnxruntime>=1.9`` or ``onnxruntime-gpu>=1.9`` to be installed.
 
 
 Train a model and export it to ONNX format
@@ -137,7 +136,11 @@ Train a model and export it to ONNX format
 
 .. tab:: TensorFlow
 
-   TODO
+   First let's install ``tf2onnx``
+
+   .. code-block:: bash
+
+      pip install tf2onnx
 
 .. tab:: Scikit Learn
 
@@ -183,51 +186,37 @@ which will result:
    saving metadata and custom objects.
 
 
-Loading an ONNX model with BentoML
-----------------------------------
+Building a Service for **ONNX**
+-------------------------------
 
-We can use ``load_model`` to load an ONNX model back to memory:
+.. seealso::
 
-.. code-block:: python
-
-   ort_session = bentoml.onnx.load_model("onnx_super_resolution")
-
-.. note::
-
-   BentoML will load an ONNX model back as an
-   ``onnxruntime.InferenceSession`` object which is ready to do
-   inference
-
-
-Then we can do the inference:
+   :ref:`Building a Service <concepts/service:Service and APIs>` for how to
+   create a prediction service with BentoML.
 
 .. code-block:: python
 
-   test_input = np.random.randn(2, 1, 244, 244) # can accept arbitrary batch size
-   ort_session.run(None, {"input": test_input.astype(np.float32)})
+   import bentoml
 
-.. note::
+   import numpy as np
+   from PIL import Image as PIL_Image
+   from PIL import ImageOps
+   from bentoml.io import Image
 
-   In above codes we need explicitly to convert input ndarray to
-   float32 because ``onnxruntime.InferenceSession`` only expects
-   single floats. In the following section we will see that BentoML
-   runner will automatically cast input data to this type
+   runner = bentoml.onnx.get("super_resolution:latest").to_runner()
 
+   svc = bentoml.Service("super_resolution", runners=[runner])
 
-In addition to :ref:`general options <concepts/model:Retrieve a saved
-model>` provided by :code:`load_model`, you can pass ``providers`` to
-set ONNX Runtime's `Execution Providers
-<https://onnxruntime.ai/docs/execution-providers/>`_. You can also
-pass ``session_options`` to set ``onnxruntime.InferenceSession``'s
-`SessionOptions
-<https://onnxruntime.ai/docs/api/python/api_summary.html#sessionoptions>`_.
-
-.. code-block:: python
-
-   ort_session = bentoml.onnx.load_model(
-       "super_resolution",
-       providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
-   )
+   @svc.api(input=Image(), output=Image())
+   def sr(img) -> np.ndarray:
+       img = img.resize((224, 224))
+       gray_img = ImageOps.grayscale(img)
+       arr = np.array(gray_img) / 255.0 # convert from 0-255 range to 0.0-1.0 range
+       arr = np.expand_dims(arr, (0, 1)) # add batch_size, color_channel dims
+       sr_arr = runner.run.run(arr)
+       sr_arr = np.squeeze(sr_arr) # remove batch_size, color_channel dims
+       sr_img = PIL_Image.fromarray(np.uint8(sr_arr * 255) , 'L')
+       return sr_img
 
 
 Using Runners
@@ -237,12 +226,6 @@ Using Runners
 
    :ref:`Runners<concepts/runner:Using Runners>` for more information on what is
    a Runner and how to use it.
-
-.. seealso::
-
-   :ref:`Runners<concepts/runner:Specifying Required Resources>` on how to
-   provide options for a runner.
-
 
 To use ``onnx`` runner locally, access the model via ``get`` and
 convert it to a runner:
@@ -274,20 +257,39 @@ Like ``load_model``, you can customize ``providers`` and
    runner.init_local()
 
 
-Building a Service for **ONNX**
--------------------------------
+Loading an ONNX model with BentoML for local testing
+----------------------------------------------------
 
-.. seealso::
+We can use ``load_model`` to load an ONNX model back to memory:
 
-   :ref:`Building a Service <concepts/service:Service and APIs>` for how to
-   create a prediction service with BentoML.
+.. code-block:: python
+
+   ort_session = bentoml.onnx.load_model("onnx_super_resolution")
+
+.. note::
+
+   BentoML will load an ONNX model back as an
+   ``onnxruntime.InferenceSession`` object which is ready to do
+   inference
 
 
-Miscellaneous Notes
--------------------
+Then we can do the inference:
+
+.. code-block:: python
+
+   test_input = np.random.randn(2, 1, 244, 244) # can accept arbitrary batch size
+   ort_session.run(None, {"input": test_input.astype(np.float32)})
+
+.. note::
+
+   In above codes we need explicitly to convert input ndarray to
+   float32 because ``onnxruntime.InferenceSession`` only expects
+   single floats. In the following section we will see that BentoML
+   runner will automatically cast input data to this type
+
 
 Dynamic Batch Size
-~~~~~~~~~~~~~~~~~~
+------------------
 
 When enabling :ref:`guides/batching:Adaptive Batching`, the exported
 ONNX model need to accept dynamic batch size. Hence the dynamic batch
@@ -320,10 +322,17 @@ axes need to be specified when the mode is exported in ONNX format.
    TODO
 
 Default Execution Providers Settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 * When a CUDA compatible GPU is available, BentoML runner will use ``["CUDAExecutionProvider", "CPUExecutionProvider"]`` as the default Execution Providers.
 * When CUDA compatible GPU is not available, BentoML runner will use
   ``["CPUExecutionProvider"]`` as the default Execution Providers.
-* You can override this setting using ``with_options`` when creating
-  the runner
+
+You can override this setting using ``with_options`` when creating the
+runner:
+
+.. code-block:: python
+
+   providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+
+   runner = bentoml.onnx.get("super_resolution").with_options(providers=providers).to_runner()

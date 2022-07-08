@@ -9,7 +9,7 @@ from BentoML version 0.13.1 to 1.0.0. Complete every migration action denoted li
 
 .. admonition:: 💡 Migration Task
 
-   Install BentoML if not already
+   Install BentoML version 1.0.0 by running the following command.
 
 
 .. code-block:: bash
@@ -24,7 +24,7 @@ Train Models
 ------------
 
 First, the quickstart project begins by training a classifier Scikit-Learn model from the iris datasets. 
-By running the :code:`python train.py`, we obtain a trained classifier model.
+By running :code:`python train.py`, we obtain a trained classifier model.
 
 .. code-block:: python
     :caption: train.py
@@ -40,10 +40,11 @@ By running the :code:`python train.py`, we obtain a trained classifier model.
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
-BentoML version 1.0.0 introduced the model store concept to help improve model management during development. 
+BentoML version 1.0.0 introduces the model store concept to help improve model management during development. 
 Once we are happy with the model trained, we can save the  model instance with the :code:`save_model()` 
 framework API to persist it in the model store. Optionally, you may attach custom labels, metadata, or custom 
-objects like tokenizers to be saved alongside the model. See Save A Trained Model to learn more.
+objects like tokenizers to be saved alongside the model. See 
+:ref:`Save A Trained Model <concepts/model:Save A Trained Model>` to learn more.
 
 .. admonition:: 💡 Migration Task
 
@@ -160,7 +161,7 @@ when saving and loading a BentoService.
 
 BentoML 1.0.0 leverages a combination of :ref:`model store <concepts/model:Managing Models>` and 
 :ref:`runners <concepts/runner:What is Runner?>` APIs for specifying the required models at runtime. Methods on the 
-model can invoked by calling the run function on the runner. Runner represents a unit of computation that can be 
+model can be invoked by calling the run function on the runner. Runner represents a unit of computation that can be 
 executed on a remote Python worker and scales independently.
 
 .. code-block:: python
@@ -172,8 +173,8 @@ API
 
 BentoML version 0.13.1 defines the inference API through the :code:`@api` 
 `decorator <https://docs.bentoml.org/en/0.13-lts/concepts.html#api-function-and-adapters>`_. 
-Input and output types can be specified through adapters. The service will convert the inference request from HTTP to 
-the desired format specified by the input adaptor. In this case, a :code:`pandas.DataFrame` object.
+Input and output types can be specified through the adapters. The service will convert the inference request from 
+HTTP to the desired format specified by the input adaptor, in this case, a :code:`pandas.DataFrame` object.
 
 .. code-block:: python
 
@@ -185,7 +186,7 @@ BentoML version 1.0.0 also provides a similar :code:`@svc.api` :ref:`decorator <
 The inference API is no longer defined within the service class. The association with the service is declared with the 
 :code:`@svc.api` decorator from the :code:`bentoml.Service` class. Input and output specifications are defined by IO 
 descriptor arguments passed to the :code:`@src.api` decorator. Similar to the adaptors, they help describe the expected 
-data type, validate that the input and output conform to the expected format and schema, and convert them from and to 
+data types, validate that the input and output conform to the expected format and schema, and convert them from and to 
 the specified native types. In addition, multiple input and output can be defined using the tuple syntax, 
 e.g. :code:`input=(image=Image(), metadata=JSON())`.
 
@@ -203,8 +204,8 @@ calling remote APIs.
 Test Services
 ~~~~~~~~~~~~~
 
-To improve development agility, BentoML version 1.0.0 added the capability to test the service in development before 
-saving. Executing the :code:`bentoml serve` command will bring up an API server to rapid development iterations. The 
+To improve development agility, BentoML version 1.0.0 adds the capability to test the service in development before 
+saving. Executing the :code:`bentoml serve` command will bring up an API server for rapid development iterations. The 
 :code:`--reload` option allows the development API server to reload upon every change of the service module.
 
 .. code-block:: bash
@@ -212,7 +213,7 @@ saving. Executing the :code:`bentoml serve` command will bring up an API server 
     > bentoml serve --reload
 
 To bring up the API server and runners in a production like setting, use the :code:`--production` option. In production 
-mode, API servers and runners will run in separate processes to maximize parallelism.
+mode, API servers and runners will run in separate processes to maximize server utility and parallelism.
 
 .. code-block:: bash
 
@@ -222,9 +223,9 @@ mode, API servers and runners will run in separate processes to maximize paralle
 Building Bentos
 ---------------
 
-Next, we will build a service into a bento and save it to the bento store. Building a service to bento is to persist 
-the service for distribution and unique to BentoML version 1.0.0. The comparable operation in version 0.13.1 is to save 
-a service to disk by calling the :code:`save()` function on the service instance.
+Next, we will build the service into a bento and save it to the bento store. Building a service to bento is to persist 
+the service for distribution. This operation is unique to BentoML version 1.0.0. The comparable operation in version 
+0.13.1 is to save a service to disk by calling the :code:`save()` function on the service instance.
 
 .. admonition:: 💡 Migration Task
 
@@ -292,8 +293,8 @@ You can view and manage all saved models via the :code:`bentoml` CLI command.
 Serve Bentos
 ~~~~~~~~~~~~
 
-We can serve the saved bentos by running the :code:`bentoml serve` command. We can add :code:`--production` to simulate 
-serving bentos in production like settings.
+We can serve the saved bentos by running the :code:`bentoml serve` command. We can add :code:`--production` to have 
+API servers and runners will run in separate processes to maximize server utility and parallelism.
 
 .. code-block:: bash
 
@@ -333,7 +334,7 @@ You can run the docker image to start the service.
 Deploy Bentos
 -------------
 
-BentoML version 0.13.1 supported deployment of Bentos to various cloud providers, including Google Cloud Platform, Amazon Web Services, 
+BentoML version 0.13.1 supports deployment of Bentos to various cloud providers, including Google Cloud Platform, Amazon Web Services, 
 and Microsoft Azure. To better support the devops workflows, cloud deployment of Bentos has been moved to a separate project, 
 `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_, to better focus on the deployment tasks. :code:`bentoctl` is a CLI tool for 
 deploying your machine-learning models to any cloud platforms.
@@ -341,7 +342,7 @@ deploying your machine-learning models to any cloud platforms.
 Manage Bentos
 -------------
 
-BentoML version 0.13.1 relied on Yatai as a bento registry to help teams collaborate and manage bentos. In additional to bento management,
+BentoML version 0.13.1 relies on Yatai as a bento registry to help teams collaborate and manage bentos. In addition to bento management,
 `🦄️ Yatai <https://github.com/bentoml/Yatai>`_ project has since been expanded into a platform for deploying large scale model 
 serving workloads on Kubernetes. Yatai standardizes BentoML deployment and provides UI for managing all your ML models and deployments 
 in one place, and enables advanced GitOps and CI/CD workflow.

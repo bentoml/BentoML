@@ -71,16 +71,22 @@ body:
       description: |
         Please share your environment with us. You should run `bentoml --env` and paste the result here.
       placeholder: |
-        - OS: [e.g. MacOS 10.14.3]
-        - Python version: [e.g. Python 3.7.13, 3.10.2]
-        - BentoML version: [e.g. 1.0.0rc1, from source, etc.]
+        BentoML version : 1.0.0rc3
+         Python version : 3.10.5
+          Platform info : macOS-12.4-arm64-arm-64bit
+          Conda version : 4.13.0
+                UID:GID : 501:20
     validations:
       required: true
-  # - type: checkboxes
-  #   id: terms
-  #   attributes:
-  #     label: Code of Conduct
-  #     description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/bentoml/BentoML/blob/main/CODE_OF_CONDUCT.md)
-  #     options:
-  #       - label: I agree to follow this project's Code of Conduct
-  #         required: true
+  - type: textarea
+    id: pip-freeze-info
+    attributes:
+      label: pip freeze
+      description: |
+        If possible, you can also send the output of `pip freeze` here.
+      placeholder: |
+        aiofiles==0.8.0
+        attrs==21.4.0
+        -e git+ssh://git@github.com/aarnphm/BentoML.git@f5079721594641e0445c944aebd78935265712ea#egg=bentoml
+    validations:
+      required: false

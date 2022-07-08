@@ -24,10 +24,8 @@ Due to its high interoperability among frameworks, we recommend you to check out
 
    TODO
 
-In this tutorial, we will show how to train a model (or use a
-pretrained model) with PyTorch TensorFlow and Scikit Learn, then we
-will convert resulting model to ONNX format, use BentoML to save it
-and create a prediction service.
+Converting model frameworks to ONNX format
+-----------------------------------------------
 
 .. note::
 

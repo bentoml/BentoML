@@ -110,8 +110,8 @@ Converting model frameworks to ONNX format
 			export_params=True,        # store the trained parameter weights inside the model file
 			opset_version=10,          # the ONNX version to export the model to
 			do_constant_folding=True,  # whether to execute constant folding for optimization
-			input_names = ['input'],   # the model's input names
-			output_names = ['output'], # the model's output names
+			input_names=['input'],   # the model's input names
+			output_names=['output'], # the model's output names
 			dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
 				      'output' : {0 : 'batch_size'}})
 
@@ -298,6 +298,32 @@ Building a Service for **ONNX**
    method, we will call ``runner.predict.run(input_data)``.
 
 
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`,
+there are two ways to include ONNX as a dependency, via ``python`` or
+``conda``:
+
+.. tab-set::
+
+   .. tab-item:: python
+
+      .. code-block:: yaml
+
+         python:
+         - onnx
+	 - onnxruntime
+
+   .. tab-item:: conda
+
+      .. code-block:: yaml
+
+         conda:
+           channels:
+           - conda-forge
+           dependencies:
+           - onnx
+	   - onnxruntime
+
+
 Using Runners
 -------------
 
@@ -388,8 +414,8 @@ axes need to be specified when the mode is exported in ONNX format.
 			export_params=True,        # store the trained parameter weights inside the model file
 			opset_version=10,          # the ONNX version to export the model to
 			do_constant_folding=True,  # whether to execute constant folding for optimization
-			input_names = ['input'],   # the model's input names
-			output_names = ['output'], # the model's output names
+			input_names=['input'],   # the model's input names
+			output_names=['output'], # the model's output names
 			dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
 				      'output' : {0 : 'batch_size'}})
 
@@ -418,7 +444,9 @@ Default Execution Providers Settings
 * When CUDA compatible GPU is not available, BentoML runner will use
   ``["CPUExecutionProvider"]`` as the default Execution Providers.
 
-You can override this setting using ``with_options`` when creating the
+If dependencies are installed, using other Execution Providers like
+``TensorrtExecutionProvider`` may increase the performance. You can
+override the default setting using ``with_options`` when creating the
 runner:
 
 .. code-block:: python
@@ -426,3 +454,7 @@ runner:
    providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
 
    runner = bentoml.onnx.get("onnx_super_resolution").with_options(providers=providers).to_runner()
+
+You can read more about Execution Providers at ONNX Runtime's
+`official documentation
+<https://onnxruntime.ai/docs/execution-providers/>`_

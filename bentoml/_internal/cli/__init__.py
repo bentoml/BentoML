@@ -45,7 +45,7 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
             "BentoML version": BENTOML_VERSION,
             "Python version": platform.python_version(),
             "Platform info": platform.platform(),
-            "Conda info": "not installed",
+            "Conda version": "not installed",
         }
 
         if is_windows:
@@ -58,9 +58,8 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
             info_dict["UID:GID"] = f"{os.geteuid()}:{os.getegid()}"
 
         if shutil.which("conda"):
-            info_dict["Conda info"] = get_pkg_version("conda")
+            info_dict["Conda version"] = get_pkg_version("conda")
 
-        click.echo("Copy-and-paste the text below in your GitHub issue.\n")
         click.echo("\n".join(map(format_param, info_dict.items())))
         ctx.exit()
 

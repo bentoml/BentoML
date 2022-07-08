@@ -15,6 +15,7 @@ import attr
 import yaml
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
+from pathspec import PathSpec
 
 from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
@@ -724,6 +725,50 @@ class BentoBuildConfig:
         # TODO: Save BentoBuildOptions to a yaml file
         # This is reserved for building interactive build file creation CLI
         raise NotImplementedError
+
+
+@attr.define(frozen=True)
+class BentoPathSpec:
+    _include: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    _exclude: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    # we want to ignore .git folder in cases the .git folder is very large.
+    git: PathSpec = attr.field(
+        default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
+    )
+
+    def includes(
+        self,
+        path: str,
+        *,
+        recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
+    ) -> bool:
+        # Determine whether a path is included or not.
+        # recurse_exclude_spec is a list of (path, spec) pairs.
+        to_include = (
+            self._include.match_file(path)
+            and not self._exclude.match_file(path)
+            and not self.git.match_file(path)
+        )
+        if to_include:
+            if recurse_exclude_spec is not None:
+                return not any(
+                    ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                    for ignore_parent, ignore_spec in recurse_exclude_spec
+                )
+        return False
+
+    def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
+        """
+        yield (parent, exclude_spec) from .bentoignore file of a given path
+        """
+        fs_ = fs.open_fs(path)
+        for file in fs_.walk.files(filter=[".bentoignore"]):
+            dir_path = "".join(fs.path.parts(file)[:-1])
+            yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 
 class FilledBentoBuildConfig(BentoBuildConfig):

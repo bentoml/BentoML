@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import json
@@ -48,8 +50,8 @@ def serve_development(
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+    bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
-    reload_delay: float = 0.25,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -89,17 +91,21 @@ def serve_development(
         )
     )
 
+    plugins = []
     if reload:
+        logger.debug(
+            "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
+        )
+
+        # initialize dictionary with {} is faster than using dict()
         plugins = [
-            dict(
-                use="bentoml._internal.utils.circus.BentoChangeReloader",
-                bento_identifier=bento_identifier,
-                working_dir=working_dir,
-                reload_delay=reload_delay,
-            ),
+            # reloader plugin
+            {
+                "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
+                "working_dir": working_dir,
+                "bentoml_home": bentoml_home,
+            },
         ]
-    else:
-        plugins = []
 
     arbiter = create_standalone_arbiter(
         watchers,

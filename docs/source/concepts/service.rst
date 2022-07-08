@@ -210,15 +210,21 @@ Beside :code:`NumpyNdarray`, BentoML supports a variety of other built-in IO des
 types under the :doc:`bentoml.io <reference/api_io_descriptors>` module. Each type comes
 with support of type validation and OpenAPI specification generation. For example:
 
-+-----------------+---------------------+------------------+-------------------------+
-| IO Descriptor   | Type                | Arguments        | Schema Type             |
-+=================+=====================+==================+=========================+
-| NumpyNdarray    | numpy.ndarray       | validate, schema | numpy.dtype             |
-+-----------------+---------------------+------------------+-------------------------+
-| PandasDataFrame | pandas.DataFrame    | validate, schema | pandas.DataFrame.dtypes |
-+-----------------+---------------------+------------------+-------------------------+
-| Json            | Python native types | validate, schema | Pydantic.BaseModel      |
-+-----------------+---------------------+------------------+-------------------------+
++-----------------+---------------------+---------------------+-------------------------+
+| IO Descriptor   | Type                | Arguments           | Schema Type             |
++=================+=====================+=====================+=========================+
+| NumpyNdarray    | numpy.ndarray       | validate, schema    | numpy.dtype             |
++-----------------+---------------------+---------------------+-------------------------+
+| PandasDataFrame | pandas.DataFrame    | validate, schema    | pandas.DataFrame.dtypes |
++-----------------+---------------------+---------------------+-------------------------+
+| Json            | Python native types | validate, schema    | Pydantic.BaseModel      |
++-----------------+---------------------+---------------------+-------------------------+
+| Image           | PIL.Image.Image     | pilmodel, mime_type |                         |
++-----------------+---------------------+---------------------+-------------------------+
+| Text            | str                 |                     |                         |
++-----------------+---------------------+---------------------+-------------------------+
+| File            | BytesIOFile         | kind, mime_type     |                         |
++-----------------+---------------------+---------------------+-------------------------+
 
 Learn more about other built-in IO Descriptors :doc:`here <reference/api_io_descriptors>`.
 

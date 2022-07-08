@@ -18,7 +18,7 @@ Here's a simple example of serving Huggingface Transformer models with BentoML:
     # load the model back:
     loaded = bentoml.transformers.load_model("text-generation-pipeline:latest")
 
-    # Load a given model under `Runner` abstraction with `load_runner`
+    # Load a given model under `Runner` abstraction with `to_runner`
     runner = bentoml.transformers.get(tag).to_runner()
     runner.init_local()
     batched_sentence = [

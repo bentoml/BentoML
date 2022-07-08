@@ -3,7 +3,7 @@ import bentoml
 # import bentoml.sklearn
 # from bentoml.io import NumpyNdarray
 
-# iris_model_runner = bentoml.sklearn.load_runner('iris_classifier:latest')
+# iris_model_runner = bentoml.sklearn.get('iris_classifier:latest').to_runner()
 svc = bentoml.Service(
     "test.simplebento",
     # runners=[iris_model_runner]

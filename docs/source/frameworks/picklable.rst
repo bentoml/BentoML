@@ -27,7 +27,7 @@ instance:
     # load the model back:
     loaded = bentoml.picklable_model.load_model("mypicklablemodel:latest")
 
-    # Run a given model under `Runner` abstraction with `load_runner`
+    # Run a given model under `Runner` abstraction with `to_runner`
     runner = bentoml.picklable_model.get(tag).to_runner()
     runner.init_local()
     runner.predict.run(7)

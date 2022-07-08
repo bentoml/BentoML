@@ -36,7 +36,7 @@ Here's an example using PyTorch with BentoML:
     # load the model back in memory:
     model = bentoml.pytorch.load_model("ngrams:latest")
 
-    # Run a given model under `Runner` abstraction with `load_runner`
+    # Run a given model under `Runner` abstraction with `to_runner`
     input_data = pd.from_csv("/path/to/csv")
     runner = bentoml.pytorch.get(tag).to_runner()
     runner.init_local()

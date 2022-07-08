@@ -10,8 +10,6 @@ ONNX is an open format built to represent machine learning models. ONNX provides
 
 Due to its high interoperability among frameworks, we recommend you to check out the framework integration with ONNX as it will contain specific recommendation and requirements for that given framework.
 
-model format to ONNX format. Please refer to resources listed below
-for in-depth knowledge of each framework.
 
 .. tab:: PyTorch
 

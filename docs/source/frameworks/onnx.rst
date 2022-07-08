@@ -6,8 +6,10 @@ ONNX
 Preface
 -------
 
-ONNX support multiple machine learning frameworks and each framework
-may have unique requirements/recommendations for converting its own
+ONNX is an open format built to represent machine learning models. ONNX provides `high interoperability <https://onnx.ai/supported-tools.html#buildModel>`_  among various frameworks, as well as enable machine learning practitioners to maximize models' performance across `different hardware <https://onnx.ai/supported-tools.html#deployModel>`_. 
+
+Due to its high interoperability among frameworks, we recommend you to check out the framework integration with ONNX as it will contain specific recommendation and requirements for that given framework.
+
 model format to ONNX format. Please refer to resources listed below
 for in-depth knowledge of each framework.
 

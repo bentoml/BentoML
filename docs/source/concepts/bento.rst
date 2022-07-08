@@ -729,6 +729,40 @@ If you need a different cuda version that is not currently supported in BentoML,
 possible to install it by specifying it in the :code:`system_packages` or via the
 :code:`setup_script`.
 
+.. dropdown:: Installing custom CUDA version with conda
+    :icon: code
+
+
+   We will demonstrate how you can install custom cuda version via conda.
+
+   Add the following to your :code:`bentofile.yaml`:
+
+   .. code-block:: yaml
+
+   conda:
+       channels:
+       - conda-forge
+       - nvidia
+       - defaults
+       dependencies:
+       - cudatoolkit-dev=10.1
+       - cudnn=7.6.4
+       - cxx-compiler=1.0
+       - mpi4py=3.0 # installs cuda-aware openmpi
+       - matplotlib=3.2
+       - networkx=2.4
+       - numba=0.48
+       - pandas=1.0
+
+   Then proceed with :code:`bentoml build` and :code:`bentoml containerize`
+   respectively:
+
+   .. code-block:: bash
+
+   bentoml build
+
+   bentoml containerize <bento>:<tag>
+
 
 Setup Script
 """"""""""""
@@ -804,125 +838,32 @@ Setup script is always executed after the specified Python packages, conda depen
 and system packages are installed. Thus user can import and utilize those libraries in
 their setup script for the initialization process.
 
+Advanced Options
+""""""""""""""""
 
-Custom Base Image (Advanced)
-""""""""""""""""""""""""""""
+For advanced customization for generating docker images, see :ref:`Advanced Containerization <guides/containerization:Containerization>`:
 
-If none of the provided distros work for your use case, e.g. if your infrastructure
-requires all docker images to be derived from the same base image with certain security
-fixes and libraries, you can config BentoML to use your base image instead:
-
-.. code:: yaml
-
-    docker:
-        base_image: "my_custom_image:latest"
-
-When a :code:`base_image` is provided, **all other docker options will be ignored**,
-(distro, cuda_version, system_packages, python_version). :code:`bentoml containerize`
-will build a new image on top of the base_image with the following steps:
-
-- setup env vars
-- run the :code:`setup_script` if provided
-- install the required Python packages
-- copy over the Bento file
-- setup the entrypoint command for serving.
-
-
-.. note::
-    :bdg-warning:`Warning:` user must ensure that the provided base image has desired
-    Python version installed. If the base image you have doesn't have Python, you may
-    install python via a :code:`setup_script`. The implementation of the script depends
-    on the base image distro or the package manager available.
-
-    .. code:: yaml
-
-        docker:
-            base_image: "my_custom_image:latest"
-            setup_script: "./setup.sh"
-
-.. warning::
-    By default, BentoML supports multi-platform docker image build out-of-the-box.
-    However, when a custom :code:`base_image` is provided, the generated Dockerfile can
-    only be used for building linux/amd64 platform docker images.
-
-    If you are running BentoML from an Apple M1 device or an ARM based computer, make
-    sure to pass the :code:`--platform` parameter when containerizing a Bento. e.g.:
-
-    .. code:: bash
-
-        bentoml containerize iris_classifier:latest --platform=linux/amd64
-
-
-Docker Template (Danger Zone)
-"""""""""""""""""""""""""""""
-
-The :code:`docker_template` field gives user the full control over how the
-:code:`Dockerfile` was generated in a Bento. Users can use this field to
-customize Bento's Dockerfile instruction set to suits their needs.
-
-First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.yaml` build file.
-This template file is a mixed between a :code:`Dockerfile` and a :code:`Jinja` template file:
-
-.. code-block:: dockerfile
-
-   {% extends bento__dockerfile %}
-   {% block SETUP_BENTO_COMPONENTS %}
-   {{ super() }}
-   RUN echo "We are running this during bentoml containerize!"
-   {% endblock %}
-
-.. note::
-
-   The template file can have extension :code:`.jinja`, :code:`.j2`, or any
-   extensions that Jinja2 can understand.
-
-Then add the path to the given template file to the :code:`docker_template` field in the :code: `bentofile.yaml`:
-
-.. code:: yaml
-
-    docker:
-        docker_template: "./Dockerfile.template"
-
-.. note:: 
-
-   Although we support any local file path, it is preferred that users put the
-   template file in the project directory.
-
-   .. code:: yaml
-
-      docker:
-          docker_template: "~/workspace/Dockerfile.template"
-
-Now to see the result generated Dockerfile, do the following:
-
-.. code-block:: bash
-
-   bentoml build && cat $(bentoml get <bento> -o path)/env/docker/Dockerfile
-
-Run :code:`bentoml containerize <bento>` to confirm the generated Dockerfile work as expected.
-
-.. seealso::
-
-    :ref:`Dockerfile Generation <guides/dockerfile_generation:Dockerfile generation>` to learn more about how BentoML generates Dockerfile for Bentos.
+1. :ref:`Using base image <guides/containerization:Custom Base Image>`
+2. :ref:`Using dockerfile template <guides/containerization:Dockerfile Template>`
 
 Docker Options Table
 """"""""""""""""""""
 
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Field           | Description                                                                                                                               |
-+=================+===========================================================================================================================================+
-| distro          | The OS distribution on the Docker image, Default to :code:`debian`.                                                                       |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| python_version  | Specify which python to include on the Docker image [`3.7`, `3.8`, `3.9`, `3.10`]. Default to the Python version in build environment.    |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| cuda_version    | Specify the cuda version to install on the Docker image [:code:`11.6.2`].                                                                 |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| env             | Declare environment variables in the generated Dockerfile.                                                                                |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| setup_script    | A python or shell script that executes during docker build time.                                                                          |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| base_image      | A user-provided docker base image. This will override all other custom attributes of the image.                                           |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| docker_template | Customize the generated dockerfile by providing a jinja2 template that extends the default dockerfile.                                    |
-+-----------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Field               | Description                                                                                                                               |
++=====================+===========================================================================================================================================+
+| distro              | The OS distribution on the Docker image, Default to :code:`debian`.                                                                       |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| python_version      | Specify which python to include on the Docker image [`3.7`, `3.8`, `3.9`, `3.10`]. Default to the Python version in build environment.    |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| cuda_version        | Specify the cuda version to install on the Docker image [:code:`11.6.2`].                                                                 |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| env                 | Declare environment variables in the generated Dockerfile.                                                                                |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| setup_script        | A python or shell script that executes during docker build time.                                                                          |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| base_image          | A user-provided docker base image. This will override all other custom attributes of the image.                                           |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| dockerfile_template | Customize the generated dockerfile by providing a jinja2 template that extends the default dockerfile.                                    |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+

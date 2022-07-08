@@ -130,11 +130,32 @@ Converting model frameworks to ONNX format
 
 .. tab:: TensorFlow
 
-   First let's install ``tf2onnx``
+   First let's install `tf2onnx <https://github.com/onnx/tensorflow-onnx>`_
 
    .. code-block:: bash
 
       pip install tf2onnx
+
+   For this tutorial we will download a pretrained ResNet-50 model:
+
+   .. code-block:: python
+
+      import tensorflow as tf
+      from tensorflow.keras.applications.resnet50 import ResNet50
+
+      model = ResNet50(weights='imagenet')
+
+   Then we can export the model to ONNX format. Notice that we use
+   ``None`` in `TensorSpec
+   <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ to
+   denote the first input dimension as dynamic batch axies, which
+   means this dimension can accept arbitrary input size.
+
+   .. code-block:: python
+
+      spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),)
+      onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
+
 
 .. tab:: Scikit Learn
 
@@ -150,18 +171,39 @@ load the exported ONNX model back into ``onnx.ModelProto`` object,
 then call BentoML's ``save_model``:
 
 
-.. code-block:: python
+.. tab:: PyTorch
 
-   signatures = {
-       "run": {"batchable": True},
-   }
-   bentoml.onnx.save_model("onnx_super_resolution", onnx_model, signatures=signatures)
+   .. code-block:: python
 
-which will result:
+      signatures = {
+	  "run": {"batchable": True},
+      }
+      bentoml.onnx.save_model("onnx_super_resolution", onnx_model, signatures=signatures)
 
-.. code-block:: bash
+   which will result:
 
-   Model(tag="onnx_super_resolution:lwqr7ah5ocv3rea3", path="~/bentoml/models/onnx_super_resolution/lwqr7ah5ocv3rea3/")
+   .. code-block:: bash
+
+      Model(tag="onnx_super_resolution:lwqr7ah5ocv3rea3", path="~/bentoml/models/onnx_super_resolution/lwqr7ah5ocv3rea3/")
+
+.. tab:: TensorFlow
+
+   .. code-block:: python
+
+      signatures = {
+	  "run": {"batchable": True},
+      }
+      bentoml.onnx.save_model("onnx_resnet50", onnx_model, signatures=signatures)
+
+   which will result:
+
+   .. code-block:: bash
+
+      Model(tag="onnx_resnet50:zavavxh6w2v3rea3", path="~/bentoml/models/onnx_resnet50/zavavxh6w2v3rea3/")
+
+.. tab:: Scikit Learn
+
+   TODO
 
 .. note::
 
@@ -188,29 +230,63 @@ Building a Service for **ONNX**
    :ref:`Building a Service <concepts/service:Service and APIs>` for how to
    create a prediction service with BentoML.
 
-.. code-block:: python
+.. tab:: PyTorch
 
-   import bentoml
+   .. code-block:: python
 
-   import numpy as np
-   from PIL import Image as PIL_Image
-   from PIL import ImageOps
-   from bentoml.io import Image
+      import bentoml
 
-   runner = bentoml.onnx.get("onnx_super_resolution:latest").to_runner()
+      import numpy as np
+      from PIL import Image as PIL_Image
+      from PIL import ImageOps
+      from bentoml.io import Image
 
-   svc = bentoml.Service("onnx_super_resolution", runners=[runner])
+      runner = bentoml.onnx.get("onnx_super_resolution:latest").to_runner()
 
-   @svc.api(input=Image(), output=Image())
-   def sr(img) -> np.ndarray:
-       img = img.resize((224, 224))
-       gray_img = ImageOps.grayscale(img)
-       arr = np.array(gray_img) / 255.0 # convert from 0-255 range to 0.0-1.0 range
-       arr = np.expand_dims(arr, (0, 1)) # add batch_size, color_channel dims
-       sr_arr = runner.run.run(arr)
-       sr_arr = np.squeeze(sr_arr) # remove batch_size, color_channel dims
-       sr_img = PIL_Image.fromarray(np.uint8(sr_arr * 255) , 'L')
-       return sr_img
+      svc = bentoml.Service("onnx_super_resolution", runners=[runner])
+
+      @svc.api(input=Image(), output=Image())
+      def sr(img) -> np.ndarray:
+	  img = img.resize((224, 224))
+	  gray_img = ImageOps.grayscale(img)
+	  arr = np.array(gray_img) / 255.0 # convert from 0-255 range to 0.0-1.0 range
+	  arr = np.expand_dims(arr, (0, 1)) # add batch_size, color_channel dims
+	  sr_arr = runner.run.run(arr)
+	  sr_arr = np.squeeze(sr_arr) # remove batch_size, color_channel dims
+	  sr_img = PIL_Image.fromarray(np.uint8(sr_arr * 255) , 'L')
+	  return sr_img
+
+
+.. tab:: TensorFlow
+
+   .. code-block:: python
+
+      import bentoml
+
+      import numpy as np
+      from bentoml.io import Image
+      from bentoml.io import JSON
+
+      runner = bentoml.onnx.get("onnx_resnet50:latest").to_runner()
+
+      svc = bentoml.Service("onnx_resnet50", runners=[runner])
+
+      @svc.api(input=Image(), output=JSON())
+      def predict(img):
+
+	  from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
+
+	  img = img.resize((224, 224))
+	  arr = np.array(img)
+	  arr = np.expand_dims(arr, axis=0)
+	  arr = preprocess_input(arr)
+	  preds = runner.run.run(arr)
+	  return decode_predictions(preds, top=1)[0]
+
+
+.. tab:: Scikit Learn
+
+   TODO
 
 .. note::
 
@@ -301,7 +377,8 @@ axes need to be specified when the mode is exported in ONNX format.
 .. tab:: PyTorch
 
    For PyTorch models, you can do that by specifying ``dynamic_axes``
-   when using ``torch.onnx.export``
+   when using `torch.onnx.export
+   <https://pytorch.org/docs/stable/onnx.html#torch.onnx.export>`_
 
    .. code-block:: python
 
@@ -318,7 +395,17 @@ axes need to be specified when the mode is exported in ONNX format.
 
 .. tab:: TensorFlow
 
-   TODO
+   For TensorFlow models, you can do that by using ``None`` to denote
+   a dynamic batch axis in `TensorSpec
+   <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ when
+   using ``tf2onnx.convert.from_keras`` or
+   ``tf2onnx.convert.from_function``
+
+   .. code-block:: python
+
+      spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),) # batch_axis = 0
+      model_proto, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
+
 
 .. tab:: Scikit Learn
 

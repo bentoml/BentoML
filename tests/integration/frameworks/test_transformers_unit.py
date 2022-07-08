@@ -19,13 +19,15 @@ set_seed(124)
 def test_get_auto_class():
     from bentoml._internal.frameworks.transformers import _get_auto_class
 
-    with pytest.raises(BentoMLException) as exc_info:
+    with pytest.raises(
+        BentoMLException, match="Given not_a_class is not a valid Transformers *"
+    ):
         _ = [i for i in _get_auto_class("not_a_class")]
-    assert "neither exists nor a valid Transformers auto class." in str(exc_info.value)
 
-    with pytest.raises(BentoMLException) as exc_info:
+    with pytest.raises(
+        BentoMLException, match="Given not_a_class is not a valid Transformers *"
+    ):
         _ = [i for i in _get_auto_class(["not_a_class"])]
-    assert "neither exists nor a valid Transformers auto class." in str(exc_info.value)
 
     with pytest.raises(
         BentoMLException,

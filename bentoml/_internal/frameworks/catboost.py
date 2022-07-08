@@ -222,8 +222,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
 
     class CatBoostRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True
-        SUPPORT_CPU_MULTI_THREADING = True
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         predict_params: t.Dict[str, t.Any]
 

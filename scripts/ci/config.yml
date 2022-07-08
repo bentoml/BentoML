@@ -102,8 +102,7 @@ keras_tf1:
     - "h5py==2.10.0"
 
 keras_tf2:
-  <<: *tmpl
-  override_name_or_path: test_keras_impl.py
+  <<: *ntmpl
   dependencies:
     - "protobuf<3.20,>=3.9.2"
     - "tensorflow==2.7.3"
@@ -169,7 +168,7 @@ pyspark:
     - "pyspark"
 
 pytorch:
-  <<: *tmpl
+  <<: *ntmpl
   dependencies:
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.9.0+cpu"
@@ -206,25 +205,7 @@ tf1:
   override_name_or_path: test_tensorflow_v1_impl.py
   dependencies:
     - "tensorflow==1.15"
-    - "tensorflow_hub"
 
-tf2:
-  <<: *tmpl
-  override_name_or_path: test_tensorflow_v2_impl.py
-  dependencies:
-    - "tensorflow_text"
-    - "tensorflow_hub"
-    - "tensorflow"
-
-torchscript:
-  <<: *tmpl
-  dependencies:
-    - "-f https://download.pytorch.org/whl/torch_stable.html"
-    - "torch==1.11.0+cpu"
-    - "torchvision==0.12.0+cpu"
-    - "pytorch_lightning==1.6.3"
-    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
-    - "psutil"
 
 transformers:
   <<: *tmpl
@@ -247,3 +228,27 @@ xgboost:
   <<: *ntmpl
   dependencies:
     - "xgboost"
+
+tensorflow_v2:
+  <<: *ntmpl
+  dependencies:
+    - "tensorflow"
+
+torchscript:
+  <<: *ntmpl
+  dependencies:
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.11.0+cpu"
+    - "torchvision==0.12.0+cpu"
+    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
+    - "psutil"
+
+pytorch_lightning:
+  <<: *ntmpl
+  dependencies:
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.11.0+cpu"
+    - "torchvision==0.12.0+cpu"
+    - "pytorch_lightning==1.6.3"
+    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
+    - "psutil"

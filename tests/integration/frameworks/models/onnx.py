@@ -11,7 +11,6 @@ import torch.nn as nn
 import onnxruntime as ort
 
 import bentoml
-from bentoml._internal.runner.resource import Resource
 
 from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
@@ -46,13 +45,17 @@ def method_caller(
     return out
 
 
-def check_model(sess: ort.InferenceSession, resource: Resource):
-    if resource.nvidia_gpu is not None and resource.nvidia_gpu > 0:
+def check_model(model: bentoml.Model, resource_cfg: dict[str, t.Any]):
+    from bentoml._internal.resource import get_resource
+
+    if get_resource(resource_cfg, "nvidia.com/gpu"):
         pass
-    elif resource.cpu is not None and resource.cpu > 0:
-        assert sess._providers == ["CPUExecutionProvider"]
-        assert sess._sess_options.inter_op_num_threads == int(resource.cpu)
-        assert sess._sess_options.intra_op_num_threads == int(resource.cpu)
+    elif get_resource(resource_cfg, "cpu"):
+        cpus = round(get_resource(resource_cfg, "cpu"))
+        # runner.setup_worker(1)
+        assert model._providers == ["CPUExecutionProvider"]
+        assert model._sess_options.inter_op_num_threads == cpus
+        assert model._sess_options.intra_op_num_threads == cpus
 
 
 def close_to(expected):

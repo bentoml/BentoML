@@ -15,25 +15,22 @@ from simple_di import Provide
 from bentoml import load
 
 from ..utils import reserve_free_port
+from ..resource import CpuResource
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
-from ..runner.resource import query_cpu_count
 from ..utils.analytics import track_serve
-from ..configuration.containers import DeploymentContainer
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
 SCRIPT_API_SERVER = "bentoml._internal.server.cli.api_server"
 SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
-SCRIPT_NGROK = "bentoml._internal.server.cli.ngrok"
 
 
 @inject
 def ensure_prometheus_dir(
-    prometheus_multiproc_dir: str = Provide[
-        DeploymentContainer.prometheus_multiproc_dir
-    ],
+    prometheus_multiproc_dir: str = Provide[BentoMLContainer.prometheus_multiproc_dir],
     clean: bool = True,
 ):
     if os.path.exists(prometheus_multiproc_dir):
@@ -48,10 +45,9 @@ def ensure_prometheus_dir(
 def serve_development(
     bento_identifier: str,
     working_dir: str,
-    port: int = Provide[DeploymentContainer.api_server_config.port],
-    host: str = Provide[DeploymentContainer.api_server_config.host],
-    backlog: int = Provide[DeploymentContainer.api_server_config.backlog],
-    with_ngrok: bool = False,
+    port: int = Provide[BentoMLContainer.api_server_config.port],
+    host: str = Provide[BentoMLContainer.api_server_config.host],
+    backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     reload: bool = False,
     reload_delay: float = 0.25,
 ) -> None:
@@ -62,20 +58,6 @@ def serve_development(
     from circus.watcher import Watcher  # type: ignore
 
     watchers: t.List[Watcher] = []
-    if with_ngrok:
-        watchers.append(
-            Watcher(
-                name="ngrok",
-                cmd=sys.executable,
-                args=[
-                    "-m",
-                    SCRIPT_NGROK,
-                ],
-                copy_env=True,
-                stop_children=True,
-                working_dir=working_dir,
-            )
-        )
 
     circus_sockets: t.List[CircusSocket] = []
     circus_sockets.append(
@@ -143,9 +125,9 @@ MAX_AF_UNIX_PATH_LENGTH = 103
 def serve_production(
     bento_identifier: str,
     working_dir: str,
-    port: int = Provide[DeploymentContainer.api_server_config.port],
-    host: str = Provide[DeploymentContainer.api_server_config.host],
-    backlog: int = Provide[DeploymentContainer.api_server_config.backlog],
+    port: int = Provide[BentoMLContainer.api_server_config.port],
+    host: str = Provide[BentoMLContainer.api_server_config.host],
+    backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: t.Optional[int] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
@@ -272,7 +254,7 @@ def serve_production(
                 "$(CIRCUS.WID)",
             ],
             copy_env=True,
-            numprocesses=api_workers or math.ceil(query_cpu_count()),
+            numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,

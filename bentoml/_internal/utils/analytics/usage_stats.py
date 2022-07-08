@@ -23,7 +23,6 @@ from .schemas import TrackingPayload
 from .schemas import CommonProperties
 from .schemas import ServeUpdateEvent
 from ...configuration.containers import BentoMLContainer
-from ...configuration.containers import DeploymentContainer
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -122,7 +121,7 @@ def track(event_properties: EventMeta) -> None:
 def track_serve_init(
     svc: Service,
     production: bool,
-    serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
+    serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ) -> None:
     if svc.bento is not None:
         bento = svc.bento
@@ -204,8 +203,8 @@ def get_metrics_report(
 def track_serve(
     svc: Service,
     production: bool,
-    metrics_client: PrometheusClient = Provide[DeploymentContainer.metrics_client],
-    serve_info: ServeInfo = Provide[DeploymentContainer.serve_info],
+    metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
+    serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ) -> t.Generator[None, None, None]:
     if do_not_track():
         yield

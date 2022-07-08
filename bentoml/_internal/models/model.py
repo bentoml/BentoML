@@ -16,10 +16,10 @@ import attr
 import yaml
 import fs.errors
 import fs.mirror
-import cloudpickle
+import cloudpickle  # type: ignore (no cloudpickle types)
 from fs.base import FS
-from cattr.gen import override
-from cattr.gen import make_dict_unstructure_fn
+from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 from simple_di import inject
 from simple_di import Provide
 
@@ -46,6 +46,9 @@ if TYPE_CHECKING:
         batchable: bool
         input_spec: tuple[AnyType] | AnyType | None
         output_spec: AnyType | None
+
+else:
+    ModelSignaturesDict = dict
 
 
 T = t.TypeVar("T")
@@ -268,9 +271,6 @@ class Model(StoreItem):
     def to_runner(
         self,
         name: str = "",
-        cpu: int | None = None,
-        nvidia_gpu: int | None = None,
-        custom_resources: dict[str, float] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
@@ -280,9 +280,6 @@ class Model(StoreItem):
 
         Args:
             name:
-            cpu:
-            nvidia_gpu:
-            custom_resources:
             max_batch_size:
             max_latency_ms:
             runnable_method_configs:
@@ -294,9 +291,6 @@ class Model(StoreItem):
             self.to_runnable(),
             name=name if name != "" else self.tag.name,
             models=[self],
-            cpu=cpu,
-            nvidia_gpu=nvidia_gpu,
-            custom_resources=custom_resources,
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
             method_configs=method_configs,
@@ -609,7 +603,7 @@ class ModelInfo:
             yaml_content["context"]["framework_versions"] = {}
 
         # weird cattrs workaround
-        yaml_content["_options"]: t.Dict[str, t.Any] = yaml_content["options"]
+        yaml_content["_options"] = t.cast(t.Dict[str, t.Any], yaml_content["options"])
 
         try:
             model_info = bentoml_cattr.structure(yaml_content, ModelInfo)

@@ -10,7 +10,7 @@ from bentoml.exceptions import NotFound
 from bentoml._internal.models.model import ModelContext
 from bentoml._internal.models.model import ModelSignature
 from bentoml._internal.runner.runner import Runner
-from bentoml._internal.runner.resource import Resource
+from bentoml._internal.runner.strategy import DefaultStrategy
 from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 
 from .models import FrameworkTestModel
@@ -141,7 +141,7 @@ def test_get_runnable(
         runnable, bentoml.Runnable
     ), "get_runnable for {bento_model.info.name} doesn't return a subclass of bentoml.Runnable"
     assert (
-        len(runnable.methods) > 0
+        len(runnable.bentoml_runnable_methods__) > 0
     ), "get_runnable for {bento_model.info.name} gives a runnable with no methods"
 
 
@@ -152,23 +152,20 @@ def test_load(
 ):
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
+        configuration.check_model(model, {})
 
-        configuration.check_model(model, Resource())
 
-        for method, inps in configuration.test_inputs.items():
-            for inp in inps:
-                args = [inp.preprocess(arg) for arg in inp.input_args]
-                kwargs = {
-                    key: inp.preprocess(kwarg)
-                    for key, kwarg in inp.input_kwargs.items()
-                }
-                if test_model.model_method_caller:
-                    out = test_model.model_method_caller(
-                        test_model, method, args, kwargs
-                    )
-                else:
-                    out = getattr(model, method)(*args, **kwargs)
-                inp.check_output(out)
+def test_runnable(
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    for config in test_model.configurations:
+        runner = saved_model.with_options(**config.load_kwargs).to_runner()
+        runner.init_local()
+        runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+        runnable = runner_handle._runnable
+        config.check_runnable(runnable, {})
+        runner.destroy()
 
 
 def test_runner_batching(
@@ -185,6 +182,9 @@ def test_runner_batching(
         runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
         for meth, inputs in config.test_inputs.items():
+            if not getattr(runner, meth).config.batchable:
+                continue
+
             if len(inputs) < 2:
                 continue
 
@@ -216,37 +216,130 @@ def test_runner_batching(
         )
 
 
+def test_runner_cpu_multi_threading(
+    framework: types.ModuleType,
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    resource_cfg = {"cpu": 2.0}
+    ran_tests = False
+    for config in test_model.configurations:
+        model_with_options = saved_model.with_options(**config.load_kwargs)
+
+        runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
+        if "cpu" not in runnable.SUPPORTED_RESOURCES:
+            continue
+
+        ran_tests = True
+
+        runner = Runner(runnable)
+
+        for meth, inputs in config.test_inputs.items():
+            strategy = DefaultStrategy()
+            strategy.setup_worker(runnable, resource_cfg, 0)
+
+            runner.init_local()
+
+            runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+            runnable = runner_handle._runnable
+            config.check_runnable(runnable, resource_cfg)
+            if (
+                hasattr(runnable, "model") and runnable.model is not None
+            ):  # TODO: add a get_model to test models
+                config.check_model(runnable.model, resource_cfg)
+
+            for inp in inputs:
+                outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
+                inp.check_output(outp)
+
+            runner.destroy()
+
+    if not ran_tests:
+        pytest.skip(
+            f"no configurations for model '{test_model.name}' supported multiple CPU threads"
+        )
+
+
+def test_runner_cpu(
+    framework: types.ModuleType,
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    resource_cfg = {"cpu": 1.0}
+
+    ran_tests = False
+    for config in test_model.configurations:
+        model_with_options = saved_model.with_options(**config.load_kwargs)
+
+        runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
+        if not runnable.SUPPORTS_CPU_MULTI_THREADING:
+            continue
+
+        ran_tests = True
+
+        runner = Runner(runnable)
+
+        for meth, inputs in config.test_inputs.items():
+            strategy = DefaultStrategy()
+            strategy.setup_worker(runnable, resource_cfg, 0)
+
+            runner.init_local()
+
+            runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+            runnable = runner_handle._runnable
+            config.check_runnable(runnable, resource_cfg)
+
+            if (
+                hasattr(runnable, "model") and runnable.model is not None
+            ):  # TODO: add a get_model to test models
+                config.check_model(runnable.model, resource_cfg)
+
+            for inp in inputs:
+                outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
+                inp.check_output(outp)
+
+            runner.destroy()
+
+    if not ran_tests:
+        pytest.skip(
+            f"no configurations for model '{test_model.name}' supported multiple CPU threads"
+        )
+
+
 @pytest.mark.gpus
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    gpu_resource = Resource(nvidia_gpu=1.0)
+    resource_cfg = {"nvidia.com/gpu": 1}
 
     ran_tests = False
     for config in test_model.configurations:
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
-        runnable = framework.get_runnable(model_with_options)
-        if not runnable.SUPPORT_NVIDIA_GPU:
+        runnable: t.Type[bentoml.Runnable] = framework.get_runnable(model_with_options)
+        if "nvidia.com/gpu" not in runnable.SUPPORTED_RESOURCES:
             continue
 
         ran_tests = True
 
-        runner = Runner(runnable, nvidia_gpu=1)
+        runner = Runner(runnable)
 
         for meth, inputs in config.test_inputs.items():
-            # TODO: use strategies to initialize GPU
-            # strategy = DefaultStrategy()
-            # strategy.setup_worker(runnable, gpu_resource)
+            strategy = DefaultStrategy()
+            strategy.setup_worker(runnable, resource_cfg, 0)
 
             runner.init_local()
 
             runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
             runnable = runner_handle._runnable
-            if hasattr(runnable, "model") and runnable.model is not None:
-                config.check_model(runnable.model, gpu_resource)
+
+            config.check_runnable(runnable, resource_cfg)
+            if (
+                hasattr(runnable, "model") and runnable.model is not None
+            ):  # TODO: add a get_model to test models
+                config.check_model(runnable.model, resource_cfg)
 
             for inp in inputs:
                 outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)

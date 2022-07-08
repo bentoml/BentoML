@@ -16,7 +16,7 @@ from ....exceptions import RemoteException
 from ...runner.utils import Params
 from ...runner.utils import PAYLOAD_META_HEADER
 from ...runner.utils import payload_params_to_multipart
-from ...configuration.containers import DeploymentContainer
+from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
     from aiohttp import BaseConnector
@@ -39,7 +39,7 @@ class RemoteRunnerClient(RunnerHandle):
 
     @property
     def _remote_runner_server_map(self) -> dict[str, str]:
-        return DeploymentContainer.remote_runner_mapping.get()
+        return BentoMLContainer.remote_runner_mapping.get()
 
     def _close_conn(self) -> None:
         if self._conn:
@@ -110,7 +110,7 @@ class RemoteRunnerClient(RunnerHandle):
                     create_trace_config(
                         # Remove all query params from the URL attribute on the span.
                         url_filter=strip_query_params,  # type: ignore
-                        tracer_provider=DeploymentContainer.tracer_provider.get(),
+                        tracer_provider=BentoMLContainer.tracer_provider.get(),
                     )
                 ],
                 connector=self._get_conn(),

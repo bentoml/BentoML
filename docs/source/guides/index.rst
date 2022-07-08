@@ -14,7 +14,7 @@ into this part of the documentation.
 
   batching
   configuration
-  dockerfile_generation
+  containerization
   server
   ci
   gpu

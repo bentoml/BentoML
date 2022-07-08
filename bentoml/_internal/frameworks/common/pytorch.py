@@ -20,17 +20,16 @@ from ...runner.utils import Params
 from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
-from ...configuration.containers import DeploymentContainer
+from ...configuration.containers import BentoMLContainer
 
 try:
     import torch
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-        torch is required in order to use module `bentoml.pytorch`,
-        `bentoml.torchscript` and `bentoml.pytorch_lightning`.
-        Instruction: Refers to https://pytorch.org/get-started/locally/
-        to setup PyTorch correctly.  """  # noqa
+        "`torch` is required in order to use module `bentoml.pytorch`, "
+        "`bentoml.torchscript` or `bentoml.pytorch_lightning`. Install torch with `pip "
+        "install torch`. For more information, refer to "
+        "https://pytorch.org/get-started/locally/"
     )
 
 if TYPE_CHECKING:
@@ -43,7 +42,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
+def partial_class(
+    cls: t.Type[PytorchModelRunnable], *args: t.Any, **kwargs: t.Any
+) -> type:
     class NewClass(cls):
         def __init__(self, *inner_args: t.Any, **inner_kwargs: t.Any) -> None:
             functools.partial(cls.__init__, *args, **kwargs)(
@@ -54,8 +55,8 @@ def partial_class(cls: type, *args: t.Any, **kwargs: t.Any) -> type:
 
 
 class PytorchModelRunnable(bentoml.Runnable):
-    SUPPORT_NVIDIA_GPU = True
-    SUPPORT_CPU_MULTI_THREADING = True
+    SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+    SUPPORTS_CPU_MULTI_THREADING = True
 
     def __init__(
         self,
@@ -89,14 +90,18 @@ class PytorchModelRunnable(bentoml.Runnable):
 def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:
     def _run(
         self: PytorchModelRunnable,
-        *args: ext.NpNDArray | torch.Tensor,
-        **kwargs: ext.NpNDArray | torch.Tensor,
+        *args: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
+        **kwargs: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
     ) -> torch.Tensor:
-        params = Params[t.Union["ext.NpNDArray", torch.Tensor]](*args, **kwargs)
+        params = Params(*args, **kwargs)
 
-        def _mapping(item: t.Union["ext.NpNDArray", torch.Tensor]) -> torch.Tensor:
+        def _mapping(
+            item: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
+        ) -> torch.Tensor:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return torch.Tensor(item, device=self.device_id)
+            if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
+                return torch.Tensor(item.to_numpy(), device=self.device_id)
             else:
                 return item.to(self.device_id)  # type: ignore # the overhead is trivial if it is already on the right device
 
@@ -137,7 +142,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         cls,
         batch: torch.Tensor,
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         batch = batch.numpy()
         if plasma_db:
@@ -158,7 +163,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
     def from_payload(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> torch.Tensor:
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
@@ -177,7 +182,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         batch: torch.Tensor,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> t.List[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
         payloads = [cls.to_payload(i, batch_dim=batch_dim) for i in batches]
@@ -189,7 +194,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[DeploymentContainer.plasma_db],
+        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> t.Tuple[torch.Tensor, list[int]]:
         batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)

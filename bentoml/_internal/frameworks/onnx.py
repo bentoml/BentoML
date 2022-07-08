@@ -29,19 +29,19 @@ try:
     import onnx
 except ImportError:  # pragma: no cover (trivial error checking)
     raise MissingDependencyException(
-        """onnx is required in order to use module `bentoml.onnx`, install
-        onnx with `pip install onnx`. For more information, refer to
-        https://onnx.ai/get-started.html"""
+        "onnx is required in order to use module `bentoml.onnx`, install "
+        "onnx with `pip install onnx`. For more information, refer to "
+        "https://onnx.ai/get-started.html"
     )
 
 try:
     import onnxruntime as ort
 except ImportError:  # pragma: no cover (trivial error checking)
     raise MissingDependencyException(
-        """`onnxruntime` or `onnxruntime-gpu` is required by `bentoml.onnx`,
-        install onnxruntime or onnxruntime-gpu with `pip install onnxruntime`
-        or `pip install onnxruntime-gpu`. For more information, refer to
-        https://onnxruntime.ai/"""
+        "`onnxruntime` or `onnxruntime-gpu` is required by `bentoml.onnx`, "
+        "install onnxruntime or onnxruntime-gpu with `pip install onnxruntime` "
+        "or `pip install onnxruntime-gpu`. For more information, refer to "
+        "https://onnxruntime.ai/"
     )
 
 MODULE_NAME = "bentoml.onnx"
@@ -301,8 +301,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
 
     class ONNXRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = True  # type: ignore
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

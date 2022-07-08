@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import typing as t
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,6 @@ import xgboost as xgb
 from sklearn.datasets import load_breast_cancer
 
 import bentoml
-from bentoml._internal.runner.resource import Resource
 
 from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
@@ -24,12 +24,14 @@ dt = xgb.DMatrix(cancer.data, label=cancer.target)  # type: ignore
 param = {"max_depth": 3, "eta": 0.3, "objective": "multi:softprob", "num_class": 2}
 
 
-def check_model(bst: xgb.Booster, resource: Resource):
+def check_model(bst: xgb.Booster, resources: dict[str, t.Any]):
     config = json.loads(bst.save_config())
-    if resource.nvidia_gpu is not None and resource.nvidia_gpu > 0:
+    if "nvidia.com/gpu" in resources and resources["nvidia.com/gpu"] > 0:
         assert config["learner"]["generic_param"]["nthread"] == str(1)
-    elif resource.cpu is not None and resource.cpu > 0:
-        assert config["learner"]["generic_param"]["nthread"] == str(int(resource.cpu))
+    elif "cpu" in resources and resources["cpu"] > 0:
+        assert config["learner"]["generic_param"]["nthread"] == str(
+            int(resources["cpu"])
+        )
 
 
 def close_to(expected):

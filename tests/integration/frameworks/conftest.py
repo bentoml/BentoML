@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import typing as t
 import pkgutil
 from types import ModuleType
 from importlib import import_module
@@ -15,7 +16,7 @@ def pytest_addoption(parser: pytest.Parser):
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
-    framework_name: str = metafunc.config.getoption("framework")  # type: ignore
+    framework_name: str = t.cast(str, metafunc.config.getoption("framework"))
 
     if "framework" in metafunc.fixturenames and "test_model" in metafunc.fixturenames:
         metafunc.parametrize("framework,test_model", test_inputs(framework_name))

@@ -3,7 +3,6 @@ from __future__ import annotations
 import pickle
 import typing as t
 import logging
-import functools
 import itertools
 import contextlib
 from typing import TYPE_CHECKING
@@ -20,12 +19,13 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..models.model import ModelSignature
-from ..runner.utils import Params
 from ..runner.container import Payload
 from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
 from ..utils.tensorflow import get_tf_version
-from ..utils.tensorflow import hook_loaded_model
+from ..utils.tensorflow import get_input_signatures_v2
+from ..utils.tensorflow import get_restorable_functions
+from ..utils.tensorflow import cast_py_args_to_tf_function_args
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,9 @@ try:
     import tensorflow as tf  # type: ignore
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-    `tensorflow` is required in order to use `bentoml.tensorflow`.
-    Instruction: `pip install tensorflow`
-    """
+        "`tensorflow` is required in order to use module `bentoml.tensorflow`, install "
+        "tensorflow with `pip install tensorflow`. For more information, refer to "
+        "https://www.tensorflow.org/install"
     )
 
 
@@ -105,11 +104,17 @@ def load_model(
 
     if "GPU" in device_name:
         physical_devices = tf.config.list_physical_devices("GPU")
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        try:
+            # an optimization for GPU memory growth. But it will raise an error if any
+            # tensorflow session is already created. That happens when users test runners
+            # in a notebook or Python interactive shell. Thus we just ignore the error.
+            tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        except RuntimeError:
+            pass
 
     with tf.device(device_name):
         tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore
-        return hook_loaded_model(tf_model, MODULE_NAME)
+        return tf_model
 
 
 def save_model(
@@ -186,19 +191,23 @@ def save_model(
        :code:`bentoml.tensorflow.save_model` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
        with :code:`bentoml.tensorflow.save_model`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
 
-    """  # noqa
+    """
     context = ModelContext(
         framework_name="tensorflow",
         framework_versions={"tensorflow": get_tf_version()},
     )
 
-    # will add signatures inference from tf_signatures later
     if signatures is None:
-        signatures = {
-            "__call__": {
-                "batchable": False,
+        restorable_functions = get_restorable_functions(model)
+        if restorable_functions:
+            signatures = {
+                k: {
+                    "batchable": False,
+                }
+                for k in restorable_functions
             }
-        }
+        else:
+            signatures = {"__call__": {"batchable": False}}
 
         logger.info(
             f"Using the default model signature {signatures} for TensorFlow models."
@@ -236,8 +245,8 @@ def get_runnable(
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
     class TensorflowRunnable(Runnable):
-        SUPPORT_NVIDIA_GPU = True
-        SUPPORT_CPU_MULTI_THREADING = True
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()
@@ -263,23 +272,33 @@ def get_runnable(
     def _gen_run_method(runnable_self: TensorflowRunnable, method_name: str):
         raw_method = getattr(runnable_self.model, method_name)
         method_partial_kwargs = partial_kwargs.get(method_name)
-        if method_partial_kwargs:
-            raw_method = functools.partial(raw_method, **method_partial_kwargs)
-
-        def _mapping(item: "TFArgType") -> "tf_ext.TensorLike":
-            if not LazyType["tf_ext.TensorLike"]("tensorflow.Tensor").isinstance(item):
-                return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
-            else:
-                return item
 
         def _run_method(
             _runnable_self: TensorflowRunnable,
             *args: "TFArgType",
             **kwargs: "TFArgType",
         ) -> "ext.NpNDArray":
-            params = Params["TFArgType"](*args, **kwargs)
-            params = params.map(_mapping)
-            res = raw_method(*params.args, **params.kwargs)
+            if method_partial_kwargs is not None:
+                kwargs = dict(method_partial_kwargs, **kwargs)
+
+            try:
+                res = raw_method(*args, **kwargs)
+            except ValueError:
+                # Tensorflow performs type checking implicitly if users decorate with `tf.function
+                # or provide `tf_signatures` when calling `save_model()`. Type checking and
+                # casting is deferred to after the `ValueError` is raised to optimize performance.
+                sigs = get_input_signatures_v2(raw_method)
+                if not sigs:
+                    raise
+
+                try:
+                    casted_args = cast_py_args_to_tf_function_args(
+                        sigs[0], *args, **kwargs
+                    )
+                except ValueError:
+                    raise
+
+                res = raw_method(*casted_args)
             return t.cast("ext.NpNDArray", res.numpy())
 
         return _run_method
@@ -377,8 +396,10 @@ class TensorflowTensorContainer(
         return cls.batches_to_batch(batches, batch_dim)
 
 
-DataContainerRegistry.register_container(
-    LazyType("tensorflow.python.framework.ops", "_EagerTensorBase"),
-    LazyType("tensorflow.python.framework.ops", "_EagerTensorBase"),
-    TensorflowTensorContainer,
-)
+# NOTE: we only register the TensorflowTensorContainer as if eager execution is enabled.
+if tf.executing_eagerly():
+    DataContainerRegistry.register_container(
+        LazyType("tensorflow.python.framework.ops", "Tensor"),
+        LazyType("tensorflow.python.framework.ops", "Tensor"),
+        TensorflowTensorContainer,
+    )

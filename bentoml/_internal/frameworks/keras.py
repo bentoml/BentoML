@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 import logging
 import functools
@@ -35,12 +34,9 @@ try:
     import tensorflow.keras as keras
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-        `tensorflow` is required to use `bentoml.keras`, since
-        we will use Tensorflow as Keras backend.\n
-        Instruction: Refers to https://www.tensorflow.org/install for
-        more information of your use case.
-        """
+        "Tensorflow is required in order to use module `bentoml.keras`, since BentoML "
+        "uses Tensorflow as Keras backend. Install Tensorflow with `pip install "
+        "tensorflow`. For more information, refer to https://www.tensorflow.org/install"
     )
 
 MODULE_NAME = "bentoml.keras"
@@ -51,7 +47,7 @@ API_VERSION = "v1"
 class KerasOptions(ModelOptions):
     """Options for the Keras model."""
 
-    include_optimizer: bool
+    include_optimizer: bool = False
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
@@ -267,8 +263,8 @@ def get_runnable(
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
     class KerasRunnable(Runnable):
-        SUPPORT_NVIDIA_GPU = True
-        SUPPORT_CPU_MULTI_THREADING = True
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()
@@ -279,10 +275,6 @@ def get_runnable(
                 self.device_name = "/device:GPU:0"
             else:
                 self.device_name = "/device:CPU:0"
-                if "BENTOML_NUM_THREAD" in os.environ:
-                    num_threads = int(os.environ["BENTOML_NUM_THREAD"])
-                    tf.config.threading.set_inter_op_parallelism_threads(num_threads)
-                    tf.config.threading.set_intra_op_parallelism_threads(num_threads)
 
             self.model = load_model(bento_model, device_name=self.device_name)
             self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}

@@ -36,9 +36,13 @@ extensions = [
 ]
 
 # Plugin Configurations:
-napoleon_include_private_with_doc = False
+napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
+napoleon_attr_annotations = True
+autodoc_typehints = "signature"
+autodoc_typehints_format = "short"
+autodoc_typehints_description_target = "documented"
 
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 10
@@ -51,9 +55,6 @@ ogp_use_first_image = True
 issues_default_group_project = "bentoml/bentoml"
 
 todo_include_todos = True
-
-autodoc_typehints = "description"
-autodoc_typehints_description_target = "documented"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -105,62 +106,26 @@ spelling_word_list_filename = ["bentoml_wordlist.txt"]
 
 # mock any heavy imports, eg: imports from frameworks library
 autodoc_mock_imports = [
-    "catboost",
-    "coremltools",
-    "detectron2",
-    "detectron2.config",
-    "detectron2.modeling",
-    "detectron2.checkpoint",
     "torch",
     "torchvision",
     "torchtext",
-    "easyocr",
-    "evalml",
     "fastai",
-    "fasttext",
-    "mxnet",
-    "mxnet.gluon",
-    "h2o",
-    "h2o.model",
+    "fastai.learner.Learner",
     "tensorflow",
     "tensorflow.keras",
     "tensorflow.python.client",
     "tensorflow.python.training.tracking.tracking",
-    "tensorflow_hub",
     "keras",
-    "trax",
-    "flax",
-    "jax",
     "lightgbm",
     "mlflow",
-    "mlflow.pyfunc",
-    "mlflow.tracking.artifact_utils",
     "onnx",
     "onnxruntime",
-    "PyRuntime",
-    "paddle",
-    "paddle.nn",
-    "paddle.inference",
-    "paddle.fluid",
-    "paddlehub",
-    "paddlehub.module.manager",
-    "paddlehub.server.server",
-    "pycaret",
-    "pycaret.internal.tabular",
-    "pyspark",
-    "pytorch",
     "torch.nn.parallel",
     "pytorch_lightning",
     "sklearn",
     "joblib",
-    "spacy",
-    "spacy.util",
-    "thinc.util",
-    "thinc.backends",
-    "statsmodels",
-    "statsmodels.api",
-    "statsmodels.tools.parallel",
     "transformers",
     "transformers.file_utils",
     "xgboost",
+    "bentoml._internal.models.model.ModelSignatureDict",
 ]

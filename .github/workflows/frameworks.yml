@@ -73,6 +73,7 @@ jobs:
               - *runner
               - bentoml/catboost.py
               - bentoml/_internal/frameworks/catboost.py
+              - tests/integration/frameworks/models/catboost.py
               - tests/integration/frameworks/test_frameworks.py
             detectron2:
               - *runner
@@ -108,6 +109,7 @@ jobs:
               - *runner
               - bentoml/lightgbm.py
               - bentoml/_internal/frameworks/lightgbm.py
+              - tests/integration/frameworks/models/lightgbm.py
               - tests/integration/frameworks/test_frameworks.py
             mlflow:
               - *runner
@@ -118,11 +120,14 @@ jobs:
               - *runner
               - bentoml/fastai.py
               - bentoml/_internal/frameworks/fastai.py
+              - bentoml/_internal/frameworks/common/pytorch.py
+              - tests/integration/frameworks/test_frameworks.py
               - tests/integration/frameworks/test_fastai_unit.py
             onnx:
               - *runner
               - bentoml/onnx.py
               - bentoml/_internal/frameworks/onnx.py
+              - tests/integration/frameworks/models/onnx.py
               - tests/integration/frameworks/test_frameworks.py
             onnxmlir:
               - *runner
@@ -154,7 +159,8 @@ jobs:
               - bentoml/pytorch.py
               - bentoml/_internal/frameworks/common/pytorch.py
               - bentoml/_internal/frameworks/pytorch.py
-              - tests/integration/frameworks/test_pytorch_impl.py
+              - tests/integration/frameworks/test_pytorch_unit.py
+              - tests/integration/frameworks/test_frameworks.py
             torchscript:
               - *runner
               - bentoml/torchscript.py
@@ -166,6 +172,7 @@ jobs:
               - bentoml/pytorch.py
               - bentoml/pytorch_lightning.py
               - bentoml/_internal/frameworks/common/pytorch.py
+              - bentoml/_internal/frameworks/torchscript.py
               - bentoml/_internal/frameworks/pytorch_lightning.py
               - tests/integration/frameworks/test_pytorch_lightning_impl.py
             sklearn:
@@ -192,13 +199,15 @@ jobs:
               - *runner
               - bentoml/tensorflow.py
               - bentoml/_internal/frameworks/tensorflow_v2.py
-              - tests/integration/frameworks/test_tensorflow_v2_impl.py
+              - tests/integration/frameworks/models/tensorflow_v2.py
+              - tests/integration/frameworks/tensorflow_v2_unit.py
             keras_tf2:
               - *runner
               - *tf2
               - bentoml/keras.py
               - bentoml/_internal/frameworks/keras.py
-              - tests/integration/frameworks/test_keras_impl.py
+              - tests/integration/frameworks/models/keras.py
+              - tests/integration/frameworks/test_frameworks.py
             transformers:
               - *runner
               - bentoml/transformers.py
@@ -208,6 +217,7 @@ jobs:
               - *runner
               - bentoml/xgboost.py
               - bentoml/_internal/frameworks/xgboost.py
+              - tests/integration/frameworks/models/xgboost.py
               - tests/integration/frameworks/test_frameworks.py
 
 
@@ -396,7 +406,7 @@ jobs:
           fi
 
       - name: Upload test coverage to Codecov
-        if: ${{ needs.diff.outputs.detectron2 == 'true' }}
+        if: ${{ needs.diff.outputs.fastai == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
@@ -888,13 +898,67 @@ jobs:
         run: make tests-pytorch
         shell: bash
 
+      - name: Run unit test for pytorch
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"pytorch.unit.xml" --cov-report term-missing:skip-covered)
+          python -m pytest ./tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for pytorch failed!"
+            exit 1
+          fi
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
-          files: ./pytorch.xml
+          files: ./pytorch.xml,./pytorch.unit.xml
           flags: pytorch
+          verbose: true
+
+  pytorch_lightning_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch_lightning == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install -r requirements/tests-requirements.txt
+
+      - name: Run tests and generate coverage report
+        run: make tests-pytorch_lightning
+        shell: bash
+
+      - name: Upload test coverage to Codecov
+        if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./pytorch_lightning.xml
+          flags: pytorch_lightning
           verbose: true
 
   torchscript_integration_tests:
@@ -1152,15 +1216,35 @@ jobs:
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: make tests-tf2
+        run: make tests-tensorflow_v2
         shell: bash
+
+      - name: Run unit test for tensorflow_v2
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.xml" --cov-report term-missing:skip-covered)
+          python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for tensorflow_v2 failed!"
+            exit 1
+          fi
+
+      - name: Run tensorflow_v2 without eager execution
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-tf-eager-execution)
+          python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for tensorflow_v2 failed!"
+            exit 1
+          fi
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           directory: ./
-          files: ./tf2.xml
+          files: ./tf2.xml,./tf2.unit.xml,./tf2.unit.no_eager.xml
           flags: tensorflow
           verbose: true
 

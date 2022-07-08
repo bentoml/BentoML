@@ -3,19 +3,19 @@ Tutorial: Intro to BentoML
 ==========================
 
 BentoML is a python-first, efficient and flexible framework for machine learning model
-serving. It lets data scientists to save and version trained models in a standardize
+serving. It lets data scientists save and version trained models in a standardized
 format and unifies how a saved model can be accessed for serving. This enables ML
 engineers to easily use the saved models for building online prediction services or
 batch inference jobs.
 
-BentoML also helps with defining the APIs, environments and dependencies for running a
-model, providing a build tool that encapsulates all model artifacts, source code and
+BentoML also helps with defining the APIs, environments, and dependencies for running a
+model, providing a build tool that encapsulates all model artifacts, source code, and
 dependencies into a self-contained format :code:`Bento`, which is designed to be DevOps
 friendly and ready for production deployment - just like docker but designed for ML
 models.
 
-What are we building
---------------------
+What are we building?
+---------------------
 
 In this tutorial, we will focus on online model serving with BentoML, using a
 classification model trained with Scikit-Learn and the Iris dataset. By the end of this
@@ -24,6 +24,7 @@ container image for deployment.
 
 
 .. note::
+
     You might be tempted to skip this tutorial because you are not using scikit-learn,
     but give it a chance. The concepts you will learn in the tutorial are fundamental to
     model serving with any ML framework using BentoML, and mastering it will give you a
@@ -79,7 +80,7 @@ Saving Models with BentoML
 --------------------------
 
 To begin with BentoML, you will need to save your trained models with BentoML API in
-its model store(a local directory managed by BentoML). The model store is used for
+its model store (a local directory managed by BentoML). The model store is used for
 managing all your trained models locally as well as accessing them for serving.
 
 .. code-block:: python
@@ -100,9 +101,9 @@ managing all your trained models locally as well as accessing them for serving.
 
    # Save model to the BentoML local model store
    bentoml.sklearn.save_model("iris_clf", clf)
+   print(f"Model saved: {saved_model}")
 
-   # INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for sklearn model
-   # INFO  [cli] Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj", path="~/bentoml/models/iris_clf/2uo5fkgxj27exuqj/")
+   # Model saved: Model(tag="iris_clf:zy3dfgxzqkjrlgxi")
 
 
 The model is now saved under the name :code:`iris_clf` with an automatically generated
@@ -161,12 +162,14 @@ Run it live:
 
     > bentoml serve service:svc --reload
 
-    INFO [cli] Starting development BentoServer from "service:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)
-    INFO [dev_api_server] Service imported from source: bentoml.Service(name="iris_classifier", import_str="service:svc", working_dir="/home/user/gallery/quickstart")
-    INFO [dev_api_server] Will watch for changes in these directories: ['/home/user/gallery/quickstart']
-    INFO [dev_api_server] Started server process [25915]
-    INFO [dev_api_server] Waiting for application startup.
-    INFO [dev_api_server] Application startup complete.                                                                                                                          on.py:59
+    2022-07-01T14:19:12-0700 [INFO] [] Starting development BentoServer from "service:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)
+    2022-07-01 14:19:12 circus[10959] [INFO] Loading the plugin...
+    2022-07-01 14:19:12 circus[10959] [INFO] Endpoint: 'tcp://127.0.0.1:52870'
+    2022-07-01 14:19:12 circus[10959] [INFO] Pub/sub: 'tcp://127.0.0.1:52871'
+    2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
+    2022-07-01 14:19:12 asyncio[10959] [DEBUG] Using selector: KqueueSelector
+    2022-07-01 14:19:12 bentoml._internal.utils.circus[10959] [INFO] Watching directories: /home/user/gallery/quickstart
+    2022-07-01 14:19:12 circus[10959] [INFO] Starting
 
 .. dropdown:: About the command :code:`bentoml serve service:svc --reload`
    :icon: code
@@ -222,7 +225,7 @@ Using Models in a Service
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this example, :code:`bentoml.sklearn.get` creates a reference to the saved model
-in the model store, and :code:`to_runner` create a Runner instance from the model.
+in the model store, and :code:`to_runner` creates a Runner instance from the model.
 The Runner abstraction gives BentoServer more flexibility in terms of how to schedule
 the inference computation, how to dynamically batch inference calls and better take
 advantage of all hardware resource available.
@@ -232,6 +235,7 @@ You can test out the Runner interface this way:
 .. code:: python
 
    import bentoml
+
    iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
    iris_clf_runner.init_local()
    iris_clf_runner.predict.run([[5.9, 3., 5.1, 1.8]])
@@ -255,12 +259,13 @@ the API function being decorated, takes a :code:`numpy.ndarray` as input, and re
 :code:`numpy.ndarray` as output.
 
 .. note::
+
    More options, such as :code:`pandas.DataFrame`, :code:`Json`, and :code:`PIL.image`
    are also supported. An IO Descriptor object can also be configured with a schema or
    a shape for input/output validation. Learn more about them in
    :doc:`reference/api_io_descriptors`.
 
-Inside the API function, user can define any business logic, feature fetching, and
+Inside the API function, users can define any business logic, feature fetching, and
 feature transformation code. Model inference calls are made directly through runner
 objects, that are passed into :code:`bentoml.Service(name=.., runners=[..])` call when
 creating the service object.
@@ -307,9 +312,10 @@ To build a Bento, first create a :code:`bentofile.yaml` file in your project dir
       - pandas
 
 .. tip::
+
    BentoML provides lots of build options in :code:`bentofile.yaml` for customizing the
    Python dependencies, cuda installation, docker image distro, etc. Read more about it
-   in :doc:`concepts/bento` page.
+   on the :doc:`concepts/bento` page.
 
 
 Next, run the :code:`bentoml build` CLI command from the same directory:
@@ -318,18 +324,18 @@ Next, run the :code:`bentoml build` CLI command from the same directory:
 
     > bentoml build
 
-    INFO [cli] Building BentoML service "iris_classifier:dpijemevl6nlhlg6" from build context "/home/user/gallery/quickstart"
-    INFO [cli] Packing model "iris_clf:7drxqvwsu6zq5uqj" from "/home/user/bentoml/models/iris_clf/7drxqvwsu6zq5uqj"
-    INFO [cli] Locking PyPI package versions..
-    INFO [cli]
-         ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-         ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-         ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-         ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-         ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-         ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-                                                                                                                                                                                                                                                                                                                        
-    INFO [cli] Successfully built Bento(tag="iris_classifier:dpijemevl6nlhlg6") at "~/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6/"
+    Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/home/user/gallery/quickstart"
+    Packing model "iris_clf:zy3dfgxzqkjrlgxi"
+    Locking PyPI package versions..
+ 
+    ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+    ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+    ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+    ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+    ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+    ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+ 
+    Successfully built Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")
 
 🎉 You've just created your first Bento, and it is now ready for serving in production!
 For starters, you can now serve it with the :code:`bentoml serve` CLI command:
@@ -338,19 +344,12 @@ For starters, you can now serve it with the :code:`bentoml serve` CLI command:
 
     > bentoml serve iris_classifier:latest --production
 
-    INFO [cli] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="~/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")
-    INFO [cli] Starting production BentoServer from "service.py:svc" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
-    INFO [iris_clf] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="~/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")
-    INFO [api_server] Service loaded from Bento store: bentoml.Service(tag="iris_classifier:dpijemevl6nlhlg6", path="~/bentoml/bentos/iris_classifier/dpijemevl6nlhlg6")
-    INFO [iris_clf] Started server process [28761]
-    INFO [iris_clf] Waiting for application startup.
-    INFO [api_server] Started server process [28762]
-    INFO [api_server] Waiting for application startup.
-    INFO [api_server] Application startup complete.
-    INFO [iris_clf] Application startup complete.
+    2022-07-01T14:48:47-0700 [INFO] [] Starting production BentoServer from "iris_classifier:latest" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+    2022-07-01T14:48:49-0700 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 10
 
 
 .. note::
+
    Even though the service definition code uses model :code:`iris_clf:latest`, the
    :code:`latest` version can be resolved with local model store to find the exact model
    version :code:`demo_mnist:7drxqvwsu6zq5uqj` during the :code:`bentoml build`
@@ -358,7 +357,7 @@ For starters, you can now serve it with the :code:`bentoml serve` CLI command:
    always using this exact model version, wherever it is deployed.
 
 
-Bento is the unit of deployment in BentoML, one of the most important artifact to keep
+Bento is the unit of deployment in BentoML, one of the most important artifacts to keep
 track of in your model deployment workflow. BentoML provides CLI commands and APIs for
 managing Bentos and moving them around, see the :ref:`concepts/bento:Managing Bentos`
 section to learn more.
@@ -374,9 +373,11 @@ via the :code:`bentoml containerize` CLI command:
 
    > bentoml containerize iris_classifier:latest
 
-   INFO  [cli] Successfully built docker image "iris_classifier:dpijemevl6nlhlg6"
+   Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
+   Successfully built docker image "iris_classifier:6otbsmxzq6lwbgxi"
 
 .. note::
+
    You will need to `install Docker <https://docs.docker.com/get-docker/>`_ before
    running this command.
 
@@ -398,17 +399,26 @@ installed. The docker image tag will be same as the Bento tag by default:
    > docker images
 
    REPOSITORY         TAG                 IMAGE ID        CREATED          SIZE
-   iris_classifier    dpijemevl6nlhlg6    78e3d3b51205    10 seconds ago   1.05GB
+   iris_classifier    6otbsmxzq6lwbgxi    0b4f5ec01941    10 seconds ago   790MB
 
 
 Run the docker image to start the BentoServer:
 
 .. code:: bash
 
-   docker run -p 3000:3000 iris_classifier:dpijemevl6nlhlg6
+    docker run -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi
+
+    2022-07-01T21:57:47+0000 [INFO] [] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:47+0000 [INFO] [] Starting production BentoServer from "/home/bentoml/bento" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+    2022-07-01T21:57:48+0000 [INFO] [api_server:1] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [runner-iris_clf:1] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [api_server:2] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 4
+    2022-07-01T21:57:48+0000 [INFO] [api_server:3] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+    2022-07-01T21:57:48+0000 [INFO] [api_server:4] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
 
 
-Most of the deployment tools built on top of BentoML uses Docker under the hood, it is
+Most of the deployment tools built on top of BentoML use Docker under the hood. It is
 recommended to test out serving from a containerized Bento docker image first, before
 moving to a production deployment. This helps verify the correctness of all the docker
 and dependency configs specified in the :code:`bentofile.yaml`.
@@ -420,18 +430,19 @@ Deploying Bentos
 BentoML standardizes the saved model format, service API definition and the Bento build
 process, which opens up many different deployment options for ML teams.
 
-The Bento we built and the docker image created in the previous steps, are designed to
-be DevOps friendly and ready for deployment in production environment. If your team
+The Bento we built and the docker image created in the previous steps are designed to
+be DevOps friendly and ready for deployment in a production environment. If your team
 has existing infrastructure for running docker, it's likely that the Bento generated
 docker images can be directly deployed to your infrastructure without any modification.
 
 .. note::
+
    To streamline the deployment process, BentoServer follows most common best practices
    found in a backend service: it provides
    :doc:`health check and prometheus metrics <guides/monitoring>`
-   endpoint for monitoring out-of-the-box; It provides configurable
+   endpoints for monitoring out-of-the-box; It provides configurable
    :doc:`distributed tracing <guides/tracing>` and :doc:`logging <guides/logging>` for
-   performance analysis and debugging; And it can be easily
+   performance analysis and debugging; and it can be easily
    :doc:`integrated with other tools <integrations/index>` that are commonly used by
    Data Engineers and DevOps engineers.
 

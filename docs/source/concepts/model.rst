@@ -12,12 +12,13 @@ pipeline, invoking a :code:`save_model` call, as demonstrated in the
 
 .. code:: python
 
-    bentoml.sklearn.save_model("iris_clf", clf)
+    saved_model = bentoml.sklearn.save_model("iris_clf", clf)
+    print(f"Model saved: {saved_model}")
 
-    # INFO  [cli] Using default model signature `{"predict": {"batchable": False}}` for sklearn model
-    # INFO  [cli] Successfully saved Model(tag="iris_clf:2uo5fkgxj27exuqj", path="~/bentoml/models/iris_clf/2uo5fkgxj27exuqj/")
+    # Model saved: Model(tag="iris_clf:2uo5fkgxj27exuqj")
 
 .. seealso::
+
    It is also possible to **use pre-trained models** directly with BentoML, without
    saving it to the model store first. Check out the
    :ref:`Custom Runner <concepts/runner:Custom Runner>` example to learn more.
@@ -72,9 +73,10 @@ To load the model instance back into memory, use the framework-specific
     import bentoml
     from sklearn.base import BaseEstimator
 
-    model:BaseEstimator = bentoml.sklearn.load_model("iris_clf:latest")
+    model: BaseEstimator = bentoml.sklearn.load_model("iris_clf:latest")
 
 .. note::
+
     The :code:`load_model` method is only here for testing and advanced customizations.
     For general model serving use cases, use Runner for running model inference. See the
     :ref:`concepts/model:Using Model Runner` section below to learn more.
@@ -100,6 +102,7 @@ instance, which is a reference to a saved model entry in the BentoML model store
 :code:`to_runner` API for creating a Runner instance from the model.
 
 .. note::
+
     BentoML also provides a framework-specific :code:`get` method under each framework
     module, e.g.: :code:`benotml.pytorch.get`. It behaves exactly the same as
     :code:`bentoml.models.get`, besides that it verifies if the model found was saved
@@ -171,13 +174,13 @@ stages. For example:
 
     > bentoml models export iris_clf:latest .
 
-    INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ./iris_clf-2uo5fkgxj27exuqj.bentomodel
+    Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ./iris_clf-2uo5fkgxj27exuqj.bentomodel
 
 .. code:: bash
 
     > bentoml models import ./iris_clf-2uo5fkgxj27exuqj.bentomodel
 
-    INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") imported
+    Model(tag="iris_clf:2uo5fkgxj27exuqj") imported
 
 .. note::
 
@@ -375,9 +378,9 @@ signature during :code:`save_model`:
     runner.classify.run( MODEL_INPUT )
 
 
-A special case to noice is for the Python magic method name :code:`__call__`. Similar to
-the Python language convention, the call to :code`runner.run` will be applied to the
-model's :code:`__call__` method:
+A special case here is Python's magic method :code:`__call__`. Similar to the
+Python language convention, the call to :code:`runner.run` will be applied to
+the model's :code:`__call__` method:
 
 .. code-block:: python
    :emphasize-lines: 4-8,13
@@ -423,6 +426,7 @@ as one inference call in the runner worker. Here's an example:
     runner.run( MODEL_INPUT )
 
 .. tip::
+
     The runner interface is exactly the same, regardless :code:`batchable` was set to
     True or False.
 

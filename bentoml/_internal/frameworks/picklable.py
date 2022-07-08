@@ -4,6 +4,8 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
+import cloudpickle
+
 import bentoml
 from bentoml import Tag
 from bentoml.models import Model
@@ -23,15 +25,6 @@ if TYPE_CHECKING:
 
 MODULE_NAME = "bentoml.picklable_model"
 API_VERSION = "v1"
-
-try:
-    import cloudpickle  # type: ignore
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        f"""cloudpickle is required in order to use the module `{MODULE_NAME}`, install
-         cloudpickle with `pip install cloudpickle`.
-        """
-    )
 
 
 logger = logging.getLogger(__name__)
@@ -154,8 +147,8 @@ def get_runnable(bento_model: Model):
     """
 
     class PicklableRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False  # type: ignore
-        SUPPORT_CPU_MULTI_THREADING = False  # type: ignore
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = False
 
         def __init__(self):
             super().__init__()

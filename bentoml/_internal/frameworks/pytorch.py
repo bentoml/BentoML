@@ -14,7 +14,6 @@ from ..types import LazyType
 from ..models import Model
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
-from ...exceptions import BentoMLException
 from ..models.model import ModelContext
 from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer
@@ -69,7 +68,7 @@ def load_model(
         bentoml_model = get(bentoml_model)
 
     if bentoml_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
+        raise NotFound(
             f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
 

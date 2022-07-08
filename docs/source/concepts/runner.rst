@@ -73,9 +73,8 @@ analysis with a pre-trained model:
 
 
     class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
-
-        SUPPORT_NVIDIA_GPU = False
-        SUPPORT_CPU_MULTI_THREADING = False
+        SUPPORTED_RESOURCES = ()
+        SUPPORTS_CPU_MULTI_THREADING = False
 
         def __init__(self):
             nltk.download('vader_lexicon')
@@ -114,11 +113,21 @@ Send a test request:
     {"is_positive":true}%
 
 
-The :code:`SUPPORT_NVIDIA_GPU` and :code:`SUPPORT_CPU_MULTI_THREADING` class attribute indicates
-whether or not this Runnable class implementation supports using GPU or utilizes multi
-threading. Since NLTK library doesn't support utilizing GPU nor multi-cpu-core natively,
-they are both set to False. This information is used by the BentoServer scheduler
-to determine the worker pool size of this runner.
+The constant attribute ``SUPPORTED_RESOURCES`` indicates which resources this Runnable class
+implementation supports. The only currently pre-defined resources are ``"cpu"`` and
+``"nvidia.com/gpu"``.
+
+The constant attribute ``SUPPORTS_CPU_MULTI_THREADING`` indicates whether or not the runner supports
+CPU multi-threading.
+
+Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods; it must be
+declared at the class level. This is a result of the fact that the runner is not instantiated in the
+scheduling code, as instantiating runners can be quite expensive.
+
+Since the NLTK library doesn't support utilizing GPU or multiple CPU cores natively, no resources
+are specified, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
+This information is used by the BentoServer scheduler to determine the worker pool size of this
+runner.
 
 The :code:`bentoml.Runnable.method` decorator is used for creating
 :code:`RunnableMethod` - the decorated method will be exposed as the runner interface
@@ -139,8 +148,8 @@ and used in the same service. For example:
     import torch
 
     class MyModelRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = True
-        SUPPORT_CPU_MULTI_THREADING = True
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self, model_file):
             self.model = torch.load_model(model_file)
@@ -191,8 +200,8 @@ Custom Model Runner
     bento_model = bentoml.pytorch.get("fraud_detect:latest")
 
     class MyPytorchRunnable(bentoml.Runnable):
-        SUPPORT_NVIDIA_GPU = False
-        SUPPORT_CPU_MULTI_THREADING = True
+        SUPPORTED_RESOURCES = ()
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             self.model = torch.load_model(bento_model.path)
@@ -219,15 +228,12 @@ Runner Options
         MyRunnable,
         runnable_init_params={"foo": foo, "bar": bar},
         name="custom_runner_name",
-        strategy=None, # default strategy will be selected depending on the SUPPORT_NVIDIA_GPU and SUPPORT_CPU_MULTI_THREADING flag on runnable
+        strategy=None, # default strategy will be selected depending on the SUPPORTED_RESOURCES and SUPPORTS_CPU_MULTI_THREADING flag on runnable
         models=[..],
 
         # below are also configurable via config file:
 
         # default configs:
-        cpu=4,
-        nvidia_gpu=1
-        custom_resources={..} # reserved API for supporting custom accelerators, a custom scheduling strategy will be needed to support new hardware types
         max_batch_size=..  # default max batch size will be applied to all run methods, unless override in the runnable_method_configs
         max_latency_ms=.. # default max latency will be applied to all run methods, unless override in the runnable_method_configs
 

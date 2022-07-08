@@ -29,19 +29,9 @@ from ...exceptions import BentoMLException
 from ..configuration import CLEAN_BENTOML_VERSION
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
-if version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
 if TYPE_CHECKING:
     from attr import Attribute
     from fs.base import FS
-
-if version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from typing_extensions import TypeAlias
 
 logger = logging.getLogger(__name__)
 
@@ -415,6 +405,9 @@ class PythonOptions:
                 f'Build option python: `no_index="{self.no_index}"` found, will ignore `index_url` and `extra_index_url` option when installing PyPI packages.'
             )
 
+    def is_empty(self) -> bool:
+        return not self.requirements_txt and not self.packages
+
     def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
@@ -434,73 +427,22 @@ class PythonOptions:
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
-        if self.requirements_txt is not None:
-            requirements_txt_file = resolve_user_filepath(
-                self.requirements_txt, build_ctx
-            )
-            copy_file_to_fs_folder(
-                requirements_txt_file,
-                bento_fs,
-                py_folder,
-                dst_filename="requirements.txt",
-            )
-        elif self.packages is not None:
-            with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
-                f.write("\n".join(self.packages))
-        else:
-            # Return early if no python packages were specified
-            return
-
-        pip_args: t.List[str] = []
+        pip_compile_compat: t.List[str] = []
         if self.index_url:
-            pip_args.extend(["--index-url", self.index_url])
+            pip_compile_compat.extend(["--index-url", self.index_url])
         if self.trusted_host:
             for host in self.trusted_host:
-                pip_args.extend(["--trusted-host", host])
+                pip_compile_compat.extend(["--trusted-host", host])
         if self.find_links:
             for link in self.find_links:
-                pip_args.extend(["--find-links", link])
+                pip_compile_compat.extend(["--find-links", link])
         if self.extra_index_url:
             for url in self.extra_index_url:
-                pip_args.extend(["--extra-index-url", url])
-
-        if self.lock_packages:
-            # Note: "--allow-unsafe" is required for including setuptools in the
-            # generated requirements.lock.txt file, and setuptool is required by
-            # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
-            # remove the "--allow-unsafe" flag here.
-
-            # Note: "--generate-hashes" is purposefully not used here because it will
-            # break if user includes PyPI package from version control system
-
-            pip_compile_in = bento_fs.getsyspath(
-                fs.path.combine(py_folder, "requirements.txt")
-            )
-            pip_compile_out = bento_fs.getsyspath(
-                fs.path.combine(py_folder, "requirements.lock.txt")
-            )
-            pip_compile_args = [pip_compile_in]
-            pip_compile_args.extend(pip_args)
-            pip_compile_args.extend(
-                [
-                    "--quiet",
-                    "--allow-unsafe",
-                    "--no-header",
-                    f"--output-file={pip_compile_out}",
-                ]
-            )
-            logger.info("Locking PyPI package versions..")
-            cmd = [sys.executable, "-m", "piptools", "compile"]
-            cmd.extend(pip_compile_args)
-            try:
-                subprocess.check_call(cmd)
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Failed locking PyPI packages: {e}")
-                logger.error(
-                    "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
-                )
+                pip_compile_compat.extend(["--extra-index-url", url])
 
         # add additional pip args that does not apply to pip-compile
+        pip_args: t.List[str] = []
+        pip_args.extend(pip_compile_compat)
         if self.no_index:
             pip_args.append("--no-index")
         if self.pip_args:
@@ -559,6 +501,59 @@ fi
             )
             f.write(install_script_content)
 
+        if self.requirements_txt is not None:
+            requirements_txt_file = resolve_user_filepath(
+                self.requirements_txt, build_ctx
+            )
+            copy_file_to_fs_folder(
+                requirements_txt_file,
+                bento_fs,
+                py_folder,
+                dst_filename="requirements.txt",
+            )
+        elif self.packages is not None:
+            with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
+                f.write("\n".join(self.packages))
+        else:
+            # Return early if no python packages were specified
+            return
+
+        if self.lock_packages and not self.is_empty():
+            # Note: "--allow-unsafe" is required for including setuptools in the
+            # generated requirements.lock.txt file, and setuptool is required by
+            # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
+            # remove the "--allow-unsafe" flag here.
+
+            # Note: "--generate-hashes" is purposefully not used here because it will
+            # break if user includes PyPI package from version control system
+
+            pip_compile_in = bento_fs.getsyspath(
+                fs.path.combine(py_folder, "requirements.txt")
+            )
+            pip_compile_out = bento_fs.getsyspath(
+                fs.path.combine(py_folder, "requirements.lock.txt")
+            )
+            pip_compile_args = [pip_compile_in]
+            pip_compile_args.extend(pip_compile_compat)
+            pip_compile_args.extend(
+                [
+                    "--quiet",
+                    "--allow-unsafe",
+                    "--no-header",
+                    f"--output-file={pip_compile_out}",
+                ]
+            )
+            logger.info("Locking PyPI package versions..")
+            cmd = [sys.executable, "-m", "piptools", "compile"]
+            cmd.extend(pip_compile_args)
+            try:
+                subprocess.check_call(cmd)
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed locking PyPI packages: {e}")
+                logger.error(
+                    "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
+                )
+
     def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
@@ -581,7 +576,11 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> Python
 
 bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
-OptionsCls: TypeAlias = t.Union[DockerOptions, CondaOptions, PythonOptions]
+
+if TYPE_CHECKING:
+    OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions]
+else:
+    OptionsCls = type
 
 
 def dict_options_converter(
@@ -629,7 +628,7 @@ class BentoBuildConfig:
 
         if use_cuda and use_conda:
             raise BentoMLException(
-                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a docker_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
+                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
             )
 
         if self.docker.distro is not None:

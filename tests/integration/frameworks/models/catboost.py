@@ -49,6 +49,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 
 classification_model = FrameworkTestModel(
     name="classification",
+    save_kwargs={
+        "signatures": {
+            "predict": {"batchable": False},
+            # TODO: staged_predict is not supported by bentoml.catboost yet
+        }
+    },
     model=CatBoostClassifier().fit(X_train, y_train),
     configurations=[
         Config(
@@ -59,12 +65,7 @@ classification_model = FrameworkTestModel(
                         expected=accurate_to(y_test, 0.9466),
                     ),
                 ],
-                "staged_predict": [
-                    Input(
-                        input_args=[X_test],
-                        expected=generator_accurate_to(y_test, 0.7),
-                    ),
-                ],
+                # TODO: staged_predict is not supported by bentoml.catboost yet
             },
         ),
     ],

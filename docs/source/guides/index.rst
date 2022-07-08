@@ -27,6 +27,7 @@ into this part of the documentation.
   logging
   custom_framework
   benchmark
+  migration
 
 
 .. admonition:: Help us improve the project!

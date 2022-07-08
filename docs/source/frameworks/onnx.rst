@@ -155,13 +155,13 @@ then call BentoML's ``save_model``:
    signatures = {
        "run": {"batchable": True},
    }
-   bentoml.onnx.save_model("super_resolution", onnx_model, signatures=signatures)
+   bentoml.onnx.save_model("onnx_super_resolution", onnx_model, signatures=signatures)
 
 which will result:
 
 .. code-block:: bash
 
-   Model(tag="super_resolution:lwqr7ah5ocv3rea3", path="~/bentoml/models/super_resolution/lwqr7ah5ocv3rea3/")
+   Model(tag="onnx_super_resolution:lwqr7ah5ocv3rea3", path="~/bentoml/models/onnx_super_resolution/lwqr7ah5ocv3rea3/")
 
 .. note::
 
@@ -197,9 +197,9 @@ Building a Service for **ONNX**
    from PIL import ImageOps
    from bentoml.io import Image
 
-   runner = bentoml.onnx.get("super_resolution:latest").to_runner()
+   runner = bentoml.onnx.get("onnx_super_resolution:latest").to_runner()
 
-   svc = bentoml.Service("super_resolution", runners=[runner])
+   svc = bentoml.Service("onnx_super_resolution", runners=[runner])
 
    @svc.api(input=Image(), output=Image())
    def sr(img) -> np.ndarray:
@@ -255,7 +255,7 @@ Like ``load_model``, you can customize ``providers`` and
 
    providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
 
-   runner = bentoml.onnx.get("super_resolution").with_options(providers=providers).to_runner()
+   runner = bentoml.onnx.get("onnx_super_resolution").with_options(providers=providers).to_runner()
 
    runner.init_local()
 
@@ -263,7 +263,7 @@ Like ``load_model``, you can customize ``providers`` and
 Loading an ONNX model with BentoML for local testing
 ----------------------------------------------------
 
-We can use ``load_model`` to load an ONNX model back to memory:
+Use ``load_model`` to verify that the saved model can be loaded properly:
 
 .. code-block:: python
 
@@ -276,7 +276,7 @@ We can use ``load_model`` to load an ONNX model back to memory:
    inference
 
 
-Then we can do the inference:
+Then we can do some test inference:
 
 .. code-block:: python
 
@@ -287,8 +287,8 @@ Then we can do the inference:
 
    In above codes we need explicitly to convert input ndarray to
    float32 because ``onnxruntime.InferenceSession`` only expects
-   single floats. In the following section we will see that BentoML
-   runner will automatically cast input data to this type
+   single floats. When using BentoML runner, it will automatically
+   cast input data to this type
 
 
 Dynamic Batch Size
@@ -338,4 +338,4 @@ runner:
 
    providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
 
-   runner = bentoml.onnx.get("super_resolution").with_options(providers=providers).to_runner()
+   runner = bentoml.onnx.get("onnx_super_resolution").with_options(providers=providers).to_runner()

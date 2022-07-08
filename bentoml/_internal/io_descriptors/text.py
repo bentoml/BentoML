@@ -40,7 +40,7 @@ class Text(IODescriptor[str]):
         @svc.api(input=Text(), output=Text())
         def predict(input_arr):
             res = runner.run(input_arr)
-            return [r['generated_text'] for r in res]
+            return res['generated_text']
 
     Users then can then serve this service with :code:`bentoml serve`:
 

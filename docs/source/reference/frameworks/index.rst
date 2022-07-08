@@ -11,5 +11,6 @@ Framework APIs
   :maxdepth: 1
 
   fastai
+  onnx
   transformers
   xgboost

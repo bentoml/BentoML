@@ -23,7 +23,7 @@ Here's a simple example of using PyTorch Lightning with BentoML:
     # `load` the model back in memory:
     model = bentoml.pytorch_lightning.load_model("addition_model:latest")
 
-    # Run a given model under `Runner` abstraction with `load_runner`
+    # Run a given model under `Runner` abstraction with `to_runner`
     runner = bentoml.pytorch_lightning.get(tag).to_runner()
     runner.init_local()
     runner.run(torch.from_numpy(np.array([[1,2,3,4]])))

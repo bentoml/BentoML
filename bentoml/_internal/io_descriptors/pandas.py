@@ -147,13 +147,13 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         input_spec = PandasDataFrame.from_sample(pd.DataFrame(np.array([[5,4,3,2]])))
 
-        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
+        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
         svc = bentoml.Service("iris-classifier", runners=[runner])
 
         @svc.api(input=input_spec, output=PandasDataFrame())
         def predict(input_arr):
-            res = runner.run_batch(input_arr)  # type: np.ndarray
+            res = runner.run(input_arr)
             return pd.DataFrame(res)
 
     Users then can then serve this service with :code:`bentoml serve`:
@@ -490,13 +490,13 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
 
         input_spec = PandasSeries.from_sample(pd.Series(np.array([[5,4,3,2]])))
 
-        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
+        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
         svc = bentoml.Service("iris-classifier", runners=[runner])
 
         @svc.api(input=input_spec, output=PandasSeries())
         def predict(input_arr):
-            res = runner.run_batch(input_arr)  # type: np.ndarray
+            res = runner.run(input_arr)  # type: np.ndarray
             return pd.Series(res)
 
     Users then can then serve this service with :code:`bentoml serve`:

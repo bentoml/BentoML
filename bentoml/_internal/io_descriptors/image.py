@@ -60,18 +60,15 @@ class Image(IODescriptor[ImageType]):
         #obj_detc.py
         import bentoml
         from bentoml.io import Image, JSON
-        import bentoml.transformers
 
         tag='google_vit_large_patch16_224:latest'
-        runner = bentoml.transformers.load_runner(tag, tasks='image-classification',
-                                                  device=-1,
-                                                  feature_extractor="google/vit-large-patch16-224")
+        runner = bentoml.tensorflow.get('image-classification').to_runner()
 
         svc = bentoml.Service("vit-object-detection", runners=[runner])
 
         @svc.api(input=Image(), output=JSON())
         def predict(input_img):
-            res = runner.run_batch(input_img)
+            res = runner.run(input_img)
             return res
 
     Users then can then serve this service with :code:`bentoml serve`:

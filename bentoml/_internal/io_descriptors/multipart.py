@@ -34,7 +34,7 @@ class Multipart(IODescriptor[t.Any]):
         from bentoml.io import NumpyNdarray, Multipart, JSON
         import bentoml.sklearn
 
-        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
+        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
         svc = bentoml.Service("iris-classifier", runners=[runner])
         input_spec = Multipart(arr=NumpyNdarray(), annotations=JSON())

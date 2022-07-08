@@ -330,5 +330,22 @@ You can run the docker image to start the service.
     2022-07-01T21:57:48+0000 [INFO] [api_server:3] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
     2022-07-01T21:57:48+0000 [INFO] [api_server:4] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
 
+Deploy Bentos
+-------------
+
+BentoML version 0.13.1 supported deployment of Bentos to various cloud providers, including Google Cloud Platform, Amazon Web Services, 
+and Microsoft Azure. To better support the devops workflows, cloud deployment of Bentos has been moved to a separate project, 
+`🚀 bentoctl <https://github.com/bentoml/bentoctl>`_, to better focus on the deployment tasks. :code:`bentoctl` is a CLI tool for 
+deploying your machine-learning models to any cloud platforms.
+
+Manage Bentos
+-------------
+
+BentoML version 0.13.1 relied on Yatai as a bento registry to help teams collaborate and manage bentos. In additional to bento management,
+`🦄️ Yatai <https://github.com/bentoml/Yatai>`_ project has since been expanded into a platform for deploying large scale model 
+serving workloads on Kubernetes. Yatai standardizes BentoML deployment and provides UI for managing all your ML models and deployments 
+in one place, and enables advanced GitOps and CI/CD workflow.
+
+
 🎉 Ta-da, you have migrated your project to BentoML 1.0.0. Have more questions? 
 `Join the BentoML Slack community <https://l.linklyhq.com/l/ktPp>`_.

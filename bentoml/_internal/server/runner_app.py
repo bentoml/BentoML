@@ -88,7 +88,9 @@ class RunnerAppFactory(BaseAppFactory):
         /readyz         Readiness probe endpoint
         /metrics        Prometheus metrics endpoint
 
-        /run
+        For method in self.runner.runner_methods:
+        /{method.name}  Run corresponding runnable method
+        /               Run the runnable method "__call__" if presented
         """
         from starlette.routing import Route
 

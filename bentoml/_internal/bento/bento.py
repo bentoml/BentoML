@@ -31,10 +31,10 @@ from ..runner import Runner
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from .build_config import CondaOptions
+from .build_config import BentoPathSpec
 from .build_config import DockerOptions
 from .build_config import PythonOptions
 from .build_config import BentoBuildConfig
-from .build_config import BentoPatternSpec
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
@@ -184,7 +184,7 @@ class Bento(StoreItem):
         # Apply default build options
         build_config = build_config.with_defaults()
         # create ignore specs
-        specs = BentoPatternSpec(build_config)
+        specs = BentoPathSpec(build_config.include, build_config.exclude)  # type: ignore (unfinished attrs converter type)
 
         # Copy all files base on include and exclude, into `src` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]

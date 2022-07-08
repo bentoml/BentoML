@@ -14,8 +14,8 @@ from circus.plugins import CircusPlugin
 from ...utils.pkg import source_locations
 from ....exceptions import MissingDependencyException
 from ...configuration import is_pypi_installed_bentoml
+from ...bento.build_config import BentoPathSpec
 from ...bento.build_config import BentoBuildConfig
-from ...bento.build_config import BentoPatternSpec
 
 try:
     from watchfiles import watch
@@ -57,7 +57,6 @@ class ServiceReloaderPlugin(CircusPlugin):
 
         logger.info(f"Watching directories: {watch_dirs}")
         self.watch_dirs = watch_dirs
-        logger.debug(f"Using {self.__class__.__qualname__} as reloader plugin.")
 
         self.create_spec()
 
@@ -67,9 +66,9 @@ class ServiceReloaderPlugin(CircusPlugin):
         self.file_changes = watch(
             *self.watch_dirs,
             watch_filter=None,
-            yield_on_timeout=True,  # NOTE: stop hanging on our tests, doesn't affect the behaviour
+            yield_on_timeout=True,  # stop hanging on our tests, doesn't affect the behaviour
             stop_event=self.exit_event,
-            rust_timeout=0,  # NOTE: we should set reload_delay to 0 to avoid unnecessary logs
+            rust_timeout=0,  # we should set timeout to zero for no timeout
         )
 
     def create_spec(self) -> None:
@@ -83,7 +82,7 @@ class ServiceReloaderPlugin(CircusPlugin):
             with open(bentofile_path, "r") as f:
                 build_config = BentoBuildConfig.from_yaml(f).with_defaults()
 
-        self.bento_spec = BentoPatternSpec(build_config)
+        self.bento_spec = BentoPathSpec(build_config.include, build_config.exclude)  # type: ignore (unfinished converter type)
 
     def should_include(self, path: str | Path) -> bool:
         # returns True if file with 'path' has changed, else False

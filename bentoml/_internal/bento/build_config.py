@@ -727,8 +727,8 @@ class BentoBuildConfig:
         raise NotImplementedError
 
 
-@attr.define(frozen=True, init=False)
-class BentoPatternSpec:
+@attr.define(frozen=True)
+class BentoPathSpec:
     _include: PathSpec = attr.field(
         converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
     )
@@ -740,18 +740,14 @@ class BentoPatternSpec:
         default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
     )
 
-    def __init__(self, build_config: "FilledBentoBuildConfig") -> None:
-        return self.__attrs_init__(build_config.include, build_config.exclude)  # type: ignore (unfinished __attr_init__ type)
-
     def includes(
         self,
         path: str,
         *,
         recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
     ) -> bool:
-        # to determine whether a path is included or not.
-        # NOTE that if dir_path is not None, then we also need to pass in ctx_fs
-        #  in order to create .bentoignore spec.
+        # Determine whether a path is included or not.
+        # recurse_exclude_spec is a list of (path, spec) pairs.
         to_include = (
             self._include.match_file(path)
             and not self._exclude.match_file(path)

@@ -48,7 +48,7 @@ HEADER_CHARSET = "latin1"
 JSON_CHARSET = "utf-8"
 
 if TYPE_CHECKING:
-    PathType = t.Union[str, os.PathLike[str]]
+    PathType = str | os.PathLike[str]
 else:
     PathType = t.Union[str, os.PathLike]
 
@@ -68,7 +68,11 @@ MetadataType: t.TypeAlias = t.Union[
     t.Dict[str, "MetadataType"],
 ]
 
-MetadataDict = t.Dict[str, MetadataType]
+if TYPE_CHECKING:
+    MetadataDict = t.Dict[str, MetadataType]
+else:
+    # NOTE: remove this when registering hook for MetadataType
+    MetadataDict = dict
 
 JSONSerializable = t.NewType("JSONSerializable", object)
 
@@ -150,11 +154,11 @@ class LazyType(t.Generic[T]):
             else:
                 self.qualname: str = getattr(module_or_cls, "__name__")
 
-    def __instancecheck__(self, obj) -> "t.TypeGuard[T]":
+    def __instancecheck__(self, obj: object) -> t.TypeGuard[T]:
         return self.isinstance(obj)
 
     @classmethod
-    def from_type(cls, typ_: t.Union["LazyType[T]", "t.Type[T]"]) -> "LazyType[T]":
+    def from_type(cls, typ_: t.Union[LazyType[T], t.Type[T]]) -> LazyType[T]:
         if isinstance(typ_, LazyType):
             return typ_
         return cls(typ_)
@@ -193,7 +197,7 @@ class LazyType(t.Generic[T]):
 
         return self._runtime_class
 
-    def isinstance(self, obj: t.Any) -> "t.TypeGuard[T]":
+    def isinstance(self, obj: t.Any) -> t.TypeGuard[T]:
         try:
             return isinstance(obj, self.get_class(import_module=False))
         except ValueError:
@@ -311,10 +315,10 @@ class FileLike(t.Generic[t.AnyStr], io.IOBase):
     def __enter__(self) -> t.IO[t.AnyStr]:
         return self._wrapped.__enter__()
 
-    def __exit__(  # type: ignore (python IO types)
+    def __exit__(  # type: ignore (override python IO types)
         self,
-        typ: t.Optional[t.Type[BaseException]],
-        value: t.Optional[BaseException],
-        traceback: t.Optional[TracebackType],
-    ) -> t.Optional[bool]:
+        typ: t.Type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
         return self._wrapped.__exit__(typ, value, traceback)

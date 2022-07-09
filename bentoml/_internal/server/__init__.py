@@ -54,10 +54,10 @@ def serve_development(
     reload: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir)
+    svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
 
-    from circus.sockets import CircusSocket
-    from circus.watcher import Watcher
+    from circus.sockets import CircusSocket  # type: ignore
+    from circus.watcher import Watcher  # type: ignore
 
     watchers: t.List[Watcher] = []
 

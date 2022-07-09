@@ -25,10 +25,6 @@ from .model_management import add_model_management_commands
 FC = t.TypeVar("FC", bound=t.Union[t.Callable[..., t.Any], click.Command])
 
 
-def format_param(keval: tuple[str, str]) -> str:
-    return "%15s : %s" % (keval[0], keval[1])
-
-
 def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
     """Add a ``--env`` option which immediately prints environment info for debugging purposes.
 
@@ -42,12 +38,13 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
             return
 
         is_windows = sys.platform == "win32"
+        conda_key = "conda"
 
         info_dict = {
-            "BentoML version": BENTOML_VERSION,
-            "Python version": platform.python_version(),
-            "Platform info": platform.platform(),
-            "Conda version": "not installed",
+            "bentoml": BENTOML_VERSION,
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+            conda_key: "not installed",
         }
 
         if is_windows:
@@ -55,9 +52,9 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
 
             # https://stackoverflow.com/a/1026626
             is_admin: bool = windll.shell32.IsUserAnAdmin() != 0
-            info_dict["Is Windows admin"] = str(is_admin)
+            info_dict["is_window_admin"] = str(is_admin)
         else:
-            info_dict["UID:GID"] = f"{os.geteuid()}:{os.getegid()}"
+            info_dict["uid:gid"] = f"{os.geteuid()}:{os.getegid()}"
 
         if shutil.which("conda"):
             try:
@@ -73,9 +70,9 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
                     .strip("\n")
                     .split(" ")[-1]
                 )
-            info_dict["Conda version"] = conda_version
+            info_dict[conda_key] = conda_version
 
-        click.echo("\n".join(map(format_param, info_dict.items())))
+        click.echo("\n".join([f"{k}: {v}" for k, v in info_dict.items()]))
         ctx.exit()
 
     param_decls = ("--env",)

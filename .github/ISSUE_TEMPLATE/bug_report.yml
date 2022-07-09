@@ -71,11 +71,11 @@ body:
       description: |
         Please share your environment with us. You should run `bentoml --env` and paste the result here.
       placeholder: |
-        BentoML version : 1.0.0rc3
-         Python version : 3.10.5
-          Platform info : macOS-12.4-arm64-arm-64bit
-          Conda version : 4.13.0
-                UID:GID : 501:20
+        bentoml: 1.0.0rc3
+        python: 3.10.5
+        platform: macOS-12.4-arm64-arm-64bit
+        conda: 4.13.0
+        uid:gid: 501:20
     validations:
       required: true
   - type: textarea

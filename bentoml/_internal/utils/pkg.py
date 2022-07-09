@@ -5,13 +5,21 @@ from typing import cast
 
 try:
     import importlib.metadata as importlib_metadata
+    from importlib.metadata import PackageNotFoundError
 except ImportError:
     import importlib_metadata
+    from importlib_metadata import PackageNotFoundError
+
+import importlib.util
 
 from packaging.version import Version
 
-__all__ = ["pkg_version_info", "get_pkg_version", "source_locations"]
-import importlib.util
+__all__ = [
+    "PackageNotFoundError",
+    "pkg_version_info",
+    "get_pkg_version",
+    "source_locations",
+]
 
 get_pkg_version = importlib_metadata.version
 

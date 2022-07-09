@@ -5,6 +5,7 @@ import sys
 import shutil
 import typing as t
 import platform
+import subprocess
 from gettext import gettext
 
 import click
@@ -14,6 +15,7 @@ from bentoml import __version__ as BENTOML_VERSION
 
 from .yatai import add_login_command
 from ..utils.pkg import get_pkg_version
+from ..utils.pkg import PackageNotFoundError
 from .click_utils import BentoMLCommandGroup
 from .bento_server import add_serve_command
 from .containerize import add_containerize_command
@@ -58,7 +60,20 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
             info_dict["UID:GID"] = f"{os.geteuid()}:{os.getegid()}"
 
         if shutil.which("conda"):
-            info_dict["Conda version"] = get_pkg_version("conda")
+            try:
+                # user is currently in a conda environment,
+                # doing this is faster than invoking `conda --version`
+                conda_version = get_pkg_version("conda")
+            except PackageNotFoundError:
+                # when user is not in a conda environment, there
+                # is no way to import conda.
+                conda_version = (
+                    subprocess.check_output(["conda", "--version"])
+                    .decode("utf-8")
+                    .strip("\n")
+                    .split(" ")[-1]
+                )
+            info_dict["Conda version"] = conda_version
 
         click.echo("\n".join(map(format_param, info_dict.items())))
         ctx.exit()

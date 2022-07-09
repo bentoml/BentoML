@@ -6,19 +6,18 @@ import time
 import typing as t
 import difflib
 import logging
+import functools
 from typing import TYPE_CHECKING
-from functools import wraps
 
-import attr
 import click
 from click import ClickException
 from click.exceptions import UsageError
 
 from ..log import configure_logging
 from ...exceptions import BentoMLException
+from ..configuration import DEBUG_ENV_VAR
+from ..configuration import QUIET_ENV_VAR
 from ..configuration import CONFIG_ENV_VAR
-from ..configuration import get_debug_mode
-from ..configuration import get_quiet_mode
 from ..configuration import set_debug_mode
 from ..configuration import set_quiet_mode
 from ..configuration import load_global_config
@@ -26,7 +25,6 @@ from ..utils.analytics import track
 from ..utils.analytics import CliEvent
 from ..utils.analytics import cli_events_map
 from ..utils.analytics import BENTOML_DO_NOT_TRACK
-from ..utils.analytics.usage_stats import do_not_track
 
 if TYPE_CHECKING:
 
@@ -45,16 +43,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@attr.define
-class CurrentEnvironment:
-    debug: bool = attr.field(factory=get_debug_mode)
-    quiet: bool = attr.field(factory=get_quiet_mode)
-    track: bool = attr.field(factory=do_not_track)
-
-
-pass_current_environment = click.make_pass_decorator(CurrentEnvironment, ensure=True)
-
-
 class BentoMLCommandGroup(click.Group):
     """
     Click command class customized for BentoML CLI, allow specifying a default command for each group defined.
@@ -64,8 +52,8 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_common_params(
-        func: t.Callable[P, t.Any],
-    ) -> WrappedCLI[click.Context, bool, bool, str | None]:
+        func: t.Callable[P, t.Any] | ClickFunctionWrapper[t.Any],
+    ) -> WrappedCLI[bool, bool, str | None]:
         # update NUMBER_OF_COMMON_PARAMS when adding option.
 
         @click.option(
@@ -73,6 +61,7 @@ class BentoMLCommandGroup(click.Group):
             "--quiet",
             is_flag=True,
             default=False,
+            envvar=QUIET_ENV_VAR,
             help="Suppress all warnings and info logs",
         )
         @click.option(
@@ -80,6 +69,7 @@ class BentoMLCommandGroup(click.Group):
             "--debug",
             is_flag=True,
             default=False,
+            envvar=DEBUG_ENV_VAR,
             help="Generate debug information",
         )
         @click.option(
@@ -95,17 +85,14 @@ class BentoMLCommandGroup(click.Group):
             envvar=CONFIG_ENV_VAR,
             help="BentoML configuration YAML file to apply",
         )
-        @wraps(func)
-        @click.pass_context
+        @functools.wraps(func)
         def wrapper(
-            ctx: click.Context,
             quiet: bool,
             verbose: bool,
-            config: t.Optional[str],
+            config: str | None,
             *args: P.args,
             **kwargs: P.kwargs,
         ) -> t.Any:
-            ctx.obj = CurrentEnvironment()
 
             if config:
                 load_global_config(config)
@@ -126,13 +113,12 @@ class BentoMLCommandGroup(click.Group):
     @staticmethod
     def bentoml_track_usage(
         cmd_group: click.Group,
-        func: WrappedCLI[click.Context, bool, bool, str | None]
-        | ClickFunctionWrapper[t.Any],
+        func: WrappedCLI[bool, bool, str | None] | ClickFunctionWrapper[t.Any],
         **kwargs: t.Any,
     ) -> WrappedCLI[t.Any]:
         command_name = kwargs.get("name", func.__name__)
 
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(do_not_track: bool, *args: P.args, **kwargs: P.kwargs) -> t.Any:
             if do_not_track:
                 os.environ[BENTOML_DO_NOT_TRACK] = str(True)
@@ -173,28 +159,18 @@ class BentoMLCommandGroup(click.Group):
     @staticmethod
     def raise_click_exception(
         cmd_group: click.Group,
-        func: WrappedCLI[t.Any],
+        func: WrappedCLI[t.Any] | ClickFunctionWrapper[t.Any],
         **kwargs: t.Any,
     ) -> ClickFunctionWrapper[t.Any]:
         command_name = kwargs.get("name", func.__name__)
 
-        @wraps(func)
-        @pass_current_environment
-        def wrapper(
-            environment: CurrentEnvironment, *args: P.args, **kwargs: P.kwargs
-        ) -> t.Any:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
             try:
                 return func(*args, **kwargs)
             except BentoMLException as err:
                 msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
                 raise ClickException(click.style(msg, fg="red")) from err
-            finally:
-                if get_debug_mode():
-                    set_debug_mode(environment.debug)
-                if get_quiet_mode():
-                    set_quiet_mode(environment.quiet)
-                if do_not_track():
-                    os.environ[BENTOML_DO_NOT_TRACK] = str(environment.track)
 
         return t.cast("ClickFunctionWrapper[t.Any]", wrapper)
 

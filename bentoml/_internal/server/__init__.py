@@ -104,6 +104,8 @@ def serve_development(
                 "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
                 "working_dir": working_dir,
                 "bentoml_home": bentoml_home,
+                "loglevel": logging.NOTSET,
+                "logoutput": "ext://sys.stdout",
             },
         ]
 
@@ -117,9 +119,8 @@ def serve_development(
 
     with track_serve(svc, production=False):
         arbiter.start(
-            cb=lambda _: logger.info(  # type: ignore
-                f'Starting development BentoServer from "{bento_identifier}" '
-                f"running on http://{host}:{port} (Press CTRL+C to quit)"
+            cb=lambda _: logger.info(  # type: ignore (ioloop callback)
+                f"Starting development BentoServer from '{bento_identifier}' running on http://{host}:{port} (Press CTRL+C to quit)"
             ),
         )
 
@@ -277,9 +278,8 @@ def serve_production(
     with track_serve(svc, production=True):
         try:
             arbiter.start(
-                cb=lambda _: logger.info(  # type: ignore
-                    f'Starting production BentoServer from "{bento_identifier}" '
-                    f"running on http://{host}:{port} (Press CTRL+C to quit)"
+                cb=lambda _: logger.info(  # type: ignore (ioloop callback)
+                    f"Starting production BentoServer from '{bento_identifier}' running on http://{host}:{port} (Press CTRL+C to quit)"
                 ),
             )
         finally:

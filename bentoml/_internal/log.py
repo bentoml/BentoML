@@ -88,7 +88,7 @@ def configure_logging():
         CLI_LOGGING_CONFIG["root"]["level"] = logging.DEBUG
     else:
         CLI_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.INFO
-        CLI_LOGGING_CONFIG["root"]["level"] = logging.WARNING
+        CLI_LOGGING_CONFIG["root"]["level"] = logging.INFO
 
     logging.config.dictConfig(CLI_LOGGING_CONFIG)
 
@@ -115,7 +115,7 @@ def configure_server_logging():
         SERVER_LOGGING_CONFIG["root"]["level"] = logging.DEBUG
     else:
         SERVER_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.INFO
-        SERVER_LOGGING_CONFIG["root"]["level"] = logging.WARNING
+        SERVER_LOGGING_CONFIG["root"]["level"] = logging.INFO
 
     logging.setLogRecordFactory(trace_record_factory)
     logging.config.dictConfig(SERVER_LOGGING_CONFIG)

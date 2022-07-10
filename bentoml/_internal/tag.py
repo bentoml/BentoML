@@ -131,8 +131,5 @@ class Tag:
         return fs.path.combine(self.name, "latest")
 
 
-# Remove after attrs support ForwardRef natively
-attr.resolve_types(Tag, globals(), locals())
-
 bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
 bentoml_cattr.register_unstructure_hook(Tag, str)

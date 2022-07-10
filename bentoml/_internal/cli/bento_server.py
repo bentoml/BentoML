@@ -5,6 +5,8 @@ import logging
 
 import click
 
+from bentoml.exceptions import BentoMLException
+
 from ..log import configure_server_logging
 from ..configuration.containers import BentoMLContainer
 
@@ -132,6 +134,11 @@ def add_serve_command(cli: click.Group) -> None:
             )
         else:
             from ..server import serve_development
+
+            if reload and sys.platform == "win32":
+                raise BentoMLException(
+                    "--reload is not supported on Windows due to circus limitation."
+                )
 
             serve_development(
                 bento,

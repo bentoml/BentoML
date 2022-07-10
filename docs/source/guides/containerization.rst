@@ -473,8 +473,8 @@ By default, a Bento sets:
 
 This aboved instructions ensure that whenever :code:`docker run` is invoked on the 🍱 container, :code:`bentoml` is called correctly. 
 
-In scenarios where one needs to setup different :code:`ENTRYPOINT`, make sure to use
-:code:`ENTRYPOINT` instruction under the :code:`SETUP_BENTO_ENTRYPOINT` block as follow:
+In scenarios where one needs to setup a custom :code:`ENTRYPOINT`, make sure to use
+the :code:`ENTRYPOINT` instruction under the :code:`SETUP_BENTO_ENTRYPOINT` block as follows:
 
 .. code-block:: jinja
 

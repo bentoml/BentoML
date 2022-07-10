@@ -122,7 +122,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     ):
         import numpy as np
 
-        if isinstance(dtype, str):
+        if not isinstance(dtype, np.dtype):
+            # Convert from primitive type or type string, e.g.:
+            # np.dtype(float)
+            # np.dtype("float64")
             dtype = np.dtype(dtype)
 
         self._dtype = dtype
@@ -169,15 +172,16 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         obj: "ext.NpNDArray",
         exception_cls: t.Type[Exception] = BadInput,
     ) -> "ext.NpNDArray":
-        if self._dtype is not None and self._dtype != obj.dtype:
-            if self._enforce_dtype:
-                raise exception_cls(
-                    f"{self.__class__.__name__}: enforced dtype mismatch"
-                )
-            try:
-                obj = obj.astype(self._dtype)  # type: ignore
-            except ValueError as e:
-                logger.warning(f"{self.__class__.__name__}: {e}")
+        if self._enforce_dtype:
+            if self._dtype is not None and self._dtype != obj.dtype:
+                # ‘same_kind’ means only safe casts or casts within a kind, like float64
+                # to float32, are allowed.
+                if np.can_cast(obj.dtype, self._dtype, casting="same_kind"):
+                    obj = obj.astype(self._dtype, casting="same_kind")  # type: ignore
+                else:
+                    raise exception_cls(
+                        f"{self.__class__.__name__}: enforced dtype mismatch"
+                    )
 
         if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
             if self._enforce_shape:
@@ -185,9 +189,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     f"{self.__class__.__name__}: enforced shape mismatch"
                 )
             try:
+                # TODO: make allow_reshape an option to NumpyNdarray io descriptor class
                 obj = obj.reshape(self._shape)
             except ValueError as e:
                 logger.warning(f"{self.__class__.__name__}: {e}")
+
         return obj
 
     async def from_http_request(self, request: Request) -> "ext.NpNDArray":

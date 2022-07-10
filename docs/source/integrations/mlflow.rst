@@ -74,7 +74,8 @@ MLflow to BentoML workflow
 
 Import from model_uri
 ~~~~~~~~~~~~~~~~~~~~~
-    a. model_info = ...log_model(...), model_info.uri
+    a. model_info = ...log_model(...)
+        model_info.uri
 
     b. autolog:
         run_id = mlflow.last_active_run().info.run_id

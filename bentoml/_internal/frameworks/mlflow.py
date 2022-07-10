@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -90,7 +91,7 @@ def import_model(
     # ...
 ) -> bentoml.Model:
     """
-    Save a <FRAMEWORK> model instance to the BentoML model store.
+    import mlflow model from a URI to the BentoML model store.
 
     Args:
         name:
@@ -163,20 +164,22 @@ def import_model(
         context=context,
     ) as bento_model:
         from mlflow.models import Model as MLflowModel
+        from mlflow.pyfunc import FLAVOR_NAME as PYFUNC_FLAVOR_NAME
         from mlflow.models.model import MLMODEL_FILE_NAME
         from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 
         local_path = _download_artifact_from_uri(
-            artifact_uri=model_uri, output_path=bento_model.path_of(MLFLOW_MODEL_FOLDER)
+            artifact_uri=model_uri, output_path=bento_model.path
         )
+        mlflow_model_path = bento_model.path_of(MLFLOW_MODEL_FOLDER)
+        shutil.move(local_path, mlflow_model_path)
+        mlflow_model_file = os.path.join(mlflow_model_path, MLMODEL_FILE_NAME)
 
-        mlflow_model_file = os.path.join(local_path, MLMODEL_FILE_NAME)
         if not os.path.exists(mlflow_model_file):
             raise BentoMLException("artifact is not a mlflow model")
 
         model_meta = MLflowModel.load(mlflow_model_file)
-        conf = model_meta.flavors.get("pyfunc")
-        if conf is None:
+        if PYFUNC_FLAVOR_NAME not in model_meta.flavors:
             raise BentoMLException(
                 "Target MLFlow model does not support python_function flavor"
             )
@@ -188,18 +191,16 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    assert bento_model.info.signatures.keys() == ["predict"]
+    assert "predict" in bento_model.info.signatures.keys()
     predict_signature = bento_model.info.signatures["predict"]
 
     class MLflowPyfuncRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = "cpu"
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True  # type: ignore
 
         def __init__(self):
             super().__init__()
-            self.model = load_model(
-                bento_model,
-            )
+            self.model = load_model(bento_model)
 
         @bentoml.Runnable.method(
             batchable=predict_signature.batchable,
@@ -208,6 +209,11 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             output_spec=None,
         )
         def predict(self, input_data):
-            return self.mode.predict(input_data)
+            return self.model.predict(input_data)
 
     return MLflowPyfuncRunnable
+
+
+def get_mlflow_model(tag_like: str | Tag) -> mlflow.models.Model:
+    bento_model = get(tag_like)
+    return mlflow.models.Model.load(bento_model.path_of(MLFLOW_MODEL_FOLDER))

@@ -111,7 +111,7 @@ def serve_development(
         watchers,
         sockets=circus_sockets,
         plugins=plugins,
-        debug=True,
+        debug=True if sys.platform != "win32" else False,
     )
     ensure_prometheus_dir()
 

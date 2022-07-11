@@ -107,6 +107,8 @@ the signatures of the model are saved as :code:`__call__` by default.
 
     bentoml.transformers.save_model(name="unmasker", pipeline=unmasker)
 
+To load the model for testing and debugging, use :code:`bentoml.transformers.load_model` with the :code:`unmasker:latest` tag.
+
 Serving a Fined-tuned Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -302,11 +304,11 @@ configurations when saving the model to the model store .
         },
     )
 
-Serving on GPU
---------------
+.. Serving on GPU
+.. --------------
 
-BentoML Transformers framework will enable inference on GPU if the hardware is available.
+.. BentoML Transformers framework will enable inference on GPU if the hardware is available.
 
-.. seealso::
+.. .. seealso::
 
-   See :ref:`Serving with GPU <guides/gpu:Serving with GPU>` to learn more.
+..    See :ref:`Serving with GPU <guides/gpu:Serving with GPU>` to learn more.

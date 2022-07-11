@@ -153,7 +153,7 @@ Serving a Pretrained Model
     from transformers import pipeline
 
     class PretrainedModelRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ("cpu")
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):

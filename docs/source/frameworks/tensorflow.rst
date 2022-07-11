@@ -1,42 +1,40 @@
 ==========
-Tensorflow
+TensorFlow
 ==========
 
-Before everything
------------------
+TensorFlow is an open source machine learning library focusing on training on inference of deep neural networks. BentoML provides native support for 
+serving and deploying models trained from TensorFlow.
 
-- Are you trying to save a keras model?
-  You may wanna use :ref:`frameworks/keras:Keras` instead, or make sure the keras model is well signated with `tf.function` `see the difference`_
-- Are you using tensorflow v1?
-  use `bentoml.tensorflow_v1`_ instead
-- Want more better performance?
-  - do some **Model Distilling** or **Model Quantilization**
-  - convert to ONNX models, save them with `bentoml.onnx`_, use proper backend (for eg: TensorRT)
+Preface
+-------
 
+Consider using BentoML :ref:`frameworks/keras:Keras` framework if working with a Keras model. If continuing with TensorFlow, make sure the keras model is well signated with `tf.function` `see the difference`_
 
-.. seealso::
-    Difference between using bentoml.keras and bentoml.tensorflow
-  * keras is not optimized for inference in production. There’re some reports about memory leaking during serving. bentoml.keras should have same concerns since it rely on the the keras API + Tensorflow backend.
-  * inference with bentoml.tensorflow is about 2x faster than bentoml.keras while being correctly decorated with tf.function
-  * bentoml.keras would do input casting just like the original keras model object. Which means using it is more convinient in debuging. No need to `
+.. note::
 
+    - Keras is not optimized for inference in production. There are reports about memory leaks during serving. :code:`bentoml.keras` has same concerns since it rely on the the Keras APIs.
+    - Inference with :code:`bentoml.tensorflow` is about twice faster than :code:`bentoml.keras`.
+    - :code:`bentoml.keras` performs input casting similar to the original Keras model for better debugging experiences.
+
+To improve the performance of Keras models, consider applying techniques like **model distillation** or **model quantization**. Alternatively, the Keras model can be converted to a ONNX model and saved with :code:`bentoml.onnx` to leverage better performance runtimes (for eg: TensorRT).
 
 Compatibility
 -------------
 
-bentoml.tensorflow requires Tensorflow v2.0 or higher.
+BentoML requires TensorFlow version 2.0 or higher. For TensorFlow version 1.0, consider using a :ref:`concepts/runner:Custom Runner`.
 
 
-Step 1: Saving a trained model
-------------------------------
+Saving a trained model
+----------------------
 
-`bentoml.tensorflow` supports saving a model in the following format:
+`bentoml.tensorflow` supports saving a model in the formats of :code:`tf.Module`, :code:`keras.models.Sequential`, or :code:`keras.Model`.
 
 .. tab-set::
 
    .. tab-item:: tf.Module
 
       .. code-block:: python
+        :caption: `train.py`
 
         # models created from the tf native API
 
@@ -62,9 +60,10 @@ Step 1: Saving a trained model
 
         bentoml.tensorflow.save(model, "my_tf_model")
 
-   .. tab-item:: keras Sequential
+   .. tab-item:: keras.model.Sequential
 
       .. code-block:: python
+        :caption: `train.py`
 
         model = keras.models.Sequential(
             (
@@ -82,9 +81,10 @@ Step 1: Saving a trained model
 
         bentoml.tensorflow.save(model, "my_keras_model")
 
-   .. tab-item:: keras Functional
+   .. tab-item:: keras.Model (Functional?)
 
       .. code-block:: python
+        :caption: `train.py`
     
         x = keras.layers.Input((5,), dtype=tf.float64, name="x")
         y = keras.layers.Dense(

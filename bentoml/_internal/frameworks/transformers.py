@@ -137,7 +137,7 @@ def load_model(
     Example:
 
     .. code-block:: python
-    
+
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """  # noqa
@@ -226,12 +226,12 @@ def save_model(
             Example:
 
             .. code-block:: json
-            
-                { 
-                    "impl": Text2TextGenerationPipeline, 
-                    "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (), 
-                    "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (), 
-                    "default": {"model": {"pt": "t5-base", 
+
+                {
+                    "impl": Text2TextGenerationPipeline,
+                    "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
+                    "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
+                    "default": {"model": {"pt": "t5-base",
                     "tf": "t5-base"}}, "type": "text",
                 }
 

@@ -227,13 +227,14 @@ def _load_bento(bento: Bento, change_global_cwd: bool) -> "Service":
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
     # Use Bento's local "{base_dir}/models/" directory as its model store
-    model_store = ModelStore(bento._fs.getsyspath("models"))
-
+    # Set the model_store to the Bento's model store
+    # XXX: This is a workaround on the fact that model_store when running
+    # from bento is not set globally.
+    BentoMLContainer.model_store.set(bento._model_store)
     svc = import_service(
         bento.info.service,
         working_dir=working_dir,
         change_global_cwd=change_global_cwd,
-        model_store=model_store,
     )
     on_load_bento(svc, bento)
     return svc

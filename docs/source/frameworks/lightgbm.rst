@@ -46,9 +46,9 @@ Users can now use LightGBM with BentoML with the following API: :code:`load`, :c
    # `load` the model back in memory:
    model = bentoml.lightgbm.load("my_lightgbm_model")
 
-   # Run a given model under `Runner` abstraction with `load_runner`
+   # Run a given model under `Runner` abstraction with `to_runner`
    input_data = pd.from_csv("/path/to/csv")
-   runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
+   runner = bentoml.lightgbm.get("my_lightgbm_model:latest").to_runner()
    runner.run(input_data)
 
 .. note::

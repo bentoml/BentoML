@@ -32,7 +32,7 @@ Here's an example of serving Tensorflow models with BentoML:
     # `load` the model back in memory:
     model = bentoml.tensorflow.load_model("cancer_clf:latest")
 
-    # Run a given model under `Runner` abstraction with `load_runner`
+    # Run a given model under `Runner` abstraction with `to_runner`
     _data = [[1.1, 2.2]]
     _tensor = tf.constant(_data)
     runner = bentoml.tensorflow.get("native_tf_module:latest").to_runner()

@@ -58,7 +58,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from bentoml.io import NumpyNdarray
         import bentoml.sklearn
 
-        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
+        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
         svc = bentoml.Service("iris-classifier", runners=[runner])
 

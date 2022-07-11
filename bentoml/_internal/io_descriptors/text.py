@@ -33,14 +33,14 @@ class Text(IODescriptor[str]):
 
         # If you don't have a gpt2 model previously saved under BentoML modelstore
         # tag = bentoml.transformers.import_from_huggingface_hub('gpt2')
-        runner = bentoml.transformers.load_runner('gpt2',tasks='text-generation')
+        runner = bentoml.tensorflow.get('gpt2').to_runner()
 
         svc = bentoml.Service("gpt2-generation", runners=[runner])
 
         @svc.api(input=Text(), output=Text())
         def predict(input_arr):
-            res = runner.run_batch(input_arr)
-            return res[0]['generated_text']
+            res = runner.run(input_arr)
+            return res['generated_text']
 
     Users then can then serve this service with :code:`bentoml serve`:
 

@@ -11,7 +11,6 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
-DEFAULT_RELOAD_DELAY = 0.25
 
 
 def add_serve_command(cli: click.Group) -> None:
@@ -63,13 +62,6 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
-        "--reload-delay",
-        type=click.FLOAT,
-        help="Delay in seconds between each check if the Service needs to be reloaded",
-        show_default=True,
-        default=DEFAULT_RELOAD_DELAY,
-    )
-    @click.option(
         "--working-dir",
         type=click.Path(),
         help="When loading from source code, specify the directory to find the Service instance",
@@ -84,27 +76,38 @@ def add_serve_command(cli: click.Group) -> None:
         api_workers: t.Optional[int],
         backlog: int,
         reload: bool,
-        reload_delay: float,
         working_dir: str,
     ) -> None:
-        """Start BentoServer from BENTO
+        """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
-        BENTO is the serving target: it can be the import path of a bentoml.Service
-        instance; a tag to a Bento in local Bento store; or a file path to a Bento
-        directory, e.g.:
+        ``BENTO`` is the serving target, it can be the import as:
+            - the import path of a :code:`bentoml.Service` instance
+            - a tag to a Bento in local Bento store
+            - a folder containing a valid `bentofile.yaml` build file with a `service` field, which provides the import path of a :code:`bentoml.Service` instance
+            - a path to a built Bento (for internal & debug use only)
+
+        e.g.:
 
         \b
-        Serve from a bentoml.Service instance source code(for development use only):
-            bentoml serve fraud_detector.py:svc
+        Serve from a bentoml.Service instance source code (for development use only):
+            :code:`bentoml serve fraud_detector.py:svc`
 
         \b
         Serve from a Bento built in local store:
-            bentoml serve fraud_detector:4tht2icroji6zput3suqi5nl2
-            bentoml serve fraud_detector:latest
+            :code:`bentoml serve fraud_detector:4tht2icroji6zput3suqi5nl2`
+            :code:`bentoml serve fraud_detector:latest`
 
         \b
         Serve from a Bento directory:
-            bentoml serve ./fraud_detector_bento
+            :code:`bentoml serve ./fraud_detector_bento`
+
+        \b
+        If :code:`--reload` is provided, BentoML will detect code and model store changes during development, and restarts the service automatically.
+
+            The `--reload` flag will:
+            - be default, all file changes under `--working-dir` (default to current directory) will trigger a restart
+            - when specified, respect :obj:`include` and :obj:`exclude` under :obj:`bentofile.yaml` as well as the :obj:`.bentoignore` file in `--working-dir`, for code and file changes
+            - all model store changes will also trigger a restart (new model saved or existing model removed)
         """
         configure_server_logging()
 
@@ -136,5 +139,4 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,
-                reload_delay=reload_delay,
             )

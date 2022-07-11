@@ -75,13 +75,13 @@ class JSON(IODescriptor[JSONType]):
 
         input_spec = PandasDataFrame.from_sample(pd.DataFrame(np.array([[5,4,3,2]])))
 
-        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
+        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
         svc = bentoml.Service("iris-classifier", runners=[runner])
 
         @svc.api(input=input_spec, output=JSON())
         def predict(input_arr: pd.DataFrame):
-            res = runner.run_batch(input_arr)  # type: np.ndarray
+            res = runner.run(input_arr)  # type: np.ndarray
             return {"res":pd.DataFrame(res).to_json(orient='record')}
 
     Users then can then serve this service with :code:`bentoml serve`:

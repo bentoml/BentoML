@@ -89,7 +89,6 @@ class RunnerAppFactory(BaseAppFactory):
         /metrics        Prometheus metrics endpoint
 
         /run
-        /run_batch
         """
         from starlette.routing import Route
 

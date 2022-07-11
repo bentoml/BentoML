@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 import sys
@@ -13,6 +15,7 @@ import attr
 import yaml
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
+from pathspec import PathSpec
 
 from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
@@ -43,7 +46,7 @@ DEFAULT_DOCKER_DISTRO = "debian"
 CONDA_ENV_YAML_FILE_NAME = "environment.yml"
 
 
-def _convert_python_version(py_version: t.Optional[str]) -> t.Optional[str]:
+def _convert_python_version(py_version: str | None) -> str | None:
     if py_version is None:
         return None
 
@@ -90,8 +93,8 @@ def _convert_cuda_version(
 
 
 def _convert_env(
-    env: t.Optional[t.Union[str, t.List[str], t.Dict[str, str]]]
-) -> t.Optional[t.Dict[str, str]]:
+    env: str | list[str] | dict[str, str] | None
+) -> dict[str, str] | dict[str, str | None] | None:
     if env is None:
         return None
 
@@ -100,7 +103,7 @@ def _convert_env(
         return dict(dotenv_values(env))
 
     if isinstance(env, list):
-        env_dict = {}
+        env_dict: dict[str, str | None] = {}
         for envvar in env:
             match = re.match(r"^(\w+)=(\w+)$", envvar)
             if not match:
@@ -122,6 +125,12 @@ def _convert_env(
 
 @attr.frozen
 class DockerOptions:
+
+    # For validating user defined bentofile.yaml.
+    __forbid_extra_keys__ = True
+    # always omit config values in case of default values got changed in future BentoML releases
+    __omit_if_default__ = False
+
     distro: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(
@@ -178,7 +187,7 @@ class DockerOptions:
                     f'Distro "{self.distro}" does not support CUDA. Distros that support CUDA are: {supports_cuda}.'
                 )
 
-    def with_defaults(self) -> "DockerOptions":
+    def with_defaults(self) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -192,7 +201,7 @@ class DockerOptions:
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self, bento_fs: "FS", build_ctx: str, conda_options: "CondaOptions"
+        self, bento_fs: FS, build_ctx: str, conda_options: CondaOptions
     ) -> None:
         use_conda = not conda_options.is_empty()
 
@@ -229,20 +238,20 @@ else:
 
 
 def conda_dependencies_validator(
-    _: t.Any, __: "Attribute[DependencyType]", value: DependencyType
+    _: t.Any, __: Attribute[DependencyType], value: DependencyType
 ) -> None:
     if not isinstance(value, list):
         raise InvalidArgument(
             f"Expected 'conda.dependencies' to be a list of dependencies, got a '{type(value)}' instead."
         )
     else:
-        conda_pip: "t.List[CondaPipType]" = [x for x in value if isinstance(x, dict)]
+        conda_pip: list[CondaPipType] = [x for x in value if isinstance(x, dict)]
         if len(conda_pip) > 0:
             if len(conda_pip) > 1 or "pip" not in conda_pip[0]:
                 raise InvalidArgument(
                     "Expected dictionary under `conda.dependencies` to ONLY have key `pip`"
                 )
-            pip_list: t.List[str] = conda_pip[0]["pip"]
+            pip_list: list[str] = conda_pip[0]["pip"]
             if not all(isinstance(x, str) for x in pip_list):
                 not_type_string = list(
                     map(
@@ -257,6 +266,11 @@ def conda_dependencies_validator(
 
 @attr.frozen
 class CondaOptions:
+
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
 
     environment_yml: t.Optional[str] = None
     channels: t.Optional[t.List[str]] = attr.field(
@@ -292,7 +306,7 @@ class CondaOptions:
                     self.pip,
                 )
 
-    def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
+    def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
         if self.is_empty():
             return
 
@@ -321,16 +335,18 @@ class CondaOptions:
             if not deps_list:
                 return
 
-            yaml_content = dict(dependencies=deps_list)
+            yaml_content: dict[str, DependencyType | list[str] | None] = dict(
+                dependencies=deps_list
+            )
             yaml_content["channels"] = self.channels
             with bento_fs.open(
                 fs.path.combine(conda_folder, CONDA_ENV_YAML_FILE_NAME), "w"
             ) as f:
                 yaml.dump(yaml_content, f)
 
-    def with_defaults(self) -> "CondaOptions":
+    def with_defaults(self) -> CondaOptions:
         # Convert from user provided options to actual build options with default values
-        defaults: t.Dict[str, t.Any] = {}
+        defaults: dict[str, t.Any] = {}
 
         # When `channels` field was left empty, apply the community maintained
         # channel `conda-forge` as default
@@ -354,6 +370,12 @@ class CondaOptions:
 
 @attr.frozen
 class PythonOptions:
+
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
+
     requirements_txt: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
@@ -408,7 +430,7 @@ class PythonOptions:
     def is_empty(self) -> bool:
         return not self.requirements_txt and not self.packages
 
-    def write_to_bento(self, bento_fs: "FS", build_ctx: str) -> None:
+    def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
@@ -554,7 +576,7 @@ fi
                     "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
                 )
 
-    def with_defaults(self) -> "PythonOptions":
+    def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -579,8 +601,6 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 
 if TYPE_CHECKING:
     OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions]
-else:
-    OptionsCls = type
 
 
 def dict_options_converter(
@@ -594,7 +614,7 @@ def dict_options_converter(
     return _converter
 
 
-@attr.define(frozen=True, on_setattr=None)
+@attr.frozen
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
     provide all the options for building a Bento. All optional build options should be
@@ -603,6 +623,11 @@ class BentoBuildConfig:
     a yaml file for future use. This also applies to nested options such as the
     DockerOptions class and the PythonOptions class.
     """
+
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
 
     service: str
     description: t.Optional[str] = None
@@ -659,7 +684,7 @@ class BentoBuildConfig:
                             f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
                         )
 
-    def with_defaults(self) -> "FilledBentoBuildConfig":
+    def with_defaults(self) -> FilledBentoBuildConfig:
         """
         Convert from user provided options to actual build options with defaults
         values filled in.
@@ -679,7 +704,7 @@ class BentoBuildConfig:
         )
 
     @classmethod
-    def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
+    def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -700,6 +725,50 @@ class BentoBuildConfig:
         # TODO: Save BentoBuildOptions to a yaml file
         # This is reserved for building interactive build file creation CLI
         raise NotImplementedError
+
+
+@attr.define(frozen=True)
+class BentoPathSpec:
+    _include: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    _exclude: PathSpec = attr.field(
+        converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
+    )
+    # we want to ignore .git folder in cases the .git folder is very large.
+    git: PathSpec = attr.field(
+        default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
+    )
+
+    def includes(
+        self,
+        path: str,
+        *,
+        recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
+    ) -> bool:
+        # Determine whether a path is included or not.
+        # recurse_exclude_spec is a list of (path, spec) pairs.
+        to_include = (
+            self._include.match_file(path)
+            and not self._exclude.match_file(path)
+            and not self.git.match_file(path)
+        )
+        if to_include:
+            if recurse_exclude_spec is not None:
+                return not any(
+                    ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                    for ignore_parent, ignore_spec in recurse_exclude_spec
+                )
+        return False
+
+    def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
+        """
+        yield (parent, exclude_spec) from .bentoignore file of a given path
+        """
+        fs_ = fs.open_fs(path)
+        for file in fs_.walk.files(filter=[".bentoignore"]):
+            dir_path = "".join(fs.path.parts(file)[:-1])
+            yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 
 class FilledBentoBuildConfig(BentoBuildConfig):

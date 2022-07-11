@@ -20,7 +20,7 @@ framework of the model, e.g. `pytorch`, `tensorflow`, or `jax`.
    .. tab-item:: PyTorch
 
       .. code-block:: yaml
-         :caption: bentofile.yaml  
+         :caption: `bentofile.yaml`
 
          service: "service.py:svc"
          labels:
@@ -36,7 +36,7 @@ framework of the model, e.g. `pytorch`, `tensorflow`, or `jax`.
    .. tab-item:: TensorFlow
 
       .. code-block:: yaml
-          :caption: bentofile.yaml
+          :caption: `bentofile.yaml`
 
           service: "service.py:svc"
           labels:
@@ -59,7 +59,7 @@ model with Yelp review dataset. To learn more, refer to the Transformers guide o
 `fine-tuning pretrained models <https://huggingface.co/docs/transformers/main/en/training>`_.
 
 .. code-block:: python
-    :caption: train.py
+    :caption: `train.py`
 
     from datasets import load_dataset
     from transformers import AutoModelForMaskedLM, AutoTokenizer, Trainer, TrainingArguments
@@ -98,7 +98,7 @@ and processors, need to be a part of the pipeline first before they can be saved
 the signatures of the model are saved as :code:`__call__` by default.
 
 .. code-block:: python
-    :caption: train.py
+    :caption: `train.py`
 
     import bentoml
     from transformers import pipeline
@@ -119,7 +119,7 @@ Create a BentoML service with the previously saved `unmasker` pipeline using the
    See :ref:`Building a Service <concepts/service:Service and APIs>` to learn more on creating a prediction service with BentoML.
 
 .. code-block:: python
-    :caption: service.py
+    :caption: `service.py`
 
     import bentoml
 
@@ -147,7 +147,7 @@ Serving a Pretrained Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
-    :caption: service.py
+    :caption: `service.py`
 
     import bentoml
 
@@ -184,7 +184,7 @@ the model for inference.
     `How to add a pipeline <https://huggingface.co/docs/transformers/main/en/add_new_pipeline>`_ from Hugging Face to learn more.
 
 .. code-block:: python
-    :caption: train.py
+    :caption: `train.py`
     
     from transformers import Pipeline
 
@@ -213,7 +213,7 @@ A custom pipeline first needs to be added to the Transformers supported tasks, :
 the Transformers :code:`pipeline` API.
 
 .. code-block:: python
-    :caption: train.py
+    :caption: `train.py`
     
     from transformers import pipeline
     from transformers import AutoTokenizer
@@ -245,7 +245,7 @@ arguments of :code:`task_name` and :code:`task_definition`, the same arguments t
 when creating the pipeline. :code:`task_name` and :code:`task_definition` will be saved as model options alongside the model.
 
 .. code-block:: python
-   :caption: train.py
+   :caption: `train.py`
     
     import bentoml
 
@@ -263,7 +263,7 @@ To serve a custom pipeline, simply create a runner and service with the previous
 :code:`task_definition` will be automatically applied when initializing the runner.
 
 .. code-block:: python
-    :caption: service.py
+    :caption: `service.py`
     
     import bentoml
 
@@ -289,7 +289,7 @@ configurations when saving the model to the model store .
    See :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` to learn more.
 
 .. code-block:: python
-    :caption: train.py
+    :caption: `train.py`
 
     import bentoml
 

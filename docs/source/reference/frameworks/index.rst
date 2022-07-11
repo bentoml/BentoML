@@ -11,3 +11,4 @@ Framework APIs
   :maxdepth: 1
 
   fastai
+  transformers

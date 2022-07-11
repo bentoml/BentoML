@@ -418,7 +418,7 @@ We recommend that users should use the following Dockerfile instructions in
 their custom Dockerfile templates: :code:`ENV`, :code:`RUN`, :code:`ARG`. These
 instructions are mostly used and often times will get the jobs done.
 
-There are a few instructions that you **shouldn't use** unless *you know what you are doing*:
+The use of the following instructions can be **potentially harmful**. They should be reserved for specialized advanced use cases.
 
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Instruction    | Reasons not to use                                                                                                                                                                                                                                        |

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import stat
 import typing as t
 import logging
 import functools
@@ -27,17 +26,6 @@ UNAME_M_TO_PLATFORM_MAPPING = {
     "riscv64": "linux/riscv64",
     "mips64": "linux/mips64le",
 }
-
-
-def in_docker() -> bool:
-    try:
-        # we are running from a docker container
-        # This dockerenv is set by docker and is a trivial way
-        # to detect whether we are in a containerized environment.
-        return stat.S_ISREG(os.stat("/.dockerenv").st_mode)
-    except FileNotFoundError:
-        # we are not running from a docker container
-        return False
 
 
 @functools.lru_cache(maxsize=1)

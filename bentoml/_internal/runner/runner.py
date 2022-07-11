@@ -108,8 +108,13 @@ class Runner:
             config = runners_config[name]
         else:
             config = runners_config
-
-        models = [] if models is None else models
+        if models is None:
+            models = []
+        else:
+            if not all(isinstance(model, Model) for model in models):
+                raise ValueError(
+                    f"models must be a list of 'bentoml.Model' instances. Got {[type(model) for model in models]} instead."
+                )
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runnable_init_params = (
             {} if runnable_init_params is None else runnable_init_params

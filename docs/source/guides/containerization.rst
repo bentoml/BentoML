@@ -79,9 +79,9 @@ First, create a :code:`Dockerfile.template` file next to your :code:`bentofile.y
 build file. This file should follow the
 `Jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_ template language, and extend
 BentoML's base template and blocks. The template should render a valid
-`Dockerfile https://docs.docker.com/engine/reference/builder/`_. For example:
+`Dockerfile <https://docs.docker.com/engine/reference/builder/>`_. For example:
 
-.. code-block:: dockerfile
+.. code-block:: jinja
 
    {% extends bento_base_template %}
    {% block SETUP_BENTO_COMPONENTS %}
@@ -109,7 +109,7 @@ expected, run :code:`bentoml containerize <bento>` to build a docker image with 
 
     .. code-block:: bash
 
-        cat "$(bentoml get MY_BENTO_NAME:latest -o path)/env/docker/Dockerfile"
+        cat "$(bentoml get <bento>:<tag> -o path)/env/docker/Dockerfile"
 
 Examples
 --------
@@ -120,7 +120,7 @@ Examples
 Building Tensorflow custom op
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let's start with an example that builds a `custom Tensorflow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento. based on |zero_out|_:
+Let's start with an example that builds a `custom Tensorflow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento, which is based on |zero_out|_:
 
 .. _zero_out: https://www.tensorflow.org/guide/create_op#define_the_op_interface
 
@@ -129,7 +129,7 @@ Let's start with an example that builds a `custom Tensorflow op <https://www.ten
 
 Define the following :code:`Dockerfile.template`:
 
-.. code-block:: Dockerfile
+.. code-block:: jinja
 
    {% extends bento_base_template %}
    {% block SETUP_BENTO_BASE_IMAGE %}
@@ -221,7 +221,7 @@ Using environment variables
 
 Define the following :code:`Dockerfile.template`:
 
-.. code-block:: Dockerfile
+.. code-block:: jinja
 
    {% extends bento_base_template %}
    {% block SETUP_BENTO_BASE_IMAGE %}
@@ -253,7 +253,7 @@ Mount credentials from host
 
 Define the following :code:`Dockerfile.template`:
 
-.. code-block:: Dockerfile
+.. code-block:: jinja
 
    {% extends bento_base_template %}
    {% block SETUP_BENTO_COMPONENTS %}
@@ -300,7 +300,7 @@ templates environment to :code:`True`.
 An example of a Dockerfile template takes advantage of multi-stage build to
 isolate the installation of a local library :code:`mypackage`:
 
-.. code-block:: dockerfile
+.. code-block:: jinja
 
    {% extends bento_base_template %}
    {% block SETUP_BENTO_BASE_IMAGE %}
@@ -418,8 +418,7 @@ We recommend that users should use the following Dockerfile instructions in
 their custom Dockerfile templates: :code:`ENV`, :code:`RUN`, :code:`ARG`. These
 instructions are mostly used and often times will get the jobs done.
 
-There are a few instructions that you shouldn't use unless you know what you are
-doing:
+The use of the following instructions can be **potentially harmful**. They should be reserved for specialized advanced use cases.
 
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Instruction    | Reasons not to use                                                                                                                                                                                                                                        |
@@ -428,10 +427,10 @@ doing:
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | :code:`SHELL`  | BentoML uses `heredoc syntax <https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#user-content-here-documents>`_ and using :code:`bash` in our containerization process. Hence changing :code:`SHELL` will result in failure. |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| :code:`CMD`    | Changing :code:`CMD` will inherently modify the behaviour of the bento container where docker won't be able to run the bento inside the container. More below                                                                                             |
+| :code:`CMD`    | Changing :code:`CMD` will inherently modify the behaviour of the bento container where docker won't be able to run the bento inside the container. More :ref:`below <guides/containerization:\:code\:\`entrypoint\`>`                                     |
 +----------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-The following instructions should be used with caution:
+The following instructions should be **used with caution**:
 
 
 :code:`WORKDIR`
@@ -466,18 +465,16 @@ From `Dockerfile documentation <https://docs.docker.com/engine/reference/builder
 
 By default, a Bento sets:
 
-.. code-block:: dockerfile
+.. code-block:: jinja
 
     ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
     CMD ["bentoml", "serve", "{{ bento__path }}", "--production"]
 
-This means that if you have multiple :code:`ENTRYPOINT` instructions, you will have to
-make sure the last :code:`ENTRYPOINT` will run bentoml when using :code:`docker
-run` on the 🍱 container. 
+This aboved instructions ensure that whenever :code:`docker run` is invoked on the 🍱 container, :code:`bentoml` is called correctly. 
 
-In cases where one needs to setup different :code:`ENTRYPOINT`, you can use
-the :code:`ENTRYPOINT` instruction under the :code:`SETUP_BENTO_ENTRYPOINT` block as follow:
+In scenarios where one needs to setup a custom :code:`ENTRYPOINT`, make sure to use
+the :code:`ENTRYPOINT` instruction under the :code:`SETUP_BENTO_ENTRYPOINT` block as follows:
 
 .. code-block:: jinja
 
@@ -531,7 +528,7 @@ Adding :code:`conda` to CUDA-enabled Bento
 
    :bdg-warning:`Warning:` miniconda install scripts provided by ContinuumIO (the parent company of Anaconda) supports Python 3.7 to 3.9. Make sure that you are using the correct python version under :code:`docker.python_version`.
 
-If you need to use conda for CUDA images, use the following template ( *partially extracted from* `ContinuumIO/docker-images <https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile>`_ ):
+If you need to use conda for CUDA images, use the following template ( *partially extracted from* |conda_docker|_ ):
 
 .. dropdown:: Expands me
    :class-title: sd-text-primary
@@ -627,3 +624,7 @@ If you need to use conda for CUDA images, use the following template ( *partiall
       {{ super() }}
       {{ common.setup_conda(__python_version__, bento__path, conda_path=conda_path) }}
       {% endblock %}
+
+.. _conda_docker: https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile
+
+.. |conda_docker| replace:: :code:`ContinuumIO/docker-images`

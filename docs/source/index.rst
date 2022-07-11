@@ -2,7 +2,7 @@
 Unified Model Serving Framework
 ===============================
 
-|pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
+|github_stars| |pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
 
 ----
 
@@ -156,7 +156,7 @@ contributing to the project, helping other users and discuss all things MLOps.
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML
-.. |downloads| image:: https://pepy.tech/badge/bentoml
+.. |downloads| image:: https://pepy.tech/badge/bentoml?style=flat-square
    :target: https://pepy.tech/project/bentoml
 .. |actions_status| image:: https://github.com/bentoml/bentoml/workflows/CI/badge.svg
    :target: https://github.com/bentoml/bentoml/actions
@@ -164,3 +164,5 @@ contributing to the project, helping other users and discuss all things MLOps.
    :target: https://docs.bentoml.org/
 .. |join_slack| image:: https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square
    :target: https://l.linklyhq.com/l/ktOX
+.. |github_stars| image:: https://img.shields.io/github/stars/bentoml/BentoML?color=%23c9378a&label=github&logo=github&style=flat-square
+   :target: https://github.com/bentoml/bentoml

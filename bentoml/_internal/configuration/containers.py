@@ -21,7 +21,6 @@ from . import expand_env_var
 from ..utils import validate_or_create_dir
 from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
-from ..utils.buildx import in_docker
 
 if TYPE_CHECKING:
     from bentoml._internal.models import ModelStore
@@ -240,43 +239,28 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def bentoml_home() -> str:
-        if not in_docker():
-            home = expand_env_var(
-                str(
-                    os.environ.get(
-                        "BENTOML_HOME", os.path.join(os.path.expanduser("~"), "bentoml")
-                    )
+        home = expand_env_var(
+            str(
+                os.environ.get(
+                    "BENTOML_HOME", os.path.join(os.path.expanduser("~"), "bentoml")
                 )
             )
-            bentos = os.path.join(home, "bentos")
-            models = os.path.join(home, "models")
+        )
+        bentos = os.path.join(home, "bentos")
+        models = os.path.join(home, "models")
 
-            validate_or_create_dir(home, bentos, models)
-            return home
-        else:
-            from ..bento.gen import BENTO_HOME
-
-            return BENTO_HOME
+        validate_or_create_dir(home, bentos, models)
+        return home
 
     @providers.SingletonFactory
     @staticmethod
     def bento_store_dir(bentoml_home: str = Provide[bentoml_home]):
-        if in_docker():
-            from ..bento.gen import BENTO_PATH
-
-            return BENTO_PATH
-        else:
-            return os.path.join(bentoml_home, "bentos")
+        return os.path.join(bentoml_home, "bentos")
 
     @providers.SingletonFactory
     @staticmethod
     def model_store_dir(bentoml_home: str = Provide[bentoml_home]):
-        if in_docker():
-            from ..bento.gen import BENTO_PATH
-
-            return os.path.join(BENTO_PATH, "models")
-        else:
-            return os.path.join(bentoml_home, "models")
+        return os.path.join(bentoml_home, "models")
 
     @providers.SingletonFactory
     @staticmethod

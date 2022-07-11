@@ -8,7 +8,7 @@ USER root
 SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 
 # Install helpers
-RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum bash <<EOF
+RUN {{ common.mount_cache("/var/cache/yum", __hash_key__) }} bash <<EOF
 set -euxo pipefail
 
 yum upgrade -y
@@ -30,7 +30,7 @@ RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 
 {% if __options__system_packages is not none %}
 # Install user-defined system package
-RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum \
+RUN {{ common.mount_cache("/var/cache/yum", __hash_key__) }} \ 
     yum install -y {{ __options__system_packages | join(' ') }} \
     && yum -y clean all
 {% endif -%}

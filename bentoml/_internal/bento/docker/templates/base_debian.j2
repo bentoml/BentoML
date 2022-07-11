@@ -1,12 +1,13 @@
 {% extends "base.j2" %}
 {% block SETUP_BENTO_BASE_IMAGE %}
+{% set __cache_apt__ = "/var/cache/apt" %}
 {{ super() }}
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
+RUN {{ common.mount_cache("/var/lib/apt", __hash_key__) }} \ 
+    {{ common.mount_cache("/var/cache/apt", __hash_key__) }} \
 	apt-get update -y \
     && apt-get install -q -y --no-install-recommends --allow-remove-essential \
 		ca-certificates gnupg2 bash build-essential \
@@ -14,8 +15,8 @@ RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
 
 {% if __options__system_packages is not none %}
 # Install user-defined system package
-RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
+RUN {{ common.mount_cache("/var/lib/apt", __hash_key__) }} \ 
+    {{ common.mount_cache("/var/cache/apt", __hash_key__) }} \
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
     {{ __options__system_packages | join(' ') }} \
     && apt-get clean

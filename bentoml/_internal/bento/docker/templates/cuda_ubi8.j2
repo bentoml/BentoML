@@ -15,7 +15,7 @@ ENV \
   APP_ROOT={{ app_root }} \
   PATH={{ path_root }}
 
-RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/yum bash <<EOF
+RUN {{ common.mount_cache("/var/cache/yum", __hash_key__) }} bash <<EOF
 set -euxo pipefail
 
 dnf install -y --setopt=tsflags=nodocs python{{ short_pyver }}

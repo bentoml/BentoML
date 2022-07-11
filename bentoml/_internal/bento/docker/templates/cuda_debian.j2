@@ -2,8 +2,8 @@
 {% block SETUP_BENTO_BASE_IMAGE %}
 {{ super() }}
 
-RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
-    --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt bash <<EOF
+RUN {{ common.mount_cache("/var/lib/apt", __hash_key__) }} \ 
+    {{ common.mount_cache("/var/cache/apt", __hash_key__) }} bash <<EOF
 set -euxo pipefail
 
 apt-get update -y

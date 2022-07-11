@@ -53,6 +53,7 @@ J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
 @attr.frozen(on_setattr=None, eq=False, repr=False)
 class ReservedEnv:
     base_image: str
+    hash_key: str
     supported_architectures: list[str]
     bentoml_version: str = attr.field(default=CLEAN_BENTOML_VERSION)
     python_version: str = attr.field(
@@ -75,7 +76,9 @@ class CustomizableEnv:
 
 
 def get_templates_variables(
-    options: DockerOptions, use_conda: bool
+    options: DockerOptions,
+    use_conda: bool,
+    hash_key: str,
 ) -> dict[str, t.Any]:
     """
     Returns a dictionary of variables to be used in BentoML base templates.
@@ -113,12 +116,16 @@ def get_templates_variables(
     return {
         **{f"__options__{k}": v for k, v in attr.asdict(options).items()},
         **CustomizableEnv().todict(),
-        **ReservedEnv(base_image, supported_architecture).todict(),
+        **ReservedEnv(
+            base_image=base_image,
+            hash_key=hash_key,
+            supported_architectures=supported_architecture,
+        ).todict(),
     }
 
 
 def generate_dockerfile(
-    options: DockerOptions, build_ctx: str, *, use_conda: bool
+    options: DockerOptions, build_ctx: str, *, use_conda: bool, hash_key: str
 ) -> str:
     """
     Generate a Dockerfile that containerize a Bento.
@@ -199,4 +206,10 @@ def generate_dockerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
-    return template.render(**get_templates_variables(options, use_conda=use_conda))
+    return template.render(
+        **get_templates_variables(
+            options,
+            use_conda=use_conda,
+            hash_key=hash_key,
+        )
+    )

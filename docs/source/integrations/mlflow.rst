@@ -318,9 +318,13 @@ MLflow model folder and expose it to ``bentoml build`` via the env var.
 Attach model params, metrics, and tags
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MLflow model usually carries lots of helpful information regarding the training metrics
-and parameters. Use the following code snippet if you want to carry over the metadata
+MLflow model format encapsulates lots of context information regarding the training metrics
+and parameters. The following code snippet shows how to carry over the metadata
 logged with an MLflow model to the BentoML model store.
+
+MLflow model encapsulates a lot of helpful information with regarding to training metrics
+and parameters. Feel free to use the following code snippet if you want to carry over the metadata
+logged with MLflow model to BentoML.
 
 .. code-block:: python
 

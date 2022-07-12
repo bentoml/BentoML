@@ -162,6 +162,10 @@ access:
 Adaptive Batching
 ~~~~~~~~~~~~~~~~~
 
+.. seealso::
+
+   :ref:`guides/batching:Adaptive Batching`: a general introduction to adaptive batching in BentoML.
+
 XGBoost's ``booster.predict`` supports taking batch input for inference. This is disabled by
 default, but can be enabled using the appropriate signature when saving your booster.
 

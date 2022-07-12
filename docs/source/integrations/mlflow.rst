@@ -12,7 +12,6 @@ Compatibility
 
 BentoML supports MLflow 0.9 and above.
 
-
 Examples
 --------
 
@@ -20,8 +19,8 @@ Besides this documentation, also check out code samples demonstrating BentoML an
 integration at: `bentoml/gallery: MLflow Examples <https://github.com/bentoml/gallery/tree/main/mlflow>`_.
 
 
-Import MLflow model to BentoML
-------------------------------
+Import an MLflow model
+----------------------
 
 `MLflow Model <https://www.mlflow.org/docs/latest/models.html>`_ is a format for saving
 trained model artifacts in MLflow experiments and pipelines. BentoML supports importing
@@ -71,14 +70,14 @@ some example ``model_uri`` values commonly used in MLflow:
     models:/<model_name>/<stage>
 
 
-Load MLflow model saved with BentoML
-------------------------------------
+Running Imported Model
+----------------------
 
 MLflow models imported to BentoML can be loaded back for running inference in a various
 of ways.
 
-Load with original Model flavor
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Load original model flavor
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For evaluation and testing purpose, sometimes it's convenient to load the model in its
 native form
@@ -107,8 +106,8 @@ for best compatibility across all ML frameworks supported by MLflow.
     predictions = pyfunc_model.predict(test_input_arr)
 
 
-Using MLFlow Runner
-~~~~~~~~~~~~~~~~~~~
+Using Model Runner
+~~~~~~~~~~~~~~~~~~
 
 Imported MLflow models can be loaded as BentoML Runner for best performance in building
 prediction service with BentoML. To test out the runner API:
@@ -121,8 +120,8 @@ prediction service with BentoML. To test out the runner API:
 
 Learn more about BentoML Runner at :doc:`/concepts/runner`.
 
-MLflow model based runner supports the following input types. Note that for some ML
-frameworks, only a subset of this list is supported.
+Runner created from an MLflow model supports the following input types. Note that for
+some ML frameworks, only a subset of this list is supported.
 
 .. code-block:: python
 
@@ -131,7 +130,7 @@ frameworks, only a subset of this list is supported.
 
 .. note::
 
-    To enable adaptive batching in a MLflow Runner, make sure to set
+    To use adaptive batching with a MLflow Runner, make sure to set
     ``signatures={'predict': {'batchable': True}}`` when importing the model:
 
     .. code-block:: python
@@ -167,15 +166,15 @@ to support GPU inference and expose multiple inference signatures.
 .. code-block:: python
 
     loaded_model = mlflow.sklearn.load_model(model_uri)
-    bentoml.sklearn.save_model("iris_clf", loaded_model,)
+    bentoml.sklearn.save_model("iris_clf", loaded_model)
 
 This way, it goes back to a typically BentoML workflow, which allow users to use a
 Runner specifically built for the target ML framework, with GPU support and multiple
 signatures available.
 
 
-Building prediction service with MLflow model
----------------------------------------------
+Build Prediction Service
+------------------------
 
 Here's an example ``bentoml.Service`` built with a MLflow model:
 
@@ -204,8 +203,8 @@ To try out the full example, download source code from
 `bentoml/gallery: MLflow Pytorch Example <https://github.com/bentoml/gallery/tree/main/mlflow/pytorch>`_.
 
 
-MLflow to BentoML workflow
---------------------------
+End-to-end workflow
+-------------------
 
 Depending on how you set up MLflow, there are a number of ways you could integrate
 BentoML for model serving and deployment.
@@ -282,9 +281,11 @@ directly to BentoML for serving.
     bentoml.mlflow.import_model('my_mlflow_model', model_uri)
 
 
+Additional Tips
+---------------
 
-Using MLFlow model dependency in Bento
---------------------------------------
+Use MLFlow model dependency config
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Most MLFlow models carries the dependency information required for running this model.
 If you don't need additional dependencies in your Service definition code, it is
@@ -316,12 +317,12 @@ MLflow model and expose it to ``bentoml build`` via the env var
     bentoml build
 
 
-Import MLfLow model with run metrics and tags
----------------------------------------------
+Attach model params, metrics, and tags
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 MLflow model usually carries lots of helpful information regarding the training metrics
 and parameters. Use the following code snippet if you want to carry over the metadata
-logged with MLflow model to BentoML.
+logged with an MLflow model to the BentoML model store.
 
 .. code-block:: python
 

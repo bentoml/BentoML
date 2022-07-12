@@ -88,6 +88,9 @@ def create_bentoml_cli():
     )
     @click.pass_context
     def env(ctx: click.Context, output: t.Literal["md", "plain"]) -> None:  # type: ignore (unused warning)
+        if output not in ["md", "plain"]:
+            raise BentoMLException(f"Unknown output format: {output}")
+
         is_windows = sys.platform == "win32"
 
         info_dict: dict[str, str | list[str]] = {
@@ -123,9 +126,6 @@ def create_bentoml_cli():
             # process info from `pip freeze`
             pip_packages = run_cmd(["pip", "freeze"])
             info_dict["pip_packages"] = pip_packages
-
-        if output not in ["md", "plain"]:
-            raise BentoMLException(f"Unknown output format: {output}")
         click.echo(pretty_format(info_dict, output=output))
         ctx.exit(0)
 

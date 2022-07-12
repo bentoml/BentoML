@@ -441,8 +441,7 @@ Default Execution Providers Settings
 * When CUDA compatible GPU is not available, BentoML runner will use
   ``["CPUExecutionProvider"]`` as the default Execution Providers.
 
-If dependencies are installed, using other Execution Providers like
-``TensorrtExecutionProvider`` may increase the performance. You can
+If ``onnxruntime-gpu`` is installed, using ``TensorrtExecutionProvider`` may improve inference runtime. You can
 override the default setting using ``with_options`` when creating the
 runner:
 

@@ -5,7 +5,7 @@ MLflow
 .. admonition:: About this page
 
    This is an API reference for using MLflow in BentoML. Please refer to
-   :doc:`MLflow guide <integrations/mlflow>` for more information about how to use FastAI
+   :doc:`MLflow guide </integrations/mlflow>` for more information about how to use MLflow
    in BentoML.
 
 

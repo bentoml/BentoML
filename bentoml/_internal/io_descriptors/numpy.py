@@ -101,14 +101,17 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
                 from bentoml.io import NumpyNdarray
 
-                @svc.api(input=NumpyNdarray(shape=(3,1), enforce_shape=True), output=NumpyNdarray())
+                @svc.api(input=NumpyNdarray(shape=(2,2), enforce_shape=False), output=NumpyNdarray())
                 def predict(input_array: np.ndarray) -> np.ndarray:
-                    # input_array will have shape (3,1)
+                    # input_array will be reshaped to (2,2)
                     result = await runner.run(input_array)
+
+            When `enforce_shape=True` is provided, BentoML will raise an exception if
+            the input array received does not match the `shape` provided.
 
         enforce_shape (:code:`bool`, `optional`, default to :code:`False`):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
-            must be specified
+            must be specified.
 
     Returns:
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
@@ -191,14 +194,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     logger.warning(msg)
 
         if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
+            msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{obj.shape}" was received.'
+            if self._enforce_shape:
+                raise exception_cls(msg)
             try:
                 obj = obj.reshape(self._shape)
             except ValueError as e:
-                msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{obj.shape}" was received, failed to reshape: {e}.'
-                if self._enforce_shape:
-                    raise exception_cls(msg)
-                else:
-                    logger.warning(msg)
+                logger.warning(f"{msg} Failed to reshape: {e}.")
 
         return obj
 

@@ -26,7 +26,7 @@ async def test_numpy(host):
         "POST",
         f"http://{host}/predict_ndarray_enforce_shape",
         headers={"Content-Type": "application/json"},
-        data="[1,2,3,4,5]",  # This will fail to reshape to (2, 2)
+        data="[1,2,3,4]",
         assert_status=400,
     )
     await async_request(

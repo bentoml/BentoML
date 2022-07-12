@@ -8,19 +8,23 @@ ONNX is an open format built to represent machine learning models. ONNX provides
 
 Due to its high interoperability among frameworks, we recommend you to check out the framework integration with ONNX as it will contain specific recommendation and requirements for that given framework.
 
+.. tab-set::
 
-.. tab:: PyTorch
+   .. tab-item:: PyTorch
+      :sync: pytorch
 
-   - `Quick tutorial about exporting a model from PyTorch to ONNX <https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html>`_ from official PyTorch documentation.
-   - `torch.onnx <https://pytorch.org/docs/stable/onnx.html>`_ from official PyTorch documentation. Pay special attention to section **Avoiding Pitfalls**, **Limitations** and **Frequently Asked Questions**.
+      - `Quick tutorial about exporting a model from PyTorch to ONNX <https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html>`_ from official PyTorch documentation.
+      - `torch.onnx <https://pytorch.org/docs/stable/onnx.html>`_ from official PyTorch documentation. Pay special attention to section **Avoiding Pitfalls**, **Limitations** and **Frequently Asked Questions**.
 
-.. tab:: TensorFlow
+   .. tab-item:: TensorFlow
+      :sync: tensorflow
 
-   - `tensorflow-onnx (tf2onnx) <https://github.com/onnx/tensorflow-onnx>`_ documentation.
+      - `tensorflow-onnx (tf2onnx) <https://github.com/onnx/tensorflow-onnx>`_ documentation.
 
-.. tab:: Scikit Learn
+   .. tab-item:: Scikit Learn
+      :sync: sklearn
 
-   TODO
+      TODO
 
 Converting model frameworks to ONNX format
 -----------------------------------------------
@@ -31,133 +35,138 @@ Converting model frameworks to ONNX format
    <https://onnxruntime.ai>`_ as ONNX backend. BentoML requires either
    ``onnxruntime>=1.9`` or ``onnxruntime-gpu>=1.9`` to be installed.
 
-.. tab:: PyTorch
+.. tab-set::
 
-   First, let’s create a SuperResolution model in PyTorch.
+   .. tab-item:: PyTorch
+      :sync: pytorch
 
-   .. code-block:: python
+      First, let’s create a SuperResolution model in PyTorch.
 
-      import torch.nn as nn
-      import torch.nn.init as init
+      .. code-block:: python
 
-      class SuperResolutionNet(nn.Module):
-	  def __init__(self, upscale_factor, inplace=False):
-	      super(SuperResolutionNet, self).__init__()
+	 import torch.nn as nn
+	 import torch.nn.init as init
 
-	      self.relu = nn.ReLU(inplace=inplace)
-	      self.conv1 = nn.Conv2d(1, 64, (5, 5), (1, 1), (2, 2))
-	      self.conv2 = nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1))
-	      self.conv3 = nn.Conv2d(64, 32, (3, 3), (1, 1), (1, 1))
-	      self.conv4 = nn.Conv2d(32, upscale_factor ** 2, (3, 3), (1, 1), (1, 1))
-	      self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
+	 class SuperResolutionNet(nn.Module):
+	     def __init__(self, upscale_factor, inplace=False):
+		 super(SuperResolutionNet, self).__init__()
 
-	      self._initialize_weights()
+		 self.relu = nn.ReLU(inplace=inplace)
+		 self.conv1 = nn.Conv2d(1, 64, (5, 5), (1, 1), (2, 2))
+		 self.conv2 = nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1))
+		 self.conv3 = nn.Conv2d(64, 32, (3, 3), (1, 1), (1, 1))
+		 self.conv4 = nn.Conv2d(32, upscale_factor ** 2, (3, 3), (1, 1), (1, 1))
+		 self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
 
-	  def forward(self, x):
-	      x = self.relu(self.conv1(x))
-	      x = self.relu(self.conv2(x))
-	      x = self.relu(self.conv3(x))
-	      x = self.pixel_shuffle(self.conv4(x))
-	      return x
+		 self._initialize_weights()
 
-	  def _initialize_weights(self):
-	      init.orthogonal_(self.conv1.weight, init.calculate_gain('relu'))
-	      init.orthogonal_(self.conv2.weight, init.calculate_gain('relu'))
-	      init.orthogonal_(self.conv3.weight, init.calculate_gain('relu'))
-	      init.orthogonal_(self.conv4.weight)
+	     def forward(self, x):
+		 x = self.relu(self.conv1(x))
+		 x = self.relu(self.conv2(x))
+		 x = self.relu(self.conv3(x))
+		 x = self.pixel_shuffle(self.conv4(x))
+		 return x
 
-      torch_model = SuperResolutionNet()
+	     def _initialize_weights(self):
+		 init.orthogonal_(self.conv1.weight, init.calculate_gain('relu'))
+		 init.orthogonal_(self.conv2.weight, init.calculate_gain('relu'))
+		 init.orthogonal_(self.conv3.weight, init.calculate_gain('relu'))
+		 init.orthogonal_(self.conv4.weight)
 
-   For this tutorial, we will download some pre-trained weights. Note
-   that this model was not trained fully for good accuracy and is used
-   here for demonstration purposes only.
+	 torch_model = SuperResolutionNet()
 
-   .. code-block:: python
+      For this tutorial, we will download some pre-trained weights. Note
+      that this model was not trained fully for good accuracy and is used
+      here for demonstration purposes only.
 
-      # Load pretrained model weights
-      model_url = 'https://s3.amazonaws.com/pytorch/test_data/export/superres_epoch100-44c6958e.pth'
+      .. code-block:: python
 
-      # Initialize model with the pretrained weights
-      map_location = lambda storage, loc: storage
-      if torch.cuda.is_available():
-	  map_location = None
-      torch_model.load_state_dict(model_zoo.load_url(model_url, map_location=map_location))
+	 # Load pretrained model weights
+	 model_url = 'https://s3.amazonaws.com/pytorch/test_data/export/superres_epoch100-44c6958e.pth'
 
-      # set the model to inference mode
-      torch_model.eval()
+	 # Initialize model with the pretrained weights
+	 map_location = lambda storage, loc: storage
+	 if torch.cuda.is_available():
+	     map_location = None
+	 torch_model.load_state_dict(model_zoo.load_url(model_url, map_location=map_location))
 
-
-   Exporting a model to onnx in PyTorch works via tracing or
-   scripting. In this tutorial we will export a model using
-   tracing. Note how we export the model with an input of
-   ``batch_size=1``, but then specify the first dimension as dynamic
-   in the ``dynamic_axes`` parameter in ``torch.onnx.export()``. The
-   exported model will thus accept inputs of size ``[batch_size, 1,
-   224, 224]`` where ``batch_size`` can vary among each inference.
-
-   .. code-block:: python
-
-      batch_size = 1 # can be any number
-      # Tracing input to the model
-      x = torch.randn(batch_size, 1, 224, 224, requires_grad=True)
-
-      # Export the model
-      torch.onnx.export(torch_model,
-			x,
-			"super_resolution.onnx",   # where to save the model (can be a file or file-like object)
-			export_params=True,        # store the trained parameter weights inside the model file
-			opset_version=10,          # the ONNX version to export the model to
-			do_constant_folding=True,  # whether to execute constant folding for optimization
-			input_names=['input'],   # the model's input names
-			output_names=['output'], # the model's output names
-			dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-				      'output' : {0 : 'batch_size'}})
-
-   Now we can compute the output using ONNX Runtime’s Python APIs:
-
-   .. code-block:: python
-
-      import onnxruntime
-
-      ort_session = onnxruntime.InferenceSession("super_resolution.onnx")
-      # compute ONNX Runtime output prediction
-      ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(x)}
-      # ONNX Runtime will return a list of outputs
-      ort_outs = ort_session.run(None, ort_inputs)
-      print(ort_outs[0])
-
-.. tab:: TensorFlow
-
-   First let's install `tf2onnx <https://github.com/onnx/tensorflow-onnx>`_
-
-   .. code-block:: bash
-
-      pip install tf2onnx
-
-   For this tutorial we will download a pretrained ResNet-50 model:
-
-   .. code-block:: python
-
-      import tensorflow as tf
-      from tensorflow.keras.applications.resnet50 import ResNet50
-
-      model = ResNet50(weights='imagenet')
-
-   Then we can export the model to ONNX format. Notice that we use
-   ``None`` in `TensorSpec
-   <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ to
-   denote the first input dimension as dynamic batch axies, which
-   means this dimension can accept arbitrary input size.
-
-   .. code-block:: python
-
-      spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),)
-      onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
+	 # set the model to inference mode
+	 torch_model.eval()
 
 
-.. tab:: Scikit Learn
+      Exporting a model to onnx in PyTorch works via tracing or
+      scripting. In this tutorial we will export a model using
+      tracing. Note how we export the model with an input of
+      ``batch_size=1``, but then specify the first dimension as dynamic
+      in the ``dynamic_axes`` parameter in ``torch.onnx.export()``. The
+      exported model will thus accept inputs of size ``[batch_size, 1,
+      224, 224]`` where ``batch_size`` can vary among each inference.
 
-   TODO
+      .. code-block:: python
+
+	 batch_size = 1 # can be any number
+	 # Tracing input to the model
+	 x = torch.randn(batch_size, 1, 224, 224, requires_grad=True)
+
+	 # Export the model
+	 torch.onnx.export(torch_model,
+			   x,
+			   "super_resolution.onnx",   # where to save the model (can be a file or file-like object)
+			   export_params=True,        # store the trained parameter weights inside the model file
+			   opset_version=10,          # the ONNX version to export the model to
+			   do_constant_folding=True,  # whether to execute constant folding for optimization
+			   input_names=['input'],   # the model's input names
+			   output_names=['output'], # the model's output names
+			   dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+					 'output' : {0 : 'batch_size'}})
+
+      Now we can compute the output using ONNX Runtime’s Python APIs:
+
+      .. code-block:: python
+
+	 import onnxruntime
+
+	 ort_session = onnxruntime.InferenceSession("super_resolution.onnx")
+	 # compute ONNX Runtime output prediction
+	 ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(x)}
+	 # ONNX Runtime will return a list of outputs
+	 ort_outs = ort_session.run(None, ort_inputs)
+	 print(ort_outs[0])
+
+   .. tab-item:: TensorFlow
+      :sync: tensorflow
+
+      First let's install `tf2onnx <https://github.com/onnx/tensorflow-onnx>`_
+
+      .. code-block:: bash
+
+	 pip install tf2onnx
+
+      For this tutorial we will download a pretrained ResNet-50 model:
+
+      .. code-block:: python
+
+	 import tensorflow as tf
+	 from tensorflow.keras.applications.resnet50 import ResNet50
+
+	 model = ResNet50(weights='imagenet')
+
+      Then we can export the model to ONNX format. Notice that we use
+      ``None`` in `TensorSpec
+      <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ to
+      denote the first input dimension as dynamic batch axies, which
+      means this dimension can accept arbitrary input size.
+
+      .. code-block:: python
+
+	 spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),)
+	 onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
+
+
+   .. tab-item:: Scikit Learn
+      :sync: sklearn
+
+      TODO
 
 
 Saving ONNX model with BentoML
@@ -169,39 +178,44 @@ load the exported ONNX model back into ``onnx.ModelProto`` object,
 then call BentoML's ``save_model``:
 
 
-.. tab:: PyTorch
+.. tab-set::
 
-   .. code-block:: python
+   .. tab-item:: PyTorch
+      :sync: pytorch
 
-      signatures = {
-	  "run": {"batchable": True},
-      }
-      bentoml.onnx.save_model("onnx_super_resolution", onnx_model, signatures=signatures)
+      .. code-block:: python
 
-   which will result:
+	 signatures = {
+	     "run": {"batchable": True},
+	 }
+	 bentoml.onnx.save_model("onnx_super_resolution", onnx_model, signatures=signatures)
 
-   .. code-block:: bash
+      which will result:
 
-      Model(tag="onnx_super_resolution:lwqr7ah5ocv3rea3", path="~/bentoml/models/onnx_super_resolution/lwqr7ah5ocv3rea3/")
+      .. code-block:: bash
 
-.. tab:: TensorFlow
+	 Model(tag="onnx_super_resolution:lwqr7ah5ocv3rea3", path="~/bentoml/models/onnx_super_resolution/lwqr7ah5ocv3rea3/")
 
-   .. code-block:: python
+   .. tab-item:: TensorFlow
+      :sync: tensorflow
 
-      signatures = {
-	  "run": {"batchable": True},
-      }
-      bentoml.onnx.save_model("onnx_resnet50", onnx_model, signatures=signatures)
+      .. code-block:: python
 
-   which will result:
+	 signatures = {
+	     "run": {"batchable": True},
+	 }
+	 bentoml.onnx.save_model("onnx_resnet50", onnx_model, signatures=signatures)
 
-   .. code-block:: bash
+      which will result:
 
-      Model(tag="onnx_resnet50:zavavxh6w2v3rea3", path="~/bentoml/models/onnx_resnet50/zavavxh6w2v3rea3/")
+      .. code-block:: bash
 
-.. tab:: Scikit Learn
+	 Model(tag="onnx_resnet50:zavavxh6w2v3rea3", path="~/bentoml/models/onnx_resnet50/zavavxh6w2v3rea3/")
 
-   TODO
+   .. tab-item:: Scikit Learn
+      :sync: sklearn
+
+      TODO
 
 .. note::
 
@@ -228,63 +242,68 @@ Building a Service for **ONNX**
    :ref:`Building a Service <concepts/service:Service and APIs>` for how to
    create a prediction service with BentoML.
 
-.. tab:: PyTorch
+.. tabset::
 
-   .. code-block:: python
+   .. tab-item:: PyTorch
+      :sync: pytorch
 
-      import bentoml
+      .. code-block:: python
 
-      import numpy as np
-      from PIL import Image as PIL_Image
-      from PIL import ImageOps
-      from bentoml.io import Image
+	 import bentoml
 
-      runner = bentoml.onnx.get("onnx_super_resolution:latest").to_runner()
+	 import numpy as np
+	 from PIL import Image as PIL_Image
+	 from PIL import ImageOps
+	 from bentoml.io import Image
 
-      svc = bentoml.Service("onnx_super_resolution", runners=[runner])
+	 runner = bentoml.onnx.get("onnx_super_resolution:latest").to_runner()
 
-      @svc.api(input=Image(), output=Image())
-      def sr(img) -> np.ndarray:
-	  img = img.resize((224, 224))
-	  gray_img = ImageOps.grayscale(img)
-	  arr = np.array(gray_img) / 255.0 # convert from 0-255 range to 0.0-1.0 range
-	  arr = np.expand_dims(arr, (0, 1)) # add batch_size, color_channel dims
-	  sr_arr = runner.run.run(arr)
-	  sr_arr = np.squeeze(sr_arr) # remove batch_size, color_channel dims
-	  sr_img = PIL_Image.fromarray(np.uint8(sr_arr * 255) , 'L')
-	  return sr_img
+	 svc = bentoml.Service("onnx_super_resolution", runners=[runner])
 
-
-.. tab:: TensorFlow
-
-   .. code-block:: python
-
-      import bentoml
-
-      import numpy as np
-      from bentoml.io import Image
-      from bentoml.io import JSON
-
-      runner = bentoml.onnx.get("onnx_resnet50:latest").to_runner()
-
-      svc = bentoml.Service("onnx_resnet50", runners=[runner])
-
-      @svc.api(input=Image(), output=JSON())
-      def predict(img):
-
-	  from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
-
-	  img = img.resize((224, 224))
-	  arr = np.array(img)
-	  arr = np.expand_dims(arr, axis=0)
-	  arr = preprocess_input(arr)
-	  preds = runner.run.run(arr)
-	  return decode_predictions(preds, top=1)[0]
+	 @svc.api(input=Image(), output=Image())
+	 def sr(img) -> np.ndarray:
+	     img = img.resize((224, 224))
+	     gray_img = ImageOps.grayscale(img)
+	     arr = np.array(gray_img) / 255.0 # convert from 0-255 range to 0.0-1.0 range
+	     arr = np.expand_dims(arr, (0, 1)) # add batch_size, color_channel dims
+	     sr_arr = runner.run.run(arr)
+	     sr_arr = np.squeeze(sr_arr) # remove batch_size, color_channel dims
+	     sr_img = PIL_Image.fromarray(np.uint8(sr_arr * 255) , 'L')
+	     return sr_img
 
 
-.. tab:: Scikit Learn
+   .. tab-item:: TensorFlow
+      :sync: tensorflow
 
-   TODO
+      .. code-block:: python
+
+	 import bentoml
+
+	 import numpy as np
+	 from bentoml.io import Image
+	 from bentoml.io import JSON
+
+	 runner = bentoml.onnx.get("onnx_resnet50:latest").to_runner()
+
+	 svc = bentoml.Service("onnx_resnet50", runners=[runner])
+
+	 @svc.api(input=Image(), output=JSON())
+	 def predict(img):
+
+	     from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
+
+	     img = img.resize((224, 224))
+	     arr = np.array(img)
+	     arr = np.expand_dims(arr, axis=0)
+	     arr = preprocess_input(arr)
+	     preds = runner.run.run(arr)
+	     return decode_predictions(preds, top=1)[0]
+
+
+   .. tab-item:: Scikit Learn
+      :sync: sklearn
+
+      TODO
 
 .. note::
 
@@ -395,7 +414,7 @@ When enabling :ref:`guides/batching:Adaptive Batching`, the exported
 ONNX model need to accept dynamic batch size. Hence the dynamic batch
 axes need to be specified when the mode is exported in ONNX format.
 
-.. tab:: PyTorch
+.. tab-item:: PyTorch
 
    For PyTorch models, you can do that by specifying ``dynamic_axes``
    when using `torch.onnx.export
@@ -414,7 +433,7 @@ axes need to be specified when the mode is exported in ONNX format.
 			dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
 				      'output' : {0 : 'batch_size'}})
 
-.. tab:: TensorFlow
+.. tab-item:: TensorFlow
 
    For TensorFlow models, you can do that by using ``None`` to denote
    a dynamic batch axis in `TensorSpec
@@ -428,7 +447,7 @@ axes need to be specified when the mode is exported in ONNX format.
       model_proto, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
 
 
-.. tab:: Scikit Learn
+.. tab-item:: Scikit Learn
 
    TODO
 

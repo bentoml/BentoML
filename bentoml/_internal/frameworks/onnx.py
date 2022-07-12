@@ -257,7 +257,7 @@ def save_model(
         import importlib_metadata
 
     # prefer "onnxruntime-gpu" over "onnxruntime" for framework versioning
-    _PACKAGE = ["onnxruntime-gpu", "onnxruntime"]
+    _PACKAGE = ["onnxruntime-gpu", "onnxruntime", "onnxruntime-silicon"]
     for p in _PACKAGE:
         try:
             _onnxruntime_version = get_pkg_version(p)

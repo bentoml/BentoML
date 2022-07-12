@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
-import shutil
 import typing as t
 import platform
 import subprocess
@@ -22,29 +20,79 @@ from .containerize import add_containerize_command
 from .bento_management import add_bento_management_commands
 from .model_management import add_model_management_commands
 
-FC = t.TypeVar("FC", bound=t.Union[t.Callable[..., t.Any], click.Command])
+conda_packages_name = "conda_packages"
 
 
-def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
-    """Add a ``--env`` option which immediately prints environment info for debugging purposes.
+def run_cmd(cmd: list[str]) -> list[str]:
+    return subprocess.check_output(cmd).decode("utf-8").split("\n")[:-1]
 
-    :param param_decls: One or more option names. Defaults to the single
-        value ``"--help"``.
-    :param kwargs: Extra arguments are passed to :func:`option`.
-    """
 
-    def callback(ctx: click.Context, params: click.Parameter, value: t.Any) -> None:
-        if not value or ctx.resilient_parsing:
-            return
+def format_dropdown(title: str, content: t.Iterable[str]) -> str:
+    processed = "\n".join(content)
+    return f"""\
+<details><summary><code>{title}</code></summary>
 
+<br>
+
+```{ 'yaml' if title == conda_packages_name else 'markdown' }
+{processed}
+```
+
+</details>
+"""
+
+
+def format_keys(key: str, markdown: bool) -> str:
+    return f"`{key}`" if markdown else key
+
+
+def pretty_format(
+    info_dict: dict[str, str | list[str]], output: t.Literal["md", "stdout"]
+) -> str:
+    out: list[str] = []
+    for key, value in info_dict.items():
+        if isinstance(value, list):
+            if output == "md":
+                out.append(format_dropdown(key, value))
+            else:
+                out.append(f"{key}:\n  " + "\n  ".join(value))
+        else:
+            out.append(f"{format_keys(key, markdown=output=='md')}: {value}")
+    return "\n".join(out)
+
+
+def create_bentoml_cli():
+
+    import sys
+
+    from ..context import component_context
+
+    component_context.component_name = "cli"
+
+    CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
+
+    @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
+    @click.version_option(BENTOML_VERSION, "-v", "--version")
+    def cli():
+        """BentoML CLI"""
+
+    @cli.command(help=gettext("Print environment info and exit"))
+    @click.option(
+        "-o",
+        "--output",
+        type=click.Choice(["md", "stdout"]),
+        default="md",
+        show_default=True,
+        help="Output format. '-o stdout' to pipe to 'ext://sys.stdout'",
+    )
+    @click.pass_context
+    def env(ctx: click.Context, output: t.Literal["md", "stdout"]) -> None:  # type: ignore (unused warning)
         is_windows = sys.platform == "win32"
-        conda_key = "conda"
 
-        info_dict = {
+        info_dict: dict[str, str | list[str]] = {
             "bentoml": BENTOML_VERSION,
             "python": platform.python_version(),
             "platform": platform.platform(),
-            conda_key: "not installed",
         }
 
         if is_windows:
@@ -56,47 +104,27 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
         else:
             info_dict["uid:gid"] = f"{os.geteuid()}:{os.getegid()}"
 
-        if shutil.which("conda"):
+        if "CONDA_PREFIX" in os.environ:
+            # conda packages
+            conda_packages = run_cmd(["conda", "env", "export"])
+
+            # user is currently in a conda environment,
+            # doing this is faster than invoking `conda --version`
             try:
-                # user is currently in a conda environment,
-                # doing this is faster than invoking `conda --version`
                 conda_version = get_pkg_version("conda")
             except PackageNotFoundError:
-                # when user is not in a conda environment, there
-                # is no way to import conda.
-                conda_version = (
-                    subprocess.check_output(["conda", "--version"])
-                    .decode("utf-8")
-                    .strip("\n")
-                    .split(" ")[-1]
-                )
-            info_dict[conda_key] = conda_version
+                conda_version = run_cmd(["conda", "--version"])[0].split(" ")[-1]
 
-        click.echo("\n".join([f"{k}: {v}" for k, v in info_dict.items()]))
-        ctx.exit()
+            info_dict["conda"] = conda_version
+            info_dict["in_conda_env"] = str(True)
+            info_dict["conda_packages"] = conda_packages
+        else:
+            # process info from `pip freeze`
+            pip_packages = run_cmd(["pip", "freeze"])
+            info_dict["pip_packages"] = pip_packages
 
-    param_decls = ("--env",)
-
-    kwargs.setdefault("is_flag", True)
-    kwargs.setdefault("expose_value", False)
-    kwargs.setdefault("is_eager", True)
-    kwargs.setdefault("help", gettext("Print environment info and exit"))
-    kwargs["callback"] = callback
-    return click.option(*param_decls, **kwargs)
-
-
-def create_bentoml_cli():
-    from ..context import component_context
-
-    component_context.component_name = "cli"
-
-    CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
-
-    @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
-    @click.version_option(BENTOML_VERSION, "-v", "--version")
-    @env_option()
-    def cli():
-        """BentoML CLI"""
+        click.echo(pretty_format(info_dict, output=output))
+        ctx.exit(0)
 
     # Add top-level CLI commands
     add_login_command(cli)

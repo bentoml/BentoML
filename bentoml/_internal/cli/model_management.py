@@ -10,14 +10,13 @@ from simple_di import inject
 from simple_di import Provide
 from rich.table import Table
 from rich.syntax import Syntax
-from rich.console import Console
 
 from bentoml import Tag
 from bentoml.models import import_model
 
+from ..utils import rich_console as console
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
-from ..utils import display_path_under_home
 from .click_utils import is_valid_bento_tag
 from .click_utils import BentoMLCommandGroup
 from .click_utils import is_valid_bento_name
@@ -76,7 +75,6 @@ def add_model_management_commands(
         bentoml models get --output=json FraudDetector:20210709_DE14C9
         """
         model = model_store.get(model_tag)
-        console = Console()
 
         if output == "path":
             console.print(model.path)
@@ -110,7 +108,7 @@ def add_model_management_commands(
         # show all verions of bento with the name FraudDetector
         > bentoml models list FraudDetector
         """
-        console = Console()
+
         models = model_store.list(model_name)
         res = [
             {

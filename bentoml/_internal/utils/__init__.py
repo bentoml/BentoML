@@ -19,6 +19,7 @@ from datetime import timedelta
 import fs
 import attr
 import fs.copy
+from rich.console import Console
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -43,6 +44,7 @@ C = t.TypeVar("C")
 T = t.TypeVar("T")
 _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
+rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
@@ -53,6 +55,7 @@ __all__ = [
     "LazyLoader",
     "validate_or_create_dir",
     "display_path_under_home",
+    "rich_console",
 ]
 
 

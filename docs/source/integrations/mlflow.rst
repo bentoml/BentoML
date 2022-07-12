@@ -202,8 +202,8 @@ Here's an example ``bentoml.Service`` built with a MLflow model:
 To try out the full example, visit `bentoml/gallery: MLflow Pytorch Example <https://github.com/bentoml/gallery/tree/main/mlflow/pytorch>`_.
 
 
-End-to-end workflow
--------------------
+MLflow 🤝 BentoML Workflow
+--------------------------
 
 There are numerous ways you can integrate BentoML with your MLFlow workflow for model serving and deployment.
 

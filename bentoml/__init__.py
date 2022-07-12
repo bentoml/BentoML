@@ -1,3 +1,19 @@
+"""
+BentoML
+=======
+
+BentoML is the unified ML Model Serving framework. Data Scientists and ML Engineers use
+BentoML to:
+
+* Accelerate and standardize the process of taking ML models to production across teams
+* Build reliable, scalable, and high performance model serving systems
+* Provide a flexible MLOps platform that grows with your Data Science needs
+
+To learn more, visit BentoML documentation at: http://docs.bentoml.org
+To get involved with the development, find us on GitHub: https://github.com/bentoml
+And join us in the BentoML slack community: https://l.linklyhq.com/l/ktOh
+"""
+
 from typing import TYPE_CHECKING
 
 from ._internal.configuration import BENTOML_VERSION as __version__
@@ -7,6 +23,7 @@ from ._internal.configuration import load_global_config
 load_global_config()
 
 # Model management APIs
+from . import io
 from . import models
 
 # Bento management APIs
@@ -100,6 +117,7 @@ __all__ = [
     "Context",
     "Service",
     "models",
+    "io",
     "Tag",
     "Model",
     "Runner",

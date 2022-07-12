@@ -52,6 +52,10 @@ repository.
         :link: /frameworks/fastai
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/integrations/mlflow`
+        :link: /integrations/mlflow
+        :link-type: doc
+
 
 The following frameworks are supported in BentoML prior to 1.0.0 release and is still
 being migrated to the new API design. Before they are officially supported in BentoML
@@ -66,7 +70,6 @@ from these ML libraries with BentoML.
 - Gluon
 - H2O
 - LightGBM
-- MLFlow
 - ONNX
 - ONNX-MLIR
 - PaddlePaddle

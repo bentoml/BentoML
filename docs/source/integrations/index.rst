@@ -7,14 +7,14 @@ Integrations
    :maxdepth: 1
    :titlesonly:
 
-   airflow
-   databricks
-   feast
-   flyte
-   knative
-   kubeflow
-   kubernetes
+   # airflow
+   # databricks
+   # feast
+   # flyte
+   # knative
+   # kubeflow
+   # kubernetes
    mlflow
-   prefect
-   ray
-   triton
+   # prefect
+   # ray
+   # triton

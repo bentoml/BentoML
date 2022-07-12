@@ -145,8 +145,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    concepts/index
    frameworks/index
    guides/index
-   yatai/index
-   bentoctl/index
+   integrations/index
    reference/index
    faq
    Community <https://l.linklyhq.com/l/ktOX>

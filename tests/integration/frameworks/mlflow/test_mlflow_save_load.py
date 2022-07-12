@@ -31,51 +31,42 @@ res_arr = np.array(
 # fmt: on
 
 
-def test_mlflow_save():
-    with pytest.raises(BentoMLException):
-        bentoml.mlflow.save()
-
-
 def test_mlflow_save_load():
     (model, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf")
     if not uri.exists():
         mlflow.sklearn.save_model(model, uri.resolve())
-    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri.resolve()))
-    model_info = bentoml.models.get(tag)
-    assert_have_file_extension(os.path.join(model_info.path, "sklearn_clf"), ".pkl")
+    bento_model = bentoml.mlflow.import_model(MODEL_NAME, str(uri.resolve()))
+    model_info = bentoml.models.get(bento_model.tag)
 
-    loaded = bentoml.mlflow.load(tag)
+    loaded = bentoml.mlflow.load_model(model_info.tag)
     np.testing.assert_array_equal(loaded.predict(data), res_arr)  # noqa
 
 
 @pytest.fixture()
 def invalid_save_with_no_mlmodel():
     uri = Path(current_file, "sklearn_clf").resolve()
-    tag = bentoml.mlflow.import_from_uri("sklearn_clf", str(uri))
-    info = bentoml.models.get(tag)
-    os.remove(str(Path(info.path, "sklearn_clf", "MLmodel").resolve()))
-    return tag
+    bento_model = bentoml.mlflow.import_model("sklearn_clf", str(uri))
+    info = bentoml.models.get(bento_model.tag)
+    os.remove(str(Path(info.path, "mlflow_model", "MLmodel").resolve()))
+    return bento_model.tag
 
 
 def test_invalid_load(invalid_save_with_no_mlmodel):
     with pytest.raises(FileNotFoundError):
-        _ = bentoml.mlflow.load(invalid_save_with_no_mlmodel)
+        _ = bentoml.mlflow.load_model(invalid_save_with_no_mlmodel)
 
 
 def test_mlflow_load_runner():
     (_, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf").resolve()
-    tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri))
-    runner = bentoml.mlflow.load_runner(tag)
-    from bentoml._internal.frameworks.mlflow import _PyFuncRunner
+    bento_model = bentoml.mlflow.import_model(MODEL_NAME, str(uri))
+    runner = bentoml.mlflow.get(bento_model.tag).to_runner()
+    runner.init_local()
 
-    assert isinstance(runner, _PyFuncRunner)
+    assert bento_model.tag == runner.models[0].tag
 
-    assert tag in runner.required_models
-    assert runner.num_replica == 1
-
-    res = runner.run_batch(data)
+    res = runner.predict.run(data)
     assert all(res == res_arr)
 
 
@@ -88,4 +79,4 @@ def test_mlflow_load_runner():
 )
 def test_mlflow_invalid_import_mlproject(uri):
     with pytest.raises(BentoMLException):
-        _ = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri))
+        _ = bentoml.mlflow.import_model(MODEL_NAME, str(uri))

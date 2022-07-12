@@ -69,7 +69,7 @@ def load_model(
     bento_model: str | Tag | bentoml.Model,
 ) -> mlflow.pyfunc.PyFuncModel:
     """
-    Load the MLFlow model with the given tag from the local BentoML model store.
+    Load the MLFlow `PyFunc <https://www.mlflow.org/docs/latest/python_api/mlflow.pyfunc.html#mlflow.pyfunc.PyFuncModel>`_ model with the given tag from the local BentoML model store.
 
     Args:
         bento_model: Either the tag of the model to get from the store, or a BentoML
@@ -164,7 +164,7 @@ def import_model(
         logger.info(
             f"Using the default model signature for MLFlow pyfunc model ({signatures}) for model {name}."
         )
-    if len(signatures.keys()) != 1 or "predict" not in signatures:
+    if len(signatures) != 1 or "predict" not in signatures:
         raise BentoMLException(
             f"MLFlow pyfunc model support only the `predict` method, signatures={signatures} is not supported"
         )
@@ -220,7 +220,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    assert "predict" in bento_model.info.signatures.keys()
+    assert "predict" in bento_model.info.signatures
     predict_signature = bento_model.info.signatures["predict"]
 
     class MLflowPyfuncRunnable(bentoml.Runnable):

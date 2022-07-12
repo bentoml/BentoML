@@ -16,3 +16,5 @@ MLflow
 .. autofunction:: bentoml.mlflow.load_model
 
 .. autofunction:: bentoml.mlflow.get
+
+.. autofunction:: bentoml.mlflow.get_mlflow_model

@@ -220,19 +220,13 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
 
       TODO
 
-.. note::
+The default signature for :obj:`~bentoml.onnx.save_model()` is set to ``{"run": {"batchable": False}}``.
 
-   The default signature for ``save_model`` is set to ``{"run": {"batchable": False}}``.
+This means by default, BentoML's :ref:`guides/batching:Adaptive Batching` is disabled when saving ONNX model.
+If you want to enable adaptive batching, provide a signature similar to the
+aboved example.
 
-   This means by default, BentoML's :ref:`guides/batching:Adaptive Batching` is disabled when saving ONNX model.
-   If you want to enable adaptive batching, provide a signature similar to the
-   aboved example. Refers to `Model Signatures <concepts/model:Model Signatures>` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
-
-.. seealso::
-
-   ``save_model`` also has some :ref:`general options
-   <concepts/model:Save A Trained Model>` for functionalities like
-   saving metadata and custom objects.
+Refers to :ref:`concepts/model:Model Signatures` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
 
 
 Building a Service for **ONNX**
@@ -243,7 +237,7 @@ Building a Service for **ONNX**
    :ref:`Building a Service <concepts/service:Service and APIs>` for how to
    create a prediction service with BentoML.
 
-.. tabset::
+.. tab-set::
 
    .. tab-item:: PyTorch
       :sync: pytorch
@@ -308,8 +302,9 @@ Building a Service for **ONNX**
 
 .. note::
 
-   In above example, notice that there are two :code:`run` in ``runner.run.run(input_data)`` while running inference. The distinction between the two ``run`` are as follow:
-   1.  The first ``run`` refers  to``onnxruntime.InferenceSession``'s ``run`` method, which is the API from ONNX Runtime to run `inference <https://onnxruntime.ai/docs/api/python/api_summary.html#data-inputs-and-outputs>`_.
+   In the aboved example, notice there are two :code:`run` in ``runner.run.run(input_data)`` inside inference code. The distinction between the two ``run`` are as follow:
+
+   1.  The first ``run`` refers  to `onnxruntime.InferenceSession <https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/session/inference_session.cc>`_'s ``run`` method, which is ONNX Runtime API to run `inference <https://onnxruntime.ai/docs/api/python/api_summary.html#data-inputs-and-outputs>`_.
    2. The second ``run`` refers to BentoML's runner inference API for invoking a model's signature. In the case of ONNX, it happens to have the same name as the ``InferenceSession`` endpoint.
 
 
@@ -418,44 +413,49 @@ ONNX model is **REQUIRED** to accept dynamic batch size.
 
 Therefore, dynamic batch axes needs to be specified when the model is exported to the ONNX format.
 
-.. tab-item:: PyTorch
+.. tab-set::
 
-   For PyTorch models, you can achieve this by specifying ``dynamic_axes``
-   when using `torch.onnx.export <https://pytorch.org/docs/stable/onnx.html#torch.onnx.export>`_
+   .. tab-item:: PyTorch
+      :sync: pytorch
 
-   .. code-block:: python
+      For PyTorch models, you can achieve this by specifying ``dynamic_axes``
+      when using `torch.onnx.export <https://pytorch.org/docs/stable/onnx.html#torch.onnx.export>`_
 
-      torch.onnx.export(
-	 torch_model,
-	 x,
-	 "super_resolution.onnx",  # where to save the model (can be a file or file-like object)
-	 export_params=True,  # store the trained parameter weights inside the model file
-	 opset_version=10,  # the ONNX version to export the model to
-	 do_constant_folding=True,  # whether to execute constant folding for optimization
-	 input_names=["input"],  # the model's input names
-	 output_names=["output"],  # the model's output names
-	 dynamic_axes={
-	    "input": {0: "batch_size"},  # variable length axes
-	    "output": {0: "batch_size"},
-	 },
-      )
+      .. code-block:: python
 
-.. tab-item:: TensorFlow
+	 torch.onnx.export(
+	    torch_model,
+	    x,
+	    "super_resolution.onnx",  # where to save the model (can be a file or file-like object)
+	    export_params=True,  # store the trained parameter weights inside the model file
+	    opset_version=10,  # the ONNX version to export the model to
+	    do_constant_folding=True,  # whether to execute constant folding for optimization
+	    input_names=["input"],  # the model's input names
+	    output_names=["output"],  # the model's output names
+	    dynamic_axes={
+	       "input": {0: "batch_size"},  # variable length axes
+	       "output": {0: "batch_size"},
+	    },
+	 )
 
-   For TensorFlow models, you can achieve this by using ``None`` to denote
-   a dynamic batch axis in `TensorSpec
-   <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ when
-   through either ``tf2onnx.convert.from_keras`` or ``tf2onnx.convert.from_function``
+   .. tab-item:: TensorFlow
+      :sync: tensorflow
 
-   .. code-block:: python
+      For TensorFlow models, you can achieve this by using ``None`` to denote
+      a dynamic batch axis in `TensorSpec
+      <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ when
+      through either ``tf2onnx.convert.from_keras`` or ``tf2onnx.convert.from_function``
 
-      spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),) # batch_axis = 0
-      model_proto, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
+      .. code-block:: python
+
+	 spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),) # batch_axis = 0
+	 model_proto, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
 
 
-.. tab-item:: Scikit Learn
+   .. tab-item:: Scikit Learn
+      :sync: sklearn
 
-   TODO
+      TODO
 
 Default Execution Providers Settings
 ------------------------------------
@@ -469,8 +469,12 @@ override the default setting using ``with_options`` when creating a runner:
 
 .. code-block:: python
 
-   providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+   providers = ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
 
-   runner = bentoml.onnx.get("onnx_super_resolution").with_options(providers=providers).to_runner()
+   bento_model = bentoml.onnx.get("onnx_super_resolution")
 
-Read more about Execution Providers at `ONNX Runtime's documentation <https://onnxruntime.ai/docs/execution-providers/>`_
+   runner = bento_model.with_options(providers=providers).to_runner()
+
+.. seealso::
+
+   `Execution Providers' documentation <https://onnxruntime.ai/docs/execution-providers/>`_

@@ -451,6 +451,5 @@ runner:
 
    runner = bentoml.onnx.get("onnx_super_resolution").with_options(providers=providers).to_runner()
 
-You can read more about Execution Providers at ONNX Runtime's
-`official documentation
+Read more about Execution Providers in `ONNX Runtime's documentation
 <https://onnxruntime.ai/docs/execution-providers/>`_

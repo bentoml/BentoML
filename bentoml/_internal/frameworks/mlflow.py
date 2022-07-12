@@ -164,7 +164,7 @@ def import_model(
         logger.info(
             f"Using the default model signature for MLFlow pyfunc model ({signatures}) for model {name}."
         )
-    if len(signatures.keys()) != 1 or "predict" not in signatures:
+    if len(signatures) != 1 or "predict" not in signatures:
         raise BentoMLException(
             f"MLFlow pyfunc model support only the `predict` method, signatures={signatures} is not supported"
         )

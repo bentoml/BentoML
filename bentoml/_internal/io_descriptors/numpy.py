@@ -191,7 +191,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 if self._enforce_dtype:
                     raise exception_cls(msg)
                 else:
-                    logger.warning(msg)
+                    logger.debug(msg)
 
         if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
             msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{obj.shape}" was received.'
@@ -200,7 +200,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             try:
                 obj = obj.reshape(self._shape)
             except ValueError as e:
-                logger.warning(f"{msg} Failed to reshape: {e}.")
+                logger.debug(f"{msg} Failed to reshape: {e}.")
 
         return obj
 

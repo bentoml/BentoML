@@ -2,42 +2,69 @@
 MLflow
 ======
 
-MLflow for training and experimentation,
-BentoML for production serving and deployment,
-They work together nicely
+MLflow is an open source framework for tracking ML experiments and packaging ML code for
+training pipelines. BentoML is agnostic to the experimentation platform and the model
+development environment, instead, BentoML focuses on ML in production, provides
+additional serving and production model deployment capability for MLflow users.
 
-Save model natively with BentoML
---------------------------------
+Compatibility
+-------------
 
-    1. save with bentoml next to log_model
+BentoML supports MLflow 0.9 and above.
 
-        mlflow.sklearn.log_model(..)
-        bentoml.sklearn.save_model(..)
 
-    2. load_model(model_uri) and then save with BentoML
+Examples
+--------
 
-        model = mlflow.sklearn.load_model(model_uri)
-        bentoml.sklearn.save_model("..", model)
+Besides this documentation, also check out code samples demonstrating BentoML and MLflow
+integration at: `bentoml/gallery: MLflow Examples <https://github.com/bentoml/gallery/tree/main/mlflow>`_.
 
-    Note: Recommended using this approach if need GPU inference
 
 Import MLflow model to BentoML
 ------------------------------
 
-    bentoml.mlflow.import_model("model_name", model_uri=...)
+`MLflow Model <https://www.mlflow.org/docs/latest/models.html>`_ is a format for saving
+trained model artifacts in MLflow experiments and pipelines. BentoML supports importing
+MLflow model to its own format for model serving. For example:
 
-About model_uri:
+.. code-block:: python
 
-    URI to the model. A local path, a 'runs:/' URI, or
-    a remote storage URI (e.g., an 's3://' URI). For
-    more information about supported remote URIs for
-    model artifacts, see https://mlflow.org/docs/latest
-    /tracking.html#artifact-stores  [required]
+    mlflow.sklearn.save_model(model, "./my_model")
+    bentoml.mlflow.import_model("my_sklearn_model", model_uri="./my_model")
 
-    The location, in URI format, of the MLflow model, for example:
+
+.. code-block:: python
+
+    with mlflow.start_run():
+        mlflow.pytorch.log_model(model, artifact_path="pytorch-model")
+
+        model_uri = mlflow.get_artifact_uri("pytorch-model")
+        bento_model = bentoml.mlflow.import_model(
+            'mlflow-pytorch-mnist',
+            model_uri,
+            signatures={'predict': {'batchable': True}}
+        )
+
+
+The ``bentoml.mlflow.import_model`` API is similar to the other ``save_model`` APIs
+found in BentoML, where the first argument represent the model name in BentoML model
+store. A new version will be automatically generated when a new MLflow model is
+imported. Users can manage imported MLflow models same as models saved with other ML
+frameworks:
+
+.. code-block:: bash
+
+    bentoml models list mlflow-pytorch-mnist
+
+
+The second argument ``model_uri`` takes a URI to the MLflow model. It can be a local
+path, a ``'runs:/'`` URI, or a remote storage URI (e.g., an ``'s3://'`` URI). Here are
+some example ``model_uri`` values commonly used in MLflow:
+
+.. code-block::
 
     /Users/me/path/to/local/model
-    relative/path/to/local/model
+    ../relative/path/to/local/model
     s3://my_bucket/path/to/model
     runs:/<mlflow_run_id>/run-relative/path/to/model
     models:/<model_name>/<model_version>
@@ -47,92 +74,256 @@ About model_uri:
 Load MLflow model saved with BentoML
 ------------------------------------
 
-* Load with original flavor
-    > bento_model = bentoml.mlflow.get("..")
-    > pytorch_model = mlflow.pytorch.load_model(bento_model.path_of("mlflow_model"))
+MLflow models imported to BentoML can be loaded back for running inference in a various
+of ways.
 
-* Load pyfunc model
-    > bento_model: PyfuncModel = bentoml.mlflow.load_model("..")
+Load with original Model flavor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Using MLFlow Runner
-    > runner = bentoml.mlflow.get('my_model:latest').to_runner()
-    > runner.init_local()
-    > runner.predict.run(input_df)
-    * supported input output types
-        PyFuncInput = Union[pandas.DataFrame, np.ndarray, csc_matrix, csr_matrix, List[Any], Dict[str, Any]]
-        PyFuncOutput = Union[pandas.DataFrame, pandas.Series, np.ndarray, list]
+For evaluation and testing purpose, sometimes it's convenient to load the model in its
+native form
 
-        RunnerInput = Union[pandas.DataFrame, np.ndarray, List[Any], Dict[str, Any]]
-        RunnerOutput = Union[pandas.DataFrame, pandas.Series, np.ndarray, list]
+.. code-block:: python
 
-* Sample service code with MLFlow Runner
+    bento_model = bentoml.mlflow.get("mlflow-pytorch-mnist:latest")
+    loaded_pytorch_model = mlflow.pytorch.load_model(bento_model.path_of("mlflow_model"))
+    loaded_pytorch_model.to(device)
+    loaded_pytorch_model.eval()
+    with torch.no_grad():
+        input_tensor = torch.from_numpy(test_input_arr).to(device)
+        predictions = loaded_pytorch_model(input_tensor)
 
+
+Load pyfunc flavor
+~~~~~~~~~~~~~~~~~~
+
+By default, ``bentoml.mflow.load_model`` will load the imported MLflow model using the
+`python_function flavor <https://www.mlflow.org/docs/latest/python_api/mlflow.pyfunc.html>`_
+for best compatibility across all ML frameworks supported by MLflow.
+
+.. code-block:: python
+
+    pyfunc_model: mlflow.pyfunc.PyFuncModel = bentoml.mlflow.load_model("mlflow-pytorch-mnist:latest")
+    predictions = pyfunc_model.predict(test_input_arr)
+
+
+Using MLFlow Runner
+~~~~~~~~~~~~~~~~~~~
+
+Imported MLflow models can be loaded as BentoML Runner for best performance in building
+prediction service with BentoML. To test out the runner API:
+
+.. code-block:: python
+
+    runner = bentoml.mlflow.get("mlflow-pytorch-mnist:latest").to_runner()
+    runner.init_local()
+    runner.predict.run(input_df)
+
+Learn more about BentoML Runner at :doc:`/concepts/runner`.
+
+MLflow model based runner supports the following input types. Note that for some ML
+frameworks, only a subset of this list is supported.
+
+.. code-block:: python
+
+    MLflowRunnerInput = Union[pandas.DataFrame, np.ndarray, List[Any], Dict[str, Any]]
+    MLflowRunnerOutput = Union[pandas.DataFrame, pandas.Series, np.ndarray, list]
+
+.. note::
+
+    To enable adaptive batching in a MLflow Runner, make sure to set
+    ``signatures={'predict': {'batchable': True}}`` when importing the model:
+
+    .. code-block:: python
+
+        bento_model = bentoml.mlflow.import_model(
+            'mlflow-pytorch-mnist',
+            model_uri,
+            signatures={'predict': {'batchable': True}}
+        )
+
+
+Limitations
+~~~~~~~~~~~
+
+There are two major limitation of using MLflow Runner in BentoML:
+
+* Lack support for GPU
+* Lack support for multiple inference method
+
+However, there is an easy workaround. Instead of importing MLflow model and running it
+via MLflow pyfunc flavor, saving trained model natively with BentoML makes it possible
+to support GPU inference and expose multiple inference signatures.
+
+1. Save model directly with bentoml
+
+.. code-block:: python
+
+    mlflow.sklearn.log_model(clf, "model")
+    bentoml.sklearn.save_model("iris_clf", clf)
+
+2. Load original flavor and save with BentoML
+
+.. code-block:: python
+
+    loaded_model = mlflow.sklearn.load_model(model_uri)
+    bentoml.sklearn.save_model("iris_clf", loaded_model,)
+
+This way, it goes back to a typically BentoML workflow, which allow users to use a
+Runner specifically built for the target ML framework, with GPU support and multiple
+signatures available.
+
+
+Building prediction service with MLflow model
+---------------------------------------------
+
+Here's an example ``bentoml.Service`` built with a MLflow model:
+
+.. code-block:: python
+
+    import bentoml
+    import mlflow
+    import torch
+
+    mnist_runner = bentoml.mlflow.get('mlflow-pytorch-mnist:latest').to_runner()
+
+    svc = bentoml.Service('mlflow_pytorch_mnist', runners=[ mnist_runner ])
+
+    input_spec = bentoml.io.NumpyNdarray(
+        dtype="float32",
+        shape=[-1, 1, 28, 28],
+        enforce_shape=True,
+        enforce_dtype=True,
+    )
+
+    @svc.api(input=input_spec, output=bentoml.io.NumpyNdarray())
+    def predict(input_arr):
+        return mnist_runner.predict.run(input_arr)
+
+To try out the full example, download source code from
+`bentoml/gallery: MLflow Pytorch Example <https://github.com/bentoml/gallery/tree/main/mlflow/pytorch>`_.
 
 
 MLflow to BentoML workflow
 --------------------------
 
-Import from model_uri
-~~~~~~~~~~~~~~~~~~~~~
-    a. model_info = ...log_model(...)
-        model_info.uri
+Depending on how you set up MLflow, there are a number of ways you could integrate
+BentoML for model serving and deployment.
 
-    b. autolog:
-        run_id = mlflow.last_active_run().info.run_id
-        model_uri = "runs:/{}/model".format(run_id)
+1. Find ``model_uri`` from a MLflow model instance returned from ``log_model``:
 
-    c. from mlflow.run scope:
+.. code-block:: python
 
-        with mlflow.start_run() as run:
-            mlflow.sklearn.log_model(lin_reg, "model")
-            model_uri = mlflow.get_artifact_uri("model")
+    # https://github.com/bentoml/gallery/tree/main/mlflow/sklearn_logistic_regression
+    logged_model = mlflow.sklearn.log_model(lr, "model")
+    print("Model saved in run %s" % mlflow.active_run().info.run_uuid)
 
-            # model_uri = f"runs:/{run.info.run_id}/model"
+    # Import logged mlflow model to BentoML model store for serving:
+    bento_model = bentoml.mlflow.import_model('logistic_regression_model', logged_model.model_uri)
+    print("Model imported to BentoML: %s" % bento_model)
 
-    d. from mlflow project:
-        model_uri = "runs:/{run_id}/{artifact_path}".format(
-            run_id=mlflow.active_run().info.run_id, artifact_path="model"
-        )
+2. Find model artifact path inside current ``mlflow.run`` scope:
+
+.. code-block:: python
+
+    # https://github.com/bentoml/gallery/tree/main/mlflow/pytorch
+    with mlflow.start_run():
+        ...
+        mlflow.pytorch.log_model(model, artifact_path="pytorch-model")
+        model_uri = mlflow.get_artifact_uri("pytorch-model")
+        bento_model = bentoml.mlflow.import_model('mlflow-pytorch-mnist', model_uri)
+
+3. When using ``autolog``, find ``model_uri`` by last active ``run_id``:
+
+.. code-block:: python
+
+    import mlflow
+    import bentoml
+    from sklearn.linear_model import LinearRegression
+
+    # enable autologging
+    mlflow.sklearn.autolog()
+
+    # prepare training data
+    X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
+    y = np.dot(X, np.array([1, 2])) + 3
+
+    # train a model
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # import logged MLFlow model to BentoML
+    run_id = mlflow.last_active_run().info.run_id
+    artifact_path = "model"
+    model_uri = f"runs:/{run_id}/{artifact_path}"
+    bento_model = bentoml.mlflow.import_model('logistic_regression_model', model_uri)
+    print(f"Model imported to BentoML: {bento_model}")
 
 
-Import a registered model on MLFlow server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    From a version:
-        model_name = "sk-learn-random-forest-reg-model"
-        model_version = 1
-        model_uri=f"models:/{model_name}/{model_version}"
-    From a stage:
-        model_name = "sk-learn-random-forest-reg-model"
-        stage = 'Staging'
-        model_uri=f"models:/{model_name}/{stage}"
 
-    note: how to verify model_uri can be accessed
+4. Import a registered model on MLflow server
 
-Import from Databricks MLFlow Server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When using a MLflow tracking server, users can also import
+`registered models <https://www.mlflow.org/docs/latest/model-registry.html#registering-a-model>`_
+directly to BentoML for serving.
 
-    See Databricks integration guide
+.. code-block:: python
+
+    # Import from a version:
+    model_name = "sk-learn-random-forest-reg-model"
+    model_version = 1
+    model_uri=f"models:/{model_name}/{model_version}"
+    bentoml.mlflow.import_model('my_mlflow_model', model_uri)
+
+    # Import from a stage:
+    model_name = "sk-learn-random-forest-reg-model"
+    stage = 'Staging'
+    model_uri=f"models:/{model_name}/{stage}"
+    bentoml.mlflow.import_model('my_mlflow_model', model_uri)
+
 
 
 Using MLFlow model dependency in Bento
 --------------------------------------
 
-    Using MLFlow model's python dependencies
+Most MLFlow models carries the dependency information required for running this model.
+If you don't need additional dependencies in your Service definition code, it is
+possible to reuse the dependency already specified in an imported MLflow model.
 
-        python:
-            requirements_txt: $BENTOML_MLFLOW_MODEL_PATH/mlflow_model/requirements.txt
-            lock_packages: False
+The first step is to put the following in your ``bentofile.yaml`` build file:
 
-    Alternatively use MLFlow model's conda environment
+.. code-block:: yaml
 
-        conda:
-            environment_yml: $BENTOML_MLFLOW_MODEL_PATH/mlflow_model/conda.yaml
+    python:
+        requirements_txt: $BENTOML_MLFLOW_MODEL_PATH/mlflow_model/requirements.txt
+        lock_packages: False
 
-    export BENTOML_MLFLOW_MODEL_PATH=$(bentoml models get iris_clf:latest -o path)
+Alternatively use MLFlow model's conda environment
+
+.. code-block:: yaml
+
+    conda:
+        environment_yml: $BENTOML_MLFLOW_MODEL_PATH/mlflow_model/conda.yaml
+
+This allows BentoML to dynamically find the dependency file based on a user-defined
+environment variable. In this case, we will use BentoML CLI to find path to the target
+MLflow model and expose it to ``bentoml build`` via the env var
+``BENTOML_MLFLOW_MODEL_PATH``:
+
+.. code-block:: bash
+
+    export BENTOML_MLFLOW_MODEL_PATH=$(bentoml models get my_mlflow_model:latest -o path)
     bentoml build
 
-Import MLFLow model with run metrics and tags
+
+Import MLfLow model with run metrics and tags
 ---------------------------------------------
+
+MLflow model usually carries lots of helpful information regarding the training metrics
+and parameters. Use the following code snippet if you want to carry over the metadata
+logged with MLflow model to BentoML.
+
+.. code-block:: python
 
     run_id = '0e4425ecbf3e4672ba0c1741651bb47a'
     run = mlflow.get_run(run_id)

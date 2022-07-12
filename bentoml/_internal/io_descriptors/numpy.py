@@ -5,6 +5,7 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
+import numpy as np
 from starlette.requests import Request
 from starlette.responses import Response
 

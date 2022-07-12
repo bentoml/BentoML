@@ -287,11 +287,11 @@ Additional Tips
 Use MLflow model dependencies config
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most MLflow models carries the dependency information required for running this model.
-If you don't need additional dependencies in your Service definition code, it is
-possible to reuse the dependency already specified in an imported MLflow model.
+Most MLflow models bundles dependency information that is required for running framework model. 
+If no additional dependencies are required in the :obj:`~bentoml.Service` definition code, users may
+pass through dependency requirements from within MLflow model to BentoML.
 
-The first step is to put the following in your ``bentofile.yaml`` build file:
+First, put the following in your ``bentofile.yaml`` build file:
 
 .. code-block:: yaml
 
@@ -299,7 +299,7 @@ The first step is to put the following in your ``bentofile.yaml`` build file:
         requirements_txt: $BENTOML_MLFLOW_MODEL_PATH/mlflow_model/requirements.txt
         lock_packages: False
 
-Alternatively use MLflow model's conda environment
+Alternatively, one can also use MLflow model's generated conda environment file:
 
 .. code-block:: yaml
 
@@ -308,7 +308,7 @@ Alternatively use MLflow model's conda environment
 
 This allows BentoML to dynamically find the given dependency file based on a user-defined
 environment variable. In this case, the ``bentoml get`` CLI returns the path to the target
-MLflow model folder and expose it to ``bentoml build`` via the env var.
+MLflow model folder and expose it to ``bentoml build`` via the environment variable
 ``BENTOML_MLFLOW_MODEL_PATH``:
 
 .. code-block:: bash
@@ -321,12 +321,8 @@ Attach model params, metrics, and tags
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 MLflow model format encapsulates lots of context information regarding the training metrics
-and parameters. The following code snippet shows how to carry over the metadata
-logged with an MLflow model to the BentoML model store.
+and parameters. The following code snippet demonstrates how to package metadata logged from a given MLflow model to the BentoML model store.
 
-MLflow model encapsulates a lot of helpful information with regarding to training metrics
-and parameters. Feel free to use the following code snippet if you want to carry over the metadata
-logged with MLflow model to BentoML.
 
 .. code-block:: python
 

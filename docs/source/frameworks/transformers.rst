@@ -12,8 +12,8 @@ Compatibility
 BentoML requires Transformers version 4 or above. For other versions of Transformers, consider using a 
 :ref:`concepts/runner:Custom Runner`.
 
-When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`, include `transformers` and the machine learning 
-framework of the model, e.g. `pytorch`, `tensorflow`, or `jax`.
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`, include ``transformers`` and the machine learning 
+framework of the model, e.g. ``pytorch``, ``tensorflow``, or ``jax``.
 
 .. tab-set::
 

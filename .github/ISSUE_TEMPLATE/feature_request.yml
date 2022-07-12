@@ -12,7 +12,7 @@ body:
     description: |
       A clear and concise description of the feature request.
     placeholder: |
-      An implementation could be implemented by...
+      I would like it if...
 - type: textarea
   id: motivation
   validations:

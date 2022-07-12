@@ -1,9 +1,6 @@
 blank_issues_enabled: true
 version: 2.1
 contact_links:
-  - name: BentoML's Issue Tracker
-    url: https://github.com/bentoml/BentoML/issues/new/choose
-    about: Open a PR/Issue ticket for BentoML's development.
   - name: BentoML's Documentation
     url: https://docs.bentoml.org/en/latest/
     about: For more information about BentoML's tutorials, guides, API references and architectures deep-dive.
@@ -15,7 +12,7 @@ contact_links:
     about: For connecting with others in the community.
   - name: BentoML Enterprise Support
     url: contact@bentoml.ai
-    about: Contact the BentoML team for supports.
+    about: Contact the BentoML team for support.
   - name: BentoML Blog
     url: modelserving.com
     about: Read the latest blogs/updates from community and the BentoML team. 

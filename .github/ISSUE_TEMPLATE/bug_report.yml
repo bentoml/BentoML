@@ -9,12 +9,12 @@ body:
       label: Is there an existing issue for this?
       description: |
         Please search to see if an issue already exists for the bug you encountered.
-        Please see [Searching Issues and Pull Requests](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
+        See [Searching Issues and Pull Requests](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
       options:
       - label: I have searched the existing issues
         required: true
   - type: textarea
-    id: describe-the-bugs
+    id: describe-the-bug
     validations:
       required: true
     attributes:
@@ -71,8 +71,8 @@ body:
       description: |
         Please share your environment with us. You should run `bentoml env` and paste the result here.
       placeholder: |
-        bentoml: 1.0.0rc3
-        python: 3.10.5
-        platform: macOS-12.4-arm64-arm-64bit
+        bentoml: ...
+        python: ...
+        platform: ...
     validations:
       required: true

@@ -13,6 +13,7 @@ from .json import MIME_TYPE_JSON
 from ..types import LazyType
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
+from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
 
 if TYPE_CHECKING:
@@ -126,7 +127,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             # Convert from primitive type or type string, e.g.:
             # np.dtype(float)
             # np.dtype("float64")
-            dtype = np.dtype(dtype)
+            try:
+                dtype = np.dtype(dtype)
+            except TypeError as e:
+                raise BentoMLException(f'NumpyNdarray: Invalid dtype "{dtype}": {e}')
 
         self._dtype = dtype
         self._shape = shape

@@ -2,7 +2,7 @@
 Serving with GPU
 ================
 
-Most popular deep learning frameworks (Tensorflow, PyTorch, ONNX, etc.) have supports
+Most popular deep learning frameworks (TensorFlow, PyTorch, ONNX, etc.) have supports
 for GPU, both for training and inference. This guide demonstrates how to serve models
 with BentoML on GPU.
 

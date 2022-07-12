@@ -1,17 +1,17 @@
 ==========
-Tensorflow
+TensorFlow
 ==========
 
 .. admonition:: About this page
 
-   This is an API reference for Tensorflow in BentoML. Please refer to
-   :ref:`Tensorflow guides <frameworks/tensorflow:Tensorflow>` for more information about how to use Tensorflow
+   This is an API reference for TensorFlow in BentoML. Please refer to
+   :doc:`/frameworks/tensorflow` for more information about how to use TensorFlow
    in BentoML.
 
 
 .. note::
 
-   You can find more examples for **Tensorflow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
+   You can find more examples for **TensorFlow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
 
 .. currentmodule:: bentoml.tensorflow
 

@@ -114,13 +114,13 @@ expected, run :code:`bentoml containerize <bento>` to build a docker image with 
 Examples
 --------
 
-1. :ref:`guides/containerization:Building Tensorflow custom op`
+1. :ref:`guides/containerization:Building TensorFlow custom op`
 2. :ref:`guides/containerization:Access AWS credentials during image build`
 
-Building Tensorflow custom op
+Building TensorFlow custom op
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let's start with an example that builds a `custom Tensorflow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento, which is based on |zero_out|_:
+Let's start with an example that builds a `custom TensorFlow op <https://www.tensorflow.org/guide/create_op>`_ binary into a Bento, which is based on |zero_out|_:
 
 .. _zero_out: https://www.tensorflow.org/guide/create_op#define_the_op_interface
 

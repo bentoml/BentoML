@@ -69,7 +69,7 @@ def load_model(
     bento_model: str | Tag | bentoml.Model,
 ) -> mlflow.pyfunc.PyFuncModel:
     """
-    Load the MLFlow model with the given tag from the local BentoML model store.
+    Load the MLFlow `PyFunc <https://www.mlflow.org/docs/latest/python_api/mlflow.pyfunc.html#mlflow.pyfunc.PyFuncModel>`_ model with the given tag from the local BentoML model store.
 
     Args:
         bento_model: Either the tag of the model to get from the store, or a BentoML

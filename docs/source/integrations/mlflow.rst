@@ -76,8 +76,8 @@ Running Imported Model
 MLflow models imported to BentoML can be loaded back for running inference in a various
 of ways.
 
-Load original model flavor
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Loading original model flavor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For evaluation and testing purpose, sometimes it's convenient to load the model in its
 native form
@@ -93,8 +93,8 @@ native form
         predictions = loaded_pytorch_model(input_tensor)
 
 
-Load pyfunc flavor
-~~~~~~~~~~~~~~~~~~
+Loading pyfunc flavor
+~~~~~~~~~~~~~~~~~~~~~
 
 By default, ``bentoml.mflow.load_model`` will load the imported MLflow model using the
 `python_function flavor <https://www.mlflow.org/docs/latest/python_api/mlflow.pyfunc.html>`_
@@ -199,15 +199,13 @@ Here's an example ``bentoml.Service`` built with a MLflow model:
     def predict(input_arr):
         return mnist_runner.predict.run(input_arr)
 
-To try out the full example, download source code from
-`bentoml/gallery: MLflow Pytorch Example <https://github.com/bentoml/gallery/tree/main/mlflow/pytorch>`_.
+To try out the full example, visit `bentoml/gallery: MLflow Pytorch Example <https://github.com/bentoml/gallery/tree/main/mlflow/pytorch>`_.
 
 
 End-to-end workflow
 -------------------
 
-Depending on how you set up MLflow, there are a number of ways you could integrate
-BentoML for model serving and deployment.
+There are numerous ways you can integrate BentoML with your MLFlow workflow for model serving and deployment.
 
 1. Find ``model_uri`` from a MLflow model instance returned from ``log_model``:
 
@@ -306,9 +304,9 @@ Alternatively use MLFlow model's conda environment
     conda:
         environment_yml: $BENTOML_MLFLOW_MODEL_PATH/mlflow_model/conda.yaml
 
-This allows BentoML to dynamically find the dependency file based on a user-defined
-environment variable. In this case, we will use BentoML CLI to find path to the target
-MLflow model and expose it to ``bentoml build`` via the env var
+This allows BentoML to dynamically find the given dependency file based on a user-defined
+environment variable. In this case, the ``bentoml get`` CLI returns the path to the target
+MLflow model folder and expose it to ``bentoml build`` via the env var.
 ``BENTOML_MLFLOW_MODEL_PATH``:
 
 .. code-block:: bash
@@ -338,4 +336,3 @@ logged with an MLflow model to the BentoML model store.
             "params": run.data.params,
         }
     )
-    run.info.artifact_uri

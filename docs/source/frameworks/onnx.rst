@@ -76,9 +76,7 @@ Converting model frameworks to ONNX format
 
 	 torch_model = SuperResolutionNet()
 
-      For this tutorial, we will download some pre-trained weights. Note
-      that this model was not trained fully for good accuracy and is used
-      here for demonstration purposes only.
+      For this tutorial, we will use pre-trained weights provided by the PyTorch team. Note that the model was only partially trained and being used for demonstration purposes.
 
       .. code-block:: python
 
@@ -98,32 +96,36 @@ Converting model frameworks to ONNX format
       Exporting a model to ONNX in PyTorch works via tracing or
       scripting (read more at `official PyTorch documentation
       <https://pytorch.org/docs/stable/onnx.html#tracing-vs-scripting>`_). In
-      this tutorial we will export a model using tracing. Note how we
-      export the model with an input of ``batch_size=1``, but then
-      specify the first dimension as dynamic in the ``dynamic_axes``
-      parameter in ``torch.onnx.export()``. The exported model will
-      thus accept inputs of size ``[batch_size, 1, 224, 224]`` where
-      ``batch_size`` can vary among each inference.
+      this tutorial we will export the model using tracing techniques: 
 
       .. code-block:: python
 
-	 batch_size = 1 # can be any number
+	 batch_size = 1
 	 # Tracing input to the model
 	 x = torch.randn(batch_size, 1, 224, 224, requires_grad=True)
 
 	 # Export the model
-	 torch.onnx.export(torch_model,
-			   x,
-			   "super_resolution.onnx",   # where to save the model (can be a file or file-like object)
-			   export_params=True,        # store the trained parameter weights inside the model file
-			   opset_version=10,          # the ONNX version to export the model to
-			   do_constant_folding=True,  # whether to execute constant folding for optimization
-			   input_names=['input'],   # the model's input names
-			   output_names=['output'], # the model's output names
-			   dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-					 'output' : {0 : 'batch_size'}})
+	 torch.onnx.export(
+	    torch_model,
+	    x,
+	    "super_resolution.onnx",  # where to save the model (can be a file or file-like object)
+	    export_params=True,  # store the trained parameter weights inside the model file
+	    opset_version=10,  # the ONNX version to export the model to
+	    do_constant_folding=True,  # whether to execute constant folding for optimization
+	    input_names=["input"],  # the model's input names
+	    output_names=["output"],  # the model's output names
+	    dynamic_axes={
+	       "input": {0: "batch_size"},  # variable length axes
+	       "output": {0: "batch_size"},
+	    },
+	 )
 
-      Now we can compute the output using ONNX Runtime’s Python APIs:
+      Notice from the arguments of ``torch.onnx.export()``, even though we are exporting the model
+      with an input of ``batch_size=1``, the first dimension is still specified as dynamic in ``dynamic_axes``
+      parameter. By doing so, the exported model will accept inputs of size ``[batch_size, 1, 224, 224]`` where
+      ``batch_size`` can vary among inferences.
+
+      We can now compute the output using ONNX Runtime’s Python APIs:
 
       .. code-block:: python
 
@@ -154,11 +156,9 @@ Converting model frameworks to ONNX format
 
 	 model = ResNet50(weights='imagenet')
 
-      Then we can export the model to ONNX format. Notice that we use
-      ``None`` in `TensorSpec
-      <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ to
+      Notice that we use ``None`` in `TensorSpec <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ to
       denote the first input dimension as dynamic batch axies, which
-      means this dimension can accept arbitrary input size.
+      means this dimension can accept any arbitrary input size:
 
       .. code-block:: python
 
@@ -175,10 +175,10 @@ Converting model frameworks to ONNX format
 Saving ONNX model with BentoML
 ------------------------------
 
-To quickly save an ONNX model to BentoML's :ref:`Model
-Store<concepts/model:Managing Models>`, first use ``onnx.load`` to
-load the exported ONNX model back into ``onnx.ModelProto`` object,
-then call BentoML's ``save_model``:
+To quickly save any given ONNX model to BentoML's :ref:`Model
+Store<concepts/model:Managing Models>`, use ``onnx.load`` to
+load the exported ONNX model back into the Python session,
+then call BentoML's :obj:`~bentoml.onnx.save_model()`:
 
 
 .. tab-set::
@@ -222,13 +222,11 @@ then call BentoML's ``save_model``:
 
 .. note::
 
-   ``save_model`` will use ``{"run": {"batchable": False}}`` as
-   default signatures if ``signatures`` is not provided. Set
-   ``batchable`` to ``False`` will disable BentoML's
-   :ref:`guides/batching:Adaptive Batching` functionality. That's why
-   we provide our own signatures here. Read more about :ref:`Model
-   Signatures <concepts/model:Model Signatures>` and :ref:`Batch Input
-   <concepts/model:Batching>`
+   The default signature for ``save_model`` is set to ``{"run": {"batchable": False}}``.
+
+   This means by default, BentoML's :ref:`guides/batching:Adaptive Batching` is disabled when saving ONNX model.
+   If you want to enable adaptive batching, provide a signature similar to the
+   aboved example. Refers to `Model Signatures <concepts/model:Model Signatures>` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
 
 .. seealso::
 
@@ -317,7 +315,7 @@ Building a Service for **ONNX**
 
 When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build
 Options>`, there are two ways to include ONNX as a dependency, via
-``python`` ((if using pip) or ``conda``:
+``python`` (if using pip) or ``conda``:
 
 .. tab-set::
 
@@ -349,8 +347,8 @@ Using Runners
    :ref:`Runners<concepts/runner:Using Runners>` for more information on what is
    a Runner and how to use it.
 
-To test ``onnx`` runner locally, access the model via ``get`` and
-convert it to a runner:
+To test ONNX Runner locally, access the model via ``get`` and
+convert it to a runner object:
 
 .. code-block:: python
 
@@ -365,16 +363,17 @@ convert it to a runner:
 .. note::
 
    You don't need to cast your input ndarray to ``np.float32`` for
-   runner input
+   runner input.
 
-Like ``load_model``, you can customize ``providers`` and
-``session_options`` when you create a runner:
+Similar to ``load_model``, you can customize ``providers`` and ``session_options`` when creating a runner:
 
 .. code-block:: python
 
    providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
 
-   runner = bentoml.onnx.get("onnx_super_resolution").with_options(providers=providers).to_runner()
+   bento_model = bentoml.onnx.get("onnx_super_resolution")
+
+   runner = bento_model.with_options(providers=providers).to_runner()
 
    runner.init_local()
 
@@ -394,9 +393,6 @@ Use ``load_model`` to verify that the saved model can be loaded properly:
    ``onnxruntime.InferenceSession`` object which is ready to do
    inference
 
-
-Then we can do some test inference:
-
 .. code-block:: python
 
    test_input = np.random.randn(2, 1, 244, 244) # can accept arbitrary batch size
@@ -404,45 +400,52 @@ Then we can do some test inference:
 
 .. note::
 
-   In above codes we need explicitly to convert input ndarray to
-   float32 because ``onnxruntime.InferenceSession`` only expects
-   single floats. When using BentoML runner, it will automatically
-   cast input data to this type
+   In the above snippet, we need explicitly convert input ndarray to
+   float32 since ``onnxruntime.InferenceSession`` expects only single floats. 
+
+   However, BentoML will automatically cast the input data automatically via Runners.
 
 
 Dynamic Batch Size
 ------------------
 
-When enabling :ref:`guides/batching:Adaptive Batching`, the exported
-ONNX model need to accept dynamic batch size. Hence the dynamic batch
-axes need to be specified when the mode is exported in ONNX format.
+.. seealso::
+
+   :ref:`guides/batching:Adaptive Batching`: a general introduction to adaptive batching in BentoML.
+
+When :ref:`guides/batching:Adaptive Batching` is enabled, the exported
+ONNX model is **REQUIRED** to accept dynamic batch size. 
+
+Therefore, dynamic batch axes needs to be specified when the model is exported to the ONNX format.
 
 .. tab-item:: PyTorch
 
-   For PyTorch models, you can do that by specifying ``dynamic_axes``
-   when using `torch.onnx.export
-   <https://pytorch.org/docs/stable/onnx.html#torch.onnx.export>`_
+   For PyTorch models, you can achieve this by specifying ``dynamic_axes``
+   when using `torch.onnx.export <https://pytorch.org/docs/stable/onnx.html#torch.onnx.export>`_
 
    .. code-block:: python
 
-      torch.onnx.export(torch_model,
-			x,
-			"super_resolution.onnx",   # where to save the model (can be a file or file-like object)
-			export_params=True,        # store the trained parameter weights inside the model file
-			opset_version=10,          # the ONNX version to export the model to
-			do_constant_folding=True,  # whether to execute constant folding for optimization
-			input_names=['input'],   # the model's input names
-			output_names=['output'], # the model's output names
-			dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-				      'output' : {0 : 'batch_size'}})
+      torch.onnx.export(
+	 torch_model,
+	 x,
+	 "super_resolution.onnx",  # where to save the model (can be a file or file-like object)
+	 export_params=True,  # store the trained parameter weights inside the model file
+	 opset_version=10,  # the ONNX version to export the model to
+	 do_constant_folding=True,  # whether to execute constant folding for optimization
+	 input_names=["input"],  # the model's input names
+	 output_names=["output"],  # the model's output names
+	 dynamic_axes={
+	    "input": {0: "batch_size"},  # variable length axes
+	    "output": {0: "batch_size"},
+	 },
+      )
 
 .. tab-item:: TensorFlow
 
-   For TensorFlow models, you can do that by using ``None`` to denote
+   For TensorFlow models, you can achieve this by using ``None`` to denote
    a dynamic batch axis in `TensorSpec
    <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ when
-   using ``tf2onnx.convert.from_keras`` or
-   ``tf2onnx.convert.from_function``
+   through either ``tf2onnx.convert.from_keras`` or ``tf2onnx.convert.from_function``
 
    .. code-block:: python
 
@@ -457,13 +460,11 @@ axes need to be specified when the mode is exported in ONNX format.
 Default Execution Providers Settings
 ------------------------------------
 
-* When a CUDA compatible GPU is available, BentoML runner will use ``["CUDAExecutionProvider", "CPUExecutionProvider"]`` as the default Execution Providers.
-* When CUDA compatible GPU is not available, BentoML runner will use
-  ``["CPUExecutionProvider"]`` as the default Execution Providers.
+When a CUDA-compatible GPU is available, BentoML runner will use ``["CUDAExecutionProvider", "CPUExecutionProvider"]`` as the de facto execution providers.
+Otherwise, Runner will use ``["CPUExecutionProvider"]`` as the default providers.
 
 If ``onnxruntime-gpu`` is installed, using ``TensorrtExecutionProvider`` may improve inference runtime. You can
-override the default setting using ``with_options`` when creating the
-runner:
+override the default setting using ``with_options`` when creating a runner:
 
 .. code-block:: python
 
@@ -471,5 +472,4 @@ runner:
 
    runner = bentoml.onnx.get("onnx_super_resolution").with_options(providers=providers).to_runner()
 
-Read more about Execution Providers in `ONNX Runtime's documentation
-<https://onnxruntime.ai/docs/execution-providers/>`_
+Read more about Execution Providers at `ONNX Runtime's documentation <https://onnxruntime.ai/docs/execution-providers/>`_

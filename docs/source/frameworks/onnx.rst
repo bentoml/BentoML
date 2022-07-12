@@ -96,12 +96,14 @@ Converting model frameworks to ONNX format
 
 
       Exporting a model to ONNX in PyTorch works via tracing or
-      scripting. In this tutorial we will export a model using
-      tracing. Note how we export the model with an input of
-      ``batch_size=1``, but then specify the first dimension as dynamic
-      in the ``dynamic_axes`` parameter in ``torch.onnx.export()``. The
-      exported model will thus accept inputs of size ``[batch_size, 1,
-      224, 224]`` where ``batch_size`` can vary among each inference.
+      scripting (read more at `official PyTorch documentation
+      <https://pytorch.org/docs/stable/onnx.html#tracing-vs-scripting>`_). In
+      this tutorial we will export a model using tracing. Note how we
+      export the model with an input of ``batch_size=1``, but then
+      specify the first dimension as dynamic in the ``dynamic_axes``
+      parameter in ``torch.onnx.export()``. The exported model will
+      thus accept inputs of size ``[batch_size, 1, 224, 224]`` where
+      ``batch_size`` can vary among each inference.
 
       .. code-block:: python
 
@@ -171,7 +173,7 @@ Converting model frameworks to ONNX format
 
 
 Saving ONNX model with BentoML
------------------------------
+------------------------------
 
 To quickly save an ONNX model to BentoML's :ref:`Model
 Store<concepts/model:Managing Models>`, first use ``onnx.load`` to

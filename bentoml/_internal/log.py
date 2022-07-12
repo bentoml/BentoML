@@ -62,6 +62,7 @@ SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
         "tracehandler": {
             "class": "logging.StreamHandler",
             "formatter": "traced",
+            "stream": "ext://sys.stdout",
         },
     },
     "loggers": {

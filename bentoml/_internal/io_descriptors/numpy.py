@@ -122,7 +122,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     ):
         import numpy as np
 
-        if not isinstance(dtype, np.dtype):
+        if dtype is not None and not isinstance(dtype, np.dtype):
             # Convert from primitive type or type string, e.g.:
             # np.dtype(float)
             # np.dtype("float64")

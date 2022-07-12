@@ -95,7 +95,7 @@ native form
         predictions = loaded_pytorch_model(input_tensor)
 
 
-Loading pyfunc flavor
+Loading Pyfunc flavor
 ~~~~~~~~~~~~~~~~~~~~~
 
 By default, ``bentoml.mflow.load_model`` will load the imported MLflow model using the
@@ -284,8 +284,8 @@ directly to BentoML for serving.
 Additional Tips
 ---------------
 
-Use MLflow model dependency config
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use MLflow model dependencies config
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Most MLflow models carries the dependency information required for running this model.
 If you don't need additional dependencies in your Service definition code, it is

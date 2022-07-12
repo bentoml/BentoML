@@ -9,11 +9,11 @@ import attr
 from ..tag import validate_tag_str
 from ..types import ParamSpec
 from ..utils import first_not_none
-from ..models import Model
 from .runnable import Runnable
 from .strategy import Strategy
 from .strategy import DefaultStrategy
 from ...exceptions import StateException
+from ..models.model import Model
 from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer

@@ -220,7 +220,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    assert "predict" in bento_model.info.signatures.keys()
+    assert "predict" in bento_model.info.signatures
     predict_signature = bento_model.info.signatures["predict"]
 
     class MLflowPyfuncRunnable(bentoml.Runnable):

@@ -90,12 +90,17 @@ class Runner:
         """
 
         if name is None:
-            name = runnable_class.__name__
+            lname = runnable_class.__name__.lower()
+            logger.warning(
+                f"Using lowercased runnable class name '{lname}' for runner."
+            )
+        else:
+            lname = name.lower()
 
-        lname = name.lower()
-
-        if name != lname:
-            logger.warning(f"Converting runner name '{name}' to lowercase: '{lname}'")
+            if name != lname:
+                logger.warning(
+                    f"Converting runner name '{name}' to lowercase: '{lname}'"
+                )
 
         try:
             validate_tag_str(lname)

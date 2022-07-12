@@ -10,9 +10,9 @@ body:
   attributes:
     label: Feature request
     description: |
-      A clear and concise description of the feature proposal.
+      A clear and concise description of the feature request.
     placeholder: |
-      An implementation of ... can be done as follow:
+      An implementation could be implemented by...
 - type: textarea
   id: motivation
   validations:
@@ -20,17 +20,17 @@ body:
   attributes:
     label: Motivation
     description: |
-      Please outline the motivation for the proposal. Is your feature request related to a problem? e.g., I'm always frustrated when [...].
-      If this is related to another GitHub issue, please link here too.
+      Please outline the motivation for this feature request. Is your feature request related to a problem? e.g., I'm always frustrated when [...].
+      If this is related to another issue, please link here too.
       If you have a current workaround, please also provide it here.
     placeholder: |
-      This feature would solve issue #2668 ...
+      This feature would solve ...
 - type: checkboxes
   id: contribution
   attributes:
     label: Contribution
     description: |
-      Is there any way that you could help, e.g. by submitting a PR? Please make sure to read the [CONTRIBUTING.md](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md) as well as [DEVELOPMENT.md](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md)
+      Is there any way that you could help, e.g. by submitting a PR? Please make sure to read the [contributing guidelines](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md) as well as [development guidelines](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md).
     options:
       - label: I can contribute code.
         required: false

@@ -23,6 +23,5 @@ rules:
     level: warning
   hyphens:
     level: warning
-  indentation: disable 
   line-length: disable
   truthy: disable

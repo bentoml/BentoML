@@ -1,5 +1,5 @@
 name: 🐛 Bug Report
-description: Create a report to help us improve bentoml.
+description: Create a bug report to help us improve BentoML.
 title: "bug: "
 labels: ["bug"]
 body:
@@ -9,7 +9,7 @@ body:
       label: Is there an existing issue for this?
       description: |
         Please search to see if an issue already exists for the bug you encountered.
-        Please see [Searching Issues and Pull Request](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
+        Please see [Searching Issues and Pull Requests](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
       options:
       - label: I have searched the existing issues
         required: true
@@ -20,7 +20,7 @@ body:
     attributes:
       label: Describe the bug
       description: Please provide a clear and concise description about the problem you ran into.
-      placeholder: I ran into ... while using ...
+      placeholder: This happened when I...
   - type: textarea
     id: to-reproduce
     validations:
@@ -52,7 +52,7 @@ body:
           bentoml serve service.py:svc --verbose
           ```
       placeholder: |
-        Steps to reproduce the behaviour:
+        Steps to reproduce the bug:
 
           1. Provide '...'
           2. Run '...'
@@ -78,15 +78,3 @@ body:
         uid:gid: 501:20
     validations:
       required: true
-  - type: textarea
-    id: pip-freeze-info
-    attributes:
-      label: pip freeze
-      description: |
-        If possible, you can also send the output of `pip freeze` here.
-      placeholder: |
-        aiofiles==0.8.0
-        attrs==21.4.0
-        -e git+ssh://git@github.com/aarnphm/BentoML.git@f5079721594641e0445c944aebd78935265712ea#egg=bentoml
-    validations:
-      required: false

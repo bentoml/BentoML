@@ -87,6 +87,23 @@ class ONNXOptions(ModelOptions):
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
+    """
+    Get the BentoML model with the given tag.
+
+    Args:
+        tag_like: The tag of the model to retrieve from the model store.
+
+    Returns:
+        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
+
+    Example:
+
+    .. code-block:: python
+
+       import bentoml
+       # target model must be from the BentoML model store
+       model = bentoml.onnx.get("onnx_resnet50")
+    """
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -119,7 +136,9 @@ def load_model(
             An instance of ONNX Runtime inference session created using ONNX model loaded from the model store.
 
     Example:
+
     .. code-block:: python
+
         import bentoml
         sess = bentoml.onnx.load_model("my_onnx_model")
     """  # noqa
@@ -154,14 +173,13 @@ def save_model(
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
-    """
-    Save a onnx model instance to the BentoML model store.
+    """Save a onnx model instance to the BentoML model store.
 
     Args:
         name (``str``):
             The name to give to the model in the BentoML store. This must be a valid
             :obj:`~bentoml.Tag` name.
-        model (onnx.ModelProto):
+        model (:obj:`~onnx.ModelProto`):
             The ONNX model to be saved.
         signatures (``dict[str, ModelSignatureDict]``, optional):
             Signatures of predict methods to be used. If not provided, the signatures default to
@@ -183,12 +201,15 @@ def save_model(
             Metadata is intended for display in a model management UI and therefore must be a
             default Python type, such as ``str`` or ``int``.
 
-        ...
     Returns:
-        A BentoML model containing the saved ONNX model instance.
-        store.
+
+        :obj:`~bentoml.Model`: A BentoML model containing the saved
+        ONNX model instance.  store.
+
     Example:
+
     .. code-block:: python
+
         import bentoml
 
         import torch

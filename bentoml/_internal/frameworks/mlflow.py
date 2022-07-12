@@ -165,11 +165,11 @@ def import_model(
     ) as bento_model:
         from mlflow.models import Model as MLflowModel
         from mlflow.pyfunc import FLAVOR_NAME as PYFUNC_FLAVOR_NAME
+        from mlflow.artifacts import download_artifacts
         from mlflow.models.model import MLMODEL_FILE_NAME
-        from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 
-        local_path = _download_artifact_from_uri(
-            artifact_uri=model_uri, output_path=bento_model.path
+        local_path = download_artifacts(
+            artifact_uri=model_uri, dst_path=bento_model.path
         )
         mlflow_model_path = bento_model.path_of(MLFLOW_MODEL_FOLDER)
         shutil.move(local_path, mlflow_model_path)

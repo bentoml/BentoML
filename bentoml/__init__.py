@@ -23,6 +23,7 @@ from ._internal.configuration import load_global_config
 load_global_config()
 
 # Model management APIs
+from . import io
 from . import models
 
 # Bento management APIs
@@ -116,6 +117,7 @@ __all__ = [
     "Context",
     "Service",
     "models",
+    "io",
     "Tag",
     "Model",
     "Runner",

@@ -172,27 +172,27 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         obj: "ext.NpNDArray",
         exception_cls: t.Type[Exception] = BadInput,
     ) -> "ext.NpNDArray":
-        if self._enforce_dtype:
-            if self._dtype is not None and self._dtype != obj.dtype:
-                # ‘same_kind’ means only safe casts or casts within a kind, like float64
-                # to float32, are allowed.
-                if np.can_cast(obj.dtype, self._dtype, casting="same_kind"):
-                    obj = obj.astype(self._dtype, casting="same_kind")  # type: ignore
+        if self._dtype is not None and self._dtype != obj.dtype:
+            # ‘same_kind’ means only safe casts or casts within a kind, like float64
+            # to float32, are allowed.
+            if np.can_cast(obj.dtype, self._dtype, casting="same_kind"):
+                obj = obj.astype(self._dtype, casting="same_kind")  # type: ignore
+            else:
+                msg = f'{self.__class__.__name__}: Expecting ndarray of dtype "{self._dtype}", but "{obj.dtype}" was received.'
+                if self._enforce_dtype:
+                    raise exception_cls(msg)
                 else:
-                    raise exception_cls(
-                        f"{self.__class__.__name__}: enforced dtype mismatch"
-                    )
+                    logger.warning(msg)
 
         if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
-            if self._enforce_shape:
-                raise exception_cls(
-                    f"{self.__class__.__name__}: enforced shape mismatch"
-                )
             try:
-                # TODO: make allow_reshape an option to NumpyNdarray io descriptor class
                 obj = obj.reshape(self._shape)
             except ValueError as e:
-                logger.warning(f"{self.__class__.__name__}: {e}")
+                msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{obj.shape}" was received, failed to reshape: {e}.'
+                if self._enforce_shape:
+                    raise exception_cls(msg)
+                else:
+                    logger.warning(msg)
 
         return obj
 

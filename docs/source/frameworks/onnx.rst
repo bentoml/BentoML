@@ -95,7 +95,7 @@ Converting model frameworks to ONNX format
 	 torch_model.eval()
 
 
-      Exporting a model to onnx in PyTorch works via tracing or
+      Exporting a model to ONNX in PyTorch works via tracing or
       scripting. In this tutorial we will export a model using
       tracing. Note how we export the model with an input of
       ``batch_size=1``, but then specify the first dimension as dynamic
@@ -309,7 +309,7 @@ Building a Service for **ONNX**
 .. note::
 
    In above example, notice that there are two :code:`run` in ``runner.run.run(input_data)`` while running inference. The distinction between the two ``run`` are as follow:
-   1.  The first ``run`` refers  to``onnxruntime.InferenceSession``'s ``run`` method, which is the API from onnxruntime to run `inference <https://onnxruntime.ai/docs/api/python/api_summary.html#data-inputs-and-outputs>`_.
+   1.  The first ``run`` refers  to``onnxruntime.InferenceSession``'s ``run`` method, which is the API from ONNX Runtime to run `inference <https://onnxruntime.ai/docs/api/python/api_summary.html#data-inputs-and-outputs>`_.
    2. The second ``run`` refers to BentoML's runner inference API for invoking a model's signature. In the case of ONNX, it happens to have the same name as the ``InferenceSession`` endpoint.
 
 

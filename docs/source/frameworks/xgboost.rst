@@ -33,7 +33,7 @@ If you've already saved a model using XGBoost, simply load it back into Python u
    bst = xgb.train(param, dt)
 
 
-After training, use save_model to save the Booster instance to BentoML model store. XGBoost has no
+After training, use :obj:`~bentoml.xgboost.save_model()` to save the Booster instance to BentoML model store. XGBoost has no
 framework-specific save options.
 
 .. code-block:: python

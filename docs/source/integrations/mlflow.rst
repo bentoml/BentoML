@@ -142,17 +142,17 @@ some ML frameworks, only a subset of this list is supported.
         )
 
 
-Limitations
-~~~~~~~~~~~
+Optimizations
+~~~~~~~~~~~~~
 
-There are two major limitation of using MLflow Runner in BentoML:
+There are two major limitations of using MLflow Runner in BentoML:
 
-* Lack support for GPU
-* Lack support for multiple inference method
+* Lack of support for GPU
+* Lack of support for multiple inference method
 
-However, there is an easy workaround. Instead of importing MLflow model and running it
-via MLflow pyfunc flavor, saving trained model natively with BentoML makes it possible
-to support GPU inference and expose multiple inference signatures.
+A common optimization we recommend, is to save trained model instance directly with BentoML,
+instead of importing MLflow pyfunc model. This makes it possible to run GPU inference and expose 
+multiple inference signatures.
 
 1. Save model directly with bentoml
 
@@ -282,10 +282,10 @@ directly to BentoML for serving.
 Additional Tips
 ---------------
 
-Use MLFlow model dependency config
+Use MLflow model dependency config
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most MLFlow models carries the dependency information required for running this model.
+Most MLflow models carries the dependency information required for running this model.
 If you don't need additional dependencies in your Service definition code, it is
 possible to reuse the dependency already specified in an imported MLflow model.
 

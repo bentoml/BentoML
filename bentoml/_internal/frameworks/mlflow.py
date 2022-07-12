@@ -69,14 +69,14 @@ def load_model(
     bento_model: str | Tag | bentoml.Model,
 ) -> mlflow.pyfunc.PyFuncModel:
     """
-    Load the MLFlow `PyFunc <https://www.mlflow.org/docs/latest/python_api/mlflow.pyfunc.html#mlflow.pyfunc.PyFuncModel>`_ model with the given tag from the local BentoML model store.
+    Load the MLflow `PyFunc <https://www.mlflow.org/docs/latest/python_api/mlflow.pyfunc.html#mlflow.pyfunc.PyFuncModel>`_ model with the given tag from the local BentoML model store.
 
     Args:
         bento_model: Either the tag of the model to get from the store, or a BentoML
             ``~bentoml.Model`` instance to load the model from.
 
     Returns:
-        The MLFlow model loaded as PyFuncModel from the BentoML model store.
+        The MLflow model loaded as PyFuncModel from the BentoML model store.
 
     Example:
 
@@ -108,7 +108,7 @@ def import_model(
     # ...
 ) -> bentoml.Model:
     """
-    import mlflow model from a URI to the BentoML model store.
+    Import MLflow model from a artifact URI to the BentoML model store.
 
     Args:
         name:
@@ -162,11 +162,11 @@ def import_model(
             "predict": {"batchable": False},
         }
         logger.info(
-            f"Using the default model signature for MLFlow pyfunc model ({signatures}) for model {name}."
+            f"Using the default model signature for MLflow pyfunc model ({signatures}) for model {name}."
         )
     if len(signatures) != 1 or "predict" not in signatures:
         raise BentoMLException(
-            f"MLFlow pyfunc model support only the `predict` method, signatures={signatures} is not supported"
+            f"MLflow pyfunc model support only the `predict` method, signatures={signatures} is not supported"
         )
 
     with bentoml.models.create(
@@ -192,7 +192,7 @@ def import_model(
                 artifact_uri=model_uri, dst_path=bento_model.path
             )
         except ImportError:
-            # For MLFlow < 1.25
+            # For MLflow < 1.25
             from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 
             local_path = _download_artifact_from_uri(

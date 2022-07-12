@@ -1,5 +1,5 @@
 ============
-Hugging Face
+Transformers
 ============
 
 `🤗 Transformers <https://huggingface.co/docs/transformers/main/en/index>`_ is a library that helps download and fine-tune popular 

@@ -8,6 +8,7 @@ Framework APIs
     framework, please see :doc:`../../frameworks/index`
 
 .. toctree::
-  :maxdepth: 1
+    :maxdepth: 1
 
-  fastai
+    fastai
+    mlflow

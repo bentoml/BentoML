@@ -40,7 +40,7 @@ MLflow model to its own format for model serving. For example:
 
         model_uri = mlflow.get_artifact_uri("pytorch-model")
         bento_model = bentoml.mlflow.import_model(
-            'mlflow-pytorch-mnist',
+            'mlflow_pytorch_mnist',
             model_uri,
             signatures={'predict': {'batchable': True}}
         )
@@ -54,7 +54,7 @@ frameworks:
 
 .. code-block:: bash
 
-    bentoml models list mlflow-pytorch-mnist
+    bentoml models list mlflow_pytorch_mnist
 
 
 The second argument ``model_uri`` takes a URI to the MLflow model. It can be a local
@@ -85,7 +85,7 @@ native form
 
 .. code-block:: python
 
-    bento_model = bentoml.mlflow.get("mlflow-pytorch-mnist:latest")
+    bento_model = bentoml.mlflow.get("mlflow_pytorch_mnist:latest")
     loaded_pytorch_model = mlflow.pytorch.load_model(bento_model.path_of("mlflow_model"))
     loaded_pytorch_model.to(device)
     loaded_pytorch_model.eval()
@@ -103,7 +103,7 @@ for best compatibility across all ML frameworks supported by MLflow.
 
 .. code-block:: python
 
-    pyfunc_model: mlflow.pyfunc.PyFuncModel = bentoml.mlflow.load_model("mlflow-pytorch-mnist:latest")
+    pyfunc_model: mlflow.pyfunc.PyFuncModel = bentoml.mlflow.load_model("mlflow_pytorch_mnist:latest")
     predictions = pyfunc_model.predict(test_input_arr)
 
 
@@ -115,7 +115,7 @@ prediction service with BentoML. To test out the runner API:
 
 .. code-block:: python
 
-    runner = bentoml.mlflow.get("mlflow-pytorch-mnist:latest").to_runner()
+    runner = bentoml.mlflow.get("mlflow_pytorch_mnist:latest").to_runner()
     runner.init_local()
     runner.predict.run(input_df)
 
@@ -137,7 +137,7 @@ frameworks, only a subset of this list is supported.
     .. code-block:: python
 
         bento_model = bentoml.mlflow.import_model(
-            'mlflow-pytorch-mnist',
+            'mlflow_pytorch_mnist',
             model_uri,
             signatures={'predict': {'batchable': True}}
         )
@@ -185,7 +185,7 @@ Here's an example ``bentoml.Service`` built with a MLflow model:
     import mlflow
     import torch
 
-    mnist_runner = bentoml.mlflow.get('mlflow-pytorch-mnist:latest').to_runner()
+    mnist_runner = bentoml.mlflow.get('mlflow_pytorch_mnist:latest').to_runner()
 
     svc = bentoml.Service('mlflow_pytorch_mnist', runners=[ mnist_runner ])
 
@@ -231,7 +231,7 @@ BentoML for model serving and deployment.
         ...
         mlflow.pytorch.log_model(model, artifact_path="pytorch-model")
         model_uri = mlflow.get_artifact_uri("pytorch-model")
-        bento_model = bentoml.mlflow.import_model('mlflow-pytorch-mnist', model_uri)
+        bento_model = bentoml.mlflow.import_model('mlflow_pytorch_mnist', model_uri)
 
 3. When using ``autolog``, find ``model_uri`` by last active ``run_id``:
 

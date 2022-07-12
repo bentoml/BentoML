@@ -40,6 +40,23 @@ logger = logging.getLogger(__name__)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
+    """
+    Get the BentoML model with the given tag.
+
+    Args:
+        tag_like: The tag of the model to retrieve from the model store.
+
+    Returns:
+        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
+
+    Example:
+
+    .. code-block:: python
+
+       import bentoml
+       # target model must be from the BentoML model store
+       model = bentoml.mlflow.get("my_mlflow_model")
+    """
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -183,16 +200,17 @@ def import_model(
             )
 
         mlflow_model_path = bento_model.path_of(MLFLOW_MODEL_FOLDER)
+        # Rename model folder from original artifact name to fixed "mlflow_model"
         shutil.move(local_path, mlflow_model_path)
         mlflow_model_file = os.path.join(mlflow_model_path, MLMODEL_FILE_NAME)
 
         if not os.path.exists(mlflow_model_file):
-            raise BentoMLException("artifact is not a mlflow model")
+            raise BentoMLException(f'artifact "{model_uri}" is not a MLflow model')
 
         model_meta = MLflowModel.load(mlflow_model_file)
         if PYFUNC_FLAVOR_NAME not in model_meta.flavors:
             raise BentoMLException(
-                "Target MLFlow model does not support python_function flavor"
+                f'MLFlow model "{model_uri}" does not support the required python_function flavor'
             )
 
         return bento_model

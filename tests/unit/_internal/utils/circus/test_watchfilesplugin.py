@@ -41,6 +41,8 @@ class TestServiceReloaderPlugin(TestCircus):
             "bentoml_home": self.reload_directory.__fspath__(),
         }
         self.mock_bentoml_install_from_source()
+        self.mock_bentoml_component_context()
+        self.mock_bentoml_server_logging()
 
     def test_logging_info(self) -> None:
         with self.assertLogs("bentoml", level=logging.INFO) as log:
@@ -52,11 +54,28 @@ class TestServiceReloaderPlugin(TestCircus):
         self.assertRaises(AssertionError, self.make_plugin, ServiceReloaderPlugin)  # type: ignore (unfinished circus type)
 
     def mock_bentoml_install_from_source(self) -> MagicMock:
-        patcher = patch("bentoml._internal.configuration.is_pypi_installed_bentoml")
-        pypi_mock = patcher.start()
+        patcher = patch(
+            "bentoml._internal.utils.circus.watchfilesplugin.is_pypi_installed_bentoml"
+        )
+        mock = patcher.start()
+        mock.return_value = False
         self.addCleanup(patcher.stop)
-        pypi_mock.return_value = False
-        return pypi_mock
+
+    def mock_bentoml_component_context(self) -> MagicMock:
+        from bentoml._internal.context import _ComponentContext
+
+        # prevent error from double setting component name
+        _ComponentContext.component_name = None
+
+    def mock_bentoml_server_logging(self) -> MagicMock:
+        patcher = patch(
+            "bentoml._internal.utils.circus.watchfilesplugin.configure_server_logging"
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        import bentoml._internal.log as log
+
+        log.configure_server_logging = lambda: None
 
     def setup_watch_mock(self, watch_return: set[FileChange]) -> MagicMock:
         # changes: 1 -> added, 2 -> modified, 3 -> deleted

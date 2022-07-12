@@ -3,16 +3,13 @@ description: Create a bug report to help us improve BentoML.
 title: "bug: "
 labels: ["bug"]
 body:
-  - type: checkboxes
+  - type: markdown
     id: issue-already-exists
     attributes:
-      label: Is there an existing issue for this?
+      label: Get help from existing issues
       description: |
         Please search to see if an issue already exists for the bug you encountered.
         See [Searching Issues and Pull Requests](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
-      options:
-      - label: I have searched the existing issues
-        required: true
   - type: textarea
     id: describe-the-bug
     validations:

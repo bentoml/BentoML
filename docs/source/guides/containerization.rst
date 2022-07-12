@@ -547,8 +547,8 @@ If you need to use conda for CUDA images, use the following template ( *partiall
       {% block SETUP_BENTO_BASE_IMAGE %}
       FROM debian:bullseye-slim as conda-build
 
-      RUN --mount=type=cache,from=cached,sharing=shared,target=/var/cache/apt \
-          --mount=type=cache,from=cached,sharing=shared,target=/var/lib/apt \
+      RUN --mount=type=cache,target=/var/cache/apt \
+          --mount=type=cache,target=/var/lib/apt \
           apt-get update -y && \
           apt-get install -y --no-install-recommends --allow-remove-essential \
                       software-properties-common \

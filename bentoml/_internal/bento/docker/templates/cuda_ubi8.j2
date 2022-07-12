@@ -15,7 +15,7 @@ ENV \
   APP_ROOT={{ app_root }} \
   PATH={{ path_root }}
 
-RUN {{ common.mount_cache("/var/cache/yum", __hash_key__) }} bash <<EOF
+RUN {{ common.mount_cache("/var/cache/yum") }} bash <<EOF
 set -euxo pipefail
 
 dnf install -y --setopt=tsflags=nodocs python{{ short_pyver }}
@@ -31,7 +31,7 @@ RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 
 {% endblock %}
 {% block SETUP_BENTO_ENTRYPOINT %}
-RUN rm -rf /var/cache/yum
-
 {{ super() }}
+
+RUN rm -rf /var/cache/yum
 {% endblock %}

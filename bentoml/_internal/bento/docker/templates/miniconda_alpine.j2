@@ -1,5 +1,10 @@
 {% extends "base_alpine.j2" %}
 {% block SETUP_BENTO_COMPONENTS %}
-{{ common.setup_conda(__python_version__, bento__path, __hash_key__) }}
+{{ common.setup_conda(__python_version__, bento__path) }}
 {{ super() }}
+{% endblock %}
+{% block SETUP_BENTO_ENTRYPOINT %}
+{{ super() }}
+
+RUN rm -rf /var/cache/apk/*
 {% endblock %}

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import os
 import typing as t
-import hashlib
 import logging
 import subprocess
 from typing import TYPE_CHECKING
@@ -345,6 +344,7 @@ def build_bentofile(
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "Bento":
     """
     Build a Bento base on options specified in a bentofile.yaml file.
@@ -364,15 +364,13 @@ def build_bentofile(
     except FileNotFoundError:
         raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
-    with open(bentofile, "r", encoding="utf-8") as fr, open(bentofile, "rb") as fb:
-        build_config = BentoBuildConfig.from_yaml(fr)
-        hash_key = hashlib.md5(fb.read()).hexdigest()
+    with open(bentofile, "r", encoding="utf-8") as f:
+        build_config = BentoBuildConfig.from_yaml(f)
 
     bento = Bento.create(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
-        hash_key=hash_key,
     ).save(_bento_store)
     logger.info(BENTOML_FIGLET)
     logger.info(f"Successfully built {bento}")

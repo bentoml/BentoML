@@ -201,7 +201,7 @@ class DockerOptions:
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self, bento_fs: FS, build_ctx: str, conda_options: CondaOptions, hash_key: str
+        self, bento_fs: FS, build_ctx: str, conda_options: CondaOptions
     ) -> None:
         use_conda = not conda_options.is_empty()
 
@@ -211,12 +211,7 @@ class DockerOptions:
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(
-                generate_dockerfile(
-                    self,
-                    build_ctx=build_ctx,
-                    use_conda=use_conda,
-                    hash_key=hash_key,
-                )
+                generate_dockerfile(self, build_ctx=build_ctx, use_conda=use_conda)
             )
 
         copy_file_to_fs_folder(

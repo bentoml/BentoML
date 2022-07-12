@@ -2,8 +2,8 @@
 {% block SETUP_BENTO_BASE_IMAGE %}
 {{ super() }}
 
-RUN {{ common.mount_cache("/var/lib/apt", __hash_key__) }} \ 
-    {{ common.mount_cache("/var/cache/apt", __hash_key__) }} bash <<EOF
+RUN {{ common.mount_cache(__lib_apt__) }} \
+    {{ common.mount_cache(__cache_apt__) }} bash <<EOF
 set -euxo pipefail
 
 apt-get update -y
@@ -35,4 +35,8 @@ RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 
 {{ super() }}
+{% endblock %}
+{% block SETUP_BENTO_ENTRYPOINT %}
+{{ super() }}
+RUN rm -rf /var/lib/{apt,cache,log}
 {% endblock %}

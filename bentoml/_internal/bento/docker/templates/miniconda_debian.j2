@@ -1,5 +1,9 @@
 {% extends "base_debian.j2" %}
 {% block SETUP_BENTO_COMPONENTS %}
-{{ common.setup_conda(__python_version__, bento__path, __hash_key__) }}
+{{ common.setup_conda(__python_version__, bento__path) }}
 {{ super() }}
+{% endblock %}
+{% block SETUP_BENTO_ENTRYPOINT %}
+{{ super() }}
+RUN rm -rf /var/lib/{apt,cache,log}
 {% endblock %}

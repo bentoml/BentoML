@@ -12,6 +12,7 @@ Framework APIs
 
   fastai
   mlflow
+  onnx
   transformers
   xgboost
 

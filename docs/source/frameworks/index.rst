@@ -16,6 +16,10 @@ repository.
         :link: /frameworks/keras
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/frameworks/onnx`
+        :link: /frameworks/onnx
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/frameworks/picklable`
         :link: /frameworks/picklable
         :link-type: doc
@@ -93,6 +97,7 @@ from these ML libraries with BentoML.
 .. toctree::
   :hidden:
 
+  onnx
   picklable
   pytorch
   pytorch_lightning

@@ -10,6 +10,7 @@ import click
 import psutil
 
 from bentoml import __version__ as BENTOML_VERSION
+from bentoml.exceptions import BentoMLException
 
 from .yatai import add_login_command
 from ..utils.pkg import get_pkg_version
@@ -47,7 +48,7 @@ def format_keys(key: str, markdown: bool) -> str:
 
 
 def pretty_format(
-    info_dict: dict[str, str | list[str]], output: t.Literal["md", "stdout"]
+    info_dict: dict[str, str | list[str]], output: t.Literal["md", "plain"]
 ) -> str:
     out: list[str] = []
     for key, value in info_dict.items():
@@ -80,13 +81,13 @@ def create_bentoml_cli():
     @click.option(
         "-o",
         "--output",
-        type=click.Choice(["md", "stdout"]),
+        type=click.Choice(["md", "plain"]),
         default="md",
         show_default=True,
-        help="Output format. '-o stdout' to pipe to 'ext://sys.stdout'",
+        help="Output format. '-o plain' to display without format.",
     )
     @click.pass_context
-    def env(ctx: click.Context, output: t.Literal["md", "stdout"]) -> None:  # type: ignore (unused warning)
+    def env(ctx: click.Context, output: t.Literal["md", "plain"]) -> None:  # type: ignore (unused warning)
         is_windows = sys.platform == "win32"
 
         info_dict: dict[str, str | list[str]] = {
@@ -123,6 +124,8 @@ def create_bentoml_cli():
             pip_packages = run_cmd(["pip", "freeze"])
             info_dict["pip_packages"] = pip_packages
 
+        if output not in ["md", "plain"]:
+            raise BentoMLException(f"Unknown output format: {output}")
         click.echo(pretty_format(info_dict, output=output))
         ctx.exit(0)
 

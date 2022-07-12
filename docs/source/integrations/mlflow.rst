@@ -85,7 +85,9 @@ native form
 .. code-block:: python
 
     bento_model = bentoml.mlflow.get("mlflow_pytorch_mnist:latest")
-    loaded_pytorch_model = mlflow.pytorch.load_model(bento_model.path_of("mlflow_model"))
+    mlflow_model_path = bento_model.path_of(bentoml.mlflow.MLFLOW_MODEL_FOLDER)
+
+    loaded_pytorch_model = mlflow.pytorch.load_model(mlflow_model_path)
     loaded_pytorch_model.to(device)
     loaded_pytorch_model.eval()
     with torch.no_grad():

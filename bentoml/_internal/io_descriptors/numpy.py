@@ -5,7 +5,6 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import numpy as np
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -173,6 +172,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         obj: "ext.NpNDArray",
         exception_cls: t.Type[Exception] = BadInput,
     ) -> "ext.NpNDArray":
+        import numpy as np
+
         if self._dtype is not None and self._dtype != obj.dtype:
             # ‘same_kind’ means only safe casts or casts within a kind, like float64
             # to float32, are allowed.

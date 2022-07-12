@@ -206,6 +206,11 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     predict_signature = bento_model.info.signatures["predict"]
 
     class MLflowPyfuncRunnable(bentoml.Runnable):
+        # The only case that multi-threading may not be supported is when user define a
+        # custom python_function MLflow model with pure python code, but there's no way
+        # of telling that from the MLflow model metadata. It should be a very rare case,
+        # because most custom python_function models are likely numpy code or model
+        # inference with pre/post-processing code.
         SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True  # type: ignore
 

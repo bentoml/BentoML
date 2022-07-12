@@ -2,8 +2,8 @@
 Service and APIs
 ================
 
-The service definition is the manifestation of the 
-`Service Oriented Architecture <https://en.wikipedia.org/wiki/Service-oriented_architecture>`_ 
+The service definition is the manifestation of the
+`Service Oriented Architecture <https://en.wikipedia.org/wiki/Service-oriented_architecture>`_
 and the core building block in BentoML where users define the model serving logic. This
 guide will dissect and explain the key components in the service definition.
 
@@ -77,6 +77,24 @@ all API requests to the global instance; otherwise, BentoML will create multiple
 instances of runners based on the available system resources. We also let advanced users
 to customize the runtime configurations to fine tune the runner performance. To learn
 more, please see the :doc:`concepts/runner` guide.
+
+Debugging Runners
+^^^^^^^^^^^^^^^^^
+
+Runners must be initialized in order to function. Normally, this is handled by BentoML internally
+when ``bentoml serve`` is called.
+
+If you want to import and run a service without using BentoML, this must be done manually. For
+example, to debug a service called ``svc`` in ``service.py``:
+
+.. code-block:: python
+
+    from service import svc
+
+    for runner in svc.runners:
+        runner.init_local()
+
+    result = svc.apis["my_endpoint"].func(inp)
 
 
 Service APIs

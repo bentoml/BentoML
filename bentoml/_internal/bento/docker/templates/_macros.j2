@@ -9,14 +9,14 @@
 {% set __conda_exec__ = [conda_path, "bin", "conda"] | join("/") %}
 {% set __conda_pkg__ = [conda_path, "pkg"] | join("/") %}
 
-RUN {{ mount_cache(__conda_pkg__, hash_key, extra_args=",mode=0777") }} bash <<EOF
+RUN {{ mount_cache(__conda_pkg__, hash_key) }} bash <<EOF
 set -euxo pipefail
 
 echo "Installing Python $PYTHON_VERSION with conda..."
 {{ __conda_exec__ }} install -y -n base pkgs/main::python={{ python_version }} pip
 EOF
 
-RUN {{ mount_cache(__conda_pkg__, hash_key, extra_args=",mode=0777") }} bash <<EOF
+RUN {{ mount_cache(__conda_pkg__, hash_key) }} bash <<EOF
 set -euxo pipefail
 
 if [ -f {{ environment_yml }} ]; then

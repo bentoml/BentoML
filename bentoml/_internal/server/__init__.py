@@ -16,6 +16,7 @@ from simple_di import Provide
 
 from bentoml import load
 
+from ..log import SERVER_LOGGING_CONFIG
 from ..utils import reserve_free_port
 from ..resource import CpuResource
 from ..utils.uri import path_to_uri
@@ -116,6 +117,8 @@ def serve_development(
         sockets=circus_sockets,
         plugins=plugins,
         debug=True if sys.platform != "win32" else False,
+        loggerconfig=SERVER_LOGGING_CONFIG,
+        loglevel=logging.WARNING,
     )
     ensure_prometheus_dir()
 

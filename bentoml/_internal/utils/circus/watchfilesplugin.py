@@ -11,6 +11,8 @@ from threading import Thread
 import fs
 from circus.plugins import CircusPlugin
 
+from ...log import configure_server_logging
+from ...context import component_context
 from ...utils.pkg import source_locations
 from ....exceptions import MissingDependencyException
 from ...configuration import is_pypi_installed_bentoml
@@ -37,6 +39,9 @@ class ServiceReloaderPlugin(CircusPlugin):
 
     def __init__(self, *args: t.Any, **config: t.Any):
         assert "working_dir" in config, "`working_dir` is required"
+
+        configure_server_logging()
+        component_context.component_name = "observer"
 
         super().__init__(*args, **config)
 

@@ -16,6 +16,7 @@ from simple_di import Provide
 
 from bentoml import load
 
+from ..log import SERVER_LOGGING_CONFIG
 from ..utils import reserve_free_port
 from ..resource import CpuResource
 from ..utils.uri import path_to_uri
@@ -106,12 +107,18 @@ def serve_development(
                 "bentoml_home": bentoml_home,
             },
         ]
+    if sys.platform == "win32":
+        logger.warning(
+            "Due to circus limitations, output from reloader plugin will not be shown on Windows."
+        )
 
     arbiter = create_standalone_arbiter(
         watchers,
         sockets=circus_sockets,
         plugins=plugins,
-        debug=True,
+        debug=True if sys.platform != "win32" else False,
+        loggerconfig=SERVER_LOGGING_CONFIG,
+        loglevel=logging.WARNING,
     )
     ensure_prometheus_dir()
 

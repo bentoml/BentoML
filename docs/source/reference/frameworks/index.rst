@@ -12,3 +12,4 @@ Framework APIs
 
     fastai
     mlflow
+    transformers

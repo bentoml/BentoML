@@ -125,18 +125,15 @@ def import_service(
             module_name = import_path
 
         # Import the service using the Bento's own model store
-        BentoMLContainer.model_store.set(model_store)
-        try:
-            module = importlib.import_module(module_name, package=working_dir)
-        except ImportError as e:
-            raise ImportServiceError(
-                f'{e} happens when importing "{module_name}" in '
-                f'current path: {repr(sys.path)}. working dir: "{working_dir}", '
-                f'current dir: "{os.getcwd()}"'
-            )
-        finally:
-            # Reset to default local model store
-            BentoMLContainer.model_store.reset()
+        with BentoMLContainer.model_store.patch(model_store):
+            try:
+                module = importlib.import_module(module_name, package=working_dir)
+            except ImportError as e:
+                raise ImportServiceError(
+                    f'{e} happens when importing "{module_name}" in '
+                    f'current path: {repr(sys.path)}. working dir: "{working_dir}", '
+                    f'current dir: "{os.getcwd()}"'
+                )
 
         if attrs_str:
             instance = module

@@ -86,6 +86,10 @@ def env_option(**kwargs: t.Any) -> t.Callable[[FC], FC]:
 
 
 def create_bentoml_cli():
+    from ..context import component_context
+
+    component_context.component_name = "cli"
+
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
     @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)

@@ -135,7 +135,9 @@ def load_model(
             The Transformers pipeline loaded from the model store.
 
     Example:
+
     .. code-block:: python
+
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """  # noqa
@@ -222,17 +224,20 @@ def save_model(
             ``type`` (:code:`str`): The type of the pipeline, e.g. ``text``, ``audio``, ``image``, ``multimodal``.
 
             Example:
-            ``{
-                "impl": Text2TextGenerationPipeline,
-                "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
-                "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
-                "default": {"model": {"pt": "t5-base", "tf": "t5-base"}},
-                "type": "text",
-            }``
+
+            .. code-block:: json
+
+                {
+                    "impl": Text2TextGenerationPipeline,
+                    "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
+                    "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
+                    "default": {"model": {"pt": "t5-base",
+                    "tf": "t5-base"}}, "type": "text",
+                }
 
             See Transformers ``module src/transformers/pipelines/__init__.py`` for more details.
             ``task_name`` and ``task_definition`` must be both provided or both not provided.
-        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
+        signatures (:code:`Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
             Methods to expose for running inference on the target model. Signatures are
              used for creating Runner instances when serving model with bentoml.Service
         labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):

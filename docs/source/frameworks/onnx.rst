@@ -290,12 +290,9 @@ Building a Service for **ONNX**
 
 .. note::
 
-   In above codes we use ``runner.run.run(input_data)`` to do
-   inference. The first ``run`` is referring to
-   ``onnxruntime.InferenceSession``'s ``run`` method, while the second
-   ``run`` is BentoML's naming convention for doing runner inference
-   for a model method. For example, for a Keras model with ``predict``
-   method, we will call ``runner.predict.run(input_data)``.
+   In above example, notice that there are two :code:`run` in ``runner.run.run(input_data)`` while running inference. The distinction between the two ``run`` are as follow:
+   1.  The first ``run`` refers  to``onnxruntime.InferenceSession``'s ``run`` method, which is the API from onnxruntime to run `inference <https://onnxruntime.ai/docs/api/python/api_summary.html#data-inputs-and-outputs>`_.
+   2. The second ``run`` refers to BentoML's runner inference API for invoking a model's signature. In the case of ONNX, it happens to have the same name as the ``InferenceSession`` endpoint.
 
 
 When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`,

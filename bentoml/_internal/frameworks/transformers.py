@@ -23,8 +23,8 @@ from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignature
-    from bentoml.types import ModelSignatureDict
 
+    from ..models.model import ModelSignaturesType
     from ..external_typing import transformers as ext
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
@@ -72,8 +72,6 @@ def _check_flax_supported() -> None:  # pragma: no cover
 
 try:
     import transformers
-
-    _check_flax_supported()
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "transformers is required in order to use module `bentoml.transformers`. "
@@ -108,6 +106,23 @@ class TransformersOptions(ModelOptions):
 
 
 def get(tag_like: str | Tag) -> Model:
+    """
+    Get the BentoML model with the given tag.
+
+    Args:
+        tag_like: The tag of the model to retrieve from the model store.
+
+    Returns:
+        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
+
+    Example:
+
+    .. code-block:: python
+
+       import bentoml
+       # target model must be from the BentoML model store
+       model = bentoml.transformers.get("my_pipeline:latest")
+    """
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -141,6 +156,7 @@ def load_model(
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """  # noqa
+    _check_flax_supported()
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
@@ -192,7 +208,7 @@ def save_model(
     task_name: str | None = None,
     task_definition: t.Dict[str, t.Any] | None = None,
     *,
-    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
+    signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
@@ -201,55 +217,43 @@ def save_model(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        pipeline (:code:`Pipeline`):
-            Instance of the Transformers pipeline to be saved. See Transformers
-            ``module src/transformers/pipelines/__init__.py`` for more details,
-            https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/__init__.py#L129.
-        task_name (:code:`str`):
-            Name of pipeline task. If not provided, the task name will be derived from ``pipeline.task``.
-            Both arguments ``task_name`` and ``task_definition`` must be provided to set save a custom pipeline.
-        task_definition (:code:`dict`):
-            Task definition for the Transformers custom pipeline. The definition is a dictionary
-            consisting of the following keys:
+        name: Name for given model instance. This should pass Python identifier check.
+        pipeline: Instance of the Transformers pipeline to be saved.
 
-            ``impl`` (:code:`str`): The name of the pipeline implementation module. The name should
-            be the same as the pipeline passed in the ``pipeline`` argument.
-            ``tf`` (:code:`tuple[AnyType]`): The name of the Tensorflow auto model class. One of ``tf`` and ``pt``
-            auto model class argument is required.
-            ``pt`` (:code:`tuple[AnyType]`): The name of the PyTorch auto model class. One of ``tf`` and ``pt``
-            auto model class argument is required.
-            ``default`` (:code:`Dict[str, AnyType]`): The names of the default models, tokenizers, feature extractors, etc.
-            ``type`` (:code:`str`): The type of the pipeline, e.g. ``text``, ``audio``, ``image``, ``multimodal``.
+                  See module `src/transformers/pipelines/__init__.py <https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/__init__.py#L129>`_ for more details.
+        task_name: Name of pipeline task. If not provided, the task name will be derived from ``pipeline.task``.
+        task_definition: Task definition for the Transformers custom pipeline. The definition is a dictionary
+                         consisting of the following keys:
 
-            Example:
+                        - ``impl`` (:code:`str`): The name of the pipeline implementation module. The name should be the same as the pipeline passed in the ``pipeline`` argument.
+                        - ``tf`` (:code:`tuple[AnyType]`): The name of the Tensorflow auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
+                        - ``pt`` (:code:`tuple[AnyType]`): The name of the PyTorch auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
+                        - ``default`` (:code:`Dict[str, AnyType]`): The names of the default models, tokenizers, feature extractors, etc.
+                        - ``type`` (:code:`str`): The type of the pipeline, e.g. ``text``, ``audio``, ``image``, ``multimodal``.
 
-            .. code-block:: json
+                        Example:
 
-                {
-                    "impl": Text2TextGenerationPipeline,
-                    "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
-                    "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
-                    "default": {"model": {"pt": "t5-base",
-                    "tf": "t5-base"}}, "type": "text",
-                }
+                        .. code-block:: python
 
-            See Transformers ``module src/transformers/pipelines/__init__.py`` for more details.
-            ``task_name`` and ``task_definition`` must be both provided or both not provided.
-        signatures (:code:`Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
-            Methods to expose for running inference on the target model. Signatures are
-             used for creating Runner instances when serving model with bentoml.Service
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (``dict[str, Any]``, optional):
-            Custom objects to be saved with the model. An example is
-            ``{"my-normalizer": normalizer}``.
+                            task_definition = {
+                                "impl": Text2TextGenerationPipeline,
+                                "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
+                                "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
+                                "default": {"model": {"pt": "t5-base", "tf": "t5-base"}},
+                                "type": "text",
+                            }
 
-            Custom objects are currently serialized with cloudpickle, but this implementation is
-            subject to change.
-        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Custom metadata for given model.
+                        See module `src/transformers/pipelines/__init__.py <https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/__init__.py#L129>`_ for more details.
+        signatures: Methods to expose for running inference on the target model. Signatures are used for creating :obj:`~bentoml.Runner` instances when serving model with :obj:`~bentoml.Service`
+        labels: User-defined labels for managing models, e.g. ``team=nlp``, ``stage=dev``.
+        custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
+
+                        Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
+        metadata: Custom metadata for given model.
+
+    .. note::
+
+        Both arguments ``task_name`` and ``task_definition`` must be provided to set save a custom pipeline.
 
     Returns:
         :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
@@ -268,6 +272,7 @@ def save_model(
         generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
         bento_model = bentoml.transformers.save_model("text-generation-pipeline", generator)
     """  # noqa
+    _check_flax_supported()
     if not isinstance(
         pipeline,
         LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),  # type: ignore

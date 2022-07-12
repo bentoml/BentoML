@@ -2,8 +2,6 @@
 ONNX
 ====
 
-
-
 ONNX is an open format built to represent machine learning models. ONNX provides `high interoperability <https://onnx.ai/supported-tools.html#buildModel>`_  among various frameworks, as well as enable machine learning practitioners to maximize models' performance across `different hardware <https://onnx.ai/supported-tools.html#deployModel>`_.
 
 Due to its high interoperability among frameworks, we recommend you to check out the framework integration with ONNX as it will contain specific recommendation and requirements for that given framework.
@@ -26,14 +24,17 @@ Due to its high interoperability among frameworks, we recommend you to check out
 
       TODO
 
+
+Compatibility
+-------------
+
+BentoML currently only support `ONNX Runtime
+<https://onnxruntime.ai>`_ as ONNX backend. BentoML requires either
+``onnxruntime>=1.9`` or ``onnxruntime-gpu>=1.9`` to be installed.
+
+
 Converting model frameworks to ONNX format
------------------------------------------------
-
-.. note::
-
-   BentoML currently only support `ONNX Runtime
-   <https://onnxruntime.ai>`_ as ONNX backend. BentoML requires either
-   ``onnxruntime>=1.9`` or ``onnxruntime-gpu>=1.9`` to be installed.
+------------------------------------------
 
 .. tab-set::
 
@@ -312,9 +313,9 @@ Building a Service for **ONNX**
    2. The second ``run`` refers to BentoML's runner inference API for invoking a model's signature. In the case of ONNX, it happens to have the same name as the ``InferenceSession`` endpoint.
 
 
-When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`,
-there are two ways to include ONNX as a dependency, via ``python`` or
-``conda``:
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build
+Options>`, there are two ways to include ONNX as a dependency, via
+``python`` ((if using pip) or ``conda``:
 
 .. tab-set::
 
@@ -346,7 +347,7 @@ Using Runners
    :ref:`Runners<concepts/runner:Using Runners>` for more information on what is
    a Runner and how to use it.
 
-To use ``onnx`` runner locally, access the model via ``get`` and
+To test ``onnx`` runner locally, access the model via ``get`` and
 convert it to a runner:
 
 .. code-block:: python

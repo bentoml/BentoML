@@ -98,7 +98,7 @@ def import_model(
             The name to give to the model in the BentoML store. This must be a valid
             :obj:`~bentoml.Tag` name.
         model_uri:
-            The <FRAMEWORK> model to be saved.
+            The MLflow model to be saved.
         signatures:
             Signatures of predict methods to be used. If not provided, the signatures
             default to {"predict": {"batchable": False}}. See
@@ -131,7 +131,7 @@ def import_model(
             'my_mlflow_model',
             model_uri="runs:/<mlflow_run_id>/run-relative/path/to/model",
             signatures={
-                "batchable": True
+                "predict": {"batchable": True},
             }
         )
     """

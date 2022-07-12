@@ -205,7 +205,7 @@ To try out the full example, visit `bentoml/gallery: MLflow Pytorch Example <htt
 MLflow 🤝 BentoML Workflow
 --------------------------
 
-There are numerous ways you can integrate BentoML with your MLFlow workflow for model serving and deployment.
+There are numerous ways you can integrate BentoML with your MLflow workflow for model serving and deployment.
 
 1. Find ``model_uri`` from a MLflow model instance returned from ``log_model``:
 
@@ -249,7 +249,7 @@ There are numerous ways you can integrate BentoML with your MLFlow workflow for 
     model = LinearRegression()
     model.fit(X, y)
 
-    # import logged MLFlow model to BentoML
+    # import logged MLflow model to BentoML
     run_id = mlflow.last_active_run().info.run_id
     artifact_path = "model"
     model_uri = f"runs:/{run_id}/{artifact_path}"
@@ -297,7 +297,7 @@ The first step is to put the following in your ``bentofile.yaml`` build file:
         requirements_txt: $BENTOML_MLFLOW_MODEL_PATH/mlflow_model/requirements.txt
         lock_packages: False
 
-Alternatively use MLFlow model's conda environment
+Alternatively use MLflow model's conda environment
 
 .. code-block:: yaml
 

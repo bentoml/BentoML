@@ -210,7 +210,7 @@ def import_model(
         model_meta = MLflowModel.load(mlflow_model_file)
         if PYFUNC_FLAVOR_NAME not in model_meta.flavors:
             raise BentoMLException(
-                f'MLFlow model "{model_uri}" does not support the required python_function flavor'
+                f'MLflow model "{model_uri}" does not support the required python_function flavor'
             )
 
         return bento_model

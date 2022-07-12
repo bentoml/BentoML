@@ -179,7 +179,7 @@ class Runner:
             )
         else:
             default_method = None
-            logger.warning(
+            logger.debug(
                 f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`'
             )
 

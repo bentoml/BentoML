@@ -3,8 +3,6 @@ ONNX
 ====
 
 
-Preface
--------
 
 ONNX is an open format built to represent machine learning models. ONNX provides `high interoperability <https://onnx.ai/supported-tools.html#buildModel>`_  among various frameworks, as well as enable machine learning practitioners to maximize models' performance across `different hardware <https://onnx.ai/supported-tools.html#deployModel>`_.
 

@@ -2,7 +2,7 @@
 XGBoost
 =======
 
-This guide provides an overview of using `XGBoost <https://xgboost.readthedocs.io/en/stable/>`_ with BentoML.
+XGBoost is an optimized distributed gradient boosting library designed to be highly efficient, flexible and portable. This guide provides an overview of using `XGBoost <https://xgboost.readthedocs.io/en/stable/>`_ with BentoML.
 
 Compatibility
 ~~~~~~~~~~~~~

@@ -19,7 +19,14 @@ def test_runner(caplog):
     assert (
         "bentoml._internal.runner.runner",
         logging.WARNING,
-        "Converting runner name 'DummyRunnable' to lowercase: 'dummyrunnable'",
+        "Using lowercased runnable class name 'dummyrunnable' for runner.",
+    ) in caplog.record_tuples
+
+    named_runner = Runner(DummyRunnable, name="UPPERCASE_name")
+    assert (
+        "bentoml._internal.runner.runner",
+        logging.WARNING,
+        "Converting runner name 'UPPERCASE_name' to lowercase: 'uppercase_name'",
     ) in caplog.record_tuples
 
     named_runner = Runner(DummyRunnable, name="test_name")

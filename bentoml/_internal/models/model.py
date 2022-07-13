@@ -305,11 +305,6 @@ class Model(StoreItem):
             self._runnable = self.info.imported_module.get_runnable(self)
         return self._runnable
 
-    def load_model(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        if self._model is None:
-            self._model = self.info.imported_module.load_model(self, *args, **kwargs)
-        return self._model
-
     def with_options(self, **kwargs: t.Any) -> Model:
         res = Model(
             self._tag,

@@ -3,8 +3,8 @@ syntax = "proto3";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
-/* Value represents a single instance of the supported datatypes. */
-// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
+/* Value represents a single instance of the supported datatypes. 
+ * TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64 */
 message Value{
 	oneof dtype{
 		float float_ = 1;
@@ -23,16 +23,16 @@ message Value{
 	}
 }
 
-/* Tuple represents a repeated field containing data with same or different datatypes */
+/* Tuple represents a repeated field containing data with same or different datatypes. */
 message Tuple{
 	repeated Value value_ = 1;
 }
 
-// TODO: message complex types
+/* TODO: message complex types */
 
 /* Array contains a dtype which identifies the type of the array.
- * The repeated field for the identified dtype contains the array. */
-// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
+ * The repeated field for the identified dtype contains the array. 
+ * TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64 */
 message Array {
 	string dtype = 1;
 	repeated float float_ = 2;

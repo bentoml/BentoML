@@ -260,6 +260,7 @@ def load(
         standalone_load: treat target Service as standalone. This will change global
             current working directory and global model store.
 
+
     The argument bento_identifier can be one of the following forms:
 
     * Tag pointing to a Bento in local Bento store under `BENTOML_HOME/bentos`
@@ -296,6 +297,12 @@ def load(
         # part in the svc_import_path can be omitted
         load("fraud_detector.py")
         load("fraud_detector")
+
+    Limitations when `standalone_load=False`:
+    * Models used in the Service being imported, if not accessed during module import,
+        must be presented in the global model store
+    * Files required for the Service to run, if not accessed during module import, must
+        be presented in the current working directory
     """
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path = os.path.abspath(os.path.expanduser(bento_identifier))

@@ -56,13 +56,16 @@ repository.
         :link: /integrations/mlflow
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/frameworks/catboost`
+        :link: /frameworks/catboost
+        :link-type: doc
+
 
 The following frameworks are supported in BentoML prior to 1.0.0 release and is still
 being migrated to the new API design. Before they are officially supported in BentoML
 1.0, users may use :ref:`Custom Runner <concepts/runner:Custom Runner>` to serve models
 from these ML libraries with BentoML.
 
-- Catboost
 - Detectron
 - EasyOCR
 - EvalML
@@ -107,4 +110,5 @@ from these ML libraries with BentoML.
   transformers
   fastai
   xgboost
+  catboost
 

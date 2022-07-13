@@ -15,4 +15,4 @@ Framework APIs
   onnx
   transformers
   xgboost
-
+  catboost

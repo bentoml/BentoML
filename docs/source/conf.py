@@ -127,5 +127,6 @@ autodoc_mock_imports = [
     "transformers",
     "transformers.file_utils",
     "xgboost",
+    "catboost",
     "bentoml._internal.models.model.ModelSignatureDict",
 ]

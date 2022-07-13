@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import typing as t
 import logging
+import datetime
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -258,7 +259,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from ..generated_pb import io_descriptors_pb2
+        from bentoml.protos import io_descriptors_pb2
 
         tuple_arr = [i for i in getattr(proto_tuple, "value_")]
 
@@ -267,15 +268,15 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return_arr = []
 
-        for i in range(len(tuple_arr)):
-            val = getattr(tuple_arr[i], tuple_arr[i].WhichOneof("dtype"))
+        for item in tuple_arr:
+            val = getattr(item, item.WhichOneof("dtype"))
 
             if not val:
                 raise ValueError("Provided protobuf tuple is missing a value.")
 
-            if tuple_arr[i].WhichOneof("dtype") == "timestamp_":
+            if item.WhichOneof("dtype") == "timestamp_":
                 val = Timestamp.ToDatetime(val)
-            elif tuple_arr[i].WhichOneof("dtype") == "duration_":
+            elif item.WhichOneof("dtype") == "duration_":
                 val = Duration.ToTimedelta(val)
 
             if isinstance(val, io_descriptors_pb2.Array):
@@ -293,7 +294,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from ..generated_pb import io_descriptors_pb2
+        from bentoml.protos import io_descriptors_pb2
 
         return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
 
@@ -305,11 +306,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         if not return_arr:
             raise ValueError("Provided array is either empty or invalid")
 
-        for i in range(len(return_arr)):
-            if isinstance(return_arr[i], io_descriptors_pb2.Array):
-                return_arr[i] = self.proto_to_arr(return_arr[i])
-            elif isinstance(return_arr[i], io_descriptors_pb2.Tuple):
-                return_arr[i] = self.handle_tuple(return_arr[i])
+        for i, item in enumerate(return_arr):
+            if isinstance(item, io_descriptors_pb2.Array):
+                return_arr[i] = self.proto_to_arr(item)
+            elif isinstance(item, io_descriptors_pb2.Tuple):
+                return_arr[i] = self.handle_tuple(item)
 
         return return_arr
 
@@ -338,8 +339,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         """
         Checks if the given type is within `supported_datatypes` dictionary
         """
-        import datetime
-
         import numpy as np
 
         supported_datatypes = {
@@ -377,13 +376,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         """
         Convert given tuple list or tuple array to protobuf
         """
-        import datetime
-
         import numpy as np
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from ..generated_pb import io_descriptors_pb2
+        from bentoml.protos import io_descriptors_pb2
 
         if len(tuple) == 0:
             raise ValueError("Provided tuple is either empty or invalid.")
@@ -401,15 +398,19 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     item = item.astype(datetime.datetime)
                 if isinstance(item, datetime.date):
                     item = datetime.datetime(item.year, item.month, item.day)
-                t = Timestamp()
-                t.FromDatetime(item)
-                tuple_arr.append(io_descriptors_pb2.Value(**{"timestamp_": t}))
+                tuple_arr.append(
+                    io_descriptors_pb2.Value(
+                        **{"timestamp_": Timestamp().FromDatetime(item)}
+                    )
+                )
             elif dtype == "duration_":
                 if isinstance(item, np.timedelta64):
                     item = item.astype(datetime.timedelta)
-                d = Duration()
-                d.FromTimedelta(item)
-                tuple_arr.append(io_descriptors_pb2.Value(**{"duration_": d}))
+                tuple_arr.append(
+                    io_descriptors_pb2.Value(
+                        **{"duration_": Duration().FromTimedelta(item)}
+                    )
+                )
             elif dtype == "array_":
                 if not all(isinstance(x, type(item[0])) for x in item):
                     val = self.create_tuple_proto(item)
@@ -426,13 +427,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         """
         Convert given list or array to protobuf
         """
-        import datetime
-
         import numpy as np
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from ..generated_pb import io_descriptors_pb2
+        from bentoml.protos import io_descriptors_pb2
 
         if len(arr) == 0:
             raise ValueError("Provided array is either empty or invalid.")
@@ -450,9 +449,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     dt = dt.astype(datetime.datetime)
                 if isinstance(dt, datetime.date):
                     dt = datetime.datetime(dt.year, dt.month, dt.day)
-                t = Timestamp()
-                t.FromDatetime(dt)
-                timestamp_arr.append(t)
+                timestamp_arr.append(Timestamp().FromDatetime(dt))
             return io_descriptors_pb2.Array(
                 dtype="timestamp_", timestamp_=timestamp_arr
             )
@@ -461,21 +458,19 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             for td in arr:
                 if isinstance(td, np.timedelta64):
                     td = td.astype(datetime.timedelta)
-                d = Duration()
-                d.FromTimedelta(td)
-                duration_arr.append(d)
+                duration_arr.append(Duration().FromTimedelta(td))
             return io_descriptors_pb2.Array(dtype="duration_", duration_=duration_arr)
         elif dtype != "array_":
             return io_descriptors_pb2.Array(**{"dtype": dtype, f"{dtype}": arr})
 
         return_arr = []
         is_tuple = False
-        for i in range(len(arr)):
-            if not all(isinstance(x, type(arr[i][0])) for x in arr[i]):
+        for item in arr:
+            if not all(isinstance(x, type(item[0])) for x in item):
                 is_tuple = True
-                val = self.create_tuple_proto(arr[i])
+                val = self.create_tuple_proto(item)
             else:
-                val = self.arr_to_proto(arr[i])
+                val = self.arr_to_proto(item)
             return_arr.append(val)
 
         if is_tuple:

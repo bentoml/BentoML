@@ -152,7 +152,7 @@ class Bento(StoreItem):
 
         # This also verifies that svc can be imported correctly
         svc = import_service(
-            build_config.service, working_dir=build_ctx, change_global_cwd=True
+            build_config.service, working_dir=build_ctx, standalone_load=True
         )
 
         tag = Tag(svc.name, version)

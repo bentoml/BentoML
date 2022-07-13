@@ -20,7 +20,6 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from .runnable import RunnableMethodConfig
-    from ..service.service import Service
 
 T = t.TypeVar("T", bound=Runnable)
 P = ParamSpec("P")
@@ -61,7 +60,6 @@ class Runner:
     resource_config: dict[str, t.Any]
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: t.Type[Strategy]
-    service_ref: t.Optional[t.Callable[..., Service]] = None
 
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
@@ -220,13 +218,6 @@ class Runner:
         """
         if not quiet:
             logger.warning("'Runner.init_local' is for debugging and testing only")
-
-        if self.service_ref:
-            service = self.service_ref()
-            if service and service.bento:
-                with BentoMLContainer.model_store.patch(service.bento._model_store):  # type: ignore
-                    self._init_local()
-                return
 
         self._init_local()
 

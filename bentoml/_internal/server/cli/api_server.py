@@ -104,9 +104,7 @@ def main(
 
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
-    svc = bentoml.load(
-        bento_identifier, working_dir=working_dir, change_global_cwd=True
-    )
+    svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
     if svc.tag is None:

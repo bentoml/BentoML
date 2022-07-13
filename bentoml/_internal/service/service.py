@@ -100,6 +100,7 @@ class Service:
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
     bento: Bento | None = attr.field(init=False, default=None)
+    _exit_stack: t.Optional[t.Any] = None
 
     # Working dir and Import path of the service, set when the service was imported
     _working_dir: str | None = attr.field(init=False, default=None)

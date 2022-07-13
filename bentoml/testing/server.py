@@ -6,10 +6,12 @@ import re
 import sys
 import json
 import time
+import shutil
 import socket
 import typing as t
 import urllib
 import logging
+import tempfile
 import contextlib
 import subprocess
 import urllib.error
@@ -209,12 +211,15 @@ def run_bento_server(
     config_file: t.Optional[str] = None,
     dev_server: bool = False,
     timeout: float = 90,
+    use_temporary_home: bool = True,
 ):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
     workdir = workdir if workdir is not None else "./"
     my_env = os.environ.copy()
+    if use_temporary_home:
+        my_env["BENTOML_HOME"] = tempfile.mkdtemp()
     if config_file is not None:
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
@@ -243,6 +248,8 @@ def run_bento_server(
     finally:
         kill_subprocess_tree(p)
         p.communicate()
+        if use_temporary_home:
+            shutil.rmtree(my_env["BENTOML_HOME"])
 
 
 def _start_mitm_proxy(port: int) -> None:

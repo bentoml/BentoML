@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "io_descriptors.proto";
 
-/* BentoServiceMessage allows single instance of one `io_descriptor``. */
+/* BentoServiceMessage allows single instance of one `io_descriptor`. */
 message BentoServiceMessage {
 	oneof io_descriptor{
 		string text = 1;

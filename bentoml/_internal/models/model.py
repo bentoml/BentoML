@@ -31,8 +31,6 @@ from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
-from ..runner import Runner
-from ..runner import Runnable
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
@@ -41,6 +39,8 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from ..types import AnyType
     from ..types import PathType
+    from ..runner import Runner
+    from ..runner import Runnable
 
     class ModelSignatureDict(t.TypedDict, total=False):
         batchable: bool
@@ -79,6 +79,8 @@ class Model(StoreItem):
     _custom_objects: dict[str, t.Any] | None = None
 
     _runnable: t.Type[Runnable] | None = attr.field(init=False, default=None)
+
+    _model: t.Any = None
 
     def __init__(
         self,
@@ -287,6 +289,8 @@ class Model(StoreItem):
         Returns:
 
         """
+        from ..runner import Runner
+
         return Runner(
             self.to_runnable(),
             name=name if name != "" else self.tag.name,

@@ -189,8 +189,38 @@ and used in the same service. For example:
 Custom Model Runner
 ^^^^^^^^^^^^^^^^^^^
 
-.. TODO::
-    Document creating custom Runnable with models from BentoML model store
+
+Custom Runnable built with Model from BentoML's model store:
+
+.. code::
+
+    from typing import Any
+
+    import bentoml
+    from bentoml.io import JSON
+    from bentoml.io import NumpyNdarray
+    from numpy.typing import NDArray
+
+    bento_model = bentoml.sklearn.get("spam_detection:latest")
+
+    class SpamDetectionRunnable(bentoml.Runnable):
+        SUPPORTS_CPU_MULTI_THREADING = True
+
+        def __init__(self):
+            # load the model instance
+            self.classifier = bentoml.sklearn.load_model(bento_model)
+
+        @bentoml.Runnable.method(batchable=False)
+        def is_spam(self, input_data: NDArray[Any]) -> NDArray[Any]:
+            return self.classifier.predict(input_data)
+
+
+    spam_detection_runner = bentoml.Runner(SpamDetectionRunnable, models=[bento_model])
+    svc = bentoml.Service("spam_detector", runners=[spam_detection_runner])
+
+    @svc.api(input=NumpyNdarray(), output=JSON())
+    def analysis(input_text: NDArray[Any]) -> dict[str, Any]:
+        return {"res": spam_detection_runner.is_spam.run(input_text)}
 
 .. code::
 

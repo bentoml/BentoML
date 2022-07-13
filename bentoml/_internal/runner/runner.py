@@ -13,12 +13,12 @@ from .runnable import Runnable
 from .strategy import Strategy
 from .strategy import DefaultStrategy
 from ...exceptions import StateException
+from ..models.model import Model
 from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ..models import Model
     from .runnable import RunnableMethodConfig
     from ..service.service import Service
 
@@ -115,8 +115,13 @@ class Runner:
             config = runners_config[name]
         else:
             config = runners_config
-
-        models = [] if models is None else models
+        if models is None:
+            models = []
+        else:
+            if not all(isinstance(model, Model) for model in models):
+                raise ValueError(
+                    f"models must be a list of 'bentoml.Model'. Got { {type(model) for model in models if isinstance(model, Model)} } instead."
+                )
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runnable_init_params = (
             {} if runnable_init_params is None else runnable_init_params

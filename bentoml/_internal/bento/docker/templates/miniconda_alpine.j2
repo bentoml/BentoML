@@ -4,7 +4,6 @@
 {{ super() }}
 {% endblock %}
 {% block SETUP_BENTO_ENTRYPOINT %}
-{{ super() }}
-
 RUN rm -rf /var/cache/apk/*
+{{ super() }}
 {% endblock %}

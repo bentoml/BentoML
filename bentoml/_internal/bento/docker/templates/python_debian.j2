@@ -4,6 +4,6 @@ SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 {{ super() }}
 {% endblock %}
 {% block SETUP_BENTO_ENTRYPOINT %}
-{{ super() }}
 RUN rm -rf /var/lib/{apt,cache,log}
+{{ super() }}
 {% endblock %}

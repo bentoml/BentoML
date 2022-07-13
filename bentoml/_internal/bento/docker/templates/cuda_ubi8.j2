@@ -31,7 +31,6 @@ RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 
 {% endblock %}
 {% block SETUP_BENTO_ENTRYPOINT %}
-{{ super() }}
-
 RUN rm -rf /var/cache/yum
+{{ super() }}
 {% endblock %}

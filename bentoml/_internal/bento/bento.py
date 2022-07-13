@@ -322,10 +322,9 @@ class Bento(StoreItem):
     @contextlib.contextmanager
     def patch_context(self):
         with BentoMLContainer.model_store.patch(self._model_store):
-            pwd = os.getcwd()
-            os.chdir(self.path)
+            # fixme: we don't moving chdir here for now because we want a
+            # controllable release. We may do that in the future.
             yield
-            os.chdir(pwd)
 
 
 class BentoStore(Store[Bento]):

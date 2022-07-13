@@ -80,6 +80,8 @@ Converting model frameworks to ONNX format
 
       .. code-block:: python
 
+	 import torch.utils.model_zoo as model_zoo
+
 	 # Load pretrained model weights
 	 model_url = 'https://s3.amazonaws.com/pytorch/test_data/export/superres_epoch100-44c6958e.pth'
 
@@ -255,16 +257,18 @@ Building a Service for **ONNX**
 
 	 svc = bentoml.Service("onnx_super_resolution", runners=[runner])
 
-	 @svc.api(input=Image(), output=Image())
+	 # for output, we set image io descriptor's pilmode to "L" to denote
+	 # the output is a gray scale image
+	 @svc.api(input=Image(), output=Image(pilmode="L"))
 	 def sr(img) -> np.ndarray:
 	     img = img.resize((224, 224))
 	     gray_img = ImageOps.grayscale(img)
-	     arr = np.array(gray_img) / 255.0 # convert from 0-255 range to 0.0-1.0 range
-	     arr = np.expand_dims(arr, (0, 1)) # add batch_size, color_channel dims
+	     arr = np.array(gray_img) / 255.0  # convert from 0-255 range to 0.0-1.0 range
+	     arr = np.expand_dims(arr, (0, 1))  # add batch_size, color_channel dims
 	     sr_arr = runner.run.run(arr)
-	     sr_arr = np.squeeze(sr_arr) # remove batch_size, color_channel dims
-	     sr_img = PIL_Image.fromarray(np.uint8(sr_arr * 255) , 'L')
-	     return sr_img
+	     sr_arr = np.squeeze(sr_arr)  # remove batch_size, color_channel dims
+	     sr_arr = np.uint8(sr_arr * 255)
+	     return sr_arr
 
 
    .. tab-item:: TensorFlow
@@ -349,7 +353,7 @@ convert it to a runner object:
 
    test_input = np.random.randn(2, 1, 244, 244)
 
-   runner = bentoml.onnx.get("super_resolution").to_runner()
+   runner = bentoml.onnx.get("onnx_super_resolution").to_runner()
 
    runner.init_local()
 

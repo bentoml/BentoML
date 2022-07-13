@@ -7,7 +7,7 @@ body:
     id: issue-already-exists
     attributes:
       value: |
-        ### Get help from existing issues
+        ## Get help from existing issues
         Please search to see if an issue already exists for the bug you encountered.
         See [Searching Issues and Pull Requests](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
   - type: textarea

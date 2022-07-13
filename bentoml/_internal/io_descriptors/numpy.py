@@ -278,7 +278,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             elif tuple_arr[i].WhichOneof("dtype") == "duration_":
                 val = Duration.ToTimedelta(val)
 
-            if isinstance(val, io_descriptors_pb2.NumpyNdarray):
+            if isinstance(val, io_descriptors_pb2.Array):
                 val = self.proto_to_arr(val)
             elif isinstance(val, io_descriptors_pb2.Tuple):
                 val = self.handle_tuple(val)
@@ -306,7 +306,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             raise ValueError("Provided array is either empty or invalid")
 
         for i in range(len(return_arr)):
-            if isinstance(return_arr[i], io_descriptors_pb2.NumpyNdarray):
+            if isinstance(return_arr[i], io_descriptors_pb2.Array):
                 return_arr[i] = self.proto_to_arr(return_arr[i])
             elif isinstance(return_arr[i], io_descriptors_pb2.Tuple):
                 return_arr[i] = self.handle_tuple(return_arr[i])
@@ -318,7 +318,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         Process incoming protobuf request and convert it to `numpy.ndarray`
 
         Args:
-            request (`io_descriptors_pb2.NumpyNdarray`):
+            request (`io_descriptors_pb2.Array`):
                 Incoming Requests
         Returns:
             a `numpy.ndarray` object. This can then be used
@@ -453,7 +453,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 t = Timestamp()
                 t.FromDatetime(dt)
                 timestamp_arr.append(t)
-            return io_descriptors_pb2.NumpyNdarray(
+            return io_descriptors_pb2.Array(
                 dtype="timestamp_", timestamp_=timestamp_arr
             )
         elif dtype == "duration_":
@@ -464,11 +464,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 d = Duration()
                 d.FromTimedelta(td)
                 duration_arr.append(d)
-            return io_descriptors_pb2.NumpyNdarray(
+            return io_descriptors_pb2.Array(
                 dtype="duration_", duration_=duration_arr
             )
         elif dtype != "array_":
-            return io_descriptors_pb2.NumpyNdarray(**{"dtype": dtype, f"{dtype}": arr})
+            return io_descriptors_pb2.Array(**{"dtype": dtype, f"{dtype}": arr})
 
         return_arr = []
         is_tuple = False
@@ -481,11 +481,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return_arr.append(val)
 
         if is_tuple:
-            return_arr = io_descriptors_pb2.NumpyNdarray(
+            return_arr = io_descriptors_pb2.Array(
                 dtype="tuple_", tuple_=return_arr
             )
         else:
-            return_arr = io_descriptors_pb2.NumpyNdarray(
+            return_arr = io_descriptors_pb2.Array(
                 dtype="array_", array_=return_arr
             )
 
@@ -499,7 +499,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             obj (`np.ndarray`):
                 `np.ndarray` that will be serialized to protobuf
         Returns:
-            `io_descriptor_pb2.NumpyNdarray`:
+            `io_descriptor_pb2.Array`:
                 Protobuf representation of given `np.ndarray`
         """
         obj = self._verify_ndarray(obj, InternalServerError)

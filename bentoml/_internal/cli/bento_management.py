@@ -11,12 +11,12 @@ from simple_di import inject
 from simple_di import Provide
 from rich.table import Table
 from rich.syntax import Syntax
-from rich.console import Console
 
 from bentoml import Tag
 from bentoml.bentos import import_bento
 from bentoml.bentos import build_bentofile
 
+from ..utils import rich_console as console
 from ..utils import calc_dir_size
 from ..utils import human_readable_size
 from ..utils import display_path_under_home
@@ -73,7 +73,6 @@ def add_bento_management_commands(
         bentoml get --output=json FraudDetector:20210709_DE14C9
         """
         bento = bento_store.get(bento_tag)
-        console = Console()
 
         if output == "path":
             console.print(bento.path)
@@ -122,7 +121,7 @@ def add_bento_management_commands(
                 bentos, key=lambda x: x.info.creation_time, reverse=True
             )
         ]
-        console = Console()
+
         if output == "json":
             info = json.dumps(res, indent=2)
             console.print(info)

@@ -1,10 +1,18 @@
+blank_issues_enabled: true
+version: 2.1
 contact_links:
+  - name: BentoML's Documentation
+    url: https://docs.bentoml.org/en/latest/
+    about: For more information about BentoML's tutorials, guides, API references and architectures deep-dive.
   - name: BentoML Discussions
     url: https://github.com/bentoml/BentoML/discussions
     about: Please ask general questions here.
   - name: BentoML Slack Community
     url: https://join.slack.bentoml.org
-    about: For connecting with others in the community
+    about: For connecting with others in the community.
   - name: BentoML Enterprise Support
     url: contact@bentoml.ai
-    about: Contact the BentoML team and learn more
+    about: Contact the BentoML team for support.
+  - name: BentoML Blog
+    url: modelserving.com
+    about: Read the latest blogs/updates from community and the BentoML team. 

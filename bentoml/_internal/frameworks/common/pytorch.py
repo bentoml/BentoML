@@ -144,7 +144,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         batch_dim: int = 0,
         plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
-        batch = batch.numpy()
+        batch = batch.cpu().numpy()
         if plasma_db:
             return cls.create_payload(
                 plasma_db.put(batch).binary(),

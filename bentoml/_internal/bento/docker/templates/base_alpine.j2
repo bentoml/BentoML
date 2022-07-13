@@ -3,7 +3,7 @@
 {{ super() }}
 
 # Install helpers
-RUN --mount=type=cache,from=cached,target=/var/cache/apk \
+RUN {{ common.mount_cache("/var/cache/apk") }} \
     apk add --update bash gcc libc-dev shadow musl-dev build-base \
 		linux-headers g++
 
@@ -13,7 +13,7 @@ SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 
 {% if __options__system_packages is not none %}
 # Install user-defined system package
-RUN --mount=type=cache,from=cached,target=/var/cache/apk \
+RUN {{ common.mount_cache("/var/cache/apk") }} \
     apk add --update {{ __options__system_packages | join(' ') }}
 {% endif -%}
 {% endblock %}

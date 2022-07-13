@@ -30,9 +30,9 @@ message Tuple{
 
 /* TODO: message complex types */
 
-/* Array contains a dtype which identifies the type of the array.
- * The repeated field for the identified dtype contains the array. 
- * TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64 */
+// Array contains a dtype which identifies the type of the array.
+// Repeated field for the identified dtype contains the array. 
+// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
 message Array {
 	string dtype = 1;
 	repeated float float_ = 2;

@@ -6,7 +6,7 @@ import "io_descriptors.proto";
 message BentoServiceMessage {
 	oneof io_descriptor{
 		string text = 1;
-        Array array = 2;
+		Array array = 2;
 	}
 }
 

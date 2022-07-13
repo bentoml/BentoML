@@ -254,12 +254,12 @@ def load(
     """Load a Service instance by the bento_identifier
 
     Args:
-        bento_identifier: the tag of the bento to export
-        working_dir: when importing from service defin
-        standalone_load: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
-            :code:`'s3'`, and :code:`'userdata'`
+        bento_identifier: target Service to import or Bento to load
+        working_dir: when importing from service, set the working_dir
+        standalone_load: treat target Service as standalone. This will change global
+            current working directory and global model store.
 
-    A bento_identifier:str can be provided in three different forms:
+    The argument bento_identifier can be one of the following forms:
 
     * Tag pointing to a Bento in local Bento store under `BENTOML_HOME/bentos`
     * File path to a Bento directory
@@ -295,8 +295,6 @@ def load(
         # part in the svc_import_path can be omitted
         load("fraud_detector.py")
         load("fraud_detector")
-
-
     """
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path = os.path.abspath(os.path.expanduser(bento_identifier))

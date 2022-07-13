@@ -169,4 +169,6 @@ default, but can be enabled using the appropriate signature when saving your mod
 
 .. code-block:: python
 
-   bento_model = bentoml.catboost.save_model("catboost_cancer_clf", model, signatures={"predict": {"batchable": True}})
+   bento_model = bentoml.catboost.save_model(
+    "catboost_cancer_clf", model, signatures={"predict": {"batchable": True}}
+    )

@@ -730,7 +730,7 @@ possible to install it by specifying it in the :code:`system_packages` or via th
 :code:`setup_script`.
 
 .. dropdown:: Installing custom CUDA version with conda
-    :icon: code
+   :icon: code
 
 
    We will demonstrate how you can install custom cuda version via conda.
@@ -739,29 +739,28 @@ possible to install it by specifying it in the :code:`system_packages` or via th
 
    .. code-block:: yaml
 
-   conda:
-       channels:
-       - conda-forge
-       - nvidia
-       - defaults
-       dependencies:
-       - cudatoolkit-dev=10.1
-       - cudnn=7.6.4
-       - cxx-compiler=1.0
-       - mpi4py=3.0 # installs cuda-aware openmpi
-       - matplotlib=3.2
-       - networkx=2.4
-       - numba=0.48
-       - pandas=1.0
+      conda:
+        channels:
+        - conda-forge
+        - nvidia
+        - defaults
+        dependencies:
+        - cudatoolkit-dev=10.1
+        - cudnn=7.6.4
+        - cxx-compiler=1.0
+        - mpi4py=3.0 # installs cuda-aware openmpi
+        - matplotlib=3.2
+        - networkx=2.4
+        - numba=0.48
+        - pandas=1.0
 
-   Then proceed with :code:`bentoml build` and :code:`bentoml containerize`
-   respectively:
+   Then proceed with :code:`bentoml build` and :code:`bentoml containerize` respectively:
 
    .. code-block:: bash
 
-   bentoml build
+      bentoml build
 
-   bentoml containerize <bento>:<tag>
+      bentoml containerize <bento>:<tag>
 
 
 Setup Script

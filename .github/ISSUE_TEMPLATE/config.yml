@@ -8,7 +8,7 @@ contact_links:
     url: https://github.com/bentoml/BentoML/discussions
     about: Please ask general questions here.
   - name: BentoML Slack Community
-    url: https://l.linklyhq.com/l/ktOh
+    url: https://join.slack.bentoml.org
     about: For connecting with others in the community.
   - name: BentoML Enterprise Support
     url: contact@bentoml.ai

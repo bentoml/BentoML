@@ -347,4 +347,7 @@ def load(
                     f"import bento in local store: `{e1}`, or if you are importing by "
                     f"python module path: `{e2}`"
                 )
+
+    if svc.bento:
+        on_load_bento(svc, svc.bento)
     return svc

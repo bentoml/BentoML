@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
+import contextlib
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
@@ -317,6 +318,14 @@ class Bento(StoreItem):
 
     def __str__(self):
         return f'Bento(tag="{self.tag}")'
+
+    @contextlib.contextmanager
+    def patch_context(self):
+        with BentoMLContainer.model_store.patch(self._model_store):
+            pwd = os.getcwd()
+            os.chdir(self.path)
+            yield
+            os.chdir(pwd)
 
 
 class BentoStore(Store[Bento]):

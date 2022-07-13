@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import weakref
 from typing import TYPE_CHECKING
 
 import attr
@@ -135,8 +134,6 @@ class Service:
                         f"Found duplicate name `{r.name}` in service runners."
                     )
                 runner_names.add(r.name)
-                ref = weakref.ref(self)
-                object.__setattr__(r, "service_ref", ref)
 
         # validate models list contains Model instances
         if models is not None:
@@ -233,6 +230,13 @@ class Service:
 def on_load_bento(svc: Service, bento: Bento):
     object.__setattr__(svc, "bento", bento)
     object.__setattr__(svc, "tag", bento.info.tag)
+
+    import contextlib
+
+    exit_stack = contextlib.ExitStack()
+    exit_stack.enter_context(bento.patch_context())
+
+    object.__setattr__(svc, "_exit_stack", exit_stack)  # attach to the service object
 
 
 def on_import_svc(svc: Service, working_dir: str, import_str: str):

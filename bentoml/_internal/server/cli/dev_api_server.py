@@ -32,7 +32,7 @@ def main(
     if parsed.scheme == "fd":
         fd = int(parsed.netloc)
         sock = socket.socket(fileno=fd)
-        svc = load(bento_identifier, working_dir=working_dir, change_global_cwd=True)
+        svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
         # setup context
         if svc.tag is None:

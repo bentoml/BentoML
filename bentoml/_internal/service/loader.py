@@ -37,7 +37,7 @@ def import_service(
     svc_import_path: str,
     *,
     working_dir: t.Optional[str] = None,
-    change_global_cwd: bool = False,
+    standalone_load: bool = False,
     model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> Service:
     """Import a Service instance from source code, by providing the svc_import_path
@@ -64,21 +64,32 @@ def import_service(
 
     prev_cwd = None
     sys_path_modified = False
+    prev_cwd = os.getcwd()
+    global_model_store = BentoMLContainer.model_store.get()
 
     try:
         if working_dir is not None:
             working_dir = os.path.realpath(os.path.expanduser(working_dir))
-            if change_global_cwd:
-                # Set cwd(current working directory) to the Bento's project directory,
-                # which allows user code to read files using relative path
-                prev_cwd = os.getcwd()
-                os.chdir(working_dir)
+            # Set cwd(current working directory) to the Bento's project directory,
+            # which allows user code to read files using relative path
+            os.chdir(working_dir)
         else:
             working_dir = os.getcwd()
 
         if working_dir not in sys.path:
             sys.path.insert(0, working_dir)
             sys_path_modified = True
+
+        if model_store is not global_model_store:
+            BentoMLContainer.model_store.set(model_store)
+
+        def recover_standalone_env_change():
+            # Reset to previous cwd
+            os.chdir(prev_cwd)
+            if sys_path_modified and working_dir:
+                # Undo changes to sys.path
+                sys.path.remove(working_dir)
+            BentoMLContainer.model_store.set(global_model_store)
 
         logger.debug(
             'Importing service "%s" from working dir: "%s"',
@@ -125,15 +136,16 @@ def import_service(
             module_name = import_path
 
         # Import the service using the Bento's own model store
-        with BentoMLContainer.model_store.patch(model_store):
-            try:
-                module = importlib.import_module(module_name, package=working_dir)
-            except ImportError as e:
-                raise ImportServiceError(
-                    f'{e} happens when importing "{module_name}" in '
-                    f'current path: {repr(sys.path)}. working dir: "{working_dir}", '
-                    f'current dir: "{os.getcwd()}"'
-                )
+        try:
+            module = importlib.import_module(module_name, package=working_dir)
+        except ImportError as e:
+            raise ImportServiceError(
+                f'{e} happens when importing "{module_name}" in '
+                f'current path: {repr(sys.path)}. working dir: "{working_dir}", '
+                f'current dir: "{os.getcwd()}"'
+            )
+        if not standalone_load:
+            recover_standalone_env_change()
 
         if attrs_str:
             instance = module
@@ -170,12 +182,7 @@ def import_service(
         )
         return instance
     except ImportServiceError:
-        if prev_cwd and change_global_cwd:
-            # Reset to previous cwd
-            os.chdir(prev_cwd)
-        if sys_path_modified and working_dir:
-            # Undo changes to sys.path
-            sys.path.remove(working_dir)
+        recover_standalone_env_change()
         raise
 
 
@@ -183,7 +190,7 @@ def import_service(
 def load_bento(
     bento_tag: str,
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    change_global_cwd: bool = False,
+    standalone_load: bool = False,
 ) -> "Service":
     """Load a Service instance from a bento found in local bento store:
 
@@ -203,10 +210,10 @@ def load_bento(
         logger.warning(
             f'Bento "{bento.tag}" was built with BentoML version {bento.info.bentoml_version}, which does not match the current BentoML version {BENTOML_VERSION}'
         )
-    return _load_bento(bento, change_global_cwd)
+    return _load_bento(bento, standalone_load)
 
 
-def load_bento_dir(path: str, change_global_cwd: bool = False) -> "Service":
+def load_bento_dir(path: str, standalone_load: bool = False) -> "Service":
     """Load a Service instance from a bento directory
 
     Example usage:
@@ -219,10 +226,10 @@ def load_bento_dir(path: str, change_global_cwd: bool = False) -> "Service":
         bento.tag,
         path,
     )
-    return _load_bento(bento, change_global_cwd)
+    return _load_bento(bento, standalone_load)
 
 
-def _load_bento(bento: Bento, change_global_cwd: bool) -> "Service":
+def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
@@ -232,7 +239,7 @@ def _load_bento(bento: Bento, change_global_cwd: bool) -> "Service":
     svc = import_service(
         bento.info.service,
         working_dir=working_dir,
-        change_global_cwd=change_global_cwd,
+        standalone_load=standalone_load,
         model_store=model_store,
     )
     on_load_bento(svc, bento)
@@ -242,9 +249,15 @@ def _load_bento(bento: Bento, change_global_cwd: bool) -> "Service":
 def load(
     bento_identifier: str,
     working_dir: t.Optional[str] = None,
-    change_global_cwd: bool = False,
+    standalone_load: bool = False,
 ) -> "Service":
     """Load a Service instance by the bento_identifier
+
+    Args:
+        bento_identifier: the tag of the bento to export
+        working_dir: when importing from service defin
+        standalone_load: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
+            :code:`'s3'`, and :code:`'userdata'`
 
     A bento_identifier:str can be provided in three different forms:
 
@@ -283,6 +296,7 @@ def load(
         load("fraud_detector.py")
         load("fraud_detector")
 
+
     """
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path = os.path.abspath(os.path.expanduser(bento_identifier))
@@ -292,7 +306,7 @@ def load(
         ):
             # Loading from path to a built Bento
             try:
-                svc = load_bento_dir(bento_path, change_global_cwd=change_global_cwd)
+                svc = load_bento_dir(bento_path, standalone_load=standalone_load)
             except ImportServiceError as e:
                 raise BentoMLException(
                     f"Failed loading Bento from directory {bento_path}: {e}"
@@ -315,7 +329,7 @@ def load(
                 svc = import_service(
                     build_config.service,
                     working_dir=working_dir,
-                    change_global_cwd=change_global_cwd,
+                    standalone_load=standalone_load,
                 )
             except ImportServiceError as e:
                 raise BentoMLException(
@@ -332,13 +346,13 @@ def load(
             svc = import_service(
                 bento_identifier,
                 working_dir=working_dir,
-                change_global_cwd=change_global_cwd,
+                standalone_load=standalone_load,
             )
             logger.debug(f"'{svc.name}' imported from source: {svc}")
         except ImportServiceError as e1:
             try:
                 # Loading from local bento store by tag, e.g. "iris_classifier:latest"
-                svc = load_bento(bento_identifier, change_global_cwd=change_global_cwd)
+                svc = load_bento(bento_identifier, standalone_load=standalone_load)
                 logger.debug(f"'{svc.name}' loaded from Bento store: {svc}")
             except (NotFound, ImportServiceError) as e2:
                 raise BentoMLException(

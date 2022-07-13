@@ -1,52 +1,51 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
-/* Value represents a single instance of the supported datatypes. */
-// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
+/* Value represents a single instance of the supported datatypes. 
+ * TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64 */
 message Value{
 	oneof dtype{
-		float float_=1;
-		double double_=2;
-		uint32 uint32_=3;
-		uint64 uint64_=4;
-		sint32 sint32_=5;
-		sint64 sint64_=6;
-		google.protobuf.Timestamp timestamp_=7;
-		google.protobuf.Duration duration_=8;
-		bool bool_=9;
-		string string_=10;
-		bytes bytes_=11;
-		Value value_=12;
-		NumpyNdarray array_=13;
-		Tuple tuple_=14;
+		float float_ = 1;
+		double double_ = 2;
+		uint32 uint32_ = 3;
+		uint64 uint64_ = 4;
+		sint32 sint32_ = 5;
+		sint64 sint64_ = 6;
+		google.protobuf.Timestamp timestamp_ = 7;
+		google.protobuf.Duration duration_ = 8;
+		bool bool_ = 9;
+		string string_ = 10;
+		bytes bytes_ = 11;
+		Array array_ = 13;
+		Tuple tuple_ = 14;
 	}
 }
 
-/* Tuple represents a repeated field containing data with same or different datatypes */
+/* Tuple represents a repeated field containing data with same or different datatypes. */
 message Tuple{
-	repeated Value value_=1;
+	repeated Value value_ = 1;
 }
 
-// TODO: message complex types
+/* TODO: message complex types */
 
-/* NumpyNdarray contains a dtype which identifies the type of the array.
- * The repeated field for the identified dtype contains the array. */
+// Array contains a dtype which identifies the type of the array.
+// Repeated field for the identified dtype contains the array. 
 // TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
-message NumpyNdarray {
-	string dtype=1;
-	repeated float float_=2;
-	repeated double double_=3;
-	repeated uint32 uint32_=4;
-	repeated uint64 uint64_=5;
-	repeated sint32 sint32_=6;
-	repeated sint64 sint64_=7;
-	repeated google.protobuf.Timestamp timestamp_=8;
-	repeated google.protobuf.Duration duration_=9;
-	repeated bool bool_=10;
-	repeated string string_=11;
-	repeated bytes bytes_=12;
-	repeated NumpyNdarray array_=13;
-	repeated Tuple tuple_=14;
+message Array {
+	string dtype = 1;
+	repeated float float_ = 2;
+	repeated double double_ = 3;
+	repeated uint32 uint32_ = 4;
+	repeated uint64 uint64_ = 5;
+	repeated sint32 sint32_ = 6;
+	repeated sint64 sint64_ = 7;
+	repeated google.protobuf.Timestamp timestamp_ = 8;
+	repeated google.protobuf.Duration duration_ = 9;
+	repeated bool bool_ = 10;
+	repeated string string_ = 11;
+	repeated bytes bytes_ = 12;
+	repeated Array array_ = 13;
+	repeated Tuple tuple_ = 14;
 }

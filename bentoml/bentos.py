@@ -469,6 +469,9 @@ def containerize(
         return False
     else:
         logger.info(f'Successfully built docker image "{docker_image_tag}"')
+        logger.info(
+            f'To run your newly built Bento container, use: "docker run -it --rm -p 3000:3000 {docker_image_tag}"'
+        )
         return True
 
 

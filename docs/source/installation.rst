@@ -9,11 +9,11 @@ BentoML is distributed as a Python package available `on PyPI <https://pypi.org/
 
 .. code-block:: bash
 
-    pip install bentoml --pre
+    pip install bentoml
 
 .. note::
-    The BentoML version 1.0 is currently under beta preview release, thus :code:`--pre` flag is required.
-    For our most recent stable release, see the `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/S>`_.
+    For the 0.13-LTS releases, see the `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/S>`_.
+
 
 .. note::
     Historical releases can be found on the `BentoML Releases page <https://github.com/bentoml/BentoML/releases>`_.

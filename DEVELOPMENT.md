@@ -19,7 +19,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 3. Clone the source code from your fork of BentoML's GitHub repository:
    ```bash
-   git clone https://github.com/yourusername/BentoML.git && cd BentoML
+   git clone git@github.com:username/BentoML.git && cd BentoML
    ```
 
 4. Add the BentoML upstream remote to your local BentoML clone:
@@ -234,11 +234,14 @@ And in your BentoML projects' `bentofile.yaml`, force the Bento to install this 
 service: "service:svc"
 description: "file: ./README.md"
 include:
-   - "*.py"
+  - "*.py"
 python:
-   packages:
-      - pandas
-      - git+https://github.com/{YOUR_GITHUB_USERNAME}/bentoml@{YOUR_REVISION}
+ packages:
+  - pandas
+  - git+https://github.com/{YOUR_GITHUB_USERNAME}/bentoml@{YOUR_REVISION}
+docker:
+ system_packages:
+  - git
 ```
 
 	

@@ -41,9 +41,6 @@ things MLOps.
 
 ## Getting Started ##
 
-__The BentoML version 1.0 is in pre-view release.__ You can be of great help by testing out the preview release, 
-reporting issues, contribute to the documentation and create sample gallery projects.  For our most recent stable release, see the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS).
-
 - [Documentation](https://docs.bentoml.org/) - Overview of the BentoML docs and related resources
 - [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
 - [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
@@ -55,7 +52,7 @@ reporting issues, contribute to the documentation and create sample gallery proj
 ## Installation ##
 
 ```bash
-pip install bentoml --pre
+pip install bentoml
 ```
 
 ## Quick Tour ##

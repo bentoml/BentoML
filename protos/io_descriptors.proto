@@ -18,7 +18,7 @@ message Value{
 		bool bool_=9;
 		string string_=10;
 		bytes bytes_=11;
-		NumpyNdarray array_=13;
+		Array array_=13;
 		Tuple tuple_=14;
 	}
 }
@@ -33,7 +33,7 @@ message Tuple{
 /* NumpyNdarray contains a dtype which identifies the type of the array.
  * The repeated field for the identified dtype contains the array. */
 // TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
-message NumpyNdarray {
+message Array {
 	string dtype=1;
 	repeated float float_=2;
 	repeated double double_=3;
@@ -46,6 +46,6 @@ message NumpyNdarray {
 	repeated bool bool_=10;
 	repeated string string_=11;
 	repeated bytes bytes_=12;
-	repeated NumpyNdarray array_=13;
+	repeated Array array_=13;
 	repeated Tuple tuple_=14;
 }

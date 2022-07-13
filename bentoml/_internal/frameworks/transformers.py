@@ -193,13 +193,13 @@ def load_model(
             "type": bento_model.info.options.type,  # type: ignore
         }
 
-    kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
-    kwargs.update(kwargs)
-    if len(kwargs) > 0:
+    extra_kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
+    extra_kwargs.update(kwargs)
+    if len(extra_kwargs) > 0:
         logger.info(
-            f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {kwargs}."
+            f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {extra_kwargs}."
         )
-    return transformers.pipeline(task=task, model=bento_model.path, **kwargs)  # type: ignore
+    return transformers.pipeline(task=task, model=bento_model.path, **extra_kwargs)  # type: ignore
 
 
 def save_model(

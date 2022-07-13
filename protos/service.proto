@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+import "io_descriptors.proto";
+
+/* Payload allows single instance of one `io_descriptor`. */
+message Payload {
+	oneof io_descriptor{
+		string text = 1;
+		Array array = 2;
+	}
+}
+
+// `BentoServiceRequest` represents a grpc request. Uses `Payload` to represent request data.
+// @api_name: name of the api user wants to call using the provided `Payload`
+message BentoServiceRequest {
+	string api_name = 1;
+	Payload input = 2;
+}
+
+// `BentoServiceResponse` represents a grpc response. Uses `Payload` to represent response data. 
+// TODO: status, error
+message BentoServiceResponse {
+	Payload output = 1;
+}
+
+// `BentoService` with rpc `RouteCall()` that takes a `BentoServiceRequest` and returns `BentoServiceResponse`
+service BentoService {
+	rpc RouteCall(BentoServiceRequest) returns (BentoServiceResponse);
+}

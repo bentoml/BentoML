@@ -12,6 +12,7 @@ Framework APIs
 
     catboost
     fastai
+    keras
     mlflow
     onnx
     sklearn

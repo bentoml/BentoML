@@ -91,7 +91,7 @@ def main(
         arbiter.start()
         return
 
-    component_context.component_name = f"runner-{runner_name}:{worker_id}"
+    component_context.component_name = f"runner:{runner_name}:{worker_id}"
     from ...log import configure_server_logging
 
     configure_server_logging()

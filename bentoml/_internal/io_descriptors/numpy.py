@@ -464,9 +464,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 d = Duration()
                 d.FromTimedelta(td)
                 duration_arr.append(d)
-            return io_descriptors_pb2.Array(
-                dtype="duration_", duration_=duration_arr
-            )
+            return io_descriptors_pb2.Array(dtype="duration_", duration_=duration_arr)
         elif dtype != "array_":
             return io_descriptors_pb2.Array(**{"dtype": dtype, f"{dtype}": arr})
 
@@ -481,13 +479,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return_arr.append(val)
 
         if is_tuple:
-            return_arr = io_descriptors_pb2.Array(
-                dtype="tuple_", tuple_=return_arr
-            )
+            return_arr = io_descriptors_pb2.Array(dtype="tuple_", tuple_=return_arr)
         else:
-            return_arr = io_descriptors_pb2.Array(
-                dtype="array_", array_=return_arr
-            )
+            return_arr = io_descriptors_pb2.Array(dtype="array_", array_=return_arr)
 
         return return_arr
 

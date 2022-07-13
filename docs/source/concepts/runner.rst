@@ -199,7 +199,7 @@ Custom Runnable built with Model from BentoML's model store:
     import bentoml
     from bentoml.io import JSON
     from bentoml.io import NumpyNdarray
-    from numpy.typing import ArrayLike
+    from numpy.typing import NDArray
 
     bento_model = bentoml.sklearn.get("spam_detection:latest")
 
@@ -211,7 +211,7 @@ Custom Runnable built with Model from BentoML's model store:
             self.classifier = bentoml.sklearn.load_model(bento_model)
 
         @bentoml.Runnable.method(batchable=False)
-        def is_spam(self, input_data: ArrayLike) -> ArrayLike:
+        def is_spam(self, input_data: NDArray[Any]) -> NDArray[Any]:
             return self.classifier.predict(input_data)
 
 
@@ -219,7 +219,7 @@ Custom Runnable built with Model from BentoML's model store:
     svc = bentoml.Service("spam_detector", runners=[spam_detection_runner])
 
     @svc.api(input=NumpyNdarray(), output=JSON())
-    def analysis(input_text: ArrayLike) -> dict[str, Any]:
+    def analysis(input_text: NDArray[Any]) -> dict[str, Any]:
         return {"res": spam_detection_runner.is_spam.run(input_text)}
 
 .. code::

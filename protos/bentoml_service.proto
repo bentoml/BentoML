@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+import "io_descriptors.proto";
+
+/* BentoServiceMessage allows single instance of one `io_descriptor``. */
+message BentoServiceMessage {
+	oneof io_descriptor{
+		string text = 1;
+        Array array = 2;
+	}
+}
+
+/* BentoServiceInput represents the input for a grpc request. Uses `BentoServiceMessage` to represent request data.  
+ * @api_name: name of the api user wants to call using the given `BentoServiceMessage` */
+message BentoServiceInput {
+	string api_name = 1;
+	BentoServiceMessage input = 2;
+}
+
+/* BentoServiceInput represents the output for a grpc response. Uses `BentoServiceMessage` to represent response data. */
+// TODO status, error
+message BentoServiceOutput {
+	BentoServiceMessage output = 1;
+}
+
+/* BentoML service with rpc `call()` that takes a `BentoServiceInput` and returns `BentoServiceOutput` */
+service BentoML{
+	rpc call(BentoServiceInput) returns (BentoServiceOutput);
+}

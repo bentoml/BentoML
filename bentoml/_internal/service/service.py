@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 import logging
+import contextlib
 from typing import TYPE_CHECKING
 
 import attr
@@ -100,7 +101,7 @@ class Service:
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
     bento: Bento | None = attr.field(init=False, default=None)
-    _exit_stack: t.Optional[t.Any] = None
+    _exit_stack: t.Optional[contextlib.ExitStack] = None
 
     # Working dir and Import path of the service, set when the service was imported
     _working_dir: str | None = attr.field(init=False, default=None)
@@ -227,12 +228,14 @@ class Service:
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
+    def __del__(self):
+        if hasattr(self, "_exit_stack") and self._exit_stack is not None:
+            self._exit_stack.close()
+
 
 def on_load_bento(svc: Service, bento: Bento):
     object.__setattr__(svc, "bento", bento)
     object.__setattr__(svc, "tag", bento.info.tag)
-
-    import contextlib
 
     exit_stack = contextlib.ExitStack()
     exit_stack.enter_context(bento.patch_context())

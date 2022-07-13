@@ -30,7 +30,7 @@ message Tuple{
 
 // TODO: message complex types
 
-/* NumpyNdarray contains a dtype which identifies the type of the array.
+/* Array contains a dtype which identifies the type of the array.
  * The repeated field for the identified dtype contains the array. */
 // TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
 message Array {

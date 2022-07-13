@@ -16,12 +16,6 @@ ML models at production scale. Data Scientists and ML Engineers use BentoML to:
 * Provide a flexible MLOps platform that grows with your Data Science needs
 
 
-.. caution::
-    The BentoML version 1.0 is currently under beta preview release. For our most recent
-    stable release, see the
-    `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/>`_.
-
-
 Learn BentoML
 -------------
 
@@ -86,6 +80,11 @@ For MLOps engineers:
         :link-type: url
 
         Fast model deployment on any cloud platform.
+
+
+.. seealso::
+    
+    For the 0.13-LTS releases, see the `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/>`_.
 
 
 Staying Informed

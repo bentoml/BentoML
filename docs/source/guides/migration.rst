@@ -14,10 +14,7 @@ from BentoML version 0.13.1 to 1.0.0. Complete every migration action denoted li
 
 .. code-block:: bash
 
-    > pip install bentoml --pre
-
-.. note::
-    The BentoML version 1.0 is currently under beta preview release, thus :code:`--pre` flag is required.
+    > pip install bentoml
 
 
 Train Models

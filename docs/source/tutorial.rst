@@ -72,8 +72,7 @@ There are three ways to complete this tutorial:
 
    .. code-block:: bash
 
-       pip install --pre bentoml
-       pip install scikit-learn pandas
+       pip install bentoml scikit-learn pandas
 
 
 Saving Models with BentoML

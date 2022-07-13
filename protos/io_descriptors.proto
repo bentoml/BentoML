@@ -18,7 +18,6 @@ message Value{
 		bool bool_=9;
 		string string_=10;
 		bytes bytes_=11;
-		Value value_=12;
 		NumpyNdarray array_=13;
 		Tuple tuple_=14;
 	}

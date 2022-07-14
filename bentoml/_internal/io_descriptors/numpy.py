@@ -298,7 +298,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         from bentoml.protos import payload_pb2
 
-        tuple_arr = [i for i in getattr(proto_tuple, "value_")]
+        tuple_arr = [i for i in getattr(proto_tuple, "value")]
 
         if not tuple_arr:
             raise ValueError("Provided tuple is either empty or invalid.")
@@ -306,14 +306,14 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         return_arr = []
 
         for item in tuple_arr:
-            val = getattr(item, item.WhichOneof("dtype"))
+            val = getattr(item, item.WhichOneof("value"))
 
             if not val:
                 raise ValueError("Provided protobuf tuple is missing a value.")
 
-            if item.WhichOneof("dtype") == "timestamp_":
+            if item.WhichOneof("value") == "timestamp_value":
                 val = Timestamp.ToDatetime(val)
-            elif item.WhichOneof("dtype") == "duration_":
+            elif item.WhichOneof("value") == "duration_value":
                 val = Duration.ToTimedelta(val)
 
             if isinstance(val, payload_pb2.Array):
@@ -324,6 +324,29 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return return_arr
 
+    def WhichArray(self, proto_arr):
+        """
+        Check which repeated field has data in given `proto_arr` and return field name.
+        """
+        from bentoml.protos import payload_pb2
+
+        if not proto_arr:
+            return ""
+
+        arr_types = [field.name for field in payload_pb2.Array.DESCRIPTOR.fields]
+
+        return_type = ""
+        for arr_type in arr_types:
+            if len(getattr(proto_arr, arr_type)) != 0:
+                if not return_type:
+                    return_type = arr_type
+                else:
+                    raise ValueError(
+                        "More than one repeated Array fields contain data."
+                    )
+
+        return return_type
+
     def proto_to_arr(self, proto_arr):
         """
         Convert given protobuf array to python list
@@ -333,15 +356,16 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         from bentoml.protos import payload_pb2
 
-        return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
+        array_type = self.WhichArray(proto_arr)
+        if not array_type:
+            raise ValueError("Provided array is either empty or invalid.")
 
-        if proto_arr.dtype == "timestamp_":
+        return_arr = [i for i in getattr(proto_arr, array_type)]
+
+        if array_type == "timestamp_value":
             return_arr = [Timestamp.ToDatetime(dt) for dt in return_arr]
-        elif proto_arr.dtype == "duration_":
+        elif array_type == "duration_value":
             return_arr = [Duration.ToTimedelta(td) for td in return_arr]
-
-        if not return_arr:
-            raise ValueError("Provided array is either empty or invalid")
 
         for i, item in enumerate(return_arr):
             if isinstance(item, payload_pb2.Array):
@@ -379,18 +403,18 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         import numpy as np
 
         supported_datatypes = {
-            np.int32: "sint32_",
-            np.int64: "sint64_",
-            np.uint32: "uint32_",
-            np.uint64: "uint64_",
-            np.float32: "float_",
-            np.float64: "double_",
-            np.bool_: "bool_",
-            np.bytes_: "bytes_",
-            np.str_: "string_",
-            np.ndarray: "array_",
-            np.datetime64: "timestamp_",
-            np.timedelta64: "duration_"
+            np.float32: "float_value",
+            np.float64: "double_value",
+            np.bytes_: "bytes_value",
+            np.bool_: "bool_value",
+            np.str_: "string_value",
+            np.uint32: "uint32_value",
+            np.int32: "sint32_value",
+            np.datetime64: "timestamp_value",
+            np.timedelta64: "duration_value",
+            np.ndarray: "array_value",
+            np.uint64: "uint64_value",
+            np.int64: "sint64_value"
             # TODO : complex types, lower byte integers(8,16)
         }
 
@@ -398,13 +422,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         for key in supported_datatypes:
             if np.dtype(type(data)) == key:
                 found_dtype = supported_datatypes[key]
-                if found_dtype == "array_":
+                if found_dtype == "array_value":
                     if isinstance(data, datetime.datetime) or isinstance(
                         data, datetime.date
                     ):
-                        found_dtype = "timestamp_"
+                        found_dtype = "timestamp_value"
                     elif isinstance(data, datetime.timedelta):
-                        found_dtype = "duration_"
+                        found_dtype = "duration_value"
                 break
 
         return found_dtype
@@ -430,31 +454,31 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 raise ValueError(
                     f'Invalid datatype "{type(item).__name__}" within tuple.'
                 )
-            elif dtype == "timestamp_":
+            elif dtype == "timestamp_value":
                 if isinstance(item, np.datetime64):
                     item = item.astype(datetime.datetime)
                 if isinstance(item, datetime.date):
                     item = datetime.datetime(item.year, item.month, item.day)
-                tuple_arr.append(
-                    payload_pb2.Value(**{"timestamp_": Timestamp().FromDatetime(item)})
-                )
-            elif dtype == "duration_":
+                t = Timestamp()
+                t.FromDatetime(item)
+                tuple_arr.append(payload_pb2.Value(**{"timestamp_value": t}))
+            elif dtype == "duration_value":
                 if isinstance(item, np.timedelta64):
                     item = item.astype(datetime.timedelta)
-                tuple_arr.append(
-                    payload_pb2.Value(**{"duration_": Duration().FromTimedelta(item)})
-                )
-            elif dtype == "array_":
+                d = Duration()
+                d.FromTimedelta(item)
+                tuple_arr.append(payload_pb2.Value(**{"duration_value": d}))
+            elif dtype == "array_value":
                 if not all(isinstance(x, type(item[0])) for x in item):
                     val = self.create_tuple_proto(item)
-                    tuple_arr.append(payload_pb2.Value(tuple_=val))
+                    tuple_arr.append(payload_pb2.Value(tuple_value=val))
                 else:
                     val = self.arr_to_proto(item)
-                    tuple_arr.append(payload_pb2.Value(array_=val))
+                    tuple_arr.append(payload_pb2.Value(array_value=val))
             else:
                 tuple_arr.append(payload_pb2.Value(**{f"{dtype}": item}))
 
-        return payload_pb2.Tuple(value_=tuple_arr)
+        return payload_pb2.Tuple(value=tuple_arr)
 
     def arr_to_proto(self, arr):
         """
@@ -475,25 +499,30 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         if not dtype:
             raise ValueError("Dtype is not supported.")
 
-        if dtype == "timestamp_":
+        if dtype == "timestamp_value":
             timestamp_arr = []
             for dt in arr:
                 if isinstance(dt, np.datetime64):
                     dt = dt.astype(datetime.datetime)
                 if isinstance(dt, datetime.date):
                     dt = datetime.datetime(dt.year, dt.month, dt.day)
-                timestamp_arr.append(Timestamp().FromDatetime(dt))
-            return payload_pb2.Array(dtype="timestamp_", timestamp_=timestamp_arr)
-        elif dtype == "duration_":
+                t = Timestamp()
+                t.FromDatetime(dt)
+                timestamp_arr.append(t)
+            return payload_pb2.Array(timestamp_value=timestamp_arr)
+        elif dtype == "duration_value":
             duration_arr = []
             for td in arr:
                 if isinstance(td, np.timedelta64):
                     td = td.astype(datetime.timedelta)
-                duration_arr.append(Duration().FromTimedelta(td))
-            return payload_pb2.Array(dtype="duration_", duration_=duration_arr)
-        elif dtype != "array_":
-            return payload_pb2.Array(**{"dtype": dtype, f"{dtype}": arr})
+                d = Duration()
+                d.FromTimedelta(td)
+                duration_arr.append(t)
+            return payload_pb2.Array(duration_value=duration_arr)
+        elif dtype != "array_value":
+            return payload_pb2.Array(**{f"{dtype}": arr})
 
+        # Handle nested arrays or tuples
         return_arr = []
         is_tuple = False
         for item in arr:
@@ -505,9 +534,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return_arr.append(val)
 
         if is_tuple:
-            return_arr = payload_pb2.Array(dtype="tuple_", tuple_=return_arr)
+            return_arr = payload_pb2.Array(tuple_value=return_arr)
         else:
-            return_arr = payload_pb2.Array(dtype="array_", array_=return_arr)
+            return_arr = payload_pb2.Array(array_value=return_arr)
 
         return return_arr
 

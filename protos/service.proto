@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package service.v1alpha1;
+package bentoml;
 
-import "io_descriptors.proto";
+import "payload.proto";
 
-// IODescriptor defines the payload for an io_descriptor.
-message IODescriptor {
-  oneof io_descriptor {
+// Payload defines the payload for an io_descriptor.
+message Payload {
+  oneof payload {
     string text = 1;
     Array array = 2;
   }
@@ -17,14 +17,14 @@ message IODescriptor {
 // @api_name: given API route the rpc request is sent to.
 message RouteCallRequest {
   string api_name = 1;
-  IODescriptor input = 2;
+  Payload input = 2;
 }
 
 // RouteCallResponse represents response payload that user receive
 // from the BentoService.
 // TODO: status, error
 message RouteCallResponse {
-  IODescriptor output = 1;
+  Payload output = 1;
 }
 
 // BentoService represents a gRPC BentoService.

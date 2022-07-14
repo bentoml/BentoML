@@ -6,6 +6,9 @@ lint:
     - COMMENT_MESSAGE
     - COMMENT_RPC
     - COMMENT_SERVICE
+  except:
+    - PACKAGE_DIRECTORY_MATCH
+    - PACKAGE_VERSION_SUFFIX
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: false
   rpc_allow_google_protobuf_empty_requests: false

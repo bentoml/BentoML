@@ -121,7 +121,7 @@ skip_glob = ["typings/*", "docs/*", "bentoml/protos/*"]
 [tool.pyright]
 pythonVersion = "3.10"
 include = ["bentoml"]
-exclude = ['bentoml/_version.py','bentoml/__main__.py']
+exclude = ['bentoml/_version.py','bentoml/__main__.py','bentoml/_internal/external_typing','bentoml/protos']
 analysis.useLibraryCodeForTypes = true
 strictListInference = true
 strictDictionaryInference = true

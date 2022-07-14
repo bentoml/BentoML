@@ -510,7 +510,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 :code:`enforce_shape=False`.
 
         Returns:
-            :obj:`~bentoml._internal.payload.NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
+            :obj:`~bentoml._internal.io_descriptors.NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
 
         Example:
 

@@ -415,31 +415,35 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 raise ValueError(
                     f'Invalid datatype "{type(item).__name__}" within tuple.'
                 )
-            elif dtype == "timestamp_":
+            elif dtype == "timestamp_value":
                 if isinstance(item, np.datetime64):
                     item = item.astype(datetime.datetime)
                 if isinstance(item, datetime.date):
                     item = datetime.datetime(item.year, item.month, item.day)
+                t = Timestamp()
+                t.FromDatetime(item)
                 tuple_arr.append(
-                    payload_pb2.Value(**{"timestamp_": Timestamp().FromDatetime(item)})
+                    payload_pb2.Value(**{"timestamp_value": t})
                 )
-            elif dtype == "duration_":
+            elif dtype == "duration_value":
                 if isinstance(item, np.timedelta64):
                     item = item.astype(datetime.timedelta)
+                d = Duration()
+                d.FromTimedelta(item)
                 tuple_arr.append(
-                    payload_pb2.Value(**{"duration_": Duration().FromTimedelta(item)})
+                    payload_pb2.Value(**{"duration_value": d})
                 )
-            elif dtype == "array_":
+            elif dtype == "array_value":
                 if not all(isinstance(x, type(item[0])) for x in item):
                     val = self.create_tuple_proto(item)
-                    tuple_arr.append(payload_pb2.Value(tuple_=val))
+                    tuple_arr.append(payload_pb2.Value(tuple_value=val))
                 else:
                     val = self.arr_to_proto(item)
-                    tuple_arr.append(payload_pb2.Value(array_=val))
+                    tuple_arr.append(payload_pb2.Value(array_value=val))
             else:
                 tuple_arr.append(payload_pb2.Value(**{f"{dtype}": item}))
 
-        return payload_pb2.Tuple(value_=tuple_arr)
+        return payload_pb2.Tuple(value=tuple_arr)
 
     def arr_to_proto(self, arr):
         """

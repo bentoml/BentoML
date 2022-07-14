@@ -364,18 +364,18 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         import numpy as np
 
         supported_datatypes = {
-            np.int32: "sint32_",
-            np.int64: "sint64_",
-            np.uint32: "uint32_",
-            np.uint64: "uint64_",
-            np.float32: "float_",
-            np.float64: "double_",
-            np.bool_: "bool_",
-            np.bytes_: "bytes_",
-            np.str_: "string_",
-            np.ndarray: "array_",
-            np.datetime64: "timestamp_",
-            np.timedelta64: "duration_"
+            np.float32: "float_value",
+            np.float64: "double_value",
+            np.bytes_: "bytes_value",
+            np.bool_: "bool_value",
+            np.str_: "string_value",
+            np.uint32: "uint32_value",
+            np.int32: "sint32_value",
+            np.datetime64: "timestamp_value",
+            np.timedelta64: "duration_value",
+            np.ndarray: "array_value",
+            np.uint64: "uint64_value",
+            np.int64: "sint64_value"
             # TODO : complex types, lower byte integers(8,16)
         }
 
@@ -383,13 +383,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         for key in supported_datatypes:
             if np.dtype(type(data)) == key:
                 found_dtype = supported_datatypes[key]
-                if found_dtype == "array_":
+                if found_dtype == "array_value":
                     if isinstance(data, datetime.datetime) or isinstance(
                         data, datetime.date
                     ):
-                        found_dtype = "timestamp_"
+                        found_dtype = "timestamp_value"
                     elif isinstance(data, datetime.timedelta):
-                        found_dtype = "duration_"
+                        found_dtype = "duration_value"
                 break
 
         return found_dtype

@@ -261,7 +261,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         from bentoml.protos import payload_pb2
 
-        tuple_arr = [i for i in getattr(proto_tuple, "value_")]
+        tuple_arr = [i for i in getattr(proto_tuple, "value")]
 
         if not tuple_arr:
             raise ValueError("Provided tuple is either empty or invalid.")
@@ -269,14 +269,14 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         return_arr = []
 
         for item in tuple_arr:
-            val = getattr(item, item.WhichOneof("dtype"))
+            val = getattr(item, item.WhichOneof("value"))
 
             if not val:
                 raise ValueError("Provided protobuf tuple is missing a value.")
 
-            if item.WhichOneof("dtype") == "timestamp_":
+            if item.WhichOneof("value") == "timestamp_value":
                 val = Timestamp.ToDatetime(val)
-            elif item.WhichOneof("dtype") == "duration_":
+            elif item.WhichOneof("value") == "duration_value":
                 val = Duration.ToTimedelta(val)
 
             if isinstance(val, payload_pb2.Array):

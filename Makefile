@@ -14,6 +14,7 @@ lint: ## Running lint checker: pylint
 	@./scripts/tools/linter.sh
 type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
+style: format lint ## Running formatter and linter
 clean: ## Clean all generated files
 	@echo "Cleaning all generated files..."
 	@cd $(GIT_ROOT)/docs && make clean

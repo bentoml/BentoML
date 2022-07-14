@@ -14,3 +14,4 @@ scikit-learn
 imageio>=2.5.0
 watchfiles>=0.15.0
 pyarrow
+grpcio-tools

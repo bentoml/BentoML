@@ -14,3 +14,6 @@ INFO "(isort) Reordering imports..."
 
 isort .
 
+INFO "(buf) Formatting protobuf..."
+
+docker run --rm --volume "$(pwd):/workspace" --workdir /workspace bufbuild/buf format -w bentoml/protos/

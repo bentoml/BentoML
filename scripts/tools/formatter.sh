@@ -13,3 +13,7 @@ black --config ./pyproject.toml bentoml tests docs examples
 INFO "(isort) Reordering imports..."
 
 isort .
+
+INFO "(buf) Formatting protobuf..."
+
+docker run --rm --volume "$(pwd):/workspace" --workdir /workspace bufbuild/buf --config "/workspace/protos/buf.yaml" format -w /workspace/protos/

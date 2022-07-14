@@ -292,7 +292,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         Check which repeated field has data in given `proto_arr` and return field name.
         """
         from bentoml.protos import payload_pb2
-        
+
         if not proto_arr:
             return ""
 
@@ -300,11 +300,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return_type = ""
         for arr_type in arr_types:
-            if(len(getattr(proto_arr, arr_type)) != 0):
+            if len(getattr(proto_arr, arr_type)) != 0:
                 if not return_type:
                     return_type = arr_type
                 else:
-                    raise ValueError("More than one repeated Array fields contain data.")
+                    raise ValueError(
+                        "More than one repeated Array fields contain data."
+                    )
 
         return return_type
 
@@ -422,17 +424,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     item = datetime.datetime(item.year, item.month, item.day)
                 t = Timestamp()
                 t.FromDatetime(item)
-                tuple_arr.append(
-                    payload_pb2.Value(**{"timestamp_value": t})
-                )
+                tuple_arr.append(payload_pb2.Value(**{"timestamp_value": t}))
             elif dtype == "duration_value":
                 if isinstance(item, np.timedelta64):
                     item = item.astype(datetime.timedelta)
                 d = Duration()
                 d.FromTimedelta(item)
-                tuple_arr.append(
-                    payload_pb2.Value(**{"duration_value": d})
-                )
+                tuple_arr.append(payload_pb2.Value(**{"duration_value": d}))
             elif dtype == "array_value":
                 if not all(isinstance(x, type(item[0])) for x in item):
                     val = self.create_tuple_proto(item)
@@ -471,7 +469,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     dt = dt.astype(datetime.datetime)
                 if isinstance(dt, datetime.date):
                     dt = datetime.datetime(dt.year, dt.month, dt.day)
-                t=Timestamp()
+                t = Timestamp()
                 t.FromDatetime(dt)
                 timestamp_arr.append(t)
             return payload_pb2.Array(timestamp_value=timestamp_arr)

@@ -8,11 +8,11 @@ source ./scripts/ci/helpers.sh
 
 INFO "(pylint) Linting bentoml..."
 
-# pylint --rcfile="./pyproject.toml" --fail-under 9.0 bentoml
+pylint --rcfile="./pyproject.toml" --fail-under 9.0 bentoml
 
 INFO "(pylint) Linting tests..."
 
-# pylint --rcfile="./pyproject.toml" --disable=E0401,F0010 --fail-under 9.0 tests
+pylint --rcfile="./pyproject.toml" --disable=E0401,F0010 --fail-under 9.0 tests
 
 INFO "(buf) Linting protobuf..."
 

@@ -262,7 +262,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             res = np.array(obj, dtype=self._dtype)
         except ValueError:
             res = np.array(obj)
-
         return self._verify_ndarray(res)
 
     async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
@@ -297,7 +296,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from bentoml.protos import io_descriptors_pb2
+        from bentoml.protos import payload_pb2
 
         tuple_arr = [i for i in getattr(proto_tuple, "value_")]
 
@@ -317,9 +316,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             elif item.WhichOneof("dtype") == "duration_":
                 val = Duration.ToTimedelta(val)
 
-            if isinstance(val, io_descriptors_pb2.Array):
+            if isinstance(val, payload_pb2.Array):
                 val = self.proto_to_arr(val)
-            elif isinstance(val, io_descriptors_pb2.Tuple):
+            elif isinstance(val, payload_pb2.Tuple):
                 val = self.handle_tuple(val)
             return_arr.append(val)
 
@@ -332,7 +331,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from bentoml.protos import io_descriptors_pb2
+        from bentoml.protos import payload_pb2
 
         return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
 
@@ -345,9 +344,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             raise ValueError("Provided array is either empty or invalid")
 
         for i, item in enumerate(return_arr):
-            if isinstance(item, io_descriptors_pb2.Array):
+            if isinstance(item, payload_pb2.Array):
                 return_arr[i] = self.proto_to_arr(item)
-            elif isinstance(item, io_descriptors_pb2.Tuple):
+            elif isinstance(item, payload_pb2.Tuple):
                 return_arr[i] = self.handle_tuple(item)
 
         return return_arr
@@ -357,7 +356,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         Process incoming protobuf request and convert it to `numpy.ndarray`
 
         Args:
-            request (`io_descriptors_pb2.Array`):
+            request (`payload_pb2.Array`):
                 Incoming Requests
         Returns:
             a `numpy.ndarray` object. This can then be used
@@ -367,9 +366,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         res: "ext.NpNDArray"
         try:
-            res = np.array(self.proto_to_arr(request), dtype=self._dtype)  # type: ignore[arg-type]
+            res = np.array(self.proto_to_arr(request), dtype=self._dtype)
         except ValueError:
-            res = np.array(self.proto_to_arr(request))  # type: ignore[arg-type]
+            res = np.array(self.proto_to_arr(request))
         res = self._verify_ndarray(res, BadInput)
         return res
 
@@ -418,7 +417,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from bentoml.protos import io_descriptors_pb2
+        from bentoml.protos import payload_pb2
 
         if len(tuple) == 0:
             raise ValueError("Provided tuple is either empty or invalid.")
@@ -437,29 +436,25 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 if isinstance(item, datetime.date):
                     item = datetime.datetime(item.year, item.month, item.day)
                 tuple_arr.append(
-                    io_descriptors_pb2.Value(
-                        **{"timestamp_": Timestamp().FromDatetime(item)}
-                    )
+                    payload_pb2.Value(**{"timestamp_": Timestamp().FromDatetime(item)})
                 )
             elif dtype == "duration_":
                 if isinstance(item, np.timedelta64):
                     item = item.astype(datetime.timedelta)
                 tuple_arr.append(
-                    io_descriptors_pb2.Value(
-                        **{"duration_": Duration().FromTimedelta(item)}
-                    )
+                    payload_pb2.Value(**{"duration_": Duration().FromTimedelta(item)})
                 )
             elif dtype == "array_":
                 if not all(isinstance(x, type(item[0])) for x in item):
                     val = self.create_tuple_proto(item)
-                    tuple_arr.append(io_descriptors_pb2.Value(tuple_=val))
+                    tuple_arr.append(payload_pb2.Value(tuple_=val))
                 else:
                     val = self.arr_to_proto(item)
-                    tuple_arr.append(io_descriptors_pb2.Value(array_=val))
+                    tuple_arr.append(payload_pb2.Value(array_=val))
             else:
-                tuple_arr.append(io_descriptors_pb2.Value(**{f"{dtype}": item}))
+                tuple_arr.append(payload_pb2.Value(**{f"{dtype}": item}))
 
-        return io_descriptors_pb2.Tuple(value_=tuple_arr)
+        return payload_pb2.Tuple(value_=tuple_arr)
 
     def arr_to_proto(self, arr):
         """
@@ -469,7 +464,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from bentoml.protos import io_descriptors_pb2
+        from bentoml.protos import payload_pb2
 
         if len(arr) == 0:
             raise ValueError("Provided array is either empty or invalid.")
@@ -488,18 +483,16 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 if isinstance(dt, datetime.date):
                     dt = datetime.datetime(dt.year, dt.month, dt.day)
                 timestamp_arr.append(Timestamp().FromDatetime(dt))
-            return io_descriptors_pb2.Array(
-                dtype="timestamp_", timestamp_=timestamp_arr
-            )
+            return payload_pb2.Array(dtype="timestamp_", timestamp_=timestamp_arr)
         elif dtype == "duration_":
             duration_arr = []
             for td in arr:
                 if isinstance(td, np.timedelta64):
                     td = td.astype(datetime.timedelta)
                 duration_arr.append(Duration().FromTimedelta(td))
-            return io_descriptors_pb2.Array(dtype="duration_", duration_=duration_arr)
+            return payload_pb2.Array(dtype="duration_", duration_=duration_arr)
         elif dtype != "array_":
-            return io_descriptors_pb2.Array(**{"dtype": dtype, f"{dtype}": arr})
+            return payload_pb2.Array(**{"dtype": dtype, f"{dtype}": arr})
 
         return_arr = []
         is_tuple = False
@@ -512,9 +505,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return_arr.append(val)
 
         if is_tuple:
-            return_arr = io_descriptors_pb2.Array(dtype="tuple_", tuple_=return_arr)
+            return_arr = payload_pb2.Array(dtype="tuple_", tuple_=return_arr)
         else:
-            return_arr = io_descriptors_pb2.Array(dtype="array_", array_=return_arr)
+            return_arr = payload_pb2.Array(dtype="array_", array_=return_arr)
 
         return return_arr
 

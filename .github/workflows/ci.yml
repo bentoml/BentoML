@@ -77,6 +77,12 @@ jobs:
         run: |
           npm install -g npm@^7 pyright
 
+      - name: Setup protobuf tools
+        uses: bufbuild/buf-setup-action@v1.6.0
+        if: success()
+        with:
+          github_token: ${{ github.token }}
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
@@ -93,6 +99,8 @@ jobs:
         run: make ci-format
       - name: Lint check
         run: make ci-lint
+      - name: Proto check
+        run: make ci-proto
       - name: Type check
         run: make ci-pyright
 

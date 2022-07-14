@@ -287,6 +287,27 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return return_arr
 
+    def WhichArray(self, proto_arr):
+        """
+        Check which repeated field has data in given `proto_arr` and return field name.
+        """
+        from bentoml.protos import payload_pb2
+        
+        if not proto_arr:
+            return ""
+
+        arr_types = [field.name for field in payload_pb2.Array.DESCRIPTOR.fields]
+
+        return_type = ""
+        for arr_type in arr_types:
+            if(len(getattr(proto_arr, arr_type)) != 0):
+                if not return_type:
+                    return_type = arr_type
+                else:
+                    raise ValueError("More than one repeated Array fields contain data.")
+
+        return return_type
+
     def proto_to_arr(self, proto_arr):
         """
         Convert given protobuf array to python list

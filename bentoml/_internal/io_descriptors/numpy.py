@@ -317,15 +317,16 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         from bentoml.protos import payload_pb2
 
-        return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
+        array_type = self.WhichArray(proto_arr)
+        if not array_type:
+            raise ValueError("Provided array is either empty or invalid.")
 
-        if proto_arr.dtype == "timestamp_":
+        return_arr = [i for i in getattr(proto_arr, array_type)]
+
+        if array_type == "timestamp_value":
             return_arr = [Timestamp.ToDatetime(dt) for dt in return_arr]
-        elif proto_arr.dtype == "duration_":
+        elif array_type == "duration_value":
             return_arr = [Duration.ToTimedelta(td) for td in return_arr]
-
-        if not return_arr:
-            raise ValueError("Provided array is either empty or invalid")
 
         for i, item in enumerate(return_arr):
             if isinstance(item, payload_pb2.Array):

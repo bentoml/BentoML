@@ -115,7 +115,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             must be specified.
 
     Returns:
-        :obj:`~bentoml._internal.payload.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
     """
 
     def __init__(

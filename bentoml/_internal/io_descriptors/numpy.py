@@ -464,25 +464,30 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         if not dtype:
             raise ValueError("Dtype is not supported.")
 
-        if dtype == "timestamp_":
+        if dtype == "timestamp_value":
             timestamp_arr = []
             for dt in arr:
                 if isinstance(dt, np.datetime64):
                     dt = dt.astype(datetime.datetime)
                 if isinstance(dt, datetime.date):
                     dt = datetime.datetime(dt.year, dt.month, dt.day)
-                timestamp_arr.append(Timestamp().FromDatetime(dt))
-            return payload_pb2.Array(dtype="timestamp_", timestamp_=timestamp_arr)
-        elif dtype == "duration_":
+                t=Timestamp()
+                t.FromDatetime(dt)
+                timestamp_arr.append(t)
+            return payload_pb2.Array(timestamp_value=timestamp_arr)
+        elif dtype == "duration_value":
             duration_arr = []
             for td in arr:
                 if isinstance(td, np.timedelta64):
                     td = td.astype(datetime.timedelta)
-                duration_arr.append(Duration().FromTimedelta(td))
-            return payload_pb2.Array(dtype="duration_", duration_=duration_arr)
-        elif dtype != "array_":
-            return payload_pb2.Array(**{"dtype": dtype, f"{dtype}": arr})
+                d = Duration()
+                d.FromTimedelta(td)
+                duration_arr.append(t)
+            return payload_pb2.Array(duration_value=duration_arr)
+        elif dtype != "array_value":
+            return payload_pb2.Array(**{f"{dtype}": arr})
 
+        # Handle nested arrays or tuples
         return_arr = []
         is_tuple = False
         for item in arr:
@@ -494,9 +499,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return_arr.append(val)
 
         if is_tuple:
-            return_arr = payload_pb2.Array(dtype="tuple_", tuple_=return_arr)
+            return_arr = payload_pb2.Array(tuple_value=return_arr)
         else:
-            return_arr = payload_pb2.Array(dtype="array_", array_=return_arr)
+            return_arr = payload_pb2.Array(array_value=return_arr)
 
         return return_arr
 

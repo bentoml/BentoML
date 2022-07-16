@@ -191,7 +191,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install .
+          pip install . -vvv
           pip install -r requirements/tests-requirements.txt
 
       - name: Run unit tests

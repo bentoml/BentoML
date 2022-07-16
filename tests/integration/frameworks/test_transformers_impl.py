@@ -38,27 +38,27 @@ def pt_gpt2_pipeline():
 @pytest.mark.parametrize(
     "name, pipeline, with_options, expected_options, input_data",
     [
-        (
-            "text-generation",
-            pipeline(task="text-generation"),  # type: ignore
-            {},
-            {"task": "text-generation", "kwargs": {}},
-            "A Bento box is a ",
-        ),
-        (
-            "text-generation",
-            pipeline(task="text-generation"),  # type: ignore
-            {"kwargs": {"a": 1}},
-            {"task": "text-generation", "kwargs": {"a": 1}},
-            "A Bento box is a ",
-        ),
-        (
-            "text-generation",
-            tf_gpt2_pipeline(),
-            {},
-            {"task": "text-generation", "kwargs": {}},
-            "A Bento box is a ",
-        ),
+        # (
+        #     "text-generation",
+        #     pipeline(task="text-generation"),  # type: ignore
+        #     {},
+        #     {"task": "text-generation", "kwargs": {}},
+        #     "A Bento box is a ",
+        # ),
+        # (
+        #     "text-generation",
+        #     pipeline(task="text-generation"),  # type: ignore
+        #     {"kwargs": {"a": 1}},
+        #     {"task": "text-generation", "kwargs": {"a": 1}},
+        #     "A Bento box is a ",
+        # ),
+        # (
+        #     "text-generation",
+        #     tf_gpt2_pipeline(),
+        #     {},
+        #     {"task": "text-generation", "kwargs": {}},
+        #     "A Bento box is a ",
+        # ),
         (
             "text-generation",
             pt_gpt2_pipeline(),

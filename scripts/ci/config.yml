@@ -211,13 +211,10 @@ transformers:
   <<: *tmpl
   dependencies:
     - "transformers"
-    - "tensorflow_hub"
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.11.0"
-    - "jax==0.2.19"
-    - "jaxlib==0.1.70"
-    - "flax==0.3.4"
-    - "tensorflow"
+    # - "jax>=0.3.14"
+    # - "jaxlib>=0.3.14"
     - "importlib_metadata"
     - "Pillow==8.4.0"
     - "typing_extensions==4.2.0"

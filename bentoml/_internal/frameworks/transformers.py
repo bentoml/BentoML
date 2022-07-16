@@ -79,6 +79,14 @@ except ImportError:  # pragma: no cover
     )
 
 
+
+def task_default_converter(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | None]]:
+    for k, v in dct.items():
+        if isinstance(v, list):
+            dct[k] = tuple(v)  # type: ignore
+    return dct
+
+
 @attr.define
 class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
@@ -90,7 +98,8 @@ class TransformersOptions(ModelOptions):
                 member_validator=attr.validators.instance_of(str)
             )
         ],  # type: ignore
-        factory=(tuple),
+        factory=tuple,
+        converter=tuple,
     )
     pt: t.Tuple[str] = attr.field(
         validator=[
@@ -98,10 +107,18 @@ class TransformersOptions(ModelOptions):
                 member_validator=attr.validators.instance_of(str)
             )
         ],  # type: ignore
-        factory=(tuple),
+        factory=tuple,
+        converter=tuple,
     )
-    default: t.Dict[str, t.Any] = attr.field(factory=dict)
-    type: str = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
+    default: t.Dict[str, t.Any] = attr.field(factory=dict, converter=task_default_converter)
+    type: t.Optional[str] = attr.field(
+        validator=attr.validators.optional(
+            attr.validators.and_(
+                attr.validators.instance_of(str),
+            )
+        ),
+        default=None,
+    )
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 

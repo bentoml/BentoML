@@ -111,14 +111,7 @@ class TransformersOptions(ModelOptions):
         converter=tuple,
     )
     default: t.Dict[str, t.Any] = attr.field(factory=dict, converter=task_default_converter)
-    type: t.Optional[str] = attr.field(
-        validator=attr.validators.optional(
-            attr.validators.and_(
-                attr.validators.instance_of(str),
-            )
-        ),
-        default=None,
-    )
+    type: t.Optional[str] = attr.field(default=None)
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
@@ -178,7 +171,7 @@ def load_model(
         bento_model = get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
+        raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 

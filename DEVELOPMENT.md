@@ -187,11 +187,16 @@ bentoml get IrisClassifier --verbose
 
 ## Style check, auto-formatting, type-checking
 
-formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort)
+formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort), [buf](https://github.com/bufbuild/buf)
 
-linter: [pylint](https://pylint.org/)
+linter: [pylint](https://pylint.org/), [buf](https://github.com/bufbuild/buf)
 
 type checker: [pyright](https://github.com/microsoft/pyright)
+
+We are using [buf](https://github.com/bufbuild/buf) for formatting and linting
+of our proto files. Configuration can be found [here](./protos/buf.yaml).
+Currently, we are running `buf` with docker, hence we kindly ask our developers
+to have docker available. Docker installation can be found [here](https://docs.docker.com/get-docker/).
 
 Run linter/format script:
 ```bash
@@ -204,6 +209,14 @@ Run type checker:
 ```bash
 make type
 ```
+
+## Editing proto files.
+
+Protos file are located under [`protos`](./protos/). The generated stubs are
+ignored for VCS by default. If you edit the protos file manually, simply run
+`pip install -e -U .` again to apply new changes the the generated stubs. 
+
+The generated stubs can be located under [`bentoml/protos`](./bentoml/protos/).
 
 ## Deploy with your changes
 
@@ -244,7 +257,7 @@ docker:
   - git
 ```
 
-	
+
 ## Testing
 
 Make sure to install all test dependencies:

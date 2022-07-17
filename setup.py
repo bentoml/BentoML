@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import os
 import ast
+import sys
+import subprocess
 from pathlib import Path
 
 import pkg_resources
 from setuptools import setup
-from grpc_tools.protoc import main as run_main  # type: ignore (unfinished type definition)
 
 GIT_ROOT = Path(os.path.abspath(__file__)).parent
 
@@ -44,7 +45,6 @@ def fix_imports(file: str, fix_name: str) -> None:
 
 def gen_args(file: str, *, grpc_out: bool = False) -> list[str]:
     args = [
-        f"-I{proto_include}",
         f"-I{str(proto_path)}",
         f"--python_out={gen_stub_path}",
     ]
@@ -65,8 +65,12 @@ def gen_args(file: str, *, grpc_out: bool = False) -> list[str]:
 if __name__ == "__main__":
 
     # Run before setup
-    run_main(gen_args("payload"))
-    run_main(gen_args("service", grpc_out=True))
+    subprocess.check_call(
+        [sys.executable, "-m", "grpc_tools.protoc", *gen_args("payload")]
+    )
+    subprocess.check_call(
+        [sys.executable, "-m", "grpc_tools.protoc", *gen_args("service", grpc_out=True)]
+    )
 
     # fix service_pb2 imports
     fix_imports("service_pb2.py", "payload_pb2")

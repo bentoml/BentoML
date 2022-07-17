@@ -4,6 +4,7 @@ requires = [
   "wheel",
   "setuptools>=59.0",
   "setuptools-scm[toml]>=6.2.3",
+  "grpcio-tools>=1.43.0"  # sync with grpcio in setup.cfg
 ]
 build-backend = "setuptools.build_meta"
 

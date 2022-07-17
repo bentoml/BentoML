@@ -1,10 +1,11 @@
 [build-system]
 requires = [
   # sync with setup.py until we discard non-pep-517/518
-  "wheel",
+  "astunparse",  # ast.unparse backports
+  "grpcio-tools>=1.43.0",  # sync with grpcio in setup.cfg
   "setuptools>=59.0",
   "setuptools-scm[toml]>=6.2.3",
-  "grpcio-tools>=1.43.0"  # sync with grpcio in setup.cfg
+  "wheel",
 ]
 build-backend = "setuptools.build_meta"
 

@@ -228,6 +228,49 @@ class Service:
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
+    def get_grpc_servicer(self):
+        from bentoml.io import Text
+        from bentoml.io import NumpyNdarray
+        from bentoml.protos import service_pb2
+        from bentoml.protos import service_pb2_grpc
+
+        type_dict = {"text": Text, "array": NumpyNdarray}
+
+        apis = self.apis
+
+        class BentoServiceServicer(service_pb2_grpc.BentoServiceServicer):
+            async def RouteCall(self, request, context):
+                try:
+                    api = apis[request.api_name]
+                except KeyError:
+                    raise ValueError(
+                        f'Provided api_name "{request.api_name}" is not defined in service."'
+                    )
+                input = request.input
+
+                io_type = input.WhichOneof("payload")
+                if api.input == type_dict[io_type]:
+                    raise ValueError(f"Please provide a {type(api.input).__name__}.")
+
+                if io_type == "text":
+                    input = input.text
+                elif io_type == "array":
+                    input = input.array
+                    input = await api.input.from_grpc_request(input, context)
+                else:
+                    raise ValueError("Invalid input type.")
+
+                output = api.func(input)
+
+                if isinstance(api.output, Text):
+                    output = service_pb2.Payload(text=output)
+                elif isinstance(api.output, NumpyNdarray):
+                    out = await api.output.to_grpc_response(output)
+                    output = service_pb2.Payload(array=out)
+                return service_pb2.RouteCallResponse(output=output)
+
+        return BentoServiceServicer
+
 
 def on_load_bento(svc: Service, bento: Bento):
     object.__setattr__(svc, "bento", bento)

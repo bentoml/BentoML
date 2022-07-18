@@ -69,6 +69,13 @@ def add_serve_command(cli: click.Group) -> None:
         default=".",
         show_default=True,
     )
+    @click.option(
+        "--grpc",
+        type=click.BOOL,
+        is_flag=True,
+        help="Start a BentoML gRPC server.",
+        default=False,
+    )
     def serve(
         bento: str,
         production: bool,
@@ -78,6 +85,7 @@ def add_serve_command(cli: click.Group) -> None:
         backlog: int,
         reload: bool,
         working_dir: str,
+        grpc: bool,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
@@ -140,4 +148,5 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,
+                using_grpc=grpc,
             )

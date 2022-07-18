@@ -72,9 +72,10 @@ Custom Models
         :link: /frameworks/picklable
         :link-type: doc
 
-    .. grid-item-card:: :ref:`/concepts/runner:Custom Runner`
-        :link: /concepts/runner:Custom Runner
-        :link-type: ref
+    .. grid-item-card:: :ref:`concepts/runner:Custom Runner`
+        :link: /concepts/runner
+        :link-type: doc
+
 
 .. TODO:
     .. grid-item-card:: :doc:`/guides/custom_ml_framework`

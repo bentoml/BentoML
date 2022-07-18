@@ -63,6 +63,10 @@ class Runner:
 
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
+    if TYPE_CHECKING:
+        run: t.Callable[..., t.Any]
+        async_run: t.Callable[..., t.Awaitable[t.Any]]
+
     def __init__(
         self,
         runnable_class: t.Type[Runnable],

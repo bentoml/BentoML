@@ -125,6 +125,19 @@ def test_logs_custom_task_definition(caplog: pytest.LogCaptureFixture):
     )
 
 
+def test_log_load_model(caplog: pytest.LogCaptureFixture):
+    with caplog.at_level(logging.INFO):
+        _ = bentoml.transformers.save_model(
+            "sentiment_test",
+            pipeline(
+                task="text-classification",
+                model="hf-internal-testing/tiny-random-distilbert",
+            ),
+        )
+        _ = bentoml.transformers.load_model("sentiment_test:latest", use_fast=True)
+    assert "with kwargs {'use_fast': True}." in caplog.text
+
+
 def test_model_options():
     unstructured_options: t.Dict[str, t.Any] = {
         "task": "sentiment-analysis",
@@ -168,7 +181,27 @@ def test_custom_pipeline():
     }
 
     # Ensure that the task is not already registered
-    if TASK_NAME in SUPPORTED_TASKS:
+
+    try:
+        SUPPORTED_TASKS[TASK_NAME] = TASK_DEFINITION
+
+        pipe = pipeline(
+            task=TASK_NAME,
+            model=AutoModelForSequenceClassification.from_pretrained(TINY_TEXT_MODEL),
+            tokenizer=AutoTokenizer.from_pretrained(TINY_TEXT_MODEL),
+        )
+
+        saved_pipe = bentoml.transformers.save_model(
+            "my_classification_model",
+            pipeline=pipe,
+            task_name=TASK_NAME,
+            task_definition=TASK_DEFINITION,
+        )
+
+        assert saved_pipe is not None
+        assert saved_pipe.tag.name == "my_classification_model"
+    finally:
+        # Remove the task definition from the list of Transformers supported tasks
         del SUPPORTED_TASKS[TASK_NAME]
     assert TASK_NAME not in SUPPORTED_TASKS
 

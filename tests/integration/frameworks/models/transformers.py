@@ -120,6 +120,40 @@ text_classification_pipeline: list[FrameworkTestModel] = [
     for model in gen_task_pipeline(model=TINY_TEXT_MODEL)
 ]
 
+batched_pipeline: list[FrameworkTestModel] = [
+    FrameworkTestModel(
+        name="batched_pipeline",
+        model=model,
+        save_kwargs={
+            "signatures": {
+                "__call__": {"batchable": True},
+            }
+        },
+        configurations=[
+            Config(
+                load_kwargs={"task": TINY_TEXT_TASK},
+                test_inputs={
+                    "__call__": [
+                        Input(
+                            input_args=[["A bento box is"]],
+                            expected=expected_equal(
+                                [{"label": "LABEL_0", "score": 0.5035}]
+                            ),
+                        ),
+                        Input(
+                            input_args=[["This is another test"]],
+                            expected=expected_equal(
+                                [{"label": "LABEL_0", "score": 0.5035}]
+                            ),
+                        ),
+                    ]
+                },
+            )
+        ],
+    )
+    for model in gen_task_pipeline(model=TINY_TEXT_MODEL)
+]
+
 tiny_image_model = "hf-internal-testing/tiny-random-vit"
 tiny_image_task = get_task(tiny_image_model)
 tiny_image_auto = "AutoModelForImageClassification"
@@ -215,4 +249,9 @@ custom_pipeline: list[FrameworkTestModel] = [
 
 # NOTE: when we need to add more test cases for different models
 #  create a list of FrameworkTestModel and append to 'models' list
-models = text_classification_pipeline + image_classification + custom_pipeline
+models = (
+    text_classification_pipeline
+    + batched_pipeline
+    + image_classification
+    + custom_pipeline
+)

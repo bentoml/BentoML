@@ -19,9 +19,11 @@ __all__ = [
     "pkg_version_info",
     "get_pkg_version",
     "source_locations",
+    "find_spec",
 ]
 
 get_pkg_version = importlib_metadata.version
+find_spec = importlib.util.find_spec
 
 
 def pkg_version_info(pkg_name: str | ModuleType) -> tuple[int, int, int]:
@@ -32,7 +34,7 @@ def pkg_version_info(pkg_name: str | ModuleType) -> tuple[int, int, int]:
 
 
 def source_locations(pkg: str) -> str | None:
-    module = importlib.util.find_spec(pkg)
+    module = find_spec(pkg)
     if module is None:
         return
     (module_path,) = module.submodule_search_locations  # type: ignore (unfinished typed)

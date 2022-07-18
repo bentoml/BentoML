@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
-import importlib
-import importlib.util
 from typing import TYPE_CHECKING
 
 import attr
@@ -19,13 +17,23 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
+from ..utils import LazyLoader
+from ..utils.pkg import find_spec
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
+    import transformers
+
     from bentoml.types import ModelSignature
 
     from ..models.model import ModelSignaturesType
     from ..external_typing import transformers as ext
+else:
+    exc_msg = "transformers is required in order to use module `bentoml.transformers`. Install transformers with `pip install transformers`."
+    transformers = LazyLoader(
+        "transformers", globals(), "transformers", exc_msg=exc_msg
+    )
+
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
 
@@ -50,10 +58,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
             "above to have Flax supported."
         )
     else:
-        _flax_available = (
-            importlib.util.find_spec("jax") is not None
-            and importlib.util.find_spec("flax") is not None
-        )
+        _flax_available = find_spec("jax") is not None and find_spec("flax") is not None
         if _flax_available:
             _jax_version = get_pkg_version("jax")
             _flax_version = get_pkg_version("flax")
@@ -70,15 +75,6 @@ def _check_flax_supported() -> None:  # pragma: no cover
             )
 
 
-try:
-    import transformers
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "transformers is required in order to use module `bentoml.transformers`. "
-        "Install transformers with `pip install transformers`."
-    )
-
-
 def _deep_convert_to_tuple(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | None]]:
     for k, v in dct.items():
         if isinstance(v, list):
@@ -86,7 +82,7 @@ def _deep_convert_to_tuple(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | 
     return dct
 
 
-def _validate_type(_: t.Any, attribute: t.Any, value: t.Any) -> None:
+def _validate_type(_: t.Any, attribute: attr.Attribute[t.Any], value: t.Any) -> None:
     """
     Validate the type of the given pipeline definition. The value is expected to be a `str`.
     `list` type is also allowed here to maintain compatibility with an earlier introduced bug.
@@ -102,7 +98,7 @@ class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
     task: str = attr.field(validator=attr.validators.instance_of(str))
-    tf: t.Optional[t.Tuple[str]] = attr.field(
+    tf: t.Tuple[str] = attr.field(
         validator=attr.validators.optional(
             attr.validators.deep_iterable(
                 member_validator=attr.validators.instance_of(str)
@@ -111,7 +107,7 @@ class TransformersOptions(ModelOptions):
         factory=tuple,
         converter=tuple,
     )
-    pt: t.Optional[t.Tuple[str]] = attr.field(
+    pt: t.Tuple[str] = attr.field(
         validator=attr.validators.optional(
             attr.validators.deep_iterable(
                 member_validator=attr.validators.instance_of(str)
@@ -120,10 +116,10 @@ class TransformersOptions(ModelOptions):
         factory=tuple,
         converter=tuple,
     )
-    default: t.Optional[t.Dict[str, t.Any]] = attr.field(
+    default: t.Dict[str, t.Any] = attr.field(
         factory=dict, converter=_deep_convert_to_tuple
     )
-    type: t.Optional[str] = attr.field(
+    type: str = attr.field(
         validator=attr.validators.optional(_validate_type),
         default=None,
     )
@@ -191,6 +187,7 @@ def load_model(
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """  # noqa
     _check_flax_supported()
+
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
@@ -200,6 +197,11 @@ def load_model(
         )
 
     from transformers.pipelines import SUPPORTED_TASKS
+
+    if TYPE_CHECKING:
+        options = t.cast(TransformersOptions, bento_model.info.options)
+    else:
+        options = bento_model.info.options
 
     task: str = bento_model.info.options.task  # type: ignore
     if task not in SUPPORTED_TASKS:
@@ -216,31 +218,29 @@ def load_model(
         SUPPORTED_TASKS[task] = {
             "impl": type(pipeline),
             "tf": tuple(
-                _convert_to_auto_class(auto_class)  # type: ignore
-                for auto_class in bento_model.info.options.tf  # type: ignore
+                _convert_to_auto_class(auto_class) for auto_class in options.tf
             ),
             "pt": tuple(
-                _convert_to_auto_class(auto_class)  # type: ignore
-                for auto_class in bento_model.info.options.pt  # type: ignore
+                _convert_to_auto_class(auto_class) for auto_class in options.pt
             ),
-            "default": bento_model.info.options.default,  # type: ignore
-            "type": bento_model.info.options.type,  # type: ignore
+            "default": options.default,
+            "type": options.type,
         }
 
-    extra_kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
+    extra_kwargs: dict[str, t.Any] = options.kwargs
     extra_kwargs.update(kwargs)
     if len(extra_kwargs) > 0:
         logger.info(
             f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {extra_kwargs}."
         )
-    return transformers.pipeline(task=task, model=bento_model.path, **extra_kwargs)  # type: ignore
+    return transformers.pipeline(task=task, model=bento_model.path, **extra_kwargs)
 
 
 def save_model(
     name: str,
     pipeline: ext.TransformersPipeline,
     task_name: str | None = None,
-    task_definition: t.Dict[str, t.Any] | None = None,
+    task_definition: dict[str, t.Any] | None = None,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -448,7 +448,7 @@ def get_runnable(
         def __init__(self):
             super().__init__()
 
-            available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES")
+            available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES", "")
             if available_gpus is not None and available_gpus not in ("", "-1"):
                 # assign GPU resources
                 if not available_gpus.isdigit():

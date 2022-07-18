@@ -170,28 +170,30 @@ def test_custom_pipeline():
     # Ensure that the task is not already registered
     if TASK_NAME in SUPPORTED_TASKS:
         del SUPPORTED_TASKS[TASK_NAME]
+    assert TASK_NAME not in SUPPORTED_TASKS
 
-    SUPPORTED_TASKS[TASK_NAME] = TASK_DEFINITION
+    try:
+        SUPPORTED_TASKS[TASK_NAME] = TASK_DEFINITION
 
-    pipe = pipeline(
-        task=TASK_NAME,
-        model=AutoModelForSequenceClassification.from_pretrained(TINY_TEXT_MODEL),
-        tokenizer=AutoTokenizer.from_pretrained(TINY_TEXT_MODEL),
-    )
+        pipe = pipeline(
+            task=TASK_NAME,
+            model=AutoModelForSequenceClassification.from_pretrained(TINY_TEXT_MODEL),
+            tokenizer=AutoTokenizer.from_pretrained(TINY_TEXT_MODEL),
+        )
 
-    saved_pipe = bentoml.transformers.save_model(
-        "my_classification_model",
-        pipeline=pipe,
-        task_name=TASK_NAME,
-        task_definition=TASK_DEFINITION,
-    )
+        saved_pipe = bentoml.transformers.save_model(
+            "my_classification_model",
+            pipeline=pipe,
+            task_name=TASK_NAME,
+            task_definition=TASK_DEFINITION,
+        )
+    finally:
+        if TASK_NAME in SUPPORTED_TASKS:
+            del SUPPORTED_TASKS[TASK_NAME]
+        assert TASK_NAME not in SUPPORTED_TASKS
 
     assert saved_pipe is not None
     assert saved_pipe.tag.name == "my_classification_model"
-
-    # Remove the task definition from the list of Transformers supported tasks
-    del SUPPORTED_TASKS[TASK_NAME]
-    assert TASK_NAME not in SUPPORTED_TASKS
 
     input_data: t.List[str] = [
         "BentoML: Create an ML Powered Prediction Service in Minutes via @TDataScience https://buff.ly/3srhTw9 #Python #MachineLearning #BentoML",
@@ -200,18 +202,25 @@ def test_custom_pipeline():
         "2000 and beyond #OpenSource #bentoml",
         "Model Serving Made Easy https://github.com/bentoml/BentoML ⭐ 1.1K #Python #Bentoml #BentoML #Modelserving #Modeldeployment #Modelmanagement #Mlplatform #Mlinfrastructure #Ml #Ai #Machinelearning #Awssagemaker #Awslambda #Azureml #Mlops #Aiops #Machinelearningoperations #Turn",
     ]
-    pipe = bentoml.transformers.load_model("my_classification_model:latest")
-    output_data = pipe(input_data)
+
+    try:
+        pipe = bentoml.transformers.load_model("my_classification_model:latest")
+        output_data = pipe(input_data)
+    finally:
+        del SUPPORTED_TASKS[TASK_NAME]
+        assert TASK_NAME not in SUPPORTED_TASKS
+
     assert output_data is not None
     assert isinstance(output_data, list) and len(output_data) == len(input_data)
     assert all([isinstance(data, np.ndarray) for data in output_data])
 
-    runnable: bentoml.Runnable = bentoml.transformers.get_runnable(saved_pipe)()
-    output_data = runnable(input_data)
+    try:
+        runnable: bentoml.Runnable = bentoml.transformers.get_runnable(saved_pipe)()
+        output_data = runnable(input_data)
+    finally:
+        del SUPPORTED_TASKS[TASK_NAME]
+        assert TASK_NAME not in SUPPORTED_TASKS
+
     assert output_data is not None
     assert isinstance(output_data, list) and len(output_data) == len(input_data)
     assert all([isinstance(data, np.ndarray) for data in output_data])
-
-    # Clean up Transformers supported tasks
-    del SUPPORTED_TASKS[TASK_NAME]
-    assert TASK_NAME not in SUPPORTED_TASKS

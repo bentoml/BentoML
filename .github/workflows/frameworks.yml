@@ -1278,6 +1278,10 @@ jobs:
           pip install .
           pip install -r requirements/tests-requirements.txt
 
+      - name: Run tests and generate coverage report
+        run: make tests-transformers
+        shell: bash
+
       - name: Run unit test for transformers
         shell: bash
         run: |
@@ -1287,10 +1291,6 @@ jobs:
             echo "unit tests for transformers failed!"
             exit 1
           fi
-
-      - name: Run tests and generate coverage report
-        run: make tests-transformers
-        shell: bash
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}

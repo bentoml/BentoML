@@ -2,9 +2,8 @@
 Framework Guides
 ================
 
-Here are the all of the supported ML frameworks for BentoML. You can find the official
-BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__
-repository.
+Here is the list of ML libraries and formats supported in BentoML. You can find example
+projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__ repository.
 
 
 .. grid:: 1 2 2 2
@@ -18,10 +17,6 @@ repository.
 
     .. grid-item-card:: :doc:`/frameworks/onnx`
         :link: /frameworks/onnx
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/picklable`
-        :link: /frameworks/picklable
         :link-type: doc
 
     .. grid-item-card:: :doc:`/frameworks/pytorch`
@@ -60,32 +55,57 @@ repository.
         :link: /frameworks/catboost
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/frameworks/lightgbm`
+        :link: /frameworks/lightgbm
+        :link-type: doc
 
-The following frameworks are supported in BentoML prior to 1.0.0 release and is still
-being migrated to the new API design. Before they are officially supported in BentoML
-1.0, users may use :ref:`Custom Runner <concepts/runner:Custom Runner>` to serve models
-from these ML libraries with BentoML.
+
+Custom Models
+-------------
+
+.. grid:: 1 2 2 2
+    :gutter: 3
+    :margin: 0
+    :padding: 3 4 0 0
+
+    .. grid-item-card:: :doc:`/frameworks/picklable`
+        :link: /frameworks/picklable
+        :link-type: doc
+
+    .. grid-item-card:: :ref:`/concepts/runner:Custom Runner`
+        :link: /concepts/runner:Custom Runner
+        :link-type: ref
+
+.. TODO:
+    .. grid-item-card:: :doc:`/guides/custom_ml_framework`
+        :link: /guides/custom_ml_framework
+        :link-type: doc
+
+
+Roadmap
+-------
+
+The following frameworks are supported in pre-1.0 BentoML versions and they are
+still being migrated to the new API in 1.0. Before they are officially supported,
+users may use :ref:`Custom Models <frameworks/index:Custom Models>` as an workaround.
 
 - Detectron
 - EasyOCR
 - EvalML
 - FastText
+- Flax
 - Gluon
 - H2O
-- LightGBM
-- ONNX
+- Jax
+- Neuropod
 - ONNX-MLIR
 - PaddlePaddle
 - PyCaret
-- Spacy
-- Statsmodels
-- Flax
-- Jax
-- Neuropod
 - PyTorch ignite
-- Spark MLlib
 - SnapML
-
+- Spacy
+- Spark MLlib
+- Statsmodels
 
 
 .. admonition:: Help us improve the project!
@@ -98,17 +118,16 @@ from these ML libraries with BentoML.
 
 
 .. toctree::
-  :hidden:
+    :hidden:
 
-  onnx
-  picklable
-  pytorch
-  pytorch_lightning
-  keras
-  sklearn
-  tensorflow
-  transformers
-  fastai
-  xgboost
-  catboost
-
+    catboost
+    fastai
+    keras
+    onnx
+    picklable
+    pytorch
+    pytorch_lightning
+    sklearn
+    tensorflow
+    transformers
+    xgboost

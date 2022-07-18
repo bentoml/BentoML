@@ -1,9 +1,12 @@
-==================
-Securing Endpoints
-==================
+========
+Security
+========
+
+Securing Endpoint Access
+------------------------
 
 Server Side Authentication
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For authentication on the BentoServer endpoint itself, a simple way to do it is via
 :code:`bentoml.Service`'s :code:`add_asgi_middleware` API. This API supports mounting
@@ -37,18 +40,34 @@ Here's an example with starlette-authlib:
 
 
 Reverse Proxy
--------------
+^^^^^^^^^^^^^
 
 It is more common to setup a reverse proxy server in front of a backend service, which
 handles rate limiting and authentication.
 
+
+Service Mesh
+^^^^^^^^^^^^
+
+For Kubernetes users looking for advanced authentication, access control and routing
+policies, we recommend deploying Bentos with `Yatai <https://github.com/bentoml/Yatai>`_
+, and use Yatai's `Istio <https://istio.io/>`_ integration.
+
+
+
+Security Policy
+---------------
+
+To report a vulnerability, please do not share it publicly on GitHub
+nor the community slack channel. Instead, contact the BentoML team
+directly via email first: contact@bentoml.ai
+
+View the full BentoML security policy `here <https://github.com/bentoml/BentoML/security/policy>`_.
+
+
 .. TODO::
-    Add sample code for setting up a Nginx reverse proxy with BentoServer
 
-
-Advanced
---------
-
-For advanced authentication, routing policies, and service mesh, we recommend deploying
-Bentos with `Yatai <https://github.com/bentoml/Yatai>`_, and use Yatai's
-`Istio <https://istio.io/>`_ integration.
+    * Base Image Security
+    * Securing Yatai deployment
+    * Reverse Proxy setup guide and sample code/config
+    * Service Mesh setup guide and sample code/config

@@ -9,7 +9,7 @@ Deployment Overview
 The three most common deployment options with BentoML are:
 
 - 🐳 Generate container images from Bento for custom docker deployment
-- `🦄️ Yatai <https://github.com/bentoml/Yatai>`_: Model Deployment at scale on Kubernetes
+- `🦄️ Yatai <https://github.com/bentoml/Yatai>`_: Production-first ML platform on Kubernetes
 - `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_: Fast model deployment on any cloud platform
 
 
@@ -294,3 +294,21 @@ Supported Cloud Platforms
 .. TODO::
     Explain limitations of each platform, e.g. GPU support
     Explain how to customize the terraform workflow
+
+
+About Horizontal Auto-scaling
+-----------------------------
+
+Auto-scaling is one of the most asked requirements when it comes to deploying models. It
+means that the system will automatically provision more hardware resources to run more
+replicas of the server in respond to growing traffic, as well as reducing the number of
+replicas if traffic volume went down.
+
+Among the deployment options introduced in this guide, Yatai on Kubernetes is the most
+recommended approach if auto-scaling and resource efficiency is important for your team.
+This is because Yatai allow users to fine-tune the resource requirements and
+auto-scaling policy at Runner level, which also allows the auto scaling to react faster
+to the data collected in Runner's adaptive batching layer in real-time.
+
+Many of the bentoctl deployment target also comes with certain level of auto-scaling
+capability, including AWS EC2, AWS Lambda.

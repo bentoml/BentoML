@@ -9,26 +9,22 @@ into this part of the documentation.
 
 
 .. toctree::
-  :maxdepth: 1
-  :titlesonly:
+    :maxdepth: 1
+    :titlesonly:
 
-  batching
-  configuration
-  containerization
-  server
-  ci
-  gpu
-  monitoring
-  securing_endpoints
-  batch_scoring
-  streaming
-  multi_models
-  tracing
-  logging
-  custom_framework
-  benchmark
-  migration
-
+    batching
+    configuration
+    containerization
+    custom_runner
+    # custom_ml_framework
+    gpu
+    logging
+    monitoring
+    performance
+    server
+    security
+    tracing
+    migration
 
 .. admonition:: Help us improve the project!
 

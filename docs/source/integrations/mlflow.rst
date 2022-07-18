@@ -3,8 +3,8 @@ MLflow
 ======
 
 MLflow is an open source framework for tracking ML experiments and packaging ML code for
-training pipelines. BentoML is agnostic to the experimentation platform and the model
-development environment, instead, BentoML focuses on ML in production, provides
+training pipelines. BentoML focuses on ML in production and is agnostic to the
+experimentation platform and the model development environment. BentoML provides
 additional serving and production model deployment capability for MLflow users.
 
 Compatibility
@@ -17,6 +17,24 @@ Examples
 
 Besides this documentation, also check out code samples demonstrating BentoML and MLflow
 integration at: `bentoml/gallery: MLflow Examples <https://github.com/bentoml/gallery/tree/main/mlflow>`_.
+
+
+Why use MLflow with BentoML?
+----------------------------
+
+MLflow is great tool for managing ML experiments and capturing models created from
+the experiments. It makes it easy to compare models trained with different parameters or
+architectures, help understand the training process, and allow data scientists to find
+the best model.
+
+Whereas BentoML model store is commonly considered for "finalized models", containing
+models from your periodic training pipelines running in production. It is designed for
+managing artifacts for build, test, and deployment, focus more on serving efficiently in
+a production environment.
+
+BentoML natively integrates with MLFlow. Users can port over models logged with MLFlow
+to BentoML models store for model serving, and easily combine MLFlow's experimentation
+and training workflow, with BentoML's model deployment workflow.
 
 
 Import an MLflow model

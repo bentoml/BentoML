@@ -63,8 +63,8 @@ runs custom logic. Here's an example, creating an NLTK runner that does sentimen
 analysis with a pre-trained model:
 
 .. code:: python
+    :caption: `service.py`
 
-    # service.py
     import bentoml
     import nltk
     from bentoml.io import Text, JSON
@@ -73,12 +73,10 @@ analysis with a pre-trained model:
 
 
     class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ()
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = False
 
         def __init__(self):
-            nltk.download('vader_lexicon')
-            nltk.download('punkt')
             self.sia = SentimentIntensityAnalyzer()
 
         @bentoml.Runnable.method(batchable=False)
@@ -89,7 +87,7 @@ analysis with a pre-trained model:
             ]
             return mean(scores) > 0
 
-    nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable)
+    nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name='nltk_sentiment')
 
     svc = bentoml.Service('sentiment_analyzer', runners=[nltk_runner])
 
@@ -98,19 +96,9 @@ analysis with a pre-trained model:
         is_positive = nltk_runner.is_positive.run(input_text)
         return { "is_positive": is_positive }
 
-Run the service:
+.. note::
 
-.. code:: bash
-
-    bentoml serve service.py:svc
-
-Send a test request:
-
-.. code:: bash
-
-    curl -X POST -H "content-type: application/text" --data "BentoML is great" http://127.0.0.1:3000/analysis
-
-    {"is_positive":true}%
+    Full code example can be found `here <https://github.com/bentoml/gallery/tree/main/custom_runner/nltk_pretrained_model>`_.
 
 
 The constant attribute ``SUPPORTED_RESOURCES`` indicates which resources this Runnable class
@@ -120,14 +108,15 @@ implementation supports. The only currently pre-defined resources are ``"cpu"`` 
 The constant attribute ``SUPPORTS_CPU_MULTI_THREADING`` indicates whether or not the runner supports
 CPU multi-threading.
 
-Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods; it must be
-declared at the class level. This is a result of the fact that the runner is not instantiated in the
-scheduling code, as instantiating runners can be quite expensive.
+.. tip::
 
-Since the NLTK library doesn't support utilizing GPU or multiple CPU cores natively, no resources
-are specified, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
-This information is used by the BentoServer scheduler to determine the worker pool size of this
-runner.
+    Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods; it must be
+    declared at the class level. This is a result of the fact that the runner is not instantiated in the
+    scheduling code, as instantiating runners can be quite expensive.
+
+Since the NLTK library doesn't support utilizing GPU or multiple CPU cores natively, supported resources
+is specified as :code:`("cpu",)`, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
+This information is used by the BentoServer scheduler to determine the worker pool size of this runner.
 
 The :code:`bentoml.Runnable.method` decorator is used for creating
 :code:`RunnableMethod` - the decorated method will be exposed as the runner interface
@@ -143,6 +132,7 @@ different scenarios. The same Runnable class can also be used to create multiple
 and used in the same service. For example:
 
 .. code:: python
+    :caption: `service.py`
 
     import bentoml
     import torch
@@ -183,12 +173,9 @@ and used in the same service. For example:
     name are a key to configuring individual runner at deploy time and to runner related
     logging and tracing features.
 
-.. TODO::
-    Add example Runnable implementation with a batchable method
 
 Custom Model Runner
 ^^^^^^^^^^^^^^^^^^^
-
 
 Custom Runnable built with Model from BentoML's model store:
 
@@ -204,6 +191,7 @@ Custom Runnable built with Model from BentoML's model store:
     bento_model = bentoml.sklearn.get("spam_detection:latest")
 
     class SpamDetectionRunnable(bentoml.Runnable):
+        SUPPORTED_RESOURCES = ("cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
@@ -230,7 +218,7 @@ Custom Runnable built with Model from BentoML's model store:
     bento_model = bentoml.pytorch.get("fraud_detect:latest")
 
     class MyPytorchRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ()
+        SUPPORTED_RESOURCES = ("cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
@@ -246,8 +234,95 @@ Custom Runnable built with Model from BentoML's model store:
     my_runner = bentoml.Runner(MyPytorchRunnable, models=[bento_model])
 
 
-Runner Options
---------------
+Serving Multiple Models via Runner
+----------------------------------
+
+Serving multiple models in the same workflow is a pretty straightforward pattern in
+BentoML’s prediction framework. Simply instantiate multiple runners up front and pass
+them to the service that’s being created. Each runner/model will automatically run with
+it’s own resources as configured. If no configuration is passed, then BentoML will
+choose the optimal amount of resources to allocate for each runner.
+
+
+Sequential Runs
+^^^^^^^^^^^^^^^
+
+.. code:: python
+
+    import asyncio
+    import bentoml
+    import PIL.Image
+
+    import bentoml
+    from bentoml.io import Image, Text
+
+    transformers_runner = bentoml.transformers.get("sentiment_model:latest").to_runner()
+    ocr_runner = bentoml.easyocr.get("ocr_model:latest").to_runner()
+
+    svc = bentoml.Service("sentiment_analysis", runners=[transformers_runner, ocr_runner])
+
+    @svc.api(input=Image())
+    def classify(input: PIL.Image.Image) -> str:
+        ocr_text = ocr_runner.run(input)
+        return transformers_runner.run(ocr_text)
+
+It’s as simple as creating 2 runners and using them together in your prediction
+endpoint. An async endpoint is preferred in many cases so that the primary event loop is
+yielded when waiting on IO. For example, the same API above can be defined as an
+``async`` endpoint:
+
+.. code:: python
+
+    @svc.api(input=Image())
+    async def classify_async(input: PIL.Image.Image) -> str:
+        ocr_text = await ocr_runner.async_run(input)
+        return await transformers_runner.async_run(ocr_text)
+
+
+Concurrent Runs
+^^^^^^^^^^^^^^^
+
+In cases where certain steps can occur concurrently, the :code:`asyncio.gather`
+method can be used to await the completion of multiple runner results. For example if
+you were running 2 models side by side to compare the results, you could await both as
+follows:
+
+.. code-block:: python
+
+    import asyncio
+    import PIL.Image
+
+    import bentoml
+    from bentoml.io import Image, Text
+
+    preprocess_runner = bentoml.Runner(MyPreprocessRunnable)
+    model_a_runner = bentoml.xgboost.get('model_a:latest').to_runner()
+    model_b_runner = bentoml.pytorch.get('model_b:latest').to_runner()
+
+    svc = bentoml.Service('inference_graph_demo', runners=[
+        preprocess_runner,
+        model_a_runner,
+        model_b_runner
+    ])
+
+    @svc.api(input=Image(), output=Text())
+    async def predict(input_image: PIL.Image.Image) -> str:
+        model_input = await preprocess_runner.async_run(input_image)
+
+        results = asyncio.gather(
+            model_a_runner.async_run(model_input),
+            model_b_runner.async_run(model_input),
+        )
+
+        return post_process(result)
+
+
+Once each model completes, the results can be compared and logged as a post processing
+step.
+
+
+Runner Definition
+-----------------
 
 .. TODO::
     Document detailed list of Runner options
@@ -276,9 +351,8 @@ Runner Options
         ],
     )
 
-
-Specifying Required Resources
------------------------------
+Runner Configuration
+--------------------
 
 .. TODO::
     Document Runner resource specification, how it works, and how to override it with
@@ -305,6 +379,7 @@ Specifying Required Resources
           - name: "predict"
             max_batch_size: 10
             max_latency_ms: 500
+
 
 
 Distributed Runner with Yatai

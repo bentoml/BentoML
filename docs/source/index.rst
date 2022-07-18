@@ -146,9 +146,10 @@ contributing to the project, helping other users and discuss all things MLOps.
    guides/index
    integrations/index
    reference/index
-   faq
    Community <https://l.linklyhq.com/l/ktOX>
    GitHub <https://github.com/bentoml/BentoML>
+   Blog <https://modelserving.com>
+
 
 .. spelling::
 

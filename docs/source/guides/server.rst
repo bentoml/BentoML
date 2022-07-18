@@ -3,13 +3,15 @@ Customize BentoServer
 =====================
 
 
+TODO: Link to basic server configs.
+
 BentoML supports mounting a variety of different types of endpoints alongside it’s
 standard prediction endpoints. Both WSGI and ASGI python web applications are supported.
 So whether you already have code written in these frameworks or if it’s just a framework
 that you know, we support the additions.
 
-Custom ASGI Middleware
-----------------------
+ASGI Middleware
+---------------
 
 The :code:`bentoml.Service`'s :code:`add_asgi_middleware` API supports mounting any
 `ASGI middleware <https://asgi.readthedocs.io/en/latest/specs/main.html>`_ to the
@@ -34,8 +36,11 @@ For example, you can add do:
     svc.add_asgi_middleware(HTTPSRedirectMiddleware)
 
 
-Mounting apps from WSGI based web frameworks
---------------------------------------------
+Customize API Server
+--------------------
+
+Bundle WSGI app (e.g. Flask)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here’s an example of mounting Flask endpoints alongside BentoML
 
@@ -61,8 +66,8 @@ Here’s an example of mounting Flask endpoints alongside BentoML
 
 As you can see, you can use flask annotations just as you would if you were building a standalone flask app. In order to ensure the correct coupling, the ``svc.mount_wsgi_app(flask_app)`` must be invoked.
 
-Mounting apps from ASGI based web frameworks
---------------------------------------------
+Bundle ASGI app (e.g. FastAPI)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here’s an example of mounting a FastAPI app alongside BentoML
 
@@ -88,3 +93,4 @@ Here’s an example of mounting a FastAPI app alongside BentoML
 
 
 The primary method to invoke is ``svc.mount_asgi_app(fastapi_app)`` in order to ensure that the fastapi endpoints are initialized
+

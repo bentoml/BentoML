@@ -74,7 +74,6 @@ def add_serve_command(cli: click.Group) -> None:
         is_flag=True,
         help="Start a BentoML gRPC server.",
         default=False,
-        show_default=True,
     )
     def serve(
         bento: str,

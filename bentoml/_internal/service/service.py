@@ -260,9 +260,9 @@ class Service:
 
                 output = api.func(input)
 
-                if type(api.output) == Text:
+                if isinstance(api.output, Text):
                     output = service_pb2.Payload(text=output)
-                elif type(api.output) == NumpyNdarray:
+                elif isinstance(api.output, NumpyNdarray):
                     out = await api.output.to_grpc_response(output)
                     output = service_pb2.Payload(array=out)
                 return service_pb2.RouteCallResponse(output=output)

@@ -9,7 +9,7 @@ cd "$GIT_ROOT" || exit
 
 source "$GIT_ROOT"/scripts/ci/helpers.sh
 
-INFO "Running setup-cfg-fmt..."
+INFO "(setup-cfg-fmt) Formatting setup.cfg..."
 # format setup.cfg
 setup-cfg-fmt --max-py-version 3.10 "$GIT_ROOT/setup.cfg"
 # add setup.cfg after format
@@ -18,7 +18,7 @@ git diff --name-status | grep setup.cfg &>/dev/null && git add setup.cfg
 # Run format scripts
 ./scripts/tools/formatter.sh || exit 1
 
-INFO "Running yamllint on github workflow..."
+INFO "(yamllint) Running on github workflow..."
 for f in $(find .github -type f -name '*.yml'); do
 	yamllint -c "$GIT_ROOT"/.yamllint.yml "$f" || exit 1
 done

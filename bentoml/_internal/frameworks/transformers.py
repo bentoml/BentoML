@@ -79,40 +79,64 @@ except ImportError:  # pragma: no cover
     )
 
 
-
-def task_default_converter(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | None]]:
+def _deep_convert_to_tuple(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | None]]:
     for k, v in dct.items():
         if isinstance(v, list):
             dct[k] = tuple(v)  # type: ignore
     return dct
 
 
+def _validate_type(_: t.Any, attribute: t.Any, value: t.Any) -> None:
+    """
+    Validate the type of the given pipeline definition. The value is expected to be a `str`.
+    `list` type is also allowed here to maintain compatibility with an earlier introduced bug.
+
+    TODO: disallow list type in the next minor version release.
+    """
+    if not isinstance(value, str) and not isinstance(value, list):
+        raise ValueError(f"{attribute.name} must be a string")
+
+
 @attr.define
 class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
-    task: str = attr.field(validator=[attr.validators.instance_of(str)])
-    tf: t.Tuple[str] = attr.field(
-        validator=[
+    task: str = attr.field(validator=attr.validators.instance_of(str))
+    tf: t.Optional[t.Tuple[str]] = attr.field(
+        validator=attr.validators.optional(
             attr.validators.deep_iterable(
                 member_validator=attr.validators.instance_of(str)
             )
-        ],  # type: ignore
+        ),  # type: ignore
         factory=tuple,
         converter=tuple,
     )
-    pt: t.Tuple[str] = attr.field(
-        validator=[
+    pt: t.Optional[t.Tuple[str]] = attr.field(
+        validator=attr.validators.optional(
             attr.validators.deep_iterable(
                 member_validator=attr.validators.instance_of(str)
             )
-        ],  # type: ignore
+        ),  # type: ignore
         factory=tuple,
         converter=tuple,
     )
-    default: t.Dict[str, t.Any] = attr.field(factory=dict, converter=task_default_converter)
-    type: t.Optional[str] = attr.field(default=None)
+    default: t.Optional[t.Dict[str, t.Any]] = attr.field(
+        factory=dict, converter=_deep_convert_to_tuple
+    )
+    type: t.Optional[str] = attr.field(
+        validator=attr.validators.optional(_validate_type),
+        default=None,
+    )
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+
+
+def _convert_to_auto_class(cls_name: str) -> ext.BaseAutoModelClass:
+    if not hasattr(transformers, cls_name):
+        raise BentoMLException(
+            f"Given {cls_name} is not a valid Transformers auto class. For more information, "
+            "please see https://huggingface.co/docs/transformers/main/en/model_doc/auto"
+        )
+    return getattr(transformers, cls_name)
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -192,11 +216,11 @@ def load_model(
         SUPPORTED_TASKS[task] = {
             "impl": type(pipeline),
             "tf": tuple(
-                getattr(transformers, auto_class)  # type: ignore
+                _convert_to_auto_class(auto_class)  # type: ignore
                 for auto_class in bento_model.info.options.tf  # type: ignore
             ),
             "pt": tuple(
-                getattr(transformers, auto_class)  # type: ignore
+                _convert_to_auto_class(auto_class)  # type: ignore
                 for auto_class in bento_model.info.options.pt  # type: ignore
             ),
             "default": bento_model.info.options.default,  # type: ignore
@@ -323,6 +347,7 @@ def save_model(
         )
 
     if task_name is not None and task_definition is not None:
+        from transformers.pipelines import TASK_ALIASES
         from transformers.pipelines import SUPPORTED_TASKS
 
         try:
@@ -347,6 +372,9 @@ def save_model(
             raise BentoMLException(
                 f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
             )
+
+        if task_name in TASK_ALIASES:
+            task_name = TASK_ALIASES[task_name]
 
         if task_name in SUPPORTED_TASKS:
             if SUPPORTED_TASKS[task_name] != task_definition:

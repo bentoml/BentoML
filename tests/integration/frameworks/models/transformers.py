@@ -34,9 +34,9 @@ if TYPE_CHECKING:
     AnyList = list[t.Any]
     PipelineGenerator = t.Generator[transformers_ext.TransformersPipeline, None, None]
 
-tiny_text_model = "hf-internal-testing/tiny-random-distilbert"
-tiny_text_task = get_task(tiny_text_model)
-tiny_text_auto = "AutoModelForSequenceClassification"
+TINY_TEXT_MODEL = "hf-internal-testing/tiny-random-distilbert"
+TINY_TEXT_TASK = get_task(TINY_TEXT_MODEL)
+TINY_TEXT_AUTO = "AutoModelForSequenceClassification"
 
 set_seed(124)
 
@@ -79,7 +79,7 @@ def gen_kwargs(
 
 
 def gen_task_pipeline(
-    model: str, task: str | None = None, *, frameworks: list[str] = ["pt"] # tf
+    model: str, task: str | None = None, *, frameworks: list[str] = ["pt"]  # tf
 ) -> PipelineGenerator:
     yield from map(
         lambda framework: pipeline(task=task, model=model, framework=framework),  # type: ignore (unfinished transformers type)
@@ -103,7 +103,7 @@ text_classification_pipeline: list[FrameworkTestModel] = [
         model=model,
         configurations=[
             Config(
-                load_kwargs={"task": tiny_text_task},
+                load_kwargs={"task": TINY_TEXT_TASK},
                 test_inputs={
                     "__call__": [
                         Input(
@@ -117,7 +117,7 @@ text_classification_pipeline: list[FrameworkTestModel] = [
             ),
         ],
     )
-    for model in gen_task_pipeline(model=tiny_text_model)
+    for model in gen_task_pipeline(model=TINY_TEXT_MODEL)
 ]
 
 tiny_image_model = "hf-internal-testing/tiny-random-vit"
@@ -167,30 +167,25 @@ custom_task = "custom-text-classification"
 
 # save_kwargs
 def create_save_kwargs() -> AnyDict:
-    save_kwargs = gen_kwargs(custom_task, tiny_text_model, tiny_text_auto, "text")
+    save_kwargs = gen_kwargs(custom_task, TINY_TEXT_MODEL, TINY_TEXT_AUTO, "text")
     save_kwargs["task_definition"]["pt"] = (
         getattr(transformers, save_kwargs["task_definition"]["pt"][0]),
     )
+
     return save_kwargs
 
 
 # inject custom task to SUPPORTED_TASKS
 SUPPORTED_TASKS[custom_task] = create_save_kwargs()["task_definition"]
 
-custom_kwargs = gen_kwargs(custom_task, tiny_text_model, tiny_text_auto, "text")
+custom_kwargs = gen_kwargs(custom_task, TINY_TEXT_MODEL, TINY_TEXT_AUTO, "text")
 load_kwargs = custom_kwargs["task_definition"]
 load_kwargs.pop("impl")
 
 
 def check_model(model: transformers_ext.TransformersPipeline, dct: AnyDict) -> None:
-    try:
-        from transformers.pipelines import PIPELINE_REGISTRY  # type: ignore # noqa
-
-        supported_tasks = PIPELINE_REGISTRY.supported_tasks
-    except ImportError:
-        supported_tasks = SUPPORTED_TASKS
-    assert custom_task in supported_tasks
-    assert supported_tasks[custom_task] == create_save_kwargs()["task_definition"]
+    assert custom_task in SUPPORTED_TASKS
+    assert SUPPORTED_TASKS[custom_task] == create_save_kwargs()["task_definition"]
 
 
 custom_pipeline: list[FrameworkTestModel] = [
@@ -214,7 +209,7 @@ custom_pipeline: list[FrameworkTestModel] = [
         ],
     )
     for model in gen_task_pipeline(
-        model=tiny_text_model, task=custom_task, frameworks=["pt"]
+        model=TINY_TEXT_MODEL, task=custom_task, frameworks=["pt"]
     )
 ]
 

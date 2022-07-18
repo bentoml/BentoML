@@ -208,7 +208,7 @@ tf1:
 
 
 transformers:
-  <<: *tmpl
+  <<: *ntmpl
   dependencies:
     - "transformers"
     - "-f https://download.pytorch.org/whl/torch_stable.html"

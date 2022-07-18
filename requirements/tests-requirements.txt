@@ -16,3 +16,4 @@ pyarrow
 build >=0.8.0
 yamllint
 grpcio-tools
+astunparse

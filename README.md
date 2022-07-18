@@ -84,12 +84,12 @@ bentoml.pytorch.save_model(
     signatures={   # model signatures for runner inference
       "predict": {
         "batchable": True,
-        "batch_dim": 0,
+        "batch_dim": 0
       }
     },
     metadata={   # user-defined additional metadata
         "acc": acc,
-        "cv_stats": cv_stats,
+        "cv_stats": cv_stats
     },
 )
 ```

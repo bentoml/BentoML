@@ -1,9 +1,12 @@
 import typing as t
+import asyncio
 from urllib.parse import urlparse
 
+import grpc
 import click
 
 from bentoml import load
+from bentoml.protos import service_pb2_grpc
 
 from ...context import component_context
 
@@ -25,28 +28,22 @@ def main(
 
     configure_server_logging()
 
+    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+
+    # setup context
+    if svc.tag is None:
+        component_context.bento_name = f"*{svc.__class__.__name__}"
+        component_context.bento_version = "not available"
+    else:
+        component_context.bento_name = svc.tag.name
+        component_context.bento_version = svc.tag.version
+
     parsed = urlparse(bind)
 
     if parsed.scheme == "fd":
-        svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
-
-        # setup context
-        if svc.tag is None:
-            component_context.bento_name = f"*{svc.__class__.__name__}"
-            component_context.bento_version = "not available"
-        else:
-            component_context.bento_name = svc.tag.name
-            component_context.bento_version = svc.tag.version
-
         # initialize runners
         for runner in svc.runners:
             runner.init_local()
-
-        import asyncio
-
-        import grpc
-
-        from bentoml.protos import service_pb2_grpc
 
         _cleanup_coroutines = []
 

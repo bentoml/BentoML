@@ -9,6 +9,11 @@ from pathlib import Path
 import pkg_resources
 from setuptools import setup
 
+if sys.version_info[:2] < (3, 9):
+    from astunparse import unparse  # type: ignore (unfinished type)
+else:
+    from ast import unparse
+
 GIT_ROOT = Path(os.path.abspath(__file__)).parent
 
 IMPORT_PATH = "bentoml.protos"
@@ -40,7 +45,7 @@ def fix_imports(file: str, fix_name: str) -> None:
     object.__setattr__(content, "body", fixed_ast)
 
     with open(os.path.join(gen_stub_path, file), "w") as f:
-        f.write(ast.unparse(content))
+        f.write(unparse(content))
 
 
 def gen_args(file: str, *, grpc_out: bool = False) -> list[str]:

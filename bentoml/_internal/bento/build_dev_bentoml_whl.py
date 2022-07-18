@@ -30,9 +30,9 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
 
     # Find bentoml module path
     module_location = source_locations("bentoml")
-    assert module_location is not None
+    if not module_location:
+        raise BentoMLException("Could not find bentoml module location.")
 
-    # PEP517 compatible
     pyproject = os.path.abspath(os.path.join(module_location, "..", "pyproject.toml"))
 
     # this is for BentoML developer to create Service containing custom development

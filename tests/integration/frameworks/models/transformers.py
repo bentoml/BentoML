@@ -79,7 +79,7 @@ def gen_kwargs(
 
 
 def gen_task_pipeline(
-    model: str, task: str | None = None, *, frameworks: list[str] = ["pt"]  # tf
+    model: str, task: str | None = None, *, frameworks: list[str] = ["pt", "tf"]
 ) -> PipelineGenerator:
     yield from map(
         lambda framework: pipeline(task=task, model=model, framework=framework),  # type: ignore (unfinished transformers type)

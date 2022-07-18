@@ -16,4 +16,9 @@ isort .
 
 INFO "(buf) Formatting protobuf..."
 
-docker run --rm --volume "$(pwd):/workspace" --workdir /workspace bufbuild/buf --config "/workspace/protos/buf.yaml" format -w /workspace/protos/
+ARGS=(--config "/workspace/protos/buf.yaml" format -w /workspace/protos/)
+if which buf &>/dev/null; then
+  buf "${ARGS[@]}"
+else
+  docker run --rm --volume "$(pwd)":/workspace --workdir /workspace bufbuild/buf "${ARGS[@]}"
+fi

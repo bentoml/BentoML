@@ -43,6 +43,7 @@ def main(
             runner.init_local()
 
         import asyncio
+
         import grpc
 
         from bentoml.protos import service_pb2_grpc

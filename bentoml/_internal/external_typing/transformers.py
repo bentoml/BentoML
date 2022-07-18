@@ -7,6 +7,9 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.configuration_utils import PretrainedConfig
 from transformers.modeling_flax_utils import FlaxPreTrainedModel
 from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
+from transformers.models.auto.auto_factory import (
+    _BaseAutoModelClass as BaseAutoModelClass,
+)
 from transformers.feature_extraction_sequence_utils import (
     SequenceFeatureExtractor as PreTrainedFeatureExtractor,
 )
@@ -20,4 +23,5 @@ __all__ = [
     "TransformersTokenizerType",
     "PreTrainedFeatureExtractor",
     "PretrainedConfig",
+    "BaseAutoModelClass",
 ]

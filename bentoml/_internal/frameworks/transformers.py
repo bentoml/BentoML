@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
-import importlib
-import importlib.util
 from typing import TYPE_CHECKING
 
 import attr
@@ -19,13 +17,23 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
+from ..utils import LazyLoader
+from ..utils.pkg import find_spec
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
+    import transformers
+
     from bentoml.types import ModelSignature
 
     from ..models.model import ModelSignaturesType
     from ..external_typing import transformers as ext
+else:
+    exc_msg = "transformers is required in order to use module `bentoml.transformers`. Install transformers with `pip install transformers`."
+    transformers = LazyLoader(
+        "transformers", globals(), "transformers", exc_msg=exc_msg
+    )
+
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
 
@@ -50,10 +58,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
             "above to have Flax supported."
         )
     else:
-        _flax_available = (
-            importlib.util.find_spec("jax") is not None
-            and importlib.util.find_spec("flax") is not None
-        )
+        _flax_available = find_spec("jax") is not None and find_spec("flax") is not None
         if _flax_available:
             _jax_version = get_pkg_version("jax")
             _flax_version = get_pkg_version("flax")
@@ -70,39 +75,64 @@ def _check_flax_supported() -> None:  # pragma: no cover
             )
 
 
-try:
-    import transformers
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "transformers is required in order to use module `bentoml.transformers`. "
-        "Install transformers with `pip install transformers`."
-    )
+def _deep_convert_to_tuple(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | None]]:
+    for k, v in dct.items():
+        if isinstance(v, list):
+            dct[k] = tuple(v)  # type: ignore
+    return dct
+
+
+def _validate_type(_: t.Any, attribute: attr.Attribute[t.Any], value: t.Any) -> None:
+    """
+    Validate the type of the given pipeline definition. The value is expected to be a `str`.
+    `list` type is also allowed here to maintain compatibility with an earlier introduced bug.
+
+    TODO: disallow list type in the next minor version release.
+    """
+    if not isinstance(value, str) and not isinstance(value, list):
+        raise ValueError(f"{attribute.name} must be a string")
 
 
 @attr.define
 class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
-    task: str = attr.field(validator=[attr.validators.instance_of(str)])
+    task: str = attr.field(validator=attr.validators.instance_of(str))
     tf: t.Tuple[str] = attr.field(
-        validator=[
+        validator=attr.validators.optional(
             attr.validators.deep_iterable(
                 member_validator=attr.validators.instance_of(str)
             )
-        ],  # type: ignore
-        factory=(tuple),
+        ),  # type: ignore
+        factory=tuple,
+        converter=tuple,
     )
     pt: t.Tuple[str] = attr.field(
-        validator=[
+        validator=attr.validators.optional(
             attr.validators.deep_iterable(
                 member_validator=attr.validators.instance_of(str)
             )
-        ],  # type: ignore
-        factory=(tuple),
+        ),  # type: ignore
+        factory=tuple,
+        converter=tuple,
     )
-    default: t.Dict[str, t.Any] = attr.field(factory=dict)
-    type: str = (attr.field(validator=[attr.validators.instance_of(str)], default=None),)  # type: ignore
+    default: t.Dict[str, t.Any] = attr.field(
+        factory=dict, converter=_deep_convert_to_tuple
+    )
+    type: str = attr.field(
+        validator=attr.validators.optional(_validate_type),
+        default=None,
+    )
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+
+
+def _convert_to_auto_class(cls_name: str) -> ext.BaseAutoModelClass:
+    if not hasattr(transformers, cls_name):
+        raise BentoMLException(
+            f"Given {cls_name} is not a valid Transformers auto class. For more information, "
+            "please see https://huggingface.co/docs/transformers/main/en/model_doc/auto"
+        )
+    return getattr(transformers, cls_name)
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -157,15 +187,21 @@ def load_model(
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """  # noqa
     _check_flax_supported()
+
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
+        raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
     from transformers.pipelines import SUPPORTED_TASKS
+
+    if TYPE_CHECKING:
+        options = t.cast(TransformersOptions, bento_model.info.options)
+    else:
+        options = bento_model.info.options
 
     task: str = bento_model.info.options.task  # type: ignore
     if task not in SUPPORTED_TASKS:
@@ -182,31 +218,29 @@ def load_model(
         SUPPORTED_TASKS[task] = {
             "impl": type(pipeline),
             "tf": tuple(
-                getattr(transformers, auto_class)  # type: ignore
-                for auto_class in bento_model.info.options.tf  # type: ignore
+                _convert_to_auto_class(auto_class) for auto_class in options.tf
             ),
             "pt": tuple(
-                getattr(transformers, auto_class)  # type: ignore
-                for auto_class in bento_model.info.options.pt  # type: ignore
+                _convert_to_auto_class(auto_class) for auto_class in options.pt
             ),
-            "default": bento_model.info.options.default,  # type: ignore
-            "type": bento_model.info.options.type,  # type: ignore
+            "default": options.default,
+            "type": options.type,
         }
 
-    kwargs: t.Dict[str, t.Any] = bento_model.info.options.kwargs  # type: ignore
-    kwargs.update(kwargs)
-    if len(kwargs) > 0:
+    extra_kwargs: dict[str, t.Any] = options.kwargs
+    extra_kwargs.update(kwargs)
+    if len(extra_kwargs) > 0:
         logger.info(
-            f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {kwargs}."
+            f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {extra_kwargs}."
         )
-    return transformers.pipeline(task=task, model=bento_model.path, **kwargs)  # type: ignore
+    return transformers.pipeline(task=task, model=bento_model.path, **extra_kwargs)
 
 
 def save_model(
     name: str,
     pipeline: ext.TransformersPipeline,
     task_name: str | None = None,
-    task_definition: t.Dict[str, t.Any] | None = None,
+    task_definition: dict[str, t.Any] | None = None,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -313,6 +347,7 @@ def save_model(
         )
 
     if task_name is not None and task_definition is not None:
+        from transformers.pipelines import TASK_ALIASES
         from transformers.pipelines import SUPPORTED_TASKS
 
         try:
@@ -337,6 +372,9 @@ def save_model(
             raise BentoMLException(
                 f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
             )
+
+        if task_name in TASK_ALIASES:
+            task_name = TASK_ALIASES[task_name]
 
         if task_name in SUPPORTED_TASKS:
             if SUPPORTED_TASKS[task_name] != task_definition:
@@ -410,7 +448,7 @@ def get_runnable(
         def __init__(self):
             super().__init__()
 
-            available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES")
+            available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES", "")
             if available_gpus is not None and available_gpus not in ("", "-1"):
                 # assign GPU resources
                 if not available_gpus.isdigit():

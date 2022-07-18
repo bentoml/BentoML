@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
 SCRIPT_API_SERVER = "bentoml._internal.server.cli.api_server"
 SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
+SCRIPT_GRPC_DEV_API_SERVER = "bentoml._internal.server.cli.grpc_dev_api_server"
 
 
 @inject
@@ -84,6 +85,7 @@ def serve_development(
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
+    using_grpc: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -105,27 +107,50 @@ def serve_development(
         )
     )
 
-    watchers.append(
-        Watcher(
-            name="dev_api_server",
-            cmd=sys.executable,
-            args=[
-                "-m",
-                SCRIPT_DEV_API_SERVER,
-                bento_identifier,
-                "--bind",
-                "fd://$(circus.sockets._bento_api_server)",
-                "--working-dir",
-                working_dir,
-                "--prometheus-dir",
-                prometheus_dir,
-            ],
-            copy_env=True,
-            stop_children=True,
-            use_sockets=True,
-            working_dir=working_dir,
+    if using_grpc:
+        watchers.append(
+            Watcher(
+                name="grpc_dev_api_server",
+                cmd=sys.executable,
+                args=[
+                    "-m",
+                    SCRIPT_GRPC_DEV_API_SERVER,
+                    bento_identifier,
+                    "--bind",
+                    "fd://$(circus.sockets._bento_api_server)",
+                    "--working-dir",
+                    working_dir,
+                    "--port",
+                    str(port),
+                ],
+                copy_env=True,
+                stop_children=True,
+                use_sockets=True,
+                working_dir=working_dir,
+            )
         )
-    )
+    else:
+        watchers.append(
+            Watcher(
+                name="dev_api_server",
+                cmd=sys.executable,
+                args=[
+                    "-m",
+                    SCRIPT_DEV_API_SERVER,
+                    bento_identifier,
+                    "--bind",
+                    "fd://$(circus.sockets._bento_api_server)",
+                    "--working-dir",
+                    working_dir,
+                    "--prometheus-dir",
+                    prometheus_dir,
+                ],
+                copy_env=True,
+                stop_children=True,
+                use_sockets=True,
+                working_dir=working_dir,
+            )
+        )
 
     plugins = []
     if reload:

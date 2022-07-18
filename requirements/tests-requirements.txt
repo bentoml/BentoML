@@ -16,3 +16,4 @@ watchfiles>=0.15.0
 pyarrow
 build >=0.8.0
 grpcio-tools
+astunparse

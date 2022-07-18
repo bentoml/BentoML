@@ -115,20 +115,27 @@ def bentoml_build(project_path: str) -> t.Generator["Tag", None, None]:
     Build a BentoML project.
     """
     logger.info(f"Building bento: {project_path}")
-    output = subprocess.check_output(
-        ["bentoml", "build", project_path],
-        stderr=subprocess.STDOUT,
-        env=dict(os.environ, COLUMNS="200"),
-    )
-    match = re.search(
-        r'Bento\(tag="([A-Za-z0-9\-_\.]+:[a-z0-9]+)"\)',
-        output.decode(),
-    )
-    assert match, f"Build failed. The details:\n {output.decode()}"
-    tag = Tag.from_taglike(match[1])
-    yield tag
-    logger.info(f"Deleting bento: {tag}")
-    subprocess.call(["bentoml", "delete", "-y", str(tag)])
+    tag = None
+    try:
+        output = subprocess.check_output(
+            ["bentoml", "build", project_path],
+            stderr=subprocess.STDOUT,
+            env=dict(os.environ, COLUMNS="200"),
+        )
+        match = re.search(
+            r'Bento\(tag="([A-Za-z0-9\-_\.]+:[a-z0-9]+)"\)',
+            output.decode(),
+        )
+        assert match, f"Build failed. The details:\n {output.decode()}"
+        tag = Tag.from_taglike(match[1])
+        yield tag
+    except subprocess.CalledProcessError as e:
+        logger.exception(e)
+        raise
+    finally:
+        if tag:
+            logger.info(f"Deleting bento: {tag}")
+            subprocess.call(["bentoml", "delete", "-y", str(tag)])
 
 
 @cached_contextmanager("{bento_tag}, {image_tag}")
@@ -143,10 +150,17 @@ def bentoml_containerize(
     if image_tag is None:
         image_tag = bento_tag.name
     logger.info(f"Building bento server docker image: {bento_tag}")
-    subprocess.check_call(["bentoml", "containerize", str(bento_tag), "-t", image_tag])
-    yield image_tag
-    logger.info(f"Removing bento server docker image: {image_tag}")
-    subprocess.call(["docker", "rmi", image_tag])
+    try:
+        subprocess.check_output(
+            ["bentoml", "containerize", str(bento_tag), "-t", image_tag]
+        )
+        yield image_tag
+    except subprocess.CalledProcessError as e:
+        logger.exception(e)
+        raise
+    finally:
+        logger.info(f"Removing bento server docker image: {image_tag}")
+        subprocess.call(["docker", "rmi", image_tag])
 
 
 @cached_contextmanager("{image_tag}, {config_file}")

@@ -247,7 +247,7 @@ class Service:
                 input = request.input
 
                 io_type = input.WhichOneof("payload")
-                if type_dict[io_type] != type(api.input):
+                if api.input == type_dict[io_type]:
                     raise ValueError(f"Please provide a {type(api.input).__name__}.")
 
                 if io_type == "text":

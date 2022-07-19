@@ -13,7 +13,8 @@ scikit-learn
 imageio>=2.5.0
 watchfiles>=0.15.0
 pyarrow
-build >=0.8.0
+build[virtualenv] >=0.8.0
 yamllint
+grpcio
 grpcio-tools
-astunparse
+mypy-protobuf==3.2.0

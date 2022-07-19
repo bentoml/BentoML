@@ -6,7 +6,6 @@ Here is the list of supported ML libraries and formats in BentoML. You can also 
 projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`_ repository.
 
 
-
 .. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
@@ -26,6 +25,10 @@ projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`_ reposito
 
     .. grid-item-card:: :doc:`/frameworks/lightgbm`
         :link: /frameworks/lightgbm
+        :link-type: doc
+
+    .. grid-item-card:: :doc:`/integrations/mlflow`
+        :link: /integrations/mlflow
         :link-type: doc
 
     .. grid-item-card:: :doc:`/frameworks/onnx`
@@ -57,20 +60,21 @@ projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`_ reposito
         :link-type: doc
 
 
-Special Cases
+Custom Models
 -------------
 
-:doc:`/frameworks/picklable`
+.. grid:: 1 2 2 2
+    :gutter: 3
+    :margin: 0
+    :padding: 3 4 0 0
 
+    .. grid-item-card:: :doc:`/frameworks/picklable`
+        :link: /frameworks/picklable
+        :link-type: doc
 
-:ref:`concepts/runner:Custom Runner`
-
-
-:doc:`/integrations/mlflow`
-
-.. TODO:
-    :doc:`/guides/custom_ml_framework`
-
+    .. grid-item-card:: :ref:`concepts/runner:Custom Runner`
+        :link: custom-runner
+        :link-type: ref
 
 
 Roadmap

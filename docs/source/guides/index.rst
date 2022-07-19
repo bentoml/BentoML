@@ -15,8 +15,6 @@ into this part of the documentation.
     batching
     configuration
     containerization
-    custom_runner
-    # custom_ml_framework
     gpu
     logging
     monitoring

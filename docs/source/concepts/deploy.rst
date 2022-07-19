@@ -310,5 +310,5 @@ This is because Yatai allow users to fine-tune the resource requirements and
 auto-scaling policy at Runner level, which also allows the auto scaling to react faster
 to the data collected in Runner's adaptive batching layer in real-time.
 
-Many of the bentoctl deployment target also comes with certain level of auto-scaling
-capability, including AWS EC2, AWS Lambda.
+Many of the bentoctl deployment targets also come with certain level of auto-scaling
+capability, including AWS EC2 and AWS Lambda.

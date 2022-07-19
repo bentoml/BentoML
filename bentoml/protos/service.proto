@@ -1,8 +1,10 @@
 syntax = "proto3";
 
-package bentoml;
+package bentoml.protos;
 
-import "payload.proto";
+import "bentoml/protos/payload.proto";
+
+option py_generic_services = true;
 
 // Payload defines the payload for an io_descriptor.
 message Payload {

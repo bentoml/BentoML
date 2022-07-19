@@ -280,11 +280,6 @@ logic:
         ...
 
 
-
-.. TODO:
-    Document Open API (Swagger) generation and sample usage
-
-
 Sync vs Async APIs
 ------------------
 
@@ -341,24 +336,28 @@ Further tuning of event loop configuration is not needed under common use cases.
 .. TODO:
 
     Running Server:
+        bentoml serve arguments
+        --reload
+        --production
 
-    List of Endpints
+        other options and configs:
+        --api-workers
+        --backlog
+        --timeout
+        --host
+        --port
 
-    OpenAPI how-to
+        Config options:
+        --config
 
-    bentoml serve arguments
-    --reload
-    --production
+    Endpoints:
+        List of Endpoints
+            POST: /{api_name}
+        Open API (Swagger) generation and sample usage
 
-    other options and configs:
-    --api-workers
-    --backlog
-    --timeout
-    --host
-    --port
-
-    Config options:
-    --config
+    Exception handling
+        custom error code
+        custom error msg
 
 
 

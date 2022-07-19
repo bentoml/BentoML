@@ -11,8 +11,20 @@ projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__ reposit
     :margin: 0
     :padding: 3 4 0 0
 
+    .. grid-item-card:: :doc:`/frameworks/catboost`
+        :link: /frameworks/catboost
+        :link-type: doc
+
+    .. grid-item-card:: :doc:`/frameworks/fastai`
+        :link: /frameworks/fastai
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/frameworks/keras`
         :link: /frameworks/keras
+        :link-type: doc
+
+    .. grid-item-card:: :doc:`/frameworks/lightgbm`
+        :link: /frameworks/lightgbm
         :link-type: doc
 
     .. grid-item-card:: :doc:`/frameworks/onnx`
@@ -43,44 +55,21 @@ projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__ reposit
         :link: /frameworks/xgboost
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/fastai`
-        :link: /frameworks/fastai
-        :link-type: doc
 
-    .. grid-item-card:: :doc:`/integrations/mlflow`
-        :link: /integrations/mlflow
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/catboost`
-        :link: /frameworks/catboost
-        :link-type: doc
-
-    .. grid-item-card:: :doc:`/frameworks/lightgbm`
-        :link: /frameworks/lightgbm
-        :link-type: doc
-
-
-Custom Models
+Special Cases
 -------------
 
-.. grid:: 1 2 2 2
-    :gutter: 3
-    :margin: 0
-    :padding: 3 4 0 0
+:doc:`/frameworks/picklable`
 
-    .. grid-item-card:: :doc:`/frameworks/picklable`
-        :link: /frameworks/picklable
-        :link-type: doc
 
-    .. grid-item-card:: :ref:`concepts/runner:Custom Runner`
-        :link: /concepts/runner
-        :link-type: doc
+:ref:`concepts/runner:Custom Runner`
 
+
+:doc:`/integrations/mlflow`
 
 .. TODO:
-    .. grid-item-card:: :doc:`/guides/custom_ml_framework`
-        :link: /guides/custom_ml_framework
-        :link-type: doc
+    :doc:`/guides/custom_ml_framework`
+
 
 
 Roadmap
@@ -124,8 +113,9 @@ users may use :ref:`Custom Models <frameworks/index:Custom Models>` as an workar
     catboost
     fastai
     keras
+    lightgbm
     onnx
-    picklable
+    picklable_model
     pytorch
     pytorch_lightning
     sklearn

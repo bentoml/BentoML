@@ -24,8 +24,8 @@ RUNNABLE_METHOD_MARK: str = "_bentoml_runnable_method"
 
 
 class Runnable:
-    SUPPORTED_RESOURCES: tuple[str, ...]
-    SUPPORTS_CPU_MULTI_THREADING: bool
+    SUPPORTED_RESOURCES: tuple[str, ...] | None = None
+    SUPPORTS_CPU_MULTI_THREADING: bool = False
 
     bentoml_runnable_methods__: dict[
         str, RunnableMethod[t.Any, t.Any, t.Any]

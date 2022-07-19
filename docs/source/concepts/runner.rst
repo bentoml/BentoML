@@ -188,7 +188,7 @@ Custom Runnable built with Model from BentoML's model store:
     from bentoml.io import NumpyNdarray
     from numpy.typing import NDArray
 
-    bento_model = bentoml.sklearn.get("spam_detection:latest")
+    bento_model = bentoml.pytorch.get("spam_detection:latest")
 
     class SpamDetectionRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("cpu",)
@@ -202,36 +202,12 @@ Custom Runnable built with Model from BentoML's model store:
         def is_spam(self, input_data: NDArray[Any]) -> NDArray[Any]:
             return self.classifier.predict(input_data)
 
-
     spam_detection_runner = bentoml.Runner(SpamDetectionRunnable, models=[bento_model])
     svc = bentoml.Service("spam_detector", runners=[spam_detection_runner])
 
     @svc.api(input=NumpyNdarray(), output=JSON())
     def analysis(input_text: NDArray[Any]) -> dict[str, Any]:
         return {"res": spam_detection_runner.is_spam.run(input_text)}
-
-.. code::
-
-    import bentoml
-    import torch
-
-    bento_model = bentoml.pytorch.get("fraud_detect:latest")
-
-    class MyPytorchRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ("cpu",)
-        SUPPORTS_CPU_MULTI_THREADING = True
-
-        def __init__(self):
-            self.model = torch.load_model(bento_model.path)
-
-        @bentoml.Runnable.method(
-            batchable=True,
-            batch_dim=0,
-        )
-        def predict(self, input_tensor):
-            return self.model(input_tensor)
-
-    my_runner = bentoml.Runner(MyPytorchRunnable, models=[bento_model])
 
 
 Serving Multiple Models via Runner
@@ -330,58 +306,37 @@ Runner Definition
 .. TODO::
     Document detailed list of Runner options
 
-.. code:: python
+    .. code:: python
 
-    my_runner = bentoml.Runner(
-        MyRunnable,
-        runnable_init_params={"foo": foo, "bar": bar},
-        name="custom_runner_name",
-        strategy=None, # default strategy will be selected depending on the SUPPORTED_RESOURCES and SUPPORTS_CPU_MULTI_THREADING flag on runnable
-        models=[..],
+        my_runner = bentoml.Runner(
+            MyRunnable,
+            runnable_init_params={"foo": foo, "bar": bar},
+            name="custom_runner_name",
+            strategy=None, # default strategy will be selected depending on the SUPPORTED_RESOURCES and SUPPORTS_CPU_MULTI_THREADING flag on runnable
+            models=[..],
 
-        # below are also configurable via config file:
+            # below are also configurable via config file:
 
-        # default configs:
-        max_batch_size=..  # default max batch size will be applied to all run methods, unless override in the runnable_method_configs
-        max_latency_ms=.. # default max latency will be applied to all run methods, unless override in the runnable_method_configs
+            # default configs:
+            max_batch_size=..  # default max batch size will be applied to all run methods, unless override in the runnable_method_configs
+            max_latency_ms=.. # default max latency will be applied to all run methods, unless override in the runnable_method_configs
 
-        runnable_method_configs=[
-            {
-                method_name="predict",
-                max_batch_size=..,
-                max_latency_ms=..,
-            }
-        ],
-    )
+            runnable_method_configs=[
+                {
+                    method_name="predict",
+                    max_batch_size=..,
+                    max_latency_ms=..,
+                }
+            ],
+        )
 
 Runner Configuration
 --------------------
 
 .. TODO::
+
     Document Runner resource specification, how it works, and how to override it with
     runtime configuration
-
-.. code:: python
-
-    my_runner = bentoml.Runner(MyRunnable, cpu=1)
-
-    my_model_runner = bentoml.pytorch.get("my_model:latest").to_runner(gpu=1)
-
-
-.. code:: yaml
-
-    runners:
-      - name: iris_clf
-        cpu: 4
-        nvidia_gpu: 0  # requesting 0 GPU
-        max_batch_size: 20
-      - name: my_custom_runner
-        cpu: 2
-        nvidia_gpu: 2  # requesting 2 GPUs
-        runnable_method_configs:
-          - name: "predict"
-            max_batch_size: 10
-            max_latency_ms: 500
 
 
 

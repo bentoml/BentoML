@@ -19,10 +19,10 @@ Due to its high interoperability among frameworks, we recommend you to check out
 
       - `tensorflow-onnx (tf2onnx) <https://github.com/onnx/tensorflow-onnx>`_ documentation.
 
-   .. tab-item:: Scikit Learn
+   .. tab-item:: scikit-learn
       :sync: sklearn
 
-      TODO
+      - `sklearn-onnx (skl2onnx) <https://onnx.ai/sklearn-onnx/>`_ documentation.
 
 
 Compatibility
@@ -44,6 +44,7 @@ Converting model frameworks to ONNX format
       First, let’s create a SuperResolution model in PyTorch.
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 import torch.nn as nn
 	 import torch.nn.init as init
@@ -79,6 +80,7 @@ Converting model frameworks to ONNX format
       For this tutorial, we will use pre-trained weights provided by the PyTorch team. Note that the model was only partially trained and being used for demonstration purposes.
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 import torch.utils.model_zoo as model_zoo
 
@@ -98,9 +100,10 @@ Converting model frameworks to ONNX format
       Exporting a model to ONNX in PyTorch works via tracing or
       scripting (read more at `official PyTorch documentation
       <https://pytorch.org/docs/stable/onnx.html#tracing-vs-scripting>`_). In
-      this tutorial we will export the model using tracing techniques: 
+      this tutorial we will export the model using tracing techniques:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 batch_size = 1
 	 # Tracing input to the model
@@ -152,6 +155,7 @@ Converting model frameworks to ONNX format
       For this tutorial we will download a pretrained ResNet-50 model:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 import tensorflow as tf
 	 from tensorflow.keras.applications.resnet50 import ResNet50
@@ -163,15 +167,53 @@ Converting model frameworks to ONNX format
       means this dimension can accept any arbitrary input size:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),)
 	 onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
 
 
-   .. tab-item:: Scikit Learn
+   .. tab-item:: scikit-learn
       :sync: sklearn
 
-      TODO
+      First let's install `sklearn-onnx <https://onnx.ai/sklearn-onnx/>`_
+
+      .. code-block:: bash
+
+	 pip install skl2onnx
+
+      For this tutorial we will train a random forest classifier on
+      Iris Data set:
+
+      .. code-block:: python
+	 :caption: `train.py`
+
+	 from sklearn.datasets import load_iris
+	 from sklearn.model_selection import train_test_split
+	 from sklearn.ensemble import RandomForestClassifier
+
+	 iris = load_iris()
+	 X, y = iris.data, iris.target
+	 X_train, X_test, y_train, y_test = train_test_split(X, y)
+	 clr = RandomForestClassifier()
+	 clr.fit(X_train, y_train)
+
+      Then we can use ``skl2onnx`` to export a scikit-learn model to
+      ONNX format:
+
+      .. code-block:: python
+	 :caption: `train.py`
+
+	 import skl2onnx
+
+	 from skl2onnx import convert_sklearn
+	 from skl2onnx.common.data_types import FloatTensorType
+	 initial_type = [('float_input', FloatTensorType([None, 4]))]
+	 model_proto = convert_sklearn(clr, initial_types=initial_type)
+
+      Notice that we use ``None`` in ``initial_type`` to denote the
+      first input dimension as dynamic batch axies, which means this
+      dimension can accept arbitrary input size:
 
 
 Saving ONNX model with BentoML
@@ -189,6 +231,7 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
       :sync: pytorch
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 signatures = {
 	     "run": {"batchable": True},
@@ -205,6 +248,7 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
       :sync: tensorflow
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 signatures = {
 	     "run": {"batchable": True},
@@ -217,10 +261,23 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
 
 	 Model(tag="onnx_resnet50:zavavxh6w2v3rea3", path="~/bentoml/models/onnx_resnet50/zavavxh6w2v3rea3/")
 
-   .. tab-item:: Scikit Learn
+   .. tab-item:: scikit-learn
       :sync: sklearn
 
-      TODO
+      .. code-block:: python
+	 :caption: `train.py`
+
+	 signatures = {
+	     "run": {"batchable": True},
+	 }
+	 bentoml.onnx.save_model("onnx_iris", model_proto, signatures=signatures)
+
+      which will result:
+
+      .. code-block:: bash
+
+	 Model(tag="onnx_iris:sqixlaqf76vv7ea3", path="~/bentoml/models/onnx_iris/sqixlaqf76vv7ea3/")
+
 
 The default signature for :obj:`~bentoml.onnx.save_model()` is set to ``{"run": {"batchable": False}}``.
 
@@ -245,6 +302,7 @@ Building a Service for **ONNX**
       :sync: pytorch
 
       .. code-block:: python
+	 :caption: `service.py`
 
 	 import bentoml
 
@@ -275,6 +333,7 @@ Building a Service for **ONNX**
       :sync: tensorflow
 
       .. code-block:: python
+	 :caption: `service.py`
 
 	 import bentoml
 
@@ -299,10 +358,25 @@ Building a Service for **ONNX**
 	     return decode_predictions(preds, top=1)[0]
 
 
-   .. tab-item:: Scikit Learn
+   .. tab-item:: scikit-learn
       :sync: sklearn
 
-      TODO
+      .. code-block:: python
+	 :caption: `service.py`
+
+	 import bentoml
+
+	 from bentoml.io import JSON
+	 from bentoml.io import NumpyNdarray
+
+	 runner = bentoml.onnx.get("onnx_iris:latest").to_runner()
+
+	 svc = bentoml.Service("onnx_iris", runners=[runner])
+
+	 @svc.api(input=NumpyNdarray(), output=JSON())
+	 def classify(input_array):
+	     return runner.run.run(input_array)
+
 
 .. note::
 
@@ -400,7 +474,7 @@ Use ``load_model`` to verify that the saved model can be loaded properly:
 .. note::
 
    In the above snippet, we need explicitly convert input ndarray to
-   float32 since ``onnxruntime.InferenceSession`` expects only single floats. 
+   float32 since ``onnxruntime.InferenceSession`` expects only single floats.
 
    However, BentoML will automatically cast the input data automatically via Runners.
 
@@ -413,7 +487,7 @@ Dynamic Batch Size
    :ref:`guides/batching:Adaptive Batching`: a general introduction to adaptive batching in BentoML.
 
 When :ref:`guides/batching:Adaptive Batching` is enabled, the exported
-ONNX model is **REQUIRED** to accept dynamic batch size. 
+ONNX model is **REQUIRED** to accept dynamic batch size.
 
 Therefore, dynamic batch axes needs to be specified when the model is exported to the ONNX format.
 
@@ -448,7 +522,7 @@ Therefore, dynamic batch axes needs to be specified when the model is exported t
       For TensorFlow models, you can achieve this by using ``None`` to denote
       a dynamic batch axis in `TensorSpec
       <https://www.tensorflow.org/api_docs/python/tf/TensorSpec>`_ when
-      through either ``tf2onnx.convert.from_keras`` or ``tf2onnx.convert.from_function``
+      using either ``tf2onnx.convert.from_keras`` or ``tf2onnx.convert.from_function``
 
       .. code-block:: python
 
@@ -456,10 +530,19 @@ Therefore, dynamic batch axes needs to be specified when the model is exported t
 	 model_proto, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
 
 
-   .. tab-item:: Scikit Learn
+   .. tab-item:: scikit-learn
       :sync: sklearn
 
-      TODO
+      For scikit-learn models, you can achieve this by using ``None``
+      in ``initial_type`` to denote the a dynamic batch axis when
+      using `skl2onnx.convert_sklearn
+      <https://onnx.ai/sklearn-onnx/api_summary.html#converters>`_
+
+      .. code-block:: python
+
+	 initial_type = [('float_input', FloatTensorType([None, 4]))]
+	 model_proto = convert_sklearn(clr, initial_types=initial_type)
+
 
 Default Execution Providers Settings
 ------------------------------------

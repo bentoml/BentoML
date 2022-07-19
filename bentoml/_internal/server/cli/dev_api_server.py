@@ -8,18 +8,25 @@ import psutil
 from bentoml import load
 
 from ...context import component_context
+from ...configuration.containers import BentoMLContainer
 
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
 @click.option("--bind", type=click.STRING, required=True)
-@click.option("--backlog", type=click.INT, default=2048)
 @click.option("--working-dir", required=False, type=click.Path(), default=None)
+@click.option("--backlog", type=click.INT, default=2048)
+@click.option(
+    "--prometheus-dir",
+    type=click.Path(exists=True),
+    help="Required by prometheus to pass the metrics in multi-process mode",
+)
 def main(
     bento_identifier: str,
     bind: str,
     working_dir: t.Optional[str],
     backlog: int,
+    prometheus_dir: t.Optional[str],
 ):
     component_context.component_name = "dev_api_server"
 
@@ -27,20 +34,24 @@ def main(
 
     configure_server_logging()
 
+    if prometheus_dir is not None:
+        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
+
+    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+
+    # setup context
+    if svc.tag is None:
+        component_context.bento_name = f"*{svc.__class__.__name__}"
+        component_context.bento_version = "not available"
+    else:
+        component_context.bento_name = svc.tag.name
+        component_context.bento_version = svc.tag.version
+
     parsed = urlparse(bind)
 
     if parsed.scheme == "fd":
         fd = int(parsed.netloc)
         sock = socket.socket(fileno=fd)
-        svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
-
-        # setup context
-        if svc.tag is None:
-            component_context.bento_name = f"*{svc.__class__.__name__}"
-            component_context.bento_version = "not available"
-        else:
-            component_context.bento_name = svc.tag.name
-            component_context.bento_version = svc.tag.version
 
         uvicorn_options = {
             "backlog": backlog,

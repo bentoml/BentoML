@@ -538,6 +538,12 @@ Therefore, dynamic batch axes needs to be specified when the model is exported t
       using `skl2onnx.convert_sklearn
       <https://onnx.ai/sklearn-onnx/api_summary.html#converters>`_
 
+      .. code-block:: python
+
+	 initial_type = [('float_input', FloatTensorType([None, 4]))]
+	 model_proto = convert_sklearn(clr, initial_types=initial_type)
+
+
 
 Default Execution Providers Settings
 ------------------------------------

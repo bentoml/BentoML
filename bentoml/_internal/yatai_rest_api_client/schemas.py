@@ -21,7 +21,7 @@ def datetime_encoder(time_obj: Optional[datetime]) -> Optional[str]:
     return time_obj.strftime(time_format)
 
 
-def datetime_decoder(datetime_str: Optional[str], _) -> Optional[datetime]:
+def datetime_decoder(datetime_str: Optional[str], _: Any) -> Optional[datetime]:
     if not datetime_str:
         return None
     return parse(datetime_str)
@@ -41,7 +41,7 @@ def schema_from_json(json_content: str, cls: Type[T]) -> T:
     return converter.structure(dct, cls)
 
 
-def schema_to_json(obj: T) -> str:
+def schema_to_json(obj: Any) -> str:
     res = converter.unstructure(obj, obj.__class__)
     return json.dumps(res)
 

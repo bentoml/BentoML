@@ -71,7 +71,7 @@ def ensure_prometheus_dir(
         f"Failed to ensure the prometheus multiproc directory {directory}, "
         f"using alternative: {alternative}",
     )
-    DeploymentContainer.prometheus_multiproc_dir.set(alternative)
+    BentoMLContainer.prometheus_multiproc_dir.set(alternative)
     return alternative
 
 

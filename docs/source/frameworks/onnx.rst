@@ -260,7 +260,7 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
 	 signatures = {
 	     "run": {"batchable": True},
 	 }
-	 bentoml.onnx.save_model("onnx_iris", onnx_model, signatures=signatures)
+	 bentoml.onnx.save_model("onnx_iris", model_proto, signatures=signatures)
 
       which will result:
 

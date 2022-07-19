@@ -9,6 +9,7 @@ import typing as t
 import logging
 import tempfile
 import contextlib
+from pathlib import Path
 
 import psutil
 from simple_di import inject
@@ -33,15 +34,45 @@ SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
 
 @inject
 def ensure_prometheus_dir(
-    prometheus_multiproc_dir: str = Provide[BentoMLContainer.prometheus_multiproc_dir],
+    directory: str = Provide[BentoMLContainer.prometheus_multiproc_dir],
     clean: bool = True,
-):
-    if os.path.exists(prometheus_multiproc_dir):
-        if not os.path.isdir(prometheus_multiproc_dir):
-            shutil.rmtree(prometheus_multiproc_dir)
-        elif clean or os.listdir(prometheus_multiproc_dir):
-            shutil.rmtree(prometheus_multiproc_dir)
-    os.makedirs(prometheus_multiproc_dir, exist_ok=True)
+    use_alternative: bool = True,
+) -> str:
+    try:
+        path = Path(directory)
+        if path.exists():
+            if not path.is_dir() or any(path.iterdir()):
+                if clean:
+                    shutil.rmtree(str(path))
+                    path.mkdir()
+                    return str(path.absolute())
+                else:
+                    raise RuntimeError(
+                        "Prometheus multiproc directory {} is not empty".format(path)
+                    )
+            else:
+                return str(path.absolute())
+        else:
+            path.mkdir(parents=True)
+            return str(path.absolute())
+    except shutil.Error as e:
+        if not use_alternative:
+            raise RuntimeError(
+                f"Failed to clean the prometheus multiproc directory {directory}: {e}"
+            )
+    except OSError as e:
+        if not use_alternative:
+            raise RuntimeError(
+                f"Failed to create the prometheus multiproc directory {directory}: {e}"
+            )
+    assert use_alternative
+    alternative = tempfile.mkdtemp()
+    logger.warning(
+        f"Failed to ensure the prometheus multiproc directory {directory}, "
+        f"using alternative: {alternative}",
+    )
+    DeploymentContainer.prometheus_multiproc_dir.set(alternative)
+    return alternative
 
 
 @inject
@@ -59,6 +90,8 @@ def serve_development(
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
+
+    prometheus_dir = ensure_prometheus_dir()
 
     watchers: t.List[Watcher] = []
 
@@ -84,6 +117,8 @@ def serve_development(
                 "fd://$(circus.sockets._bento_api_server)",
                 "--working-dir",
                 working_dir,
+                "--prometheus-dir",
+                prometheus_dir,
             ],
             copy_env=True,
             stop_children=True,
@@ -120,7 +155,6 @@ def serve_development(
         loggerconfig=SERVER_LOGGING_CONFIG,
         loglevel=logging.WARNING,
     )
-    ensure_prometheus_dir()
 
     with track_serve(svc, production=False):
         arbiter.start(
@@ -153,6 +187,8 @@ def serve_production(
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
+
+    prometheus_dir = ensure_prometheus_dir()
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -265,6 +301,8 @@ def serve_production(
                 f"{backlog}",
                 "--worker-id",
                 "$(CIRCUS.WID)",
+                "--prometheus-dir",
+                prometheus_dir,
             ],
             copy_env=True,
             numprocesses=api_workers or math.ceil(CpuResource.from_system()),
@@ -278,8 +316,6 @@ def serve_production(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
     )
-
-    ensure_prometheus_dir()
 
     with track_serve(svc, production=True):
         try:

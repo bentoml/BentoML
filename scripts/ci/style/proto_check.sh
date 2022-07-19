@@ -10,7 +10,7 @@ set_on_failed_callback "[FAIL] proto check failed"
 
 echo "Running proto format check..."
 
-if ! (git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.proto' | xargs -0 --no-run-if-empty buf format --config "./protos/buf.yaml" -d --exit-code); then
+if ! (git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.proto' | xargs -0 --no-run-if-empty buf format --config "./bentoml/protos/buf.yaml" -d --exit-code); then
   FAIL "proto format check failed"
   echo "Format incorrectly. Make sure to run \`make format\`"
   exit 1
@@ -20,7 +20,7 @@ PASS "proto format check passed!"
 
 echo "Running proto lint check..."
 
-if ! (git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.proto' | xargs -0 --no-run-if-empty buf lint --config "./protos/buf.yaml" --error-format msvs); then
+if ! (git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.proto' | xargs -0 --no-run-if-empty buf lint --config "./bentoml/protos/buf.yaml" --error-format msvs); then
   FAIL "proto lint check failed"
   echo "Lint error. Make sure to run \`make lint\`"
   exit 1

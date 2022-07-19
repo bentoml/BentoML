@@ -1,8 +1,8 @@
 [build-system]
 requires = [
-  # sync with setup.py until we discard non-pep-517/518
-  "astunparse",  # ast.unparse backports
-  "grpcio-tools>=1.43.0",  # sync with grpcio in setup.cfg
+  # sync with setup.cfg until we discard non-pep-517/518
+  "grpcio-tools==1.47.0",  # sync with grpcio in setup.cfg
+  "mypy-protobuf==3.2.0",  # generating stubs for type checking
   "setuptools>=59.0",
   "setuptools-scm[toml]>=6.2.3",
   "wheel",
@@ -35,7 +35,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = "-rfEX -p pytester -p no:warnings"
+addopts = "-rfEX -p pytester -p no:warnings --dist=loadfile"
 python_files = ["test_*.py","*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus"]

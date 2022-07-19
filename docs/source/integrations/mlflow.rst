@@ -27,14 +27,13 @@ the experiments. It makes it easy to compare models trained with different param
 architectures, help understand the training process, and allow data scientists to find
 the best model.
 
-Whereas BentoML model store is commonly considered for "finalized models", containing
-models from your periodic training pipelines running in production. It is designed for
-managing artifacts for build, test, and deployment, focus more on serving efficiently in
-a production environment.
+BentoML's model store, on the other hand, is mainly used for "finalized models", containing
+models from your periodic training pipelines meant for running in production. It is designed for
+managing artifacts for building, testing, and deploying prediction services.
 
 BentoML natively integrates with MLFlow. Users can port over models logged with MLFlow
-to BentoML models store for model serving, and easily combine MLFlow's experimentation
-and training workflow, with BentoML's model deployment workflow.
+to BentoML's model store for model serving, and easily combine MLFlow's experimentation
+and training workflow with BentoML's model deployment workflow.
 
 
 Import an MLflow model

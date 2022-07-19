@@ -3,7 +3,8 @@ Customize BentoServer
 =====================
 
 
-TODO: Link to basic server configs.
+.. TODO::
+    Link to basic server configs.
 
 BentoML supports mounting a variety of different types of endpoints alongside it’s
 standard prediction endpoints. Both WSGI and ASGI python web applications are supported.

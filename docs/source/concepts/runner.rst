@@ -191,7 +191,7 @@ Custom Runnable built with Model from BentoML's model store:
     bento_model = bentoml.sklearn.get("spam_detection:latest")
 
     class SpamDetectionRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ("cpu")
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
@@ -218,7 +218,7 @@ Custom Runnable built with Model from BentoML's model store:
     bento_model = bentoml.pytorch.get("fraud_detect:latest")
 
     class MyPytorchRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ("cpu")
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
@@ -314,7 +314,10 @@ follows:
             model_b_runner.async_run(model_input),
         )
 
-        return post_process(result)
+        return post_process(
+            results[0], # model a result
+            results[1], # model b result
+        )
 
 
 Once each model completes, the results can be compared and logged as a post processing

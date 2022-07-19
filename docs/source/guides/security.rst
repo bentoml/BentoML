@@ -49,9 +49,9 @@ handles rate limiting and authentication.
 Service Mesh
 ^^^^^^^^^^^^
 
-For Kubernetes users looking for advanced authentication, access control and routing
-policies, we recommend deploying Bentos with `Yatai <https://github.com/bentoml/Yatai>`_
-, and use Yatai's `Istio <https://istio.io/>`_ integration.
+For Kubernetes users looking for advanced authentication, access control, and routing
+policies, we recommend deploying bentos with `Yatai <https://github.com/bentoml/Yatai>`_
+and using Yatai's `Istio <https://istio.io/>`_ integration.
 
 
 
@@ -59,7 +59,7 @@ Security Policy
 ---------------
 
 To report a vulnerability, please do not share it publicly on GitHub
-nor the community slack channel. Instead, contact the BentoML team
+or the community slack channel. Instead, contact the BentoML team
 directly via email first: contact@bentoml.ai
 
 View the full BentoML security policy `here <https://github.com/bentoml/BentoML/security/policy>`_.

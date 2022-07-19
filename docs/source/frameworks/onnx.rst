@@ -544,7 +544,6 @@ Therefore, dynamic batch axes needs to be specified when the model is exported t
 	 model_proto = convert_sklearn(clr, initial_types=initial_type)
 
 
-
 Default Execution Providers Settings
 ------------------------------------
 

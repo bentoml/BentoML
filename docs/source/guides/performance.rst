@@ -1,10 +1,8 @@
 =================
-Performance Gudie
+Performance Guide
 =================
 
-This guide is intended to aid advanced BentoML users in better understanding the costs
-and performance of their model serving workloads by providing insights into BentoML's
-architecture and how to fine tune its performance.
+This guide is intended to aid advanced BentoML users with a better understanding of the costs and performance overhead of their model serving workload. This guide will also demonstrate BentoML's architecture and provide insights into how users can fine-tune its performance.
 
 .. TODO::
 

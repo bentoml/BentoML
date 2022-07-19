@@ -299,16 +299,12 @@ Supported Cloud Platforms
 About Horizontal Auto-scaling
 -----------------------------
 
-Auto-scaling is one of the most asked requirements when it comes to deploying models. It
-means that the system will automatically provision more hardware resources to run more
-replicas of the server in respond to growing traffic, as well as reducing the number of
-replicas if traffic volume went down.
+Auto-scaling is one of the most sought-after features when it comes to deploying models. Autoscaling helps optimize resource usage and cost by automatically provisioning up and scaling down depending on incoming traffic.
 
-Among the deployment options introduced in this guide, Yatai on Kubernetes is the most
-recommended approach if auto-scaling and resource efficiency is important for your team.
-This is because Yatai allow users to fine-tune the resource requirements and
-auto-scaling policy at Runner level, which also allows the auto scaling to react faster
-to the data collected in Runner's adaptive batching layer in real-time.
+Among deployment options introduced in this guide, Yatai on Kubernetes is the
+recommended approach if auto-scaling and resource efficiency are required for your team’s workflow.
+Yatai enables users to fine-tune resource requirements and
+auto-scaling policy at the Runner level, which inherently improves interoperability between auto-scaling and data aggregated at Runner's adaptive batching layer in real-time.
 
-Many of the bentoctl deployment targets also come with certain level of auto-scaling
-capability, including AWS EC2 and AWS Lambda.
+Many of bentoctl’s deployment targets also come with a certain level of auto-scaling
+capabilities, including AWS EC2 and AWS Lambda.

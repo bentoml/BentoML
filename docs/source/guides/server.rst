@@ -6,10 +6,10 @@ Customize BentoServer
 .. TODO::
     Link to basic server configs.
 
-BentoML supports mounting a variety of different types of endpoints alongside it’s
-standard prediction endpoints. Both WSGI and ASGI python web applications are supported.
-So whether you already have code written in these frameworks or if it’s just a framework
-that you know, we support the additions.
+BentoML supports customizing the API service layer by mounting any WSGI or ASGI Python Web applications to a ``bentoml.Service``.
+
+This means any code you have written in a Python web framework can be deployed together with your BentoML service and have access to Runners 😊.
+
 
 ASGI Middleware
 ---------------
@@ -40,10 +40,12 @@ For example, you can add do:
 Customize API Server
 --------------------
 
+BentoML provides first-class support for bundling existing WSGI or ASGI app into a BentoServer.
+
 Bundle WSGI app (e.g. Flask)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here’s an example of mounting Flask endpoints alongside BentoML
+Here’s an example of mounting Flask endpoints alongside BentoML:
 
 .. code-block:: python
 
@@ -65,7 +67,7 @@ Here’s an example of mounting Flask endpoints alongside BentoML
         return {'input_received': input_json, 'foo': 'bar'}
 
 
-As you can see, you can use flask annotations just as you would if you were building a standalone flask app. In order to ensure the correct coupling, the ``svc.mount_wsgi_app(flask_app)`` must be invoked.
+As you can see, you can use flask annotations as if you were building a standalone flask app. To ensure correct coupling, ``svc.mount_wsgi_app(flask_app)`` must be invoked.
 
 Bundle ASGI app (e.g. FastAPI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,5 +95,5 @@ Here’s an example of mounting a FastAPI app alongside BentoML
         return {'input_received': input_json, 'foo': 'bar'}
 
 
-The primary method to invoke is ``svc.mount_asgi_app(fastapi_app)`` in order to ensure that the fastapi endpoints are initialized
+Make sure to invoke ``svc.mount_asgi_app(fastapi_app)`` so that the FastAPI endpoints are initialized correctly.
 

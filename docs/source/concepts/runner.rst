@@ -110,13 +110,11 @@ CPU multi-threading.
 
 .. tip::
 
-    Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods; it must be
-    declared at the class level. This is a result of the fact that the runner is not instantiated in the
-    scheduling code, as instantiating runners can be quite expensive.
+    Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods, as they are class-level attributes. The reason being BentoML’s scheduling policy is not invoked in runners’ initialization code, as instantiating runners can be quite expensive.
 
-Since the NLTK library doesn't support utilizing GPU or multiple CPU cores natively, supported resources
+Since NLTK library doesn't support utilizing GPU or multiple CPU cores natively, supported resources
 is specified as :code:`("cpu",)`, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
-This information is used by the BentoServer scheduler to determine the worker pool size of this runner.
+This information is then used by the BentoServer scheduler to determine the worker pool size for this runner.
 
 The :code:`bentoml.Runnable.method` decorator is used for creating
 :code:`RunnableMethod` - the decorated method will be exposed as the runner interface
@@ -213,11 +211,7 @@ Custom Runnable built with Model from BentoML's model store:
 Serving Multiple Models via Runner
 ----------------------------------
 
-Serving multiple models in the same workflow is a pretty straightforward pattern in
-BentoML’s prediction framework. Simply instantiate multiple runners up front and pass
-them to the service that’s being created. Each runner/model will automatically run with
-it’s own resources as configured. If no configuration is passed, then BentoML will
-choose the optimal amount of resources to allocate for each runner.
+Serving multiple models in the same workflow is also a common pattern in BentoML’s prediction framework. This pattern can be achieved by simply instantiating multiple runners up front and passing them to the service that’s being created. Each runner/model will be configured with its’ own resources and run autonomously. If no configuration is passed, BentoML will then determine the optimal resources to allocate to each runner.
 
 
 Sequential Runs
@@ -242,14 +236,14 @@ Sequential Runs
         ocr_text = ocr_runner.run(input)
         return transformers_runner.run(ocr_text)
 
-It’s as simple as creating 2 runners and using them together in your prediction
-endpoint. An async endpoint is preferred in many cases so that the primary event loop is
-yielded when waiting on IO. For example, the same API above can be defined as an
-``async`` endpoint:
+It’s as simple as creating two runners and invoking them synchronously in your prediction endpoint. Note that an async endpoint is often preferred in these use cases as the primary event loop is yielded while waiting for other IO-expensive tasks. 
+
+For example, the same API above can be achieved as an ``async`` endpoint:
+
 
 .. code:: python
 
-    @svc.api(input=Image())
+    @svc.api(input=Image(),output=Text())
     async def classify_async(input: PIL.Image.Image) -> str:
         ocr_text = await ocr_runner.async_run(input)
         return await transformers_runner.async_run(ocr_text)
@@ -258,10 +252,7 @@ yielded when waiting on IO. For example, the same API above can be defined as an
 Concurrent Runs
 ^^^^^^^^^^^^^^^
 
-In cases where certain steps can occur concurrently, the :code:`asyncio.gather`
-method can be used to await the completion of multiple runner results. For example if
-you were running 2 models side by side to compare the results, you could await both as
-follows:
+In cases where certain steps can be executed concurrently, :code:`asyncio.gather` can be used to aggregate results from multiple concurrent runs. For instance, if you are running two models simultaneously, you could invoke ``asyncio.gather`` as follows:
 
 .. code-block:: python
 
@@ -285,7 +276,7 @@ follows:
     async def predict(input_image: PIL.Image.Image) -> str:
         model_input = await preprocess_runner.async_run(input_image)
 
-        results = asyncio.gather(
+        results = await asyncio.gather(
             model_a_runner.async_run(model_input),
             model_b_runner.async_run(model_input),
         )

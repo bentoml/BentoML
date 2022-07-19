@@ -8,8 +8,7 @@ Securing Endpoint Access
 Server Side Authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For authentication on the BentoServer endpoint itself, a simple way to do it is via
-:code:`bentoml.Service`'s :code:`add_asgi_middleware` API. This API supports mounting
+To enable authentication for a given BentoServer endpoint, An authentication middleware can be added to :code:`bentoml.Service`'s via :code:`add_asgi_middleware` API. This API supports mounting
 any ASGI middleware to the BentoServer endpoints. And many of the middlewares built by
 the Python community, provides authentication or security functionality.
 
@@ -42,27 +41,25 @@ Here's an example with starlette-authlib:
 Reverse Proxy
 ^^^^^^^^^^^^^
 
-It is more common to setup a reverse proxy server in front of a backend service, which
-handles rate limiting and authentication.
+It is a common practice to set up a reverse proxy server to handle rate limiting and authentication for any given backend services.
 
 
 Service Mesh
 ^^^^^^^^^^^^
 
 For Kubernetes users looking for advanced authentication, access control, and routing
-policies, we recommend deploying bentos with `Yatai <https://github.com/bentoml/Yatai>`_
-and using Yatai's `Istio <https://istio.io/>`_ integration.
+policies, we recommend you to deploy Bentos with `Yatai <https://github.com/bentoml/Yatai>`_
+and use Yatai's `Istio <https://istio.io/>`_ integration.
 
 
 
 Security Policy
 ---------------
 
-To report a vulnerability, please do not share it publicly on GitHub
-or the community slack channel. Instead, contact the BentoML team
-directly via email first: contact@bentoml.ai
+To report a vulnerability, we kindly ask you not to share it publicly on GitHub or in the community slack channel. Instead, contact the BentoML team directly at contact@bentoml.ai
 
-View the full BentoML security policy `here <https://github.com/bentoml/BentoML/security/policy>`_.
+View the full BentoML’s security policy `here <https://github.com/bentoml/BentoML/security/policy>`_.
+
 
 
 .. TODO::

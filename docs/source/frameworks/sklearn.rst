@@ -2,7 +2,7 @@
 Scikit-Learn
 ============
 
-Here's a simple example of using scikit-learn with BentoML:
+Below is a simple example of using scikit-learn with BentoML:
 
 .. code:: python
 

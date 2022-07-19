@@ -5,7 +5,7 @@ Picklable Model
 For custom ML models created with pure Python code, a simple way to make it work with
 the BentoML workflow is via ``bentoml.picklable_model``.
 
-Here's an example of saving a simple Python function as model:
+Below is an example of saving a Python function as a model:
 
 .. code:: python
 
@@ -29,10 +29,10 @@ Load the model back to memory for testing:
 
 .. code:: python
 
-    In [1]: loaded_model = bentoml.picklable_model.load_model("my_python_model:latest")
+    loaded_model = bentoml.picklable_model.load_model("my_python_model:latest")
 
-    In [2]: loaded_model([1, 2, 3])
-    Out[2]: array([1, 4, 9])
+    loaded_model([1, 2, 3])
+    # out: array([1, 4, 9])
 
 
 Load the model as a local Runner to test out its inference API:

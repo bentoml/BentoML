@@ -2,8 +2,9 @@
 Framework Guides
 ================
 
-Here is the list of ML libraries and formats supported in BentoML. You can find example
-projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__ repository.
+Here is the list of supported ML libraries and formats in BentoML. You can also find example
+projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`_ repository.
+
 
 
 .. grid:: 1 2 2 2
@@ -75,9 +76,7 @@ Special Cases
 Roadmap
 -------
 
-The following frameworks are supported in pre-1.0 BentoML versions and they are
-still being migrated to the new API in 1.0. Before they are officially supported,
-users may use :ref:`Custom Models <frameworks/index:Custom Models>` as an workaround.
+The following frameworks are supported in pre-1.0 BentoML versions and are being migrated to the new 1.0 API. In the meantime, users may use :ref:`Custom Models <frameworks/index:Custom Models>` as a workaround.
 
 - Detectron
 - EasyOCR

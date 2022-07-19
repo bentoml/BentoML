@@ -2,13 +2,21 @@ import typing as t
 import asyncio
 from urllib.parse import urlparse
 
-import grpc
 import click
 
 from bentoml import load
-from bentoml.protos import service_pb2_grpc
+from bentoml.exceptions import MissingDependencyException
 
 from ...context import component_context
+
+try:
+    import grpc
+except ImportError:
+    raise MissingDependencyException(
+        "`grpcio` is required for `--grpc`. Install requirements with `pip install 'bentoml[grpc]'`."
+    )
+
+from bentoml.protos import service_pb2_grpc
 
 
 @click.command()
@@ -45,7 +53,7 @@ def main(
         for runner in svc.runners:
             runner.init_local()
 
-        _cleanup_coroutines = []
+        _cleanup_coroutines: list[t.Coroutine[t.Any, t.Any, None]] = []
 
         async def serve() -> None:
             server = grpc.aio.server()
@@ -56,7 +64,7 @@ def main(
 
             await server.start()
 
-            async def server_graceful_shutdown():
+            async def server_graceful_shutdown() -> None:
                 # Shuts down the server with 5 seconds of grace period. During the
                 # grace period, the server won't accept new connections and allow
                 # existing RPCs to continue within the grace period.

@@ -16,6 +16,10 @@ from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
+    import grpc
+
+    from bentoml.protos import service_pb2_grpc
+
     from .. import external_typing as ext
     from ..bento import Bento
     from .openapi.specification import OpenAPISpecification
@@ -228,7 +232,7 @@ class Service:
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
-    def get_grpc_servicer(self):
+    def get_grpc_servicer(self) -> service_pb2_grpc.BentoServiceServicer:
         from bentoml.io import Text
         from bentoml.io import NumpyNdarray
         from bentoml.protos import service_pb2
@@ -239,7 +243,11 @@ class Service:
         apis = self.apis
 
         class BentoServiceServicer(service_pb2_grpc.BentoServiceServicer):
-            async def RouteCall(self, request, context):
+            async def RouteCall(
+                self,
+                request: service_pb2.RouteCallRequest,
+                context: grpc.ServicerContext,
+            ) -> service_pb2.RouteCallResponse:
                 try:
                     api = apis[request.api_name]
                 except KeyError:

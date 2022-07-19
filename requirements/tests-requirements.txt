@@ -1,5 +1,4 @@
 # Tests dependencies
-aiohttp==3.8.1
 black==22.3.0
 codecov
 coverage>=4.4
@@ -15,3 +14,4 @@ imageio>=2.5.0
 watchfiles>=0.15.0
 pyarrow
 build >=0.8.0
+yamllint

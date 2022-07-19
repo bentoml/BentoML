@@ -44,6 +44,7 @@ Converting model frameworks to ONNX format
       First, let’s create a SuperResolution model in PyTorch.
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 import torch.nn as nn
 	 import torch.nn.init as init
@@ -79,6 +80,7 @@ Converting model frameworks to ONNX format
       For this tutorial, we will use pre-trained weights provided by the PyTorch team. Note that the model was only partially trained and being used for demonstration purposes.
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 import torch.utils.model_zoo as model_zoo
 
@@ -101,6 +103,7 @@ Converting model frameworks to ONNX format
       this tutorial we will export the model using tracing techniques:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 batch_size = 1
 	 # Tracing input to the model
@@ -152,6 +155,7 @@ Converting model frameworks to ONNX format
       For this tutorial we will download a pretrained ResNet-50 model:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 import tensorflow as tf
 	 from tensorflow.keras.applications.resnet50 import ResNet50
@@ -163,6 +167,7 @@ Converting model frameworks to ONNX format
       means this dimension can accept any arbitrary input size:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),)
 	 onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
@@ -181,6 +186,7 @@ Converting model frameworks to ONNX format
       Iris Data set:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 from sklearn.datasets import load_iris
 	 from sklearn.model_selection import train_test_split
@@ -196,6 +202,7 @@ Converting model frameworks to ONNX format
       ONNX format:
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 import skl2onnx
 
@@ -224,6 +231,7 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
       :sync: pytorch
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 signatures = {
 	     "run": {"batchable": True},
@@ -240,6 +248,7 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
       :sync: tensorflow
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 signatures = {
 	     "run": {"batchable": True},
@@ -256,6 +265,7 @@ then call BentoML's :obj:`~bentoml.onnx.save_model()`:
       :sync: sklearn
 
       .. code-block:: python
+	 :caption: `train.py`
 
 	 signatures = {
 	     "run": {"batchable": True},
@@ -292,6 +302,7 @@ Building a Service for **ONNX**
       :sync: pytorch
 
       .. code-block:: python
+	 :caption: `service.py`
 
 	 import bentoml
 
@@ -322,6 +333,7 @@ Building a Service for **ONNX**
       :sync: tensorflow
 
       .. code-block:: python
+	 :caption: `service.py`
 
 	 import bentoml
 
@@ -350,6 +362,7 @@ Building a Service for **ONNX**
       :sync: sklearn
 
       .. code-block:: python
+	 :caption: `service.py`
 
 	 import bentoml
 

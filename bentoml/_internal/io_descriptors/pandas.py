@@ -691,3 +691,12 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
                 obj.to_json(orient=self._orient),  # type: ignore[arg-type]
                 media_type=MIME_TYPE_JSON,
             )
+
+    def generate_protobuf(self):
+        pass
+
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj) -> t.Any:
+        pass

@@ -187,3 +187,12 @@ class Multipart(IODescriptor[t.Any]):
             resp = io_.init_http_response()
             res_mapping[k] = await io_.finalize_http_response(resp, data)
         return await concat_to_multipart_response(res_mapping, ctx)
+
+    def generate_protobuf(self):
+        pass
+
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj) -> t.Any:
+        pass

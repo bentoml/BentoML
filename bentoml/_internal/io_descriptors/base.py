@@ -5,14 +5,23 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from starlette.requests import Request
-from starlette.responses import Response
-
 if TYPE_CHECKING:
     from types import UnionType
 
+    import grpc
+    from starlette.requests import Request
+    from starlette.responses import Response
+
     from ..types import LazyType
+    from ...protos import service_pb2
     from ..context import InferenceApiContext as Context
+
+    InputType = (
+        UnionType
+        | t.Type[t.Any]
+        | LazyType[t.Any]
+        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
+    )
 
 
 IOPyObj = t.TypeVar("IOPyObj")
@@ -44,26 +53,19 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         return self._init_str
 
     @abstractmethod
-    def input_type(
-        self,
-    ) -> t.Union[
-        "UnionType",
-        t.Type[t.Any],
-        "LazyType[t.Any]",
-        t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]],
-    ]:
+    def input_type(self) -> InputType:
         ...
 
     @abstractmethod
-    def openapi_schema_type(self) -> t.Dict[str, str]:
+    def openapi_schema_type(self) -> dict[str, str]:
         ...
 
     @abstractmethod
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_request_schema(self) -> dict[str, t.Any]:
         ...
 
     @abstractmethod
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+    def openapi_responses_schema(self) -> dict[str, t.Any]:
         ...
 
     @abstractmethod
@@ -76,12 +78,16 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     ) -> Response:
         ...
 
-    # TODO: gRPC support
-    # @abstractmethod
-    # def generate_protobuf(self): ...
+    @abstractmethod
+    def generate_protobuf(self):
+        ...
 
-    # @abstractmethod
-    # async def from_grpc_request(self, request: GRPCRequest) -> IOType: ...
+    @abstractmethod
+    async def from_grpc_request(
+        self, request: service_pb2.RouteCallRequest, context: grpc.ServicerContext
+    ) -> IOPyObj:
+        ...
 
-    # @abstractmethod
-    # async def to_grpc_response(self, obj: IOType) -> GRPCResponse: ...
+    @abstractmethod
+    async def to_grpc_response(self, obj: IOPyObj) -> service_pb2.RouteCallResponse:
+        ...

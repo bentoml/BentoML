@@ -8,15 +8,18 @@ Keras
    model. ``bentoml.keras`` utilizing Keras' native model format,
    which will give better development experience if user are more
    familiar with Keras model. However, Keras' native model format is
-   not optimized for production inference. Using
-   ``bentoml.tensorflow`` is recommended in production
+   not optimized for production inference. There are `known reports
+   <https://github.com/tensorflow/tensorflow/issues?q=is%3Aissue+sort%3Aupdated-desc+keras+memory+leak>`_
+   of memory leaks during serving at the time of BentoML 1.0
+   release. Using ``bentoml.tensorflow`` is recommended in production
    environment. You can read :doc:`bentoml.tensorflow documentation
    </frameworks/tensorflow>` for more information.
 
    You can also convert a Keras model to ONNX model and use
    ``bentoml.onnx`` to serve production inference. Refer
-   :doc:`bentoml.onnx documentation </frameworks/onnx>` for more
-   information.
+   :doc:`bentoml.onnx documentation </frameworks/onnx>` and
+   `tensorflow-onnx (tf2onnx) documentation
+   <https://github.com/onnx/tensorflow-onnx>`_ for more information.
 
 
 Compatibility

@@ -19,7 +19,6 @@ ML models at production scale. Data Scientists and ML Engineers use BentoML to:
 Learn BentoML
 -------------
 
-
 .. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
@@ -37,7 +36,7 @@ Learn BentoML
 
         A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
 
-    .. grid-item-card:: :doc:`🧮 ML Framework Specific Guide <frameworks/index>`
+    .. grid-item-card:: :doc:`🧮 ML Framework Guides <frameworks/index>`
         :link: frameworks/index
         :link-type: doc
 
@@ -55,6 +54,12 @@ Learn BentoML
 
         Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and performance optimization.
 
+    .. grid-item-card:: :doc:`⚙️ Integrations & Ecosystem <integrations/index>`
+        :link: integrations/index
+        :link-type: doc
+
+        Learn how BentoML works together with other tools and products in the Data/ML ecosystem
+
     .. grid-item-card:: `💬 BentoML Community <https://l.linklyhq.com/l/ktOX>`_
         :link: https://l.linklyhq.com/l/ktOX
         :link-type: url
@@ -62,29 +67,25 @@ Learn BentoML
         Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
 
 
-For MLOps engineers:
+Beyond Model Serving
+--------------------
 
-.. grid::  1 2 2 2
+.. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
-    :padding: 0
+    :padding: 3 4 0 0
 
     .. grid-item-card:: `🦄️ Yatai <https://github.com/bentoml/Yatai>`_
         :link: https://github.com/bentoml/Yatai
         :link-type: url
 
-        Model Deployment at scale on Kubernetes.
+        Production-first ML platform on Kubernetes.
 
     .. grid-item-card:: `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_
         :link: https://github.com/bentoml/bentoctl
         :link-type: url
 
         Fast model deployment on any cloud platform.
-
-
-.. seealso::
-    
-    For the 0.13-LTS releases, see the `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/>`_.
 
 
 Staying Informed
@@ -146,9 +147,10 @@ contributing to the project, helping other users and discuss all things MLOps.
    guides/index
    integrations/index
    reference/index
-   faq
    Community <https://l.linklyhq.com/l/ktOX>
    GitHub <https://github.com/bentoml/BentoML>
+   Blog <https://modelserving.com>
+
 
 .. spelling::
 

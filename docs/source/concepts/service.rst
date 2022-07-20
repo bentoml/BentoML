@@ -244,7 +244,7 @@ with support of type validation and OpenAPI specification generation. For exampl
 | File            | BytesIOFile         | kind, mime_type     |                         |
 +-----------------+---------------------+---------------------+-------------------------+
 
-Learn more about other built-in IO Descriptors :doc:`here <reference/api_io_descriptors>`.
+Learn more about other built-in IO Descriptors :doc:`here </reference/api_io_descriptors>`.
 
 Composite Types
 ^^^^^^^^^^^^^^^
@@ -278,11 +278,6 @@ logic:
     )
     def predict(arr: np.ndarray, json: t.Dict[str, t.Any]) -> np.ndarray:
         ...
-
-
-
-.. TODO:
-    Document Open API (Swagger) generation and sample usage
 
 
 Sync vs Async APIs
@@ -336,4 +331,33 @@ method is invoked, the event loop is released to service other requests while th
 request awaits the results of the method. In addition, BentoML will automatically
 configure the ideal amount of parallelism based on the available number of CPU cores.
 Further tuning of event loop configuration is not needed under common use cases.
+
+
+.. TODO:
+
+    Running Server:
+        bentoml serve arguments
+        --reload
+        --production
+
+        other options and configs:
+        --api-workers
+        --backlog
+        --timeout
+        --host
+        --port
+
+        Config options:
+        --config
+
+    Endpoints:
+        List of Endpoints
+            POST: /{api_name}
+        Open API (Swagger) generation and sample usage
+
+    Exception handling
+        custom error code
+        custom error msg
+
+
 

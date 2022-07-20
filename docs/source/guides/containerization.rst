@@ -1,6 +1,6 @@
-================
-Containerization
-================
+=========================
+Advanced Containerization
+=========================
 
 This guides describes advanced containerization options 
 provided by BentoML:

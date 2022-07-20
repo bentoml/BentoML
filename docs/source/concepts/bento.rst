@@ -840,7 +840,7 @@ their setup script for the initialization process.
 Advanced Options
 """"""""""""""""
 
-For advanced customization for generating docker images, see :ref:`Advanced Containerization <guides/containerization:Containerization>`:
+For advanced customization for generating docker images, see :doc:`/guides/containerization`:
 
 1. :ref:`Using base image <guides/containerization:Custom Base Image>`
 2. :ref:`Using dockerfile template <guides/containerization:Dockerfile Template>`

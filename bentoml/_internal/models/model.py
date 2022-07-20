@@ -18,9 +18,9 @@ import fs.errors
 import fs.mirror
 import cloudpickle  # type: ignore (no cloudpickle types)
 from fs.base import FS
-from cattr.gen import override
-from cattr.gen import make_dict_structure_fn
-from cattr.gen import make_dict_unstructure_fn
+from cattr.gen import override  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_structure_fn  # type: ignore (incomplete cattr types)
+from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
 from simple_di import inject
 from simple_di import Provide
 
@@ -172,12 +172,14 @@ class Model(StoreItem):
         Returns:
             object: Model instance created in temporary filesystem
         """
-        tag = Tag(name).make_new_version()
+        tag = Tag.from_str(name)
+        if tag.version is None:
+            tag = tag.make_new_version()
         labels = {} if labels is None else labels
         metadata = {} if metadata is None else metadata
         options = ModelOptions() if options is None else options
 
-        model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
+        model_fs = fs.open_fs(f"temp://bentoml_model_{tag.name}")
 
         return cls(
             tag,
@@ -625,9 +627,9 @@ bentoml_cattr.register_structure_hook_func(
     ),
 )
 bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),
+    lambda cls: issubclass(cls, ModelInfo),  # type: ignore (lambda)
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(
+    make_dict_unstructure_fn(  # type: ignore (incomplete cattr types)
         ModelInfo,
         bentoml_cattr,
         tag=override(omit=True),

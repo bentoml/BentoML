@@ -29,8 +29,7 @@ if TYPE_CHECKING:
         t.Any,
     ]
 
-
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
+    JSONType = str | dict[str, t.Any] | pydantic.BaseModel
 
 MIME_TYPE_JSON = "application/json"
 
@@ -162,6 +161,9 @@ class JSON(IODescriptor[JSONType]):
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
         return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
+
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_str = await request.body()

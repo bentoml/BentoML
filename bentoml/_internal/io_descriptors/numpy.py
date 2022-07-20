@@ -44,7 +44,7 @@ def _is_matched_shape(
     return True
 
 
-class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
+class NumpyNdarray(IODescriptor[ext.NpNDArray]):
     """
     :code:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -203,6 +203,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 logger.debug(f"{msg} Failed to reshape: {e}.")
 
         return obj
+
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
 
     async def from_http_request(self, request: Request) -> "ext.NpNDArray":
         """

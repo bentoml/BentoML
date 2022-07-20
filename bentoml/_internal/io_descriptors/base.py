@@ -5,11 +5,12 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from starlette.requests import Request
-from starlette.responses import Response
-
 if TYPE_CHECKING:
+
     from types import UnionType
+
+    from starlette.requests import Request
+    from starlette.responses import Response
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
@@ -65,6 +66,10 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     @abstractmethod
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         ...
+
+    @abstractmethod
+    async def init_http_response(self) -> Response:
+        return Response(None)
 
     @abstractmethod
     async def from_http_request(self, request: Request) -> IOPyObj:

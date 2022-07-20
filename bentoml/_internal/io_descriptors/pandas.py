@@ -21,7 +21,7 @@ from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
-    import pandas as pd  # type: ignore[import]
+    import pandas as pd
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
@@ -128,7 +128,7 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
         )
 
 
-class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
+class PandasDataFrame(IODescriptor[ext.PdDataFrame]):
     """
     :code:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
     where either inputs will be converted to or outputs will be converted from type
@@ -278,6 +278,9 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     def openapi_responses_schema(self) -> dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
         return {self._default_format.mime_type: {"schema": self.openapi_schema_type()}}
+
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE_JSON)
 
     async def from_http_request(self, request: Request) -> ext.PdDataFrame:
         """
@@ -471,7 +474,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         )
 
 
-class PandasSeries(IODescriptor["ext.PdSeries"]):
+class PandasSeries(IODescriptor[ext.PdSeries]):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type

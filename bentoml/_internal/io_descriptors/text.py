@@ -94,6 +94,9 @@ class Text(IODescriptor[str]):
         """Returns OpenAPI schema for outcoming responses"""
         return {MIME_TYPE: {"schema": self.openapi_schema_type()}}
 
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=MIME_TYPE)
+
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()
         return str(obj.decode("utf-8"))

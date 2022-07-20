@@ -112,6 +112,9 @@ class File(IODescriptor[FileType]):
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
+    async def init_http_response(self) -> Response:
+        return Response(None, media_type=self._mime_type)
+
     async def to_http_response(
         self,
         obj: FileType,

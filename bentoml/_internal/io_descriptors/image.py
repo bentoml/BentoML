@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
     ]
+    ImageType = PIL.Image.Image | ext.NpNDArray
 else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
@@ -38,11 +39,6 @@ else:
     """
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
-
-# NOTES: we will keep type in quotation to avoid backward compatibility
-#  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
-#  that enable a new way to type hint an ndarray.
-ImageType: t.TypeAlias = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 
 DEFAULT_PIL_MODE = "RGB"
 

@@ -674,7 +674,7 @@ Here's a basic Docker options configuration.
     docker:
         distro: debian
         python_version: "3.8.12"
-        cuda_version: "11.6,2"
+        cuda_version: "11.6.2"
         system_packages:
             - libblas-dev
             - liblapack-dev
@@ -723,7 +723,7 @@ BentoML also installs additional packages required for the target cuda version.
 .. code:: yaml
 
     docker:
-        cuda_version: "11.6,2"
+        cuda_version: "11.6.2"
 
 If you need a different cuda version that is not currently supported in BentoML, it is
 possible to install it by specifying it in the :code:`system_packages` or via the

@@ -131,3 +131,12 @@ class Text(IODescriptor[str]):
             return res
         else:
             return Response(obj, media_type=MIME_TYPE)
+
+    def generate_protobuf(self):
+        pass
+
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj) -> t.Any:
+        pass

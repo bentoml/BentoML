@@ -9,10 +9,12 @@ if TYPE_CHECKING:
     from types import UnionType
 
     from typing_extensions import Self
+    import grpc
     from starlette.requests import Request
     from starlette.responses import Response
 
     from ..types import LazyType
+    from ...protos import service_pb2
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Response as OpenAPIResponse
@@ -82,4 +84,18 @@ class IODescriptor(ABC, t.Generic[IOType]):
     async def to_http_response(
         self, obj: IOType, ctx: Context | None = None
     ) -> Response:
+        ...
+
+    @abstractmethod
+    def generate_protobuf(self):
+        ...
+
+    @abstractmethod
+    async def from_grpc_request(
+        self, request: service_pb2.RouteCallRequest, context: grpc.ServicerContext
+    ) -> IOPyObj:
+        ...
+
+    @abstractmethod
+    async def to_grpc_response(self, obj: IOPyObj) -> service_pb2.RouteCallResponse:
         ...

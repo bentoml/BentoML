@@ -155,6 +155,15 @@ class File(IODescriptor[FileType]):
             res = Response(body)
         return res
 
+    def generate_protobuf(self):
+        pass
+
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj) -> t.Any:
+        pass
+
 
 class BytesIOFile(File):
     async def from_http_request(self, request: Request) -> t.IO[bytes]:

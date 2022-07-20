@@ -245,3 +245,12 @@ class Image(IODescriptor[ImageType]):
                 media_type=self._mime_type,
                 headers={"content-disposition": content_disposition},
             )
+
+    def generate_protobuf(self):
+        pass
+
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj) -> t.Any:
+        pass

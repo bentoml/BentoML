@@ -24,9 +24,11 @@ from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
+    import grpc
     import numpy as np
 
     from .. import external_typing as ext
+    from ...protos import service_pb2
     from ..context import InferenceApiContext as Context
 else:
     np = LazyLoader("np", globals(), "numpy")
@@ -246,7 +248,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return obj
 
-    async def from_http_request(self, request: Request) -> "ext.NpNDArray":
+    async def from_http_request(self, request: Request) -> ext.NpNDArray:
         """
         Process incoming requests and convert incoming objects to ``numpy.ndarray``.
 
@@ -375,7 +377,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return return_arr
 
-    async def from_grpc_request(self, request, context):
+    async def from_grpc_request(
+        self, request: service_pb2.RouteCallRequest, context: grpc.ServicerContext
+    ) -> ext.NpNDArray:
         """
         Process incoming protobuf request and convert it to `numpy.ndarray`
 
@@ -540,7 +544,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         return return_arr
 
-    async def to_grpc_response(self, obj):
+    async def to_grpc_response(
+        self, obj: ext.NpNDArray
+    ) -> service_pb2.RouteCallResponse:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -553,6 +559,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         """
         obj = self._verify_ndarray(obj, InternalServerError)
         return self.arr_to_proto(obj)
+
+    def generate_protobuf(self):
+        pass
 
     @classmethod
     def from_sample(

@@ -23,7 +23,7 @@ install_requires = [
     "aiohttp",
     "aiohttp_cors==0.7.0",
     "alembic",
-    "urllib3<=1.26.6",
+    "urllib3>=1.26.5,<1.27.0",
     "boto3",
     "cerberus",
     "certifi",
@@ -38,7 +38,7 @@ install_requires = [
     "numpy",
     "packaging",
     "prometheus_client",
-    "protobuf>=3.8.0",
+    "protobuf>=3.8.0,<=3.20.0",
     "psutil",
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both

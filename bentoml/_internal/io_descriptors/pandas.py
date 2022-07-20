@@ -128,7 +128,7 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
         )
 
 
-class PandasDataFrame(IODescriptor[ext.PdDataFrame]):
+class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     """
     :code:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
     where either inputs will be converted to or outputs will be converted from type
@@ -263,9 +263,7 @@ class PandasDataFrame(IODescriptor[ext.PdDataFrame]):
         self._default_format = SerializationFormat[default_format.upper()]
         _validate_serialization_format(self._default_format)
 
-    def input_type(
-        self,
-    ) -> LazyType[ext.PdDataFrame]:
+    def input_type(self) -> LazyType[ext.PdDataFrame]:
         return LazyType("pandas", "DataFrame")
 
     def openapi_schema_type(self) -> dict[str, t.Any]:
@@ -474,7 +472,7 @@ class PandasDataFrame(IODescriptor[ext.PdDataFrame]):
         )
 
 
-class PandasSeries(IODescriptor[ext.PdSeries]):
+class PandasSeries(IODescriptor["ext.PdSeries"]):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -601,9 +599,7 @@ class PandasSeries(IODescriptor[ext.PdSeries]):
         self._enforce_shape = enforce_shape
         self._mime_type = "application/json"
 
-    def input_type(
-        self,
-    ) -> LazyType[ext.PdSeries]:
+    def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:

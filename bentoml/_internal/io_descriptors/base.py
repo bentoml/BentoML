@@ -5,12 +5,13 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from starlette.responses import Response
+
 if TYPE_CHECKING:
 
     from types import UnionType
 
     from starlette.requests import Request
-    from starlette.responses import Response
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         t.Any,
     ]
 
-    JSONType = str | dict[str, t.Any] | pydantic.BaseModel
+JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
 
 MIME_TYPE_JSON = "application/json"
 

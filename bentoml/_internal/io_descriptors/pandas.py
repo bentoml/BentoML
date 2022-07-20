@@ -400,6 +400,15 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         else:
             return Response(resp, media_type=serialization_format.mime_type)
 
+    def generate_protobuf(self):
+        pass
+
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj) -> t.Any:
+        pass
+
     @classmethod
     def from_sample(
         cls,

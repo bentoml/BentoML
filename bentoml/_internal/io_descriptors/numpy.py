@@ -47,7 +47,7 @@ def _is_matched_shape(
     return True
 
 
-class NumpyNdarray(IODescriptor[ext.NpNDArray]):
+class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     """
     :code:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type

@@ -25,8 +25,8 @@ from bentoml.types import InferenceTask, JsonSerializable, Optional
 from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
-imageio = LazyLoader('imageio', globals(), 'imageio')
-numpy = LazyLoader('numpy', globals(), 'numpy')
+imageio = LazyLoader("imageio", globals(), "imageio")
+numpy = LazyLoader("numpy", globals(), "numpy")
 
 
 ApiFuncArgs = Tuple[Sequence[numpy.ndarray], Sequence[Optional[JsonSerializable]]]
@@ -177,7 +177,9 @@ class AnnotatedImageInput(MultiFileInput):
         accept_image_formats=None,
         **base_kwargs,
     ):
-        assert imageio, "`imageio` dependency can be imported"
+        assert (
+            imageio
+        ), "`imageio` is required. Install with `pip install imageio<=2.9.0`"
         input_names = [image_input_name, annotation_input_name]
         super().__init__(input_names=input_names, allow_none=True, **base_kwargs)
 
@@ -241,7 +243,8 @@ class AnnotatedImageInput(MultiFileInput):
                 )
             except UnicodeDecodeError:
                 task.discard(
-                    http_status=400, err_msg="JSON must be in unicode",
+                    http_status=400,
+                    err_msg="JSON must be in unicode",
                 )
             except json.JSONDecodeError:
                 task.discard(

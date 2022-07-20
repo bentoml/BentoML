@@ -1,6 +1,7 @@
 [build-system]
 requires = [
   # sync with setup.cfg until we discard non-pep-517/518
+  "protobuf==3.19.4",
   "grpcio-tools==1.47.0",  # sync with grpcio in setup.cfg
   "mypy-protobuf==3.2.0",  # generating stubs for type checking
   "setuptools>=59.0",
@@ -35,7 +36,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = "-rfEX -p pytester -p no:warnings --dist=loadfile"
+addopts = "-rfEX -p pytester -p no:warnings -x"
 python_files = ["test_*.py","*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus"]

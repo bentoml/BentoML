@@ -180,9 +180,6 @@ class Image(IODescriptor[ImageType]):
             )
         return PIL.Image.open(io.BytesIO(bytes_))
 
-    async def init_http_response(self) -> Response:
-        return Response(None, media_type=self._mime_type)
-
     async def to_http_response(
         self, obj: ImageType, ctx: Context | None = None
     ) -> Response:

@@ -674,7 +674,7 @@ Here's a basic Docker options configuration.
     docker:
         distro: debian
         python_version: "3.8.12"
-        cuda_version: "11.6,2"
+        cuda_version: "11.6.2"
         system_packages:
             - libblas-dev
             - liblapack-dev

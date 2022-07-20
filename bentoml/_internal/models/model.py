@@ -179,7 +179,7 @@ class Model(StoreItem):
         metadata = {} if metadata is None else metadata
         options = ModelOptions() if options is None else options
 
-        model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
+        model_fs = fs.open_fs(f"temp://bentoml_model_{tag.name}")
 
         return cls(
             tag,

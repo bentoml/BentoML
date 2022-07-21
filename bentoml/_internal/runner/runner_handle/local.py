@@ -4,6 +4,7 @@ import typing as t
 import functools
 from typing import TYPE_CHECKING
 
+import anyio
 from bentoml._internal.runner.utils import Params
 from bentoml._internal.runner.container import Payload
 from bentoml._internal.runner.container import AutoContainer
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
+
+
+THREAD_LIMITER = anyio.CapacityLimiter(1)
 
 
 class LocalRunnerRef(RunnerHandle):
@@ -48,9 +52,7 @@ class LocalRunnerRef(RunnerHandle):
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> R:
-        import anyio
-
         method = getattr(self._runnable, __bentoml_method.name)
         return await anyio.to_thread.run_sync(
-            functools.partial(method, **kwargs), *args, limiter=anyio.CapacityLimiter(1)
+            functools.partial(method, **kwargs), *args, limiter=THREAD_LIMITER,
         )

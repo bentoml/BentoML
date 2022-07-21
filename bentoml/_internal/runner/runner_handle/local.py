@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     R = t.TypeVar("R")
 
 
-# This is a quick hack around anyio.CapacityLimiter where
+# This is a quick workaround anyio.CapacityLimiter where
 # we set local variable to use ThreadLocal. This ensures that
 # our LocalRunnerRef will only run in exactly one thread.
 class LocalCapacityLimiter:

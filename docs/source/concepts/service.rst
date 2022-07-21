@@ -195,13 +195,19 @@ declare and invoke these descriptors please see the
 Schema and Validation
 ^^^^^^^^^^^^^^^^^^^^^
 
-The IO descriptors help automatically generate an OpenAPI specifications of the service
-based on the types of IO descriptors selected. We can further customize the IO
-descriptors by providing the :code:`dtype` of the `numpy.ndarray` object. The provided
-:code:`dtype` will be automatically translated in the generated OpenAPI specification.
-The IO descriptors will validate the arguments and return values against the provided
-:code:`dtype`. Requests that fail the validation will result in errors. We can choose to
-optionally disable validation through the :code:`validate` argument.
+IO descriptors allow users to define the expected data types, shape, and schema, based 
+on the type of the input and output descriptor specified. IO descriptors can also be defined 
+through  examples with the :code:`from_sample` API to simplify the development of service 
+definitions.
+
+Numpy
+~~~~~
+
+The data type and shape of the :code:`NumpyNdarray` can be specified with the :code:`dtype` 
+and :code:`shape` arguments. By setting the :code:`enforce_shape` and :code:`enforce_dtype` 
+arguments to `True`, the IO descriptor will strictly validate the input and output data 
+based the specified data type and shape. To learn more, see IO descrptor reference for 
+:ref:`reference/api_io_descriptors:NumPy ndarray`.
 
 .. code-block:: python
 
@@ -209,16 +215,84 @@ optionally disable validation through the :code:`validate` argument.
 
     from bentoml.io import NumpyNdarray
 
-    # Create API function with pre- and post- processing logic
+    svc = bentoml.Service("iris_classifier")
+
+    # Define IO descriptors through samples
+    output_descriptor = NumpyNdarray.from_sample(np.array([[1.0, 2.0, 3.0, 4.0]]))
+
     @svc.api(
-        input=NumpyNdarray(schema=np.dtype(int, 4), validate=True),
-        output=NumpyNdarray(schema=np.dtype(int), validate=True),
+        input=NumpyNdarray(
+            shape=(-1, 4),
+            dtype=np.float32,
+            enforce_dtype=True,
+            enforce_shape=True
+        ),
+        output=output_descriptor,
     )
-    def predict(input_array: np.ndarray) -> np.ndarray:
-        # Define pre-processing logic
-        result = await runner.run(input_array)
-        # Define post-processing logic
-        return result
+    def classify(input_array: np.ndarray) -> np.ndarray:
+        ...
+
+Pandas DataFrame
+~~~~~~~~~~~~~~~~
+
+The data type and shape of the :code:`PandasDataFrame` can be specified with the :code:`dtype` 
+and :code:`shape` arguments. By setting the :code:`enforce_shape` and :code:`enforce_dtype` 
+arguments to `True`, the IO descriptor will strictly validate the input and output data 
+based the specified data type and shape. To learn more, see IO descrptor reference for 
+:ref:`reference/api_io_descriptors:Tabular Data with Pandas`.
+
+.. code-block:: python
+
+    import pandas as pd
+
+    from bentoml.io import PandasDataFrame
+
+    svc = bentoml.Service("iris_classifier")
+
+    # Define IO descriptors through samples
+    output_descriptor = PandasDataFrame.from_sample(pd.DataFrame([[5,4,3,2]]))
+
+    @svc.api(
+        input=PandasDataFrame(
+            orient="records",
+            dtype=np.float32,
+            enforce_dtype=True,
+            shape=(-1, 4),
+            enforce_shape=True
+        ),
+        output=output_descriptor,
+    )
+    def classify(input_series: pd.DataFrame) -> pd.DataFrame:
+        ...
+
+JSON
+~~~~
+
+The data type of a JSON IO descriptor can be specified through a Pydantic model. By setting 
+the :code:`validate_json` argument to `True`, the IO descriptor will strictly validate the input 
+based on the specified pydantic model. To learn more, see IO descrptor reference for 
+:ref:`reference/api_io_descriptors:Structured Data with JSON`.
+
+.. code-block:: python
+
+    import typing as t
+    
+    from pydantic import BaseModel
+
+    svc = bentoml.Service("iris_classifier")
+
+    class IrisInput(BaseModel):
+        sepal_length: float
+        sepal_width: float
+        petal_length: float
+        petal_width: float
+
+    @svc.api(
+        input=JSON(pydantic_model=IrisInput, validate_json=True),
+        output=JSON(),
+    )
+    def classify(input_series: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        ...
 
 
 Built-in Types

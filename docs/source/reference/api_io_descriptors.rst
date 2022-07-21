@@ -25,8 +25,8 @@ Tabular Data with Pandas
 .. autoclass:: bentoml.io.PandasSeries
 
 
-Structure Data with JSON
-------------------------
+Structured Data with JSON
+-------------------------
 .. note::
     For common structure data, we recommend using the JSON descriptor, as it provides
     the most flexibility. Users can also define a schema of the JSON data via a

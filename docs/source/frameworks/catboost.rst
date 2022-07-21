@@ -96,7 +96,8 @@ there are two ways to include CatBoost as a dependency, via ``python`` or
       .. code-block:: yaml
 
          python:
-         - catboost
+	   packages:
+	     - catboost
 
    .. tab-item:: conda
 

@@ -102,7 +102,8 @@ information, as well as the fact that it depends on XGBoost. This can be done us
          service: "service:svc"
          description: "My XGBoost service"
          python:
-         - xgboost
+	   packages:
+	     - xgboost
 
    .. tab-item:: conda
 

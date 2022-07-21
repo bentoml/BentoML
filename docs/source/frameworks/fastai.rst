@@ -119,7 +119,8 @@ there are two ways to include fastai as a dependency, via ``python`` or
       .. code-block:: yaml
 
          python:
-         - fastai
+	   packages:
+	     - fastai
 
    .. tab-item:: conda
 

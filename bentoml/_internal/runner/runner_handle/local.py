@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import typing as t
 import functools
+import threading
 from typing import TYPE_CHECKING
+
+import anyio
 
 from bentoml._internal.runner.utils import Params
 from bentoml._internal.runner.container import Payload
@@ -18,9 +21,25 @@ if TYPE_CHECKING:
     R = t.TypeVar("R")
 
 
+# This is a quick workaround anyio.CapacityLimiter where
+# we set local variable to use ThreadLocal. This ensures that
+# our LocalRunnerRef will only run in exactly one thread.
+class LocalCapacityLimiter:
+    local = threading.local()
+
+    def __init__(self, total_tokens: float = 40):
+        self.local.limiter = anyio.CapacityLimiter(total_tokens)
+
+    async def __aenter__(self) -> None:
+        await self.local.limiter.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
+        await self.local.limiter.__aexit__(exc_type, exc_val, exc_tb)
+
+
 class LocalRunnerRef(RunnerHandle):
     def __init__(self, runner: Runner) -> None:  # pylint: disable=super-init-not-called
-        self._runnable = runner.runnable_class(**runner.runnable_init_params)
+        self._runnable = runner.runnable_class(**runner.runnable_init_params)  # type: ignore
 
     def run_method(
         self,
@@ -48,9 +67,9 @@ class LocalRunnerRef(RunnerHandle):
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> R:
-        import anyio
-
         method = getattr(self._runnable, __bentoml_method.name)
         return await anyio.to_thread.run_sync(
-            functools.partial(method, **kwargs), *args, limiter=anyio.CapacityLimiter(1)
+            functools.partial(method, **kwargs),
+            *args,
+            limiter=LocalCapacityLimiter(1),  # type: ignore
         )

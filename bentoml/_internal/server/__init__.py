@@ -129,6 +129,10 @@ def serve_development(
 
     plugins = []
     if reload:
+        if sys.platform == "win32":
+            logger.warning(
+                "Due to circus limitations, output from the reloader plugin will not be shown on Windows."
+            )
         logger.debug(
             "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
         )
@@ -142,18 +146,13 @@ def serve_development(
                 "bentoml_home": bentoml_home,
             },
         ]
-    if sys.platform == "win32":
-        logger.warning(
-            "Due to circus limitations, output from reloader plugin will not be shown on Windows."
-        )
-
     arbiter = create_standalone_arbiter(
         watchers,
         sockets=circus_sockets,
         plugins=plugins,
         debug=True if sys.platform != "win32" else False,
         loggerconfig=SERVER_LOGGING_CONFIG,
-        loglevel=logging.WARNING,
+        loglevel="WARNING",
     )
 
     with track_serve(svc, production=False):

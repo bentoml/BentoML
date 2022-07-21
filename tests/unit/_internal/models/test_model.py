@@ -173,6 +173,18 @@ def test_model_creationtime():
     assert repr(model_a) == f'Model(tag="{model_a.tag}", path="{model_a.path}")'
 
 
+def test_model_version():
+    model_with_version = Model.create(
+        "testmodel:myversion",
+        module="test",
+        api_version="v1",
+        signatures={},
+        context=TEST_MODEL_CONTEXT,
+    )
+
+    assert model_with_version.info.version == "myversion"
+
+
 class AdditionClass:
     def __init__(self, x: int):
         self.x = x

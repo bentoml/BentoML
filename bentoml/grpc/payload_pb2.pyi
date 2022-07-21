@@ -26,68 +26,10 @@ class Tuple(google.protobuf.message.Message):
     def ClearField(self, field_name: typing_extensions.Literal["value",b"value"]) -> None: ...
 global___Tuple = Tuple
 
-class Value(google.protobuf.message.Message):
-    """Value represents a single instance of the supported datatypes.
-    TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64.
-    """
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    FLOAT_VALUE_FIELD_NUMBER: builtins.int
-    DOUBLE_VALUE_FIELD_NUMBER: builtins.int
-    BYTES_VALUE_FIELD_NUMBER: builtins.int
-    BOOL_VALUE_FIELD_NUMBER: builtins.int
-    STRING_VALUE_FIELD_NUMBER: builtins.int
-    UINT32_VALUE_FIELD_NUMBER: builtins.int
-    SINT32_VALUE_FIELD_NUMBER: builtins.int
-    TIMESTAMP_VALUE_FIELD_NUMBER: builtins.int
-    DURATION_VALUE_FIELD_NUMBER: builtins.int
-    ARRAY_VALUE_FIELD_NUMBER: builtins.int
-    TUPLE_VALUE_FIELD_NUMBER: builtins.int
-    UINT64_VALUE_FIELD_NUMBER: builtins.int
-    SINT64_VALUE_FIELD_NUMBER: builtins.int
-    float_value: builtins.float
-    double_value: builtins.float
-    bytes_value: builtins.bytes
-    bool_value: builtins.bool
-    string_value: typing.Text
-    uint32_value: builtins.int
-    sint32_value: builtins.int
-    @property
-    def timestamp_value(self) -> google.protobuf.timestamp_pb2.Timestamp: ...
-    @property
-    def duration_value(self) -> google.protobuf.duration_pb2.Duration: ...
-    @property
-    def array_value(self) -> global___Array: ...
-    @property
-    def tuple_value(self) -> global___Tuple: ...
-    uint64_value: builtins.int
-    sint64_value: builtins.int
-    def __init__(self,
-        *,
-        float_value: builtins.float = ...,
-        double_value: builtins.float = ...,
-        bytes_value: builtins.bytes = ...,
-        bool_value: builtins.bool = ...,
-        string_value: typing.Text = ...,
-        uint32_value: builtins.int = ...,
-        sint32_value: builtins.int = ...,
-        timestamp_value: typing.Optional[google.protobuf.timestamp_pb2.Timestamp] = ...,
-        duration_value: typing.Optional[google.protobuf.duration_pb2.Duration] = ...,
-        array_value: typing.Optional[global___Array] = ...,
-        tuple_value: typing.Optional[global___Tuple] = ...,
-        uint64_value: builtins.int = ...,
-        sint64_value: builtins.int = ...,
-        ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value","value",b"value"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value","value",b"value"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["value",b"value"]) -> typing.Optional[typing_extensions.Literal["float_value","double_value","bytes_value","bool_value","string_value","uint32_value","sint32_value","timestamp_value","duration_value","array_value","tuple_value","uint64_value","sint64_value"]]: ...
-global___Value = Value
-
 class Array(google.protobuf.message.Message):
-    """TODO: message complex types
-
-    Array contains a dtype which identifies the type of the array.
+    """Array contains a dtype which identifies the type of the array.
     Repeated field for the identified dtype contains the array.
-    TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64
+    TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64, complex
     """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
     FLOAT_VALUE_FIELD_NUMBER: builtins.int
@@ -147,3 +89,67 @@ class Array(google.protobuf.message.Message):
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value"]) -> None: ...
 global___Array = Array
+
+class Value(google.protobuf.message.Message):
+    """Value represents a single instance of the supported datatypes.
+    TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64.
+    """
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    FLOAT_VALUE_FIELD_NUMBER: builtins.int
+    DOUBLE_VALUE_FIELD_NUMBER: builtins.int
+    BYTES_VALUE_FIELD_NUMBER: builtins.int
+    BOOL_VALUE_FIELD_NUMBER: builtins.int
+    STRING_VALUE_FIELD_NUMBER: builtins.int
+    UINT32_VALUE_FIELD_NUMBER: builtins.int
+    SINT32_VALUE_FIELD_NUMBER: builtins.int
+    TIMESTAMP_VALUE_FIELD_NUMBER: builtins.int
+    DURATION_VALUE_FIELD_NUMBER: builtins.int
+    ARRAY_VALUE_FIELD_NUMBER: builtins.int
+    TUPLE_VALUE_FIELD_NUMBER: builtins.int
+    UINT64_VALUE_FIELD_NUMBER: builtins.int
+    SINT64_VALUE_FIELD_NUMBER: builtins.int
+    DATAFRAME_COLUMNS_FIELD_NUMBER: builtins.int
+    DATAFRAME_INDICES_FIELD_NUMBER: builtins.int
+    float_value: builtins.float
+    double_value: builtins.float
+    bytes_value: builtins.bytes
+    bool_value: builtins.bool
+    string_value: typing.Text
+    uint32_value: builtins.int
+    sint32_value: builtins.int
+    @property
+    def timestamp_value(self) -> google.protobuf.timestamp_pb2.Timestamp: ...
+    @property
+    def duration_value(self) -> google.protobuf.duration_pb2.Duration: ...
+    @property
+    def array_value(self) -> global___Array: ...
+    @property
+    def tuple_value(self) -> global___Tuple: ...
+    uint64_value: builtins.int
+    sint64_value: builtins.int
+    @property
+    def dataframe_columns(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
+    @property
+    def dataframe_indices(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
+    def __init__(self,
+        *,
+        float_value: builtins.float = ...,
+        double_value: builtins.float = ...,
+        bytes_value: builtins.bytes = ...,
+        bool_value: builtins.bool = ...,
+        string_value: typing.Text = ...,
+        uint32_value: builtins.int = ...,
+        sint32_value: builtins.int = ...,
+        timestamp_value: typing.Optional[google.protobuf.timestamp_pb2.Timestamp] = ...,
+        duration_value: typing.Optional[google.protobuf.duration_pb2.Duration] = ...,
+        array_value: typing.Optional[global___Array] = ...,
+        tuple_value: typing.Optional[global___Tuple] = ...,
+        uint64_value: builtins.int = ...,
+        sint64_value: builtins.int = ...,
+        dataframe_columns: typing.Optional[typing.Iterable[typing.Text]] = ...,
+        dataframe_indices: typing.Optional[typing.Iterable[typing.Text]] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","kind",b"kind","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","dataframe_columns",b"dataframe_columns","dataframe_indices",b"dataframe_indices","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","kind",b"kind","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["kind",b"kind"]) -> typing.Optional[typing_extensions.Literal["float_value","double_value","bytes_value","bool_value","string_value","uint32_value","sint32_value","timestamp_value","duration_value","array_value","tuple_value","uint64_value","sint64_value"]]: ...
+global___Value = Value

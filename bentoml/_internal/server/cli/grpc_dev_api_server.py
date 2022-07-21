@@ -16,8 +16,6 @@ except ImportError:
         "`grpcio` is required for `--grpc`. Install requirements with `pip install 'bentoml[grpc]'`."
     )
 
-from bentoml.protos import service_pb2_grpc
-
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
@@ -30,6 +28,9 @@ def main(
     working_dir: t.Optional[str],
     port: int,
 ):
+
+    from bentoml.grpc import service_pb2_grpc
+
     component_context.component_name = "grpc_dev_api_server"
 
     from ...log import configure_server_logging

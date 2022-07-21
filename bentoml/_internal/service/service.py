@@ -18,7 +18,7 @@ from ..io_descriptors import IODescriptor
 if TYPE_CHECKING:
     import grpc
 
-    from bentoml.protos import service_pb2_grpc
+    from bentoml.grpc import service_pb2_grpc
 
     from .. import external_typing as ext
     from ..bento import Bento
@@ -233,19 +233,19 @@ class Service:
     def get_grpc_servicer(self) -> service_pb2_grpc.BentoServiceServicer:
         from bentoml.io import Text
         from bentoml.io import NumpyNdarray
-        from bentoml.protos import service_pb2
-        from bentoml.protos import service_pb2_grpc
+        from bentoml.grpc import service_pb2
+        from bentoml.grpc import service_pb2_grpc
 
         type_dict = {"text": Text, "array": NumpyNdarray}
 
         apis = self.apis
 
         class BentoServiceServicer(service_pb2_grpc.BentoServiceServicer):
-            async def RouteCall(
+            async def Call(
                 self,
-                request: service_pb2.RouteCallRequest,
+                request: service_pb2.Request,
                 context: grpc.ServicerContext,
-            ) -> service_pb2.RouteCallResponse:
+            ) -> service_pb2.Response:
                 try:
                     api = apis[request.api_name]
                 except KeyError:

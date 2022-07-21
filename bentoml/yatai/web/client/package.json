@@ -27,7 +27,8 @@
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
     "react-scripts": "3.4.4",
-    "typescript": "~3.7.2"
+    "typescript": "~3.7.2",
+    "terser": "^5.14.2",
   },
   "proxy": "http://localhost:3000",
   "scripts": {

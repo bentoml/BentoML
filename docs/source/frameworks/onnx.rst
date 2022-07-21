@@ -396,9 +396,10 @@ Options>`, there are two ways to include ONNX as a dependency, via
 
       .. code-block:: yaml
 
-         python:
-         - onnx
-	 - onnxruntime
+	 python:
+	   packages:
+	     - onnx
+	     - onnxruntime
 
    .. tab-item:: conda
 

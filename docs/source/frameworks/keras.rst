@@ -125,8 +125,9 @@ Options>`, there are two ways to include Keras as a dependency, via
 
       .. code-block:: yaml
 
-         python:
-         - tensorflow
+	 python:
+	   packages:
+	     - tensorflow
 
    .. tab-item:: conda
 

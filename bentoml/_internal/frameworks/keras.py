@@ -52,6 +52,23 @@ class KerasOptions(ModelOptions):
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
+    """
+    Get the BentoML model with the given tag.
+
+    Args:
+        tag_like: The tag of the model to retrieve from the model store.
+
+    Returns:
+        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
+
+    Example:
+
+    .. code-block:: python
+
+       import bentoml
+       # target model must be from the BentoML model store
+       model = bentoml.keras.get("keras_resnet50")
+    """
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -142,8 +159,9 @@ def save_model(
             Custom metadata for given model.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
-        the user-defined model's name, and a generated `version` by BentoML.
+
+        :obj:`~bentoml.Model`: A BentoML model containing the saved
+        Keras model instance.
 
     Examples:
 

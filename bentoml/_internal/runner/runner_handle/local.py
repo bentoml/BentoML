@@ -21,7 +21,10 @@ if TYPE_CHECKING:
     R = t.TypeVar("R")
 
 
-class CustomCapacityLimiter:
+# This is a quick hack around anyio.CapacityLimiter where
+# we set local variable to use ThreadLocal. This ensures that
+# our LocalRunnerRef will only run in exactly one thread.
+class LocalCapacityLimiter:
     local = threading.local()
 
     def __init__(self, total_tokens: float = 40):
@@ -68,5 +71,5 @@ class LocalRunnerRef(RunnerHandle):
         return await anyio.to_thread.run_sync(
             functools.partial(method, **kwargs),
             *args,
-            limiter=CustomCapacityLimiter(1),  # type: ignore
+            limiter=LocalCapacityLimiter(1),  # type: ignore
         )

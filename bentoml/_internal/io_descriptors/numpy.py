@@ -252,7 +252,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     async def from_grpc_request(
-        self, request: service_pb2.Request, context: grpc.ServicerContext
+        self, request: service_pb2.CallRequest, context: grpc.ServicerContext
     ) -> ext.NpNDArray:
         """
         Process incoming protobuf request and convert it to `numpy.ndarray`

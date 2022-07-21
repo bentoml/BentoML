@@ -1,19 +1,19 @@
 syntax = "proto3";
 
-package bentoml.grpc;
+package bentoml.grpc.v1;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
-option go_package = "github.com/bentoml/grpc/payload;payload";
+option cc_generic_services = true;
+option go_package = "github.com/bentoml/grpc/v1";
 option java_multiple_files = true;
-option java_outer_classname = "PayloadProto";
-// Java namespace
-option java_package = "com.bentoml.grpc";
-// ObjectiveC namespace
-option objc_class_prefix = "PLD";
+option java_outer_classname = "ServiceProto";
+option java_package = "com.bentoml.grpc.v1";
+option objc_class_prefix = "SVC";
+option py_generic_services = true;
 
 // Tuple represents a repeated field containing data with same or different datatypes.
 message Tuple {
@@ -61,4 +61,27 @@ message Value {
   repeated string dataframe_indices = 102;
 
   reserved 16 to 100, 103 to 100000;
+}
+
+// a gRPC BentoServer.
+service BentoService {
+  // Call handles unary API.
+  rpc Call(Request) returns (Response) {}
+}
+
+// Request represents a request payload that user send
+// to the BentoService.
+message Request {
+  // a given API route the rpc request is sent to.
+  string api_name = 1;
+
+  // representation of the input value.
+  Value input = 2;
+}
+
+// Response represents response payload that user receive
+// from the BentoService.
+message Response {
+  // representation of the output value.
+  Value output = 1;
 }

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import typing as t
 import functools
+import threading
 from typing import TYPE_CHECKING
 
 import anyio
+
 from bentoml._internal.runner.utils import Params
 from bentoml._internal.runner.container import Payload
 from bentoml._internal.runner.container import AutoContainer
@@ -19,12 +21,22 @@ if TYPE_CHECKING:
     R = t.TypeVar("R")
 
 
-THREAD_LIMITER = anyio.CapacityLimiter(1)
+class CustomCapacityLimiter:
+    local = threading.local()
+
+    def __init__(self, total_tokens: float = 40):
+        self.local.limiter = anyio.CapacityLimiter(total_tokens)
+
+    async def __aenter__(self) -> None:
+        await self.local.limiter.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
+        await self.local.limiter.__aexit__(exc_type, exc_val, exc_tb)
 
 
 class LocalRunnerRef(RunnerHandle):
     def __init__(self, runner: Runner) -> None:  # pylint: disable=super-init-not-called
-        self._runnable = runner.runnable_class(**runner.runnable_init_params)
+        self._runnable = runner.runnable_class(**runner.runnable_init_params)  # type: ignore
 
     def run_method(
         self,
@@ -54,5 +66,7 @@ class LocalRunnerRef(RunnerHandle):
     ) -> R:
         method = getattr(self._runnable, __bentoml_method.name)
         return await anyio.to_thread.run_sync(
-            functools.partial(method, **kwargs), *args, limiter=THREAD_LIMITER,
+            functools.partial(method, **kwargs),
+            *args,
+            limiter=CustomCapacityLimiter(1),  # type: ignore
         )

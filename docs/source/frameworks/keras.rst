@@ -5,18 +5,18 @@ Keras
 .. note::
 
    Both ``bentoml.keras`` and ``bentoml.tensorflow`` support Keras
-   model. ``bentoml.keras`` utilizing Keras' native model format,
-   which will give better development experience if user are more
-   familiar with Keras model. However, Keras' native model format is
+   models. ``bentoml.keras`` utilizes the native model format and
+   will give a better development experience to users who are more
+   familiar with Keras models. However, the native model format of Keras is
    not optimized for production inference. There are `known reports
    <https://github.com/tensorflow/tensorflow/issues?q=is%3Aissue+sort%3Aupdated-desc+keras+memory+leak>`_
-   of memory leaks during serving at the time of BentoML 1.0
-   release. Using ``bentoml.tensorflow`` is recommended in production
-   environment. You can read :doc:`bentoml.tensorflow documentation
-   </frameworks/tensorflow>` for more information.
+   of memory leaks during serving time at the time of BentoML 1.0
+   release, so ``bentoml.tensorflow`` is recommended in production
+   environments. You can read :doc:`bentoml.tensorflow
+   </frameworks/tensorflow>` documentation for more information.
 
    You can also convert a Keras model to ONNX model and use
-   ``bentoml.onnx`` to serve production inference. Refer
+   ``bentoml.onnx`` to serve in production. Refer
    :doc:`bentoml.onnx documentation </frameworks/onnx>` and
    `tensorflow-onnx (tf2onnx) documentation
    <https://github.com/onnx/tensorflow-onnx>`_ for more information.
@@ -25,11 +25,13 @@ Keras
 Compatibility
 -------------
 
-BentoML requires TensorFlow **2.7.3** or higher to be installed.
+BentoML requires TensorFlow version **2.7.3** or higher to be installed.
 
 
 Saving a Keras Model
 --------------------
+
+The following example loads a pre-trained ResNet50 model.
 
 .. code-block:: python
 
@@ -66,7 +68,8 @@ to save the model instance to BentoML model store.
    bentoml.keras.save_model("keras_resnet50", model)
 
 
-To verify that the saved model can be loaded properly:
+Keras model can be loaded with :obj:`~bentoml.keras.load_model` to 
+verify that the saved model can be loaded properly.
 
 .. code-block:: python
 
@@ -80,7 +83,12 @@ Building a Service using Keras
 
 .. seealso::
 
-   :ref:`Building a Service <concepts/service:Service and APIs>`: more information on creating a prediction service with BentoML.
+   See :ref:`Building a Service <concepts/service:Service and APIs>` for more 
+   information on creating a prediction service with BentoML.
+
+The following service example creates a ``predict`` API endpoint that accepts an image as input 
+and return JSON data as output. Within the API function, Keras model runner created from the 
+previously saved ResNet50 model is used for inference.
 
 .. code-block:: python
 

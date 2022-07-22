@@ -39,6 +39,7 @@ THREAD_ENVS = [
     "TF_NUM_INTEROP_THREADS",
     "TF_NUM_INTRAOP_THREADS",
     "BENTOML_NUM_THREAD",
+    "RAYON_RS_NUM_CPUS",
 ]  # TODO(jiang): make it configurable?
 
 

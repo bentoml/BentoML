@@ -35,16 +35,14 @@ class Strategy(abc.ABC):
 
 
 THREAD_ENVS = [
-    "BENTOML_NUM_THREAD", # For custom Runner code
-    "OMP_NUM_THREADS", # openmp
-    "OPENBLAS_NUM_THREADS", # openblas,
-    "MKL_NUM_THREADS", # mkl,
-    "VECLIB_MAXIMUM_THREADS", # accelerate,
-    "NUMEXPR_NUM_THREADS", # numexpr
-    
+    "BENTOML_NUM_THREAD",  # For custom Runner code
+    "OMP_NUM_THREADS",  # openmp
+    "OPENBLAS_NUM_THREADS",  # openblas,
+    "MKL_NUM_THREADS",  # mkl,
+    "VECLIB_MAXIMUM_THREADS",  # accelerate,
+    "NUMEXPR_NUM_THREADS",  # numexpr
     # For huggingface fast tokenizer
     "RAYON_RS_NUM_CPUS",
-    
     # For Tensorflow
     "TF_NUM_INTEROP_THREADS",
     "TF_NUM_INTRAOP_THREADS",

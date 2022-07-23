@@ -1,7 +1,7 @@
 {% extends "base.j2" %}
-{% block SETUP_BENTO_BASE_IMAGE %}
 {% set __cache_apt__ = "/var/cache/apt" %}
 {% set __lib_apt__ = "/var/lib/apt" %}
+{% block SETUP_BENTO_BASE_IMAGE %}
 {{ super() }}
 USER root
 

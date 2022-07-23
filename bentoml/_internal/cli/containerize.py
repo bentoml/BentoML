@@ -33,6 +33,7 @@ def add_containerize_command(cli: click.Group) -> None:
         help="Name and optionally a tag (format: 'name:tag'), defaults to bento tag.",
         required=False,
         callback=validate_tag,
+        multiple=True,
     )
     @click.option(
         "--add-host",

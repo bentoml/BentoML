@@ -6,9 +6,9 @@ import click
 import psutil
 
 from bentoml import load
-
-from ...context import component_context
-from ...configuration.containers import BentoMLContainer
+from bentoml._internal.log import configure_server_logging
+from bentoml._internal.context import component_context
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 
 @click.command()
@@ -29,8 +29,6 @@ def main(
     prometheus_dir: t.Optional[str],
 ):
     component_context.component_name = "dev_api_server"
-
-    from ...log import configure_server_logging
 
     configure_server_logging()
 

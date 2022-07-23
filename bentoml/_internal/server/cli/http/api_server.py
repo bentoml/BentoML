@@ -10,8 +10,7 @@ from urllib.parse import urlparse
 import psutil
 
 import bentoml
-
-from ...context import component_context
+from bentoml._internal.context import component_context
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -72,8 +71,8 @@ def main(
 
     import uvicorn
 
-    from ...log import configure_server_logging
-    from ...configuration.containers import BentoMLContainer
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     configure_server_logging()
 

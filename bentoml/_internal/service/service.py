@@ -18,7 +18,7 @@ from ..io_descriptors import IODescriptor
 if TYPE_CHECKING:
     import grpc
 
-    from bentoml.grpc import service_pb2_grpc
+    from bentoml.grpc.v1 import service_pb2_grpc
 
     from .. import external_typing as ext
     from ..bento import Bento
@@ -99,6 +99,10 @@ class Service:
         t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
     ] = attr.field(init=False, factory=list)
 
+    # gRPC interceptors
+    interceptors: t.List[t.Type[grpc.ServerInterceptor]] = attr.field(
+        init=False, factory=list
+    )
     apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
@@ -207,6 +211,15 @@ class Service:
         pass
 
     @property
+    def grpc_server(self) -> grpc.aio.Server:
+        import grpc
+
+        # from ..server.grpc import get_service_servicer
+
+        server = grpc.aio.server(interceptors=self.interceptors)
+        return server
+
+    @property
     def asgi_app(self) -> "ext.ASGIApp":
         from ..server.service_app import ServiceAppFactory
 
@@ -230,52 +243,10 @@ class Service:
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
-    def get_grpc_servicer(self) -> service_pb2_grpc.BentoServiceServicer:
-        from bentoml.io import Text
-        from bentoml.io import NumpyNdarray
-        from bentoml.grpc import service_pb2
-        from bentoml.grpc import service_pb2_grpc
-
-        type_dict = {"text": Text, "array": NumpyNdarray}
-
-        apis = self.apis
-
-        class BentoServiceServicer(service_pb2_grpc.BentoServiceServicer):
-            async def Call(
-                self,
-                request: service_pb2.Request,
-                context: grpc.ServicerContext,
-            ) -> service_pb2.Response:
-                try:
-                    api = apis[request.api_name]
-                except KeyError:
-                    raise ValueError(
-                        f'Provided api_name "{request.api_name}" is not defined in service."'
-                    )
-                input = request.input
-
-                io_type = input.WhichOneof("payload")
-                if api.input == type_dict[io_type]:
-                    raise ValueError(f"Please provide a {type(api.input).__name__}.")
-
-                if io_type == "text":
-                    input = input.text
-                elif io_type == "array":
-                    input = input.array
-                    input = await api.input.from_grpc_request(input, context)
-                else:
-                    raise ValueError("Invalid input type.")
-
-                output = api.func(input)
-
-                if isinstance(api.output, Text):
-                    output = service_pb2.Payload(text=output)
-                elif isinstance(api.output, NumpyNdarray):
-                    out = await api.output.to_grpc_response(output)
-                    output = service_pb2.Payload(array=out)
-                return service_pb2.RouteCallResponse(output=output)
-
-        return BentoServiceServicer
+    def add_grpc_interceptor(
+        self, interceptor_cls: t.Type[grpc.ServerInterceptor]
+    ) -> None:
+        self.interceptors.append(interceptor_cls)
 
 
 def on_load_bento(svc: Service, bento: Bento):

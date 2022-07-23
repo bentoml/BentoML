@@ -12,7 +12,7 @@ black --config ./pyproject.toml bentoml/ tests/ docs/
 
 INFO "(isort) Reordering imports..."
 
-isort .
+isort bentoml/**/*.py
 
 INFO "(buf) Formatting protobuf..."
 

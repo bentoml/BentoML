@@ -18,10 +18,9 @@ from ..io_descriptors import IODescriptor
 if TYPE_CHECKING:
     import grpc
 
-    from bentoml.grpc.v1 import service_pb2_grpc
-
     from .. import external_typing as ext
     from ..bento import Bento
+    from ..server.grpc_server import GRPCServer
 
     WSGI_APP = t.Callable[
         [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
@@ -35,9 +34,9 @@ def add_inference_api(
     func: t.Callable[..., t.Any],
     input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
     output: IODescriptor[t.Any],
-    name: t.Optional[str],
-    doc: t.Optional[str],
-    route: t.Optional[str],
+    name: str | None,
+    doc: str | None,
+    route: str | None,
 ) -> None:
     api = InferenceAPI(
         name=name if name is not None else func.__name__,
@@ -89,21 +88,22 @@ class Service:
     """
 
     name: str
-    runners: t.List[Runner]
-    models: t.List[Model]
+    runners: list[Runner]
+    models: list[Model]
 
-    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
+    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
-    middlewares: t.List[
-        t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
-    ] = attr.field(init=False, factory=list)
+    middlewares: list[tuple[t.Type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(
+        init=False, factory=list
+    )
 
     # gRPC interceptors
-    interceptors: t.List[t.Type[grpc.ServerInterceptor]] = attr.field(
+    interceptors: list[t.Type[grpc.aio.ServerInterceptor]] = attr.field(
         init=False, factory=list
     )
-    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+
+    apis: dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -117,8 +117,8 @@ class Service:
         self,
         name: str,
         *,
-        runners: t.List[Runner] | None = None,
-        models: t.List[Model] | None = None,
+        runners: list[Runner] | None = None,
+        models: list[Model] | None = None,
     ):
         """
 
@@ -131,7 +131,7 @@ class Service:
 
         # validate runners list contains Runner instances and runner names are unique
         if runners is not None:
-            runner_names: t.Set[str] = set()
+            runner_names: set[str] = set()
             for r in runners:
                 assert isinstance(
                     r, Runner
@@ -160,9 +160,9 @@ class Service:
         self,
         input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
         output: IODescriptor[t.Any],
-        name: t.Optional[str] = None,
-        doc: t.Optional[str] = None,
-        route: t.Optional[str] = None,
+        name: str | None = None,
+        doc: str | None = None,
+        route: str | None = None,
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         """Decorator for adding InferenceAPI to this service"""
 
@@ -211,27 +211,24 @@ class Service:
         pass
 
     @property
-    def grpc_server(self) -> grpc.aio.Server:
-        import grpc
+    def grpc_server(self) -> GRPCServer:
+        from ..server.grpc_server import GRPCServer
 
-        # from ..server.grpc import get_service_servicer
-
-        server = grpc.aio.server(interceptors=self.interceptors)
-        return server
+        return GRPCServer(bento_service=self, interceptors=self.interceptors)()
 
     @property
-    def asgi_app(self) -> "ext.ASGIApp":
+    def asgi_app(self) -> ext.ASGIApp:
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
 
     def mount_asgi_app(
-        self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
+        self, app: ext.ASGIApp, path: str = "/", name: str | None = None
     ) -> None:
         self.mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(
-        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
+        self, app: WSGI_APP, path: str = "/", name: str | None = None
     ) -> None:
         # TODO: Migrate to a2wsgi
         from starlette.middleware.wsgi import WSGIMiddleware
@@ -239,12 +236,12 @@ class Service:
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_asgi_middleware(
-        self, middleware_cls: t.Type["ext.AsgiMiddleware"], **options: t.Any
+        self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
     def add_grpc_interceptor(
-        self, interceptor_cls: t.Type[grpc.ServerInterceptor]
+        self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor]
     ) -> None:
         self.interceptors.append(interceptor_cls)
 

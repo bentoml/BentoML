@@ -1,9 +1,9 @@
 [build-system]
 requires = [
   # sync with setup.cfg until we discard non-pep-517/518
+  "grpcio-tools==1.47.0",
+  "mypy-protobuf==3.2.0",
   "protobuf==3.19.4",
-  "grpcio-tools==1.47.0",  # sync with grpcio in setup.cfg
-  "mypy-protobuf==3.2.0",  # generating stubs for type checking
   "setuptools>=59.0",
   "setuptools-scm[toml]>=6.2.3",
   "wheel",

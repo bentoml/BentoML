@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import typing as t
 import builtins
-import datetime
+from dataclasses import dataclass
 
 from google.protobuf.message import Message
 from google.protobuf.descriptor import FieldDescriptor
-from google.protobuf.duration_pb2 import Duration
-from google.protobuf.timestamp_pb2 import Timestamp
 
 # defines a descriptor type to python native type.
 TYPE_CALLABLE_MAP: dict[int, type] = {
@@ -30,37 +27,37 @@ TYPE_CALLABLE_MAP: dict[int, type] = {
 }
 
 
-def datetime_to_timestamp(dt: datetime.datetime) -> Timestamp:
+@dataclass
+class MethodName:
     """
-    Convert a datetime object to a Timestamp object.
+    Represents a gRPC method name.
+
+    Attributes:
+        package: This is defined by `package foo.bar`,
+        designation in the protocol buffer definition
+        service: service name in protocol buffer
+        definition (eg: service SearchService { ... })
+        method: method name
     """
-    timestamp = Timestamp()
-    timestamp.FromDatetime(dt)
-    return timestamp
+
+    package: str = ""
+    service: str = ""
+    method: str = ""
+
+    @property
+    def fully_qualified_service(self):
+        """return the service name prefixed with package"""
+        return f"{self.package}.{self.service}" if self.package else self.service
 
 
-def timestamp_to_datetime(timestamp: Timestamp) -> datetime.datetime:
+def parse_method_name(method_name: str) -> tuple[MethodName, bool]:
     """
-    Convert a Timestamp object to a datetime object.
+    Infers the grpc service and method name from the handler_call_details.
+    e.g. /package.ServiceName/MethodName
     """
-    return timestamp.ToDatetime()
-
-
-def timedelta_to_duration(td: datetime.timedelta) -> Duration:
-    """
-    Convert a timedelta object to a Duration object.
-    """
-    duration = Duration()
-    duration.FromTimedelta(td)
-    return duration
-
-
-def duration_to_timedelta(duration: Duration) -> datetime.timedelta:
-    """
-    Convert a Duration object to a timedelta object.
-    """
-    return duration.ToTimedelta()
-
-
-def repeated(type_callable: builtins.type) -> t.Callable[[list[t.Any]], list[t.Any]]:
-    return lambda value: [type_callable(v) for v in value]
+    if len(method_name.split("/")) < 3:
+        return MethodName(), False
+    _, package_service, method = method_name.split("/")
+    *packages, service = package_service.rsplit(".", maxsplit=1)
+    package = packages[0] if packages else ""
+    return MethodName(package, service, method), True

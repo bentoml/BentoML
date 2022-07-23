@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package bentoml.grpc.v1;
 
-import "google/protobuf/duration.proto";
-import "google/protobuf/timestamp.proto";
+import "bentoml/grpc/v1/struct.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -15,73 +14,62 @@ option java_package = "com.bentoml.grpc.v1";
 option objc_class_prefix = "SVC";
 option py_generic_services = true;
 
-// Tuple represents a repeated field containing data with same or different datatypes.
-message Tuple {
-  repeated Value value = 1;
-}
-
-// Array contains a dtype which identifies the type of the array.
-// Repeated field for the identified dtype contains the array.
-// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64, complex
-message Array {
-  repeated float float_value = 1;
-  repeated double double_value = 2;
-  repeated bytes bytes_value = 3;
-  repeated bool bool_value = 4;
-  repeated string string_value = 5;
-  repeated uint32 uint32_value = 6;
-  repeated sint32 sint32_value = 7;
-  repeated google.protobuf.Timestamp timestamp_value = 8;
-  repeated google.protobuf.Duration duration_value = 9;
-  repeated Array array_value = 10;
-  repeated Tuple tuple_value = 11;
-  repeated uint64 uint64_value = 12;
-  repeated sint64 sint64_value = 13;
-}
-
-// Value represents a single instance of the supported datatypes.
-// TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64.
-message Value {
-  oneof kind {
-    float float_value = 1;
-    double double_value = 2;
-    bytes bytes_value = 3;
-    bool bool_value = 4;
-    string string_value = 5;
-    uint32 uint32_value = 6;
-    sint32 sint32_value = 7;
-    google.protobuf.Timestamp timestamp_value = 8;
-    google.protobuf.Duration duration_value = 9;
-    Array array_value = 10;
-    Tuple tuple_value = 11;
-    uint64 uint64_value = 12;
-    sint64 sint64_value = 13;
-  }
-  repeated string dataframe_columns = 101;
-  repeated string dataframe_indices = 102;
-
-  reserved 16 to 100, 103 to 100000;
-}
-
 // a gRPC BentoServer.
 service BentoService {
+  // Check server liveliness.
+  rpc ServerLive(ServerLiveRequest) returns (ServerLiveResponse) {}
+
+  // Check server readiness
+  rpc ServerReady(ServerReadyRequest) returns (ServerReadyResponse) {}
+
   // Call handles unary API.
-  rpc Call(Request) returns (Response) {}
+  rpc Call(CallRequest) returns (CallResponse) {}
+
+  // CallStream handles streaming API.
+  rpc CallStream(stream CallStreamRequest) returns (stream CallStreamResponse) {}
 }
 
-// Request represents a request payload that user send
-// to the BentoService.
-message Request {
+// request for ServerLive that takes no arguments.
+message ServerLiveRequest {}
+
+// response for ServerLive returns a boolean determine server's liveliness.
+message ServerLiveResponse {
+  bool live = 1;
+}
+
+// request for ServerReady that takes no arguments.
+message ServerReadyRequest {}
+
+// response for ServerReady returns a boolean determine server's readiness.
+message ServerReadyResponse {
+  bool ready = 1;
+}
+
+// Request for Call.
+message CallRequest {
   // a given API route the rpc request is sent to.
   string api_name = 1;
 
   // representation of the input value.
-  Value input = 2;
+  bentoml.grpc.v1.StructuredValue contents = 2;
 }
 
-// Response represents response payload that user receive
-// from the BentoService.
-message Response {
+// Response from Call.
+message CallResponse {
   // representation of the output value.
-  Value output = 1;
+  bentoml.grpc.v1.StructuredValue contents = 1;
+}
+
+// Request message for CallStream.
+message CallStreamRequest {
+  CallRequest stream_inputs = 1;
+}
+
+// Response message for CallStream.
+message CallStreamResponse {
+  // message describing the error. Empty message signals the call was successful without error.
+  string error_message = 1;
+
+  // representation of the output value.
+  CallResponse stream_outputs = 2;
 }

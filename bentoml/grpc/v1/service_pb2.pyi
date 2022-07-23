@@ -3,222 +3,199 @@
 isort:skip_file
 """
 import abc
+import bentoml.grpc.v1.struct_pb2
 import builtins
 import concurrent.futures
 import google.protobuf.descriptor
-import google.protobuf.duration_pb2
-import google.protobuf.internal.containers
 import google.protobuf.message
 import google.protobuf.service
-import google.protobuf.timestamp_pb2
 import typing
 import typing_extensions
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
-class Tuple(google.protobuf.message.Message):
-    """Tuple represents a repeated field containing data with same or different datatypes."""
+class ServerLiveRequest(google.protobuf.message.Message):
+    """request for ServerLive that takes no arguments."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    VALUE_FIELD_NUMBER: builtins.int
-    @property
-    def value(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Value]: ...
+    def __init__(self,
+        ) -> None: ...
+global___ServerLiveRequest = ServerLiveRequest
+
+class ServerLiveResponse(google.protobuf.message.Message):
+    """response for ServerLive returns a boolean determine server's liveliness."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    LIVE_FIELD_NUMBER: builtins.int
+    live: builtins.bool
     def __init__(self,
         *,
-        value: typing.Optional[typing.Iterable[global___Value]] = ...,
+        live: builtins.bool = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["value",b"value"]) -> None: ...
-global___Tuple = Tuple
+    def ClearField(self, field_name: typing_extensions.Literal["live",b"live"]) -> None: ...
+global___ServerLiveResponse = ServerLiveResponse
 
-class Array(google.protobuf.message.Message):
-    """Array contains a dtype which identifies the type of the array.
-    Repeated field for the identified dtype contains the array.
-    TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64, complex
-    """
+class ServerReadyRequest(google.protobuf.message.Message):
+    """request for ServerReady that takes no arguments."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    FLOAT_VALUE_FIELD_NUMBER: builtins.int
-    DOUBLE_VALUE_FIELD_NUMBER: builtins.int
-    BYTES_VALUE_FIELD_NUMBER: builtins.int
-    BOOL_VALUE_FIELD_NUMBER: builtins.int
-    STRING_VALUE_FIELD_NUMBER: builtins.int
-    UINT32_VALUE_FIELD_NUMBER: builtins.int
-    SINT32_VALUE_FIELD_NUMBER: builtins.int
-    TIMESTAMP_VALUE_FIELD_NUMBER: builtins.int
-    DURATION_VALUE_FIELD_NUMBER: builtins.int
-    ARRAY_VALUE_FIELD_NUMBER: builtins.int
-    TUPLE_VALUE_FIELD_NUMBER: builtins.int
-    UINT64_VALUE_FIELD_NUMBER: builtins.int
-    SINT64_VALUE_FIELD_NUMBER: builtins.int
-    @property
-    def float_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]: ...
-    @property
-    def double_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]: ...
-    @property
-    def bytes_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bytes]: ...
-    @property
-    def bool_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bool]: ...
-    @property
-    def string_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
-    @property
-    def uint32_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]: ...
-    @property
-    def sint32_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]: ...
-    @property
-    def timestamp_value(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[google.protobuf.timestamp_pb2.Timestamp]: ...
-    @property
-    def duration_value(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[google.protobuf.duration_pb2.Duration]: ...
-    @property
-    def array_value(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Array]: ...
-    @property
-    def tuple_value(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Tuple]: ...
-    @property
-    def uint64_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]: ...
-    @property
-    def sint64_value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]: ...
+    def __init__(self,
+        ) -> None: ...
+global___ServerReadyRequest = ServerReadyRequest
+
+class ServerReadyResponse(google.protobuf.message.Message):
+    """response for ServerReady returns a boolean determine server's readiness."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    READY_FIELD_NUMBER: builtins.int
+    ready: builtins.bool
     def __init__(self,
         *,
-        float_value: typing.Optional[typing.Iterable[builtins.float]] = ...,
-        double_value: typing.Optional[typing.Iterable[builtins.float]] = ...,
-        bytes_value: typing.Optional[typing.Iterable[builtins.bytes]] = ...,
-        bool_value: typing.Optional[typing.Iterable[builtins.bool]] = ...,
-        string_value: typing.Optional[typing.Iterable[typing.Text]] = ...,
-        uint32_value: typing.Optional[typing.Iterable[builtins.int]] = ...,
-        sint32_value: typing.Optional[typing.Iterable[builtins.int]] = ...,
-        timestamp_value: typing.Optional[typing.Iterable[google.protobuf.timestamp_pb2.Timestamp]] = ...,
-        duration_value: typing.Optional[typing.Iterable[google.protobuf.duration_pb2.Duration]] = ...,
-        array_value: typing.Optional[typing.Iterable[global___Array]] = ...,
-        tuple_value: typing.Optional[typing.Iterable[global___Tuple]] = ...,
-        uint64_value: typing.Optional[typing.Iterable[builtins.int]] = ...,
-        sint64_value: typing.Optional[typing.Iterable[builtins.int]] = ...,
+        ready: builtins.bool = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value"]) -> None: ...
-global___Array = Array
+    def ClearField(self, field_name: typing_extensions.Literal["ready",b"ready"]) -> None: ...
+global___ServerReadyResponse = ServerReadyResponse
 
-class Value(google.protobuf.message.Message):
-    """Value represents a single instance of the supported datatypes.
-    TODO: int32, int64, fixed32, fixed64, sfixed32, sfixed64.
-    """
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    FLOAT_VALUE_FIELD_NUMBER: builtins.int
-    DOUBLE_VALUE_FIELD_NUMBER: builtins.int
-    BYTES_VALUE_FIELD_NUMBER: builtins.int
-    BOOL_VALUE_FIELD_NUMBER: builtins.int
-    STRING_VALUE_FIELD_NUMBER: builtins.int
-    UINT32_VALUE_FIELD_NUMBER: builtins.int
-    SINT32_VALUE_FIELD_NUMBER: builtins.int
-    TIMESTAMP_VALUE_FIELD_NUMBER: builtins.int
-    DURATION_VALUE_FIELD_NUMBER: builtins.int
-    ARRAY_VALUE_FIELD_NUMBER: builtins.int
-    TUPLE_VALUE_FIELD_NUMBER: builtins.int
-    UINT64_VALUE_FIELD_NUMBER: builtins.int
-    SINT64_VALUE_FIELD_NUMBER: builtins.int
-    DATAFRAME_COLUMNS_FIELD_NUMBER: builtins.int
-    DATAFRAME_INDICES_FIELD_NUMBER: builtins.int
-    float_value: builtins.float
-    double_value: builtins.float
-    bytes_value: builtins.bytes
-    bool_value: builtins.bool
-    string_value: typing.Text
-    uint32_value: builtins.int
-    sint32_value: builtins.int
-    @property
-    def timestamp_value(self) -> google.protobuf.timestamp_pb2.Timestamp: ...
-    @property
-    def duration_value(self) -> google.protobuf.duration_pb2.Duration: ...
-    @property
-    def array_value(self) -> global___Array: ...
-    @property
-    def tuple_value(self) -> global___Tuple: ...
-    uint64_value: builtins.int
-    sint64_value: builtins.int
-    @property
-    def dataframe_columns(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
-    @property
-    def dataframe_indices(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
-    def __init__(self,
-        *,
-        float_value: builtins.float = ...,
-        double_value: builtins.float = ...,
-        bytes_value: builtins.bytes = ...,
-        bool_value: builtins.bool = ...,
-        string_value: typing.Text = ...,
-        uint32_value: builtins.int = ...,
-        sint32_value: builtins.int = ...,
-        timestamp_value: typing.Optional[google.protobuf.timestamp_pb2.Timestamp] = ...,
-        duration_value: typing.Optional[google.protobuf.duration_pb2.Duration] = ...,
-        array_value: typing.Optional[global___Array] = ...,
-        tuple_value: typing.Optional[global___Tuple] = ...,
-        uint64_value: builtins.int = ...,
-        sint64_value: builtins.int = ...,
-        dataframe_columns: typing.Optional[typing.Iterable[typing.Text]] = ...,
-        dataframe_indices: typing.Optional[typing.Iterable[typing.Text]] = ...,
-        ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","kind",b"kind","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["array_value",b"array_value","bool_value",b"bool_value","bytes_value",b"bytes_value","dataframe_columns",b"dataframe_columns","dataframe_indices",b"dataframe_indices","double_value",b"double_value","duration_value",b"duration_value","float_value",b"float_value","kind",b"kind","sint32_value",b"sint32_value","sint64_value",b"sint64_value","string_value",b"string_value","timestamp_value",b"timestamp_value","tuple_value",b"tuple_value","uint32_value",b"uint32_value","uint64_value",b"uint64_value"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["kind",b"kind"]) -> typing.Optional[typing_extensions.Literal["float_value","double_value","bytes_value","bool_value","string_value","uint32_value","sint32_value","timestamp_value","duration_value","array_value","tuple_value","uint64_value","sint64_value"]]: ...
-global___Value = Value
-
-class Request(google.protobuf.message.Message):
-    """Request represents a request payload that user send
-    to the BentoService.
-    """
+class CallRequest(google.protobuf.message.Message):
+    """Request for Call."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
     API_NAME_FIELD_NUMBER: builtins.int
-    INPUT_FIELD_NUMBER: builtins.int
+    CONTENTS_FIELD_NUMBER: builtins.int
     api_name: typing.Text
     """a given API route the rpc request is sent to."""
 
     @property
-    def input(self) -> global___Value:
+    def contents(self) -> bentoml.grpc.v1.struct_pb2.StructuredValue:
         """representation of the input value."""
         pass
     def __init__(self,
         *,
         api_name: typing.Text = ...,
-        input: typing.Optional[global___Value] = ...,
+        contents: typing.Optional[bentoml.grpc.v1.struct_pb2.StructuredValue] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["input",b"input"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["api_name",b"api_name","input",b"input"]) -> None: ...
-global___Request = Request
+    def HasField(self, field_name: typing_extensions.Literal["contents",b"contents"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["api_name",b"api_name","contents",b"contents"]) -> None: ...
+global___CallRequest = CallRequest
 
-class Response(google.protobuf.message.Message):
-    """Response represents response payload that user receive
-    from the BentoService.
-    """
+class CallResponse(google.protobuf.message.Message):
+    """Response from Call."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    OUTPUT_FIELD_NUMBER: builtins.int
+    CONTENTS_FIELD_NUMBER: builtins.int
     @property
-    def output(self) -> global___Value:
+    def contents(self) -> bentoml.grpc.v1.struct_pb2.StructuredValue:
         """representation of the output value."""
         pass
     def __init__(self,
         *,
-        output: typing.Optional[global___Value] = ...,
+        contents: typing.Optional[bentoml.grpc.v1.struct_pb2.StructuredValue] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["output",b"output"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["output",b"output"]) -> None: ...
-global___Response = Response
+    def HasField(self, field_name: typing_extensions.Literal["contents",b"contents"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["contents",b"contents"]) -> None: ...
+global___CallResponse = CallResponse
+
+class CallStreamRequest(google.protobuf.message.Message):
+    """Request message for CallStream."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    STREAM_INPUTS_FIELD_NUMBER: builtins.int
+    @property
+    def stream_inputs(self) -> global___CallRequest: ...
+    def __init__(self,
+        *,
+        stream_inputs: typing.Optional[global___CallRequest] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["stream_inputs",b"stream_inputs"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["stream_inputs",b"stream_inputs"]) -> None: ...
+global___CallStreamRequest = CallStreamRequest
+
+class CallStreamResponse(google.protobuf.message.Message):
+    """Response message for CallStream."""
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    ERROR_MESSAGE_FIELD_NUMBER: builtins.int
+    STREAM_OUTPUTS_FIELD_NUMBER: builtins.int
+    error_message: typing.Text
+    """message describing the error. Empty message signals the call was successful without error."""
+
+    @property
+    def stream_outputs(self) -> global___CallResponse:
+        """representation of the output value."""
+        pass
+    def __init__(self,
+        *,
+        error_message: typing.Text = ...,
+        stream_outputs: typing.Optional[global___CallResponse] = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["stream_outputs",b"stream_outputs"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["error_message",b"error_message","stream_outputs",b"stream_outputs"]) -> None: ...
+global___CallStreamResponse = CallStreamResponse
 
 class BentoService(google.protobuf.service.Service, metaclass=abc.ABCMeta):
     """a gRPC BentoServer."""
     DESCRIPTOR: google.protobuf.descriptor.ServiceDescriptor
     @abc.abstractmethod
+    def ServerLive(
+        inst: BentoService,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___ServerLiveRequest,
+        callback: typing.Optional[typing.Callable[[global___ServerLiveResponse], None]],
+    ) -> concurrent.futures.Future[global___ServerLiveResponse]:
+        """Check server liveliness."""
+        pass
+    @abc.abstractmethod
+    def ServerReady(
+        inst: BentoService,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___ServerReadyRequest,
+        callback: typing.Optional[typing.Callable[[global___ServerReadyResponse], None]],
+    ) -> concurrent.futures.Future[global___ServerReadyResponse]:
+        """Check server readiness"""
+        pass
+    @abc.abstractmethod
     def Call(
         inst: BentoService,
         rpc_controller: google.protobuf.service.RpcController,
-        request: global___Request,
-        callback: typing.Optional[typing.Callable[[global___Response], None]],
-    ) -> concurrent.futures.Future[global___Response]:
+        request: global___CallRequest,
+        callback: typing.Optional[typing.Callable[[global___CallResponse], None]],
+    ) -> concurrent.futures.Future[global___CallResponse]:
         """Call handles unary API."""
+        pass
+    @abc.abstractmethod
+    def CallStream(
+        inst: BentoService,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___CallStreamRequest,
+        callback: typing.Optional[typing.Callable[[global___CallStreamResponse], None]],
+    ) -> concurrent.futures.Future[global___CallStreamResponse]:
+        """CallStream handles streaming API."""
         pass
 class BentoService_Stub(BentoService):
     """a gRPC BentoServer."""
     def __init__(self, rpc_channel: google.protobuf.service.RpcChannel) -> None: ...
     DESCRIPTOR: google.protobuf.descriptor.ServiceDescriptor
+    def ServerLive(
+        inst: BentoService_Stub,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___ServerLiveRequest,
+        callback: typing.Optional[typing.Callable[[global___ServerLiveResponse], None]] = None,
+    ) -> concurrent.futures.Future[global___ServerLiveResponse]:
+        """Check server liveliness."""
+        pass
+    def ServerReady(
+        inst: BentoService_Stub,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___ServerReadyRequest,
+        callback: typing.Optional[typing.Callable[[global___ServerReadyResponse], None]] = None,
+    ) -> concurrent.futures.Future[global___ServerReadyResponse]:
+        """Check server readiness"""
+        pass
     def Call(
         inst: BentoService_Stub,
         rpc_controller: google.protobuf.service.RpcController,
-        request: global___Request,
-        callback: typing.Optional[typing.Callable[[global___Response], None]] = None,
-    ) -> concurrent.futures.Future[global___Response]:
+        request: global___CallRequest,
+        callback: typing.Optional[typing.Callable[[global___CallResponse], None]] = None,
+    ) -> concurrent.futures.Future[global___CallResponse]:
         """Call handles unary API."""
+        pass
+    def CallStream(
+        inst: BentoService_Stub,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___CallStreamRequest,
+        callback: typing.Optional[typing.Callable[[global___CallStreamResponse], None]] = None,
+    ) -> concurrent.futures.Future[global___CallStreamResponse]:
+        """CallStream handles streaming API."""
         pass

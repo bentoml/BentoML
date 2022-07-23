@@ -1,12 +1,7 @@
 version: v1
 lint:
   use:
-    - BASIC
-    - ENUM_VALUE_PREFIX
-    - ENUM_ZERO_VALUE_SUFFIX
-    - FILE_LOWER_SNAKE_CASE
-    - PACKAGE_VERSION_SUFFIX
-    - SERVICE_SUFFIX
+    - DEFAULT
     - COMMENT_ENUM
     - COMMENT_MESSAGE
     - COMMENT_RPC
@@ -14,8 +9,10 @@ lint:
   except:
     - DIRECTORY_SAME_PACKAGE
   ignore_only:
-    PACKAGE_DIRECTORY_MATCH:
+    DEFAULT:
       - bentoml/grpc/v1/service_test.proto
+    ENUM_VALUE_PREFIX:
+      - bentoml/grpc/v1/types.proto
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: true
   rpc_allow_google_protobuf_empty_requests: true

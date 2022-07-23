@@ -126,7 +126,7 @@ class RunnerAppFactory(BaseAppFactory):
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore[import]
         from starlette.middleware import Middleware
 
-        def client_request_hook(span: Span, _scope: t.Dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span, _: t.Dict[str, t.Any]) -> None:
             if span is not None:
                 span_id: int = span.context.span_id
                 trace_context.request_id = span_id
@@ -167,7 +167,7 @@ class RunnerAppFactory(BaseAppFactory):
         from starlette.responses import Response
 
         async def _run(requests: t.Iterable[Request]) -> list[Response]:
-            assert self._is_ready
+            assert self._probe.is_ready
             if not requests:
                 return []
             params_list = await asyncio.gather(
@@ -213,7 +213,7 @@ class RunnerAppFactory(BaseAppFactory):
         from starlette.responses import Response
 
         async def _run(request: Request) -> Response:
-            assert self._is_ready
+            assert self._probe.is_ready
 
             params = await multipart_to_payload_params(request)
             params = params.map(AutoContainer.from_payload)

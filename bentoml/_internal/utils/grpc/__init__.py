@@ -1,30 +1,15 @@
 from __future__ import annotations
 
-import builtins
+import enum
 from dataclasses import dataclass
 
-from google.protobuf.message import Message
-from google.protobuf.descriptor import FieldDescriptor
 
-# defines a descriptor type to python native type.
-TYPE_CALLABLE_MAP: dict[int, type] = {
-    FieldDescriptor.TYPE_DOUBLE: builtins.float,
-    FieldDescriptor.TYPE_FLOAT: builtins.float,
-    FieldDescriptor.TYPE_INT32: builtins.int,
-    FieldDescriptor.TYPE_INT64: builtins.int,
-    FieldDescriptor.TYPE_UINT32: builtins.int,
-    FieldDescriptor.TYPE_UINT64: builtins.int,
-    FieldDescriptor.TYPE_SINT32: builtins.int,
-    FieldDescriptor.TYPE_SINT64: builtins.int,
-    FieldDescriptor.TYPE_FIXED32: builtins.int,
-    FieldDescriptor.TYPE_FIXED64: builtins.int,
-    FieldDescriptor.TYPE_SFIXED32: builtins.int,
-    FieldDescriptor.TYPE_SFIXED64: builtins.int,
-    FieldDescriptor.TYPE_BOOL: builtins.bool,
-    FieldDescriptor.TYPE_STRING: builtins.str,
-    FieldDescriptor.TYPE_BYTES: builtins.bytes,
-    FieldDescriptor.TYPE_ENUM: builtins.int,
-}
+class RpcMethodType(str, enum.Enum):
+    UNARY = "UNARY"
+    CLIENT_STREAMING = "CLIENT_STREAMING"
+    SERVER_STREAMING = "SERVER_STREAMING"
+    BIDI_STREAMING = "BIDI_STREAMING"
+    UNKNOWN = "UNKNOWN"
 
 
 @dataclass
@@ -61,3 +46,16 @@ def parse_method_name(method_name: str) -> tuple[MethodName, bool]:
     *packages, service = package_service.rsplit(".", maxsplit=1)
     package = packages[0] if packages else ""
     return MethodName(package, service, method), True
+
+
+def get_method_type(request_streaming: bool, response_streaming: bool) -> str:
+    if not request_streaming and not response_streaming:
+        return RpcMethodType.UNARY
+    elif not request_streaming and response_streaming:
+        return RpcMethodType.SERVER_STREAMING
+    elif request_streaming and not response_streaming:
+        return RpcMethodType.CLIENT_STREAMING
+    elif request_streaming and response_streaming:
+        return RpcMethodType.BIDI_STREAMING
+    else:
+        return RpcMethodType.UNKNOWN

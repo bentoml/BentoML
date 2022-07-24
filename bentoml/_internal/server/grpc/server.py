@@ -9,10 +9,10 @@ import attr
 import grpc
 from simple_di import Provide
 
-from ..configuration.containers import BentoMLContainer
+from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ..service import Service
+    from ...service import Service
 
 logger = logging.getLogger(__name__)
 

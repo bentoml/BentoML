@@ -4,19 +4,13 @@ import sys
 import json
 import socket
 import typing as t
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+import click
 import psutil
 
 import bentoml
-
-from ...context import component_context
-
-if TYPE_CHECKING:
-    from asgiref.typing import ASGI3Application
-
-import click
+from bentoml._internal.context import component_context
 
 
 @click.command()
@@ -72,8 +66,8 @@ def main(
 
     import uvicorn
 
-    from ...log import configure_server_logging
-    from ...configuration.containers import BentoMLContainer
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     configure_server_logging()
 
@@ -136,7 +130,7 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    app = t.cast("ASGI3Application", svc.asgi_app)
+    app = svc.asgi_app
     assert parsed.scheme == "fd"
 
     # skip the uvicorn internal supervisor

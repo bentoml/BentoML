@@ -16,4 +16,4 @@ isort .
 
 INFO "(buf) Formatting protobuf..."
 
-docker run --rm --volume "$(pwd)":/workspace --workdir /workspace bufbuild/buf --config "/workspace/bentoml/protos/buf.yaml" format -w /workspace/bentoml/protos/
+docker run --rm --volume "$GIT_ROOT":/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w "/workspace/bentoml/"

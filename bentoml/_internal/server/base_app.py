@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 from starlette.responses import PlainTextResponse
 from starlette.exceptions import HTTPException
 
+from .handlers import Probe
+
 if TYPE_CHECKING:
     from starlette.routing import BaseRoute
     from starlette.requests import Request
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAppFactory(abc.ABC):
-    _is_ready: bool = False
+    _probe: Probe = Probe()
 
     @property
     @abc.abstractmethod
@@ -27,24 +29,23 @@ class BaseAppFactory(abc.ABC):
 
     @property
     def on_startup(self) -> t.List[t.Callable[[], None]]:
-        return [self.mark_as_ready]
+        return [self._probe.mark_as_ready, self._probe.mark_as_live]
 
     @property
     def on_shutdown(self) -> t.List[t.Callable[[], None]]:
         return []
-
-    def mark_as_ready(self) -> None:
-        self._is_ready = True
 
     async def livez(self, _: "Request") -> "Response":
         """
         Health check for BentoML API server.
         Make sure it works with Kubernetes liveness probe
         """
-        return PlainTextResponse("\n", status_code=200)
+        if self._probe.is_live:
+            return PlainTextResponse("\n", status_code=200)
+        raise HTTPException(500)
 
     async def readyz(self, _: "Request") -> "Response":
-        if self._is_ready:
+        if self._probe.is_ready:
             return PlainTextResponse("\n", status_code=200)
         raise HTTPException(500)
 

@@ -4,14 +4,10 @@ import sys
 import json
 import socket
 import typing as t
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import click
 import psutil
-
-if TYPE_CHECKING:
-    from asgiref.typing import ASGI3Application
 
 
 @click.command()
@@ -133,13 +129,12 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    app = t.cast("ASGI3Application", svc.asgi_app)
     assert parsed.scheme == "fd"
 
     # skip the uvicorn internal supervisor
     fd = int(parsed.netloc)
     sock = socket.socket(fileno=fd)
-    config = uvicorn.Config(app, **uvicorn_options)
+    config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
     uvicorn.Server(config).run(sockets=[sock])
 
 

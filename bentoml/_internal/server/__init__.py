@@ -9,7 +9,6 @@ import typing as t
 import logging
 import tempfile
 import contextlib
-from typing import TYPE_CHECKING
 from pathlib import Path
 
 import psutil
@@ -23,12 +22,8 @@ from ..utils import reserve_free_port
 from ..resource import CpuResource
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
-from ..utils.circus import create_circus_socket_from_uri
 from ..utils.analytics import track_serve
 from ..configuration.containers import BentoMLContainer
-
-if TYPE_CHECKING:
-    from circus.sockets import CircusSocket
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +101,6 @@ def serve_development(
     prometheus_dir = ensure_prometheus_dir()
 
     watchers: list[Watcher] = []
-    circus_sockets: list[CircusSocket] = []
 
     if grpc:
         watcher_name = "grpc_dev_api_server"
@@ -117,6 +111,7 @@ def serve_development(
         script_to_use = SCRIPT_DEV_API_SERVER
         socket_path = f"fd://$(circus.sockets.{API_SERVER_NAME})"
 
+    circus_sockets: list[CircusSocket] = []
     circus_sockets.append(
         CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
     )

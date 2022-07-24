@@ -9,7 +9,6 @@ import attr
 import grpc
 from simple_di import Provide
 
-from .handlers import Probe
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -41,12 +40,7 @@ class GRPCServer:
             interceptors=[interceptor() for interceptor in interceptors]
         )
 
-    # create a probe for checking liveliness and readiness of the server.
-    probe: Probe = attr.field(init=False, factory=lambda: Probe())
-
     def startup(self) -> None:
-        self.probe.mark_as_live()
-
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 runner.init_local(quiet=True)
@@ -55,8 +49,6 @@ class GRPCServer:
                 runner.init_client()
 
     def shutdown(self) -> None:
-        self.probe.mark_as_dead()
-
         for runner in self.bento_service.runners:
             runner.destroy()
 
@@ -83,8 +75,6 @@ class GRPCServer:
             interceptors=self.interceptors,
             options=self.options,
         )
-
-        self.probe.mark_as_ready()
 
         return self.server
 

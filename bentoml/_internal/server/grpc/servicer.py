@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing as t
 import asyncio
 from typing import TYPE_CHECKING
 
@@ -12,8 +11,6 @@ from bentoml.exceptions import MissingDependencyException
 from .utils import handle_grpc_error
 
 if TYPE_CHECKING:
-    from bentoml.grpc.v1.service_pb2_grpc import BentoServiceServicer
-
     from .utils import BentoServicerContext
     from ..grpc_server import GRPCServer
 
@@ -68,22 +65,6 @@ def add_bentoservice_servicer(server_cls: GRPCServer) -> None:
 
     class BentoServiceServicer(_service_pb2_grpc.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
-
-        @handle_grpc_error
-        def ServerLive(
-            self,
-            request: _service_pb2.ServerLiveRequest,
-            context: BentoServicerContext,
-        ) -> _service_pb2.ServerLiveResponse:
-            return _service_pb2.ServerLiveResponse(live=server_cls.probe.is_live)
-
-        @handle_grpc_error
-        def ServerReady(
-            self,
-            request: _service_pb2.ServerReadyRequest,
-            context: BentoServicerContext,
-        ) -> _service_pb2.ServerReadyResponse:
-            return _service_pb2.ServerReadyResponse(ready=server_cls.probe.is_ready)
 
         @handle_grpc_error
         async def Call(

@@ -34,6 +34,7 @@ exclude = '''
   | bentoml/_version.py
 )
 '''
+extend-exclude = "(_pb2.py$|_pb2_grpc.py$)"
 
 [tool.pytest.ini_options]
 addopts = "-rfEX -p pytester -p no:warnings -x"
@@ -124,7 +125,7 @@ skip_glob = ["typings/*", "docs/*", "bentoml/grpc/*"]
 [tool.pyright]
 pythonVersion = "3.10"
 include = ["bentoml"]
-exclude = ['bentoml/_version.py','bentoml/__main__.py','bentoml/_internal/external_typing','bentoml/grpc']
+exclude = ['bentoml/_version.py','bentoml/__main__.py','bentoml/_internal/external_typing','bentoml/grpc', '**/*_pb2.py', "**/*_pb2_grpc.py"]
 analysis.useLibraryCodeForTypes = true
 strictListInference = true
 strictDictionaryInference = true

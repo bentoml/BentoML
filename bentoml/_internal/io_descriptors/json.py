@@ -14,6 +14,11 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import MissingDependencyException
 
+try:
+    import pydantic
+except ImportError:
+    pydantic = None
+
 if TYPE_CHECKING:
     from types import UnionType
 
@@ -67,58 +72,48 @@ class JSON(IODescriptor[JSONType]):
 
     .. code-block:: python
 
-        # sklearn_svc.py
-        import pandas as pd
         import numpy as np
-        from bentoml.io import PandasDataFrame, JSON
-        import bentoml.sklearn
+        import pandas as pd
+        import bentoml
+        from bentoml.io import NumpyNdarray, JSON
+        from pydantic import BaseModel
 
-        input_spec = PandasDataFrame.from_sample(pd.DataFrame(np.array([[5,4,3,2]])))
+        iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
-        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
+        svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-        svc = bentoml.Service("iris-classifier", runners=[runner])
+        class IrisFeatures(BaseModel):
+            sepal_len: float
+            sepal_width: float
+            petal_len: float
+            petal_width: float
 
-        @svc.api(input=input_spec, output=JSON())
-        def predict(input_arr: pd.DataFrame):
-            res = runner.run(input_arr)  # type: np.ndarray
-            return {"res":pd.DataFrame(res).to_json(orient='record')}
+        input_spec = JSON(pydantic_model=IrisFeatures)
+
+        @svc.api(input=input_spec, output=NumpyNdarray())
+        def classify(input_data: IrisFeatures) -> np.ndarray:
+            input_df = pd.DataFrame([input_data.dict()])
+            return iris_clf_runner.predict.run(input_df)
 
     Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
-        % bentoml serve ./sklearn_svc.py:svc --auto-reload
+        % bentoml serve ./service.py:svc
 
-        (Press CTRL+C to quit)
-        [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
-        [INFO] API Server running on http://0.0.0.0:3000
+        [INFO] [cli] Starting development BentoServer from "service.py:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)
 
     Users can then send requests to the newly started services with any client:
 
-    .. tabs::
+        % curl -X POST -H "content-type: application/json" \
+            --data '{"sepal_len": 6.2, "sepal_width": 3.2, "petal_len": 5.2, "petal_width": 2.2, "abc": 123}' \
+            http://127.0.0.1:3000/classify
 
-        .. code-tab:: python
-
-            import requests
-            requests.post(
-                "http://0.0.0.0:3000/predict",
-                headers={"content-type": "application/json"},
-                data='[{"0":5,"1":4,"2":3,"3":2}]'
-            ).text
-
-        .. code-tab:: bash
-
-            % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:3000/predict
-
-            {"res":"[{\"0\":1}]"}%
+        [2]%
 
     Args:
         pydantic_model (:code:`pydantic.BaseModel`, `optional`, default to :code:`None`):
-            Pydantic model schema.
-        validate_json (:code:`bool`, `optional`, default to :code:`True`): If True, then use
-            Pydantic model specified above to validate given JSON.
+            Pydantic model schema. When used, inference API callback will receive an instance of the specified pydantic_model class
         json_encoder (:code:`Type[json.JSONEncoder]`, default to :code:`~bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
             JSON encoder class.
 
@@ -129,13 +124,10 @@ class JSON(IODescriptor[JSONType]):
     def __init__(
         self,
         pydantic_model: t.Type[pydantic.BaseModel] | None = None,
-        validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
-            try:
-                import pydantic
-            except ImportError:
+            if pydantic is None:
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"
                 )
@@ -144,7 +136,6 @@ class JSON(IODescriptor[JSONType]):
             ), "`pydantic_model` must be a subclass of `pydantic.BaseModel`"
 
         self._pydantic_model = pydantic_model
-        self._validate_json = validate_json
         self._json_encoder = json_encoder
 
     def input_type(self) -> "UnionType":
@@ -165,23 +156,19 @@ class JSON(IODescriptor[JSONType]):
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_str = await request.body()
-        if self._pydantic_model is not None and self._validate_json:
+        try:
+            json_obj = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise BadInput(f"Invalid JSON input received: {e}") from None
+
+        if self._pydantic_model is not None:
             try:
-                import pydantic
-            except ImportError:
-                raise MissingDependencyException(
-                    "`pydantic` must be installed to use `pydantic_model`"
-                ) from None
-            try:
-                pydantic_model = self._pydantic_model.parse_raw(json_str)
+                pydantic_model = self._pydantic_model.parse_obj(json_obj)
                 return pydantic_model
             except pydantic.ValidationError as e:
-                raise BadInput(f"Json validation error: {e}") from None
+                raise BadInput(f"Invalid JSON input received: {e}") from None
         else:
-            try:
-                return json.loads(json_str)
-            except json.JSONDecodeError as e:
-                raise BadInput(f"Json validation error: {e}") from None
+            return json_obj
 
     async def to_http_response(self, obj: JSONType, ctx: Context | None = None):
         json_str = json.dumps(

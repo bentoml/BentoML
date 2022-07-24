@@ -92,7 +92,7 @@ def main(
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,
-            args=["-m", "bentoml._internal.server.cli.api_server"]
+            args=["-m", "bentoml._internal.server.cli.http.api_server"]
             + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
@@ -130,13 +130,12 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    app = svc.asgi_app
     assert parsed.scheme == "fd"
 
     # skip the uvicorn internal supervisor
     fd = int(parsed.netloc)
     sock = socket.socket(fileno=fd)
-    config = uvicorn.Config(app, **uvicorn_options)
+    config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
     uvicorn.Server(config).run(sockets=[sock])
 
 

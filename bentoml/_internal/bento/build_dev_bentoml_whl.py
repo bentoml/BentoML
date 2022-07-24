@@ -44,6 +44,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         )
         try:
             import build.env
+
             from build import ProjectBuilder
         except ModuleNotFoundError:
             raise BentoMLException(

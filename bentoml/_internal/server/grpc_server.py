@@ -69,14 +69,14 @@ class GRPCServer:
             )
         return options
 
-    def __call__(self) -> grpc.aio.Server:
+    def __call__(self) -> GRPCServer:
         self.server = grpc.aio.server(
             futures.ThreadPoolExecutor(self._thread_pool_size),
             interceptors=self.interceptors,
             options=self.options,
         )
 
-        return self.server
+        return self
 
     def add_insecure_port(self, address: str) -> int:
         return self.server.add_insecure_port(address)

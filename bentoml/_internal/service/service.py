@@ -18,9 +18,10 @@ from ..io_descriptors import IODescriptor
 if TYPE_CHECKING:
     import grpc
 
+    from bentoml.protos import service_pb2_grpc
+
     from .. import external_typing as ext
     from ..bento import Bento
-    from ..server.grpc_server import GRPCServer
 
     WSGI_APP = t.Callable[
         [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
@@ -34,9 +35,9 @@ def add_inference_api(
     func: t.Callable[..., t.Any],
     input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
     output: IODescriptor[t.Any],
-    name: str | None,
-    doc: str | None,
-    route: str | None,
+    name: t.Optional[str],
+    doc: t.Optional[str],
+    route: t.Optional[str],
 ) -> None:
     api = InferenceAPI(
         name=name if name is not None else func.__name__,
@@ -88,22 +89,17 @@ class Service:
     """
 
     name: str
-    runners: list[Runner]
-    models: list[Model]
+    runners: t.List[Runner]
+    models: t.List[Model]
 
-    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(
+    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
-    middlewares: list[tuple[t.Type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(
-        init=False, factory=list
-    )
+    middlewares: t.List[
+        t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
+    ] = attr.field(init=False, factory=list)
 
-    # gRPC interceptors
-    interceptors: list[t.Type[grpc.aio.ServerInterceptor]] = attr.field(
-        init=False, factory=list
-    )
-
-    apis: dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -117,8 +113,8 @@ class Service:
         self,
         name: str,
         *,
-        runners: list[Runner] | None = None,
-        models: list[Model] | None = None,
+        runners: t.List[Runner] | None = None,
+        models: t.List[Model] | None = None,
     ):
         """
 
@@ -131,7 +127,7 @@ class Service:
 
         # validate runners list contains Runner instances and runner names are unique
         if runners is not None:
-            runner_names: set[str] = set()
+            runner_names: t.Set[str] = set()
             for r in runners:
                 assert isinstance(
                     r, Runner
@@ -160,9 +156,9 @@ class Service:
         self,
         input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
         output: IODescriptor[t.Any],
-        name: str | None = None,
-        doc: str | None = None,
-        route: str | None = None,
+        name: t.Optional[str] = None,
+        doc: t.Optional[str] = None,
+        route: t.Optional[str] = None,
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         """Decorator for adding InferenceAPI to this service"""
 
@@ -211,24 +207,18 @@ class Service:
         pass
 
     @property
-    def grpc_server(self) -> GRPCServer:
-        from ..server.grpc_server import GRPCServer
-
-        return GRPCServer(bento_service=self, interceptors=self.interceptors)()
-
-    @property
-    def asgi_app(self) -> ext.ASGIApp:
+    def asgi_app(self) -> "ext.ASGIApp":
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
 
     def mount_asgi_app(
-        self, app: ext.ASGIApp, path: str = "/", name: str | None = None
+        self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
     ) -> None:
         self.mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(
-        self, app: WSGI_APP, path: str = "/", name: str | None = None
+        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
     ) -> None:
         # TODO: Migrate to a2wsgi
         from starlette.middleware.wsgi import WSGIMiddleware
@@ -236,14 +226,56 @@ class Service:
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_asgi_middleware(
-        self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any
+        self, middleware_cls: t.Type["ext.AsgiMiddleware"], **options: t.Any
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
-    def add_grpc_interceptor(
-        self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor]
-    ) -> None:
-        self.interceptors.append(interceptor_cls)
+    def get_grpc_servicer(self) -> service_pb2_grpc.BentoServiceServicer:
+        from bentoml.io import Text
+        from bentoml.io import NumpyNdarray
+        from bentoml.protos import service_pb2
+        from bentoml.protos import service_pb2_grpc
+
+        type_dict = {"text": Text, "array": NumpyNdarray}
+
+        apis = self.apis
+
+        class BentoServiceServicer(service_pb2_grpc.BentoServiceServicer):
+            async def RouteCall(
+                self,
+                request: service_pb2.RouteCallRequest,
+                context: grpc.ServicerContext,
+            ) -> service_pb2.RouteCallResponse:
+                try:
+                    api = apis[request.api_name]
+                except KeyError:
+                    raise ValueError(
+                        f'Provided api_name "{request.api_name}" is not defined in service."'
+                    )
+                input = request.input
+
+                io_type = input.WhichOneof("payload")
+                if api.input == type_dict[io_type]:
+                    raise ValueError(f"Please provide a {type(api.input).__name__}.")
+
+                if io_type == "text":
+                    input = input.text
+                elif io_type == "array":
+                    input = input.array
+                    input = await api.input.from_grpc_request(input, context)
+                else:
+                    raise ValueError("Invalid input type.")
+
+                output = api.func(input)
+
+                if isinstance(api.output, Text):
+                    output = service_pb2.Payload(text=output)
+                elif isinstance(api.output, NumpyNdarray):
+                    out = await api.output.to_grpc_response(output)
+                    output = service_pb2.Payload(array=out)
+                return service_pb2.RouteCallResponse(output=output)
+
+        return BentoServiceServicer
 
 
 def on_load_bento(svc: Service, bento: Bento):

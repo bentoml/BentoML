@@ -7,12 +7,11 @@ import typing as t
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+import click
 import psutil
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
-
-import click
 
 
 @click.command()

@@ -1,124 +1,85 @@
 from __future__ import annotations
 
 import typing as t
+import asyncio
 import logging
-from typing import TYPE_CHECKING
-from concurrent import futures
 
-import attr
 import grpc
-from simple_di import Provide
+from grpc import aio
 
-from ...configuration.containers import BentoMLContainer
-
-if TYPE_CHECKING:
-    from ...service import Service
+from ...utils import cached_property
 
 logger = logging.getLogger(__name__)
 
 
-@attr.define(init=False)
 class GRPCServer:
-    """
-    A light wrapper around grpc.aio.Server.
-    """
-
-    # Set a thread pool size of 10 as default. Subject to change.
-    _thread_pool_size = 10
-    # Set a grace period for the server to stop, default to 5.
-    _grace_period = 5
-
-    interceptors: list[grpc.aio.ServerInterceptor]
+    """An ASGI-like implementation for async gRPC server."""
 
     def __init__(
         self,
-        bento_service: Service,
-        interceptors: t.List[t.Type[grpc.aio.ServerInterceptor]],
+        server: aio.Server,
+        on_startup: t.Sequence[t.Callable[[], t.Any]] | None = None,
+        on_shutdown: t.Sequence[t.Callable[[], t.Any]] | None = None,
+        *,
+        _grace_period: int = 5,
     ):
-        self.bento_service = bento_service
-        self.__attrs_init__(  # type: ignore (unfinished attrs init type)
-            interceptors=[interceptor() for interceptor in interceptors]
-        )
+        self._grace_period = _grace_period
 
-    def startup(self) -> None:
-        if BentoMLContainer.development_mode.get():
-            for runner in self.bento_service.runners:
-                runner.init_local(quiet=True)
-        else:
-            for runner in self.bento_service.runners:
-                runner.init_client()
+        self.server = server
 
-    def shutdown(self) -> None:
-        for runner in self.bento_service.runners:
-            runner.destroy()
+        # define a cleanup future list
+        self._cleanup: list[t.Coroutine[t.Any, t.Any, None]] = []
 
-    @property
-    def options(
-        self,
-        max_message_length: int
-        | None = Provide[BentoMLContainer.grpc.max_message_length],
-    ) -> list[tuple[str, t.Any]]:
-        options: list[tuple[str, t.Any]] = []
-        if max_message_length:
-            options.extend(
-                [
-                    ("grpc.max_message_length", max_message_length),
-                    ("grpc.max_receive_message_length", max_message_length),
-                    ("grpc.max_send_message_length", max_message_length),
-                ]
-            )
-        return options
+        self.on_startup = [] if on_startup is None else list(on_startup)
+        self.on_shutdown = [] if on_shutdown is None else list(on_shutdown)
 
-    def __call__(self) -> GRPCServer:
-        self.server = grpc.aio.server(
-            futures.ThreadPoolExecutor(self._thread_pool_size),
-            interceptors=self.interceptors,
-            options=self.options,
-        )
+    @cached_property
+    def _loop(self) -> asyncio.AbstractEventLoop:
+        return asyncio.get_event_loop()
 
-        return self
+    def run(self, bind_addr: str) -> None:
+        try:
+            self._loop.run_until_complete(self.serve(bind_addr=bind_addr))
+        finally:
+            self._loop.run_until_complete(*self._cleanup)
+            self._loop.close()
 
-    def add_insecure_port(self, address: str) -> int:
-        return self.server.add_insecure_port(address)
+    async def serve(self, bind_addr: str) -> None:
+        self.add_insecure_port(bind_addr)
 
-    def add_secure_port(
-        self, address: str, server_credentials: grpc.ServerCredentials
-    ) -> int:
-        return self.server.add_secure_port(address, server_credentials)
+        await self.startup()
 
-    def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: t.Sequence[grpc.GenericRpcHandler]
-    ) -> None:
-        self.server.add_generic_rpc_handlers(generic_rpc_handlers)
+        self._cleanup.append(self.shutdown())
 
-    async def register_servicer(self):
-        from bentoml._internal.configuration import get_debug_mode
-        from bentoml.grpc.v1.service_pb2_grpc import add_BentoServiceServicer_to_server
+        await self.wait_for_termination()
 
-        from .grpc.servicer import add_health_servicer
-        from .grpc.servicer import add_bentoservice_servicer
-
-        # add health checking servicer.
-        await add_health_servicer(self.server, enable_reflection=get_debug_mode())
-
-        add_BentoServiceServicer_to_server(
-            add_bentoservice_servicer(self)(), self.server
-        )
-
-    async def start(self):
-        self.startup()
-
-        # register all servicer.
-        await self.register_servicer()
+    async def startup(self) -> None:
+        # Running on_startup callback.
+        for handler in self.on_startup:
+            if asyncio.iscoroutinefunction(handler):
+                await handler()
+            else:
+                handler()
 
         await self.server.start()
         logger.debug("GRPC server started.")
 
-    async def stop(self):
-        self.shutdown()
+    async def shutdown(self):
+        # Running on_startup callback.
+        for handler in self.on_shutdown:
+            if asyncio.iscoroutinefunction(handler):
+                await handler()
+            else:
+                handler()
 
         await self.server.stop(grace=self._grace_period)
         logger.debug("GRPC server stopped.")
 
     async def wait_for_termination(self, timeout: int | None = None) -> bool:
         return await self.server.wait_for_termination(timeout=timeout)
+
+    def add_insecure_port(self, address: str) -> int:
+        return self.server.add_insecure_port(address)
+
+    def add_secure_port(self, address: str, credentials: grpc.ServerCredentials) -> int:
+        return self.server.add_secure_port(address, credentials)

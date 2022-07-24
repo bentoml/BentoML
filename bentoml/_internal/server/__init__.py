@@ -11,7 +11,6 @@ import tempfile
 import contextlib
 from typing import TYPE_CHECKING
 from pathlib import Path
-from functools import partial
 
 import psutil
 from simple_di import inject
@@ -24,6 +23,7 @@ from ..utils import reserve_free_port
 from ..resource import CpuResource
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
+from ..utils.circus import create_circus_socket_from_uri
 from ..utils.analytics import track_serve
 from ..configuration.containers import BentoMLContainer
 
@@ -86,14 +86,6 @@ def ensure_prometheus_dir(
     return alternative
 
 
-def create_circus_socket(
-    *, name: str = API_SERVER_NAME, **kwargs: t.Any
-) -> CircusSocket:
-    from circus.sockets import CircusSocket
-
-    return CircusSocket(name=name, **kwargs)
-
-
 @inject
 def serve_development(
     bento_identifier: str,
@@ -108,35 +100,26 @@ def serve_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
 
+    from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
     prometheus_dir = ensure_prometheus_dir()
 
     watchers: list[Watcher] = []
     circus_sockets: list[CircusSocket] = []
-    uds_path = None
-    watcher_name = "dev_api_server"
-
-    create_uds_socket = partial(create_circus_socket, backlog=backlog)
-    create_tcp_socket = partial(
-        create_circus_socket, port=port, host=host, backlog=backlog
-    )
 
     if grpc:
         watcher_name = "grpc_dev_api_server"
         script_to_use = SCRIPT_GRPC_DEV_API_SERVER
-        if psutil.POSIX:
-            uds_path = tempfile.mkdtemp()
-            sockets_path = os.path.join(uds_path, "grpc.sock")
-            assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
-            circus_sockets.append(create_uds_socket(path=sockets_path))
-        elif psutil.WINDOWS:
-            circus_sockets.append(create_tcp_socket())
-        else:
-            raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
+        socket_path = f"tcp://{host}:{port}"
     else:
+        watcher_name = "dev_api_server"
         script_to_use = SCRIPT_DEV_API_SERVER
-        circus_sockets.append(create_tcp_socket())
+        socket_path = f"fd://$(circus.sockets.{API_SERVER_NAME})"
+
+    circus_sockets.append(
+        CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
+    )
 
     watchers.append(
         Watcher(
@@ -147,7 +130,7 @@ def serve_development(
                 script_to_use,
                 bento_identifier,
                 "--bind",
-                f"fd://$(circus.sockets.{API_SERVER_NAME})",
+                socket_path,
                 "--working-dir",
                 working_dir,
                 "--prometheus-dir",
@@ -189,16 +172,12 @@ def serve_development(
     )
 
     with track_serve(svc, production=False):
-        try:
-            arbiter.start(
-                cb=lambda _: logger.info(  # type: ignore
-                    f'Starting development BentoServer from "{bento_identifier}" '
-                    f"running on http://{host}:{port} (Press CTRL+C to quit)"
-                ),
-            )
-        finally:
-            if uds_path:
-                shutil.rmtree(uds_path)
+        arbiter.start(
+            cb=lambda _: logger.info(  # type: ignore
+                f'Starting development BentoServer from "{bento_identifier}" '
+                f"running on http://{host}:{port} (Press CTRL+C to quit)"
+            ),
+        )
 
 
 @inject

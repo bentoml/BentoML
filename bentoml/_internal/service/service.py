@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..bento import Bento
-    from ..server.grpc_server import GRPCServer
+    from ..server.grpc import GRPCServer
 
     WSGI_APP = t.Callable[
         [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
@@ -212,9 +212,9 @@ class Service:
 
     @property
     def grpc_server(self) -> GRPCServer:
-        from ..server.grpc_server import GRPCServer
+        from ..server.grpc_app import GRPCAppFactory
 
-        return GRPCServer(self, interceptors=self.interceptors)()
+        return GRPCAppFactory(self)()
 
     @property
     def asgi_app(self) -> "ext.ASGIApp":

@@ -72,15 +72,16 @@ class JSON(IODescriptor[JSONType]):
 
     .. code-block:: python
 
+        import typing
         import numpy as np
         import pandas as pd
         import bentoml
         from bentoml.io import NumpyNdarray, JSON
         from pydantic import BaseModel
 
-        iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
+        iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
 
-        svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+        svc = bentoml.Service("iris_classifier_pydantic", runners=[iris_clf_runner])
 
         class IrisFeatures(BaseModel):
             sepal_len: float
@@ -88,12 +89,24 @@ class JSON(IODescriptor[JSONType]):
             petal_len: float
             petal_width: float
 
+            # Optional field
+            request_id: typing.Optional[int]
+
+            # Use custom Pydantic config for additional validation options
+            class Config:
+                extra = 'forbid'
+
+
         input_spec = JSON(pydantic_model=IrisFeatures)
 
         @svc.api(input=input_spec, output=NumpyNdarray())
         def classify(input_data: IrisFeatures) -> np.ndarray:
-            input_df = pd.DataFrame([input_data.dict()])
+            if input_data.request_id is not None:
+                print("Received request ID: ", input_data.request_id)
+
+            input_df = pd.DataFrame([input_data.dict(exclude={"request_id"})])
             return iris_clf_runner.predict.run(input_df)
+
 
     Users then can then serve this service with :code:`bentoml serve`:
 
@@ -106,7 +119,7 @@ class JSON(IODescriptor[JSONType]):
     Users can then send requests to the newly started services with any client:
 
         % curl -X POST -H "content-type: application/json" \
-            --data '{"sepal_len": 6.2, "sepal_width": 3.2, "petal_len": 5.2, "petal_width": 2.2, "abc": 123}' \
+            --data '{"sepal_len": 6.2, "sepal_width": 3.2, "petal_len": 5.2, "petal_width": 2.2}' \
             http://127.0.0.1:3000/classify
 
         [2]%

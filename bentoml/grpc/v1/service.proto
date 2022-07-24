@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package bentoml.grpc.v1;
+
+import "bentoml/grpc/v1/struct.proto";
+
+// cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
+option cc_enable_arenas = true;
+option cc_generic_services = true;
+option go_package = "github.com/bentoml/grpc/v1";
+option java_multiple_files = true;
+option java_outer_classname = "ServiceProto";
+option java_package = "com.bentoml.grpc.v1";
+option objc_class_prefix = "SVC";
+option py_generic_services = true;
+
+// a gRPC BentoServer.
+service BentoService {
+  // Check server liveliness.
+  rpc ServerLive(ServerLiveRequest) returns (ServerLiveResponse) {}
+
+  // Check server readiness
+  rpc ServerReady(ServerReadyRequest) returns (ServerReadyResponse) {}
+
+  // Call handles unary API.
+  rpc Call(CallRequest) returns (CallResponse) {}
+
+  // CallStream handles streaming API.
+  rpc CallStream(stream CallStreamRequest) returns (stream CallStreamResponse) {}
+}
+
+// request for ServerLive that takes no arguments.
+message ServerLiveRequest {}
+
+// response for ServerLive returns a boolean determine server's liveliness.
+message ServerLiveResponse {
+  bool live = 1;
+}
+
+// request for ServerReady that takes no arguments.
+message ServerReadyRequest {}
+
+// response for ServerReady returns a boolean determine server's readiness.
+message ServerReadyResponse {
+  bool ready = 1;
+}
+
+// Request for Call.
+message CallRequest {
+  // a given API route the rpc request is sent to.
+  string api_name = 1;
+
+  // representation of the input value.
+  bentoml.grpc.v1.StructuredValue contents = 2;
+}
+
+// Response from Call.
+message CallResponse {
+  // representation of the output value.
+  bentoml.grpc.v1.StructuredValue contents = 1;
+}
+
+// Request message for CallStream.
+message CallStreamRequest {
+  CallRequest stream_inputs = 1;
+}
+
+// Response message for CallStream.
+message CallStreamResponse {
+  // message describing the error. Empty message signals the call was successful without error.
+  string error_message = 1;
+
+  // representation of the output value.
+  CallResponse stream_outputs = 2;
+}

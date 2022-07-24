@@ -54,9 +54,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             builder = ProjectBuilder(os.path.dirname(pyproject))
             builder.python_executable = env.executable
             builder.scripts_dir = env.scripts_dir
-            # install requirements for build_system
             env.install(builder.build_system_requires)
-            # generate wheels
             builder.build("wheel", dist_dir)
             shutil.copytree(dist_dir, target_path)
     else:

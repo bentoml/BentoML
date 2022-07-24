@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import typing as t
-from typing import TYPE_CHECKING
+import asyncio
+from urllib.parse import urlparse
 
 import click
 import psutil
@@ -10,9 +10,6 @@ from bentoml import load
 from bentoml._internal.log import configure_server_logging
 from bentoml._internal.context import component_context
 from bentoml._internal.configuration.containers import BentoMLContainer
-
-if TYPE_CHECKING:
-    from ...grpc_server import GRPCServer
 
 
 @click.command()
@@ -28,9 +25,8 @@ def main(
     bento_identifier: str,
     bind: str,
     working_dir: str | None,
-    prometheus_dir: t.Optional[str],
+    prometheus_dir: str | None,
 ):
-    import asyncio
 
     component_context.component_name = "grpc_dev_api_server"
 
@@ -52,22 +48,9 @@ def main(
     if psutil.WINDOWS:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    cleanup: list[t.Coroutine[t.Any, t.Any, None]] = []
+    parsed = urlparse(bind)
 
-    loop = asyncio.get_event_loop()
-
-    async def start_grpc_server(srv: GRPCServer) -> None:
-        srv.add_insecure_port(bind)
-
-        await srv.start()
-        cleanup.append(srv.stop())
-        await srv.wait_for_termination()
-
-    try:
-        loop.run_until_complete(start_grpc_server(svc.grpc_server))
-    finally:
-        loop.run_until_complete(*cleanup)
-        loop.close()
+    svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 import click
 import psutil
+import uvicorn
 
 from bentoml import load
 from bentoml._internal.log import configure_server_logging
@@ -63,8 +64,6 @@ def main(
 
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-        import uvicorn  # type: ignore
-
         config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
         uvicorn.Server(config).run(sockets=[sock])
     else:
@@ -72,4 +71,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()  # pylint: disable=no-value-for-parameter
+    main()

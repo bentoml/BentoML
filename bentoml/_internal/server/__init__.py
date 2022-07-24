@@ -27,10 +27,15 @@ from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
+
 SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
-SCRIPT_API_SERVER = "bentoml._internal.server.cli.api_server"
-SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
-SCRIPT_GRPC_DEV_API_SERVER = "bentoml._internal.server.cli.grpc_dev_api_server"
+SCRIPT_API_SERVER = "bentoml._internal.server.cli.http.api_server"
+SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.http.dev_api_server"
+SCRIPT_GRPC_DEV_API_SERVER = "bentoml._internal.server.cli.grpc.dev_api_server"
+
+MAX_AF_UNIX_PATH_LENGTH = 103
+
+API_SERVER_NAME = "_bento_api_server"
 
 
 @inject
@@ -85,76 +90,57 @@ def serve_development(
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
-    using_grpc: bool = False,
+    grpc: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
 
-    from circus.sockets import CircusSocket  # type: ignore
-    from circus.watcher import Watcher  # type: ignore
+    from circus.sockets import CircusSocket
+    from circus.watcher import Watcher
 
     prometheus_dir = ensure_prometheus_dir()
 
-    watchers: t.List[Watcher] = []
+    watchers: list[Watcher] = []
 
-    circus_sockets: t.List[CircusSocket] = []
+    if grpc:
+        watcher_name = "grpc_dev_api_server"
+        script_to_use = SCRIPT_GRPC_DEV_API_SERVER
+        socket_path = f"tcp://{host}:{port}"
+    else:
+        watcher_name = "dev_api_server"
+        script_to_use = SCRIPT_DEV_API_SERVER
+        socket_path = f"fd://$(circus.sockets.{API_SERVER_NAME})"
+
+    circus_sockets: list[CircusSocket] = []
     circus_sockets.append(
-        CircusSocket(
-            name="_bento_api_server",
-            host=host,
-            port=port,
-            backlog=backlog,
+        CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
+    )
+
+    watchers.append(
+        Watcher(
+            name=watcher_name,
+            cmd=sys.executable,
+            args=[
+                "-m",
+                script_to_use,
+                bento_identifier,
+                "--bind",
+                socket_path,
+                "--working-dir",
+                working_dir,
+                "--prometheus-dir",
+                prometheus_dir,
+            ],
+            copy_env=True,
+            stop_children=True,
+            use_sockets=True,
+            working_dir=working_dir,
         )
     )
 
-    if using_grpc:
-        watchers.append(
-            Watcher(
-                name="grpc_dev_api_server",
-                cmd=sys.executable,
-                args=[
-                    "-m",
-                    SCRIPT_GRPC_DEV_API_SERVER,
-                    bento_identifier,
-                    "--bind",
-                    "fd://$(circus.sockets._bento_api_server)",
-                    "--working-dir",
-                    working_dir,
-                    "--port",
-                    str(port),
-                ],
-                copy_env=True,
-                stop_children=True,
-                use_sockets=True,
-                working_dir=working_dir,
-            )
-        )
-    else:
-        watchers.append(
-            Watcher(
-                name="dev_api_server",
-                cmd=sys.executable,
-                args=[
-                    "-m",
-                    SCRIPT_DEV_API_SERVER,
-                    bento_identifier,
-                    "--bind",
-                    "fd://$(circus.sockets._bento_api_server)",
-                    "--working-dir",
-                    working_dir,
-                    "--prometheus-dir",
-                    prometheus_dir,
-                ],
-                copy_env=True,
-                stop_children=True,
-                use_sockets=True,
-                working_dir=working_dir,
-            )
-        )
-
     plugins = []
     if reload:
-        if sys.platform == "win32":
+        if psutil.WINDOWS:
             logger.warning(
                 "Due to circus limitations, output from the reloader plugin will not be shown on Windows."
             )
@@ -175,7 +161,7 @@ def serve_development(
         watchers,
         sockets=circus_sockets,
         plugins=plugins,
-        debug=True if sys.platform != "win32" else False,
+        debug=not psutil.WINDOWS,
         loggerconfig=SERVER_LOGGING_CONFIG,
         loglevel="WARNING",
     )
@@ -187,9 +173,6 @@ def serve_development(
                 f"running on http://{host}:{port} (Press CTRL+C to quit)"
             ),
         )
-
-
-MAX_AF_UNIX_PATH_LENGTH = 103
 
 
 @inject
@@ -204,8 +187,8 @@ def serve_production(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
-    from circus.sockets import CircusSocket  # type: ignore
-    from circus.watcher import Watcher  # type: ignore
+    from circus.sockets import CircusSocket
+    from circus.watcher import Watcher
 
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
@@ -284,7 +267,7 @@ def serve_production(
                             working_dir,
                             "--no-access-log",
                             "--worker-id",
-                            "$(circus.wid)",
+                            "$(CIRCUS.WID)",
                         ],
                         copy_env=True,
                         stop_children=True,
@@ -293,16 +276,15 @@ def serve_production(
                         numprocesses=runner.scheduled_worker_count,
                     )
                 )
-            port_stack.enter_context(
-                reserve_free_port()
-            )  # reserve one more to avoid conflicts
+            # reserve one more to avoid conflicts
+            port_stack.enter_context(reserve_free_port())
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
     logger.debug("Runner map: %s", runner_bind_map)
 
-    circus_socket_map["_bento_api_server"] = CircusSocket(
-        name="_bento_api_server",
+    circus_socket_map[API_SERVER_NAME] = CircusSocket(
+        name=API_SERVER_NAME,
         host=host,
         port=port,
         backlog=backlog,
@@ -316,7 +298,7 @@ def serve_production(
                 SCRIPT_API_SERVER,
                 bento_identifier,
                 "--bind",
-                "fd://$(circus.sockets._bento_api_server)",
+                f"fd://$(circus.sockets.{API_SERVER_NAME})",
                 "--runner-map",
                 json.dumps(runner_bind_map),
                 "--working-dir",

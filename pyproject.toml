@@ -1,9 +1,9 @@
 [build-system]
 requires = [
   # sync with setup.cfg until we discard non-pep-517/518
+  "grpcio-tools==1.47.0",
+  "mypy-protobuf==3.2.0",
   "protobuf==3.19.4",
-  "grpcio-tools==1.47.0",  # sync with grpcio in setup.cfg
-  "mypy-protobuf==3.2.0",  # generating stubs for type checking
   "setuptools>=59.0",
   "setuptools-scm[toml]>=6.2.3",
   "wheel",
@@ -29,11 +29,12 @@ exclude = '''
     | build
     | dist
     | typings
-    | bentoml/protos
+    | bentoml/grpc
   )/
   | bentoml/_version.py
 )
 '''
+extend-exclude = "(_pb2.py$|_pb2_grpc.py$)"
 
 [tool.pytest.ini_options]
 addopts = "-rfEX -p pytester -p no:warnings -x"
@@ -42,7 +43,7 @@ testpaths = ["tests"]
 markers = ["gpus"]
 
 [tool.pylint.master]
-ignore=".ipynb_checkpoints,typings,bentoml/_internal/external_typing"
+ignore=".ipynb_checkpoints,typings,bentoml/_internal/external_typing,bentoml/grpc"
 ignore-paths=".*.pyi"
 unsafe-load-any-extension="no"
 extension-pkg-whitelist="numpy,tensorflow,torch,paddle,keras,pydantic"
@@ -119,12 +120,12 @@ length_sort = true
 force_single_line = true
 order_by_type = true
 force_alphabetical_sort_within_sections = true
-skip_glob = ["typings/*", "docs/*", "bentoml/protos/*"]
+skip_glob = ["typings/*", "docs/*", "bentoml/grpc/*"]
 
 [tool.pyright]
 pythonVersion = "3.10"
 include = ["bentoml"]
-exclude = ['bentoml/_version.py','bentoml/__main__.py','bentoml/_internal/external_typing','bentoml/protos']
+exclude = ['bentoml/_version.py','bentoml/__main__.py','bentoml/_internal/external_typing','bentoml/grpc', '**/*_pb2.py', "**/*_pb2_grpc.py"]
 analysis.useLibraryCodeForTypes = true
 strictListInference = true
 strictDictionaryInference = true

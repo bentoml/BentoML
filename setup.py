@@ -5,25 +5,23 @@ import sys
 import subprocess
 from pathlib import Path
 
-import pkg_resources
 from setuptools import setup
 
 GIT_ROOT = Path(os.path.abspath(__file__)).parent
 
-proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
+_VERSION_MAP = {
+    "v1": {
+        ("service.proto", "service_test.proto"): {"grpc_out": True},
+        ("types.proto", "struct.proto"): {},
+    },
+}
 
 
-def gen_args(file: str, *, grpc_out: bool = False) -> list[str]:
+def get_args(parent_path: str, *paths: str, grpc_out: bool = False) -> list[str]:
     args = ["-I.", "--python_out=.", "--mypy_out=."]
     if grpc_out:
         args.extend(["--grpc_python_out=.", "--mypy_grpc_out=."])
-
-    if not file.endswith(".proto"):
-        file += ".proto"
-    file_path = os.path.join("bentoml", "protos", file)
-
-    args.append(file_path)
-
+    args.extend([os.path.join(parent_path, path) for path in paths])
     return args
 
 
@@ -32,10 +30,11 @@ if __name__ == "__main__":
     # run setuptools.setup()
     setup()
 
-    # Run before setup
-    subprocess.check_call(
-        [sys.executable, "-m", "grpc_tools.protoc", *gen_args("payload")]
-    )
-    subprocess.check_call(
-        [sys.executable, "-m", "grpc_tools.protoc", *gen_args("service", grpc_out=True)]
-    )
+    binary = [sys.executable, "-m", "grpc_tools.protoc"]
+
+    for version, file_map in _VERSION_MAP.items():
+        version_path = os.path.join("bentoml", "grpc", version)
+
+        # Generate bentoml stubs
+        for paths, options in file_map.items():
+            subprocess.check_call([*binary, *get_args(version_path, *paths, **options)])

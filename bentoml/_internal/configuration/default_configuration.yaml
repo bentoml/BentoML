@@ -23,6 +23,8 @@ api_server:
     access_control_allow_headers: Null
     access_control_max_age: Null
     access_control_expose_headers: Null
+  grpc:
+    max_message_length: Null
 
 runners:
   batching:

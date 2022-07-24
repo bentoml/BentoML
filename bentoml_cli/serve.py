@@ -128,6 +128,10 @@ def add_serve_command(cli: click.Group) -> None:
                 logger.warning(
                     "'--reload' is not supported with '--production'; ignoring"
                 )
+            if grpc:
+                logger.warning(
+                    "'--grpc' is not supported with '--production' yet; ignoring"
+                )
 
             from bentoml.serve import serve_production
 
@@ -148,5 +152,5 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,
-                using_grpc=grpc,
+                grpc=grpc,
             )

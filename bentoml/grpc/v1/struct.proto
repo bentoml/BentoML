@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package bentoml.grpc.v1;
+
+import "bentoml/grpc/v1/types.proto";
+
+// cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
+option cc_enable_arenas = true;
+option cc_generic_services = true;
+option go_package = "github.com/bentoml/grpc/v1";
+option java_multiple_files = true;
+option java_outer_classname = "StructProto";
+option java_package = "com.bentoml.grpc.v1";
+option objc_class_prefix = "STCT";
+
+// Protocol buffer representing contents of a given rpc call.
+// Partial verbatim sources of tensorflow/core/framework/tensor.proto.
+//
+// One key different from the original is that since we are using proto3,
+//  repeated values are packed by default.
+message Value {
+  // dtype represents the data type of given contents. This would help us
+  // to use the correct serialization protocol on the server side if needed.
+  bentoml.grpc.v1.DataType dtype = 1;
+
+  // Only one of the representations below is set, one of "contents" and
+  // the "xxx_value" attributes.  We are not using oneof because as oneofs cannot
+  // contain repeated fields it would require another extra set of messages.
+
+  // Serialized raw contents. This representation
+  // can be used for all tensor types. The purpose of this representation is to
+  // reduce serialization overhead during RPC call by avoiding serialization of
+  // many repeated small items.
+  bytes contents = 2;
+
+  // Type specific representations that make it easy to create tensor protos in
+  // all languages.  Only the representation corresponding to "dtype" can
+  // be set. The values hold the flattened representation of the inputs in
+  // row major order.
+
+  // DT_HALF, DT_BFLOAT16. Note that since protobuf has no int16 type, we'll
+  // have some pointless zero padding for each value here.
+  repeated int32 half_value = 11;
+
+  // DT_FLOAT.
+  repeated float float_value = 3;
+
+  // DT_DOUBLE.
+  repeated double double_value = 4;
+
+  // DT_INT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8.
+  repeated int32 int_value = 5;
+
+  // DT_STRING
+  repeated bytes string_value = 6;
+
+  // DT_COMPLEX64. scomplex_value(2*i) and scomplex_value(2*i+1) are real
+  // and imaginary parts of i-th single precision complex.
+  repeated float scomplex_value = 7;
+
+  // DT_INT64
+  repeated int64 int64_value = 8;
+
+  // DT_BOOL
+  repeated bool bool_value = 9;
+
+  // DT_COMPLEX128. dcomplex_value(2*i) and dcomplex_value(2*i+1) are real
+  // and imaginary parts of i-th double precision complex.
+  repeated double dcomplex_value = 10;
+
+  // DT_UINT32
+  repeated uint32 uint32_value = 12;
+
+  // DT_UINT64
+  repeated uint64 uint64_value = 13;
+}
+
+// StructuredValue represents a dynamic typed value representing various
+// data structures that are inspired by Python's data structures.
+// Partial verbatim sources of tensorflow/core/protobuf/struct.proto.
+//
+// [16, 100] will be reserved for future use. Users are free to use from [3, 15]
+message StructuredValue {
+  oneof kind {
+    // Represents a None value.
+    NoneValue none_value = 1;
+
+    // Represents any value that can be represented as a payload contents.
+    Value any_value = 2;
+
+    // Represents a list of `Value`.
+    ListValue list_value = 51;
+
+    // Represents a tuple of `Value`.
+    TupleValue tuple_value = 52;
+
+    // Represents a dict `Value`.
+    DictValue dict_value = 53;
+
+    // Represents Python's namedtuple.
+    NamedTupleValue namedtuple_value = 54;
+  }
+
+  // dataframes_columns and dataframe_indices are used
+  // in conjunction with contents to represent a dataframe.
+  repeated string dataframe_columns = 101;
+  repeated string dataframe_indices = 102;
+
+  // We want to reserve these for future uses.
+  reserved 16 to 50, 55 to 100;
+}
+
+// represents None type.
+message NoneValue {}
+
+// Represents a Python list.
+message ListValue {
+  repeated StructuredValue values = 1;
+}
+
+// Represents a Python tuple.
+message TupleValue {
+  repeated StructuredValue values = 1;
+}
+
+// Represents a Python dict with key<str> and value<StructuredValue>.
+// This key is analogous with Value.string_value
+message DictValue {
+  map<string, StructuredValue> fields = 1;
+}
+
+// Represents a (key, value) pair.
+message PairValue {
+  string key = 1;
+  StructuredValue value = 2;
+}
+
+// Represents a namedtuple.
+message NamedTupleValue {
+  string type_name = 1;
+  repeated PairValue values = 2;
+}

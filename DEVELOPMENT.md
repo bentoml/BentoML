@@ -194,7 +194,7 @@ linter: [pylint](https://pylint.org/), [buf](https://github.com/bufbuild/buf)
 type checker: [pyright](https://github.com/microsoft/pyright)
 
 We are using [buf](https://github.com/bufbuild/buf) for formatting and linting
-of our proto files. Configuration can be found [here](./protos/buf.yaml).
+of our proto files. Configuration can be found [here](./bentoml/grpc/buf.yaml).
 Currently, we are running `buf` with docker, hence we kindly ask our developers
 to have docker available. Docker installation can be found [here](https://docs.docker.com/get-docker/).
 
@@ -212,11 +212,11 @@ make type
 
 ## Editing proto files.
 
-Protos file are located under [`protos`](./protos/). The generated stubs are
+Protos file are located under [`bentoml/grpc`](./bentoml/grpc/). The generated stubs are
 ignored for VCS by default. If you edit the protos file manually, simply run
 `pip install -e -U .` again to apply new changes the the generated stubs. 
 
-The generated stubs can be located under [`bentoml/protos`](./bentoml/protos/).
+The generated stubs can be located under [`bentoml/grpc`](./bentoml/grpc/).
 
 ## Deploy with your changes
 

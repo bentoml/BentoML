@@ -14,11 +14,13 @@ if TYPE_CHECKING:
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.utils import BentoServicerContext
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Response as OpenAPIResponse
     from ..service.openapi.specification import Reference
     from ..service.openapi.specification import RequestBody
+    from bentoml.grpc.v1 import service_pb2
+
+    from ..server.grpc.types import BentoServicerContext
 
     InputType = (
         UnionType
@@ -91,12 +93,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     @abstractmethod
     async def from_grpc_request(
-        self, request: CallRequest, context: BentoServicerContext
+        self, request: service_pb2.Request, context: BentoServicerContext
     ) -> IOType:
         ...
 
     @abstractmethod
     async def to_grpc_response(
         self, obj: IOType, context: BentoServicerContext
-    ) -> CallResponse:
+    ) -> service_pb2.Response:
         ...

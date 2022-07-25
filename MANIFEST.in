@@ -5,6 +5,7 @@ exclude CONTRIBUTING.md GOVERNANCE.md CODE_OF_CONDUCT.md DEVELOPMENT.md SECURITY
 exclude Makefile MANIFEST.in
 exclude *.yml
 exclude .git*
+exclude bentoml/grpc/buf.yaml
 
 # Directories to exclude in PyPI package
 prune requirements

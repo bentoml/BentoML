@@ -2,6 +2,7 @@
 requires = [
   # sync with setup.cfg until we discard non-pep-517/518
   "grpcio-tools==1.47.0",
+  "googleapis-common-protos",
   "mypy-protobuf==3.2.0",
   "protobuf==3.19.4",
   "setuptools>=59.0",

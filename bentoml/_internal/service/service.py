@@ -212,6 +212,12 @@ class Service:
     def on_asgi_app_shutdown(self) -> None:
         pass
 
+    def on_grpc_server_startup(self) -> None:
+        pass
+
+    def on_grpc_server_shutdown(self) -> None:
+        pass
+
     @property
     def grpc_server(self) -> GRPCServer:
         from ..server.grpc_app import GRPCAppFactory

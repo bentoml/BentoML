@@ -1,7 +1,47 @@
 from __future__ import annotations
 
 import enum
+import typing as t
+import logging
+from http import HTTPStatus
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
+
+import grpc
+
+from bentoml.exceptions import BentoMLException
+
+from .serializer import proto_to_dict
+
+if TYPE_CHECKING:
+    from ...server.grpc.types import RequestType
+    from ...server.grpc.types import ResponseType
+    from ...server.grpc.types import RpcMethodHandler
+    from ...server.grpc.types import BentoServicerContext
+
+__all__ = [
+    "grpc_status_code",
+    "parse_method_name",
+    "get_method_type",
+    "get_factory_and_method",
+    "proto_to_dict",
+]
+
+logger = logging.getLogger(__name__)
+
+_STATUS_CODE_MAPPING = {
+    HTTPStatus.BAD_REQUEST: grpc.StatusCode.INVALID_ARGUMENT,
+    HTTPStatus.INTERNAL_SERVER_ERROR: grpc.StatusCode.INTERNAL,
+    HTTPStatus.NOT_FOUND: grpc.StatusCode.NOT_FOUND,
+    HTTPStatus.UNPROCESSABLE_ENTITY: grpc.StatusCode.FAILED_PRECONDITION,
+}
+
+
+def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:
+    """
+    Convert BentoMLException.error_code to grpc.StatusCode.
+    """
+    return _STATUS_CODE_MAPPING.get(err.error_code, grpc.StatusCode.UNKNOWN)
 
 
 class RpcMethodType(str, enum.Enum):
@@ -59,3 +99,21 @@ def get_method_type(request_streaming: bool, response_streaming: bool) -> str:
         return RpcMethodType.BIDI_STREAMING
     else:
         return RpcMethodType.UNKNOWN
+
+
+def get_factory_and_method(
+    rpc_handler: RpcMethodHandler,
+) -> tuple[
+    t.Callable[..., t.Any],
+    t.Callable[[RequestType, BentoServicerContext], t.Awaitable[ResponseType]],
+]:
+    if rpc_handler.unary_unary:
+        return grpc.unary_unary_rpc_method_handler, rpc_handler.unary_unary
+    elif rpc_handler.unary_stream:
+        return grpc.unary_stream_rpc_method_handler, rpc_handler.unary_stream
+    elif rpc_handler.stream_unary:
+        return grpc.stream_unary_rpc_method_handler, rpc_handler.stream_unary
+    elif rpc_handler.stream_stream:
+        return grpc.stream_stream_rpc_method_handler, rpc_handler.stream_stream
+    else:
+        raise BentoMLException(f"RPC method handler {rpc_handler} does not exist.")

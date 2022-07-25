@@ -10,7 +10,6 @@ from collections import namedtuple
 
 from google.protobuf.message import Message
 
-from bentoml.grpc.v1 import struct_pb2
 from bentoml.exceptions import BentoMLException
 
 from ..lazy_loader import LazyLoader

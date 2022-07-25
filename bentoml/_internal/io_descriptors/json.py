@@ -11,14 +11,9 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from ..types import LazyType
+from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
-from ...exceptions import MissingDependencyException
-
-try:
-    import pydantic
-except ImportError:
-    pydantic = None
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -34,6 +29,13 @@ if TYPE_CHECKING:
         t.Type["pydantic.BaseModel"],
         t.Any,
     ]
+else:
+    pydantic = LazyLoader(
+        "pydantic",
+        globals(),
+        "pydantic",
+        exc_msg="`pydantic` must be installed to use `pydantic_model`, install with `pip install pydantic`",
+    )
 
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
@@ -145,10 +147,6 @@ class JSON(IODescriptor[JSONType]):
         **kwargs,
     ):
         if pydantic_model is not None:
-            if pydantic is None:
-                raise MissingDependencyException(
-                    "`pydantic` must be installed to use `pydantic_model`"
-                )
             assert issubclass(
                 pydantic_model, pydantic.BaseModel
             ), "`pydantic_model` must be a subclass of `pydantic.BaseModel`"

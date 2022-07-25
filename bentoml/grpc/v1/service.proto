@@ -3,6 +3,9 @@ syntax = "proto3";
 package bentoml.grpc.v1;
 
 import "bentoml/grpc/v1/struct.proto";
+import "google/protobuf/any.proto";
+import "google/rpc/error_details.proto";
+import "google/rpc/status.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -22,11 +25,8 @@ service BentoService {
   // Check server readiness
   rpc ServerReady(ServerReadyRequest) returns (ServerReadyResponse) {}
 
-  // Call handles unary API.
-  rpc Call(CallRequest) returns (CallResponse) {}
-
-  // CallStream handles streaming API.
-  rpc CallStream(stream CallStreamRequest) returns (stream CallStreamResponse) {}
+  // Inference handles unary API.
+  rpc Inference(InferenceRequest) returns (InferenceResponse) {}
 }
 
 // request for ServerLive that takes no arguments.
@@ -45,31 +45,175 @@ message ServerReadyResponse {
   bool ready = 1;
 }
 
-// Request for Call.
-message CallRequest {
+// Request for Inference.
+message InferenceRequest {
   // a given API route the rpc request is sent to.
-  string api_name = 1;
+  string api_name = 14;
+  string api_version = 15;
 
   // representation of the input value.
-  bentoml.grpc.v1.StructuredValue contents = 2;
+  oneof contents {
+    // Serialized bytes contents.
+    bytes bytes_contents = 1;
+
+    // DT_HALF, DT_BFLOAT16
+    int32 half_contents = 10;
+
+    // DT_FLOAT.
+    float float_contents = 2;
+
+    // DT_DOUBLE.
+    double double_contents = 3;
+
+    // DT_INT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8.
+    int32 int_contents = 4;
+
+    // DT_STRING
+    bytes string_contents = 5;
+
+    // DT_COMPLEX64.
+    float scomplex_contents = 6;
+
+    // DT_INT64
+    int64 int64_contents = 7;
+
+    // DT_BOOL
+    bool bool_contents = 8;
+
+    // DT_COMPLEX128
+    double dcomplex_contents = 9;
+
+    // DT_UINT32
+    uint32 uint32_contents = 11;
+
+    // DT_UINT64
+    uint64 uint64_contents = 12;
+
+    // Represents arbitrary Python data structures.
+    NoneValue none_contents = 50;
+    ListValue list_contents = 51;
+    TupleValue tuple_contents = 52;
+    DictValue dict_contents = 53;
+    NamedTupleValue namedtuple_contents = 54;
+
+    google.protobuf.Any any_contents = 55;
+  }
+
+  // The data contained in an input can be represented in
+  // "raw" bytes form or in the repeated type that matches the
+  // data type.
+  // Using the "raw" bytes form will typically allow higher performance due to the way protobuf
+  // allocation and reuse interacts with GRPC.
+  // For example, see https://github.com/grpc/grpc/issues/23231.
+  //
+  // To use the raw representation 'raw_input_contents' must be
+  // initialized with data for each tensor in the same order as
+  // 'inputs'. For each tensor, the size of this content must
+  // match what is expected by the tensor's shape and data
+  // type. The raw data must be the flattened, one-dimensional,
+  // row-major order of the tensor elements without any stride
+  // or padding between the elements.
+  //
+  // Note that the FP16 and BF16 data
+  // types must be represented as raw content as there is no
+  // specific data type for a 16-bit float type.
+  //
+  // If this field is specified then contents must not be specified for any input tensor.
+  repeated bytes raw_bytes_contents = 13;
+
+  // dataframes_columns and dataframe_indices are used
+  // in conjunction with contents to represent a dataframe.
+  // Recommendation: for better performance, use raw_bytes_contents in
+  // conjunction with the below fields.
+  repeated string dataframe_columns = 101;
+  repeated string dataframe_indices = 102;
 }
 
-// Response from Call.
-message CallResponse {
+// Response from Inference.
+message InferenceResponse {
   // representation of the output value.
-  bentoml.grpc.v1.StructuredValue contents = 1;
-}
+  // representation of the input value.
+  oneof contents {
+    // Serialized bytes contents.
+    bytes bytes_contents = 1;
 
-// Request message for CallStream.
-message CallStreamRequest {
-  CallRequest stream_inputs = 1;
-}
+    // DT_HALF, DT_BFLOAT16
+    int32 half_contents = 10;
 
-// Response message for CallStream.
-message CallStreamResponse {
-  // message describing the error. Empty message signals the call was successful without error.
-  string error_message = 1;
+    // DT_FLOAT.
+    float float_contents = 2;
 
-  // representation of the output value.
-  CallResponse stream_outputs = 2;
+    // DT_DOUBLE.
+    double double_contents = 3;
+
+    // DT_INT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8.
+    int32 int_contents = 4;
+
+    // DT_STRING
+    bytes string_contents = 5;
+
+    // DT_COMPLEX64.
+    float scomplex_contents = 6;
+
+    // DT_INT64
+    int64 int64_contents = 7;
+
+    // DT_BOOL
+    bool bool_contents = 8;
+
+    // DT_COMPLEX128
+    double dcomplex_contents = 9;
+
+    // DT_UINT32
+    uint32 uint32_contents = 11;
+
+    // DT_UINT64
+    uint64 uint64_contents = 12;
+
+    // Represents arbitrary Python data structures.
+    NoneValue none_contents = 50;
+    ListValue list_contents = 51;
+    TupleValue tuple_contents = 52;
+    DictValue dict_contents = 53;
+    NamedTupleValue namedtuple_contents = 54;
+
+    google.protobuf.Any any_contents = 55;
+  }
+
+  // The data contained in an output can be represented in
+  // "raw" bytes form or in the repeated type that matches the
+  // data type.
+  // Using the "raw" bytes form will typically allow higher performance due to the way protobuf
+  // allocation and reuse interacts with GRPC.
+  // For example, see https://github.com/grpc/grpc/issues/23231.
+  //
+  // To use the raw representation 'raw_input_contents' must be
+  // initialized with data for each tensor in the same order as
+  // 'inputs'. For each tensor, the size of this content must
+  // match what is expected by the tensor's shape and data
+  // type. The raw data must be the flattened, one-dimensional,
+  // row-major order of the tensor elements without any stride
+  // or padding between the elements.
+  //
+  // Note that the FP16 and BF16 data
+  // types must be represented as raw content as there is no
+  // specific data type for a 16-bit float type.
+  //
+  // If this field is specified then contents must not be specified for any input tensor.
+  repeated bytes raw_bytes_contents = 13;
+
+  // Sends a rpc status back to the client.
+  google.rpc.Status status = 14;
+
+  // the response should also include an error message type
+  oneof errors {
+    google.rpc.RetryInfo retry_info = 100;
+    google.rpc.DebugInfo debug_info = 101;
+    google.rpc.QuotaFailure quota_failure = 102;
+    google.rpc.ErrorInfo error_info = 103;
+    google.rpc.PreconditionFailure precondition_failure = 104;
+    google.rpc.BadRequest bad_request = 105;
+    google.rpc.RequestInfo request_info = 106;
+    google.rpc.LocalizedMessage localized_message = 107;
+  }
 }

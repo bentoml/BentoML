@@ -544,3 +544,103 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     ) -> tuple[t.Any, list[int]]:
         container_cls = DataContainerRegistry.find_by_name(payloads[0].container)
         return container_cls.from_batch_payloads(payloads, batch_dim)
+
+
+class TupleContainer(DataContainer[t.Tuple[t.Any], t.Tuple[t.Any]]):
+    @classmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence[t.Tuple[t.Any]], batch_dim: int | t.Tuple = 0
+    ) -> tuple[t.Tuple[t.Any], list[int]]:
+        element_num = len(batches[0])
+        if isinstance(batch_dim, int):
+            batch_dim = (batch_dim,) * element_num
+        else:
+            assert (
+                len(batch_dim) == element_num
+            ), "Tuple DataContainer's batch element number should be equal to batch_dim element number"
+        raw_batch = [
+            AutoContainer.batches_to_batch(element_batches, element_batch_dim)
+            for element_batches, element_batch_dim in zip(zip(*batches), batch_dim)
+        ]
+        batch = tuple(element_batch for element_batch, _ in raw_batch)
+        # following line requires all different container use same indices format
+        indices = raw_batch[0][1]
+        return tuple(batch), indices
+
+    @classmethod
+    def batch_to_batches(
+        cls,
+        batch: t.Tuple[t.Any],
+        indices: t.Sequence[int],
+        batch_dim: int | t.Tuple = 0,
+    ) -> list[t.Tuple[t.Any]]:
+
+        element_num = len(batch)
+        if isinstance(batch_dim, int):
+            batch_dim = (batch_dim,) * element_num
+        else:
+            assert (
+                len(batch_dim) == element_num
+            ), "Tuple DataContainer's batch element number should be equal to batch_dim element number"
+
+        # here we get [element0_batches, element1_batches, ...]
+        batches_by_element = [
+            AutoContainer.batch_to_batches(element_batch, indices, batch_dim[idx])
+            for idx, element_batch in enumerate(batch)
+        ]
+        return list(zip(*batches_by_element))
+
+    @classmethod
+    def to_payload(cls, batch: t.Any, batch_dim: int | t.Tuple = 0) -> Payload:
+        element_num = len(batch)
+        if isinstance(batch_dim, int):
+            batch_dim = (batch_dim,) * element_num
+        else:
+            assert (
+                len(batch_dim) == element_num
+            ), "Tuple DataContainer's batch element number should be equal to batch_dim element number"
+        payloads_by_element = tuple(
+            AutoContainer.to_payload(element_batch, batch_dim[idx])
+            for idx, element_batch in enumerate(batch)
+        )
+        batch_size = payloads_by_element[0].batch_size
+        return cls.create_payload(pickle.dumps(payloads_by_element), batch_size)
+
+    @classmethod
+    @inject
+    def from_payload(cls, payload: Payload) -> t.Tuple[t.Any]:
+        element_payloads = pickle.loads(payload.data)
+        batch = tuple(
+            AutoContainer.from_payload(payload) for payload in element_payloads
+        )
+        return batch
+
+    @classmethod
+    @inject
+    def batch_to_payloads(
+        cls,
+        batch: t.Tuple[t.Any],
+        indices: t.Sequence[int],
+        batch_dim: int | t.Tuple = 0,
+    ) -> list[Payload]:
+
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
+        return payloads
+
+    @classmethod
+    @inject
+    def from_batch_payloads(
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int | t.Tuple = 0,
+    ) -> tuple[t.Tuple[t.Any], list[int]]:
+        batches = [cls.from_payload(payload) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
+
+
+DataContainerRegistry.register_container(
+    tuple,
+    tuple,
+    TupleContainer,
+)

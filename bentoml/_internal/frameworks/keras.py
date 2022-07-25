@@ -337,7 +337,10 @@ def get_runnable(
                 _run_method = _gen_run_method(runnable_self, method_name)
                 runnable_self.methods_cache[method_name] = _run_method
 
-            return _run_method(runnable_self, *args)
+            res = _run_method(runnable_self, *args)
+            if isinstance(res, list):
+                res = tuple(res)
+            return res
 
         KerasRunnable.add_method(
             run_method,

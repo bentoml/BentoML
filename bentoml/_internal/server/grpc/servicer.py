@@ -9,22 +9,24 @@ from bentoml.exceptions import UnprocessableEntity
 from bentoml.exceptions import MissingDependencyException
 from bentoml._internal.service.service import Service
 
-from .utils import handle_grpc_error
 from ...configuration import get_debug_mode
 
 if TYPE_CHECKING:
-    from .utils import BentoServicerContext
+    from .types import BentoServicerContext
 
 
 def register_bento_servicer(service: Service, server: aio.Server) -> None:
+    """
+    This is the actual implementation of BentoServicer.
+    Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
+    """
     from bentoml.grpc.v1 import service_pb2 as _service_pb2
     from bentoml.grpc.v1 import service_pb2_grpc as _service_pb2_grpc
 
     class BentoServiceServicer(_service_pb2_grpc.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
 
-        @handle_grpc_error
-        async def Call(
+        async def Call(  # type: ignore (no async types)
             self,
             request: _service_pb2.CallRequest,
             context: BentoServicerContext,
@@ -46,7 +48,7 @@ def register_bento_servicer(service: Service, server: aio.Server) -> None:
             response = await api.output.to_grpc_response(output, context)
             return response
 
-    _service_pb2_grpc.add_BentoServiceServicer_to_server(BentoServiceServicer(), server)
+    _service_pb2_grpc.add_BentoServiceServicer_to_server(BentoServiceServicer(), server)  # type: ignore (lack of asyncio types)
 
 
 async def register_health_servicer(server: aio.Server) -> None:

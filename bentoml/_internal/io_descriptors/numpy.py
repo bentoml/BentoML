@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.utils import BentoServicerContext
+    from ..server.grpc.types import BentoServicerContext
 else:
     np = LazyLoader("np", globals(), "numpy")
 

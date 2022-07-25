@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.utils import BentoServicerContext
+    from ..server.grpc.types import BentoServicerContext
 
     InputType = (
         UnionType

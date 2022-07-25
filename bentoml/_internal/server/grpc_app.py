@@ -110,10 +110,13 @@ class GRPCAppFactory:
 
     @property
     def interceptors(self) -> list[aio.ServerInterceptor]:
-        interceptors: list[aio.ServerInterceptor] = []
+        from .grpc.interceptors import ExceptionHandlerInterceptor
+
+        # TODO: add access log, tracing, prometheus interceptors.
+        interceptors: list[aio.ServerInterceptor] = [ExceptionHandlerInterceptor()]
+
+        # add users-defined interceptors.
         interceptors.extend(
             [interceptor() for interceptor in self.bento_service.interceptors]
         )
-
-        # TODO: add access log, tracing, prometheus interceptors.
         return interceptors

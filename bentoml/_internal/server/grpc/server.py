@@ -62,7 +62,6 @@ class GRPCServer:
                 handler()
 
         await self.server.start()
-        logger.debug("GRPC server started.")
 
     async def shutdown(self):
         # Running on_startup callback.
@@ -73,7 +72,6 @@ class GRPCServer:
                 handler()
 
         await self.server.stop(grace=self._grace_period)
-        logger.debug("GRPC server stopped.")
 
     async def wait_for_termination(self, timeout: int | None = None) -> bool:
         return await self.server.wait_for_termination(timeout=timeout)

@@ -11,11 +11,21 @@ import grpc
 
 from bentoml.exceptions import BentoMLException
 
+from .serializer import proto_to_dict
+
 if TYPE_CHECKING:
     from ...server.grpc.types import RequestType
     from ...server.grpc.types import ResponseType
     from ...server.grpc.types import RpcMethodHandler
     from ...server.grpc.types import BentoServicerContext
+
+__all__ = [
+    "grpc_status_code",
+    "parse_method_name",
+    "get_method_type",
+    "get_factory_and_method",
+    "proto_to_dict",
+]
 
 logger = logging.getLogger(__name__)
 

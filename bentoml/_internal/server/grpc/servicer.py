@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 def register_bento_servicer(service: Service, server: aio.Server) -> None:
     """
     This is the actual implementation of BentoServicer.
-    Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
+    Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Inference
     """
     from bentoml.grpc.v1 import service_pb2 as _service_pb2
     from bentoml.grpc.v1 import service_pb2_grpc as _service_pb2_grpc
@@ -26,11 +26,11 @@ def register_bento_servicer(service: Service, server: aio.Server) -> None:
     class BentoServiceServicer(_service_pb2_grpc.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
 
-        async def Call(  # type: ignore (no async types)
+        async def Inference(  # type: ignore (no async types)
             self,
-            request: _service_pb2.CallRequest,
+            request: _service_pb2.InferenceRequest,
             context: BentoServicerContext,
-        ) -> _service_pb2.CallResponse | None:
+        ) -> _service_pb2.InferenceResponse | None:
             if request.api_name not in service.apis:
                 raise UnprocessableEntity(
                     f"given 'api_name' is not defined in {service.name}",

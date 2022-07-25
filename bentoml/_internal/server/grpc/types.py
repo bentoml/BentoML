@@ -4,23 +4,39 @@ Specific types for BentoService gRPC server.
 from __future__ import annotations
 
 from typing import Tuple
-from typing import Union
 from typing import TypeVar
 from typing import Callable
 from typing import Optional
-from typing import Sequence
 from typing import Awaitable
 from typing import NamedTuple
 from typing import TYPE_CHECKING
 
+import grpc
+
+
+class HandlerCallDetails(
+    NamedTuple("HandlerCallDetails", method=str, invocation_metadata=Tuple[str, bytes]),
+    grpc.HandlerCallDetails,
+):
+    """Describes an RPC that has just arrived for service.
+
+    Attributes:
+    method: The method name of the RPC.
+    invocation_metadata: A sequence of metadatum, a key-value pair included in the HTTP header.
+                        An example is: ``('binary-metadata-bin', b'\\x00\\xFF')``
+    """
+
+    method: str
+    invocation_metadata: Tuple[str, bytes]
+
+
 if TYPE_CHECKING:
     from typing import Protocol
 
-    import grpc
     from grpc import aio
 
-    from bentoml.grpc.v1.service_pb2 import CallRequest
-    from bentoml.grpc.v1.service_pb2 import CallResponse
+    from bentoml.grpc.v1.service_pb2 import InferenceRequest
+    from bentoml.grpc.v1.service_pb2 import InferenceResponse
     from bentoml.grpc.v1.service_pb2 import ServerLiveRequest
     from bentoml.grpc.v1.service_pb2 import ServerLiveResponse
     from bentoml.grpc.v1.service_pb2 import ServerReadyRequest
@@ -29,29 +45,12 @@ if TYPE_CHECKING:
 
     P = TypeVar("P", contravariant=True)
 
-    ResponseType = CallResponse | ServerLiveResponse | ServerReadyResponse
-    RequestType = CallRequest | ServerLiveRequest | ServerReadyRequest
+    ResponseType = InferenceResponse | ServerLiveResponse | ServerReadyResponse
+    RequestType = InferenceRequest | ServerLiveRequest | ServerReadyRequest
     BentoServicerContext = aio.ServicerContext[ResponseType, RequestType]
 
-    RequestDeserializerFn = Optional[Callable[[bytes], object]]
-    ResponseSerializerFn = Optional[Callable[[object], bytes]]
-
-    class HandlerCallDetails(
-        NamedTuple(
-            "HandlerCallDetails", method=str, invocation_metadata=Tuple[str, bytes]
-        ),
-        grpc.HandlerCallDetails,
-    ):
-        """Describes an RPC that has just arrived for service.
-
-        Attributes:
-        method: The method name of the RPC.
-        invocation_metadata: A sequence of metadatum, a key-value pair included in the HTTP header.
-                            An example is: ``('binary-metadata-bin', b'\\x00\\xFF')``
-        """
-
-        method: str
-        invocation_metadata: Tuple[str, bytes]
+    RequestDeserializerFn = Optional[Callable[[RequestType], object]]
+    ResponseSerializerFn = Optional[Callable[[bytes], ResponseType]]
 
     class AsyncHandlerProtocol(Protocol[P]):
         def __call__(
@@ -89,21 +88,6 @@ if TYPE_CHECKING:
         stream_unary: Optional[AsyncHandlerMethod]
         stream_stream: Optional[AsyncHandlerMethod]
 
-    class ClientCallDetails(
-        NamedTuple(
-            "ClientCallDetails",
-            method=str,
-            timeout=Optional[float],
-            metadata=Optional[Sequence[Tuple[str, Union[str, bytes]]]],
-            credentials=Optional[grpc.CallCredentials],
-            wait_for_ready=Optional[bool],
-            compression=grpc.Compression,
-        ),
-        grpc.aio.ClientCallDetails,
-    ):
-        # see https://grpc.github.io/grpc/python/grpc.html#grpc.ClientCallDetails
-        pass
-
     __all__ = [
         "RequestType",
         "ResponseType",
@@ -111,5 +95,4 @@ if TYPE_CHECKING:
         "BentoServiceServicer",
         "HandlerCallDetails",
         "RpcMethodHandler",
-        "ClientCallDetails",
     ]

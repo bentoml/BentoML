@@ -18,7 +18,6 @@ from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
 
 if TYPE_CHECKING:
-    import grpc
     import numpy as np
 
     from bentoml.grpc.v1 import service_pb2
@@ -253,7 +252,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     async def from_grpc_request(
-        self, request: service_pb2.CallRequest, context: BentoServicerContext
+        self, request: service_pb2.InferenceRequest, context: BentoServicerContext
     ) -> ext.NpNDArray:
         """
         Process incoming protobuf request and convert it to `numpy.ndarray`
@@ -265,35 +264,28 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        from google.protobuf.json_format import MessageToDict
-        from google.protobuf.text_format import MessageToBytes
-
         from bentoml.grpc.v1 import struct_pb2
-        from bentoml.grpc.v1 import service_pb2
 
-        logger.info([f.name for f in struct_pb2.StructuredValue.DESCRIPTOR.fields])
-        pld = request.contents.SerializeToString()
-        print(struct_pb2.StructuredValue.FromString(pld))
-        print(MessageToDict(request.contents))
+        from ..utils.grpc import proto_to_dict
 
-        raise RuntimeError
-        return self._verify_ndarray(res, BadInput)
+        logger.info([f for f in struct_pb2.ContentsProto.DESCRIPTOR.fields])
+        contents = proto_to_dict(request.contents)
+        return np.frombuffer(contents)
 
     async def to_grpc_response(
         self, obj: ext.NpNDArray, context: BentoServicerContext
-    ) -> service_pb2.CallResponse:
+    ) -> service_pb2.InferenceResponse:
         """
         Process given objects and convert it to grpc protobuf response.
 
         Args:
-            obj (`np.ndarray`):
-                `np.ndarray` that will be serialized to protobuf
+            obj: `np.ndarray` that will be serialized to protobuf
+            context: grpc.aio.ServicerContext from grpc.aio.Server
         Returns:
             `io_descriptor_pb2.Array`:
                 Protobuf representation of given `np.ndarray`
         """
-        obj = self._verify_ndarray(obj, InternalServerError)
-        return self.arr_to_proto(obj)
+        pass
 
     def generate_protobuf(self):
         pass

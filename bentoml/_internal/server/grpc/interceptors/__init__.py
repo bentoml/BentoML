@@ -8,6 +8,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+import grpc
 from grpc import aio
 
 from bentoml.exceptions import BentoMLException
@@ -22,15 +23,79 @@ if TYPE_CHECKING:
     from ..types import HandlerCallDetails
     from ..types import BentoServicerContext
 
+AsyncClientInterceptorReturn = type(
+    "AsyncClientInterceptorReturn", (aio.Call, grpc.Future), {}
+)
+
 logger = logging.getLogger(__name__)
 
-# verbatim sources with modification from https://github.com/d5h-foss/grpc-interceptor
+
+# TODO: test cases.
+class AsyncClientInterceptor(aio.UnaryUnaryClientInterceptor, metaclass=ABCMeta):
+    """
+    Base class for BentoService client-side interceptors.
+    To implement, subclass this class and override ``intercept`` method.
+    """
+
+    @abstractmethod
+    async def intercept(
+        self,
+        continuation: t.Callable[
+            [aio.ClientCallDetails, RequestType],
+            t.Awaitable[AsyncClientInterceptorReturn],
+        ],
+        client_call_details: aio.ClientCallDetails,
+        request: RequestType,
+    ) -> AsyncClientInterceptorReturn:
+        """
+        Override this method to implement an async client interceptor.
+        This method is currently only support unary RPCs.
+
+        The interceptor implementation should call ``method`` via ``grpc.aio.ClientCallDetails`` and
+        the ``request`` object as parameters.
+
+        The `request` parameter may be type checked to determine if this is a singluar request
+        for unary RPCs or an iterator for client-streaming or client-server streaming RPCs.
+
+        Args:
+          continuation: A coroutine that proceeds with the invocation by
+                        executing the next interceptor in the chain or invoking the
+                        actual RPC on the underlying Channel. It is the interceptor's
+                        responsibility to call it if it decides to move the RPC forward.
+                        The interceptor can use
+                        ``call = await continuation(client_call_details, request)``
+                        to continue with the RPC. `continuation` returns the call to the
+                        RPC.
+          client_call_details: A ClientCallDetails object describing the outgoing RPC.
+          request: The request value for the RPC.
+
+        Returns:
+            The type returns should match the type of return value received by calling ``method``.
+            This is an object of both ``grpc.aio.Call`` for the RPC and a ``grpc.Future``.
+            The actual result from the RPC can be got by calling ``.result()`` on the value returned from ``method``.
+        """
+        return await continuation(client_call_details, request)
+
+    async def intercept_unary_unary(
+        self,
+        continuation: t.Callable[
+            [aio.ClientCallDetails, ResponseType],
+            aio.UnaryUnaryCall[RequestType, ResponseType],
+        ],
+        client_call_details: aio.ClientCallDetails,
+        request: t.Any,
+    ) -> aio.UnaryUnaryCall[RequestType, ResponseType] | ResponseType:
+        """Implementation of grpc.UnaryUnaryClientInterceptor."""
+        return await self.intercept(continuation, client_call_details, request)  # type: ignore (unable to infer from mro)
+
+
+# Modification from https://github.com/d5h-foss/grpc-interceptor
 # added better typing that fits with BentoService signatures.
 class AsyncServerInterceptor(aio.ServerInterceptor, metaclass=ABCMeta):
     """
     Base class for BentoService server-side interceptors.
 
-    To implement, subclass this one and override ``intercept`` method.
+    To implement, subclass this class and override ``intercept`` method.
     """
 
     @abstractmethod
@@ -125,7 +190,6 @@ class ExceptionHandlerInterceptor(AsyncServerInterceptor):
 
         Args:
             ex: The exception raised by the method.
-            request_or_iterator: The request or iterator of responses.
             context: The context of the RPC.
             method_name: The name of the method.
         """

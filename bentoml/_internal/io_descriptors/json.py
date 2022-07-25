@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import typing as t
+import logging
 import dataclasses
 from typing import TYPE_CHECKING
 
@@ -38,6 +39,8 @@ if TYPE_CHECKING:
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
 
 MIME_TYPE_JSON = "application/json"
+
+logger = logging.getLogger(__name__)
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
@@ -137,7 +140,9 @@ class JSON(IODescriptor[JSONType]):
     def __init__(
         self,
         pydantic_model: t.Type[pydantic.BaseModel] | None = None,
+        *,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
+        **kwargs,
     ):
         if pydantic_model is not None:
             if pydantic is None:
@@ -150,6 +155,12 @@ class JSON(IODescriptor[JSONType]):
 
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
+
+        # Backwards compatible API for version 1.0.0
+        if "validate_json" in kwargs:
+            logger.warning(
+                "validate_json option in bentoml.io.JSON has been deprecated, use a pydantic model to specify validation options instead"
+            )
 
     def input_type(self) -> "UnionType":
         return JSONType

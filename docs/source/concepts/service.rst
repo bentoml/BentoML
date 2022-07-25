@@ -269,30 +269,31 @@ JSON
 ~~~~
 
 The data type of a JSON IO descriptor can be specified through a Pydantic model. By setting 
-the :code:`validate_json` argument to `True`, the IO descriptor will strictly validate the input 
-based on the specified pydantic model. To learn more, see IO descrptor reference for 
+a pydantic model, the IO descriptor will validate the input based on the specified pydantic
+model and return. To learn more, see IO descrptor reference for
 :ref:`reference/api_io_descriptors:Structured Data with JSON`.
 
 .. code-block:: python
 
-    import typing as t
-    
+    from typing import Dict, Any
     from pydantic import BaseModel
 
     svc = bentoml.Service("iris_classifier")
 
-    class IrisInput(BaseModel):
+    class IrisFeatures(BaseModel):
         sepal_length: float
         sepal_width: float
         petal_length: float
         petal_width: float
 
     @svc.api(
-        input=JSON(pydantic_model=IrisInput, validate_json=True),
+        input=JSON(pydantic_model=IrisFeatures),
         output=JSON(),
     )
-    def classify(input_series: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        ...
+    def classify(input_series: IrisFeatures) -> Dict[str, Any]:
+        input_df = pd.DataFrame([input_data.dict()])
+        results = iris_clf_runner.predict.run(input_df).to_list()
+        return {"predictions": results}
 
 
 Built-in Types

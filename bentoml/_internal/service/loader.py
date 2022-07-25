@@ -136,7 +136,7 @@ def import_service(
         try:
             module = importlib.import_module(module_name, package=working_dir)
         except ImportError as e:
-            raise ImportServiceError(f'Failed importing module "{module_name}": {e}')
+            raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
         if not standalone_load:
             recover_standalone_env_change()
 

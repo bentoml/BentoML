@@ -9,6 +9,7 @@ import concurrent.futures
 import google.protobuf.descriptor
 import google.protobuf.message
 import google.protobuf.service
+import google.rpc.status_pb2
 import typing
 import typing_extensions
 
@@ -77,16 +78,20 @@ class CallResponse(google.protobuf.message.Message):
     """Response from Call."""
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
     CONTENTS_FIELD_NUMBER: builtins.int
+    STATUS_FIELD_NUMBER: builtins.int
     @property
     def contents(self) -> bentoml.grpc.v1.struct_pb2.StructuredValue:
         """representation of the output value."""
         pass
+    @property
+    def status(self) -> google.rpc.status_pb2.Status: ...
     def __init__(self,
         *,
         contents: typing.Optional[bentoml.grpc.v1.struct_pb2.StructuredValue] = ...,
+        status: typing.Optional[google.rpc.status_pb2.Status] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["contents",b"contents"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["contents",b"contents"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["contents",b"contents","status",b"status"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["contents",b"contents","status",b"status"]) -> None: ...
 global___CallResponse = CallResponse
 
 class CallStreamRequest(google.protobuf.message.Message):

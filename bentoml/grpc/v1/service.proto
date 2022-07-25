@@ -3,6 +3,7 @@ syntax = "proto3";
 package bentoml.grpc.v1;
 
 import "bentoml/grpc/v1/struct.proto";
+import "google/rpc/status.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -58,6 +59,7 @@ message CallRequest {
 message CallResponse {
   // representation of the output value.
   bentoml.grpc.v1.StructuredValue contents = 1;
+  google.rpc.Status status = 2;
 }
 
 // Request message for CallStream.

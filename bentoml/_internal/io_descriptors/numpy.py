@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
+    from ..server.grpc.utils import BentoServicerContext
 else:
     np = LazyLoader("np", globals(), "numpy")
 
@@ -251,36 +252,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         else:
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
-    def proto_to_arr(self, proto_arr):
-        """
-        Convert given protobuf array to python list
-        """
-        from google.protobuf.duration_pb2 import Duration
-        from google.protobuf.timestamp_pb2 import Timestamp
-
-        from bentoml.grpc import service_pb2
-
-        array_type = self.WhichArray(proto_arr)
-        if not array_type:
-            raise ValueError("Provided array is either empty or invalid.")
-
-        return_arr = [i for i in getattr(proto_arr, array_type)]
-
-        if array_type == "timestamp_value":
-            return_arr = [Timestamp.ToDatetime(dt) for dt in return_arr]
-        elif array_type == "duration_value":
-            return_arr = [Duration.ToTimedelta(td) for td in return_arr]
-
-        for i, item in enumerate(return_arr):
-            if isinstance(item, service_pb2.Array):
-                return_arr[i] = self.proto_to_arr(item)
-            elif isinstance(item, service_pb2.Tuple):
-                return_arr[i] = self.handle_tuple(item)
-
-        return return_arr
-
     async def from_grpc_request(
-        self, request: service_pb2.Request, context: grpc.ServicerContext
+        self, request: service_pb2.CallRequest, context: BentoServicerContext
     ) -> ext.NpNDArray:
         """
         Process incoming protobuf request and convert it to `numpy.ndarray`
@@ -292,17 +265,23 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        res: "ext.NpNDArray"
-        try:
-            res = np.array(self.proto_to_arr(request), dtype=self._dtype)
-        except ValueError:
-            res = np.array(self.proto_to_arr(request))
-        res = self._verify_ndarray(res, BadInput)
-        return res
+        from google.protobuf.json_format import MessageToDict
+        from google.protobuf.text_format import MessageToBytes
+
+        from bentoml.grpc.v1 import struct_pb2
+        from bentoml.grpc.v1 import service_pb2
+
+        logger.info([f.name for f in struct_pb2.StructuredValue.DESCRIPTOR.fields])
+        pld = request.contents.SerializeToString()
+        print(struct_pb2.StructuredValue.FromString(pld))
+        print(MessageToDict(request.contents))
+
+        raise RuntimeError
+        return self._verify_ndarray(res, BadInput)
 
     async def to_grpc_response(
-        self, obj: ext.NpNDArray, context: grpc.ServicerContext
-    ) -> service_pb2.Response:
+        self, obj: ext.NpNDArray, context: BentoServicerContext
+    ) -> service_pb2.CallResponse:
         """
         Process given objects and convert it to grpc protobuf response.
 

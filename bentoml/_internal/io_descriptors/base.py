@@ -11,12 +11,12 @@ if TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
 
-    from bentoml.grpc.v1.service_pb2 import CallRequest
-    from bentoml.grpc.v1.service_pb2 import CallResponse
+    from bentoml.grpc.v1.service_pb2 import InferenceRequest
+    from bentoml.grpc.v1.service_pb2 import InferenceResponse
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.utils import BentoServicerContext
+    from ..server.grpc.types import BentoServicerContext
 
     InputType = (
         UnionType
@@ -86,12 +86,12 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
 
     @abstractmethod
     async def from_grpc_request(
-        self, request: CallRequest, context: BentoServicerContext
+        self, request: InferenceRequest, context: BentoServicerContext
     ) -> IOPyObj:
         ...
 
     @abstractmethod
     async def to_grpc_response(
         self, obj: IOPyObj, context: BentoServicerContext
-    ) -> CallResponse:
+    ) -> InferenceResponse:
         ...

@@ -53,7 +53,7 @@ class GRPCAppFactory:
 
         on_startup: OnStartup = [
             self.mark_as_ready,
-            self.bento_service.on_asgi_app_startup,
+            self.bento_service.on_grpc_server_startup,
         ]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
@@ -77,7 +77,7 @@ class GRPCAppFactory:
 
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:
-        on_shutdown = [self.bento_service.on_asgi_app_shutdown]
+        on_shutdown = [self.bento_service.on_grpc_server_shutdown]
         for runner in self.bento_service.runners:
             on_shutdown.append(runner.destroy)
 
@@ -110,10 +110,13 @@ class GRPCAppFactory:
 
     @property
     def interceptors(self) -> list[aio.ServerInterceptor]:
-        interceptors: list[aio.ServerInterceptor] = []
+        from .grpc.interceptors import ExceptionHandlerInterceptor
+
+        # TODO: add access log, tracing, prometheus interceptors.
+        interceptors: list[aio.ServerInterceptor] = [ExceptionHandlerInterceptor()]
+
+        # add users-defined interceptors.
         interceptors.extend(
             [interceptor() for interceptor in self.bento_service.interceptors]
         )
-
-        # TODO: add access log, tracing, prometheus interceptors.
         return interceptors

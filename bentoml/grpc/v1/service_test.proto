@@ -9,23 +9,23 @@ option optimize_for = SPEED;
 option py_generic_services = true;
 
 // Represents a request for TestService.
-message TestRequest {
+message ExecuteRequest {
   string input = 1;
 }
 
 // Represents a response from TestService.
-message TestResponse {
+message ExecuteResponse {
   string output = 1;
 }
 
 // Use for testing interceptors per RPC call.
 service TestService {
   // Unary API
-  rpc Execute(TestRequest) returns (TestResponse);
+  rpc Execute(ExecuteRequest) returns (ExecuteResponse);
   // Client-streaming API
-  rpc ClientStreamExecute(stream TestRequest) returns (TestResponse);
+  rpc ClientStreamExecute(stream ExecuteRequest) returns (ExecuteResponse);
   // Server-streaming API
-  rpc ServerStreamExecute(TestRequest) returns (stream TestResponse);
+  rpc ServerStreamExecute(ExecuteRequest) returns (stream ExecuteResponse);
   // Bidirectional streaming API
-  rpc BidiStreamExecute(stream TestRequest) returns (stream TestResponse);
+  rpc BidiStreamExecute(stream ExecuteRequest) returns (stream ExecuteResponse);
 }

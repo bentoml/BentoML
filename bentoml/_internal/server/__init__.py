@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
-SCRIPT_API_SERVER = "bentoml._internal.server.cli.http.api_server"
-SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.http.dev_api_server"
-SCRIPT_GRPC_DEV_API_SERVER = "bentoml._internal.server.cli.grpc.dev_api_server"
+SCRIPT_API_SERVER = "bentoml._internal.server.cli.rest_api_server"
+SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.rest_dev_api_server"
+SCRIPT_GRPC_DEV_API_SERVER = "bentoml._internal.server.cli.grpc_dev_api_server"
 
 MAX_AF_UNIX_PATH_LENGTH = 103
 

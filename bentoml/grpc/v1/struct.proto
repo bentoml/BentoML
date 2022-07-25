@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package bentoml.grpc.v1;
 
-import "bentoml/grpc/v1/types.proto";
+import "google/protobuf/any.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -13,101 +13,78 @@ option java_outer_classname = "StructProto";
 option java_package = "com.bentoml.grpc.v1";
 option objc_class_prefix = "STCT";
 
-// Protocol buffer representing contents of a given rpc call.
-// Partial verbatim sources of tensorflow/core/framework/tensor.proto.
-//
-// One key different from the original is that since we are using proto3,
-//  repeated values are packed by default.
-message Value {
-  // dtype represents the data type of given contents. This would help us
-  // to use the correct serialization protocol on the server side if needed.
-  bentoml.grpc.v1.DataType dtype = 1;
-
-  // Only one of the representations below is set, one of "contents" and
-  // the "xxx_value" attributes.  We are not using oneof because as oneofs cannot
-  // contain repeated fields it would require another extra set of messages.
-
-  // Serialized raw contents. This representation
-  // can be used for all tensor types. The purpose of this representation is to
+// Representing contents of a given rpc call.
+message ContentsProto {
+  // Serialized bytes contents.
+  // The purpose of this representation is to
   // reduce serialization overhead during RPC call by avoiding serialization of
   // many repeated small items.
-  bytes contents = 2;
+  repeated bytes bytes_contents = 1;
 
-  // Type specific representations that make it easy to create tensor protos in
-  // all languages.  Only the representation corresponding to "dtype" can
-  // be set. The values hold the flattened representation of the inputs in
-  // row major order.
+  // Type specific representations that make it easy to create protos in
+  // all languages. The values hold the flattened representation of the inputs in row major order.
+  //
+  // Note that for quantized types, one should use ``bytes_contents`` and provide dtype at IO descriptor level.
 
   // DT_HALF, DT_BFLOAT16. Note that since protobuf has no int16 type, we'll
   // have some pointless zero padding for each value here.
-  repeated int32 half_value = 11;
+  repeated int32 half_contents = 10 [packed = true];
 
   // DT_FLOAT.
-  repeated float float_value = 3;
+  repeated float float_contents = 2 [packed = true];
 
   // DT_DOUBLE.
-  repeated double double_value = 4;
+  repeated double double_contents = 3 [packed = true];
 
   // DT_INT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8.
-  repeated int32 int_value = 5;
+  repeated int32 int_contents = 4 [packed = true];
 
   // DT_STRING
-  repeated bytes string_value = 6;
+  repeated bytes string_contents = 5;
 
-  // DT_COMPLEX64. scomplex_value(2*i) and scomplex_value(2*i+1) are real
+  // DT_COMPLEX64. scomplex_contents(2*i) and scomplex_contents(2*i+1) are real
   // and imaginary parts of i-th single precision complex.
-  repeated float scomplex_value = 7;
+  repeated float scomplex_contents = 6 [packed = true];
 
   // DT_INT64
-  repeated int64 int64_value = 8;
+  repeated int64 int64_contents = 7 [packed = true];
 
   // DT_BOOL
-  repeated bool bool_value = 9;
+  repeated bool bool_contents = 8 [packed = true];
 
-  // DT_COMPLEX128. dcomplex_value(2*i) and dcomplex_value(2*i+1) are real
+  // DT_COMPLEX128. dcomplex_contents(2*i) and dcomplex_contents(2*i+1) are real
   // and imaginary parts of i-th double precision complex.
-  repeated double dcomplex_value = 10;
+  repeated double dcomplex_contents = 9 [packed = true];
 
   // DT_UINT32
-  repeated uint32 uint32_value = 12;
+  repeated uint32 uint32_contents = 11 [packed = true];
 
   // DT_UINT64
-  repeated uint64 uint64_value = 13;
-}
+  repeated uint64 uint64_contents = 12 [packed = true];
 
-// StructuredValue represents a dynamic typed value representing various
-// data structures that are inspired by Python's data structures.
-// Partial verbatim sources of tensorflow/core/protobuf/struct.proto.
-//
-// [16, 100] will be reserved for future use. Users are free to use from [3, 15]
-message StructuredValue {
-  oneof kind {
-    // Represents a None value.
-    NoneValue none_value = 1;
+  // This section represents a dynamic typed value representing various
+  // data structures that are inspired by Python's data structures.
 
-    // Represents any value that can be represented as a payload contents.
-    Value any_value = 2;
+  // Represents a None value.
+  repeated NoneValue none_contents = 50;
 
-    // Represents a list of `Value`.
-    ListValue list_value = 51;
+  // Represents a list of `ContentsProto`.
+  repeated ListValue list_contents = 51;
 
-    // Represents a tuple of `Value`.
-    TupleValue tuple_value = 52;
+  // Represents a tuple of `ContentsProto`.
+  repeated TupleValue tuple_contents = 52;
 
-    // Represents a dict `Value`.
-    DictValue dict_value = 53;
+  // Represents a dict `ContentsProto`.
+  repeated DictValue dict_contents = 53;
 
-    // Represents Python's namedtuple.
-    NamedTupleValue namedtuple_value = 54;
-  }
+  // Represents Python's namedtuple.
+  repeated NamedTupleValue namedtuple_contents = 54;
 
-  // dataframes_columns and dataframe_indices are used
-  // in conjunction with contents to represent a dataframe.
-  repeated string dataframe_columns = 101;
-  repeated string dataframe_indices = 102;
+  // To represent any type contents.
+  repeated google.protobuf.Any any_contents = 55;
 
   // We want to reserve these for future uses.
-  reserved 16 to 50, 55 to 100;
+  reserved 56 to 100;
 }
 
 // represents None type.
@@ -115,28 +92,31 @@ message NoneValue {}
 
 // Represents a Python list.
 message ListValue {
-  repeated StructuredValue values = 1;
+  repeated ContentsProto values = 1;
 }
 
 // Represents a Python tuple.
 message TupleValue {
-  repeated StructuredValue values = 1;
+  repeated ContentsProto values = 1;
 }
 
-// Represents a Python dict with key<str> and value<StructuredValue>.
-// This key is analogous with Value.string_value
+// Represents a Python dict with key<str> and value<ContentsProto>.
+// This key is analogous with ContentsProto.string_contents.
+// Note that map<> does not preserve order from given message.
 message DictValue {
-  map<string, StructuredValue> fields = 1;
+  map<string, ContentsProto> fields = 1;
 }
 
 // Represents a (key, value) pair.
 message PairValue {
   string key = 1;
-  StructuredValue value = 2;
+  ContentsProto value = 2;
 }
 
 // Represents a namedtuple.
+// One key different from DictValue is that NamedTupleValue reserved
+// the order of key value map, whereas map doesn't.
 message NamedTupleValue {
-  string type_name = 1;
+  string name = 1;
   repeated PairValue values = 2;
 }

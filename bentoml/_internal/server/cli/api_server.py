@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import psutil
+from joblib import logger
 
 import bentoml
 
@@ -69,6 +70,10 @@ def main(
     \b
     This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting BentoML API server {worker_id}...")
 
     import uvicorn
 

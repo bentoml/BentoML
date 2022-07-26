@@ -1,3 +1,8 @@
+"""
+All entrypoints script should keep the requirements(imports) simple.
+We shall avoid import anything from bentoml here.
+"""
+
 from __future__ import annotations
 
 import sys
@@ -7,11 +12,6 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import psutil
-
-from bentoml import load
-from bentoml._internal.utils.uri import uri_to_path
-
-from ...context import component_context
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -91,6 +91,10 @@ def main(
         arbiter.start()
         return
 
+    from bentoml import load
+
+    from ...context import component_context
+
     component_context.component_name = f"runner:{runner_name}:{worker_id}"
     from ...log import configure_server_logging
 
@@ -135,20 +139,7 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    if parsed.scheme in ("file", "unix"):
-        uvicorn.run(
-            app,
-            uds=uri_to_path(bind),
-            **uvicorn_options,
-        )
-    elif parsed.scheme == "tcp":
-        uvicorn.run(
-            app,
-            host=parsed.hostname,
-            port=parsed.port,
-            **uvicorn_options,
-        )
-    elif parsed.scheme == "fd":
+    if parsed.scheme == "fd":
         # when fd is provided, we will skip the uvicorn internal supervisor, thus there is only one process
         fd = int(parsed.netloc)
         sock = socket.socket(fileno=fd)

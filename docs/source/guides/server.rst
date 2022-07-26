@@ -18,7 +18,7 @@ Custom Endpoint URL
 By default, the inference APIs are generated from the ``@api`` defined within a
 ``bentoml.Service``. The URL route for the inference API is determined by the function
 name. Take the sample service from our tutorial for example, the function name ``classify``
-will be used for generating the REST API URL ``/classify``:
+will be used as the REST API URL ``/classify``:
 
 .. code-block:: python
 

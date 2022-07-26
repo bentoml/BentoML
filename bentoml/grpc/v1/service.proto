@@ -4,8 +4,6 @@ package bentoml.grpc.v1;
 
 import "bentoml/grpc/v1/struct.proto";
 import "google/protobuf/any.proto";
-import "google/rpc/error_details.proto";
-import "google/rpc/status.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -109,19 +107,4 @@ message InferenceResponse {
   //
   // If this field is specified then contents must not be specified for any input tensor.
   repeated bytes raw_bytes_contents = 2;
-
-  // Sends a rpc status back to the client.
-  google.rpc.Status status = 3;
-
-  // the response should also include an error message type
-  oneof errors {
-    google.rpc.RetryInfo retry_info = 100;
-    google.rpc.DebugInfo debug_info = 101;
-    google.rpc.QuotaFailure quota_failure = 102;
-    google.rpc.ErrorInfo error_info = 103;
-    google.rpc.PreconditionFailure precondition_failure = 104;
-    google.rpc.BadRequest bad_request = 105;
-    google.rpc.RequestInfo request_info = 106;
-    google.rpc.LocalizedMessage localized_message = 107;
-  }
 }

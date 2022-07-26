@@ -22,7 +22,7 @@ jobs:
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -56,7 +56,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup python
         uses: actions/setup-python@v2
@@ -107,7 +107,7 @@ jobs:
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.docs == 'true') || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
 
@@ -159,7 +159,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
 
@@ -229,7 +229,7 @@ jobs:
       BENTOML_BUNDLE_LOCAL_BUILD: True
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0  # fetch all tags and branches
       - name: Setup python

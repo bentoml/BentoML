@@ -49,7 +49,7 @@ jobs:
       transformers: ${{ steps.filter.outputs.transformers }}
       xgboost: ${{ steps.filter.outputs.xgboost }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -226,7 +226,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -271,7 +271,7 @@ jobs:
     #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -316,7 +316,7 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -365,7 +365,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -420,7 +420,7 @@ jobs:
     #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.gluon == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -465,7 +465,7 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -509,7 +509,7 @@ jobs:
   #   if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       with:
   #         fetch-depth: 0 # fetch all tags and branches
   #     - name: Setup python
@@ -553,7 +553,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -597,7 +597,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -641,7 +641,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.mlflow == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -685,7 +685,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -732,7 +732,7 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -776,7 +776,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.picklable_model == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -821,7 +821,7 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -867,7 +867,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -921,7 +921,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch_lightning == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -965,7 +965,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.torchscript == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -1009,7 +1009,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.sklearn == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -1054,7 +1054,7 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -1099,7 +1099,7 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -1144,7 +1144,7 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -1188,7 +1188,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.tf2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -1252,7 +1252,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.transformers == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
@@ -1306,7 +1306,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.xgboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python

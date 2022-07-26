@@ -10,24 +10,61 @@ from dataclasses import dataclass
 import grpc
 
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import UnprocessableEntity
 
-from .serializer import proto_to_dict
+from ..lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
-    from ...server.grpc.types import RequestType
-    from ...server.grpc.types import ResponseType
+
+    from bentoml.io import IODescriptor
+    from bentoml.grpc.v1 import service_pb2
+
+    from ...server.grpc.types import HandlerMethod
+    from ...server.grpc.types import HandlerFactoryFn
     from ...server.grpc.types import RpcMethodHandler
-    from ...server.grpc.types import BentoServicerContext
+
+    # keep sync with bentoml.grpc.v1.service.Response
+    ContentsDict = dict[str, dict[str, t.Any]]
+else:
+    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 
 __all__ = [
     "grpc_status_code",
     "parse_method_name",
     "get_method_type",
-    "get_factory_and_method",
-    "proto_to_dict",
+    "get_rpc_handler",
+    "deserialize_proto",
+    "serialize_proto",
 ]
 
 logger = logging.getLogger(__name__)
+
+
+def deserialize_proto(
+    io_descriptor: IODescriptor[t.Any],
+    req: service_pb2.Request,
+    **kwargs: t.Any,
+) -> tuple[str, dict[str, t.Any]]:
+    # Deserialize a service_pb2.Request to dict.
+    from google.protobuf.json_format import MessageToDict
+
+    if "preserving_proto_field_name" not in kwargs:
+        kwargs.setdefault("preserving_proto_field_name", True)
+
+    kind = req.contents.WhichOneof("kind")
+    if kind not in io_descriptor.accepted_proto_kind:
+        raise UnprocessableEntity(
+            f"{kind} is not supported for {io_descriptor.__class__.__name__}. Supported message fields are: {io_descriptor.accepted_proto_kind}"
+        )
+
+    return kind, MessageToDict(getattr(req.contents, kind), **kwargs)
+
+
+def serialize_proto(fields: str, contents_dict: ContentsDict) -> service_pb2.Response:
+    from google.protobuf.json_format import ParseDict
+
+    return ParseDict({"contents": {fields: contents_dict}}, service_pb2.Response())
+
 
 _STATUS_CODE_MAPPING = {
     HTTPStatus.BAD_REQUEST: grpc.StatusCode.INVALID_ARGUMENT,
@@ -101,19 +138,26 @@ def get_method_type(request_streaming: bool, response_streaming: bool) -> str:
         return RpcMethodType.UNKNOWN
 
 
-def get_factory_and_method(
-    rpc_handler: RpcMethodHandler,
-) -> tuple[
-    t.Callable[..., t.Any],
-    t.Callable[[RequestType, BentoServicerContext], t.Awaitable[ResponseType]],
-]:
-    if rpc_handler.unary_unary:
-        return grpc.unary_unary_rpc_method_handler, rpc_handler.unary_unary
-    elif rpc_handler.unary_stream:
-        return grpc.unary_stream_rpc_method_handler, rpc_handler.unary_stream
-    elif rpc_handler.stream_unary:
-        return grpc.stream_unary_rpc_method_handler, rpc_handler.stream_unary
-    elif rpc_handler.stream_stream:
-        return grpc.stream_stream_rpc_method_handler, rpc_handler.stream_stream
+def get_rpc_handler(
+    handler: RpcMethodHandler,
+) -> tuple[HandlerFactoryFn, HandlerMethod[t.Any]]:
+    if handler.unary_unary:
+        return grpc.unary_unary_rpc_method_handler, handler.unary_unary
+    elif handler.unary_stream:
+        return grpc.unary_stream_rpc_method_handler, handler.unary_stream
+    elif handler.stream_unary:
+        return grpc.stream_unary_rpc_method_handler, handler.stream_unary
+    elif handler.stream_stream:
+        return grpc.stream_stream_rpc_method_handler, handler.stream_stream
     else:
-        raise BentoMLException(f"RPC method handler {rpc_handler} does not exist.")
+        raise BentoMLException(f"RPC method handler {handler} does not exist.")
+
+
+def invoke_handler_factory(
+    fn: HandlerMethod[t.Any], factory: HandlerFactoryFn, handler: RpcMethodHandler
+) -> t.Any:
+    return factory(
+        fn,
+        request_deserializer=handler.request_deserializer,
+        response_serializer=handler.response_serializer,
+    )

@@ -61,7 +61,7 @@ Since the web serving layer is built with the Python ASGI protocol, users can us
 :code:`bentoml.Service#add_asgi_middleware` API to mount arbitrary
 `ASGI middleware <https://asgi.readthedocs.io/en/latest/specs/main.html>`_ to change
 anything they may need to customize in the HTTP request to response lifecycle, such as
-manipulating the request headers or modify the response status code.
+manipulating the request headers, modifying the response status code, or authorizing access to an endpoint.
 
 Users can implement their own ASGI middleware class and use with BentoML,
 to checkout the existing middleware built by the Python community, such as:
@@ -85,13 +85,11 @@ For example, you can add do:
 Fully Customized Endpoints
 --------------------------
 
-BentoML provides first-class support for bundling existing WSGI or ASGI app into a
-BentoServer's web serving layer, to fully extend BentoML's REST API to adapt to your
-needs.
+BentoML provides first-class support for mounting existing WSGI or ASGI apps onto the
+web serving layer, to enable common use cases such as serving existing Python web applications alongside
+the models, performing custom authentication and authorization, handling GET requests and web UIs, or
+providing streaming capabilities.
 
-Use this method if you want to serve existing Python Web applications with your models,
-or if you need to customize the API request handling to handle authentication, GET requests,
-custom web UI, or provide HTTP streaming endpoints.
 
 
 Bundle ASGI app (e.g. FastAPI)
@@ -149,8 +147,7 @@ Here’s an example of mounting BentoML Service with an ASGI app built with Fast
         return { "prediction": results.tolist()[0] }
 
 
-This goes the same for ASGI web applications built with any ASGI framework other than
-FastAPI as well.
+In addition to FastAPI, application mounting is supported for any ASGI web applications built with any frameworks adhering to the ASGI standards.
 
 Bundle WSGI app (e.g. Flask)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -24,7 +24,7 @@ will be used for generating the REST API URL ``/classify``:
 
     svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())\
+    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def classify(input_arr):
         ...
 

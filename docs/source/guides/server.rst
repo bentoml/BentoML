@@ -30,7 +30,7 @@ will be used for generating the REST API URL ``/classify``:
 
 However, user can customize this URL endpoint via the ``route`` option in the
 ``bentoml.Service#api`` decorator. For example, the following code will generate an
-endpoint with URL `/v1/models/iris_classifier`, regardless of the API function name:
+endpoint with URL ``/v1/models/iris_classifier/predict``, regardless of the API function name:
 
 
 .. code-block:: python
@@ -141,7 +141,7 @@ Here’s an example of mounting BentoML Service with an ASGI app built with Fast
         results = iris_clf_runner.predict.run(input_df)
         return { "prediction": results.tolist()[0] }
 
-    # For demo purpose, here's an identical inference endpoint implemented via FastAPI
+    # BentoML Runner's async API is recommended for async endpoints
     @fastapi_app.post("/predict_fastapi_async")
     async def predict_async(features: IrisFeatures):
         input_df = pd.DataFrame([features.dict()])
@@ -149,7 +149,7 @@ Here’s an example of mounting BentoML Service with an ASGI app built with Fast
         return { "prediction": results.tolist()[0] }
 
 
-This goes the same for ASGI web applications built with any ASGI frameworks other than
+This goes the same for ASGI web applications built with any ASGI framework other than
 FastAPI as well.
 
 Bundle WSGI app (e.g. Flask)

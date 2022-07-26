@@ -61,8 +61,8 @@ Since the web serving layer is built with the Python ASGI protocol, users can us
 anything they may need to customize in the HTTP request to response lifecycle, such as
 manipulating the request headers, modifying the response status code, or authorizing access to an endpoint.
 
-Users can implement their own ASGI middleware class and use with BentoML,
-to checkout the existing middleware built by the Python community, such as:
+Users can not only implement their own ASGI middleware class,
+but also use existing middleware built by the Python web development community, such as:
 
 - FastAPI middlewares: https://fastapi.tiangolo.com/advanced/middleware/
 - Starlette middlewares: https://www.starlette.io/middleware/

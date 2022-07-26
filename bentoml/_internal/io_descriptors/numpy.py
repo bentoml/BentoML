@@ -305,12 +305,14 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        from bentoml.grpc.v1 import struct_pb2
-
         from ..utils.grpc import proto_to_dict
 
-        logger.info([f for f in struct_pb2.ContentsProto.DESCRIPTOR.fields])
+        # from bentoml.grpc.v1 import struct_pb2
+        # logger.info([f for f in struct_pb2.ContentsProto.DESCRIPTOR.fields])
+        print(request.contents)
         contents = proto_to_dict(request.contents)
+        print(contents)
+        raise RuntimeError
         return np.frombuffer(contents)
 
     async def to_grpc_response(
@@ -326,7 +328,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             `io_descriptor_pb2.Array`:
                 Protobuf representation of given `np.ndarray`
         """
-        pass
+        from bentoml.grpc.v1 import service_pb2
+
+        return service_pb2.InferenceResponse()
 
     def generate_protobuf(self):
         pass

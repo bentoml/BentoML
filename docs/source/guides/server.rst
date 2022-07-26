@@ -2,14 +2,12 @@
 Customize BentoServer
 =====================
 
-BentoServer architecture runs the BentoML Service API in an `ASGI <https://asgi.readthedocs.io/en/latest/>`_
-web serving layer and Runners in a separate worker process pool managed by BentoML. The ASGI web
+BentoML Server runs the Service API in an `ASGI <https://asgi.readthedocs.io/en/latest/>`_
+web serving layer and puts Runners in a separate worker process pool managed by BentoML. The ASGI web
 serving layer will expose REST endpoints for inference APIs, such as ``POST /predict`` and common
 infrastructure APIs, such as ``GET /metrics`` for monitoring.
 
-Since the web serving layer is usually front-facing for applications to consume predictions,
-BentoML offers a number of ways for users to customize its behaviors. This guide will dive
-into these available options.
+BentoML offers a number of ways to customize the behaviors of the web serving layer to meet the needs of the consumers.
 
 
 Custom Endpoint URL

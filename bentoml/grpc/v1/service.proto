@@ -48,56 +48,10 @@ message ServerReadyResponse {
 // Request for Inference.
 message InferenceRequest {
   // a given API route the rpc request is sent to.
-  string api_name = 14;
-  string api_version = 15;
+  string api_name = 1;
+  string api_version = 2;
 
-  // representation of the input value.
-  oneof contents {
-    // Serialized bytes contents.
-    bytes bytes_contents = 1;
-
-    // DT_HALF, DT_BFLOAT16
-    int32 half_contents = 10;
-
-    // DT_FLOAT.
-    float float_contents = 2;
-
-    // DT_DOUBLE.
-    double double_contents = 3;
-
-    // DT_INT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8.
-    int32 int_contents = 4;
-
-    // DT_STRING
-    bytes string_contents = 5;
-
-    // DT_COMPLEX64.
-    float scomplex_contents = 6;
-
-    // DT_INT64
-    int64 int64_contents = 7;
-
-    // DT_BOOL
-    bool bool_contents = 8;
-
-    // DT_COMPLEX128
-    double dcomplex_contents = 9;
-
-    // DT_UINT32
-    uint32 uint32_contents = 11;
-
-    // DT_UINT64
-    uint64 uint64_contents = 12;
-
-    // Represents arbitrary Python data structures.
-    NoneValue none_contents = 50;
-    ListValue list_contents = 51;
-    TupleValue tuple_contents = 52;
-    DictValue dict_contents = 53;
-    NamedTupleValue namedtuple_contents = 54;
-
-    google.protobuf.Any any_contents = 55;
-  }
+  repeated bentoml.grpc.v1.ContentsProto contents = 3;
 
   // The data contained in an input can be represented in
   // "raw" bytes form or in the repeated type that matches the
@@ -119,7 +73,7 @@ message InferenceRequest {
   // specific data type for a 16-bit float type.
   //
   // If this field is specified then contents must not be specified for any input tensor.
-  repeated bytes raw_bytes_contents = 13;
+  repeated bytes raw_bytes_contents = 4;
 
   // dataframes_columns and dataframe_indices are used
   // in conjunction with contents to represent a dataframe.
@@ -132,53 +86,7 @@ message InferenceRequest {
 // Response from Inference.
 message InferenceResponse {
   // representation of the output value.
-  // representation of the input value.
-  oneof contents {
-    // Serialized bytes contents.
-    bytes bytes_contents = 1;
-
-    // DT_HALF, DT_BFLOAT16
-    int32 half_contents = 10;
-
-    // DT_FLOAT.
-    float float_contents = 2;
-
-    // DT_DOUBLE.
-    double double_contents = 3;
-
-    // DT_INT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8.
-    int32 int_contents = 4;
-
-    // DT_STRING
-    bytes string_contents = 5;
-
-    // DT_COMPLEX64.
-    float scomplex_contents = 6;
-
-    // DT_INT64
-    int64 int64_contents = 7;
-
-    // DT_BOOL
-    bool bool_contents = 8;
-
-    // DT_COMPLEX128
-    double dcomplex_contents = 9;
-
-    // DT_UINT32
-    uint32 uint32_contents = 11;
-
-    // DT_UINT64
-    uint64 uint64_contents = 12;
-
-    // Represents arbitrary Python data structures.
-    NoneValue none_contents = 50;
-    ListValue list_contents = 51;
-    TupleValue tuple_contents = 52;
-    DictValue dict_contents = 53;
-    NamedTupleValue namedtuple_contents = 54;
-
-    google.protobuf.Any any_contents = 55;
-  }
+  repeated bentoml.grpc.v1.ContentsProto contents = 1;
 
   // The data contained in an output can be represented in
   // "raw" bytes form or in the repeated type that matches the
@@ -200,10 +108,10 @@ message InferenceResponse {
   // specific data type for a 16-bit float type.
   //
   // If this field is specified then contents must not be specified for any input tensor.
-  repeated bytes raw_bytes_contents = 13;
+  repeated bytes raw_bytes_contents = 2;
 
   // Sends a rpc status back to the client.
-  google.rpc.Status status = 14;
+  google.rpc.Status status = 3;
 
   // the response should also include an error message type
   oneof errors {

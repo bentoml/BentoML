@@ -196,7 +196,7 @@ jobs:
         shell: bash
 
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           name: codecov-${{ matrix.os }}-python${{ matrix.python-version }}
           fail_ci_if_error: true
@@ -271,7 +271,7 @@ jobs:
         run: ./scripts/ci/run_tests.sh general_features
 
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           flags: e2e-tests
           directory: ./

@@ -258,7 +258,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.catboost == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./catboost.xml
@@ -303,7 +303,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.detectron2 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./detectron2.xml
@@ -348,7 +348,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.easyocr == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./easyocr.xml
@@ -407,7 +407,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.fastai == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./fastai.xml,./fastai.unit.xml
@@ -452,7 +452,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.gluon == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./gluon.xml
@@ -497,7 +497,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.h2o == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./h2o.xml
@@ -541,7 +541,7 @@ jobs:
 
   #     - name: Upload test coverage to Codecov
   #       if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
-  #       uses: codecov/codecov-action@v2
+  #       uses: codecov/codecov-action@v3
   #       with:
   #         directory: ./
   #         files: ./keras_tf1.xml
@@ -585,7 +585,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf2 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./keras_tf2.xml
@@ -629,7 +629,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.lightgbm == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./lightgbm.xml
@@ -673,7 +673,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.mlflow == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./mlflow.xml
@@ -717,7 +717,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnx == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./onnx.xml
@@ -764,7 +764,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./paddle.xml
@@ -808,7 +808,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./picklable_model.xml
@@ -853,7 +853,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pycaret == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./pycaret.xml
@@ -909,7 +909,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./pytorch.xml,./pytorch.unit.xml
@@ -953,7 +953,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./pytorch_lightning.xml
@@ -997,7 +997,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.torchscript == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./torchscript.xml
@@ -1041,7 +1041,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.sklearn == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./sklearn.xml
@@ -1086,7 +1086,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.spacy == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./spacy.xml
@@ -1131,7 +1131,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.statsmodels == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./statsmodels.xml
@@ -1176,7 +1176,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf1 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./tf1.xml
@@ -1240,7 +1240,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./tf2.xml,./tf2.unit.xml,./tf2.unit.no_eager.xml
@@ -1294,7 +1294,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./transformers.xml
@@ -1338,7 +1338,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.xgboost == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./xgboost.xml

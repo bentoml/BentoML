@@ -29,7 +29,7 @@ will be used as the REST API URL ``/classify``:
         ...
 
 However, user can customize this URL endpoint via the ``route`` option in the
-``bentoml.Service#api`` decorator. For example, the following code will generate an
+``bentoml.Service#api`` decorator. For example, the following code will assign the 
 endpoint with URL ``/v1/models/iris_classifier/predict``, regardless of the API function name:
 
 

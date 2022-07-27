@@ -17,4 +17,3 @@ build[virtualenv] >=0.8.0
 yamllint
 grpcio
 grpcio-tools
-mypy-protobuf==3.2.0

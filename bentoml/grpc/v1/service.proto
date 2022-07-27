@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package bentoml.grpc.v1;
 
-import "bentoml/grpc/v1/struct.proto";
-import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -17,94 +16,180 @@ option py_generic_services = true;
 
 // a gRPC BentoServer.
 service BentoService {
-  // Check server liveliness.
-  rpc ServerLive(ServerLiveRequest) returns (ServerLiveResponse) {}
-
-  // Check server readiness
-  rpc ServerReady(ServerReadyRequest) returns (ServerReadyResponse) {}
-
-  // Inference handles unary API.
-  rpc Inference(InferenceRequest) returns (InferenceResponse) {}
+  // Infer handles unary API.
+  rpc Infer(Request) returns (Response) {}
 }
 
-// request for ServerLive that takes no arguments.
-message ServerLiveRequest {}
-
-// response for ServerLive returns a boolean determine server's liveliness.
-message ServerLiveResponse {
-  bool live = 1;
-}
-
-// request for ServerReady that takes no arguments.
-message ServerReadyRequest {}
-
-// response for ServerReady returns a boolean determine server's readiness.
-message ServerReadyResponse {
-  bool ready = 1;
-}
-
-// Request for Inference.
-message InferenceRequest {
+// Request for Infer.
+message Request {
   // a given API route the rpc request is sent to.
   string api_name = 1;
-  string api_version = 2;
 
-  repeated bentoml.grpc.v1.ContentsProto contents = 3;
+  Value contents = 2;
 
-  // The data contained in an input can be represented in
-  // "raw" bytes form or in the repeated type that matches the
-  // data type.
-  // Using the "raw" bytes form will typically allow higher performance due to the way protobuf
-  // allocation and reuse interacts with GRPC.
-  // For example, see https://github.com/grpc/grpc/issues/23231.
-  //
-  // To use the raw representation 'raw_input_contents' must be
-  // initialized with data for each tensor in the same order as
-  // 'inputs'. For each tensor, the size of this content must
-  // match what is expected by the tensor's shape and data
-  // type. The raw data must be the flattened, one-dimensional,
-  // row-major order of the tensor elements without any stride
-  // or padding between the elements.
-  //
-  // Note that the FP16 and BF16 data
-  // types must be represented as raw content as there is no
-  // specific data type for a 16-bit float type.
-  //
-  // If this field is specified then contents must not be specified for any input tensor.
-  repeated bytes raw_bytes_contents = 4;
-
-  // dataframes_columns and dataframe_indices are used
-  // in conjunction with contents to represent a dataframe.
-  // Recommendation: for better performance, use raw_bytes_contents in
-  // conjunction with the below fields.
-  repeated string dataframe_columns = 101;
-  repeated string dataframe_indices = 102;
+// TODO:
+// The data contained in an input can be represented in
+// "raw" bytes form or in the repeated type that matches the data type.
+// Using the "raw" bytes form will typically allow higher performance due to the way protobuf
+// allocation and reuse interacts with GRPC.
+// For example, see https://github.com/grpc/grpc/issues/23231.
+// bytes raw_bytes_contents = 3;
 }
 
-// Response from Inference.
-message InferenceResponse {
+// Response from Infer.
+message Response {
   // representation of the output value.
-  repeated bentoml.grpc.v1.ContentsProto contents = 1;
+  Value contents = 1;
 
-  // The data contained in an output can be represented in
-  // "raw" bytes form or in the repeated type that matches the
-  // data type.
-  // Using the "raw" bytes form will typically allow higher performance due to the way protobuf
-  // allocation and reuse interacts with GRPC.
-  // For example, see https://github.com/grpc/grpc/issues/23231.
-  //
-  // To use the raw representation 'raw_input_contents' must be
-  // initialized with data for each tensor in the same order as
-  // 'inputs'. For each tensor, the size of this content must
-  // match what is expected by the tensor's shape and data
-  // type. The raw data must be the flattened, one-dimensional,
-  // row-major order of the tensor elements without any stride
-  // or padding between the elements.
-  //
-  // Note that the FP16 and BF16 data
-  // types must be represented as raw content as there is no
-  // specific data type for a 16-bit float type.
-  //
-  // If this field is specified then contents must not be specified for any input tensor.
-  repeated bytes raw_bytes_contents = 2;
+// TODO:
+// The data contained in an input can be represented in
+// "raw" bytes form or in the repeated type that matches the data type.
+// Using the "raw" bytes form will typically allow higher performance due to the way protobuf
+// allocation and reuse interacts with GRPC.
+// For example, see https://github.com/grpc/grpc/issues/23231.
+// bytes raw_bytes_contents = 2;
+}
+
+// Represents a n-dimensional array.
+// This is synonymous to NumpyNdarray IO Descriptor.
+message NDArray {
+  // The shape of the array.
+  repeated int32 shape = 1;
+  // The contents of the array as flattened.
+  optional Array array = 2;
+}
+
+// This represents a 1-d array.
+message Array {
+  optional DataType dtype = 1;
+
+  // Type specific representations that make it easy to create protos in
+  // all languages. The values hold the flattened representation of the inputs in row major order.
+
+  // Serialized bytes contents.
+  // The purpose of this representation is to
+  // reduce serialization overhead during RPC call by avoiding serialization of
+  // many repeated small items.
+  // for quantized types, use bytes_contents
+  bytes bytes_contents = 2;
+
+  // DT_BOOL
+  repeated bool bool_contents = 7 [packed = true];
+
+  // DT_FLOAT, DT_COMPLEX64
+  // Note that since protobuf has no int16 type, we'll have some pointless zero padding for each value here.
+  repeated float float_contents = 3 [packed = true];
+
+  // DT_STRING
+  repeated string string_contents = 6;
+
+  // DT_DOUBLE, DT_COMPLEX128
+  repeated double double_contents = 4 [packed = true];
+
+  // DT_INT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8, DT_HALF, DT_BFLOAT16
+  repeated int32 int_contents = 5 [packed = true];
+
+  // DT_INT64
+  repeated int64 long_contents = 8 [packed = true];
+
+  // DT_UINT32
+  repeated uint32 uint32_val = 11 [packed = true];
+
+  // DT_UINT64
+  repeated uint64 uint64_val = 12 [packed = true];
+
+  // TODO: support single/double precision complex value type.
+
+  // User can specify arbitrary struct that then can be parsed to numpy.
+  // DT_STRUCT
+  repeated google.protobuf.Struct struct_contents = 10;
+
+  reserved 13, 14, 15;
+}
+
+// Represents file types.
+// This is synonymous to File IO Descriptor.
+message File {
+  // type of file, let it be csv, text ,parquet,  etc.
+  optional string kind = 1;
+  // contents of file as bytes.
+  bytes content = 2;
+}
+
+// Represents a map value.
+// This can be used for PandasDataFrame IO Descriptor.
+message MapValue {
+  map<string, Value> fields = 1;
+}
+
+// Representing contents of a given rpc call.
+message Value {
+  oneof kind {
+    // Text()
+    string string_value = 1;
+    // File(), Image()
+    File file_value = 2;
+    // NDArray(), etc.
+    Array array_value = 3;
+    // NDArray(), etc.
+    NDArray ndarray_value = 4;
+    // DataFrame()
+    MapValue map_value = 5;
+  }
+  // We want to reserve these for future uses.
+  reserved 56 to 100;
+}
+
+// Represents data type that can be passed to numpy.
+enum DataType {
+  // Not a legal value for DataType.  Used to indicate a DataType field
+  // has not been set.
+  DT_UNSPECIFIED = 0;
+
+  // Data types that all computation devices are expected to be
+  // capable to support.
+  DT_FLOAT = 1;
+  DT_DOUBLE = 2;
+
+  // int type
+  DT_INT64 = 9;
+  DT_INT32 = 3;
+  DT_INT16 = 5;
+  DT_INT8 = 6;
+
+  // string type
+  DT_STRING = 7;
+
+  // bool type
+  DT_BOOL = 10;
+
+  // Represents half data type (32 -> 16 bits).
+  DT_HALF = 19;
+  // Float32 truncated to 16 bits.  Only for cast ops.
+  DT_BFLOAT16 = 14;
+
+  // Quantized int8
+  DT_QINT8 = 11;
+  // Quantized uint8
+  DT_QUINT8 = 12;
+  // Quantized int32
+  DT_QINT32 = 13;
+  // Quantized int16
+  DT_QINT16 = 15;
+  // Quantized uint16
+  DT_QUINT16 = 16;
+
+  // Double-precision complex
+  DT_COMPLEX128 = 18;
+  // Single-precision complex
+  DT_COMPLEX64 = 8;
+
+  // unsigned int type
+  DT_UINT64 = 21;
+  DT_UINT32 = 20;
+  DT_UINT16 = 17;
+  DT_UINT8 = 4;
+
+  // struct dtype
+  DT_STRUCT = 22;
 }

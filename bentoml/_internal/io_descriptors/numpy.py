@@ -240,11 +240,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
         self._packed = packed
+        if bytesorder not in ["C", "F", "A", None]:
+            raise BadInput(
+                f"'bytesorder' must be one of ['C', 'F', 'A', 'None'], got {bytesorder} instead."
+            )
         if not bytesorder:
             bytesorder = "C"  # default from numpy (C-order)
             # https://numpy.org/doc/stable/user/basics.byteswapping.html#introduction-to-byte-ordering-and-ndarrays
-        if bytesorder not in ["C", "F", "A"]:
-            raise BadInput(f"'bytesorder' must be one of ['C', 'F', 'A', 'None']")
         self._bytesorder: t.Literal["C", "F", "A", None] = bytesorder
 
         self.accepted_proto_kind = ["array_value", "ndarray_value"]
@@ -438,28 +440,39 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             `io_descriptor_pb2.Array`:
                 Protobuf representation of given `np.ndarray`
         """
-        from ..utils.grpc import serialize_proto
+        from ..utils.grpc import grpc_status_code
 
         _NPTYPE_TO_DTYPE_STRING_MAP = {
             np.dtype(v): k for k, v in _DTYPE_TO_STRING_MAP.items()
         }
         dtype_string = _NPTYPE_TO_DTYPE_STRING_MAP[obj.dtype]
 
-        obj = self._verify_ndarray(obj, InternalServerError)
-        print(obj.tobytes())
+        try:
+            obj = self._verify_ndarray(obj, InternalServerError)
+        except InternalServerError as e:
+            context.set_code(grpc_status_code(e))
+            context.set_details(e.message)
+            raise
+
+        cnt: dict[str, t.Any] = {"dtype": dtype_string}
+
+        resp = service_pb2.Response()
         if self._packed:
-            cnt = {"bytes_contents": obj.tobytes(order=self._bytesorder)}
+            cnt.update({"bytes_contents": obj.tobytes(order=self._bytesorder)})
         else:
-            cnt = {_DTYPE_TO_FIELD_MAP[dtype_string]: obj.tolist()}
+            cnt.update({_DTYPE_TO_FIELD_MAP[dtype_string]: obj.tolist()})
 
         if obj.ndim == 1:
-            # 1D array
-            dct = {"dtype": dtype_string, **cnt}
-            fields = "arrayValue"
+            message = service_pb2.Array(**cnt)
+            resp.contents.array_value.CopyFrom(message)
         else:
-            dct = {"shape": tuple(obj.shape), "array": {"dtype": dtype_string, **cnt}}
-            fields = "ndarrayValue"
-        return serialize_proto(fields, dct)
+            cnt["shape"] = tuple(obj.shape)
+            resp.contents.ndarray_value.CopyFrom(
+                service_pb2.NDArray(
+                    shape=tuple(obj.shape), array=service_pb2.Array(**cnt)
+                )
+            )
+        return resp
 
     def generate_protobuf(self):
         pass

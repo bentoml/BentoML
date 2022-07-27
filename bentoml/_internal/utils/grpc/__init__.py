@@ -141,13 +141,13 @@ def get_method_type(request_streaming: bool, response_streaming: bool) -> str:
 def get_rpc_handler(
     handler: RpcMethodHandler,
 ) -> tuple[HandlerFactoryFn, HandlerMethod[t.Any]]:
-    if handler.unary_unary:
+    if not handler.request_streaming and not handler.response_streaming:
         return grpc.unary_unary_rpc_method_handler, handler.unary_unary
-    elif handler.unary_stream:
+    elif not handler.request_streaming and handler.response_streaming:
         return grpc.unary_stream_rpc_method_handler, handler.unary_stream
-    elif handler.stream_unary:
+    elif handler.request_streaming and not handler.response_streaming:
         return grpc.stream_unary_rpc_method_handler, handler.stream_unary
-    elif handler.stream_stream:
+    elif handler.request_streaming and handler.response_streaming:
         return grpc.stream_stream_rpc_method_handler, handler.stream_stream
     else:
         raise BentoMLException(f"RPC method handler {handler} does not exist.")

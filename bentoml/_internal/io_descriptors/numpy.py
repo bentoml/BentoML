@@ -249,7 +249,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         enforce_dtype: bool = False,
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
-        packed: bool = True,
+        packed: bool = False,
         bytesorder: t.Literal["C", "F", "A", None] = None,
     ):
         if dtype and not isinstance(dtype, np.dtype):
@@ -489,6 +489,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 Protobuf representation of given `np.ndarray`
         """
         from ..utils.grpc import grpc_status_code
+        from ..configuration import get_debug_mode
 
         _NPTYPE_TO_DTYPE_STRING_MAP = {
             np.dtype(v): k for k, v in _DTYPE_TO_STRING_MAP.items()
@@ -508,6 +509,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         if self._packed:
             cnt.update({"bytes_contents": obj.tobytes(order=self._bytesorder)})
         else:
+            if self._bytesorder:
+                logger.warning(
+                    f"'bytesorder={self._bytesorder}' is ignored when 'packed={self._packed}'."
+                )
             cnt.update({_DTYPE_TO_FIELD_MAP[dtype_string]: obj.tolist()})
 
         if obj.ndim == 1:
@@ -520,6 +525,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                     shape=tuple(obj.shape), array=service_pb2.Array(**cnt)
                 )
             )
+        if get_debug_mode():
+            logger.debug(f"Response proto: \n{resp}")
         return resp
 
     def generate_protobuf(self):

@@ -32,13 +32,13 @@ AsyncClientInterceptorReturn = type(
 logger = logging.getLogger(__name__)
 
 
-# Modified from https://github.com/d5h-foss/grpc-interceptor
-# with addition of better typing that fits with BentoService signatures.
 class AsyncServerInterceptor(aio.ServerInterceptor, metaclass=ABCMeta):
     """
     Base class for BentoService server-side interceptors.
 
     To implement, subclass this class and override ``intercept`` method.
+
+    Currently, only unary RPCs are supported.
     """
 
     @abstractmethod
@@ -68,47 +68,20 @@ class AsyncServerInterceptor(aio.ServerInterceptor, metaclass=ABCMeta):
         handler_factory, next_handler = get_rpc_handler(handler)
         method_name = handler_call_details.method
 
-        if handler.response_streaming:
+        # if handler is a streaming RPC, the return handler
+        # would not be the Request message.
+        # Right now we will just pass the handler directly to
+        # the interceptor.
+        # TODO: support streaming RPCs.
+        if handler and (handler.request_streaming or handler.response_streaming):
+            return handler
 
-            async def invoke_intercept_streaming(
-                request: Request, context: BentoServicerContext
-            ) -> t.AsyncGenerator[Response, None]:
-                coroutine_or_asyncgen = await self.intercept(
-                    next_handler, request, context, method_name
-                )
+        async def invoke_intercept_unary(
+            request: Request, context: BentoServicerContext
+        ) -> t.Awaitable[Response]:
+            return await self.intercept(next_handler, request, context, method_name)
 
-                # Async server streaming handlers return async_generator, because they
-                # use the async def + yield syntax. However, this is NOT a coroutine
-                # and hence is not awaitable. This can be a problem if the interceptor
-                # ignores the individual streaming response items and simply returns the
-                # result of method(request, context). In that case the interceptor IS a
-                # coroutine, and hence should be awaited. In both cases, we need
-                # something we can iterate over so that THIS function is an
-                # async_generator like the actual RPC method.
-                if asyncio.iscoroutine(coroutine_or_asyncgen):
-                    asyncgen = await coroutine_or_asyncgen
-                    # If a handler is using the read/write API, it will return None.
-                    if not asyncgen:
-                        return
-                else:
-                    asyncgen = coroutine_or_asyncgen
-
-                async for r in asyncgen:
-                    yield r
-
-            return invoke_handler_factory(
-                invoke_intercept_streaming, handler_factory, handler
-            )
-        else:
-
-            async def invoke_intercept_unary(
-                request: Request, context: BentoServicerContext
-            ) -> t.Awaitable[Response]:
-                return await self.intercept(next_handler, request, context, method_name)
-
-            return invoke_handler_factory(
-                invoke_intercept_unary, handler_factory, handler
-            )
+        return invoke_handler_factory(invoke_intercept_unary, handler_factory, handler)
 
 
 class ExceptionHandlerInterceptor(AsyncServerInterceptor):
@@ -130,12 +103,13 @@ class ExceptionHandlerInterceptor(AsyncServerInterceptor):
         logger.error(
             f"Error while invoking {method_name}: {ex}", exc_info=sys.exc_info()
         )
-        details = f"{ex.__class__.__name__}<{ex}>"
+        details = f"{ex.__class__.__name__}<{str(ex)}>"
         if isinstance(ex, BentoMLException):
             status_code = grpc_status_code(ex)
             details = ex.message
         elif any(isinstance(ex, cls) for cls in (RuntimeError, TypeError)):
             status_code = grpc.StatusCode.INTERNAL
+            details = "An error has occurred in BentoML user code when handling this request, find the error details in server logs."
         else:
             status_code = grpc.StatusCode.UNKNOWN
 
@@ -161,7 +135,7 @@ class ExceptionHandlerInterceptor(AsyncServerInterceptor):
         request: Request,
         context: BentoServicerContext,
         method_name: str,
-    ) -> t.Any:
+    ) -> t.AsyncGenerator[Response, t.Any]:
         try:
             response_or_iterator = method(request, context)
             if not hasattr(response_or_iterator, "__aiter__"):

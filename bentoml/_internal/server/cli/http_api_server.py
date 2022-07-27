@@ -92,7 +92,7 @@ def main(
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,
-            args=["-m", "bentoml._internal.server.cli.rest_api_server"]
+            args=["-m", "bentoml._internal.server.cli.http_api_server"]
             + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,

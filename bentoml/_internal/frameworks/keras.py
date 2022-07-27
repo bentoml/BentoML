@@ -318,13 +318,12 @@ def get_runnable(
             with tf.device(runnable_self.device_name):
                 params = params.map(_mapping)
                 if len(params.args) == 1:
-                    res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(
-                        *params.args
-                    )
+                    arg = params.args[0]
                 else:
-                    res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(
-                        params.args
-                    )
+                    arg = params.args
+
+                res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(arg)
+
                 if LazyType["tf_ext.EagerTensor"](
                     "tensorflow.python.framework.ops._EagerTensorBase"
                 ).isinstance(res):

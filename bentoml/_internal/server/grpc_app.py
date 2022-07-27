@@ -112,7 +112,7 @@ class GRPCAppFactory:
     def interceptors(self) -> list[aio.ServerInterceptor]:
         from .grpc.interceptors import ExceptionHandlerInterceptor
 
-        # TODO: add access log, tracing, prometheus interceptors.
+        # # TODO: add access log, tracing, prometheus interceptors.
         interceptors: list[aio.ServerInterceptor] = [ExceptionHandlerInterceptor()]
 
         # add users-defined interceptors.

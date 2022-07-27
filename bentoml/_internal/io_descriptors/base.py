@@ -12,13 +12,15 @@ if TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
 
+    from bentoml.grpc.v1.service_pb2 import Request as GRPCRequest
+    from bentoml.grpc.v1.service_pb2 import Response as GRPCResponse
+
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Response as OpenAPIResponse
     from ..service.openapi.specification import Reference
     from ..service.openapi.specification import RequestBody
-    from bentoml.grpc.v1 import service_pb2
 
     from ..server.grpc.types import BentoServicerContext
 
@@ -43,6 +45,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
     HTTP_METHODS = ["POST"]
 
     _init_str: str = ""
+    _proto_kind: list[str] | None = None
 
     _mime_type: str
 
@@ -56,6 +59,19 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     def __repr__(self) -> str:
         return self._init_str
+
+    @property
+    def accepted_proto_kind(self) -> list[str]:
+        """
+        Returns a list of kinds fields that the IODescriptor can accept.
+
+        Make sure to keep in sync with bentoml.grpc.v1.Value message.
+        """
+        return self._proto_kind or []
+
+    @accepted_proto_kind.setter
+    def accepted_proto_kind(self, value: list[str]):
+        self._proto_kind = value
 
     @abstractmethod
     def input_type(self) -> InputType:
@@ -93,12 +109,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     @abstractmethod
     async def from_grpc_request(
-        self, request: service_pb2.Request, context: BentoServicerContext
+        self, request: GRPCRequest, context: BentoServicerContext
     ) -> IOType:
         ...
 
     @abstractmethod
     async def to_grpc_response(
         self, obj: IOType, context: BentoServicerContext
-    ) -> service_pb2.Response:
+    ) -> GRPCResponse:
         ...

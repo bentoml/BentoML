@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import typing as t
 import logging
+from typing import overload
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -17,11 +18,11 @@ from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
+from ...exceptions import UnprocessableEntity
 
 if TYPE_CHECKING:
     import numpy as np
@@ -33,14 +34,116 @@ if TYPE_CHECKING:
     from ..server.grpc.types import BentoServicerContext
 else:
     np = LazyLoader("np", globals(), "numpy")
+    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 
 logger = logging.getLogger(__name__)
 
 
-def _is_matched_shape(
-    left: t.Optional[t.Tuple[int, ...]],
-    right: t.Optional[t.Tuple[int, ...]],
-) -> bool:  # pragma: no cover
+_DTYPE_TO_FIELD_MAP = {
+    "DT_BOOL": "bool_contents",
+    "DT_FLOAT": "float_contents",
+    "DT_COMPLEX64": "float_contents",
+    "DT_STRING": "string_contents",
+    "DT_DOUBLE": "double_contents",
+    "DT_COMPLEX128": "double_contents",
+    "DT_INT32": "int_contents",
+    "DT_IN16": "int_contents",
+    "DT_UINT16": "int_contents",
+    "DT_INT8": "int_contents",
+    "DT_UINT8": "int_contents",
+    "DT_HALF": "int_contents",
+    "DT_INT64": "long_contents",
+    "DT_STRUCT": "struct_contents",
+    "DT_UINT32": "uint32_contents",
+    "DT_UINT64": "uint64_contents",
+    # "DT_QINT32": "bytes_contents",
+    # "DT_QINT16": "bytes_contents",
+    # "DT_QUINT16": "bytes_contents",
+    # "DT_QINT8": "bytes_contents",
+    # "DT_QUINT8": "bytes_contents",
+    # "DT_BFLOAT16": "int_contents",
+}
+
+_DTYPE_TO_STRING_MAP = {
+    "DT_BOOL": "bool",
+    "DT_FLOAT": "float32",
+    "DT_COMPLEX64": "complex64",
+    "DT_STRING": "<U",  # <U is little-edian unicode, S: zero-terminated bytes (not recommended)
+    "DT_DOUBLE": "float64",
+    "DT_COMPLEX128": "complex128",
+    "DT_INT32": "int32",
+    "DT_INT16": "int16",
+    "DT_UINT16": "uint16",
+    "DT_INT8": "int8",
+    "DT_UINT8": "uint8",
+    "DT_HALF": "float16",
+    "DT_INT64": "int64",
+    "DT_UINT32": "uint32",
+    "DT_UINT64": "uint64",
+}
+
+
+# TODO: support DT_BFLOAT16, quantized data type
+_NOT_SUPPORTED_DTYPE = [
+    "DT_QINT32",
+    "DT_QINT16",
+    "DT_QUINT16",
+    "DT_QINT8",
+    "DT_QUINT8",
+    "DT_BFLOAT16",
+]
+
+
+# Note that if DT_STRUCT is used, user need to specify np.dtype in NumpyNdarray
+def get_dtype(
+    datatype_string: str,
+    *,
+    struct_npdtype: np.dtype[t.Any] | None = None,
+) -> np.dtype[t.Any] | None:
+    if datatype_string == "DT_UNSPECIFIED":
+        return
+    elif datatype_string in _NOT_SUPPORTED_DTYPE:
+        raise UnprocessableEntity(f"{datatype_string} is not yet supported.")
+    elif datatype_string == "DT_STRUCT":
+        assert (
+            struct_npdtype
+        ), "'dtype' is required in NumpyNdarray to use in conjunction with DT_STRUCT."
+        return struct_npdtype
+    else:
+        return np.dtype(_DTYPE_TO_STRING_MAP[datatype_string])
+
+
+@overload
+def get_array_value(array: dict[str, str | bytes]) -> tuple[str, bytes, bool]:
+    ...
+
+
+@overload
+def get_array_value(
+    array: dict[str, str | list[t.Any]]
+) -> tuple[str, list[t.Any], bool]:
+    ...
+
+
+# array_descriptor -> {"dtype": "DT_FLOAT", "float_contents": [1, 2, 3]}
+def get_array_value(array: dict[str, t.Any]) -> tuple[str, list[t.Any] | bytes, bool]:
+    # returns the array contents with whether the result is using bytes.
+    dtype = t.cast(str, array.pop("dtype"))
+    if _DTYPE_TO_FIELD_MAP[dtype] not in array:
+        if "bytes_contents" not in array:
+            raise BadInput(
+                f"{dtype} requires specifying either '{_DTYPE_TO_FIELD_MAP[dtype]}' or 'bytes_contents' in the protobuf message."
+            )
+        content = array.pop("bytes_contents")
+        assert isinstance(content, bytes)
+        return dtype, content, True
+    else:
+        # all of the repeated fields can be represented as list.
+        content = t.cast(t.List[t.Any], array.pop(_DTYPE_TO_FIELD_MAP[dtype]))
+        return dtype, content, False
+
+
+def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
     if (left is None) or (right is None):
         return False
 
@@ -56,6 +159,7 @@ def _is_matched_shape(
     return True
 
 
+# TODO: when updating docs, add examples with gRPCurl
 class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
@@ -145,6 +249,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         enforce_dtype: bool = False,
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
+        packed: bool = True,
+        bytesorder: t.Literal["C", "F", "A", None] = None,
     ):
         if dtype and not isinstance(dtype, np.dtype):
             # Convert from primitive type or type string, e.g.:
@@ -153,14 +259,21 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             try:
                 dtype = np.dtype(dtype)
             except TypeError as e:
-                raise BentoMLException(
-                    f'NumpyNdarray: Invalid dtype "{dtype}": {e}'
-                ) from e
+                raise UnprocessableEntity(f'NumpyNdarray: Invalid dtype "{dtype}": {e}')
 
-        self._dtype = dtype
+        self._dtype: ext.NpDTypeLike | None = dtype
         self._shape = shape
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
+        self._packed = packed
+        if bytesorder not in ["C", "F", "A", None]:
+            raise BadInput(
+                f"'bytesorder' must be one of ['C', 'F', 'A', 'None'], got {bytesorder} instead."
+            )
+        if not bytesorder:
+            bytesorder = "C"  # default from numpy (C-order)
+            # https://numpy.org/doc/stable/user/basics.byteswapping.html#introduction-to-byte-ordering-and-ndarrays
+        self._bytesorder: t.Literal["C", "F", "A", None] = bytesorder
 
         self._sample_input = None
 
@@ -293,7 +406,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     async def from_grpc_request(
-        self, request: service_pb2.InferenceRequest, context: BentoServicerContext
+        self, request: service_pb2.Request, context: BentoServicerContext
     ) -> ext.NpNDArray:
         """
         Process incoming protobuf request and convert it to `numpy.ndarray`
@@ -305,19 +418,66 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        from ..utils.grpc import proto_to_dict
+        import grpc
 
-        # from bentoml.grpc.v1 import struct_pb2
-        # logger.info([f for f in struct_pb2.ContentsProto.DESCRIPTOR.fields])
-        print(request.contents)
-        contents = proto_to_dict(request.contents)
-        print(contents)
-        raise RuntimeError
-        return np.frombuffer(contents)
+        from ..utils.grpc import deserialize_proto
+
+        field, serialized = deserialize_proto(self, request)
+        if field == "ndarray_value":
+            # {'shape': [2, 3], 'array': {'dtype': 'DT_FLOAT', ...}}
+            if "array" not in serialized:
+                msg = "'array' cannot be None."
+                context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+                context.set_details(msg)
+                raise BadInput(msg)
+
+            shape = tuple(serialized["shape"])
+            if self._shape:
+                if not self._enforce_shape:
+                    logger.warning(
+                        f"'shape={self._shape},enforce_shape={self._enforce_shape}' is set with {self.__class__.__name__}, while 'shape' field is present in request message. To avoid this warning, set 'enforce_shape=True'. Using 'shape={shape}' from request message."
+                    )
+                    self._shape = shape
+                else:
+                    logger.debug(
+                        f"'enforce_shape={self._enforce_shape}', ignoring 'shape' field in request message."
+                    )
+            else:
+                self._shape = shape
+
+            array = serialized["array"]
+        else:
+            # {'dtype': 'DT_FLOAT', 'float_contents': [1.0, 2.0, 3.0]}
+            array = serialized
+
+        dtype_string, content, use_bytes = get_array_value(array)
+        dtype = get_dtype(dtype_string, struct_npdtype=self._dtype)
+        if self._dtype:
+            if not self._enforce_dtype:
+                logger.warning(
+                    f"'dtype={self._dtype},enforce_dtype={self._enforce_dtype}' is set with {self.__class__.__name__}, while 'dtype' field is present in request message. To avoid this warning, set 'enforce_dtype=True'. Using 'dtype={dtype}' from request message."
+                )
+                self._dtype = dtype
+            else:
+                logger.debug(
+                    f"'enforce_dtype={self._enforce_dtype}', ignoring 'dtype' field in request message."
+                )
+        else:
+            self._dtype = dtype
+
+        if use_bytes:
+            res = np.frombuffer(content, dtype=self._dtype)
+        else:
+            try:
+                res = np.array(content, dtype=self._dtype)
+            except ValueError:
+                res = np.array(content)
+
+        return self._verify_ndarray(res, BadInput)
 
     async def to_grpc_response(
         self, obj: ext.NpNDArray, context: BentoServicerContext
-    ) -> service_pb2.InferenceResponse:
+    ) -> service_pb2.Response:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -328,9 +488,39 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             `io_descriptor_pb2.Array`:
                 Protobuf representation of given `np.ndarray`
         """
-        from bentoml.grpc.v1 import service_pb2
+        from ..utils.grpc import grpc_status_code
 
-        return service_pb2.InferenceResponse()
+        _NPTYPE_TO_DTYPE_STRING_MAP = {
+            np.dtype(v): k for k, v in _DTYPE_TO_STRING_MAP.items()
+        }
+        dtype_string = _NPTYPE_TO_DTYPE_STRING_MAP[obj.dtype]
+
+        try:
+            obj = self._verify_ndarray(obj, InternalServerError)
+        except InternalServerError as e:
+            context.set_code(grpc_status_code(e))
+            context.set_details(e.message)
+            raise
+
+        cnt: dict[str, t.Any] = {"dtype": dtype_string}
+
+        resp = service_pb2.Response()
+        if self._packed:
+            cnt.update({"bytes_contents": obj.tobytes(order=self._bytesorder)})
+        else:
+            cnt.update({_DTYPE_TO_FIELD_MAP[dtype_string]: obj.tolist()})
+
+        if obj.ndim == 1:
+            message = service_pb2.Array(**cnt)
+            resp.contents.array_value.CopyFrom(message)
+        else:
+            cnt["shape"] = tuple(obj.shape)
+            resp.contents.ndarray_value.CopyFrom(
+                service_pb2.NDArray(
+                    shape=tuple(obj.shape), array=service_pb2.Array(**cnt)
+                )
+            )
+        return resp
 
     def generate_protobuf(self):
         pass

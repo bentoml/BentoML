@@ -57,6 +57,7 @@ input_array_i32 = np.array(input_data, dtype="int64")
 input_tensor = tf.constant(input_data, dtype=tf.float64)
 input_tensor_f32 = tf.constant(input_data, dtype=tf.float32)
 
+
 native_sequential_model = FrameworkTestModel(
     name="keras_tf2",
     model=KerasSequentialModel(),
@@ -82,4 +83,52 @@ native_sequential_model = FrameworkTestModel(
 )
 
 
-models: list[FrameworkTestModel] = [native_sequential_model]
+def KerasFunctionalModel() -> keras.models.Model:
+    class FunctionalModel(keras.Model):
+        def __init__(self, **kwargs):
+            super(FunctionalModel, self).__init__(**kwargs)
+            self.dense_1 = keras.layers.Dense(30, activation="relu")
+            self.dense_2 = keras.layers.Dense(10)
+
+        @tf.function(
+            input_signature=[tf.TensorSpec(shape=(None, 32), dtype=tf.float32)]
+        )
+        def call(self, inputs):
+            inputs = inputs[:30]
+            x = self.dense_1(inputs)
+            return self.dense_2(x)
+
+    model = FunctionalModel()
+    model.predict(tf.ones((1, 32)))
+    return model
+
+
+input_data2 = np.ones((1, 32))
+functional_model = KerasFunctionalModel()
+res2 = functional_model.predict(np.array(input_data2))
+input_array2 = np.array(input_data2, dtype="float64")
+input_tensor2 = tf.constant(input_data2, dtype=tf.float32)
+
+native_functional_model = FrameworkTestModel(
+    name="keras_tf2",
+    model=functional_model,
+    configurations=[
+        Config(
+            test_inputs={
+                "predict": [
+                    Input(
+                        input_args=[i],
+                        expected=lambda out: np.isclose(out, res2).all(),
+                    )
+                    for i in [
+                        input_tensor2,
+                        input_array2,
+                        input_data2,
+                    ]
+                ],
+            },
+        ),
+    ],
+)
+
+models: list[FrameworkTestModel] = [native_sequential_model, native_functional_model]

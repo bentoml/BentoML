@@ -114,6 +114,16 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
+    if "GPU" in device_name:
+        physical_devices = tf.config.list_physical_devices("GPU")
+        try:
+            # an optimization for GPU memory growth. But it will raise an error if any
+            # tensorflow session is already created. That happens when users test runners
+            # in a notebook or Python interactive shell. Thus we just ignore the error.
+            tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        except RuntimeError:
+            pass
+
     with tf.device(device_name):
         return keras.models.load_model(
             bento_model.path,

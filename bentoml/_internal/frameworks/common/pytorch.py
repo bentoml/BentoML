@@ -173,7 +173,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
 
         else:
             ret = pickle.loads(payload.data)
-        return torch.Tensor(ret)
+        return torch.Tensor(ret).requires_grad_(False)
 
     @classmethod
     @inject

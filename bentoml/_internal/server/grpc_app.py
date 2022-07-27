@@ -110,10 +110,24 @@ class GRPCAppFactory:
 
     @property
     def interceptors(self) -> list[aio.ServerInterceptor]:
-        from .grpc.interceptors import ExceptionHandlerInterceptor
+        from opentelemetry import trace
+        from opentelemetry.sdk.trace.export import ConsoleSpanExporter
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-        # # TODO: add access log, tracing, prometheus interceptors.
-        interceptors: list[aio.ServerInterceptor] = [ExceptionHandlerInterceptor()]
+        from .grpc.interceptors import ExceptionHandlerInterceptor
+        from .grpc.interceptors.access_log import AccessLogInterceptor
+
+        tracer_provider = BentoMLContainer.tracer_provider.get()
+        trace.set_tracer_provider(tracer_provider)
+        trace.get_tracer_provider().add_span_processor(
+            SimpleSpanProcessor(ConsoleSpanExporter())
+        )
+
+        # TODO: prometheus interceptors.
+        interceptors: list[aio.ServerInterceptor] = [
+            AccessLogInterceptor(),
+            ExceptionHandlerInterceptor(),
+        ]
 
         # add users-defined interceptors.
         interceptors.extend(

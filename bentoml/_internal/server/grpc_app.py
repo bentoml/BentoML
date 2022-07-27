@@ -16,6 +16,8 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from opentelemetry.trace import TracerProvider
+
     from ..service import Service
 
     OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
@@ -109,11 +111,29 @@ class GRPCAppFactory:
         return options
 
     @property
-    def interceptors(self) -> list[aio.ServerInterceptor]:
-        from .grpc.interceptors import ExceptionHandlerInterceptor
+    @inject
+    def interceptors(
+        self,
+        *,
+        tracer_provider: TracerProvider = Provide[BentoMLContainer.tracer_provider],
+    ) -> list[aio.ServerInterceptor]:
+        from opentelemetry import trace
+        from opentelemetry.sdk.trace.export import ConsoleSpanExporter
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-        # # TODO: add access log, tracing, prometheus interceptors.
-        interceptors: list[aio.ServerInterceptor] = [ExceptionHandlerInterceptor()]
+        from .grpc.interceptors import ExceptionHandlerInterceptor
+        from .grpc.interceptors.access import AccessLogInterceptor
+
+        trace.set_tracer_provider(tracer_provider)
+        trace.get_tracer_provider().add_span_processor(
+            SimpleSpanProcessor(ConsoleSpanExporter())
+        )
+
+        # TODO: prometheus interceptors.
+        interceptors: list[aio.ServerInterceptor] = [
+            ExceptionHandlerInterceptor(),
+            AccessLogInterceptor(),
+        ]
 
         # add users-defined interceptors.
         interceptors.extend(

@@ -7,6 +7,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.v1 import service_pb2
 
 from .base import IODescriptor
 from ..utils.http import set_cookies
@@ -132,11 +133,11 @@ class Text(IODescriptor[str]):
         else:
             return Response(obj, media_type=MIME_TYPE)
 
+    async def from_grpc_request(self, request: service_pb2.Request, context) -> str:
+        return str(request.contents.string_value)
+
+    async def to_grpc_response(self, obj: str, context) -> service_pb2.Response:
+        return service_pb2.Response(contents=service_pb2.Value(string_value=obj))
+
     def generate_protobuf(self):
-        pass
-
-    async def from_grpc_request(self, request, context) -> t.Any:
-        pass
-
-    async def to_grpc_response(self, obj, context) -> t.Any:
         pass

@@ -41,9 +41,8 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento."
         )
         try:
-            from build.env import IsolatedEnvBuilder
-
             from build import ProjectBuilder
+            from build.env import IsolatedEnvBuilder
         except ModuleNotFoundError:
             raise BentoMLException(
                 f"Environment variable {BENTOML_DEV_BUILD}=True detected, which requires the `pypa/build` package. Make sure to install all dev dependencies via `pip install -r requirements/dev-requirements.txt` and try again."

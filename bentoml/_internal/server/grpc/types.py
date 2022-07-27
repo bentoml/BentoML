@@ -3,65 +3,42 @@ Specific types for BentoService gRPC server.
 """
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Any
 from typing import TypeVar
 from typing import Callable
 from typing import Optional
-from typing import Awaitable
 from typing import NamedTuple
 from typing import TYPE_CHECKING
-
-import grpc
-
-
-class HandlerCallDetails(
-    NamedTuple("HandlerCallDetails", method=str, invocation_metadata=Tuple[str, bytes]),
-    grpc.HandlerCallDetails,
-):
-    """Describes an RPC that has just arrived for service.
-
-    Attributes:
-    method: The method name of the RPC.
-    invocation_metadata: A sequence of metadatum, a key-value pair included in the HTTP header.
-                        An example is: ``('binary-metadata-bin', b'\\x00\\xFF')``
-    """
-
-    method: str
-    invocation_metadata: Tuple[str, bytes]
-
 
 if TYPE_CHECKING:
     from typing import Protocol
 
+    import grpc
     from grpc import aio
 
-    from bentoml.grpc.v1.service_pb2 import InferenceRequest
-    from bentoml.grpc.v1.service_pb2 import InferenceResponse
-    from bentoml.grpc.v1.service_pb2 import ServerLiveRequest
-    from bentoml.grpc.v1.service_pb2 import ServerLiveResponse
-    from bentoml.grpc.v1.service_pb2 import ServerReadyRequest
-    from bentoml.grpc.v1.service_pb2 import ServerReadyResponse
+    from bentoml.grpc.v1.service_pb2 import Request
+    from bentoml.grpc.v1.service_pb2 import Response
     from bentoml.grpc.v1.service_pb2_grpc import BentoServiceServicer
 
-    P = TypeVar("P", contravariant=True)
+    P_con = TypeVar("P_con", contravariant=True)
 
-    ResponseType = InferenceResponse | ServerLiveResponse | ServerReadyResponse
-    RequestType = InferenceRequest | ServerLiveRequest | ServerReadyRequest
-    BentoServicerContext = aio.ServicerContext[ResponseType, RequestType]
+    BentoServicerContext = aio.ServicerContext[Response, Request]
 
-    RequestDeserializerFn = Optional[Callable[[RequestType], object]]
-    ResponseSerializerFn = Optional[Callable[[bytes], ResponseType]]
+    RequestDeserializerFn = Callable[[Request | None], object] | None
+    ResponseSerializerFn = Callable[[bytes], Response | None] | None
 
-    class AsyncHandlerProtocol(Protocol[P]):
+    HandlerMethod = Callable[[Request, BentoServicerContext], P_con]
+
+    class HandlerFactoryProtocol(Protocol[P_con]):
         def __call__(
             self,
-            behaviour: Callable[[RequestType, BentoServicerContext], Awaitable[P]],
+            behaviour: HandlerMethod[P_con],
             request_deserializer: RequestDeserializerFn = None,
             response_serializer: ResponseSerializerFn = None,
         ) -> grpc.RpcMethodHandler:
             ...
 
-    AsyncHandlerMethod = AsyncHandlerProtocol[ResponseType]
+    HandlerFactoryFn = HandlerFactoryProtocol[Any]
 
     class RpcMethodHandler(
         NamedTuple(
@@ -70,10 +47,10 @@ if TYPE_CHECKING:
             response_streaming=bool,
             request_deserializer=RequestDeserializerFn,
             response_serializer=ResponseSerializerFn,
-            unary_unary=Optional[AsyncHandlerMethod],
-            unary_stream=Optional[AsyncHandlerMethod],
-            stream_unary=Optional[AsyncHandlerMethod],
-            stream_stream=Optional[AsyncHandlerMethod],
+            unary_unary=Optional[aio.UnaryUnaryMultiCallable],
+            unary_stream=Optional[aio.UnaryStreamMultiCallable],
+            stream_unary=Optional[aio.StreamUnaryMultiCallable],
+            stream_stream=Optional[aio.StreamStreamMultiCallable],
         ),
         grpc.RpcMethodHandler,
     ):
@@ -83,14 +60,29 @@ if TYPE_CHECKING:
         response_streaming: bool
         request_deserializer: RequestDeserializerFn
         response_serializer: ResponseSerializerFn
-        unary_unary: Optional[AsyncHandlerMethod]
-        unary_stream: Optional[AsyncHandlerMethod]
-        stream_unary: Optional[AsyncHandlerMethod]
-        stream_stream: Optional[AsyncHandlerMethod]
+        unary_unary: Optional[aio.UnaryUnaryMultiCallable]
+        unary_stream: Optional[aio.UnaryStreamMultiCallable]
+        stream_unary: Optional[aio.StreamUnaryMultiCallable]
+        stream_stream: Optional[aio.StreamStreamMultiCallable]
+
+    class HandlerCallDetails(
+        NamedTuple("HandlerCallDetails", method=str, invocation_metadata=aio.Metadata),
+        grpc.HandlerCallDetails,
+    ):
+        """Describes an RPC that has just arrived for service.
+
+        Attributes:
+        method: The method name of the RPC.
+        invocation_metadata: A sequence of metadatum, a key-value pair included in the HTTP header.
+                            An example is: ``('binary-metadata-bin', b'\\x00\\xFF')``
+        """
+
+        method: str
+        invocation_metadata: aio.Metadata
 
     __all__ = [
-        "RequestType",
-        "ResponseType",
+        "Request",
+        "Response",
         "BentoServicerContext",
         "BentoServiceServicer",
         "HandlerCallDetails",

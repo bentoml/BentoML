@@ -12,7 +12,6 @@ GIT_ROOT = Path(os.path.abspath(__file__)).parent
 _VERSION_MAP = {
     "v1": {
         ("service.proto", "service_test.proto"): {"grpc_out": True},
-        ("struct.proto",): {},
     },
 }
 

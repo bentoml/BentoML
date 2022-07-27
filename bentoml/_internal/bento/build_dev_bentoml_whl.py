@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import os
-import shutil
 import logging
-import tempfile
 
 from bentoml.exceptions import BentoMLException
 
@@ -43,20 +41,20 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento."
         )
         try:
-            from build import ProjectBuilder
             from build.env import IsolatedEnvBuilder
+
+            from build import ProjectBuilder
         except ModuleNotFoundError:
             raise BentoMLException(
                 f"Environment variable {BENTOML_DEV_BUILD}=True detected, which requires the `pypa/build` package. Make sure to install all dev dependencies via `pip install -r requirements/dev-requirements.txt` and try again."
             )
 
-        with tempfile.TemporaryDirectory() as dist_dir, IsolatedEnvBuilder() as env:
+        with IsolatedEnvBuilder() as env:
             builder = ProjectBuilder(os.path.dirname(pyproject))
             builder.python_executable = env.executable
             builder.scripts_dir = env.scripts_dir
             env.install(builder.build_system_requires)
-            builder.build("wheel", dist_dir)
-            shutil.copytree(dist_dir, target_path)
+            builder.build("wheel", target_path)
     else:
         logger.info(
             "Custom BentoML build is detected. For a Bento to use the same build at serving time, add your custom BentoML build to the pip packages list, e.g. `packages=['git+https://github.com/bentoml/bentoml.git@13dfb36']`"

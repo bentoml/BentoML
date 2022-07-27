@@ -212,11 +212,9 @@ make type
 
 ## Editing proto files.
 
-Protos file are located under [`bentoml/grpc`](./bentoml/grpc/). The generated stubs are
-ignored for VCS by default. If you edit the protos file manually, simply run
-`pip install -e -U .` again to apply new changes the the generated stubs. 
-
-The generated stubs can be located under [`bentoml/grpc`](./bentoml/grpc/).
+The proto files for the BentoML gRPC service are located under [`bentoml/grpc`](./bentoml/grpc/).
+The generated python files are not included in the git repository, and are instead generated on install.
+If you edit the proto files, make sure to run `pip install -e -U .` again to regenerate them.
 
 ## Deploy with your changes
 

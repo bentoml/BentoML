@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
+import anyio
 from grpc import aio
 
 from bentoml.exceptions import UnprocessableEntity
@@ -41,7 +42,7 @@ def register_bento_servicer(service: Service, server: aio.Server) -> None:
             if asyncio.iscoroutinefunction(api.func):
                 output = await api.func(input)
             else:
-                output = api.func(input)
+                output = await anyio.to_thread.run_sync(api.func, input)
 
             return await api.output.to_grpc_response(output, context)
 

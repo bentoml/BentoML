@@ -210,7 +210,7 @@ Run type checker:
 make type
 ```
 
-## Editing proto files.
+## Editing proto files
 
 The proto files for the BentoML gRPC service are located under [`bentoml/grpc`](./bentoml/grpc/).
 The generated python files are not included in the git repository, and are instead generated on install.

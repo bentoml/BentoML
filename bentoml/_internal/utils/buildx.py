@@ -173,9 +173,9 @@ def build(
 
     cmds += ["--progress", progress]
 
-    if tags is None:
+    if not tags:
         tags = []
-    tags = [tags] if not isinstance(tags, list) else tags
+    tags = list(tags) if not isinstance(tags, list) else tags
     for tag in tags:
         cmds.extend(["--tag", tag])
 

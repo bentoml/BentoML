@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import re
-import typing as t
 import logging
 from typing import TYPE_CHECKING
 
@@ -8,7 +9,8 @@ from ...exceptions import BentoMLException
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import click
+    from click import Context
+    from click import Parameter
 
 
 def to_valid_docker_image_name(name: str) -> str:
@@ -21,12 +23,7 @@ def to_valid_docker_image_version(version: str) -> str:
     return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
 
 
-def validate_tag(
-    ctx: "click.Context", param: "click.Parameter", tag: t.Optional[str]
-) -> t.Optional[str]:  # noqa # pylint: disable=unused-argument
-    if tag is None:
-        return tag
-
+def _validate_docker_tag(tag: str) -> str:
     if ":" in tag:
         name, version = tag.split(":")[:2]
     else:
@@ -67,3 +64,14 @@ def validate_tag(
             "or a dash and may contain a maximum of 128 characters."
         )
     return tag
+
+
+def validate_tag(
+    ctx: Context, param: Parameter, tag: str | tuple[str] | None
+) -> str | tuple[str] | None:
+    if tag is None:
+        return tag
+    elif isinstance(tag, tuple):
+        return tuple(map(_validate_docker_tag, tag))
+    else:
+        return _validate_docker_tag(tag)

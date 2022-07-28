@@ -5,7 +5,6 @@ import typing as t
 import logging
 import functools
 import itertools
-import contextlib
 from typing import TYPE_CHECKING
 
 from simple_di import inject
@@ -41,6 +40,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+if hasattr(torch, "inference_mode"):  # pytorch>=1.9
+    inference_mode_ctx = torch.inference_mode
+else:
+    inference_mode_ctx = torch.no_grad
+
 
 def partial_class(
     cls: t.Type[PytorchModelRunnable], *args: t.Any, **kwargs: t.Any
@@ -74,17 +78,6 @@ class PytorchModelRunnable(bentoml.Runnable):
             self.device_id = "cpu"
         self.model: ModelType = loader(bento_model, device_id=self.device_id)
         self.model.train(False)  # to turn off dropout and batchnorm
-        self._no_grad_context = contextlib.ExitStack()
-        if hasattr(torch, "inference_mode"):  # pytorch>=1.9
-            self._no_grad_context.enter_context(torch.inference_mode())
-        else:
-            self._no_grad_context.enter_context(torch.no_grad())
-
-    def __del__(self):
-        self._no_grad_context.close()
-        # no need for now because our worker process will quit and return the gpu memory
-        # if self.device_id == "cuda":
-        # torch.cuda.empty_cache()
 
 
 def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:
@@ -105,8 +98,9 @@ def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tens
             else:
                 return item.to(self.device_id)  # type: ignore # the overhead is trivial if it is already on the right device
 
-        params = params.map(_mapping)
-        return getattr(self.model, method_name)(*params.args, **params.kwargs)
+        with inference_mode_ctx():
+            params = params.map(_mapping)
+            return getattr(self.model, method_name)(*params.args, **params.kwargs)
 
     return _run
 

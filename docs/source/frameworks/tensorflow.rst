@@ -10,12 +10,12 @@ Preface
 
 Even though ``bentoml.tensorflow`` supports Keras model, we recommend our users to use :ref:`bentoml.keras <frameworks/keras>` for better development experience. 
 
-If you must use TensorFlow for your Keras model, make sure that your Keras model inference callback (such as ``predict``) is decorated with :code:`tf.function`.
+If you must use TensorFlow for your Keras model, make sure that your Keras model inference callback (such as ``predict``) is decorated with :obj:`~tf.function`.
 
 .. note::
 
     - Keras is not optimized for production inferencing. There are `known reports <https://github.com/tensorflow/tensorflow/issues?q=is%3Aissue+sort%3Aupdated-desc+keras+memory+leak>`_ of memory leaks during serving at the time of BentoML 1.0 release. The same issue applies to ``bentoml.keras`` as it heavily relies on the Keras APIs.
-    - Running Inference with :code:`bentoml.tensorflow` usually halves the time comparing with using ``bentoml.keras``.
+    - Running Inference with :obj:`~bentoml.tensorflow` usually halves the time comparing with using ``bentoml.keras``.
     - ``bentoml.keras`` performs input casting that resembles the original Keras model input signatures.
 
 .. note::
@@ -56,13 +56,54 @@ Saving a Trained Model
             def __call__(self, inputs):
                 return self.dense(inputs)
 
-
         model = NativeModel()
-        ... # training
 
-        # =========
+        loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        optimizer = tf.keras.optimizers.Adam()
 
-        bentoml.tensorflow.save(model, "my_tf_model")
+        EPOCHS = 10
+        for epoch in range(EPOCHS):
+            with tf.GradientTape() as tape:
+                predictions = model(train_x)
+                loss = loss_object(train_y, predictions)
+
+            gradients = tape.gradient(loss, model.trainable_variables)
+            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+        bentoml.tensorflow.save(
+            model,
+            "my_tf_model",
+            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+        )
+
+   .. tab-item:: keras.Model
+
+      .. code-block:: python
+        :caption: `train.py`
+
+        class Model(keras.Model):
+            def __init__(self):
+                super().__init__()
+                self.dense = keras.layers.Dense(1)
+
+            @tf.function(
+                input_signature=[
+                    tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="inputs")
+                ]
+            )
+            def call(self, inputs):
+                return self.dense(inputs)
+
+        model = Model()
+        model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+        model.fit(train_x, train_y, epochs=10)
+
+        bentoml.tensorflow.save(
+            model,
+            "my_keras_model",
+            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+        )
+
 
    .. tab-item:: keras.model.Sequential
 
@@ -83,9 +124,13 @@ Saving a Trained Model
         opt = keras.optimizers.Adam(0.002, 0.5)
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
 
-        bentoml.tensorflow.save(model, "my_keras_model")
+        bentoml.tensorflow.save(
+            model,
+            "my_keras_model",
+            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+        )
 
-   .. tab-item:: keras.Model (Functional?)
+   .. tab-item:: Functional keras.Model
 
       .. code-block:: python
         :caption: `train.py`
@@ -97,8 +142,14 @@ Saving a Trained Model
             kernel_initializer=keras.initializers.Ones(),
         )(x)
         model = keras.Model(inputs=x, outputs=y)
+        opt = keras.optimizers.Adam(0.002, 0.5)
+        model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
 
-        bentoml.tensorflow.save(model, "my_keras_model")
+        bentoml.tensorflow.save(
+            model,
+            "my_keras_model",
+            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+        )
 
 ``bentoml.tensorflow`` also supports saving models that take multiple tensors as input:
 
@@ -126,7 +177,7 @@ Saving a Trained Model
 
 .. note::
 
-    :code:`bentoml.tensorflow.save_model` has two parameters: ``tf_signature`` and ``signatures``.
+    :obj:`~bentoml.tensorflow.save_model` has two parameters: ``tf_signature`` and ``signatures``.
     Use the following arguments to define the model signatures signatures ensure consistent model behaviors in a Python session and from the BentoML model store.
     - `tf_signatures` is an alias to `tf.saved_model.save <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_ *signatures* field. This optional signatures controls which methods in a given `obj <https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/trackable/base.py#L281>`_ will be available to programs that consume `SavedModel's <https://www.tensorflow.org/guide/saved_model>`_, for example, serving APIs. Read more about TensorFlow's signatures behavior `from their API documentation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_.
     - ``signatures`` refers to a general :ref:`Model Signatures <concepts/model:Model Signatures>`_ that dictates which methods can be used for inference in the Runner context. This signatures dictionary will be used during the creation process of a Runner instance.
@@ -140,23 +191,10 @@ The signatures used for creating a Runner is ``{"__call__": {"batchable": False}
     bentoml.tensorflow.save(model, "my_model", signatures={"__call__": {"batch_dim": 0, "batchable": True}})
 
 
-.. Step 2: Create & test a Runner
-.. ------------------------------
-
-.. .. code-block:: python
-
-..     runner = bentoml.tensorflow.get("my_tf_model").to_runner()
-
-..     runner.init_local()  # only for testing, do not call this in a bento service definition
-..     runner.__call__.run(input_data)
-..     # the same as:
-..     # runner.run(input_data)
-
-
 Building a Service
 ------------------
 
-Create a BentoML service with the previously saved `my_tf_model` pipeline using the :code:`bentoml.tensorflow` framework APIs.
+Create a BentoML service with the previously saved `my_tf_model` pipeline using the :obj:`~bentoml.tensorflow` framework APIs.
 
 .. code-block:: python
     :caption: `service.py`
@@ -173,7 +211,7 @@ Create a BentoML service with the previously saved `my_tf_model` pipeline using 
 .. note::
 
     Follow the steps to get the best performance out of your TensorFlow model.
-    #. Save the model with well-defined :code:`tf.function` decorator.
+    #. Save the model with well-defined :obj:`~tf.function` decorator.
     #. Apply adaptive batching if possible.
     #. Serve on GPUs if applicable.
     #. See performance guide from [TensorFlow Doc]
@@ -182,8 +220,8 @@ Adaptive Batching
 -----------------
 
 Most TensorFlow models can accept batched data as input. If batched interence is supported, it is recommended to enable batching to take advantage of 
-the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :code:`signatures` 
-argument with the method name and providing :code:`batchable` and :code:`batch_dim` configurations when saving the model to the model store.
+the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :obj:`~signatures` 
+argument with the method name and providing :obj:`~batchable` and :obj:`~batch_dim` configurations when saving the model to the model store.
 
 We may modify our code from
 

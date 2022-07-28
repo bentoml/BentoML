@@ -123,6 +123,7 @@ Saving a Trained Model
         )
         opt = keras.optimizers.Adam(0.002, 0.5)
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
+        model.fit(train_x, train_y, epochs=10)
 
         bentoml.tensorflow.save(
             model,
@@ -144,6 +145,7 @@ Saving a Trained Model
         model = keras.Model(inputs=x, outputs=y)
         opt = keras.optimizers.Adam(0.002, 0.5)
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
+        model.fit(train_x, train_y, epochs=10)
 
         bentoml.tensorflow.save(
             model,
@@ -162,8 +164,8 @@ Saving a Trained Model
 
         @tf.function(
             input_signature=[
-                tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="x1"),
-                tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="x2"),
+                tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="x1"),
+                tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="x2"),
                 tf.TensorSpec(shape=(), dtype=tf.float64, name="factor"),
             ]
         )
@@ -173,7 +175,11 @@ Saving a Trained Model
     model = MultiInputModel()
     ... # training
 
-    bentoml.tensorflow.save(model, "my_tf_model")
+    bentoml.tensorflow.save(
+        model,
+        "my_tf_model",
+        signatures={"__call__": {"batchable": True, "batchdim": 0}}
+    )
 
 .. note::
 

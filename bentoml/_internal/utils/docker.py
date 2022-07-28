@@ -9,7 +9,8 @@ from ...exceptions import BentoMLException
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import click
+    from click import Context
+    from click import Parameter
 
 
 def to_valid_docker_image_name(name: str) -> str:
@@ -66,13 +67,11 @@ def _validate_docker_tag(tag: str) -> str:
 
 
 def validate_tag(
-    ctx: "click.Context", param: "click.Parameter", tag: str | tuple[str] | None
-) -> str | None:
+    ctx: Context, param: Parameter, tag: str | tuple[str] | None
+) -> str | tuple[str] | None:
     if tag is None:
         return tag
     elif isinstance(tag, tuple):
-        for t in tag:
-            assert not isinstance(t, list)
-            return validate_tag(ctx, param, t)
+        return tuple(map(_validate_docker_tag, tag))
     else:
         return _validate_docker_tag(tag)

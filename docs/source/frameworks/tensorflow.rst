@@ -225,30 +225,29 @@ argument with the method name and providing :obj:`~batchable` and :obj:`~batch_d
 
 We may modify our code from
 
-.. .. code-block:: python
+.. code-block:: python
+    :caption: `train.py`
 
-..     class NativeModel(tf.Module):
-..         @tf.function(
-..             input_signature=[
-..                 tf.TensorSpec(shape=[1, 5], dtype=tf.int64, name="inputs")
-..             ]
-..         )
-..         def __call__(self, inputs):
-..             ...
+    class NativeModel(tf.Module):
+        @tf.function(
+            input_signature=[
+                tf.TensorSpec(shape=[1, 5], dtype=tf.int64, name="inputs")
+            ]
+        )
+        def __call__(self, inputs):
+            ...
 
-..     model = NativeModel()
-..     bentoml.tensorflow.save(model, "test_model")  # the default signature is `{"__call__": {"batchable": False}}`
+    model = NativeModel()
+    bentoml.tensorflow.save(model, "test_model")  # the default signature is `{"__call__": {"batchable": False}}`
 
+    runner.run([[1,2,3,4,5]])  # -> bentoml will always call `model([[1,2,3,4,5]])`
 
-..     runner.run([[1,2,3,4,5]])  # -> bentoml will always call `model([[1,2,3,4,5]])`
-
-.. to
+to
 
 .. code-block:: python
     :caption: `train.py`
 
     class NativeModel(tf.Module):
-
         @tf.function(
             input_signature=[
                 tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="inputs")

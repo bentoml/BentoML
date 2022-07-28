@@ -380,7 +380,7 @@ def build_bentofile(
 @inject
 def containerize(
     tag: Tag | str,
-    docker_image_tag: str | None = None,
+    docker_image_tag: str | t.List[str] | None = None,
     *,
     add_host: dict[str, str] | None = None,
     allow: t.List[str] | None = None,

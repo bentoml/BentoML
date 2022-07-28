@@ -420,7 +420,7 @@ def containerize(
     buildx.health()
 
     bento = _bento_store.get(tag)
-    if docker_image_tag is None:
+    if not docker_image_tag:
         docker_image_tag = str(bento.tag)
 
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")

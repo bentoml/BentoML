@@ -20,7 +20,7 @@ If you must use TensorFlow for your Keras model, make sure that your Keras model
 
 .. note::
 
-    :bdg-info:`Remarks:` We recommend users apply model optimization techniques such as **distillation** or **quantization**. Alternatively, Keras models can also be converted to :ref:`ONNX <frameworks/onnx>` models and leverage different runtimes (e.g. TensorRT, Apache TVM, etc.).
+    :bdg-info:`Remarks:` We recommend users apply model optimization techniques such as **distillation** or **quantization**. Alternatively, Keras models can also be converted to :ref:`ONNX <frameworks/onnx>` models and leverage different runtimes.
 
 Compatibility
 -------------

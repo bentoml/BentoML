@@ -1,31 +1,52 @@
 from __future__ import annotations
 
+import sys
 import asyncio
+import logging
 from typing import TYPE_CHECKING
 
+import grpc
 import anyio
 from grpc import aio
 
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
 from bentoml.exceptions import MissingDependencyException
 from bentoml._internal.service.service import Service
 
+from ...utils import LazyLoader
+from ...utils.grpc import grpc_status_code
+
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
+    from logging import _ExcInfoType as ExcInfoType  # type: ignore (private warning)
+
+    from bentoml.grpc.v1 import service_pb2 as _service_pb2
+    from bentoml.grpc.v1 import service_pb2_grpc as _service_pb2_grpc
+
     from .types import BentoServicerContext
+else:
+    _service_pb2 = LazyLoader("_service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+    _service_pb2_grpc = LazyLoader(
+        "_service_pb2_grpc", globals(), "bentoml.grpc.v1.service_pb2_grpc"
+    )
+
+
+def log_exception(request: _service_pb2.Request, exc_info: ExcInfoType) -> None:
+    logger.error(f"Exception on /{request.api_name}", exc_info=exc_info)
 
 
 def register_bento_servicer(service: Service, server: aio.Server) -> None:
     """
     This is the actual implementation of BentoServicer.
-    Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Inference
+    Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
     """
-    from bentoml.grpc.v1 import service_pb2 as _service_pb2
-    from bentoml.grpc.v1 import service_pb2_grpc as _service_pb2_grpc
 
     class BentoServiceServicer(_service_pb2_grpc.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
 
-        async def Infer(  # type: ignore (no async types)
+        async def Call(  # type: ignore (no async types)
             self,
             request: _service_pb2.Request,
             context: BentoServicerContext,
@@ -36,15 +57,33 @@ def register_bento_servicer(service: Service, server: aio.Server) -> None:
                 )
 
             api = service.apis[request.api_name]
+            response = _service_pb2.Response()
 
-            input = await api.input.from_grpc_request(request, context)
+            try:
+                input = await api.input.from_grpc_request(request, context)
 
-            if asyncio.iscoroutinefunction(api.func):
-                output = await api.func(input)
-            else:
-                output = await anyio.to_thread.run_sync(api.func, input)
+                if asyncio.iscoroutinefunction(api.func):
+                    output = await api.func(input)
+                else:
+                    output = await anyio.to_thread.run_sync(api.func, input)
 
-            return await api.output.to_grpc_response(output, context)
+                response = await api.output.to_grpc_response(output, context)
+            except BentoMLException as e:
+                log_exception(request, sys.exc_info())
+                await context.abort(code=grpc_status_code(e), details=e.message)
+            except (RuntimeError, TypeError, NotImplementedError):
+                log_exception(request, sys.exc_info())
+                await context.abort(
+                    code=grpc.StatusCode.INTERNAL,
+                    details="An internal runtime error has occurred, check out error details in server logs.",
+                )
+            except Exception:  # type: ignore (generic exception)
+                log_exception(request, sys.exc_info())
+                await context.abort(
+                    code=grpc.StatusCode.UNKNOWN,
+                    details="An error has occurred in BentoML user code when handling this request, find the error details in server logs.",
+                )
+            return response
 
     _service_pb2_grpc.add_BentoServiceServicer_to_server(BentoServiceServicer(), server)  # type: ignore (lack of asyncio types)
 
@@ -61,6 +100,7 @@ async def register_health_servicer(server: aio.Server) -> None:
             "'grpcio-health-checking' is required for using health checking endpoints. Install with `pip install grpcio-health-checking`."
         )
     try:
+        # reflection is required for health checking to work.
         from grpc_reflection.v1alpha import reflection
     except ImportError:
         raise MissingDependencyException(

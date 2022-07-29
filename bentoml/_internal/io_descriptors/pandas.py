@@ -128,7 +128,9 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
         )
 
 
-class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
+class PandasDataFrame(
+    IODescriptor["ext.PdDataFrame"], proto_fields=["map_value", "raw_value"]
+):
     """
     :code:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
     where either inputs will be converted to or outputs will be converted from type
@@ -480,7 +482,9 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         )
 
 
-class PandasSeries(IODescriptor["ext.PdSeries"]):
+class PandasSeries(
+    IODescriptor["ext.PdSeries"], proto_fields=["map_value", "raw_value"]
+):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type

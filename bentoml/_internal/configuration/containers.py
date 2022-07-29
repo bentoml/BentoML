@@ -111,6 +111,7 @@ SCHEMA = Schema(
             },
             "grpc": {
                 "max_message_length": Or(int, None),
+                "maximum_concurrent_rpcs": Or(int, None),
             },
         },
         "runners": {

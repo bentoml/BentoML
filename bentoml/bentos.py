@@ -380,7 +380,7 @@ def build_bentofile(
 @inject
 def containerize(
     tag: Tag | str,
-    docker_image_tag: str | t.List[str] | None = None,
+    docker_image_tag: str | None = None,
     *,
     add_host: dict[str, str] | None = None,
     allow: t.List[str] | None = None,
@@ -420,7 +420,7 @@ def containerize(
     buildx.health()
 
     bento = _bento_store.get(tag)
-    if not docker_image_tag:
+    if docker_image_tag is None:
         docker_image_tag = str(bento.tag)
 
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")

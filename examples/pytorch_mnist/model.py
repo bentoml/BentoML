@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class SimpleConvNet(nn.Module):
     '''
     Simple Convolutional Neural Network

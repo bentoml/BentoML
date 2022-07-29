@@ -1,8 +1,10 @@
-import bentoml
-import pandas as pd
-from sklearn import svm, datasets
-
 import logging
+
+import pandas as pd
+from sklearn import svm
+from sklearn import datasets
+
+import bentoml
 
 logging.basicConfig(level=logging.WARN)
 

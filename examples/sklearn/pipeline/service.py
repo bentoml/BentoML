@@ -1,5 +1,6 @@
 import bentoml
-from bentoml.io import Text, JSON
+from bentoml.io import JSON
+from bentoml.io import Text
 
 bento_model = bentoml.sklearn.get("20_news_group:latest")
 

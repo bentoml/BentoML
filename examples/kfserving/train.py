@@ -1,7 +1,9 @@
-import bentoml
-from sklearn import svm, datasets
-
 import logging
+
+from sklearn import svm
+from sklearn import datasets
+
+import bentoml
 
 logging.basicConfig(level=logging.WARN)
 

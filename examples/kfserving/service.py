@@ -1,9 +1,11 @@
 from typing import List
 
-import pydantic
 import numpy as np
+import pydantic
+
 import bentoml
-from bentoml.io import NumpyNdarray, JSON
+from bentoml.io import JSON
+from bentoml.io import NumpyNdarray
 
 iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 

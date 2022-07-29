@@ -1,6 +1,8 @@
 import xgboost
+from locust import task
+from locust import between
+from locust import HttpUser
 from sklearn.datasets import load_svmlight_file
-from locust import HttpUser, task, between
 
 test_data = load_svmlight_file('data/agaricus.txt.train')
 num_of_rows = len(test_data[0])

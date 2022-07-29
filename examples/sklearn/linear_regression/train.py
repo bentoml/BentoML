@@ -1,6 +1,6 @@
-import bentoml 
 from sklearn import linear_model
 
+import bentoml
 
 if __name__ == "__main__":
     reg = linear_model.LinearRegression()

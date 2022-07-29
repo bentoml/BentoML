@@ -1,18 +1,19 @@
-import argparse
 import os
 import random
+import argparse
 
-import bentoml
 import numpy as np
 import torch
 import torch.nn.functional as F
-from sklearn.model_selection import KFold
-from torch import nn
-from torch.utils.data import ConcatDataset, DataLoader
-from torchvision import transforms
-from torchvision.datasets import MNIST
-
 from model import SimpleConvNet
+from torch import nn
+from torchvision import transforms
+from torch.utils.data import DataLoader
+from torch.utils.data import ConcatDataset
+from torchvision.datasets import MNIST
+from sklearn.model_selection import KFold
+
+import bentoml
 
 K_FOLDS = 5
 NUM_EPOCHS = 3

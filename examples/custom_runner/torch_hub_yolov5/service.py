@@ -1,8 +1,9 @@
-import torch
 import numpy as np
+import torch
 
 import bentoml
-from bentoml.io import Image, PandasDataFrame
+from bentoml.io import Image
+from bentoml.io import PandasDataFrame
 
 
 class Yolov5Runnable(bentoml.Runnable):

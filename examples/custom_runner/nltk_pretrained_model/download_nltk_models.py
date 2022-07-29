@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+
 import nltk
 
 if os.environ.get("BENTO_PATH"):

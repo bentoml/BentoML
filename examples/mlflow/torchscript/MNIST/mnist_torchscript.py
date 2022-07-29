@@ -2,17 +2,18 @@
 
 import argparse
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
-from torchvision import datasets, transforms
 import numpy as np
+import torch
+import mlflow
+import torch.nn as nn
+import torch.optim as optim
+import mlflow.pytorch
+import torch.nn.functional as F
+from torchvision import datasets
+from torchvision import transforms
+from torch.optim.lr_scheduler import StepLR
 
 import bentoml
-import mlflow
-import mlflow.pytorch
 
 
 class Net(nn.Module):

@@ -1,7 +1,10 @@
 import numpy as np
+from flask import Flask
+from flask import jsonify
+from flask import request
+
 import bentoml
 from bentoml.io import NumpyNdarray
-from flask import Flask, request, jsonify
 
 bento_model = bentoml.sklearn.get("iris_clf:latest")
 iris_clf_runner = bento_model.to_runner()

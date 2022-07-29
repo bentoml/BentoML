@@ -1,8 +1,9 @@
 import asyncio
-import bentoml
-
-from bentoml.io import Text, JSON
 from statistics import median
+
+import bentoml
+from bentoml.io import JSON
+from bentoml.io import Text
 
 bert_runner = bentoml.transformers.get("bert-base-uncased:latest").to_runner()
 distilbert_runner = bentoml.transformers.get("distilbert:latest").to_runner()

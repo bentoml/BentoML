@@ -1,8 +1,11 @@
-import bentoml
-import nltk
-from bentoml.io import Text, JSON
-from nltk.sentiment import SentimentIntensityAnalyzer
 from statistics import mean
+
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+import bentoml
+from bentoml.io import JSON
+from bentoml.io import Text
 
 
 class NLTKSentimentAnalysisRunnable(bentoml.Runnable):

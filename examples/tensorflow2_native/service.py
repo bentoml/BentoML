@@ -1,8 +1,10 @@
 
-import bentoml
 import numpy as np
-from bentoml.io import Image, NumpyNdarray
 from PIL.Image import Image as PILImage
+
+import bentoml
+from bentoml.io import Image
+from bentoml.io import NumpyNdarray
 
 mnist_runner = bentoml.tensorflow.get("tensorflow_mnist:latest").to_runner()
 

@@ -1,6 +1,8 @@
-import bentoml
-import transformers
 import logging
+
+import transformers
+
+import bentoml
 
 logging.basicConfig(level=logging.WARN)
 

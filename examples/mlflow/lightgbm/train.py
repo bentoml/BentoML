@@ -1,14 +1,15 @@
 import argparse
 
-from sklearn import datasets
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, log_loss
+import mlflow
 import lightgbm as lgb
 import matplotlib as mpl
+import mlflow.lightgbm
+from sklearn import datasets
+from sklearn.metrics import log_loss
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 import bentoml
-import mlflow
-import mlflow.lightgbm
 
 mpl.use("Agg")
 

@@ -1,4 +1,5 @@
 import numpy as np
+
 import bentoml
 from bentoml.io import NumpyNdarray
 

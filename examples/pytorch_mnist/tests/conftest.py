@@ -5,13 +5,14 @@ import typing as t
 
 import numpy as np
 import pytest
+
 from bentoml.testing.server import run_api_server
 
 
 def pytest_configure(config):  # pylint: disable=unused-argument
     import os
-    import subprocess
     import sys
+    import subprocess
 
     cmd = f"{sys.executable} {os.path.join(os.getcwd(), 'train.py')} --k-folds=0"
     subprocess.run(cmd, shell=True, check=True)

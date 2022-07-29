@@ -1,12 +1,13 @@
 # pylint: disable=redefined-outer-name
 # type: ignore[no-untyped-def]
 
-import asyncio
 import io
 import json
+import asyncio
 
 import numpy as np
 import pytest
+
 from bentoml.testing.utils import async_request
 
 

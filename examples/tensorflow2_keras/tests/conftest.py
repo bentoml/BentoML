@@ -1,12 +1,14 @@
 # pylint: disable=redefined-outer-name
 
+import typing as t
 import pathlib
 import subprocess
-import typing as t
+
+import pytest
 
 import bentoml
-import pytest
-from bentoml.testing.server import bentoml_build, host_bento
+from bentoml.testing.server import host_bento
+from bentoml.testing.server import bentoml_build
 
 
 def pytest_configure(config):  # pylint: disable=unused-argument

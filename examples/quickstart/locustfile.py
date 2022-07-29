@@ -1,6 +1,8 @@
 import numpy as np
+from locust import task
+from locust import between
+from locust import HttpUser
 from sklearn import datasets
-from locust import HttpUser, task, between
 
 test_data = datasets.load_iris().data
 num_of_rows = test_data.shape[0]

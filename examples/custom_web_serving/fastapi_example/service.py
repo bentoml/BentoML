@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
-import bentoml
-from bentoml.io import NumpyNdarray, JSON
-from pydantic import BaseModel
 from fastapi import FastAPI
+from pydantic import BaseModel
+
+import bentoml
+from bentoml.io import JSON
+from bentoml.io import NumpyNdarray
+
 
 class IrisFeatures(BaseModel):
     sepal_len: float

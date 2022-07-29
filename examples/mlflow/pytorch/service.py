@@ -1,7 +1,7 @@
-import bentoml
-
-import mlflow
 import torch
+import mlflow
+
+import bentoml
 
 mnist_runner = bentoml.mlflow.get('mlflow_pytorch_mnist:latest').to_runner()
 

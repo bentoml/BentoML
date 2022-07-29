@@ -1,7 +1,10 @@
-import bentoml
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Conv2D, Dense, Flatten
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Flatten
+
+import bentoml
 
 print("TensorFlow version:", tf.__version__)
 

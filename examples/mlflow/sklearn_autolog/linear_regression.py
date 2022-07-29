@@ -1,12 +1,12 @@
 from pprint import pprint
 
 import numpy as np
+import mlflow
+from utils import fetch_logged_data
+from mlflow.tracking import MlflowClient
 from sklearn.linear_model import LinearRegression
 
 import bentoml
-import mlflow
-from mlflow.tracking import MlflowClient
-from utils import fetch_logged_data
 
 
 def main():

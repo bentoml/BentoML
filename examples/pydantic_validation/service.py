@@ -1,9 +1,12 @@
 import typing
+
 import numpy as np
 import pandas as pd
-import bentoml
-from bentoml.io import NumpyNdarray, JSON
 from pydantic import BaseModel
+
+import bentoml
+from bentoml.io import JSON
+from bentoml.io import NumpyNdarray
 
 iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
 

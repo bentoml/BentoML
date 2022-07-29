@@ -1,0 +1,8 @@
+service: "service.py:svc"
+include:
+  - "service.py"
+python:
+  packages:
+    - "nltk"
+docker:
+  setup_script: "./download_nltk_models.py"

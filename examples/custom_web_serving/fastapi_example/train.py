@@ -12,7 +12,9 @@ if __name__ == "__main__":
 
     # Load training data
     iris = datasets.load_iris()
-    X = pd.DataFrame(data=iris.data, columns=['sepal_len', 'sepal_width', 'petal_len', 'petal_width'])
+    X = pd.DataFrame(
+        data=iris.data, columns=["sepal_len", "sepal_width", "petal_len", "petal_width"]
+    )
     y = iris.target
 
     # Model Training

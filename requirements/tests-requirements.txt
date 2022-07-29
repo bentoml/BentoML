@@ -1,5 +1,5 @@
 # Tests dependencies
-black==22.3.0
+black[jupyter]==22.3.0
 codecov
 coverage>=4.4
 isort>=5.0.0

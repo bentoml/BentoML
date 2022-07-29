@@ -150,15 +150,13 @@ def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     loss_function = nn.CrossEntropyLoss()
     for epoch in range(epochs):
-        train_epoch(model, optimizer, loss_function,
-                    train_loader, epoch, device)
+        train_epoch(model, optimizer, loss_function, train_loader, epoch, device)
     return model
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(
-        description="BentoML PyTorch MNIST Example")
+    parser = argparse.ArgumentParser(description="BentoML PyTorch MNIST Example")
     parser.add_argument(
         "--epochs",
         type=int,
@@ -210,11 +208,7 @@ if __name__ == "__main__":
         "cv_stats": cv_results,
     }
 
-    signatures = {
-        "predict": {
-            "batchable": True
-        }
-    }
+    signatures = {"predict": {"batchable": True}}
 
     saved_model = bentoml.pytorch.save_model(
         args.model_name,

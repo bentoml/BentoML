@@ -24,9 +24,9 @@ class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
         return mean(scores) > 0
 
 
-nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name='nltk_sentiment')
+nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name="nltk_sentiment")
 
-svc = bentoml.Service('sentiment_analyzer', runners=[nltk_runner])
+svc = bentoml.Service("sentiment_analyzer", runners=[nltk_runner])
 
 
 @svc.api(input=Text(), output=JSON())

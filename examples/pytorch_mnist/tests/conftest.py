@@ -2,6 +2,7 @@
 # type: ignore[no-untyped-def]
 
 import typing as t
+
 import pytest
 
 from bentoml.testing.server import run_api_server

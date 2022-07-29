@@ -40,7 +40,7 @@ def main():
     # import only the best_estimator artifact to BentoML
     artifact_path = "best_estimator"
     model_uri = f"runs:/{run_id}/{artifact_path}"
-    bento_model = bentoml.mlflow.import_model('sklearn_gs_iris', model_uri)
+    bento_model = bentoml.mlflow.import_model("sklearn_gs_iris", model_uri)
     print("\nModel imported to BentoML: %s" % bento_model)
 
 

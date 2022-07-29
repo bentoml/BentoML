@@ -45,7 +45,9 @@ def main():
     iris = datasets.load_iris()
     X = iris.data
     y = iris.target
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     # enable auto logging
     mlflow.lightgbm.autolog()
@@ -65,7 +67,11 @@ def main():
             "seed": 42,
         }
         model = lgb.train(
-            params, train_set, num_boost_round=10, valid_sets=[train_set], valid_names=["train"]
+            params,
+            train_set,
+            num_boost_round=10,
+            valid_sets=[train_set],
+            valid_names=["train"],
         )
 
         # evaluate model
@@ -80,9 +86,7 @@ def main():
         # Import logged mlflow model to BentoML model store for serving:
         model_uri = mlflow.get_artifact_uri("model")
         bento_model = bentoml.mlflow.import_model(
-            'lgb_iris',
-            model_uri,
-            signatures={'predict': {'batchable': True}}
+            "lgb_iris", model_uri, signatures={"predict": {"batchable": True}}
         )
         print("Model imported to BentoML: %s" % bento_model)
 

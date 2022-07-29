@@ -7,7 +7,7 @@ bento_model = bentoml.sklearn.get("20_news_group:latest")
 target_names = bento_model.custom_objects["target_names"]
 model_runner = bento_model.to_runner()
 
-svc = bentoml.Service('doc_classifier', runners=[model_runner])
+svc = bentoml.Service("doc_classifier", runners=[model_runner])
 
 
 @svc.api(input=Text(), output=JSON())

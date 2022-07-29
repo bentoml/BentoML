@@ -58,5 +58,5 @@ async def test_image(host, img_data):
             data=img_bytes,
             headers={"Content-Type": "image/png"},
             assert_status=200,
-            assert_data=bdigit
+            assert_data=bdigit,
         )

@@ -17,7 +17,7 @@ svc = bentoml.Service(
 @svc.api(input=Image(), output=NumpyNdarray(dtype="float32"))
 async def predict_image(f: PILImage) -> "np.ndarray":
     assert isinstance(f, PILImage)
-    arr = np.array(f)/255.0
+    arr = np.array(f) / 255.0
     assert arr.shape == (28, 28)
 
     # We are using greyscale image and our PyTorch model expect one

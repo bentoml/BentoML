@@ -10,7 +10,6 @@ from bentoml.testing.server import host_bento
 
 
 def pytest_configure(config):  # pylint: disable=unused-argument
-    import os
     import sys
 
     subprocess.check_call(

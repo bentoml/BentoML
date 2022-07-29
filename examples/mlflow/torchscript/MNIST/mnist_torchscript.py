@@ -203,7 +203,7 @@ def main():
         str(actual), str(predicted)))
 
     # Option2: save MLflow model and import MLflow pyfunc model to BentoML
-    with mlflow.start_run() as run:
+    with mlflow.start_run():
         # logging scripted model
         mlflow.pytorch.log_model(scripted_model, "model")
 

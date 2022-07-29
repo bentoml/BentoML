@@ -39,7 +39,6 @@ set -euxo pipefail
 if [ -f {{ path }} ]; then
   echo "{{ echo_msg }}..."
   bash {{ path }}
-  {{ path }}
 fi
 EOF
 {%- endmacro -%}

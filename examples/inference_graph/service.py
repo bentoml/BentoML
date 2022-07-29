@@ -1,5 +1,4 @@
 import asyncio
-from statistics import median
 
 import bentoml
 from bentoml.io import JSON

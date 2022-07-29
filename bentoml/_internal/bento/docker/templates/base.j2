@@ -54,12 +54,39 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
 
+{# bento__home already include leading / #}
+# An assumption is made that all containers will have Python included.
+COPY <<-"EOT" {{ bento__home }}runscript
+#!/usr/bin/env python3
+
+from __future__ import annotations
+import subprocess
+
+
+def main(argv: list[str]) -> int:
+    args = argv[1:]
+    script = args[0]
+
+    with open(script, "r") as f:
+        code = f.readlines()
+    lang = code[0].replace("#!", "").strip().split()[-1]
+    return subprocess.check_call([lang, script, *args[1:]])
+
+
+if __name__ == "__main__":
+    import sys
+
+    raise SystemExit(main(sys.argv))
+EOT
+RUN chmod +x {{ bento__home }}runscript
+
+{% set __runexec__ = [bento__home, "runscript"] | join("") %}
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
-{{ common.run_script(__install_python_scripts__, "install.sh to install python packages", run_args=__pip_cache__) }}
+{{ common.run_script(__install_python_scripts__, "install.sh to install python packages", run_args=__pip_cache__, runexec=__runexec__) }}
 
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
-{{ common.run_script(__setup_script__, "user setup scripts") }}
+{{ common.run_script(__setup_script__, "user setup scripts", runexec=__runexec__) }}
 
 {% endblock %}
 

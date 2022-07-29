@@ -31,14 +31,14 @@ EOF
 
 {%- endmacro -%}
 
-{%- macro run_script(path, echo_msg, run_args="") -%}
+{%- macro run_script(path, echo_msg, run_args="", runexec=bash) -%}
 # Running {{ echo_msg }}
 RUN {{ run_args }} bash <<EOF
 set -euxo pipefail
 
 if [ -f {{ path }} ]; then
   echo "{{ echo_msg }}..."
-  bash {{ path }}
+  {{ runexec }} {{ path }}
 fi
 EOF
 {%- endmacro -%}

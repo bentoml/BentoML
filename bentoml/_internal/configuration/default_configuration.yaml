@@ -25,6 +25,7 @@ api_server:
     access_control_expose_headers: Null
   grpc:
     max_message_length: Null
+    maximum_concurrent_rpcs: Null
 
 runners:
   batching:

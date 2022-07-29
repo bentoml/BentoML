@@ -3,7 +3,6 @@ Specific types for BentoService gRPC server.
 """
 from __future__ import annotations
 
-from typing import Any
 from typing import TypeVar
 from typing import Callable
 from typing import Optional
@@ -11,8 +10,6 @@ from typing import NamedTuple
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Protocol
-
     import grpc
     from grpc import aio
 
@@ -20,25 +17,14 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1.service_pb2 import Response
     from bentoml.grpc.v1.service_pb2_grpc import BentoServiceServicer
 
-    P_con = TypeVar("P_con", contravariant=True)
+    P = TypeVar("P")
 
     BentoServicerContext = aio.ServicerContext[Response, Request]
 
     RequestDeserializerFn = Callable[[Request | None], object] | None
     ResponseSerializerFn = Callable[[bytes], Response | None] | None
 
-    HandlerMethod = Callable[[Request, BentoServicerContext], P_con]
-
-    class HandlerFactoryProtocol(Protocol[P_con]):
-        def __call__(
-            self,
-            behaviour: HandlerMethod[P_con],
-            request_deserializer: RequestDeserializerFn = None,
-            response_serializer: ResponseSerializerFn = None,
-        ) -> grpc.RpcMethodHandler:
-            ...
-
-    HandlerFactoryFn = HandlerFactoryProtocol[Any]
+    HandlerMethod = Callable[[Request, BentoServicerContext], P]
 
     class RpcMethodHandler(
         NamedTuple(
@@ -47,10 +33,10 @@ if TYPE_CHECKING:
             response_streaming=bool,
             request_deserializer=RequestDeserializerFn,
             response_serializer=ResponseSerializerFn,
-            unary_unary=Optional[aio.UnaryUnaryMultiCallable],
-            unary_stream=Optional[aio.UnaryStreamMultiCallable],
-            stream_unary=Optional[aio.StreamUnaryMultiCallable],
-            stream_stream=Optional[aio.StreamStreamMultiCallable],
+            unary_unary=Optional[HandlerMethod[Response]],
+            unary_stream=Optional[HandlerMethod[Response]],
+            stream_unary=Optional[HandlerMethod[Response]],
+            stream_stream=Optional[HandlerMethod[Response]],
         ),
         grpc.RpcMethodHandler,
     ):
@@ -60,10 +46,10 @@ if TYPE_CHECKING:
         response_streaming: bool
         request_deserializer: RequestDeserializerFn
         response_serializer: ResponseSerializerFn
-        unary_unary: Optional[aio.UnaryUnaryMultiCallable]
-        unary_stream: Optional[aio.UnaryStreamMultiCallable]
-        stream_unary: Optional[aio.StreamUnaryMultiCallable]
-        stream_stream: Optional[aio.StreamStreamMultiCallable]
+        unary_unary: Optional[HandlerMethod[Response]]
+        unary_stream: Optional[HandlerMethod[Response]]
+        stream_unary: Optional[HandlerMethod[Response]]
+        stream_stream: Optional[HandlerMethod[Response]]
 
     class HandlerCallDetails(
         NamedTuple("HandlerCallDetails", method=str, invocation_metadata=aio.Metadata),

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str]):
+class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
     """
     :code:`Text` defines API specification for the inputs/outputs of a Service. :code:`Text`
     represents strings for all incoming requests/outcoming responses as specified in

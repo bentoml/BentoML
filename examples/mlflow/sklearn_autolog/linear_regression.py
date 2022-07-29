@@ -30,8 +30,7 @@ def main():
     # import logged MLFlow model to BentoML
     artifact_path = "model"
     model_uri = f"runs:/{run_id}/{artifact_path}"
-    bento_model = bentoml.mlflow.import_model(
-        'logistic_regression_model', model_uri)
+    bento_model = bentoml.mlflow.import_model("logistic_regression_model", model_uri)
     print("\nModel imported to BentoML: %s" % bento_model)
 
 

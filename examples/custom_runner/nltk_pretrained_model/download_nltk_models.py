@@ -14,5 +14,5 @@ if os.environ.get("BENTO_PATH"):
 else:
     download_dir = os.path.expandvars("$HOME/nltk_data")
 
-nltk.download('vader_lexicon', download_dir)
-nltk.download('punkt', download_dir)
+nltk.download("vader_lexicon", download_dir)
+nltk.download("punkt", download_dir)

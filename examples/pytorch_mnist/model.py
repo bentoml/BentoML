@@ -3,9 +3,10 @@ import torch.nn as nn
 
 
 class SimpleConvNet(nn.Module):
-    '''
+    """
     Simple Convolutional Neural Network
-    '''
+    """
+
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
@@ -16,7 +17,7 @@ class SimpleConvNet(nn.Module):
             nn.ReLU(),
             nn.Linear(50, 20),
             nn.ReLU(),
-            nn.Linear(20, 10)
+            nn.Linear(20, 10),
         )
 
     def forward(self, x):

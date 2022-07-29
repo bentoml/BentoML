@@ -138,8 +138,9 @@ def main():
         default=False,
         help="quickly check a single pass",
     )
-    parser.add_argument("--seed", type=int, default=1,
-                        metavar="S", help="random seed (default: 1)")
+    parser.add_argument(
+        "--seed", type=int, default=1, metavar="S", help="random seed (default: 1)"
+    )
     parser.add_argument(
         "--log-interval",
         type=int,
@@ -171,8 +172,7 @@ def main():
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     )
-    dataset1 = datasets.MNIST("../data", train=True,
-                              download=True, transform=transform)
+    dataset1 = datasets.MNIST("../data", train=True, download=True, transform=transform)
     dataset2 = datasets.MNIST("../data", train=False, transform=transform)
     train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
@@ -190,8 +190,11 @@ def main():
     # Saving model and running inference with BentoML:
 
     # Option1: save natively with bentoml.torchscript_iris
-    bentoml.torchscript.save_model('torchscript_mnist', scripted_model,
-                                   signatures={"__call__": {"batchable": True}})
+    bentoml.torchscript.save_model(
+        "torchscript_mnist",
+        scripted_model,
+        signatures={"__call__": {"batchable": True}},
+    )
     model_runner = bentoml.torchscript.get("torchscript_mnist").to_runner()
     model_runner.init_local()
 
@@ -199,8 +202,11 @@ def main():
     prediction = model_runner.run(test_datapoint[0].unsqueeze(0).numpy())
     actual = test_target[0].item()
     predicted = np.argmax(prediction).item()
-    print("\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(
-        str(actual), str(predicted)))
+    print(
+        "\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(
+            str(actual), str(predicted)
+        )
+    )
 
     # Option2: save MLflow model and import MLflow pyfunc model to BentoML
     with mlflow.start_run():
@@ -210,9 +216,7 @@ def main():
         # Import logged mlflow model to BentoML model store for serving:
         model_uri = mlflow.get_artifact_uri("model")
         bento_model = bentoml.mlflow.import_model(
-            'mlflow_torch_mnist',
-            model_uri,
-            signatures={'predict': {'batchable': True}}
+            "mlflow_torch_mnist", model_uri, signatures={"predict": {"batchable": True}}
         )
         print(f"Model imported to BentoML: {bento_model}")
 
@@ -220,12 +224,14 @@ def main():
         model_runner.init_local()
 
         test_datapoint, test_target = next(iter(test_loader))
-        prediction = model_runner.predict.run(
-            test_datapoint[0].unsqueeze(0).numpy())
+        prediction = model_runner.predict.run(test_datapoint[0].unsqueeze(0).numpy())
         actual = test_target[0].item()
         predicted = np.argmax(prediction).item()
-        print("\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(
-            str(actual), str(predicted)))
+        print(
+            "\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(
+                str(actual), str(predicted)
+            )
+        )
 
 
 if __name__ == "__main__":

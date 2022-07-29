@@ -12,8 +12,7 @@ from bentoml.testing.server import host_bento
 def pytest_configure(config):  # pylint: disable=unused-argument
     import sys
 
-    subprocess.check_call(
-        [sys.executable, pathlib.Path("train.py").absolute()])
+    subprocess.check_call([sys.executable, pathlib.Path("train.py").absolute()])
 
 
 @pytest.fixture(scope="session")

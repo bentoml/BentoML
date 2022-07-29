@@ -10,7 +10,7 @@ class Yolov5Runnable(bentoml.Runnable):
     SUPPORTS_CPU_MULTI_THREADING = True
 
     def __init__(self):
-        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+        self.model = torch.hub.load("ultralytics/yolov5", "yolov5s")
 
         if torch.cuda.is_available():
             self.model.cuda()
@@ -43,7 +43,7 @@ class Yolov5Runnable(bentoml.Runnable):
 
 yolo_v5_runner = bentoml.Runner(Yolov5Runnable, max_batch_size=30)
 
-svc = bentoml.Service('yolo_v5_demo', runners=[yolo_v5_runner])
+svc = bentoml.Service("yolo_v5_demo", runners=[yolo_v5_runner])
 
 
 @svc.api(input=Image(), output=PandasDataFrame())

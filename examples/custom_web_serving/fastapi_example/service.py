@@ -35,6 +35,7 @@ svc.mount_asgi_app(fastapi_app)
 def metadata():
     return {"name": bento_model.tag.name, "version": bento_model.tag.version}
 
+
 # For demo purpose, here's an identical inference endpoint implemented via FastAPI
 
 
@@ -43,6 +44,7 @@ def predict(features: IrisFeatures):
     input_df = pd.DataFrame([features.dict()])
     results = iris_clf_runner.predict.run(input_df)
     return {"prediction": results.tolist()[0]}
+
 
 # For demo purpose, here's an identical inference endpoint implemented via FastAPI
 

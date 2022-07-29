@@ -41,13 +41,21 @@ parser.add_argument(
     help="input batch size for testing (default: 1000)",
 )
 parser.add_argument(
-    "--epochs", type=int, default=10, metavar="N", help="number of epochs to train (default: 10)"
+    "--epochs",
+    type=int,
+    default=10,
+    metavar="N",
+    help="number of epochs to train (default: 10)",
 )
 parser.add_argument(
     "--lr", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
 )
 parser.add_argument(
-    "--momentum", type=float, default=0.5, metavar="M", help="SGD momentum (default: 0.5)"
+    "--momentum",
+    type=float,
+    default=0.5,
+    metavar="M",
+    help="SGD momentum (default: 0.5)",
 )
 parser.add_argument(
     "--enable-cuda",
@@ -56,8 +64,9 @@ parser.add_argument(
     default="True",
     help="enables or disables CUDA training",
 )
-parser.add_argument("--seed", type=int, default=1,
-                    metavar="S", help="random seed (default: 1)")
+parser.add_argument(
+    "--seed", type=int, default=1, metavar="S", help="random seed (default: 1)"
+)
 parser.add_argument(
     "--log-interval",
     type=int,
@@ -201,21 +210,18 @@ if __name__ == "__main__":
         print("\nLogging the trained model as a run artifact...")
         mlflow.pytorch.log_model(model, artifact_path="pytorch-model")
         print(
-            "\nThe model is logged at:\n%s" % os.path.join(
-                mlflow.get_artifact_uri(), "pytorch-model")
+            "\nThe model is logged at:\n%s"
+            % os.path.join(mlflow.get_artifact_uri(), "pytorch-model")
         )
 
         # Option 1: Save pytorch model directly with BentoML
         bento_model_1 = bentoml.pytorch.save_model(
-            'pytorch-mnist',
-            model,
-            signatures={"__call__": {"batchable": True}}
+            "pytorch-mnist", model, signatures={"__call__": {"batchable": True}}
         )
         print("Pytorch Model saved with BentoML: %s" % bento_model_1)
 
         # make predictions with BentoML runner
-        model_runner_1 = bentoml.pytorch.get(
-            "pytorch-mnist:latest").to_runner()
+        model_runner_1 = bentoml.pytorch.get("pytorch-mnist:latest").to_runner()
         model_runner_1.init_local()
 
         # Extract a few examples from the test dataset to evaluate on
@@ -225,21 +231,21 @@ if __name__ == "__main__":
         template = 'Sample {} : Ground truth is "{}", model prediction is "{}"'
         print("\nSample predictions")
         for index in range(5):
-            print(template.format(
-                index, eval_labels[index], predictions.argmax(1)[index]))
+            print(
+                template.format(index, eval_labels[index], predictions.argmax(1)[index])
+            )
 
         # Option 2: Import logged mlflow model to BentoML for serving:
         model_uri = mlflow.get_artifact_uri("pytorch-model")
         bento_model_2 = bentoml.mlflow.import_model(
-            'mlflow_pytorch_mnist',
+            "mlflow_pytorch_mnist",
             model_uri,
-            signatures={'predict': {'batchable': True}}
+            signatures={"predict": {"batchable": True}},
         )
         print("Model imported to BentoML: %s" % bento_model_2)
 
         # make predictions with BentoML runner
-        model_runner_2 = bentoml.mlflow.get(
-            "mlflow_pytorch_mnist:latest").to_runner()
+        model_runner_2 = bentoml.mlflow.get("mlflow_pytorch_mnist:latest").to_runner()
         model_runner_2.init_local()
 
         # Extract a few examples from the test dataset to evaluate on
@@ -249,5 +255,6 @@ if __name__ == "__main__":
         template = 'Sample {} : Ground truth is "{}", model prediction is "{}"'
         print("\nSample predictions")
         for index in range(5):
-            print(template.format(
-                index, eval_labels[index], predictions.argmax(1)[index]))
+            print(
+                template.format(index, eval_labels[index], predictions.argmax(1)[index])
+            )

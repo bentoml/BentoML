@@ -70,11 +70,13 @@ print()
 
 print("Best score: %0.3f" % grid_search.best_score_)
 best_parameters = grid_search.best_estimator_.get_params()
-best_parameters = {param_name: best_parameters[param_name] for param_name in sorted(parameters.keys())}
+best_parameters = {
+    param_name: best_parameters[param_name] for param_name in sorted(parameters.keys())
+}
 print(f"Best parameters set: {best_parameters}")
 
 bento_model = bentoml.sklearn.save_model(
-    '20_news_group',
+    "20_news_group",
     grid_search.best_estimator_,
     signatures={
         "predict": {"batchable": True, "batch_dim": 0},
@@ -90,4 +92,6 @@ print(f"Model saved: {bento_model}")
 # Test running inference with BentoML runner
 test_runner = bentoml.sklearn.get("20_news_group:latest").to_runner()
 test_runner.init_local()
-assert test_runner.predict.run(["hello"]) == grid_search.best_estimator_.predict(["hello"])
+assert test_runner.predict.run(["hello"]) == grid_search.best_estimator_.predict(
+    ["hello"]
+)

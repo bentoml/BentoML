@@ -13,6 +13,7 @@ prune typings
 prune scripts
 prune hooks
 prune docs
+prune examples
 prune .git*
 prune */__pycache__
 prune */.DS_Store

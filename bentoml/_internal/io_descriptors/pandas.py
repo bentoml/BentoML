@@ -336,7 +336,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 logger.warning(
                     "`columns` is None or undefined, while `apply_column_names`=True"
                 )
-            elif len(self._columns) == res.shape[1]:
+            elif len(self._columns) != res.shape[1]:
                 raise BadInput(
                     "length of `columns` does not match the columns of incoming data"
                 )

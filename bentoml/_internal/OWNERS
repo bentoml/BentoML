@@ -1,0 +1,8 @@
+@bentoml/bentoml-reviewers
+@sauyon resource.py log.py store.py tag.py exportable.py io_descriptors/ runner/ server/ models/
+@yetone yatai*
+@bojiang service/ server/ marshal/ runner/ frameworks/ utils/circus.py
+@ssheng configuration/ cli/ service/ models
+@aarnphm bento/ server/ runner/ io_descriptors/ utils/analytics utils/buildx.py utils/cattr.py
+@parano cli/ service/ bento/ server/ models/
+@larme frameworks/ runner/ cli/ utils/tensorflow.py utils/benchmark.py

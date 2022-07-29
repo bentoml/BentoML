@@ -35,7 +35,7 @@ Here's an example with starlette-authlib:
 
     svc = bentoml.Service('my_service', runners=[...])
 
-    svc.add_asgi_middleware(SessionMiddleware, secret='you_secret')
+    svc.add_asgi_middleware(SessionMiddleware, secret_key='you_secret')
 
 
 Reverse Proxy

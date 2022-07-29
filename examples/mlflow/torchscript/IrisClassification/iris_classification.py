@@ -38,8 +38,8 @@ def prepare_data():
     target_names = iris.target_names
 
     X_train, X_test, y_train, y_test = train_test_split(
-            data, labels, test_size=0.2, random_state=42, shuffle=True, stratify=labels
-            )
+        data, labels, test_size=0.2, random_state=42, shuffle=True, stratify=labels
+    )
 
     X_train = torch.FloatTensor(X_train).to(device)
     X_test = torch.FloatTensor(X_test).to(device)
@@ -72,15 +72,17 @@ def test_model(model, X_test, y_test):
         predict_out = model(X_test)
         _, predict_y = torch.max(predict_out, 1)
 
-        print("\nprediction accuracy", float(accuracy_score(y_test.cpu(), predict_y.cpu())))
+        print("\nprediction accuracy", float(
+            accuracy_score(y_test.cpu(), predict_y.cpu())))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Iris Classification Torchscripted model")
+    parser = argparse.ArgumentParser(
+        description="Iris Classification Torchscripted model")
 
     parser.add_argument(
-            "--epochs", type=int, default=100, help="number of epochs to run (default: 100)"
-            )
+        "--epochs", type=int, default=100, help="number of epochs to run (default: 100)"
+    )
 
     args = parser.parse_args()
 
@@ -91,12 +93,11 @@ if __name__ == "__main__":
     scripted_model = train_model(scripted_model, args.epochs, X_train, y_train)
     test_model(scripted_model, X_test, y_test)
 
-
     # Saving model and running inference with BentoML:
 
     # Option1: save natively with bentoml.torchscript_iris
     bentoml.torchscript.save_model('torchscript_iris', scripted_model,
-            signatures={"__call__": {"batchable": True}})
+                                   signatures={"__call__": {"batchable": True}})
     model_runner = bentoml.torchscript.get("torchscript_iris").to_runner()
     model_runner.init_local()
 
@@ -108,23 +109,25 @@ if __name__ == "__main__":
 
     # Option2: save MLflow model and import MLflow pyfunc model to BentoML
     with mlflow.start_run() as run:
-        mlflow.pytorch.log_model(scripted_model, "model")  # logging scripted model
+        # logging scripted model
+        mlflow.pytorch.log_model(scripted_model, "model")
 
         # Import logged mlflow model to BentoML model store for serving:
         model_uri = mlflow.get_artifact_uri("model")
         bento_model = bentoml.mlflow.import_model(
-                'mlflow_torch_iris',
-                model_uri,
-                signatures={'predict': {'batchable': True}}
-                )
+            'mlflow_torch_iris',
+            model_uri,
+            signatures={'predict': {'batchable': True}}
+        )
         print(f"Model imported to BentoML: {bento_model}")
-
 
         model_runner = bentoml.mlflow.get("mlflow_torch_iris").to_runner()
         model_runner.init_local()
 
-        test_input = np.array([4.4000, 3.0000, 1.3000, 0.2000], dtype="float32")
+        test_input = np.array(
+            [4.4000, 3.0000, 1.3000, 0.2000], dtype="float32")
         actual = "setosa"
         prediction = model_runner.predict.run(test_input)
         predicted = target_names[np.argmax(prediction)]
-        print("\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(actual, predicted))
+        print("\nPREDICTION RESULT: ACTUAL: {}, PREDICTED: {}".format(
+            actual, predicted))

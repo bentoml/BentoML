@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 import bentoml
@@ -19,7 +18,7 @@ class Yolov5Runnable(bentoml.Runnable):
             self.model.cpu()
 
         # Config inference settings
-        self.inference_size=320
+        self.inference_size = 320
 
         # Optional configs
         # self.model.conf = 0.25  # NMS confidence threshold
@@ -44,11 +43,13 @@ class Yolov5Runnable(bentoml.Runnable):
 
 yolo_v5_runner = bentoml.Runner(Yolov5Runnable, max_batch_size=30)
 
-svc = bentoml.Service('yolo_v5_demo', runners=[ yolo_v5_runner ])
+svc = bentoml.Service('yolo_v5_demo', runners=[yolo_v5_runner])
+
 
 @svc.api(input=Image(), output=PandasDataFrame())
 def invocation(input_img):
     return yolo_v5_runner.inference.run([input_img])[0]
+
 
 @svc.api(input=Image(), output=Image())
 def render(input_img):

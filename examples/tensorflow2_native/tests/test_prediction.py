@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # type: ignore[no-untyped-def]
 
-import io
 import json
 import asyncio
 

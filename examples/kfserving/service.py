@@ -11,10 +11,13 @@ iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
 svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
+
 class KFServingInputSchema(pydantic.BaseModel):
-    instances: List[List[float]] 
+    instances: List[List[float]]
+
 
 kfserving_input = JSON(pydantic_model=KFServingInputSchema)
+
 
 @svc.api(
     input=kfserving_input,

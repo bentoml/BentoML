@@ -38,7 +38,7 @@ if __name__ == "__main__":
     y_val = y_train[-10000:]
     x_train = x_train[:-10000]
     y_train = y_train[:-10000]
-    
+
     # Create an instance of the model
     model = MyModel()
     model.compile(

@@ -4,12 +4,9 @@ import argparse
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from model import SimpleConvNet
 from torch import nn
 from torchvision import transforms
-from torch.utils.data import DataLoader
-from torch.utils.data import ConcatDataset
 from torchvision.datasets import MNIST
 from sklearn.model_selection import KFold
 
@@ -153,13 +150,15 @@ def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     loss_function = nn.CrossEntropyLoss()
     for epoch in range(epochs):
-        train_epoch(model, optimizer, loss_function, train_loader, epoch, device)
+        train_epoch(model, optimizer, loss_function,
+                    train_loader, epoch, device)
     return model
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="BentoML PyTorch MNIST Example")
+    parser = argparse.ArgumentParser(
+        description="BentoML PyTorch MNIST Example")
     parser.add_argument(
         "--epochs",
         type=int,
@@ -211,7 +210,7 @@ if __name__ == "__main__":
         "cv_stats": cv_results,
     }
 
-    signatures={
+    signatures = {
         "predict": {
             "batchable": True
         }

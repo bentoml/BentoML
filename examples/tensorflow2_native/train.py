@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Flatten
@@ -60,7 +59,8 @@ if __name__ == "__main__":
     x_test = x_test.reshape(10000, 28, 28, 1).astype("float32")
 
     train_ds = (
-        tf.data.Dataset.from_tensor_slices((x_train, y_train)).shuffle(10000).batch(32)
+        tf.data.Dataset.from_tensor_slices(
+            (x_train, y_train)).shuffle(10000).batch(32)
     )
 
     test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(32)
@@ -68,15 +68,18 @@ if __name__ == "__main__":
     # Create an instance of the model
     model = MyModel()
 
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
+        from_logits=True)
 
     optimizer = tf.keras.optimizers.Adam()
 
     train_loss = tf.keras.metrics.Mean(name="train_loss")
-    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name="train_accuracy")
+    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
+        name="train_accuracy")
 
     test_loss = tf.keras.metrics.Mean(name="test_loss")
-    test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name="test_accuracy")
+    test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
+        name="test_accuracy")
 
     EPOCHS = 2
 

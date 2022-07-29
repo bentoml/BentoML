@@ -5,7 +5,7 @@ import nltk
 
 if os.environ.get("BENTO_PATH"):
     # Bento setup_script is executed as root user during containerize. By default, NLTK
-    # will download data files to "/root/nltk_data". However, the default user when running 
+    # will download data files to "/root/nltk_data". However, the default user when running
     # a BentoML generated docker image is "bentoml", which does not have the permission
     # for accessing "/root".
     # This ensures NLTK data are downloaded to the "bentoml" user's home directory,

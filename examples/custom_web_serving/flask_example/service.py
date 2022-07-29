@@ -16,14 +16,18 @@ svc = bentoml.Service("iris_flask_demo", runners=[iris_clf_runner])
 def predict_bentoml(input_series: np.ndarray) -> np.ndarray:
     return iris_clf_runner.predict.run(input_series)
 
+
 flask_app = Flask(__name__)
 svc.mount_wsgi_app(flask_app)
+
 
 @flask_app.route("/metadata")
 def metadata():
     return {"name": bento_model.tag.name, "version": bento_model.tag.version}
 
 # For demo purpose, here's an identical inference endpoint implemented via FastAPI
+
+
 @flask_app.route("/predict_flask", methods=["POST"])
 def predict():
     content_type = request.headers.get('Content-Type')

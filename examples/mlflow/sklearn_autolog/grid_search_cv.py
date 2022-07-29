@@ -44,7 +44,5 @@ def main():
     print("\nModel imported to BentoML: %s" % bento_model)
 
 
-
-
 if __name__ == "__main__":
     main()

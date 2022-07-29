@@ -1,7 +1,6 @@
 import typing as t
 
 import numpy as np
-import PIL.Image
 from PIL.Image import Image as PILImage
 
 import bentoml
@@ -16,6 +15,7 @@ svc = bentoml.Service(
         mnist_runner,
     ],
 )
+
 
 def to_numpy(tensor):
     return tensor.detach().cpu().numpy()

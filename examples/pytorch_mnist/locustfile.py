@@ -14,4 +14,3 @@ class PyTorchMNISTLoadTestUser(HttpUser):
     def predict_image(self):
         files = {"upload_files": ("1.png", test_image_bytes, "image/png")}
         self.client.post("/predict_image", files=files)
-

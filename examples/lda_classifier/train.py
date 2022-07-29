@@ -27,7 +27,7 @@ def main():
     y_pred = lda.predict(X_test)
 
     accuracy = accuracy_score(y_test, y_pred)
-    print ("Accuracy:", accuracy)
+    print("Accuracy:", accuracy)
 
     # Save model with BentoML
     saved_model = bentoml.picklable_model.save_model(

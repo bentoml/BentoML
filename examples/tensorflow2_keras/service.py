@@ -1,4 +1,3 @@
-
 import numpy as np
 from PIL.Image import Image as PILImage
 
@@ -13,6 +12,7 @@ svc = bentoml.Service(
     runners=[mnist_runner],
 )
 
+
 @svc.api(input=Image(), output=NumpyNdarray(dtype="float32"))
 async def predict_image(f: PILImage) -> "np.ndarray":
     assert isinstance(f, PILImage)
@@ -21,5 +21,6 @@ async def predict_image(f: PILImage) -> "np.ndarray":
 
     # We are using greyscale image and our PyTorch model expect one
     # extra channel dimension
-    arr = np.expand_dims(arr, (0, 3)).astype("float32") # reshape to [1, 28, 28, 1]
+    arr = np.expand_dims(arr, (0, 3)).astype(
+        "float32")  # reshape to [1, 28, 28, 1]
     return await mnist_runner.async_run(arr)

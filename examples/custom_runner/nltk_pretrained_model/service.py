@@ -12,7 +12,7 @@ class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
     SUPPORTED_RESOURCES = ("cpu",)
     SUPPORTS_CPU_MULTI_THREADING = False
 
-    def __init__(self): 
+    def __init__(self):
         self.sia = SentimentIntensityAnalyzer()
 
     @bentoml.Runnable.method(batchable=False)
@@ -23,11 +23,13 @@ class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
         ]
         return mean(scores) > 0
 
+
 nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name='nltk_sentiment')
 
 svc = bentoml.Service('sentiment_analyzer', runners=[nltk_runner])
 
+
 @svc.api(input=Text(), output=JSON())
 def analysis(input_text):
     is_positive = nltk_runner.is_positive.run(input_text)
-    return { "is_positive": is_positive }
+    return {"is_positive": is_positive}

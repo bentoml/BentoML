@@ -33,12 +33,21 @@ class GRPCAppFactory:
 
     _is_ready: bool = False
 
-    def __init__(self, bento_service: Service, *, _thread_pool_size: int = 10) -> None:
+    @inject
+    def __init__(
+        self,
+        bento_service: Service,
+        *,
+        _thread_pool_size: int = 10,
+        maximum_concurrent_rpcs: int
+        | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+    ) -> None:
         self.bento_service = bento_service
         self.server = aio.server(
             ThreadPoolExecutor(_thread_pool_size),
             interceptors=self.interceptors,
             options=self.options,
+            maximum_concurrent_rpcs=maximum_concurrent_rpcs,
         )
 
     @property
@@ -121,22 +130,30 @@ class GRPCAppFactory:
         from opentelemetry.sdk.trace.export import ConsoleSpanExporter
         from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-        from .grpc.interceptors import ExceptionHandlerInterceptor
-        from .grpc.interceptors.access import AccessLogInterceptor
+        # from .grpc.interceptors import AccessLogInterceptor
 
         trace.set_tracer_provider(tracer_provider)
         trace.get_tracer_provider().add_span_processor(
             SimpleSpanProcessor(ConsoleSpanExporter())
         )
+        # from .grpc.interceptors.trace import (
+        #     AsyncOpenTelemetryServerInterceptor as OtelInterceptor,
+        # )
 
         # TODO: prometheus interceptors.
-        interceptors: list[aio.ServerInterceptor] = [
-            ExceptionHandlerInterceptor(),
-            AccessLogInterceptor(),
-        ]
+        # interceptors: list[aio.ServerInterceptor] = [OtelInterceptor()]
+        interceptors: list[aio.ServerInterceptor] = []
+
+        access_log_config = BentoMLContainer.api_server_config.logging.access
+        if access_log_config.enabled.get():
+            from .grpc.interceptors import AccessLogInterceptor
+
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                interceptors.append(
+                    AccessLogInterceptor(tracer_provider=tracer_provider)
+                )
 
         # add users-defined interceptors.
-        interceptors.extend(
-            [interceptor() for interceptor in self.bento_service.interceptors]
-        )
+        interceptors.extend(map(lambda x: x(), self.bento_service.interceptors))
         return interceptors

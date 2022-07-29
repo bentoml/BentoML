@@ -19,12 +19,9 @@ if TYPE_CHECKING:
     from bentoml.io import IODescriptor
     from bentoml.grpc.v1 import service_pb2
 
+    from ...server.grpc.types import Response
     from ...server.grpc.types import HandlerMethod
-    from ...server.grpc.types import HandlerFactoryFn
     from ...server.grpc.types import RpcMethodHandler
-
-    # keep sync with bentoml.grpc.v1.service.Response
-    ContentsDict = dict[str, dict[str, t.Any]]
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 
@@ -32,9 +29,7 @@ __all__ = [
     "grpc_status_code",
     "parse_method_name",
     "get_method_type",
-    "get_rpc_handler",
     "deserialize_proto",
-    "serialize_proto",
 ]
 
 logger = logging.getLogger(__name__)
@@ -51,19 +46,13 @@ def deserialize_proto(
     if "preserving_proto_field_name" not in kwargs:
         kwargs.setdefault("preserving_proto_field_name", True)
 
-    kind = req.contents.WhichOneof("kind")
-    if kind not in io_descriptor.accepted_proto_kind:
+    kind = req.input.WhichOneof("kind")
+    if kind not in io_descriptor.accepted_proto_fields:
         raise UnprocessableEntity(
-            f"{kind} is not supported for {io_descriptor.__class__.__name__}. Supported message fields are: {io_descriptor.accepted_proto_kind}"
+            f"{kind} is not supported for {io_descriptor.__class__.__name__}. Supported protobuf message fields are: {io_descriptor.accepted_proto_fields}"
         )
 
-    return kind, MessageToDict(getattr(req.contents, kind), **kwargs)
-
-
-def serialize_proto(fields: str, contents_dict: ContentsDict) -> service_pb2.Response:
-    from google.protobuf.json_format import ParseDict
-
-    return ParseDict({"contents": {fields: contents_dict}}, service_pb2.Response())
+    return kind, MessageToDict(getattr(req.input, kind), **kwargs)
 
 
 _STATUS_CODE_MAPPING = {
@@ -95,10 +84,8 @@ class MethodName:
     Represents a gRPC method name.
 
     Attributes:
-        package: This is defined by `package foo.bar`,
-        designation in the protocol buffer definition
-        service: service name in protocol buffer
-        definition (eg: service SearchService { ... })
+        package: This is defined by `package foo.bar`, designation in the protocol buffer definition
+        service: service name in protocol buffer definition (eg: service SearchService { ... })
         method: method name
     """
 
@@ -138,26 +125,20 @@ def get_method_type(request_streaming: bool, response_streaming: bool) -> str:
         return RpcMethodType.UNKNOWN
 
 
-def get_rpc_handler(
-    handler: RpcMethodHandler,
-) -> tuple[HandlerFactoryFn, HandlerMethod[t.Any]]:
+def wrap_rpc_handler(
+    wrapper: t.Callable[[HandlerMethod[Response] | None], HandlerMethod[Response]],
+    handler: RpcMethodHandler | None,
+) -> RpcMethodHandler | None:
+    if not handler:
+        return None
+
     if not handler.request_streaming and not handler.response_streaming:
-        return grpc.unary_unary_rpc_method_handler, handler.unary_unary
+        return handler._replace(unary_unary=wrapper(handler.unary_unary))
     elif not handler.request_streaming and handler.response_streaming:
-        return grpc.unary_stream_rpc_method_handler, handler.unary_stream
+        return handler._replace(unary_stream=wrapper(handler.unary_stream))
     elif handler.request_streaming and not handler.response_streaming:
-        return grpc.stream_unary_rpc_method_handler, handler.stream_unary
+        return handler._replace(stream_unary=wrapper(handler.stream_unary))
     elif handler.request_streaming and handler.response_streaming:
-        return grpc.stream_stream_rpc_method_handler, handler.stream_stream
+        return handler._replace(stream_stream=wrapper(handler.stream_stream))
     else:
         raise BentoMLException(f"RPC method handler {handler} does not exist.")
-
-
-def invoke_handler_factory(
-    fn: HandlerMethod[t.Any], factory: HandlerFactoryFn, handler: RpcMethodHandler
-) -> t.Any:
-    return factory(
-        fn,
-        request_deserializer=handler.request_deserializer,
-        response_serializer=handler.response_serializer,
-    )

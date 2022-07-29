@@ -1,0 +1,7 @@
+service: "service.py:svc"
+include:
+- "service.py"
+- "lda.py"
+python:
+  packages:
+    - numpy

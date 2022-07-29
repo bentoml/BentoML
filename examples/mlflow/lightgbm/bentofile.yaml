@@ -1,0 +1,5 @@
+service: "service.py:svc"
+include:
+- "service.py"
+conda:
+  environment_yml: ./conda.yaml

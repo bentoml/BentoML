@@ -1,0 +1,4 @@
+scikit-learn
+pydantic
+pandas
+bentoml>=1.0.0

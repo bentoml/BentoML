@@ -1,0 +1,3 @@
+tensorflow
+pillow
+bentoml>=1.0.0

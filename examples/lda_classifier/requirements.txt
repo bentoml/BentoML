@@ -1,0 +1,2 @@
+scikit-learn
+bentoml>=1.0.0

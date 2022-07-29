@@ -1,0 +1,11 @@
+name: sklearn-example
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+    - mlflow>=1.0
+    - scipy
+    - scikit-learn
+    - bentoml>=1.0.0rc3

@@ -1,0 +1,7 @@
+service: "service:svc"
+include:
+  - "model.py"
+  - "service.py"
+python:
+  packages:
+    - "numpy"

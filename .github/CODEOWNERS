@@ -1,0 +1,46 @@
+# Auto-generated via ./scripts/generate-owners.
+# Uses OWNERS files in different modules throughout the
+# repository as the source of truth for module ownership.
+/**/OWNERS @parano @yubozhao
+/bentoml/** @bentoml/bentoml-reviewers
+/bentoml/tensorflow* @larme @bentoml/bentoml-reviewers
+/bentoml/xgboost.py @sauyon @bentoml/bentoml-reviewers
+/bentoml/transformers.py @ssheng @bentoml/bentoml-reviewers
+/bentoml/pytorch.py @bojiang @bentoml/bentoml-reviewers
+/bentoml/torchscript.py @bojiang @bentoml/bentoml-reviewers
+/bentoml/pytorch_lightning.py @bojiang @bentoml/bentoml-reviewers
+/bentoml/onnx.py @larme @bentoml/bentoml-reviewers
+/bentoml/keras.py @larme @bentoml/bentoml-reviewers
+/bentoml/mlflow.py @parano @bentoml/bentoml-reviewers
+/bentoml/sklearn.py @parano @bentoml/bentoml-reviewers
+/bentoml/fastai.py @aarnphm @bentoml/bentoml-reviewers
+/bentoml/bentos.py @aarnphm @bentoml/bentoml-reviewers
+/bentoml/paddle.py @jjmachan @bentoml/bentoml-reviewers
+/bentoml/catboost.py @yetone @bentoml/bentoml-reviewers
+/bentoml/_internal/bento/ @aarnphm @parano @bentoml/bentoml-reviewers
+/bentoml/_internal/server/ @sauyon @bojiang @aarnphm @parano @bentoml/bentoml-reviewers
+/bentoml/_internal/frameworks/ @bojiang @larme @bentoml/bentoml-reviewers
+/bentoml/_internal/io_descriptors/ @sauyon @aarnphm @bentoml/bentoml-reviewers
+/bentoml/_internal/runner/ @sauyon @bojiang @aarnphm @larme @bentoml/bentoml-reviewers
+/bentoml/_internal/cli/ @ssheng @parano @larme @bentoml/bentoml-reviewers
+/bentoml/_internal/yatai* @yetone @bentoml/bentoml-reviewers
+/bentoml/_internal/service/ @bojiang @ssheng @parano @bentoml/bentoml-reviewers
+/bentoml/_internal/utils/analytics @aarnphm @bentoml/bentoml-reviewers
+/bentoml/_internal/configuration/ @ssheng @bentoml/bentoml-reviewers
+/bentoml/_internal/models/ @sauyon @parano @bentoml/bentoml-reviewers
+/bentoml/_internal/marshal/ @bojiang @bentoml/bentoml-reviewers
+/bentoml/_internal/models @ssheng @bentoml/bentoml-reviewers @sauyon @parano
+/bentoml/_internal/resource.py @sauyon @bentoml/bentoml-reviewers
+/bentoml/_internal/log.py @sauyon @bentoml/bentoml-reviewers
+/bentoml/_internal/store.py @sauyon @bentoml/bentoml-reviewers
+/bentoml/_internal/tag.py @sauyon @bentoml/bentoml-reviewers
+/bentoml/_internal/exportable.py @sauyon @bentoml/bentoml-reviewers
+/bentoml/_internal/utils/buildx.py @aarnphm @bentoml/bentoml-reviewers
+/bentoml/_internal/utils/cattr.py @aarnphm @bentoml/bentoml-reviewers
+/bentoml/_internal/utils/tensorflow.py @larme @bentoml/bentoml-reviewers
+/bentoml/_internal/utils/benchmark.py @larme @bentoml/bentoml-reviewers
+/bentoml/_internal/utils/circus.py @bojiang
+/bentoml/_internal/bento/docker/** @aarnphm @bentoml/bentoml-reviewers
+/bentoml/testing/** @bojiang @bentoml/bentoml-reviewers
+/docs/source/** @parano @ssheng @bentoml/bentoml-reviewers
+/examples/** @bentoml/bentoml-reviewers

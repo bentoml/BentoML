@@ -37,8 +37,6 @@ def metadata():
 
 
 # For demo purpose, here's an identical inference endpoint implemented via FastAPI
-
-
 @fastapi_app.post("/predict_fastapi")
 def predict(features: IrisFeatures):
     input_df = pd.DataFrame([features.dict()])
@@ -47,8 +45,6 @@ def predict(features: IrisFeatures):
 
 
 # For demo purpose, here's an identical inference endpoint implemented via FastAPI
-
-
 @fastapi_app.post("/predict_fastapi_async")
 async def predict_async(features: IrisFeatures):
     input_df = pd.DataFrame([features.dict()])

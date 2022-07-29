@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import io
 import typing as t
 import tarfile
 import tempfile
+from typing import TYPE_CHECKING
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from functools import wraps
@@ -25,6 +28,9 @@ from rich.progress import DownloadColumn
 from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
 
 from ..tag import Tag
 from ..bento import Bento
@@ -81,7 +87,7 @@ class _CallbackIOWrapper(ObjectWrapper):
         self,
         callback: t.Callable[[int], None],
         stream: t.BinaryIO,
-        method: "t.Literal['read', 'write']" = "read",
+        method: Literal["read", "write"] = "read",
     ):
         """
         Wrap a given `file`-like object's `read()` or `write()` to report
@@ -245,9 +251,9 @@ class YataiClient:
                 runnable_type=r.runnable_type,
                 models=r.models,
                 resource_config=BentoRunnerResourceSchema(
-                    cpu=r.resource_config.cpu,
-                    nvidia_gpu=r.resource_config.nvidia_gpu,
-                    custom_resources=r.resource_config.custom_resources,
+                    cpu=r.resource_config.get("cpu"),
+                    nvidia_gpu=r.resource_config.get("nvidia.com/gpu"),
+                    custom_resources=r.resource_config.get("custom_resources"),
                 )
                 if r.resource_config
                 else None,
@@ -306,10 +312,11 @@ class YataiClient:
 
                     tar.add(bento_dir_path, arcname="./", filter=filter_)
             tar_io.seek(0, 0)
-            with self.spin(text=f'Start uploading Bento "{bento.tag}"..'):
-                yatai_rest_client.start_upload_bento(
-                    bento_repository_name=bento_repository.name, version=version
-                )
+            if not remote_bento.presigned_urls_deprecated:
+                with self.spin(text=f'Start uploading Bento "{bento.tag}"..'):
+                    yatai_rest_client.start_upload_bento(
+                        bento_repository_name=bento_repository.name, version=version
+                    )
 
             file_size = tar_io.getbuffer().nbytes
 
@@ -326,6 +333,22 @@ class YataiClient:
                 tar_io,
                 "read",
             )
+            if remote_bento.presigned_urls_deprecated:
+                try:
+                    yatai_rest_client.upload_bento(
+                        bento_repository_name=bento_repository.name,
+                        version=version,
+                        data=wrapped_file,
+                    )
+                except Exception as e:  # pylint: disable=broad-except
+                    self.log_progress.add_task(
+                        f'[bold red]Failed to upload Bento "{bento.tag}"'
+                    )
+                    raise e
+                self.log_progress.add_task(
+                    f'[bold green]Successfully pushed Bento "{bento.tag}"'
+                )
+                return
             finish_req = FinishUploadBentoSchema(
                 status=BentoUploadStatus.SUCCESS,
                 reason="",
@@ -406,7 +429,9 @@ class YataiClient:
         version = _tag.version
         if version is None:
             raise BentoMLException(f'Bento "{_tag}" version can not be None')
+
         yatai_rest_client = get_current_yatai_rest_api_client()
+
         with self.spin(text=f'Fetching bento "{_tag}"'):
             remote_bento = yatai_rest_client.get_bento(
                 bento_repository_name=name, version=version
@@ -434,20 +459,26 @@ class YataiClient:
 
                 futures = executor.map(pull_model, remote_bento.manifest.models)
                 list(futures)
-
             # Download bento files from yatai
             with self.spin(text=f'Getting a presigned download url for bento "{_tag}"'):
                 remote_bento = yatai_rest_client.presign_bento_download_url(
                     name, version
                 )
-            url = remote_bento.presigned_download_url
-            response = requests.get(url, stream=True)
+            if not remote_bento.presigned_urls_deprecated:
+                response = requests.get(
+                    remote_bento.presigned_download_url, stream=True
+                )
+            else:
+                response = yatai_rest_client.download_bento(
+                    bento_repository_name=name,
+                    version=version,
+                )
             if response.status_code != 200:
                 raise BentoMLException(
                     f'Failed to download bento "{_tag}": {response.text}'
                 )
             total_size_in_bytes = int(response.headers.get("content-length", 0))
-            block_size = 1024  # 1 KiB
+            block_size = 1024  # 1 Kibibyte
             with NamedTemporaryFile() as tar_file:
                 self.transmission_progress.update(
                     download_task_id,
@@ -563,10 +594,11 @@ class YataiClient:
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
                     tar.add(bento_dir_path, arcname="./")
             tar_io.seek(0, 0)
-            with self.spin(text=f'Start uploading model "{model.tag}"..'):
-                yatai_rest_client.start_upload_model(
-                    model_repository_name=model_repository.name, version=version
-                )
+            if not remote_model.presigned_urls_deprecated:
+                with self.spin(text=f'Start uploading model "{model.tag}"..'):
+                    yatai_rest_client.start_upload_model(
+                        model_repository_name=model_repository.name, version=version
+                    )
             file_size = tar_io.getbuffer().nbytes
             self.transmission_progress.update(
                 upload_task_id,
@@ -584,6 +616,22 @@ class YataiClient:
                 tar_io,
                 "read",
             )
+            if remote_model.presigned_urls_deprecated:
+                try:
+                    yatai_rest_client.upload_model(
+                        model_repository_name=model_repository.name,
+                        version=version,
+                        data=wrapped_file,
+                    )
+                except Exception as e:  # pylint: disable=broad-except
+                    self.log_progress.add_task(
+                        f'[bold red]Failed to upload model "{model.tag}"'
+                    )
+                    raise e
+                self.log_progress.add_task(
+                    f'[bold green]Successfully pushed model "{model.tag}"'
+                )
+                return
             finish_req = FinishUploadModelSchema(
                 status=ModelUploadStatus.SUCCESS,
                 reason="",
@@ -665,14 +713,20 @@ class YataiClient:
             raise BentoMLException(f'Model "{_tag}" version cannot be None')
         with self.spin(text=f'Getting a presigned download url for model "{_tag}"..'):
             remote_model = yatai_rest_client.presign_model_download_url(name, version)
+
         if not remote_model:
             raise BentoMLException(f'Model "{_tag}" not found on Yatai')
-        url = remote_model.presigned_download_url
-        response = requests.get(url, stream=True)
-        if response.status_code != 200:
-            raise BentoMLException(
-                f'Failed to download model "{_tag}": {response.text}'
+        if not remote_model.presigned_urls_deprecated:
+            response = requests.get(remote_model.presigned_download_url, stream=True)
+            if response.status_code != 200:
+                raise BentoMLException(
+                    f'Failed to download model "{_tag}": {response.text}'
+                )
+        else:
+            response = yatai_rest_client.download_model(
+                model_repository_name=name, version=version
             )
+
         total_size_in_bytes = int(response.headers.get("content-length", 0))
         block_size = 1024  # 1 Kibibyte
         with NamedTemporaryFile() as tar_file:

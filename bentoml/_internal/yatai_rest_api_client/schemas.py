@@ -141,9 +141,9 @@ class BentoApiSchema:
 
 @attr.define
 class BentoRunnerResourceSchema:
-    cpu: Optional[float]
-    nvidia_gpu: Optional[float]
-    custom_resources: Dict[str, float]
+    cpu: Optional[Any]
+    nvidia_gpu: Optional[Any]
+    custom_resources: Optional[Any]
 
 
 @attr.define
@@ -173,6 +173,7 @@ class BentoSchema(ResourceSchema):
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
+    presigned_urls_deprecated: Optional[bool]
     manifest: BentoManifestSchema
 
     upload_started_at: Optional[datetime] = attr.field(default=None)
@@ -247,6 +248,7 @@ class ModelSchema(ResourceSchema):
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
+    presigned_urls_deprecated: Optional[bool]
     manifest: ModelManifestSchema
 
     upload_started_at: Optional[datetime] = attr.field(default=None)

@@ -24,7 +24,7 @@ from ..service.openapi.specification import RequestBody
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str]):
+class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in

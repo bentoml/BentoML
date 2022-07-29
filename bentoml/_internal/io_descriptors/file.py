@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
-class File(IODescriptor[FileType]):
+class File(IODescriptor[FileType], proto_fields=["raw_value"]):
     """
     :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as

@@ -69,7 +69,7 @@ class DefaultJsonEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-class JSON(IODescriptor[JSONType]):
+class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
     """
     :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation

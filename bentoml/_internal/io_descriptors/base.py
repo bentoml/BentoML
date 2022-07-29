@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing as t
-from abc import ABC
+from abc import ABCMeta
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
@@ -35,7 +35,22 @@ if TYPE_CHECKING:
 IOType = t.TypeVar("IOType")
 
 
-class IODescriptor(ABC, t.Generic[IOType]):
+class DescriptorMeta(ABCMeta):
+    def __new__(
+        cls: type[Self],
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, t.Any],
+        *,
+        proto_fields: list[str] | None = None,
+    ) -> Self:
+        if not proto_fields:
+            proto_fields = []
+        namespace["_proto_fields"] = proto_fields
+        return super().__new__(cls, name, bases, namespace)
+
+
+class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_fields=None):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
@@ -45,7 +60,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
     HTTP_METHODS = ["POST"]
 
     _init_str: str = ""
-    _proto_kind: list[str] | None = None
+    _proto_fields: list[str]
 
     _mime_type: str
 
@@ -61,17 +76,13 @@ class IODescriptor(ABC, t.Generic[IOType]):
         return self._init_str
 
     @property
-    def accepted_proto_kind(self) -> list[str]:
+    def accepted_proto_fields(self) -> list[str]:
         """
         Returns a list of kinds fields that the IODescriptor can accept.
 
         Make sure to keep in sync with bentoml.grpc.v1.Value message.
         """
-        return self._proto_kind or []
-
-    @accepted_proto_kind.setter
-    def accepted_proto_kind(self, value: list[str]):
-        self._proto_kind = value
+        return self._proto_fields
 
     @abstractmethod
     def input_type(self) -> InputType:

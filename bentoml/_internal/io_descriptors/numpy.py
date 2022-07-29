@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import typing as t
 import logging
-from typing import overload
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -38,109 +37,38 @@ else:
 
 logger = logging.getLogger(__name__)
 
-
-_DTYPE_TO_FIELD_MAP = {
-    "DT_BOOL": "bool_contents",
-    "DT_FLOAT": "float_contents",
-    "DT_COMPLEX64": "float_contents",
-    "DT_STRING": "string_contents",
-    "DT_DOUBLE": "double_contents",
-    "DT_COMPLEX128": "double_contents",
-    "DT_INT32": "int_contents",
-    "DT_IN16": "int_contents",
-    "DT_UINT16": "int_contents",
-    "DT_INT8": "int_contents",
-    "DT_UINT8": "int_contents",
-    "DT_HALF": "int_contents",
-    "DT_INT64": "long_contents",
-    "DT_STRUCT": "struct_contents",
-    "DT_UINT32": "uint32_contents",
-    "DT_UINT64": "uint64_contents",
-    # "DT_QINT32": "bytes_contents",
-    # "DT_QINT16": "bytes_contents",
-    # "DT_QUINT16": "bytes_contents",
-    # "DT_QINT8": "bytes_contents",
-    # "DT_QUINT8": "bytes_contents",
-    # "DT_BFLOAT16": "int_contents",
-}
-
-_DTYPE_TO_STRING_MAP = {
-    "DT_BOOL": "bool",
-    "DT_FLOAT": "float32",
-    "DT_COMPLEX64": "complex64",
-    "DT_STRING": "<U",  # <U is little-edian unicode, S: zero-terminated bytes (not recommended)
-    "DT_DOUBLE": "float64",
-    "DT_COMPLEX128": "complex128",
-    "DT_INT32": "int32",
-    "DT_INT16": "int16",
-    "DT_UINT16": "uint16",
-    "DT_INT8": "int8",
-    "DT_UINT8": "uint8",
-    "DT_HALF": "float16",
-    "DT_INT64": "int64",
-    "DT_UINT32": "uint32",
-    "DT_UINT64": "uint64",
+# TODO: support the following types for for protobuf message:
+# - support complex64, complex128, object and struct types
+# - BFLOAT16, QINT32, QINT16, QUINT16, QINT8, QUINT8
+#
+# For int16, uint16, int8, uint8 -> specify types in NumpyNdarray + using int_values.
+#
+# For bfloat16, half (float16) -> specify types in NumpyNdarray + using float_values.
+#
+# for string_values, use <U for np.dtype instead of S (zero-terminated bytes).
+_VALUES_TO_NP_DTYPE_MAP = {
+    "bool_values": "bool",
+    "float_values": "float32",
+    "string_values": "<U",
+    "double_values": "float64",
+    "int_values": "int32",
+    "long_values": "int64",
+    "uint32_values": "uint32",
+    "uint64_values": "uint64",
 }
 
 
-# TODO: support DT_BFLOAT16, quantized data type
-_NOT_SUPPORTED_DTYPE = [
-    "DT_QINT32",
-    "DT_QINT16",
-    "DT_QUINT16",
-    "DT_QINT8",
-    "DT_QUINT8",
-    "DT_BFLOAT16",
-]
-
-
-# Note that if DT_STRUCT is used, user need to specify np.dtype in NumpyNdarray
-def get_dtype(
-    datatype_string: str,
-    *,
-    struct_npdtype: np.dtype[t.Any] | None = None,
-) -> np.dtype[t.Any] | None:
-    if datatype_string == "DT_UNSPECIFIED":
-        return
-    elif datatype_string in _NOT_SUPPORTED_DTYPE:
-        raise UnprocessableEntity(f"{datatype_string} is not yet supported.")
-    elif datatype_string == "DT_STRUCT":
-        assert (
-            struct_npdtype
-        ), "'dtype' is required in NumpyNdarray to use in conjunction with DT_STRUCT."
-        return struct_npdtype
-    else:
-        return np.dtype(_DTYPE_TO_STRING_MAP[datatype_string])
-
-
-@overload
-def get_array_value(array: dict[str, str | bytes]) -> tuple[str, bytes, bool]:
-    ...
-
-
-@overload
-def get_array_value(
-    array: dict[str, str | list[t.Any]]
-) -> tuple[str, list[t.Any], bool]:
-    ...
-
-
-# array_descriptor -> {"dtype": "DT_FLOAT", "float_contents": [1, 2, 3]}
-def get_array_value(array: dict[str, t.Any]) -> tuple[str, list[t.Any] | bytes, bool]:
+# array_descriptor -> {"float_contents": [1, 2, 3]}
+def get_array_proto(array: dict[str, t.Any]) -> tuple[str, list[t.Any]]:
     # returns the array contents with whether the result is using bytes.
-    dtype = t.cast(str, array.pop("dtype"))
-    if _DTYPE_TO_FIELD_MAP[dtype] not in array:
-        if "bytes_contents" not in array:
-            raise BadInput(
-                f"{dtype} requires specifying either '{_DTYPE_TO_FIELD_MAP[dtype]}' or 'bytes_contents' in the protobuf message."
-            )
-        content = array.pop("bytes_contents")
-        assert isinstance(content, bytes)
-        return dtype, content, True
-    else:
-        # all of the repeated fields can be represented as list.
-        content = t.cast(t.List[t.Any], array.pop(_DTYPE_TO_FIELD_MAP[dtype]))
-        return dtype, content, False
+    accepted_fields = list(service_pb2.Array.DESCRIPTOR.fields_by_name)
+    if len(set(array) - set(accepted_fields)) > 0:
+        raise UnprocessableEntity("Given array has unsupported fields.")
+    if len(array) != 1:
+        raise BadInput(
+            f"Array contents can only be one of {accepted_fields} as key. Use one of {list(array)} only."
+        )
+    return tuple(array.items())[0]
 
 
 def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
@@ -160,7 +88,10 @@ def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
 
 
 # TODO: when updating docs, add examples with gRPCurl
-class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
+class NumpyNdarray(
+    IODescriptor["ext.NpNDArray"],
+    proto_fields=["multi_dimensional_array_value", "array_value", "raw_value"],
+):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -253,9 +184,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         bytesorder: t.Literal["C", "F", "A", None] = None,
     ):
         if dtype and not isinstance(dtype, np.dtype):
-            # Convert from primitive type or type string, e.g.:
-            # np.dtype(float)
-            # np.dtype("float64")
+            # Convert from primitive type or type string, e.g.: np.dtype(float) or np.dtype("float64")
             try:
                 dtype = np.dtype(dtype)
             except TypeError as e:
@@ -265,15 +194,18 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         self._shape = shape
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
+
+        # whether to use packed representation of numpy while sending protobuf
+        # this means users should be using raw_value instead of array_value or multi_dimensional_array_value
         self._packed = packed
-        if bytesorder not in ["C", "F", "A", None]:
+        if bytesorder and bytesorder not in ["C", "F", "A"]:
             raise BadInput(
-                f"'bytesorder' must be one of ['C', 'F', 'A', 'None'], got {bytesorder} instead."
+                f"'bytesorder' must be one of ['C', 'F', 'A'], got {bytesorder} instead."
             )
         if not bytesorder:
             bytesorder = "C"  # default from numpy (C-order)
             # https://numpy.org/doc/stable/user/basics.byteswapping.html#introduction-to-byte-ordering-and-ndarrays
-        self._bytesorder: t.Literal["C", "F", "A", None] = bytesorder
+        self._bytesorder: t.Literal["C", "F", "A"] = bytesorder
 
         self._sample_input = None
 
@@ -422,8 +354,30 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
         from ..utils.grpc import deserialize_proto
 
+        # TODO: deserialize is pretty inefficient, but ok for first pass.
         field, serialized = deserialize_proto(self, request)
-        if field == "ndarray_value":
+
+        if self._packed:
+            if field != "raw_value":
+                raise BentoMLException(
+                    f"'packed={self._packed}' requires to use 'raw_value' instead of {field}."
+                )
+            if not self._shape:
+                raise UnprocessableEntity("'shape' is required when 'packed' is set.")
+            metadata = serialized["metadata"]
+            if not self._dtype:
+                if "dtype" not in metadata:
+                    raise BentoMLException(
+                        f"'dtype' is not found in both {repr(self)} and {metadata}. Set either 'dtype' in {self.__class__.__name__} or add 'dtype' to metadata for 'raw_value' message."
+                    )
+                dtype = metadata["dtype"]
+            else:
+                dtype = self._dtype
+            obj = np.frombuffer(serialized["content"], dtype=dtype)
+
+            return np.reshape(obj, self._shape)
+
+        if field == "multi_dimensional_array_value":
             # {'shape': [2, 3], 'array': {'dtype': 'DT_FLOAT', ...}}
             if "array" not in serialized:
                 msg = "'array' cannot be None."
@@ -447,11 +401,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
             array = serialized["array"]
         else:
-            # {'dtype': 'DT_FLOAT', 'float_contents': [1.0, 2.0, 3.0]}
+            # {'float_contents': [1.0, 2.0, 3.0]}
             array = serialized
 
-        dtype_string, content, use_bytes = get_array_value(array)
-        dtype = get_dtype(dtype_string, struct_npdtype=self._dtype)
+        dtype_string, content = get_array_proto(array)
+        dtype = np.dtype(_VALUES_TO_NP_DTYPE_MAP[dtype_string])
         if self._dtype:
             if not self._enforce_dtype:
                 logger.warning(
@@ -465,13 +419,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         else:
             self._dtype = dtype
 
-        if use_bytes:
-            res = np.frombuffer(content, dtype=self._dtype)
-        else:
-            try:
-                res = np.array(content, dtype=self._dtype)
-            except ValueError:
-                res = np.array(content)
+        try:
+            res = np.array(content, dtype=self._dtype)
+        except ValueError:
+            res = np.array(content)
 
         return self._verify_ndarray(res, BadInput)
 
@@ -491,10 +442,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from ..utils.grpc import grpc_status_code
         from ..configuration import get_debug_mode
 
-        _NPTYPE_TO_DTYPE_STRING_MAP = {
-            np.dtype(v): k for k, v in _DTYPE_TO_STRING_MAP.items()
-        }
-        dtype_string = _NPTYPE_TO_DTYPE_STRING_MAP[obj.dtype]
+        _NP_TO_VALUE_MAP = {np.dtype(v): k for k, v in _VALUES_TO_NP_DTYPE_MAP.items()}
+        value_key = _NP_TO_VALUE_MAP[obj.dtype]
 
         try:
             obj = self._verify_ndarray(obj, InternalServerError)
@@ -503,31 +452,38 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             context.set_details(e.message)
             raise
 
-        cnt: dict[str, t.Any] = {"dtype": dtype_string}
+        response = service_pb2.Response()
+        value = service_pb2.Value()
 
-        resp = service_pb2.Response()
         if self._packed:
-            cnt.update({"bytes_contents": obj.tobytes(order=self._bytesorder)})
+            raw = service_pb2.Raw(
+                metadata={"dtype": str(obj.dtype)},
+                content=obj.tobytes(order=self._bytesorder),
+            )
+            value.raw_value.CopyFrom(raw)
         else:
             if self._bytesorder:
                 logger.warning(
                     f"'bytesorder={self._bytesorder}' is ignored when 'packed={self._packed}'."
                 )
-            cnt.update({_DTYPE_TO_FIELD_MAP[dtype_string]: obj.tolist()})
-
-        if obj.ndim == 1:
-            message = service_pb2.Array(**cnt)
-            resp.contents.array_value.CopyFrom(message)
-        else:
-            cnt["shape"] = tuple(obj.shape)
-            resp.contents.ndarray_value.CopyFrom(
-                service_pb2.NDArray(
-                    shape=tuple(obj.shape), array=service_pb2.Array(**cnt)
+            # we just need a view of the array, instead of copy it to contiguous memory.
+            array = service_pb2.Array(**{value_key: obj.ravel().tolist()})
+            if obj.ndim != 1:
+                ndarray = service_pb2.MultiDimensionalArray(
+                    shape=tuple(obj.shape), array=array
                 )
-            )
+                value.multi_dimensional_array_value.CopyFrom(ndarray)
+            else:
+                value.array_value.CopyFrom(array)
+
+        response.output.CopyFrom(value)
+
         if get_debug_mode():
-            logger.debug(f"Response proto: \n{resp}")
-        return resp
+            logger.debug(
+                f"Response proto: {response.SerializeToString(deterministic=True)}"
+            )
+
+        return response
 
     def generate_protobuf(self):
         pass

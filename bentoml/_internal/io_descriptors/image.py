@@ -49,7 +49,7 @@ ImageType: t.TypeAlias = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 DEFAULT_PIL_MODE = "RGB"
 
 
-class Image(IODescriptor[ImageType]):
+class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified

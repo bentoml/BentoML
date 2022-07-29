@@ -20,7 +20,7 @@ WORKDIR /home/bentoml
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip pip install -U pip
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip pip install bentoml==${BENTOML_VERSION}
 
-COPY ./quickstart .
+COPY ../examples/quickstart .
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip pip install -r ./requirements.txt
 
 # For jupyter notebook UI

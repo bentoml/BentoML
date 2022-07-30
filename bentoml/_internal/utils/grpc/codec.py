@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from google.protobuf.message import Message
 
 # content-type is always application/grpc
-# https://chromium.googlesource.com/external/github.com/grpc/grpc/+/HEAD/doc/PROTOCOL-HTTP2.md
 GRPC_CONTENT_TYPE = "application/grpc"
 
 
@@ -31,10 +30,12 @@ class Codec(ABC):
 
     @abstractmethod
     def encode(self, message: t.Any, message_type: t.Type[Message]) -> bytes:
+        # TODO: We will want to use this to encode headers message.
         pass
 
     @abstractmethod
     def decode(self, data: bytes, message_type: t.Type[Message]) -> t.Any:
+        # TODO: We will want to use this to decode headers message.
         pass
 
 

@@ -21,10 +21,7 @@ if TYPE_CHECKING:
     from bentoml.io import IODescriptor
     from bentoml.grpc.v1 import service_pb2
 
-    from ...server.grpc.types import Response
-    from ...server.grpc.types import HandlerMethod
     from ...server.grpc.types import RpcMethodHandler
-    from ...server.grpc.types import AsyncHandlerMethod
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 

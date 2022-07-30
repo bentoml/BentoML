@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
     from ..types import Request
     from ..types import Response
-    from ..types import HandlerMethod
     from ..types import RpcMethodHandler
     from ..types import AsyncHandlerMethod
     from ..types import HandlerCallDetails
@@ -36,6 +35,11 @@ logger = logging.getLogger(__name__)
 
 
 class GenericHeadersServerInterceptor(aio.ServerInterceptor):
+    """
+    A light header interceptor that provides some initial metadata to the client.
+    TODO: https://chromium.googlesource.com/external/github.com/grpc/grpc/+/HEAD/doc/PROTOCOL-HTTP2.md
+    """
+
     def __init__(self, *, codec: Codec | None = None):
         if not codec:
             # By default, we use ProtoCodec.
@@ -68,6 +72,8 @@ class GenericHeadersServerInterceptor(aio.ServerInterceptor):
             ) -> Response | t.Awaitable[Response]:
                 # setup metadata
                 self.set_trailing_metadata(context)
+
+                # for the rpc itself.
                 resp = behaviour(request, context)
                 if not hasattr(resp, "__aiter__"):
                     resp = await resp

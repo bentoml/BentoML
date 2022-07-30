@@ -114,8 +114,6 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                     trailing = dict(trailing_metadata)
                     content_type = trailing.get("content-type", GRPC_CONTENT_TYPE)
 
-                response = service_pb2.Response()
-
                 start = default_timer()
                 try:
                     response = behaviour(request, context)
@@ -124,6 +122,7 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                 except Exception as e:
                     context.set_code(grpc.StatusCode.INTERNAL)
                     context.set_details(str(e))
+                    response = service_pb2.Response()
                 finally:
                     latency = max(default_timer() - start, 0)
                     req = [

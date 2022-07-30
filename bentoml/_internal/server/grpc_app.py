@@ -16,8 +16,6 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from opentelemetry.trace import TracerProvider
-
     from ..service import Service
 
     OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
@@ -120,29 +118,13 @@ class GRPCAppFactory:
         return options
 
     @property
-    @inject
-    def interceptors(
-        self,
-        *,
-        tracer_provider: TracerProvider = Provide[BentoMLContainer.tracer_provider],
-    ) -> list[aio.ServerInterceptor]:
-        from opentelemetry import trace
-        from opentelemetry.sdk.trace.export import ConsoleSpanExporter
-        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-
-        # from .grpc.interceptors import AccessLogInterceptor
-
-        trace.set_tracer_provider(tracer_provider)
-        trace.get_tracer_provider().add_span_processor(
-            SimpleSpanProcessor(ConsoleSpanExporter())
+    def interceptors(self) -> list[aio.ServerInterceptor]:
+        from .grpc.interceptors.trace import (
+            AsyncOpenTelemetryServerInterceptor as OtelInterceptor,
         )
-        # from .grpc.interceptors.trace import (
-        #     AsyncOpenTelemetryServerInterceptor as OtelInterceptor,
-        # )
 
         # TODO: prometheus interceptors.
-        # interceptors: list[aio.ServerInterceptor] = [OtelInterceptor()]
-        interceptors: list[aio.ServerInterceptor] = []
+        interceptors: list[t.Type[aio.ServerInterceptor]] = [OtelInterceptor]
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
@@ -150,10 +132,9 @@ class GRPCAppFactory:
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:
-                interceptors.append(
-                    AccessLogInterceptor(tracer_provider=tracer_provider)
-                )
+                interceptors.append(AccessLogInterceptor)
 
         # add users-defined interceptors.
-        interceptors.extend(map(lambda x: x(), self.bento_service.interceptors))
-        return interceptors
+        interceptors.extend(self.bento_service.interceptors)
+
+        return list(map(lambda x: x(), interceptors))

@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from ...server.grpc.types import Response
     from ...server.grpc.types import HandlerMethod
     from ...server.grpc.types import RpcMethodHandler
+    from ...server.grpc.types import AsyncHandlerMethod
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 
@@ -30,6 +31,7 @@ __all__ = [
     "parse_method_name",
     "get_method_type",
     "deserialize_proto",
+    "to_http_status",
 ]
 
 logger = logging.getLogger(__name__)
@@ -55,10 +57,18 @@ def deserialize_proto(
     return kind, MessageToDict(getattr(req.input, kind), **kwargs)
 
 
+# Maps HTTP status code to grpc.StatusCode
 _STATUS_CODE_MAPPING = {
+    HTTPStatus.OK: grpc.StatusCode.OK,
+    HTTPStatus.UNAUTHORIZED: grpc.StatusCode.UNAUTHENTICATED,
+    HTTPStatus.FORBIDDEN: grpc.StatusCode.PERMISSION_DENIED,
+    HTTPStatus.NOT_FOUND: grpc.StatusCode.UNIMPLEMENTED,
+    HTTPStatus.TOO_MANY_REQUESTS: grpc.StatusCode.UNAVAILABLE,
+    HTTPStatus.BAD_GATEWAY: grpc.StatusCode.UNAVAILABLE,
+    HTTPStatus.SERVICE_UNAVAILABLE: grpc.StatusCode.UNAVAILABLE,
+    HTTPStatus.GATEWAY_TIMEOUT: grpc.StatusCode.DEADLINE_EXCEEDED,
     HTTPStatus.BAD_REQUEST: grpc.StatusCode.INVALID_ARGUMENT,
     HTTPStatus.INTERNAL_SERVER_ERROR: grpc.StatusCode.INTERNAL,
-    HTTPStatus.NOT_FOUND: grpc.StatusCode.NOT_FOUND,
     HTTPStatus.UNPROCESSABLE_ENTITY: grpc.StatusCode.FAILED_PRECONDITION,
 }
 
@@ -68,6 +78,16 @@ def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:
     Convert BentoMLException.error_code to grpc.StatusCode.
     """
     return _STATUS_CODE_MAPPING.get(err.error_code, grpc.StatusCode.UNKNOWN)
+
+
+def to_http_status(status_code: grpc.StatusCode) -> int:
+    """
+    Convert grpc.StatusCode to HTTPStatus.
+    """
+    try:
+        return {v: k for k, v in _STATUS_CODE_MAPPING.items()}[status_code].value
+    except KeyError:
+        return HTTPStatus.INTERNAL_SERVER_ERROR.value
 
 
 class RpcMethodType(str, enum.Enum):
@@ -126,7 +146,10 @@ def get_method_type(request_streaming: bool, response_streaming: bool) -> str:
 
 
 def wrap_rpc_handler(
-    wrapper: t.Callable[[HandlerMethod[Response] | None], HandlerMethod[Response]],
+    wrapper: t.Callable[
+        [HandlerMethod[Response] | AsyncHandlerMethod[Response] | None],
+        HandlerMethod[Response] | AsyncHandlerMethod[Response],
+    ],
     handler: RpcMethodHandler | None,
 ) -> RpcMethodHandler | None:
     if not handler:

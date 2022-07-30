@@ -12,6 +12,8 @@ import grpc
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
 
+from .codec import ProtoCodec
+from .codec import get_grpc_content_type
 from ..lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
@@ -29,9 +31,10 @@ else:
 __all__ = [
     "grpc_status_code",
     "parse_method_name",
-    "get_method_type",
     "deserialize_proto",
     "to_http_status",
+    "get_grpc_content_type",
+    "ProtoCodec",
 ]
 
 logger = logging.getLogger(__name__)
@@ -85,9 +88,11 @@ def to_http_status(status_code: grpc.StatusCode) -> int:
     Convert grpc.StatusCode to HTTPStatus.
     """
     try:
-        return {v: k for k, v in _STATUS_CODE_MAPPING.items()}[status_code].value
+        status = {v: k for k, v in _STATUS_CODE_MAPPING.items()}[status_code]
     except KeyError:
-        return HTTPStatus.INTERNAL_SERVER_ERROR.value
+        status = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    return status.value
 
 
 class RpcMethodType(str, enum.Enum):
@@ -132,36 +137,31 @@ def parse_method_name(method_name: str) -> tuple[MethodName, bool]:
     return MethodName(package, service, method), True
 
 
-def get_method_type(request_streaming: bool, response_streaming: bool) -> str:
-    if not request_streaming and not response_streaming:
-        return RpcMethodType.UNARY
-    elif not request_streaming and response_streaming:
-        return RpcMethodType.SERVER_STREAMING
-    elif request_streaming and not response_streaming:
-        return RpcMethodType.CLIENT_STREAMING
-    elif request_streaming and response_streaming:
-        return RpcMethodType.BIDI_STREAMING
-    else:
-        return RpcMethodType.UNKNOWN
-
-
 def wrap_rpc_handler(
-    wrapper: t.Callable[
-        [HandlerMethod[Response] | AsyncHandlerMethod[Response] | None],
-        HandlerMethod[Response] | AsyncHandlerMethod[Response],
-    ],
+    wrapper: t.Callable[..., t.Any],
     handler: RpcMethodHandler | None,
 ) -> RpcMethodHandler | None:
     if not handler:
         return None
 
+    # The reason we are using TYPE_CHECKING for assert here
+    # is that if the following bool request_streaming and response_streaming
+    # are set, then it is guaranteed that RpcMethodHandler are not None.
     if not handler.request_streaming and not handler.response_streaming:
+        if TYPE_CHECKING:
+            assert handler.unary_unary
         return handler._replace(unary_unary=wrapper(handler.unary_unary))
     elif not handler.request_streaming and handler.response_streaming:
+        if TYPE_CHECKING:
+            assert handler.unary_stream
         return handler._replace(unary_stream=wrapper(handler.unary_stream))
     elif handler.request_streaming and not handler.response_streaming:
+        if TYPE_CHECKING:
+            assert handler.stream_unary
         return handler._replace(stream_unary=wrapper(handler.stream_unary))
     elif handler.request_streaming and handler.response_streaming:
+        if TYPE_CHECKING:
+            assert handler.stream_stream
         return handler._replace(stream_stream=wrapper(handler.stream_stream))
     else:
         raise BentoMLException(f"RPC method handler {handler} does not exist.")

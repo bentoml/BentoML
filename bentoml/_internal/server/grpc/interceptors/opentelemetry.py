@@ -21,6 +21,7 @@ from opentelemetry.semconv.trace import SpanAttributes
 from ....utils.pkg import get_pkg_version
 from ....utils.grpc import wrap_rpc_handler
 from ....utils.grpc import parse_method_name
+from ....utils.grpc.codec import GRPC_CONTENT_TYPE
 from ....configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -139,6 +140,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
     @inject
     def __init__(
         self,
+        *,
         tracer_provider: TracerProvider = Provide[BentoMLContainer.tracer_provider],
         schema_url: str | None = None,
     ):
@@ -149,7 +151,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
         )
 
     @asynccontextmanager
-    async def _set_remote_context(
+    async def set_remote_context(
         self, servicer_context: BentoServicerContext
     ) -> t.AsyncGenerator[None, None]:
         metadata = servicer_context.invocation_metadata()
@@ -163,7 +165,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
         finally:
             detach(token)
 
-    def _start_span(
+    def start_span(
         self,
         method_name: str,
         context: BentoServicerContext,
@@ -173,26 +175,39 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             SpanAttributes.RPC_SYSTEM: "grpc",
             SpanAttributes.RPC_GRPC_STATUS_CODE: grpc.StatusCode.OK.value[0],
         }
-        if method_name:
-            method, _ = parse_method_name(method_name)
-            attributes.update(
-                {
-                    SpanAttributes.RPC_METHOD: method.fully_qualified_service,
-                    SpanAttributes.RPC_SERVICE: method.service,
-                }
-            )
+
+        # method_name shouldn't be none, otherwise
+        # it will never reach this point.
+        method_rpc, _ = parse_method_name(method_name)
+        attributes.update(
+            {
+                SpanAttributes.RPC_METHOD: method_rpc.method,
+                SpanAttributes.RPC_SERVICE: method_rpc.fully_qualified_service,
+            }
+        )
 
         # add some attributes from the metadata
         metadata = context.invocation_metadata()
-        if metadata and "user-agent" in metadata:
-            attributes["rpc.user_agent"] = metadata["user-agent"]
+        if metadata:
+            dct: dict[str, str | bytes] = dict(metadata)
+            if "user-agent" in dct:
+                attributes["rpc.user_agent"] = dct["user-agent"]
+
+        # get trailing metadata
+        trailing_metadata: MetadataType | None = context.trailing_metadata()
+        if trailing_metadata:
+            trailing = dict(trailing_metadata)
+            attributes["rpc.content_type"] = trailing.get(
+                "content-type", GRPC_CONTENT_TYPE
+            )
 
         # Split up the peer to keep with how other telemetry sources
-        # do it.  This looks like:
+        # do it. This looks like:
         # * ipv6:[::1]:57284
         # * ipv4:127.0.0.1:57284
         # * ipv4:10.2.1.1:57284,127.0.0.1:57284
         #
+        # the process ip and port would be [::1] 57284
         try:
             ipv4_addr = context.peer().split(",")[0]
             ip, port = ipv4_addr.split(":", 1)[1].rsplit(":", 1)
@@ -205,7 +220,6 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             # other telemetry sources add this, so we will too
             if ip in ("[::1]", "127.0.0.1"):
                 attributes[SpanAttributes.NET_PEER_NAME] = "localhost"
-
         except IndexError:
             logger.warning("Failed to parse peer address '%s'", context.peer())
 
@@ -233,8 +247,9 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             async def new_behaviour(
                 request: Request, context: BentoServicerContext
             ) -> Response | t.Awaitable[Response]:
-                async with self._set_remote_context(context):
-                    with self._start_span(method_name, context) as span:
+
+                async with self.set_remote_context(context):
+                    with self.start_span(method_name, context) as span:
                         # wrap context
                         wrapped_context = _OpenTelemetryServicerContext(context, span)
 

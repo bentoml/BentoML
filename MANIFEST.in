@@ -2,8 +2,8 @@
 
 # Files to exclude in PyPI distribution
 exclude CONTRIBUTING.md GOVERNANCE.md CODE_OF_CONDUCT.md DEVELOPMENT.md SECURITY.md
-exclude Makefile MANIFEST.in AUTHORS
-exclude *.yml .mailmap
+exclude Makefile MANIFEST.in
+exclude *.yml
 exclude .git*
 
 # Directories to exclude in PyPI package

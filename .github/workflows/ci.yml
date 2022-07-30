@@ -20,6 +20,7 @@ jobs:
       related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
+      codeowners: ${{ steps.filter.outputs.codeowners }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
@@ -44,9 +45,15 @@ jobs:
               - *related
               - requirements/docs-requirements.txt
               - "docs/**"
+            codeowners:
+              - .github/CODEOWNERS
 
   codeowners-sanity:
     runs-on: ubuntu-latest
+    needs:
+      - diff
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.codeowners == 'true') }}
     steps:
       # Checks-out your repository, which is validated in the next step
       - uses: actions/checkout@v2

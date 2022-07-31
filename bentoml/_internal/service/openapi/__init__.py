@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import typing as t
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from . import Service
-    from ..io_descriptors import IODescriptor
+    from .. import Service
+    from ...io_descriptors import IODescriptor
 
 
 HEALTHZ_DESC = (
@@ -26,9 +28,7 @@ READYZ_DESC = (
 METRICS_DESC = "Prometheus metrics endpoint"
 
 
-def _generate_responses_schema(
-    output: "IODescriptor[t.Any]",
-) -> t.Dict[str, t.Dict[str, t.Any]]:
+def response_schemas(output: IODescriptor[t.Any]) -> dict[str, dict[str, t.Any]]:
     resp = {
         "200": dict(
             description="success",
@@ -41,7 +41,7 @@ def _generate_responses_schema(
     return resp
 
 
-def get_service_openapi_doc(svc: "Service"):
+def generate_openapi_doc(svc: "Service"):
     info = {
         "title": svc.name,
         "description": "A Prediction Service built with BentoML",
@@ -105,7 +105,7 @@ def get_service_openapi_doc(svc: "Service"):
                 description=api.doc or "",
                 operationId=f"{svc.name}__{api.name}",
                 requestBody=dict(content=api.input.openapi_request_schema()),
-                responses=_generate_responses_schema(api.output),
+                responses=response_schemas(api.output),
                 # examples=None,
                 # headers=None,
             )

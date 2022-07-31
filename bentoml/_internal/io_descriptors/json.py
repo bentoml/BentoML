@@ -153,7 +153,7 @@ class JSON(IODescriptor[JSONType]):
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
 
-        # Remove validate_json in version 1.1.0
+        # Remove validate_json in version 1.0.2
         if validate_json is not None:
             logger.warning(
                 "validate_json option in bentoml.io.JSON has been deprecated, use a pydantic model to specify validation options instead"

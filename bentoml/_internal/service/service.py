@@ -192,9 +192,9 @@ class Service:
         return get_default_bento_readme(self)
 
     def openapi_doc(self):
-        from .openapi import get_service_openapi_doc
+        from .openapi import generate_openapi_doc
 
-        return get_service_openapi_doc(self)
+        return generate_openapi_doc(self)
 
     def on_asgi_app_startup(self) -> None:
         pass

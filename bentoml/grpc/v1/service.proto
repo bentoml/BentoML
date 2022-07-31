@@ -4,7 +4,6 @@ package bentoml.grpc.v1;
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
-option cc_generic_services = false;
 option go_package = "github.com/bentoml/grpc/v1";
 option java_multiple_files = true;
 option java_outer_classname = "ServiceProto";

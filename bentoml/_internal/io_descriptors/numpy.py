@@ -269,26 +269,30 @@ class NumpyNdarray(
         )
 
     def _verify_ndarray(
-        self, obj: ext.NpNDArray, exception_cls: t.Type[Exception] = BadInput
-    ) -> ext.NpNDArray:
-        if self._dtype is not None and self._dtype != obj.dtype:
+        self,
+        obj: "ext.NpNDArray",
+        dtype: np.dtype[t.Any] | None,
+        shape: tuple[int, ...] | None,
+        exception_cls: t.Type[Exception] = BadInput,
+    ) -> "ext.NpNDArray":
+        if dtype is not None and dtype != obj.dtype:
             # ‘same_kind’ means only safe casts or casts within a kind, like float64
             # to float32, are allowed.
-            if np.can_cast(obj.dtype, self._dtype, casting="same_kind"):
-                obj = obj.astype(self._dtype, casting="same_kind")  # type: ignore
+            if np.can_cast(obj.dtype, dtype, casting="same_kind"):
+                obj = obj.astype(dtype, casting="same_kind")  # type: ignore
             else:
-                msg = f'{self.__class__.__name__}: Expecting ndarray of dtype "{self._dtype}", but "{obj.dtype}" was received.'
+                msg = f'{self.__class__.__name__}: Expecting ndarray of dtype "{dtype}", but "{obj.dtype}" was received.'
                 if self._enforce_dtype:
                     raise exception_cls(msg)
                 else:
                     logger.debug(msg)
 
-        if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
-            msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{obj.shape}" was received.'
+        if shape is not None and not _is_matched_shape(shape, obj.shape):
+            msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{shape}", but "{obj.shape}" was received.'
             if self._enforce_shape:
                 raise exception_cls(msg)
             try:
-                obj = obj.reshape(self._shape)
+                obj = obj.reshape(shape)
             except ValueError as e:
                 logger.debug(f"{msg} Failed to reshape: {e}.")
 
@@ -310,7 +314,7 @@ class NumpyNdarray(
             res = np.array(obj, dtype=self._dtype)
         except ValueError:
             res = np.array(obj)
-        return self._verify_ndarray(res)
+        return self._verify_ndarray(res, dtype=self._dtype, shape=self._shape)
 
     async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
         """
@@ -324,7 +328,9 @@ class NumpyNdarray(
             HTTP Response of type ``starlette.responses.Response``. This can
              be accessed via cURL or any external web traffic.
         """
-        obj = self._verify_ndarray(obj, InternalServerError)
+        obj = self._verify_ndarray(
+            obj, dtype=self._dtype, shape=self._shape, exception_cls=InternalServerError
+        )
         if ctx is not None:
             res = Response(
                 json.dumps(obj.tolist()),
@@ -364,6 +370,7 @@ class NumpyNdarray(
                 )
             if not self._shape:
                 raise UnprocessableEntity("'shape' is required when 'packed' is set.")
+
             metadata = serialized["metadata"]
             if not self._dtype:
                 if "dtype" not in metadata:
@@ -391,13 +398,11 @@ class NumpyNdarray(
                     logger.warning(
                         f"'shape={self._shape},enforce_shape={self._enforce_shape}' is set with {self.__class__.__name__}, while 'shape' field is present in request message. To avoid this warning, set 'enforce_shape=True'. Using 'shape={shape}' from request message."
                     )
-                    self._shape = shape
                 else:
                     logger.debug(
                         f"'enforce_shape={self._enforce_shape}', ignoring 'shape' field in request message."
                     )
-            else:
-                self._shape = shape
+                    shape = self._shape
 
             array = serialized["array"]
         else:
@@ -411,20 +416,18 @@ class NumpyNdarray(
                 logger.warning(
                     f"'dtype={self._dtype},enforce_dtype={self._enforce_dtype}' is set with {self.__class__.__name__}, while 'dtype' field is present in request message. To avoid this warning, set 'enforce_dtype=True'. Using 'dtype={dtype}' from request message."
                 )
-                self._dtype = dtype
             else:
                 logger.debug(
                     f"'enforce_dtype={self._enforce_dtype}', ignoring 'dtype' field in request message."
                 )
-        else:
-            self._dtype = dtype
+                dtype = self._dtype
 
         try:
-            res = np.array(content, dtype=self._dtype)
+            res = np.array(content, dtype=dtype)
         except ValueError:
             res = np.array(content)
 
-        return self._verify_ndarray(res, BadInput)
+        return self._verify_ndarray(res, dtype=dtype, shape=shape)
 
     async def to_grpc_response(
         self, obj: ext.NpNDArray, context: BentoServicerContext
@@ -446,7 +449,12 @@ class NumpyNdarray(
         value_key = _NP_TO_VALUE_MAP[obj.dtype]
 
         try:
-            obj = self._verify_ndarray(obj, InternalServerError)
+            obj = self._verify_ndarray(
+                obj,
+                dtype=self._dtype,
+                shape=self._shape,
+                exception_cls=InternalServerError,
+            )
         except InternalServerError as e:
             context.set_code(grpc_status_code(e))
             context.set_details(e.message)
@@ -462,7 +470,7 @@ class NumpyNdarray(
             )
             value.raw_value.CopyFrom(raw)
         else:
-            if self._bytesorder:
+            if self._bytesorder and self._bytesorder != "C":
                 logger.warning(
                     f"'bytesorder={self._bytesorder}' is ignored when 'packed={self._packed}'."
                 )

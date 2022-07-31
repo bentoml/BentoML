@@ -1,16 +1,41 @@
 * @bentoml/bentoml-reviewers
-/bentoml/_internal/bento/ @aarnphm @bentoml/bentoml-reviewers
-/bentoml/_internal/server/ @bojiang @bentoml/bentoml-reviewers
-/bentoml/_internal/frameworks/ @larme @bentoml/bentoml-reviewers
-/bentoml/_internal/io_descriptors/ @aarnphm @bentoml/bentoml-reviewers
-/bentoml/_internal/runner/ @bojiang @bentoml/bentoml-reviewers
-/bentoml/_internal/cli/ @ssheng @parano @larme @bentoml/bentoml-reviewers
-/bentoml/_internal/yatai* @yetone @bentoml/bentoml-reviewers
-/bentoml/_internal/service/ @parano @bentoml/bentoml-reviewers
-/bentoml/_internal/utils/analytics @aarnphm @bentoml/bentoml-reviewers
-/bentoml/_internal/configuration/ @ssheng @bentoml/bentoml-reviewers
-/bentoml/_internal/models/ @sauyon @bentoml/bentoml-reviewers
-/bentoml/_internal/marshal/ @bojiang @bentoml/bentoml-reviewers
-/bentoml/_internal/*.py @sauyon @bentoml/bentoml-reviewers
-/bentoml/testing/ @bojiang @bentoml/bentoml-reviewers
+# User-facing API changes:
+/bentoml/*.py @ssheng @parano 
+
+# BentoML Internal
+/bentoml/_internal/bento/docker/ @aarnphm 
+/bentoml/_internal/bento/ @sauyon @parano 
+/bentoml/_internal/server/ @bojiang @ssheng 
+/bentoml/_internal/frameworks/ @larme 
+/bentoml/_internal/io_descriptors/ @aarnphm @sauyon
+/bentoml/_internal/runner/ @bojiang @sauyon
+/bentoml/_internal/cli/ @aarnphm @larme
+/bentoml/_internal/yatai* @yetone 
+/bentoml/_internal/service/ @bojiang 
+/bentoml/_internal/utils/analytics @ssheng @parano 
+/bentoml/_internal/configuration/ @ssheng
+/bentoml/_internal/models/ @sauyon
+/bentoml/_internal/marshal/ @bojiang
+/bentoml/_internal/testing/ @bojiang 
+/bentoml/_internal/external_typing/ @sauyon 
+/bentoml/_internal/*.py @sauyon
+
+# Example code & notebooks
+/examples/ @larme @ssheng 
+
+# Release scripts
+/scripts/ @ssheng 
+
+# Github Configs
+/.github/ @aarnphm @ssheng 
+
+# Docs, Community and Governance
 /docs/ @parano @ssheng
+README.md @parano @ssheng 
+GOVERNANCE.md @parano @ssheng 
+CODE_OF_CONDUCT.md @ssheng @yubozhao 
+CONTRIBUTING.md @yubozhao @ssheng 
+DEVELOPMENT.md @sauyon @ssheng 
+
+# External Typing
+/typings/ @sauyon @ssheng

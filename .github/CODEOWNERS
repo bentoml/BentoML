@@ -1,9 +1,9 @@
 # User-facing API changes:
 /bentoml/*.py @ssheng @parano 
 
-# BentoML Internal
+# BentoML Internals
 /bentoml/_internal/bento/docker/ @aarnphm 
-/bentoml/_internal/bento/ @sauyon @parano 
+/bentoml/_internal/bento/ @sauyon @parano @aarnphm
 /bentoml/_internal/server/ @bojiang @ssheng 
 /bentoml/_internal/frameworks/ @larme 
 /bentoml/_internal/io_descriptors/ @aarnphm @sauyon
@@ -25,7 +25,7 @@
 # Release scripts
 /scripts/ @ssheng 
 
-# Github Configs
+# GitHub Configs
 /.github/ @aarnphm @ssheng 
 
 # Docs, Community and Governance
@@ -36,5 +36,5 @@ CODE_OF_CONDUCT.md @ssheng @yubozhao
 CONTRIBUTING.md @yubozhao @ssheng 
 DEVELOPMENT.md @sauyon @ssheng 
 
-# External Typing
+# Typing stubs
 /typings/ @sauyon @ssheng

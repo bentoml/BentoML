@@ -12,6 +12,12 @@ from ..utils.http import set_cookies
 if TYPE_CHECKING:
     from ..context import InferenceApiContext as Context
 
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import Parameter
+from ..service.openapi.specification import Reference
+from ..service.openapi.specification import Components
+from ..service.openapi.specification import RequestBody
 
 MIME_TYPE = "text/plain"
 
@@ -82,6 +88,21 @@ class Text(IODescriptor[str]):
 
     def input_type(self) -> t.Type[str]:
         return str
+
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
+
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
+
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "string"}

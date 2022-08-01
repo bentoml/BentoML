@@ -15,7 +15,13 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Parameter
+from ..service.openapi.specification import Reference
+from ..service.openapi.specification import Components
+from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     import numpy as np
@@ -163,6 +169,21 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
     def input_type(self) -> LazyType["ext.NpNDArray"]:
         return LazyType("numpy", "ndarray")
+
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
+
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
+
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "array", "items": self._items_schema()}

@@ -16,6 +16,12 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import Parameter
+from ..service.openapi.specification import Reference
+from ..service.openapi.specification import Components
+from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -32,10 +38,7 @@ else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = f"""\
-    `Pillow` is required to use {__name__}
-    Instructions: `pip install -U Pillow`
-    """
+    _exc = f"'Pillow' is required to use {__name__}. Install with: 'pip install -U Pillow'."
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
@@ -154,16 +157,20 @@ class Image(IODescriptor[ImageType]):
     def input_type(self) -> UnionType:
         return ImageType
 
-    def openapi_schema_type(self) -> dict[str, str]:
-        return {"type": "string", "format": "binary"}
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
 
-    def openapi_request_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for incoming requests"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
 
-    def openapi_responses_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for outcoming responses"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])

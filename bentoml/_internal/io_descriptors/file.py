@@ -14,6 +14,12 @@ from .base import IODescriptor
 from ..types import FileLike
 from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import Parameter
+from ..service.openapi.specification import Reference
+from ..service.openapi.specification import Components
+from ..service.openapi.specification import RequestBody
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +89,7 @@ class File(IODescriptor[FileType]):
 
     """
 
-    _mime_type: str
-
-    def __new__(  # pylint: disable=arguments-differ # returning subclass from new
-        cls, kind: FileKind = "binaryio", mime_type: str | None = None
-    ) -> File:
+    def __new__(cls, kind: FileKind = "binaryio", mime_type: str | None = None) -> File:
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
 
         if kind == "binaryio":
@@ -101,16 +103,20 @@ class File(IODescriptor[FileType]):
     def input_type(self) -> t.Type[t.Any]:
         return FileLike[bytes]
 
-    def openapi_schema_type(self) -> dict[str, str]:
-        return {"type": "string", "format": "binary"}
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
 
-    def openapi_request_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for incoming requests"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
 
-    def openapi_responses_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for outcoming responses"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     async def to_http_response(
         self,

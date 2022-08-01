@@ -14,7 +14,13 @@ from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Parameter
+from ..service.openapi.specification import Reference
+from ..service.openapi.specification import Components
+from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -50,7 +56,6 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
     def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
-
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(o):
             return o.tolist()
         if LazyType["ext.NpGeneric"]("numpy.generic").isinstance(o):
@@ -140,16 +145,19 @@ class JSON(IODescriptor[JSONType]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that in JSON format.
     """
 
+    _mime_type: str = MIME_TYPE_JSON
+
     def __init__(
         self,
+        *,
         pydantic_model: t.Type[pydantic.BaseModel] | None = None,
         validate_json: bool | None = None,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
-        if pydantic_model is not None:
+        if pydantic_model:
             assert issubclass(
                 pydantic_model, pydantic.BaseModel
-            ), "`pydantic_model` must be a subclass of `pydantic.BaseModel`"
+            ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
 
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
@@ -157,15 +165,35 @@ class JSON(IODescriptor[JSONType]):
         # Remove validate_json in version 1.0.2
         if validate_json is not None:
             logger.warning(
-                "validate_json option in bentoml.io.JSON has been deprecated, use a pydantic model to specify validation options instead"
+                "'validate_json' option from 'bentoml.io.JSON' has been deprecated. Use a Pydantic model to specify validation options instead."
             )
 
-    def input_type(self) -> "UnionType":
+    def input_type(self) -> UnionType:
         return JSONType
+
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
+
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
+
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if self._pydantic_model is None:
             return {"type": "object"}
+
+        from ..service.openapi.utils import generate_model_schema
+
+        # print(generate_model_schema(self._pydantic_model))
+
         return self._pydantic_model.schema()
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:

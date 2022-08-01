@@ -19,6 +19,12 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import Parameter
+from ..service.openapi.specification import Reference
+from ..service.openapi.specification import Components
+from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     import pandas as pd  # type: ignore[import]
@@ -267,6 +273,21 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         self,
     ) -> LazyType[ext.PdDataFrame]:
         return LazyType("pandas", "DataFrame")
+
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
+
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
+
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     def openapi_schema_type(self) -> dict[str, t.Any]:
         return _schema_type(self._dtype)
@@ -602,6 +623,21 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         self,
     ) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
+
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
+
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
+
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._dtype)

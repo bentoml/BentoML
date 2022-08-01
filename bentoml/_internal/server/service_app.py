@@ -38,7 +38,7 @@ DEFAULT_INDEX_HTML = """\
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Swagger UI</title>
+    <title>BentoML Prediction Service</title>
     <link rel="stylesheet" type="text/css" href="./static_content/swagger-ui.css" />
     <link rel="stylesheet" type="text/css" href="./static_content/index.css" />
     <link rel="icon" type="image/png" href="./static_content/favicon-32x32.png" sizes="32x32" />

@@ -12,6 +12,12 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import Parameter
+from ..service.openapi.specification import Reference
+from ..service.openapi.specification import Components
+from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -145,6 +151,21 @@ class Multipart(IODescriptor[t.Any]):
             res[k] = inp_type
 
         return res
+
+    def _openapi_schema(self) -> Schema | Reference:
+        pass
+
+    def _openapi_parameters(self) -> Parameter | Reference:
+        pass
+
+    def _openapi_components(self) -> Components:
+        pass
+
+    def _openapi_request_body(self) -> RequestBody:
+        pass
+
+    def _openapi_responses(self) -> OpenAPIResponse:
+        pass
 
     def openapi_schema_type(self) -> dict[str, t.Any]:
         return {

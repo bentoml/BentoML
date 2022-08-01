@@ -1,17 +1,41 @@
+"""
+Python representation of the OpenAPI Specification.
+
+Specs can be found at https://spec.openapis.org/oas/v<semver>#openapi-specification (semver := 3.x.x | 2.x.x)
+
+We will refers to the Python object that coresponds to an OpenAPI object as POS (Python implementation for a OpenAPI Specification).
+
+Note that even though we cover most bases, there are still a lot of OpenAPI features such as deprecation,
+webhooks, securities, etc. are yet to be implemented/exposed to user.
+"""
 from __future__ import annotations
 
 import enum
 import typing as t
+import logging
 
 import attr
 import yaml
+import cattr.errors
 from cattr.gen import override
 from cattr.gen import make_dict_unstructure_fn
 
 from bentoml.exceptions import InvalidArgument
-from bentoml._internal.utils import bentoml_cattr
+
+from ...utils import bentoml_cattr
+
+logger = logging.getLogger(__name__)
 
 _T = t.TypeVar("_T")
+
+# All classes contains the following special fields:
+# - __omit_if_default__: If True, cattrs will omit all fields that use default values. This is useful for most POS
+#                        as the default value for most fields are set to None.
+# - __forbid_extra_keys__: If True, cattrs will raise an error if given data/dictionary contains additional keys that is not an attribute of a given POS.
+# - __rename_fields__: a mapping of existing fields and the correct name specified under OpenAPI specification.
+#                      To avoid naming collision with Python builtin types as well as reserved words, we will postfix
+#                      the field name with an underscore. __rename_fields__'s responsibility is to map the correct name per OpenAPI specification.
+# - __preserve_cls_structure__: If True, cattrs will allow to return the OpenAPI object directly.
 
 
 class SecuritySchemeType(enum.Enum):
@@ -21,13 +45,21 @@ class SecuritySchemeType(enum.Enum):
     openIdConnect = "openIdConnect"
 
 
+class APIKeyIn(enum.Enum):
+    query = "query"
+    header = "header"
+    cookie = "cookie"
+
+
 @attr.frozen
 class APIKey:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
+    __rename_fields__ = {"in_": "in"}
+
     name: str
-    in_: APIKeyIn
+    in_: t.Optional[APIKeyIn]
     description: t.Optional[str] = None
     type: t.Literal[SecuritySchemeType.apiKey] = SecuritySchemeType.apiKey
 
@@ -120,12 +152,6 @@ class OpenIdConnect:
     type: t.Literal[SecuritySchemeType.oauth2] = SecuritySchemeType.oauth2
 
 
-class APIKeyIn(enum.Enum):
-    query = "query"
-    header = "header"
-    cookie = "cookie"
-
-
 SecurityScheme = t.Union[APIKey, HTTPBase, OAuth2, OpenIdConnect, HTTPBearer]
 
 
@@ -149,6 +175,12 @@ class License:
         default=attr.Factory(lambda self: self.name.replace(" ", "-"), takes_self=True),
     )
     url: t.Optional[str] = None
+
+
+Apache2_0 = License(
+    name="Apache 2.0",
+    url="https://www.apache.org/licenses/LICENSE-2.0.html",
+)
 
 
 @attr.frozen
@@ -203,10 +235,11 @@ class ParameterInType(enum.Enum):
 @attr.frozen
 class ParamBase:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
+    __rename_fields__ = {"in_": "in"}
 
     name: t.Optional[str]
-    in_: t.Optional[ParameterInType]
+    in_: t.Optional[ParameterInType] = None
     description: t.Optional[str] = None
     required: t.Optional[bool] = None
     deprecated: t.Optional[bool] = None
@@ -228,45 +261,11 @@ class Header(ParamBase):
     in_ = None
 
 
-def _in_from_dict(cls: t.Type[_T], data: dict[str, t.Any]) -> _T:
-    if "in" not in data:
-        raise InvalidArgument("'in' field is missing from given dictionary.")
-    in_ = data.pop("in")
-    return cls(in_=in_, **data)
-
-
-# handles in_ serde variables
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: attr.has(cls)
-    and hasattr(cls, "in_")
-    and any(issubclass(cls, cl) for cl in (ParamBase, APIKey)),
-    lambda data, cl: _in_from_dict(cl, data),
-)
-bentoml_cattr.register_unstructure_hook_factory(
-    lambda cls: attr.has(cls)
-    and hasattr(cls, "in_")
-    and any(issubclass(cls, cl) for cl in (ParamBase, APIKey)),
-    lambda cls: make_dict_unstructure_fn(cls, bentoml_cattr, in_=override(rename="in")),
-)
-
-
 @attr.frozen
 class Reference:
+    __rename_fields__ = {"ref": "$ref"}
+
     ref: str
-
-
-def _reference_structure_hook(
-    data: t.Dict[str, t.Any], cl: t.Type[Reference]
-) -> Reference:
-    return cl(ref=data["$ref"])
-
-
-def _reference_unstructure_hook(o: Reference) -> dict[str, str]:
-    return {"$ref": o.ref}
-
-
-bentoml_cattr.register_structure_hook(Reference, _reference_structure_hook)
-bentoml_cattr.register_unstructure_hook(Reference, _reference_unstructure_hook)
 
 
 @attr.frozen
@@ -292,8 +291,17 @@ class XML:
 
 @attr.frozen
 class Schema:
+    """
+    The Schema Object allows the definition of input and output data types.
+    These types can be objects, but also primitives and arrays. This object is an extended subset of http://json-schema.org/.
+
+    ground truth: https://spec.openapis.org/oas/v3.0.2#schema-object
+    """
+
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
+
+    __rename_fields__ = {"ref": "$ref", "not_": "not"}
 
     type: t.Optional[str]
     ref: t.Optional[str] = None
@@ -403,6 +411,8 @@ class Operation:
     operationId: t.Optional[str] = None
     parameters: t.Optional[t.List[t.Union[Parameter, Reference]]] = None
     requestBody: t.Optional[t.Union[RequestBody, Reference]] = None
+
+    # Note that this is not yet implemented.
     callbacks: t.Optional[
         t.Mapping[str, t.Union[t.Dict[str, PathItem], Reference]]
     ] = None
@@ -424,14 +434,7 @@ class Info:
     contact: t.Optional[Contact] = None
     license: t.Optional[License] = None
 
-    @classmethod
-    def from_object(cls, info: dict[str, t.Any] | Info) -> Info:
-        if isinstance(info, Info):
-            return info
-        return cls(**info)
-
-
-bentoml_cattr.register_structure_hook(Info, lambda d, _: Info.from_object(d))
+    __preserve_cls_structure__ = True
 
 
 @attr.frozen
@@ -439,7 +442,9 @@ class PathItem:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    ref: t.Optional[str] = None  # $ref
+    __rename_fields__ = {"ref": "$ref"}
+
+    ref: t.Optional[str] = None
     summary: t.Optional[str] = None
     description: t.Optional[str] = None
     get: t.Optional[Operation] = None
@@ -453,14 +458,7 @@ class PathItem:
     servers: t.Optional[t.List[Server]] = None
     parameters: t.Optional[t.List[t.Union[Parameter, Reference]]] = None
 
-    @classmethod
-    def from_object(cls, pathitem: dict[str, t.Any] | PathItem) -> PathItem:
-        if isinstance(pathitem, PathItem):
-            return pathitem
-        return cls(**pathitem)
-
-
-bentoml_cattr.register_structure_hook(PathItem, lambda d, _: PathItem.from_object(d))
+    __preserve_cls_structure__ = True
 
 
 @attr.frozen
@@ -472,14 +470,7 @@ class Tag:
     description: t.Optional[str] = None
     externalDocs: t.Optional[ExternalDocumentation] = None
 
-    @classmethod
-    def from_taglike(cls, taglike: Tag | dict[str, str]) -> Tag:
-        if isinstance(taglike, Tag):
-            return taglike
-        return cls(**taglike)
-
-
-bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))
+    __preserve_cls_structure__ = True
 
 
 @attr.frozen
@@ -487,17 +478,17 @@ class Components:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    schemas: t.Optional[t.Dict[str, t.Union[Schema, Reference]]] = None
-    # TODO: add responses validation
-    responses: t.Optional[t.Dict[str, t.Union[Response, Reference]]] = None
+    schemas: t.Dict[str, t.Union[Schema, Reference]]
 
+    # The below fields are not yet implemented.
+    # Here for consistency sake.
+    responses: t.Optional[t.Dict[str, t.Union[Response, Reference]]] = None
     parameters: t.Optional[t.Dict[str, t.Union[Parameter, Reference]]] = None
     examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
     requestBodies: t.Optional[t.Dict[str, t.Union[RequestBody, Reference]]] = None
     headers: t.Optional[t.Dict[str, t.Union[Header, Reference]]] = None
     securitySchemes: t.Optional[t.Dict[str, t.Union[SecurityScheme, Reference]]] = None
     links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
-
     # Using Any for Specification Extensions
     callbacks: t.Optional[
         t.Dict[str, t.Union[t.Dict[str, PathItem], Reference, t.Any]]
@@ -526,13 +517,56 @@ class OpenAPISpecification:
         return bentoml_cattr.unstructure(self)
 
     @classmethod
-    def from_dict(cls, dct: dict[str, t.Any]) -> OpenAPISpecification:
-        return bentoml_cattr.structure(dct, cls)
+    def from_yaml_file(cls, stream: t.IO[t.Any]) -> OpenAPISpecification:
+        try:
+            yaml_content = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            logger.error(exc)
+            raise
+
+        try:
+            return bentoml_cattr.structure(yaml_content, cls)
+        except cattr.errors.ClassValidationError:
+            raise
 
 
-Apache2_0 = License(
-    name="Apache 2.0",
-    url="https://www.apache.org/licenses/LICENSE-2.0.html",
+def _structure_rename_fields_hook(data: t.Dict[str, t.Any], cl: t.Type[_T]) -> _T:
+    # pop is atomic, so we don't need to worry about performance deficit.
+    # See https://stackoverflow.com/a/17326099/8643197.
+    rev = {
+        k: data.pop(v) for k, v in getattr(cl, "__rename_fields__").items() if v in data
+    }
+    return cl(**rev, **data)
+
+
+# handles all OpenAPI class that includes __rename_fields__
+bentoml_cattr.register_structure_hook_func(
+    lambda cls: attr.has(cls) and hasattr(cls, "__rename_fields__"),
+    lambda data, cl: _structure_rename_fields_hook(data, cl),
+)
+bentoml_cattr.register_unstructure_hook_factory(
+    lambda cls: attr.has(cls) and hasattr(cls, "__rename_fields__"),
+    lambda cls: make_dict_unstructure_fn(
+        cls,
+        bentoml_cattr,
+        # for all classes under OpenAPI, we want to omit default values.
+        _cattrs_omit_if_default=getattr(cls, "__omit_if_default__", True),
+        **{k: override(rename=v) for k, v in cls.__rename_fields__.items()},
+    ),
+)
+
+
+# register all class in this structure whom
+# implement a '__preserve_cls_structure__' method
+def _preserve_cls_structure(data: dict[str, t.Any], cl: t.Type[_T]) -> _T:
+    if isinstance(data, cl):
+        return data
+    return cl(**data)
+
+
+bentoml_cattr.register_structure_hook_func(
+    lambda cls: attr.has(cls) and hasattr(cls, "__preserve_cls_structure__"),
+    lambda data, cls: _preserve_cls_structure(data, cls),
 )
 
 

@@ -209,7 +209,7 @@ def build(
     if cache_from is not None:
         if isinstance(cache_from, str):
             cmds.extend(["--cache-from", cache_from])
-        elif isinstance(cache_from, list):
+        elif isinstance(cache_from, t.Iterable):
             for arg in cache_from:
                 cmds.extend(["--cache-from", arg])
         else:
@@ -219,7 +219,7 @@ def build(
     if cache_to is not None:
         if isinstance(cache_to, str):
             cmds.extend(["--cache-to", cache_to])
-        elif isinstance(cache_to, list):
+        elif isinstance(cache_to, t.Iterable):
             for arg in cache_to:
                 cmds.extend(["--cache-to", arg])
         else:

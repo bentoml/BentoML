@@ -219,7 +219,7 @@ def build(
     if cache_to is not None:
         if isinstance(cache_to, str):
             cmds.extend(["--cache-to", cache_to])
-        elif isinstance(cache_to, list) or isinstance(cache_to, tuple):
+        elif isinstance(cache_to, t.Iterable):
             for arg in cache_to:
                 cmds.extend(["--cache-to", arg])
         else:

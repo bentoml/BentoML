@@ -22,13 +22,13 @@ if TYPE_CHECKING:
     )
 
 
-IOType = t.TypeVar("IOType")
+IOPyObj = t.TypeVar("IOPyObj")
 
 
 _T = t.TypeVar("_T")
 
 
-class IODescriptor(ABC, t.Generic[IOType]):
+class IODescriptor(ABC, t.Generic[IOPyObj]):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
@@ -67,12 +67,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
         ...
 
     @abstractmethod
-    async def from_http_request(self, request: Request) -> IOType:
+    async def from_http_request(self, request: Request) -> IOPyObj:
         ...
 
     @abstractmethod
     async def to_http_response(
-        self, obj: IOType, ctx: Context | None = None
+        self, obj: IOPyObj, ctx: Context | None = None
     ) -> Response:
         ...
 

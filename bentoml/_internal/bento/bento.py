@@ -66,7 +66,7 @@ def get_default_bento_readme(svc: "Service"):
             doc += f"* Output: {api.output.__class__.__name__}\n\n"
 
     doc += """
-## Customize This Message
+## Customization
 
 This is the default generated `bentoml.Service` doc. You may customize it in your Bento
 build file, e.g.:
@@ -229,7 +229,7 @@ class Bento(StoreItem):
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
         with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
-            yaml.dump(svc.openapi_doc(), f)
+            yaml.dump(svc.openapi, f)
 
         res = Bento(
             tag,

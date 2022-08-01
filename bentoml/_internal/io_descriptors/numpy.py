@@ -15,6 +15,7 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
+from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
     import numpy as np
@@ -168,11 +169,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
+        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
+        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
 
     def _verify_ndarray(
         self,

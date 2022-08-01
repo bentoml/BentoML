@@ -14,6 +14,7 @@ from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
+from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -169,11 +170,11 @@ class JSON(IODescriptor[JSONType]):
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
+        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
+        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_str = await request.body()

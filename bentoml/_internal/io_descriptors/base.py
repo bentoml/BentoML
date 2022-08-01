@@ -14,14 +14,21 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
 
+    InputType = (
+        UnionType
+        | t.Type[t.Any]
+        | LazyType[t.Any]
+        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
+    )
 
-IOPyObj = t.TypeVar("IOPyObj")
+
+IOType = t.TypeVar("IOType")
 
 
 _T = t.TypeVar("_T")
 
 
-class IODescriptor(ABC, t.Generic[IOPyObj]):
+class IODescriptor(ABC, t.Generic[IOType]):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
@@ -44,14 +51,7 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         return self._init_str
 
     @abstractmethod
-    def input_type(
-        self,
-    ) -> t.Union[
-        "UnionType",
-        t.Type[t.Any],
-        "LazyType[t.Any]",
-        t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]],
-    ]:
+    def input_type(self) -> InputType:
         ...
 
     @abstractmethod
@@ -67,12 +67,12 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         ...
 
     @abstractmethod
-    async def from_http_request(self, request: Request) -> IOPyObj:
+    async def from_http_request(self, request: Request) -> IOType:
         ...
 
     @abstractmethod
     async def to_http_response(
-        self, obj: IOPyObj, ctx: Context | None = None
+        self, obj: IOType, ctx: Context | None = None
     ) -> Response:
         ...
 

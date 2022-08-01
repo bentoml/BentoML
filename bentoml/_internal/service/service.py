@@ -18,6 +18,7 @@ from ..io_descriptors import IODescriptor
 if TYPE_CHECKING:
     from .. import external_typing as ext
     from ..bento import Bento
+    from .openapi.specification import OpenAPISpecification
 
     WSGI_APP = t.Callable[
         [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
@@ -191,10 +192,11 @@ class Service:
 
         return get_default_bento_readme(self)
 
-    def openapi_doc(self):
-        from .openapi import generate_openapi_doc
+    @property
+    def openapi(self) -> OpenAPISpecification:
+        from .openapi import generate_spec
 
-        return generate_openapi_doc(self)
+        return generate_spec(self)
 
     def on_asgi_app_startup(self) -> None:
         pass

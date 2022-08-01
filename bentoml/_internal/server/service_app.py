@@ -106,6 +106,7 @@ class ServiceAppFactory(BaseAppFactory):
         """
         from starlette.responses import Response
 
+        # TODO: add readme description.
         return Response(
             content=DEFAULT_INDEX_HTML.format(readme=self.bento_service.doc),
             status_code=200,
@@ -115,7 +116,7 @@ class ServiceAppFactory(BaseAppFactory):
     async def docs_view_func(self, _: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        docs = self.bento_service.openapi_doc()
+        docs = self.bento_service.openapi.to_dict()
         return JSONResponse(docs)
 
     @property

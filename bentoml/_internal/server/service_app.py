@@ -116,13 +116,7 @@ class ServiceAppFactory(BaseAppFactory):
     async def docs_view_func(self, _: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        docs = self.bento_service.openapi_spec.asdict()
-
-        from bentoml._internal.utils import rich_console as console
-
-        console.log(docs)
-
-        return JSONResponse(docs)
+        return JSONResponse(self.bento_service.openapi_spec.asdict())
 
     @property
     def routes(self) -> list[BaseRoute]:

@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import typing as t
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
-from .utils import handle_parameters
-from .utils import generate_responses
-from .utils import generate_service_components
+from deepmerge.merger import Merger
+
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import InternalServerError
+
+from .utils import REF_PREFIX
+from .utils import exception_schema
+from .utils import exception_components_schema
 from ...bento.bento import get_default_bento_readme
 from .specification import Tag
 from .specification import Info
@@ -13,7 +21,10 @@ from .specification import Apache2
 from .specification import Contact
 from .specification import PathItem
 from .specification import Response
+from .specification import MediaType
 from .specification import Operation
+from .specification import Reference
+from .specification import Components
 from .specification import OpenAPISpecification
 
 if TYPE_CHECKING:
@@ -34,9 +45,32 @@ __all__ = ["generate_spec"]
 INFRA_TAG = Tag(name="infra", description="Infrastructure endpoints.")
 APP_TAG = Tag(name="app", description="Inference endpoints.")
 
+merger = Merger(
+    # merge dicts
+    [(dict, "merge")],
+    # override all other types
+    ["override"],
+    # override conflicting types
+    ["override"],
+)
+
 
 def make_api_path(api: InferenceAPI) -> str:
     return api.route if api.route.startswith("/") else f"/{api.route}"
+
+
+@lru_cache(maxsize=1)
+def make_infra_endpoints() -> dict[str, PathItem]:
+    return {
+        endpoint: PathItem(
+            get=Operation(
+                responses={"200": Response(description=SUCCESS_DESCRIPTION)},
+                tags=[INFRA_TAG.name],
+                description=INFRA_DECRIPTION[endpoint],
+            )
+        )
+        for endpoint in INFRA_DECRIPTION
+    }
 
 
 def generate_info(svc: Service) -> Info:
@@ -60,18 +94,17 @@ def generate_info(svc: Service) -> Info:
     )
 
 
-@lru_cache(maxsize=1)
-def make_infra_endpoints() -> dict[str, PathItem]:
-    return {
-        endpoint: PathItem(
-            get=Operation(
-                responses={"200": Response(description=SUCCESS_DESCRIPTION)},
-                tags=[INFRA_TAG.name],
-                description=INFRA_DECRIPTION[endpoint],
-            )
-        )
-        for endpoint in INFRA_DECRIPTION
-    }
+def generate_service_components(svc: Service) -> Components:
+    components: dict[str, t.Any] = {}
+    for api in svc.apis.values():
+        api_components = api.input.openapi_components()
+        merger.merge(api_components, api.output.openapi_components())
+        merger.merge(components, api_components)
+
+    # merge exception at last
+    merger.merge(components, {"schemas": exception_components_schema()})
+
+    return Components(**components)
 
 
 def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
@@ -88,11 +121,30 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
             **{
                 make_api_path(api): PathItem(
                     post=Operation(
-                        responses=generate_responses(api.output),
+                        responses={
+                            HTTPStatus.OK.value: api.output.openapi_responses(),
+                            **{
+                                ex.error_code.value: Response(
+                                    description=filled.description,
+                                    content={
+                                        "application/json": MediaType(
+                                            schema=Reference(
+                                                f"{REF_PREFIX}{filled.title}"
+                                            )
+                                        )
+                                    },
+                                )
+                                for ex in [
+                                    InvalidArgument,
+                                    NotFound,
+                                    InternalServerError,
+                                ]
+                                for filled in exception_schema(ex)
+                            },
+                        },
                         tags=[APP_TAG.name],
                         summary=f"{api}",
                         description=api.doc or "",
-                        parameters=handle_parameters(api),
                         requestBody=api.input.openapi_request_body(),
                         operationId=f"{svc.name}__{api.name}",
                     )

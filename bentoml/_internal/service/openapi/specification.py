@@ -10,7 +10,6 @@ webhooks, securities, etc. are yet to be implemented/exposed to user.
 """
 from __future__ import annotations
 
-import enum
 import typing as t
 import logging
 
@@ -71,46 +70,10 @@ class Link:
 
     operationRef: t.Optional[str] = None
     operationId: t.Optional[str] = None
-    parameters: t.Optional[t.Dict[str, t.Any]] = None
     requestBody: t.Optional[t.Any] = None
     description: t.Optional[str] = None
 
-
-class ParameterInType(enum.Enum):
-    query = "query"
-    header = "header"
-    path = "path"
-    cookie = "cookie"
-
-
-@attr.frozen
-class ParamBase:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = False
-
-    __rename_fields__ = {"in_": "in"}
-
-    name: t.Optional[str]
-    in_: t.Optional[ParameterInType] = None
-    description: t.Optional[str] = None
-    required: t.Optional[bool] = None
-    deprecated: t.Optional[bool] = None
-    style: t.Optional[str] = None
-    explode: t.Optional[bool] = None
-    allowReserved: t.Optional[bool] = None
-    schema: t.Optional[t.Union[Schema, Reference]] = None
-    example: t.Optional[t.Any] = None
-    examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
-    content: t.Optional[t.Dict[str, MediaType]] = None
-
-
-class Parameter(ParamBase):
-    pass
-
-
-class Header(ParamBase):
-    name = None
-    in_ = None
+    # not yet supported: parameters
 
 
 @attr.frozen
@@ -191,10 +154,11 @@ class Encoding:
     __forbid_extra_keys__ = True
 
     contentType: t.Optional[str] = None
-    headers: t.Optional[t.Dict[str, t.Union[Header, Reference]]] = None
     style: t.Optional[str] = None
     explode: t.Optional[bool] = None
     allowReserved: t.Optional[bool] = None
+
+    # not yet supported: headers
 
 
 @attr.frozen
@@ -214,9 +178,10 @@ class Response:
     __forbid_extra_keys__ = True
 
     description: str
-    headers: t.Optional[t.Dict[str, t.Union[Header, Reference]]] = None
     content: t.Optional[t.Dict[str, MediaType]] = None
     links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
+
+    # not yet supported: headers
 
 
 @attr.frozen
@@ -234,16 +199,15 @@ class Operation:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    responses: t.Dict[str, t.Union[Response, Reference]]
+    responses: t.Dict[t.Union[str, int], t.Union[Response, Reference]]
     tags: t.Optional[t.List[str | Tag]] = None
     summary: t.Optional[str] = None
     description: t.Optional[str] = None
     externalDocs: t.Optional[ExternalDocumentation] = None
     operationId: t.Optional[str] = None
-    parameters: t.Optional[t.List[t.Union[Parameter, Reference]]] = None
     requestBody: t.Optional[t.Union[RequestBody, Reference]] = None
 
-    # Not yet supported: callbacks, deprecated, servers, security
+    # Not yet supported: parameters, callbacks, deprecated, servers, security
 
 
 @attr.frozen
@@ -283,14 +247,14 @@ class PathItem:
     head: t.Optional[Operation] = None
     patch: t.Optional[Operation] = None
     trace: t.Optional[Operation] = None
-    parameters: t.Optional[t.List[t.Union[Parameter, Reference]]] = None
-    # not yet supported: servers
+    # not yet supported: servers, parameters
 
 
 @attr.frozen
 class Tag:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
+
     __preserve_cls_structure__ = True
 
     name: str
@@ -307,13 +271,11 @@ class Components:
 
     schemas: t.Dict[str, t.Union[Schema, Reference]]
     responses: t.Optional[t.Dict[str, t.Union[Response, Reference]]] = None
-    parameters: t.Optional[t.Dict[str, t.Union[Parameter, Reference]]] = None
     examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
     requestBodies: t.Optional[t.Dict[str, t.Union[RequestBody, Reference]]] = None
-    headers: t.Optional[t.Dict[str, t.Union[Header, Reference]]] = None
     links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
 
-    # Not yet supported: securitySchemes, callbacks
+    # Not yet supported: securitySchemes, callbacks, parameters, headers
 
     def asdict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)

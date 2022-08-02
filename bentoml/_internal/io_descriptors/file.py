@@ -16,9 +16,7 @@ from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
-from ..service.openapi.specification import Parameter
 from ..service.openapi.specification import Reference
-from ..service.openapi.specification import Components
 from ..service.openapi.specification import RequestBody
 
 logger = logging.getLogger(__name__)
@@ -103,13 +101,10 @@ class File(IODescriptor[FileType]):
     def input_type(self) -> t.Type[t.Any]:
         return FileLike[bytes]
 
-    def _openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema | Reference:
         pass
 
-    def _openapi_parameter(self) -> Parameter | Reference:
-        pass
-
-    def openapi_components(self) -> Components:
+    def openapi_components(self) -> dict[str, t.Any]:
         pass
 
     def openapi_request_body(self) -> RequestBody:

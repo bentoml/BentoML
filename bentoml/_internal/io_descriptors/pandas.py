@@ -21,9 +21,7 @@ from ...exceptions import MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
-from ..service.openapi.specification import Parameter
 from ..service.openapi.specification import Reference
-from ..service.openapi.specification import Components
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
@@ -277,10 +275,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     def openapi_schema(self) -> Schema | Reference:
         pass
 
-    def openapi_parameter(self) -> Parameter | Reference:
-        pass
-
-    def openapi_components(self) -> Components:
+    def openapi_components(self) -> dict[str, t.Any]:
         pass
 
     def openapi_request_body(self) -> RequestBody:
@@ -630,7 +625,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
     def openapi_parameter(self) -> Parameter | Reference:
         pass
 
-    def openapi_components(self) -> Components:
+    def openapi_components(self) -> dict[str, t.Any]:
         pass
 
     def openapi_request_body(self) -> RequestBody:

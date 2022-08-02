@@ -35,8 +35,8 @@ __all__ = [
     "LazyType",
     "is_compatible_type",
     "FileLike",
-    "evaluate_forwardref",
 ]
+
 logger = logging.getLogger(__name__)
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
@@ -75,24 +75,6 @@ else:
     MetadataDict = dict
 
 JSONSerializable = t.NewType("JSONSerializable", object)
-
-
-# verbatim from pydantic/typing.py
-if sys.version_info < (3, 9):
-
-    # for python < 3.9, _evaluate does not include recursive_guard
-    def evaluate_forwardref(
-        typ: t.ForwardRef, globalns: dict[str, t.Any], localns: dict[str, t.Any]
-    ) -> t.Any:
-        return typ._evaluate(globalns, localns)
-
-else:
-
-    def evaluate_forwardref(
-        typ: t.ForwardRef, globalns: dict[str, t.Any], localns: dict[str, t.Any]
-    ) -> t.Any:
-        # reason behind casting is that there are no types for _evaluate 🙂
-        return t.cast(t.Any, typ)._evaluate(globalns, localns, set())
 
 
 T = t.TypeVar("T")

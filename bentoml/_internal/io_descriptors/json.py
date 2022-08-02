@@ -14,35 +14,28 @@ from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
+from ..service.openapi import REF_PREFIX
+from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Parameter
 from ..service.openapi.specification import Reference
-from ..service.openapi.specification import Components
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
 
     import pydantic
+    import pydantic.schema as schema
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 
-    _SerializableObj: t.TypeAlias = t.Union[
-        "ext.NpNDArray",
-        "ext.PdDataFrame",
-        t.Type["pydantic.BaseModel"],
-        t.Any,
-    ]
+    _Serializable = ext.NpNDArray | ext.PdDataFrame | t.Type[pydantic.BaseModel]
 else:
-    pydantic = LazyLoader(
-        "pydantic",
-        globals(),
-        "pydantic",
-        exc_msg="`pydantic` must be installed to use `pydantic_model`, install with `pip install pydantic`",
-    )
+    _exc_msg = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install pydantic'."
+    pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=_exc_msg)
+    schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=_exc_msg)
 
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
@@ -53,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultJsonEncoder(json.JSONEncoder):
-    def default(self, o: _SerializableObj) -> t.Any:
+    def default(self, o: _Serializable) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(o):
@@ -175,45 +168,36 @@ class JSON(IODescriptor[JSONType]):
         if not self._pydantic_model:
             return Schema(type="object")
 
-        from ..service.openapi.utils import generate_pydantic_component_schema
-
-        print(generate_pydantic_component_schema(self._pydantic_model))
-
-    def openapi_parameter(self) -> Parameter | Reference:
-        pass
-
-    def openapi_components(self) -> Components:
-        from ..service.openapi.utils import generate_pydantic_component_schema
-
-        return Components(
-            schemas=generate_pydantic_component_schema(self._pydantic_model)
+        # returns schemas from pydantic_model.
+        return Schema(
+            **schema.model_process_schema(
+                self._pydantic_model,
+                model_name_map=schema.get_model_name_map(
+                    schema.get_flat_models_from_model(self._pydantic_model)
+                ),
+                ref_prefix=REF_PREFIX,
+            )[0]
         )
+
+    def openapi_components(self) -> dict[str, t.Any]:
+        if not self._pydantic_model:
+            return {}
+
+        from ..service.openapi.utils import pydantic_components_schema
+
+        return {"schemas": pydantic_components_schema(self._pydantic_model)}
 
     def openapi_request_body(self) -> RequestBody:
         return RequestBody(
-            content={self._mime_type: MediaType(schema=self.openapi_schema())}
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+            required=True,
         )
 
     def openapi_responses(self) -> OpenAPIResponse:
-        pass
-
-    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        if self._pydantic_model is None:
-            return {"type": "object"}
-
-        from ..service.openapi.utils import generate_pydantic_component_schema
-
-        print(generate_pydantic_component_schema(self._pydantic_model))
-
-        return self._pydantic_model.schema()
-
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
-
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
+        return OpenAPIResponse(
+            description=SUCCESS_DESCRIPTION,
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+        )
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_str = await request.body()

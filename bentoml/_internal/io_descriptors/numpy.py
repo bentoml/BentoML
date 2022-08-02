@@ -18,9 +18,7 @@ from ...exceptions import InternalServerError
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Parameter
 from ..service.openapi.specification import Reference
-from ..service.openapi.specification import Components
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
@@ -173,10 +171,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     def openapi_schema(self) -> Schema | Reference:
         return Schema(type="array", items=self._items_schema())
 
-    def openapi_parameter(self) -> Parameter | Reference:
-        pass
-
-    def openapi_components(self) -> Components:
+    def openapi_components(self) -> dict[str, t.Any]:
         pass
 
     def openapi_request_body(self) -> RequestBody:

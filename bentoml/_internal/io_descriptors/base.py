@@ -16,9 +16,7 @@ if TYPE_CHECKING:
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Response as OpenAPIResponse
-    from ..service.openapi.specification import Parameter
     from ..service.openapi.specification import Reference
-    from ..service.openapi.specification import Components
     from ..service.openapi.specification import RequestBody
 
     InputType = (
@@ -75,11 +73,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
         raise NotImplementedError
 
     @abstractmethod
-    def openapi_parameter(self) -> Parameter | Reference:
-        raise NotImplementedError
-
-    @abstractmethod
-    def openapi_components(self) -> Components:
+    def openapi_components(self) -> dict[str, t.Any]:
         raise NotImplementedError
 
     @abstractmethod

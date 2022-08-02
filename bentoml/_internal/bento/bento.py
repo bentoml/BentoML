@@ -77,16 +77,7 @@ build file, e.g.:
 ```yaml
 ...
 description: "file: ./readme.md"
-labels:
-  foo: bar
-  team: abc
-docker:
-  distro: debian
-  gpu: True
-python:
-  packages:
-    - tensorflow
-    - numpy
+...
 ```
 """
     # TODO: add links to documentation that may help with API client development

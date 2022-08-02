@@ -45,7 +45,7 @@ jobs:
               - requirements/docs-requirements.txt
               - "docs/**"
 
-  codestyle-check:
+  codestyle_check:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -96,7 +96,7 @@ jobs:
       - name: Type check
         run: make ci-pyright
 
-  documentation-spelling-check:
+  documentation_spelling_check:
     defaults:
       run:
         shell: bash
@@ -141,7 +141,7 @@ jobs:
         run: make spellcheck-docs
         shell: bash
 
-  unit-tests:
+  unit_tests:
     needs:
       - diff
 
@@ -205,7 +205,7 @@ jobs:
           files: ./unit.xml
           verbose: true
 
-  bento-server-e2e-tests:
+  bento_server_e2e_tests:
     needs:
       - diff
 

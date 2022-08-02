@@ -15,7 +15,6 @@ prune hooks
 prune docs
 prune examples
 prune .git*
-prune */OWNERS
 prune */__pycache__
 prune */.DS_Store
 prune */.ipynb_checkpoints

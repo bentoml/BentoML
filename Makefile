@@ -19,7 +19,7 @@ clean: ## Clean all generated files
 	@cd $(GIT_ROOT)/docs && make clean
 	@cd $(GIT_ROOT) || exit 1
 	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
-hooks: ## Install pre-defined hooks
+hooks: __check_defined_FORCE ## Install pre-defined hooks
 	@./scripts/install_hooks.sh
 
 
@@ -34,7 +34,7 @@ ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 ci-lint: ci-pylint ## Running lint check in CI: pylint
 
 
-tests-%:
+tests-%: check-defined-USE_GPU check-defined-USE_VERBOSE
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), -$(t)))
@@ -78,3 +78,15 @@ install-spellchecker-deps: ## Inform users to install enchant depending on their
 	@echo Make sure to install enchant from your distros package manager
 	@exit 1
 endif
+
+check_defined = $(strip $(foreach 1,$1, $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+        $(error Undefined $1$(if $2, ($2))$(if $(value @), \
+                required by target `$@`)))
+check-defined-% : __check_defined_FORCE
+	$(eval $@_target := $(subst check-defined-, ,$@))
+	@:$(call check_defined, $*, $@_target)
+
+.PHONY : __check_defined_FORCE
+__check_defined_FORCE:

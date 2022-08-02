@@ -686,7 +686,7 @@ Here's a basic Docker options configuration:
 .. note::
 
    BentoML leverage `BuildKit <https://github.com/moby/buildkit>`_, a cache-efficient builder toolkit,
-   to containerize a Bento 🍱.
+   to containerize Bentos 🍱.
 
    BuildKit comes with `Docker 18.09 <https://docs.docker.com/develop/develop-images/build_enhancements/>`_. This means
    if you are using Docker via Docker Desktop, BuildKit will be available by default.

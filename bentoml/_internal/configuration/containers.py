@@ -173,27 +173,22 @@ class BentoMLConfiguration:
                 override_config = yaml.safe_load(f)
             config_merger.merge(self.config, override_config)
 
+            global_runner_cfg = {
+                k: self.config["runners"][k]
+                for k in ("batching", "resources", "logging")
+            }
             for key in self.config["runners"]:
                 if key not in ["batching", "resources", "logging"]:
                     runner_cfg = self.config["runners"][key]
 
                     # key is a runner name
-                    override_resources = False
-                    resource_cfg = None
-                    if "resources" in runner_cfg:
-                        override_resources = True
-                        resource_cfg = runner_cfg["resources"]
-                        if resource_cfg == "system":
-                            resource_cfg = system_resources()
+                    if runner_cfg.get("resources") == "system":
+                        runner_cfg["resources"] = system_resources()
 
                     self.config["runners"][key] = config_merger.merge(
-                        self.config["runners"], runner_cfg
+                        global_runner_cfg, runner_cfg
                     )
-
-                    if override_resources:
-                        # we don't want to merge resource configuration, override
-                        # it with previous resource config if it was set
-                        self.config["runners"][key]["resources"] = resource_cfg
+                    breakpoint()
 
             if validate_schema:
                 try:

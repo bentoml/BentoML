@@ -416,7 +416,8 @@ class _BentoMLContainerClass:
             config.tracing.excluded_urls
         ],
     ):
-        from opentelemetry.util.http import ExcludeList, parse_excluded_urls
+        from opentelemetry.util.http import ExcludeList
+        from opentelemetry.util.http import parse_excluded_urls
 
         if isinstance(excluded_urls, list):
             return ExcludeList(excluded_urls)

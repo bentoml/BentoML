@@ -39,6 +39,19 @@ Here is another example config file for tracing with Jaeger and opentracing:
         address: localhost
         port: 6831
 
+If you would like to exclude some routes from tracing, you can specify them using
+the :code:`excluded_urls` parameter. This parameter can be either a comma-separated 
+string of routes, or a list of strings.
+
+.. code-block:: yaml
+
+    tracing:
+      type: jaeger
+      jaeger:
+        address: localhost
+        port: 6831
+      excluded_urls: readyz,livez,healthz,static_content,docs,metrics
+
 
 When starting a BentoML API model server, provide the path to this config file via the
 CLI argument `--config`:

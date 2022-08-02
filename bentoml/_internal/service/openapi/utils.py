@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
     from bentoml.exceptions import BentoMLException
 
+    from ...io_descriptors import IODescriptor
     from ...service.service import Service
 else:
     _exc_msg = (
@@ -36,11 +37,7 @@ else:
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=_exc_msg)
     schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=_exc_msg)
 
-BadRequestType = t.Union[BadInput, InvalidArgument, StateException]
-ExceptionType = t.Union[BadRequestType, NotFound, InternalServerError]
-
 REF_PREFIX = "#/components/schemas/"
-SUCCESS_DESCRIPTION = "Successful Response"
 
 
 def generate_model_schema(pydantic_model: t.Type[pydantic.BaseModel]):
@@ -59,8 +56,16 @@ def generate_model_schema(pydantic_model: t.Type[pydantic.BaseModel]):
     return {k: definitions[k] for k in sorted(definitions)}
 
 
-def generate_components(svc: Service) -> Components:
-    return Components(schemas={**exception_components_schema()})
+def generate_service_components(svc: Service) -> Components:
+    ex_dict = exception_components_schema()
+    for api in svc.apis.values():
+        pass
+
+    return Components(schemas=ex_dict)
+
+
+BadRequestType = t.Union[BadInput, InvalidArgument, StateException]
+ExceptionType = t.Union[BadRequestType, NotFound, InternalServerError]
 
 
 def exception_schema(ex: t.Type[BentoMLException]) -> t.Iterable[FilledExceptionSchema]:
@@ -87,11 +92,11 @@ def exception_components_schema() -> dict[str, Schema]:
     }
 
 
-def generate_responses(api_response: Response) -> dict[int, Response]:
+def generate_responses(descriptor: IODescriptor[t.Any]) -> dict[int, Response]:
     # This will return a responses following OpenAPI spec.
     # example: {200: {"description": ..., "content": ...}, 404: {"description": ..., "content": ...}, ...}
     return {
-        HTTPStatus.OK.value: api_response,
+        HTTPStatus.OK.value: descriptor.openapi_responses(),
         **{
             ex.error_code.value: Response(
                 description=filled.description,

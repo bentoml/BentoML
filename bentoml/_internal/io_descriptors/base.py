@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing as t
-from abc import ABCMeta
+from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
@@ -28,12 +28,6 @@ if TYPE_CHECKING:
         | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
     )
 
-    class OpenAPI:
-        schema: Schema | Reference
-        parameters: Parameter | Reference
-        requestBody: RequestBody
-        responses: OpenAPIResponse
-
 
 IOType = t.TypeVar("IOType")
 
@@ -47,35 +41,7 @@ def simplify(obj: t.Any) -> str:
     return repr(obj)
 
 
-def to_camel_case(name: str) -> str:
-    comp = name.split("_")
-    return comp[0] + "".join(x.title() for x in comp[1:])
-
-
-class DescriptorMeta(ABCMeta):
-    def __new__(
-        cls: type,
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, t.Any],
-    ) -> None:
-        def openapi_namespace(prefix: str = "openapi") -> tuple[str]:
-            return tuple(
-                x[len(prefix) + 2 :] for x in dir(cls) if x.startswith(f"_{prefix}_")
-            )
-
-        openapi_attrs = {
-            to_camel_case(k): property(
-                fget=getattr(cls, f"_openapi_{k}"), doc=f"OpenAPI {k} object."
-            )
-            for k in openapi_namespace()
-        }
-        setattr(cls, "openapi", type("OpenAPI", (), openapi_attrs))
-
-        return super().__new__(cls, name, bases, namespace)
-
-
-class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta):
+class IODescriptor(ABC, t.Generic[IOType]):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
@@ -87,7 +53,6 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta):
     _init_str: str = ""
 
     _mime_type: str
-    openapi: OpenAPI
 
     def __new__(cls: t.Type[Self], *args: t.Any, **kwargs: t.Any) -> Self:
         self = super().__new__(cls)
@@ -106,23 +71,23 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta):
         ...
 
     @abstractmethod
-    def _openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema | Reference:
         raise NotImplementedError
 
     @abstractmethod
-    def _openapi_parameters(self) -> Parameter | Reference:
+    def openapi_parameter(self) -> Parameter | Reference:
         raise NotImplementedError
 
     @abstractmethod
-    def _openapi_components(self) -> Components:
+    def openapi_components(self) -> Components:
         raise NotImplementedError
 
     @abstractmethod
-    def _openapi_request_body(self) -> RequestBody:
+    def openapi_request_body(self) -> RequestBody:
         raise NotImplementedError
 
     @abstractmethod
-    def _openapi_responses(self) -> OpenAPIResponse:
+    def openapi_responses(self) -> OpenAPIResponse:
         raise NotImplementedError
 
     @abstractmethod
@@ -134,13 +99,3 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta):
         self, obj: IOType, ctx: Context | None = None
     ) -> Response:
         ...
-
-    # TODO: gRPC support
-    # @abstractmethod
-    # def generate_protobuf(self): ...
-
-    # @abstractmethod
-    # async def from_grpc_request(self, request: GRPCRequest) -> IOType: ...
-
-    # @abstractmethod
-    # async def to_grpc_response(self, obj: IOType) -> GRPCResponse: ...

@@ -6,8 +6,7 @@ from functools import lru_cache
 
 from .utils import handle_parameters
 from .utils import generate_responses
-from .utils import generate_components
-from .utils import SUCCESS_DESCRIPTION
+from .utils import generate_service_components
 from ...utils import bentoml_cattr
 from .specification import Tag
 from .specification import Info
@@ -21,6 +20,8 @@ from .specification import OpenAPISpecification
 if TYPE_CHECKING:
     from .. import Service
     from ..inference_api import InferenceAPI
+
+SUCCESS_DESCRIPTION = "Successful Response"
 
 INFRA_DECRIPTION = {
     "/healthz": "Health check endpoint. Expecting an empty response with status code <code>200</code> when the service is in health state. The <code>/healthz</code> endpoint is <b>deprecated</b>. (since Kubernetes v1.16)",
@@ -95,7 +96,7 @@ def generate_spec(
     return OpenAPISpecification(
         openapi=openapi_version,
         info=generate_info(svc),
-        components=generate_components(svc),
+        components=generate_service_components(svc),
         tags=generate_tags(additional_tags=additional_tags),
         paths={
             # setup infra endpoints
@@ -104,12 +105,12 @@ def generate_spec(
             **{
                 make_api_path(api): PathItem(
                     post=Operation(
-                        responses=generate_responses(api.output.openapi.responses),
+                        responses=generate_responses(api.output),
                         tags=[APP_TAG.name],
                         summary=f"{api}",
                         description=api.doc or "",
                         parameters=handle_parameters(api),
-                        requestBody=api.input.openapi.requestBody,
+                        requestBody=api.input.openapi_request_body(),
                         operationId=f"{svc.name}__{api.name}",
                     )
                 )

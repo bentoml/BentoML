@@ -193,7 +193,7 @@ class Service:
         return get_default_bento_readme(self)
 
     @property
-    def openapi(self) -> OpenAPISpecification:
+    def openapi_spec(self) -> OpenAPISpecification:
         from .openapi import generate_spec
 
         return generate_spec(self)

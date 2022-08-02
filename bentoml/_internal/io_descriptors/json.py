@@ -52,7 +52,7 @@ MIME_TYPE_JSON = "application/json"
 logger = logging.getLogger(__name__)
 
 
-class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
+class DefaultJsonEncoder(json.JSONEncoder):
     def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
@@ -171,19 +171,26 @@ class JSON(IODescriptor[JSONType]):
     def input_type(self) -> UnionType:
         return JSONType
 
-    def _openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema | Reference:
+        if not self._pydantic_model:
+            return Schema(type="object")
+        from ..service.openapi.utils import generate_model_schema
+
+        generated = generate_model_schema(self._pydantic_model)
+        return
+
+    def openapi_parameter(self) -> Parameter | Reference:
         pass
 
-    def _openapi_parameters(self) -> Parameter | Reference:
+    def openapi_components(self) -> Components:
         pass
 
-    def _openapi_components(self) -> Components:
-        pass
+    def openapi_request_body(self) -> RequestBody:
+        return RequestBody(
+            content={self._mime_type: MediaType(schema=self.openapi_schema())}
+        )
 
-    def _openapi_request_body(self) -> RequestBody:
-        pass
-
-    def _openapi_responses(self) -> OpenAPIResponse:
+    def openapi_responses(self) -> OpenAPIResponse:
         pass
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
@@ -192,7 +199,7 @@ class JSON(IODescriptor[JSONType]):
 
         from ..service.openapi.utils import generate_model_schema
 
-        # print(generate_model_schema(self._pydantic_model))
+        print(generate_model_schema(self._pydantic_model))
 
         return self._pydantic_model.schema()
 

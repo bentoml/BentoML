@@ -116,7 +116,8 @@ class ServiceAppFactory(BaseAppFactory):
     async def docs_view_func(self, _: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        docs = self.bento_service.openapi.to_dict()
+        docs = self.bento_service.openapi_spec.to_dict()
+        print(docs)
         return JSONResponse(docs)
 
     @property

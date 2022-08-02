@@ -106,16 +106,16 @@ class File(IODescriptor[FileType]):
     def _openapi_schema(self) -> Schema | Reference:
         pass
 
-    def _openapi_parameters(self) -> Parameter | Reference:
+    def _openapi_parameter(self) -> Parameter | Reference:
         pass
 
-    def _openapi_components(self) -> Components:
+    def openapi_components(self) -> Components:
         pass
 
-    def _openapi_request_body(self) -> RequestBody:
+    def openapi_request_body(self) -> RequestBody:
         pass
 
-    def _openapi_responses(self) -> OpenAPIResponse:
+    def openapi_responses(self) -> OpenAPIResponse:
         pass
 
     async def to_http_response(

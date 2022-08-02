@@ -20,8 +20,6 @@ import cattr.errors
 from cattr.gen import override
 from cattr.gen import make_dict_unstructure_fn
 
-from bentoml.exceptions import InvalidArgument
-
 from ...utils import bentoml_cattr
 
 logger = logging.getLogger(__name__)

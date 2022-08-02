@@ -229,7 +229,7 @@ class Bento(StoreItem):
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
         with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
-            yaml.dump(svc.openapi, f)
+            yaml.dump(svc.openapi_spec, f)
 
         res = Bento(
             tag,

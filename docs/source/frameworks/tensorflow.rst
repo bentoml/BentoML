@@ -225,7 +225,7 @@ Create a BentoML service with the previously saved `my_tf_model` pipeline using 
 Adaptive Batching
 -----------------
 
-Most TensorFlow models can accept batched data as input. If batched interence is supported, it is recommended to enable batching to take advantage of 
+Most TensorFlow models can accept batched data as input. If batch inference is supported, it is recommended to enable batching to take advantage of 
 the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :obj:`~signatures` 
 argument with the method name and providing :obj:`~batchable` and :obj:`~batch_dim` configurations when saving the model to the model store.
 

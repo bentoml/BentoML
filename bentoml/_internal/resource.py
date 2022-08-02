@@ -214,15 +214,15 @@ def query_os_cpu_count() -> int:
 
 class NvidiaGpuResource(Resource[int], resource_id="nvidia.com/gpu"):
     @classmethod
-    def from_spec(cls, spec: t.Any) -> int:
+    def from_spec(cls, spec: t.Any) -> t.Iterable[int]:
         if not isinstance(spec, (int, str)):
             raise TypeError("NVidia GPU resource limit must be int or str")
 
         if isinstance(spec, int):
-            return spec
+            return range(spec)
 
         try:
-            return int(spec)
+            return range(int(spec))
         except ValueError:
             raise BentoMLConfigException(
                 f"Invalid NVidia GPU resource limit '{spec}'. "

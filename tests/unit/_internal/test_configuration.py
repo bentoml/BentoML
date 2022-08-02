@@ -12,11 +12,11 @@ runners:
     test_runner_1:
         resources: system
     test_runner_2:
-        resources: 
-            cpu: 2 
+        resources:
+            cpu: 2
     test_runner_batching:
         batching:
-            enabled: True 
+            enabled: True
         logging:
             access:
                 enabled: True

@@ -42,7 +42,7 @@ generated when the model is saved. You can see all model revisions from CLI via 
 commands:
 
 ```bash
-bentoml get iris_classifier:latest
+bentoml models get iris_clf:latest
 
 bentoml models list
 

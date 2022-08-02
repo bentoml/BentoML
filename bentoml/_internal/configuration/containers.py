@@ -188,7 +188,6 @@ class BentoMLConfiguration:
                     self.config["runners"][key] = config_merger.merge(
                         global_runner_cfg, runner_cfg
                     )
-                    breakpoint()
 
             if validate_schema:
                 try:

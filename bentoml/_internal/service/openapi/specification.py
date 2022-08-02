@@ -26,132 +26,6 @@ logger = logging.getLogger(__name__)
 
 _T = t.TypeVar("_T")
 
-# All classes contains the following special fields:
-# - __omit_if_default__: If True, cattrs will omit all fields that use default values. This is useful for most POS
-#                        as the default value for most fields are set to None.
-# - __forbid_extra_keys__: If True, cattrs will raise an error if given data/dictionary contains additional keys that is not an attribute of a given POS.
-# - __rename_fields__: a mapping of existing fields and the correct name specified under OpenAPI specification.
-#                      To avoid naming collision with Python builtin types as well as reserved words, we will postfix
-#                      the field name with an underscore. __rename_fields__'s responsibility is to map the correct name per OpenAPI specification.
-# - __preserve_cls_structure__: If True, cattrs will allow to return the OpenAPI object directly.
-
-
-class SecuritySchemeType(enum.Enum):
-    apiKey = "apiKey"
-    http = "http"
-    oauth2 = "oauth2"
-    openIdConnect = "openIdConnect"
-
-
-class APIKeyIn(enum.Enum):
-    query = "query"
-    header = "header"
-    cookie = "cookie"
-
-
-@attr.frozen
-class APIKey:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    __rename_fields__ = {"in_": "in"}
-
-    name: str
-    in_: t.Optional[APIKeyIn]
-    description: t.Optional[str] = None
-    type: t.Literal[SecuritySchemeType.apiKey] = SecuritySchemeType.apiKey
-
-
-@attr.frozen
-class HTTPBase:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    scheme: str
-    description: t.Optional[str] = None
-    type: t.Literal[SecuritySchemeType.http] = SecuritySchemeType.http
-
-
-@attr.frozen
-class HTTPBearer(HTTPBase):
-    scheme: str = "bearer"
-    bearerFormat: t.Optional[str] = None
-
-
-@attr.frozen
-class OAuthFlowImplicit:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    authorizationUrl: str
-    refreshUrl: t.Optional[str] = None
-    scopes: t.Dict[str, str] = attr.field(factory=dict)
-
-
-@attr.frozen
-class OAuthFlowPassword:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    tokenUrl: str
-    refreshUrl: t.Optional[str] = None
-    scopes: t.Dict[str, str] = attr.field(factory=dict)
-
-
-@attr.frozen
-class OAuthFlowClientCredentials:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    tokenUrl: str
-    refreshUrl: t.Optional[str] = None
-    scopes: t.Dict[str, str] = attr.field(factory=dict)
-
-
-@attr.frozen
-class OAuthFlowAuthorizationCode:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    authorizationUrl: str
-    tokenUrl: str
-    refreshUrl: t.Optional[str] = None
-    scopes: t.Dict[str, str] = attr.field(factory=dict)
-
-
-@attr.frozen
-class OAuthFlows:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    implicit: t.Optional[OAuthFlowImplicit] = None
-    password: t.Optional[OAuthFlowPassword] = None
-    clientCredentials: t.Optional[OAuthFlowClientCredentials] = None
-    authorizationCode: t.Optional[OAuthFlowAuthorizationCode] = None
-
-
-@attr.frozen
-class OAuth2:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    flows: OAuthFlows
-    description: t.Optional[str] = None
-    type: t.Literal[SecuritySchemeType.oauth2] = SecuritySchemeType.oauth2
-
-
-@attr.frozen
-class OpenIdConnect:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    openIdConnectUrl: str
-    description: t.Optional[str] = None
-    type: t.Literal[SecuritySchemeType.oauth2] = SecuritySchemeType.oauth2
-
-
-SecurityScheme = t.Union[APIKey, HTTPBase, OAuth2, OpenIdConnect, HTTPBearer]
-
 
 @attr.frozen
 class Contact:
@@ -175,7 +49,7 @@ class License:
     url: t.Optional[str] = None
 
 
-Apache2_0 = License(
+Apache2 = License(
     name="Apache 2.0",
     url="https://www.apache.org/licenses/LICENSE-2.0.html",
 )
@@ -191,26 +65,6 @@ class ExternalDocumentation:
 
 
 @attr.frozen
-class ServerVariable:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    default: str
-    enum: t.Optional[t.List[str]] = None
-    description: t.Optional[str] = None
-
-
-@attr.frozen
-class Server:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    url: str
-    description: t.Optional[str] = None
-    variables: t.Optional[t.Dict[str, ServerVariable]] = None
-
-
-@attr.frozen
 class Link:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
@@ -220,7 +74,6 @@ class Link:
     parameters: t.Optional[t.Dict[str, t.Any]] = None
     requestBody: t.Optional[t.Any] = None
     description: t.Optional[str] = None
-    server: t.Optional[Server] = None
 
 
 class ParameterInType(enum.Enum):
@@ -234,6 +87,7 @@ class ParameterInType(enum.Enum):
 class ParamBase:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
+
     __rename_fields__ = {"in_": "in"}
 
     name: t.Optional[str]
@@ -276,26 +130,7 @@ class Discriminator:
 
 
 @attr.frozen
-class XML:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    name: t.Optional[str] = None
-    namespace: t.Optional[str] = None
-    prefix: t.Optional[str] = None
-    attribute: t.Optional[bool] = None
-    wrapped: t.Optional[bool] = None
-
-
-@attr.frozen
 class Schema:
-    """
-    The Schema Object allows the definition of input and output data types.
-    These types can be objects, but also primitives and arrays. This object is an extended subset of http://json-schema.org/.
-
-    ground truth: https://spec.openapis.org/oas/v3.0.2#schema-object
-    """
-
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
 
@@ -333,10 +168,10 @@ class Schema:
     discriminator: t.Optional[Discriminator] = None
     readOnly: t.Optional[bool] = None
     writeOnly: t.Optional[bool] = None
-    xml: t.Optional[XML] = None
     externalDocs: t.Optional[ExternalDocumentation] = None
     example: t.Optional[t.Any] = None
     deprecated: t.Optional[bool] = None
+    # not yet supported: xml
 
 
 @attr.frozen
@@ -380,7 +215,6 @@ class Response:
 
     description: str
     headers: t.Optional[t.Dict[str, t.Union[Header, Reference]]] = None
-    # TODO: validate str to correct media type
     content: t.Optional[t.Dict[str, MediaType]] = None
     links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
 
@@ -395,7 +229,6 @@ class RequestBody:
     required: t.Optional[bool] = None
 
 
-# represents a "get", "post", "put", "delete", "options", "head", "patch", "trace" operations.
 @attr.frozen
 class Operation:
     __omit_if_default__ = True
@@ -410,13 +243,7 @@ class Operation:
     parameters: t.Optional[t.List[t.Union[Parameter, Reference]]] = None
     requestBody: t.Optional[t.Union[RequestBody, Reference]] = None
 
-    # Note that this is not yet implemented.
-    callbacks: t.Optional[
-        t.Mapping[str, t.Union[t.Dict[str, PathItem], Reference]]
-    ] = None
-    deprecated: t.Optional[bool] = None
-    security: t.Optional[t.Dict[str, t.List[str]]] = None
-    servers: t.Optional[t.List[Server]] = None
+    # Not yet supported: callbacks, deprecated, servers, security
 
 
 @attr.frozen
@@ -424,21 +251,24 @@ class Info:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
+    __preserve_cls_structure__ = True
+
     title: str
     version: str
     summary: t.Optional[str] = None
     description: t.Optional[str] = None
-    termsOfService: t.Optional[str] = None
     contact: t.Optional[Contact] = None
     license: t.Optional[License] = None
 
-    __preserve_cls_structure__ = True
+    # Not yet supported: termsOfService
 
 
 @attr.frozen
 class PathItem:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
+
+    __preserve_cls_structure__ = True
 
     __rename_fields__ = {"ref": "$ref"}
 
@@ -453,22 +283,19 @@ class PathItem:
     head: t.Optional[Operation] = None
     patch: t.Optional[Operation] = None
     trace: t.Optional[Operation] = None
-    servers: t.Optional[t.List[Server]] = None
     parameters: t.Optional[t.List[t.Union[Parameter, Reference]]] = None
-
-    __preserve_cls_structure__ = True
+    # not yet supported: servers
 
 
 @attr.frozen
 class Tag:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
+    __preserve_cls_structure__ = True
 
     name: str
     description: t.Optional[str] = None
     externalDocs: t.Optional[ExternalDocumentation] = None
-
-    __preserve_cls_structure__ = True
 
 
 @attr.frozen
@@ -476,21 +303,20 @@ class Components:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    schemas: t.Dict[str, t.Union[Schema, Reference]]
+    __preserve_cls_structure__ = True
 
-    # The below fields are not yet implemented.
-    # Here for consistency sake.
+    schemas: t.Dict[str, t.Union[Schema, Reference]]
     responses: t.Optional[t.Dict[str, t.Union[Response, Reference]]] = None
     parameters: t.Optional[t.Dict[str, t.Union[Parameter, Reference]]] = None
     examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
     requestBodies: t.Optional[t.Dict[str, t.Union[RequestBody, Reference]]] = None
     headers: t.Optional[t.Dict[str, t.Union[Header, Reference]]] = None
-    securitySchemes: t.Optional[t.Dict[str, t.Union[SecurityScheme, Reference]]] = None
     links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
-    # Using Any for Specification Extensions
-    callbacks: t.Optional[
-        t.Dict[str, t.Union[t.Dict[str, PathItem], Reference, t.Any]]
-    ] = None
+
+    # Not yet supported: securitySchemes, callbacks
+
+    def asdict(self) -> t.Dict[str, t.Any]:
+        return bentoml_cattr.unstructure(self)
 
 
 @attr.frozen
@@ -504,14 +330,9 @@ class OpenAPISpecification:
     tags: t.Optional[t.List[Tag]] = None
     components: t.Optional[Components] = None
 
-    # EXPERIMENTAL/NOT-YET-IMPLEMENTED
-    servers: t.Optional[t.List[Server]] = None
-    security: t.Optional[t.List[t.Dict[str, t.List[str]]]] = None
-    externalDocs: t.Optional[ExternalDocumentation] = None
-    jsonSchemaDialect: t.Optional[str] = None
-    webhooks: t.Any = None
+    # Not yet supported: servers, security, externalDocs, webhooks, jsonSchemaDialect
 
-    def to_dict(self) -> dict[str, t.Any]:
+    def asdict(self) -> dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
 
     @classmethod
@@ -571,7 +392,7 @@ bentoml_cattr.register_structure_hook_func(
 def _OpenAPISpecification_dumper(
     dumper: yaml.Dumper, spec: OpenAPISpecification
 ) -> yaml.Node:
-    return dumper.represent_dict(spec.to_dict())
+    return dumper.represent_dict(spec.asdict())
 
 
 yaml.add_representer(OpenAPISpecification, _OpenAPISpecification_dumper)

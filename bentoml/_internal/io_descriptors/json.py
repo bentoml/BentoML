@@ -174,16 +174,20 @@ class JSON(IODescriptor[JSONType]):
     def openapi_schema(self) -> Schema | Reference:
         if not self._pydantic_model:
             return Schema(type="object")
-        from ..service.openapi.utils import generate_model_schema
 
-        generated = generate_model_schema(self._pydantic_model)
-        return
+        from ..service.openapi.utils import generate_pydantic_component_schema
+
+        print(generate_pydantic_component_schema(self._pydantic_model))
 
     def openapi_parameter(self) -> Parameter | Reference:
         pass
 
     def openapi_components(self) -> Components:
-        pass
+        from ..service.openapi.utils import generate_pydantic_component_schema
+
+        return Components(
+            schemas=generate_pydantic_component_schema(self._pydantic_model)
+        )
 
     def openapi_request_body(self) -> RequestBody:
         return RequestBody(
@@ -197,9 +201,9 @@ class JSON(IODescriptor[JSONType]):
         if self._pydantic_model is None:
             return {"type": "object"}
 
-        from ..service.openapi.utils import generate_model_schema
+        from ..service.openapi.utils import generate_pydantic_component_schema
 
-        print(generate_model_schema(self._pydantic_model))
+        print(generate_pydantic_component_schema(self._pydantic_model))
 
         return self._pydantic_model.schema()
 

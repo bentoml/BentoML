@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from functools import partial
 from functools import lru_cache
 
 from .utils import handle_parameters
 from .utils import generate_responses
 from .utils import generate_service_components
-from ...utils import bentoml_cattr
+from ...bento.bento import get_default_bento_readme
 from .specification import Tag
 from .specification import Info
+from .specification import Apache2
 from .specification import Contact
 from .specification import PathItem
 from .specification import Response
-from .specification import Apache2_0
 from .specification import Operation
 from .specification import OpenAPISpecification
 
@@ -36,24 +35,11 @@ INFRA_TAG = Tag(name="infra", description="Infrastructure endpoints.")
 APP_TAG = Tag(name="app", description="Inference endpoints.")
 
 
-# setup bentoml default tags
-# add a field for users to add additional tags if needed.
-def generate_tags(
-    *, additional_tags: list[dict[str, str] | Tag] | None = None
-) -> list[Tag]:
-    defined_tags = [INFRA_TAG, APP_TAG]
-    if additional_tags:
-        partial_structure = partial(bentoml_cattr.structure, cl=Tag)
-        defined_tags.extend(map(partial_structure, additional_tags))
-
-    return defined_tags
-
-
 def make_api_path(api: InferenceAPI) -> str:
     return api.route if api.route.startswith("/") else f"/{api.route}"
 
 
-def generate_info(svc: Service, *, term_of_service: str | None = None) -> Info:
+def generate_info(svc: Service) -> Info:
     # default version if svc.tag is None
     version = "0.0.0"
     if svc.tag and svc.tag.version:
@@ -64,11 +50,13 @@ def generate_info(svc: Service, *, term_of_service: str | None = None) -> Info:
     # description=svc.doc
     return Info(
         title=svc.name,
-        description="A BentoService built for inference.",
+        summary="A BentoService built for inference.",
+        description=svc.bento.doc
+        if svc.bento
+        else get_default_bento_readme(svc, add_headers=False),
         version=version,
-        termsOfService=term_of_service,
         contact=Contact(name="BentoML Team", email="contact@bentoml.ai"),
-        license=Apache2_0,
+        license=Apache2,
     )
 
 
@@ -86,18 +74,13 @@ def make_infra_endpoints() -> dict[str, PathItem]:
     }
 
 
-def generate_spec(
-    svc: Service,
-    *,
-    openapi_version: str = "3.0.2",
-    additional_tags: list[dict[str, str] | Tag] | None = None,
-):
+def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
     return OpenAPISpecification(
         openapi=openapi_version,
         info=generate_info(svc),
+        tags=[INFRA_TAG, APP_TAG],
         components=generate_service_components(svc),
-        tags=generate_tags(additional_tags=additional_tags),
         paths={
             # setup infra endpoints
             **make_infra_endpoints(),

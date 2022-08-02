@@ -53,9 +53,12 @@ BENTO_README_FILENAME = "README.md"
 DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
 
-def get_default_bento_readme(svc: "Service"):
-    doc = f'# BentoML Service "{svc.name}"\n\n'
-    doc += "This is a Machine Learning Service created with BentoML. \n\n"
+def get_default_bento_readme(svc: Service, *, add_headers: bool = True) -> str:
+    doc = ""
+
+    if add_headers:
+        doc = f'# BentoML Service "{svc.name}"\n\n'
+        doc += "This is a Machine Learning Service created with BentoML. \n\n"
 
     if svc.apis:
         doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
@@ -72,7 +75,7 @@ This is the default generated `bentoml.Service` doc. You may customize it in you
 build file, e.g.:
 
 ```yaml
-service: "image_classifier.py:svc"
+...
 description: "file: ./readme.md"
 labels:
   foo: bar

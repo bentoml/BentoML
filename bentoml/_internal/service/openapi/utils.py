@@ -40,7 +40,7 @@ else:
 REF_PREFIX = "#/components/schemas/"
 
 
-def generate_model_schema(pydantic_model: t.Type[pydantic.BaseModel]):
+def generate_pydantic_component_schema(pydantic_model: t.Type[pydantic.BaseModel]):
     flat_models = schema.get_flat_models_from_model(pydantic_model)
     model_name_map = schema.get_model_name_map(flat_models)
 
@@ -53,22 +53,26 @@ def generate_model_schema(pydantic_model: t.Type[pydantic.BaseModel]):
         definitions.update(m_definitions)
         model_name = model_name_map[model]
         definitions[model_name] = m_schema
-    return {k: definitions[k] for k in sorted(definitions)}
+    return {k: Schema(**definitions[k]) for k in sorted(definitions)}
 
 
 def generate_service_components(svc: Service) -> Components:
-    ex_dict = exception_components_schema()
-    for api in svc.apis.values():
-        pass
+    exceptions = exception_components_schema()
 
-    return Components(schemas=ex_dict)
+    return
 
 
-BadRequestType = t.Union[BadInput, InvalidArgument, StateException]
-ExceptionType = t.Union[BadRequestType, NotFound, InternalServerError]
+@lru_cache(maxsize=1)
+def exception_components_schema() -> dict[str, Schema]:
+    return {
+        schema.title: schema
+        for ex in [InvalidArgument, NotFound, InternalServerError]
+        for schema in exception_schema(ex)
+    }
 
 
 def exception_schema(ex: t.Type[BentoMLException]) -> t.Iterable[FilledExceptionSchema]:
+    # convert BentoML exception to OpenAPI components schema
     error_properties = {
         "msg": Schema(title="Message", type="string"),
         "type": Schema(title="Error Type", type="string"),
@@ -83,13 +87,9 @@ def exception_schema(ex: t.Type[BentoMLException]) -> t.Iterable[FilledException
     )
 
 
-@lru_cache(maxsize=1)
-def exception_components_schema() -> dict[str, Schema]:
-    return {
-        schema.title: schema
-        for ex in [InvalidArgument, NotFound, InternalServerError]
-        for schema in exception_schema(ex)
-    }
+class FilledExceptionSchema(Schema):
+    title: str
+    description: str
 
 
 def generate_responses(descriptor: IODescriptor[t.Any]) -> dict[int, Response]:
@@ -143,8 +143,3 @@ def handle_parameters(api: InferenceAPI) -> list[Parameter | Reference]:
     sig = handle_typed_signatures(api.func)
     for param_name, param in sig.parameters.items():
         print(param_name, param.annotation, param.default)
-
-
-class FilledExceptionSchema(Schema):
-    title: str
-    description: str

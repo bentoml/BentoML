@@ -184,7 +184,7 @@ Saving a Trained Model
 .. note::
 
     :obj:`~bentoml.tensorflow.save_model` has two parameters: ``tf_signature`` and ``signatures``.
-    Use the following arguments to define the model signatures signatures ensure consistent model behaviors in a Python session and from the BentoML model store.
+    Use the following arguments to define the model signatures to ensure consistent model behaviors in a Python session and from the BentoML model store.
     - `tf_signatures` is an alias to `tf.saved_model.save <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_ *signatures* field. This optional signatures controls which methods in a given `obj <https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/trackable/base.py#L281>`_ will be available to programs that consume `SavedModel's <https://www.tensorflow.org/guide/saved_model>`_, for example, serving APIs. Read more about TensorFlow's signatures behavior `from their API documentation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_.
     - ``signatures`` refers to a general :ref:`Model Signatures <concepts/model:Model Signatures>`_ that dictates which methods can be used for inference in the Runner context. This signatures dictionary will be used during the creation process of a Runner instance.
 

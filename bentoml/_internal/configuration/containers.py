@@ -3,6 +3,7 @@ import uuid
 import typing as t
 import logging
 import multiprocessing
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
@@ -186,7 +187,7 @@ class BentoMLConfiguration:
                         runner_cfg["resources"] = system_resources()
 
                     self.config["runners"][key] = config_merger.merge(
-                        global_runner_cfg, runner_cfg
+                        deepcopy(global_runner_cfg), runner_cfg
                     )
 
             if validate_schema:

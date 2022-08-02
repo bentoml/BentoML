@@ -6,6 +6,9 @@ OVERRIDE_RUNNERS = """
 runners:
     batching:
         enabled: False
+        max_batch_size: 10
+    resources:
+        cpu: 4
     logging:
         access:
             enabled: False
@@ -14,6 +17,9 @@ runners:
     test_runner_2:
         resources:
             cpu: 2
+    test_runner_gpu:
+        resources:
+            nvidia.com/gpu: 1
     test_runner_batching:
         batching:
             enabled: True
@@ -26,6 +32,7 @@ runners:
 def test_bentoml_configuration_runner_override():
     with NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
         tmpfile.write(OVERRIDE_RUNNERS)
+        tmpfile.flush()
         bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
         runner_cfg = bentoml_cfg["runners"]
 

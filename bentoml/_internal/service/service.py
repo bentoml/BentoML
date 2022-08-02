@@ -99,7 +99,7 @@ class Service:
     ] = attr.field(init=False, factory=list)
 
     # gRPC interceptors
-    interceptors: list[t.Type[grpc.aio.ServerInterceptor]] = attr.field(
+    interceptors: list[grpc.aio.ServerInterceptor] = attr.field(
         init=False, factory=list
     )
 
@@ -247,7 +247,7 @@ class Service:
         self.middlewares.append((middleware_cls, options))
 
     def add_grpc_interceptor(
-        self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor]
+        self, interceptor_cls: grpc.aio.ServerInterceptor
     ) -> None:
         self.interceptors.append(interceptor_cls)
 

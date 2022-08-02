@@ -20,8 +20,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from ..service import Service
 
-    OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
-
+    OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]    
 
 class GRPCAppFactory:
     """
@@ -132,22 +131,23 @@ class GRPCAppFactory:
             AsyncOpenTelemetryServerInterceptor as AsyncOtelInterceptor,
         )
 
-        interceptors: list[aio.ServerInterceptor] = []
+        interceptors: list[aio.ServerInterceptor] = [
+            GenericHeadersServerInterceptor(),
+            AsyncOtelInterceptor(),
+        ]
 
         if self.enable_metrics:
             from .grpc.interceptors.prometheus import PrometheusServerInterceptor
+            from ..utils import reserve_free_port
 
-            prometheus_interceptor = PrometheusServerInterceptor(
-                bento_service=self.bento_service
-            )
+            prometheus_interceptor = PrometheusServerInterceptor(bento_service=self.bento_service)
             interceptors.append(prometheus_interceptor)  # type: ignore
 
-        interceptors.extend(
-            [
-                GenericHeadersServerInterceptor(),
-                AsyncOtelInterceptor(),
-            ]
-        )
+            with reserve_free_port() as port:
+                logger.info(
+                    f"Prometheus metrics for grpc server can be viewed at http://127.0.0.1:{port}/"
+                )
+                prometheus_interceptor.metrics_client.start_http_server(port)
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
@@ -158,6 +158,6 @@ class GRPCAppFactory:
                 interceptors.append(AccessLogServerInterceptor())
 
         # add users-defined interceptors.
-        interceptors.extend(map(lambda x: x(), self.bento_service.interceptors))
+        interceptors.extend(self.bento_service.interceptors)
 
         return interceptors

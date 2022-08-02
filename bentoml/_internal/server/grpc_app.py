@@ -41,8 +41,12 @@ class GRPCAppFactory:
         _thread_pool_size: int = 10,
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+        enable_metrics: bool = Provide[
+            BentoMLContainer.api_server_config.metrics.enabled
+        ],
     ) -> None:
         self.bento_service = bento_service
+        self.enable_metrics = enable_metrics
         self.server = aio.server(
             ThreadPoolExecutor(_thread_pool_size),
             interceptors=self.interceptors,
@@ -128,11 +132,22 @@ class GRPCAppFactory:
             AsyncOpenTelemetryServerInterceptor as AsyncOtelInterceptor,
         )
 
-        # TODO: prometheus interceptors.
-        interceptors: list[t.Type[aio.ServerInterceptor]] = [
-            GenericHeadersServerInterceptor,
-            AsyncOtelInterceptor,
-        ]
+        interceptors: list[aio.ServerInterceptor] = []
+
+        if self.enable_metrics:
+            from .grpc.interceptors.prometheus import PrometheusServerInterceptor
+
+            prometheus_interceptor = PrometheusServerInterceptor(
+                bento_service=self.bento_service
+            )
+            interceptors.append(prometheus_interceptor)  # type: ignore
+
+        interceptors.extend(
+            [
+                GenericHeadersServerInterceptor(),
+                AsyncOtelInterceptor(),
+            ]
+        )
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
@@ -140,9 +155,9 @@ class GRPCAppFactory:
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:
-                interceptors.append(AccessLogServerInterceptor)
+                interceptors.append(AccessLogServerInterceptor())
 
         # add users-defined interceptors.
-        interceptors.extend(self.bento_service.interceptors)
+        interceptors.extend(map(lambda x: x(), self.bento_service.interceptors))
 
-        return list(map(lambda x: x(), interceptors))
+        return interceptors

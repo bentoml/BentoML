@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     from ..types import AsyncHandlerMethod
     from ..types import HandlerCallDetails
     from ..types import BentoServicerContext
-
     from ....service import Service
     from ...metrics.prometheus import PrometheusClient
 
@@ -35,6 +34,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
     """
     An async interceptor for prometheus metrics
     """
+
     @inject
     def __init__(
         self,
@@ -48,7 +48,9 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
         # ref: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
         self.service_name = self.service_name.replace("-", ":").replace(".", "::")
 
-        self.service_version = bento_service.tag.version if bento_service.tag is not None else ""
+        self.service_version = (
+            bento_service.tag.version if bento_service.tag is not None else ""
+        )
 
         self.metrics_request_duration = metrics_client.Histogram(
             name=self.service_name + "_request_duration_seconds",

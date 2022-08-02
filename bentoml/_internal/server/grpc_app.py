@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from ..service import Service
 
-    OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]    
+    OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
+
 
 class GRPCAppFactory:
     """
@@ -137,10 +138,12 @@ class GRPCAppFactory:
         ]
 
         if self.enable_metrics:
-            from .grpc.interceptors.prometheus import PrometheusServerInterceptor
             from ..utils import reserve_free_port
+            from .grpc.interceptors.prometheus import PrometheusServerInterceptor
 
-            prometheus_interceptor = PrometheusServerInterceptor(bento_service=self.bento_service)
+            prometheus_interceptor = PrometheusServerInterceptor(
+                bento_service=self.bento_service
+            )
             interceptors.append(prometheus_interceptor)  # type: ignore
 
             with reserve_free_port() as port:

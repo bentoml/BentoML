@@ -246,9 +246,7 @@ class Service:
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
-    def add_grpc_interceptor(
-        self, interceptor_cls: grpc.aio.ServerInterceptor
-    ) -> None:
+    def add_grpc_interceptor(self, interceptor_cls: grpc.aio.ServerInterceptor) -> None:
         self.interceptors.append(interceptor_cls)
 
 

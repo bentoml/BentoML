@@ -1,3 +1,5 @@
+* @bentoml/bentoml-reviewers
+
 # User-facing API changes:
 /bentoml/*.py @ssheng @parano @bentoml/bentoml-reviewers
 

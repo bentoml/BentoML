@@ -20,7 +20,7 @@ _RESOURCE_REGISTRY: dict[str, t.Type[Resource[t.Any]]] = {}
 T = t.TypeVar("T")
 
 
-def get_resource(resources: dict[str, t.Any], resource_kind: str) -> t.Any:
+def get_resource(resources: dict[str, t.Any], resource_kind: str, validate: bool = False) -> t.Any:
     if resource_kind not in _RESOURCE_REGISTRY:
         raise BentoMLConfigException(f"Unknown resource kind '{resource_kind}'.")
 
@@ -31,7 +31,8 @@ def get_resource(resources: dict[str, t.Any], resource_kind: str) -> t.Any:
             return resource.from_system()
         else:
             res = resource.from_spec(resources[resource_kind])
-            resource.validate(res)
+            if validate:
+                resource.validate(res)
             return res
     else:
         return None

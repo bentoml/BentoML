@@ -20,7 +20,6 @@ jobs:
       related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
-      codeowners: ${{ steps.filter.outputs.codeowners }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
@@ -45,8 +44,6 @@ jobs:
               - *related
               - requirements/docs-requirements.txt
               - "docs/**"
-            codeowners:
-              - .github/CODEOWNERS
 
   codestyle-check:
     runs-on: ubuntu-latest

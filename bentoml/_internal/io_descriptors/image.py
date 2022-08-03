@@ -20,7 +20,6 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
@@ -157,7 +156,7 @@ class Image(IODescriptor[ImageType]):
     def input_type(self) -> UnionType:
         return ImageType
 
-    def openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema:
         return Schema(type="string", format="binary")
 
     def openapi_components(self) -> dict[str, t.Any] | None:

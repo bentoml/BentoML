@@ -18,7 +18,6 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
 logger = logging.getLogger(__name__)
@@ -105,7 +104,7 @@ class File(IODescriptor[FileType]):
     def input_type(self) -> t.Type[t.Any]:
         return FileLike[bytes]
 
-    def openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema:
         return Schema(type="string", format="binary")
 
     def openapi_components(self) -> dict[str, t.Any] | None:

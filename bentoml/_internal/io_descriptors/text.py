@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
-from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
 MIME_TYPE = "text/plain"
@@ -99,7 +98,7 @@ class Text(IODescriptor[str]):
     def input_type(self) -> t.Type[str]:
         return str
 
-    def openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema:
         return Schema(type="string")
 
     def openapi_components(self) -> dict[str, t.Any] | None:

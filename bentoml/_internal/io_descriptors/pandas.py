@@ -23,11 +23,10 @@ from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
-    import pandas as pd  # type: ignore[import]
+    import pandas as pd
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
@@ -279,7 +278,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     ) -> LazyType[ext.PdDataFrame]:
         return LazyType("pandas", "DataFrame")
 
-    def openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema:
         return _openapi_schema(self._dtype)
 
     def openapi_components(self) -> dict[str, t.Any] | None:
@@ -616,7 +615,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
     ) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
 
-    def openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema:
         return _openapi_schema(self._dtype)
 
     def openapi_components(self) -> dict[str, t.Any] | None:

@@ -200,7 +200,7 @@ class Operation:
     __forbid_extra_keys__ = True
 
     responses: t.Dict[t.Union[str, int], t.Union[Response, Reference]]
-    tags: t.Optional[t.List[str | Tag]] = None
+    tags: t.Optional[t.List[t.Union[str, Tag]]] = None
     summary: t.Optional[str] = None
     description: t.Optional[str] = None
     externalDocs: t.Optional[ExternalDocumentation] = None

@@ -16,7 +16,6 @@ from ..utils.formparser import concat_to_multipart_response
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
@@ -143,7 +142,7 @@ class Multipart(IODescriptor[t.Any]):
         self,
     ) -> dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]:
         res: dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]] = {}
-        for (k, v) in self._inputs.items():
+        for k, v in self._inputs.items():
             inp_type = v.input_type()
             if isinstance(inp_type, dict):
                 raise TypeError(
@@ -153,12 +152,10 @@ class Multipart(IODescriptor[t.Any]):
 
         return res
 
-    def openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema:
         return Schema(
             type="object",
-            properties={
-                io_type: io.openapi_schema() for io_type, io in self._inputs.items()
-            },
+            properties={args: io.openapi_schema() for args, io in self._inputs.items()},
         )
 
     def openapi_components(self) -> dict[str, t.Any] | None:

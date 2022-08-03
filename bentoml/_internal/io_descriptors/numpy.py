@@ -16,10 +16,10 @@ from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
 from ..service.openapi import SUCCESS_DESCRIPTION
+from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
@@ -27,6 +27,8 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
+else:
+    np = LazyLoader("np", globals(), "numpy")
 
 logger = logging.getLogger(__name__)
 
@@ -123,36 +125,36 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
     """
 
-    _input_sample: ext.NpNDArray | None = None
-
     def __init__(
         self,
-        dtype: t.Optional[t.Union[str, "np.dtype[t.Any]"]] = None,
+        dtype: str | ext.NpDTypeLike | None = None,
         enforce_dtype: bool = False,
-        shape: t.Optional[t.Tuple[int, ...]] = None,
+        shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
     ):
-        import numpy as np
-
-        if dtype is not None and not isinstance(dtype, np.dtype):
+        if dtype and not isinstance(dtype, np.dtype):
             # Convert from primitive type or type string, e.g.:
             # np.dtype(float)
             # np.dtype("float64")
             try:
                 dtype = np.dtype(dtype)
             except TypeError as e:
-                raise BentoMLException(f'NumpyNdarray: Invalid dtype "{dtype}": {e}')
+                raise BentoMLException(
+                    f'NumpyNdarray: Invalid dtype "{dtype}": {e}'
+                ) from e
 
         self._dtype = dtype
         self._shape = shape
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
 
-    def _openapi_types(self) -> str:  # pragma: no cover
+        self._sample_input = None
+
+    def _openapi_types(self) -> str:
         # convert numpy dtypes to openapi compatible types.
         var_type = "integer"
-        if self._dtype is not None:
-            name = self._dtype.name
+        if self._dtype:
+            name: str = self._dtype.name
             if name.startswith("float") or name.startswith("complex"):
                 var_type = "number"
         return var_type
@@ -160,7 +162,17 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     def input_type(self) -> LazyType[ext.NpNDArray]:
         return LazyType("numpy", "ndarray")
 
-    def openapi_schema(self) -> Schema | Reference:
+    @property
+    def sample_input(self) -> ext.NpNDArray | None:
+        return self._sample_input
+
+    @sample_input.setter
+    def sample_input(self, value: ext.NpNDArray) -> None:
+        self._sample_input = value
+
+    def openapi_schema(self) -> Schema:
+        # Note that we are yet provide
+        # supports schemas for arrays that is > 2D.
         items = Schema(type=self._openapi_types())
         if self._shape and len(self._shape) > 1:
             items = Schema(type="array", items=Schema(type=self._openapi_types()))
@@ -170,41 +182,36 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
-        example = (
-            self._input_sample.tolist() if self._input_sample is not None else None
-        )
+    def openapi_example(self) -> t.Any:
+        if self.sample_input is not None:
+            if isinstance(self.sample_input, np.generic):
+                raise BadInput("NumpyNdarray: sample_input must be a numpy array.")
+            return self.sample_input.tolist()
+        return
 
+    def openapi_request_body(self) -> RequestBody:
         return RequestBody(
             content={
                 self._mime_type: MediaType(
-                    schema=self.openapi_schema(), example=example
+                    schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
             required=True,
         )
 
     def openapi_responses(self) -> OpenAPIResponse:
-        example = (
-            self._input_sample.tolist() if self._input_sample is not None else None
-        )
-
         return OpenAPIResponse(
             description=SUCCESS_DESCRIPTION,
             content={
                 self._mime_type: MediaType(
-                    schema=self.openapi_schema(), example=example
+                    schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
         )
 
     def _verify_ndarray(
-        self,
-        obj: "ext.NpNDArray",
-        exception_cls: t.Type[Exception] = BadInput,
-    ) -> "ext.NpNDArray":
-        import numpy as np
-
+        self, obj: ext.NpNDArray, exception_cls: t.Type[Exception] = BadInput
+    ) -> ext.NpNDArray:
         if self._dtype is not None and self._dtype != obj.dtype:
             # ‘same_kind’ means only safe casts or casts within a kind, like float64
             # to float32, are allowed.
@@ -240,16 +247,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        import numpy as np
-
         obj = await request.json()
-        res: "ext.NpNDArray"
         try:
-            res = np.array(obj, dtype=self._dtype)  # type: ignore[arg-type]
+            res = np.array(obj, dtype=self._dtype)
         except ValueError:
-            res = np.array(obj)  # type: ignore[arg-type]
-        res = self._verify_ndarray(res, BadInput)
-        return res
+            res = np.array(obj)
+
+        return self._verify_ndarray(res)
 
     async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
         """
@@ -312,12 +316,17 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             @svc.api(input=inp, output=NumpyNdarray())
             def predict() -> np.ndarray:...
         """
+        if isinstance(sample_input, np.generic):
+            raise BentoMLException(
+                "NumpyNdarray.from_sample() expects a numpy.array, not numpy.generic."
+            )
+
         inst = cls(
             dtype=sample_input.dtype,
             shape=sample_input.shape,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
-        inst._input_sample = sample_input
+        inst.sample_input = sample_input
 
         return inst

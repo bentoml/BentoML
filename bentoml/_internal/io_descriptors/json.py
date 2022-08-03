@@ -6,12 +6,14 @@ import logging
 import dataclasses
 from typing import TYPE_CHECKING
 
+import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
+from ..utils import bentoml_cattr
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ..service.openapi import REF_PREFIX
@@ -19,7 +21,6 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 
-    _Serializable = ext.NpNDArray | ext.PdDataFrame | t.Type[pydantic.BaseModel]
+    _Serializable = ext.NpNDArray | ext.PdDataFrame | t.Type[pydantic.BaseModel] | type
 else:
     _exc_msg = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install pydantic'."
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=_exc_msg)
@@ -62,6 +63,8 @@ class DefaultJsonEncoder(json.JSONEncoder):
             if "__root__" in obj_dict:
                 obj_dict = obj_dict.get("__root__")
             return obj_dict
+        if attr.has(o):  # type: ignore (trivial case)
+            return bentoml_cattr.unstructure(o)
 
         return super().default(o)
 
@@ -164,7 +167,7 @@ class JSON(IODescriptor[JSONType]):
     def input_type(self) -> UnionType:
         return JSONType
 
-    def openapi_schema(self) -> Schema | Reference:
+    def openapi_schema(self) -> Schema:
         if not self._pydantic_model:
             return Schema(type="object")
 

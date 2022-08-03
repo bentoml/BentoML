@@ -1,15 +1,12 @@
 # pylint: disable=redefined-outer-name
-# type: ignore[no-untyped-def]
 
 import io
 import json
 
 import numpy as np
 import pytest
-import aiohttp
 
 from bentoml.testing.utils import async_request
-from bentoml.testing.utils import parse_multipart_form
 
 
 @pytest.fixture()

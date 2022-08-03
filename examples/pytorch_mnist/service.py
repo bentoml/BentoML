@@ -1,21 +1,21 @@
+from __future__ import annotations
+
 import typing as t
+from typing import TYPE_CHECKING
 
 import numpy as np
-import PIL.Image
 from PIL.Image import Image as PILImage
 
 import bentoml
 from bentoml.io import Image
 from bentoml.io import NumpyNdarray
 
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
 mnist_runner = bentoml.pytorch.get("pytorch_mnist").to_runner()
 
-svc = bentoml.Service(
-    name="pytorch_mnist_demo",
-    runners=[
-        mnist_runner,
-    ],
-)
+svc = bentoml.Service(name="pytorch_mnist_demo", runners=[mnist_runner])
 
 
 def to_numpy(tensor):
@@ -26,9 +26,7 @@ def to_numpy(tensor):
     input=NumpyNdarray(dtype="float32", enforce_dtype=True),
     output=NumpyNdarray(dtype="int64"),
 )
-async def predict_ndarray(
-    inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
-) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+async def predict_ndarray(inp: NDArray[t.Any]) -> NDArray[t.Any]:
     assert inp.shape == (28, 28)
     # We are using greyscale image and our PyTorch model expect one
     # extra channel dimension. Then we will also add one batch
@@ -39,7 +37,7 @@ async def predict_ndarray(
 
 
 @svc.api(input=Image(), output=NumpyNdarray(dtype="int64"))
-async def predict_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+async def predict_image(f: PILImage) -> NDArray[t.Any]:
     assert isinstance(f, PILImage)
     arr = np.array(f) / 255.0
     assert arr.shape == (28, 28)

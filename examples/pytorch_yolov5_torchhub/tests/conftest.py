@@ -3,10 +3,9 @@
 
 import typing as t
 
-import numpy as np
 import pytest
 
-from bentoml.testing.server import run_api_server
+from bentoml.testing.server import host_bento
 
 
 def pytest_configure(config):  # pylint: disable=unused-argument
@@ -24,7 +23,7 @@ def host() -> t.Generator[str, None, None]:
 
     bentoml.build("service:svc")
 
-    with run_api_server(
+    with host_bento(
         bento="pytorch_mnist_demo:latest",
     ) as host:
         yield host

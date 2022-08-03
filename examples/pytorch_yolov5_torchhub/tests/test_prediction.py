@@ -1,20 +1,13 @@
-# pylint: disable=redefined-outer-name
-# type: ignore[no-untyped-def]
-
-import io
 import json
 
-import numpy as np
 import pytest
-import aiohttp
 
 from bentoml.testing.utils import async_request
-from bentoml.testing.utils import parse_multipart_form
 
 
 @pytest.fixture()
 def img_bytes():
-    img_path = f"bus.jpg"
+    img_path = "bus.jpg"
     with open(img_path, "rb") as f:
         return f.read()
 

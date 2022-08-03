@@ -167,7 +167,8 @@ argument added to the service API function. Both the request and response contex
 accessed through the inference context for getting and setting the headers, cookies, and
 status codes.
 
-.. code:: python
+.. code-block:: python
+   :caption: `service.py`
 
     @svc.api(
         input=NumpyNdarray(),

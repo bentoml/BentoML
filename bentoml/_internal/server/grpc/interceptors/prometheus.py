@@ -91,7 +91,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
 
                 # instrument request duration
                 start = default_timer()
-                self.metrics_request_duration.labels(  # type: ignore
+                self.metrics_request_duration.labels(  # type: ignore (unfinished prometheus types)
                     api_name=api_name,
                     service_version=self.service_version,
                     http_response_code=to_http_status(context.code()),

@@ -63,6 +63,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
             name=f"{self.service_name}_request_in_progress",
             documentation="Total number of GRPC requests in progress now",
             labelnames=["api_name", "service_version"],
+            multiprocess_mode="livesum",
         )
 
     async def intercept_service(

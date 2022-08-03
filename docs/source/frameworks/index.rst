@@ -3,7 +3,7 @@ Framework Guides
 ================
 
 Here is the list of supported ML libraries and formats in BentoML. You can also find example
-projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`_ repository.
+projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
 
 
 .. grid:: 1 2 2 2

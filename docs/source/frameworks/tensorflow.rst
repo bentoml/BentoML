@@ -285,6 +285,6 @@ to
 
 .. note::
 
-   You can find more examples for **TensorFlow** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
+   You can find more examples for **TensorFlow** in our `bentoml/examples https://github.com/bentoml/BentoML/tree/main/examples`_ directory.
 
 .. currentmodule:: bentoml.tensorflow

@@ -22,7 +22,7 @@ There are many ways to contribute to BentoML.
 
 * Contributing code or documentation to the project by submitting a Github pull request.
 
-* Create new example projects and contribute it to [bentoml/gallery](https://github.com/bentoml/gallery).
+* Create new example projects and contribute it to [bentoml/examples](https://github.com/bentoml/BentoML/tree/main/examples)
 
 
 

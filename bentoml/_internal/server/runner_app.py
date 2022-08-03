@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import pickle
 import typing as t
 import asyncio
 import logging
@@ -215,7 +216,8 @@ class RunnerAppFactory(BaseAppFactory):
         async def _run(request: Request) -> Response:
             assert self._is_ready
 
-            params = await multipart_to_payload_params(request)
+            params = pickle.loads(await request.body())
+
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import pickle
 import typing as t
 import asyncio
 import functools
@@ -15,7 +16,6 @@ from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
 from ...runner.utils import Params
 from ...runner.utils import PAYLOAD_META_HEADER
-from ...runner.utils import payload_params_to_multipart
 from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -145,11 +145,10 @@ class RemoteRunnerClient(RunnerHandle):
                     "All batchable arguments must have the same batch size."
                 )
 
-        multipart = payload_params_to_multipart(payload_params)
         path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
         async with self._client.post(
             f"{self._addr}/{path}",
-            data=multipart,
+            data=pickle.dump(payload_params),
             headers={
                 "Bento-Name": component_context.bento_name,
                 "Bento-Version": component_context.bento_version,

@@ -25,9 +25,7 @@ if TYPE_CHECKING:
     from ...metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
-START_TIME_VAR: "contextvars.ContextVar[float]" = contextvars.ContextVar(
-    "START_TIME_VAR"
-)
+START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")
 
 
 class PrometheusServerInterceptor(aio.ServerInterceptor):
@@ -53,17 +51,17 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
         )
 
         self.metrics_request_duration = metrics_client.Histogram(
-            name=self.service_name + "_request_duration_seconds",
-            documentation=self.service_name + " API GRPC request duration in seconds",
+            name=f"{self.service_name}_request_duration_seconds",
+            documentation=f"{self.service_name} API GRPC request duration in seconds",
             labelnames=["api_name", "service_version", "grpc_response_code"],
         )
         self.metrics_request_total = metrics_client.Counter(
-            name=self.service_name + "_request_total",
+            name=f"{self.service_name}_request_total",
             documentation="Total number of GRPC requests",
             labelnames=["api_name", "service_version", "grpc_response_code"],
         )
         self.metrics_request_in_progress = metrics_client.Gauge(
-            name=self.service_name + "_request_in_progress",
+            name=f"{self.service_name}_request_in_progress",
             documentation="Total number of GRPC requests in progress now",
             labelnames=["api_name", "service_version"],
         )

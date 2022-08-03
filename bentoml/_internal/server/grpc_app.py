@@ -161,6 +161,6 @@ class GRPCAppFactory:
                 interceptors.append(AccessLogServerInterceptor())
 
         # add users-defined interceptors.
-        interceptors.extend(self.bento_service.interceptors)
+        interceptors.extend(map(lambda x: x(), self.bento_service.interceptors))
 
         return interceptors

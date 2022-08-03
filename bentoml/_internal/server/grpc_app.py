@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ..service import Service
+    from ..server.metrics.prometheus import PrometheusClient
 
     OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
 
@@ -44,15 +45,13 @@ class GRPCAppFactory:
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
+        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
-        self.server = aio.server(
-            ThreadPoolExecutor(_thread_pool_size),
-            interceptors=self.interceptors,
-            options=self.options,
-            maximum_concurrent_rpcs=maximum_concurrent_rpcs,
-        )
+        self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
+        self._thread_pool_size = _thread_pool_size
+        self._metrics_client = metrics_client
 
     @property
     def name(self) -> str:
@@ -91,7 +90,22 @@ class GRPCAppFactory:
             raise MissingDependencyException(
                 "'grpcio-health-checking' is required for using health checking endpoints. Install with `pip install grpcio-health-checking`."
             )
+        from ..utils import reserve_free_port
         from .grpc.servicer import create_bento_servicer
+
+        if self.enable_metrics:
+            with reserve_free_port() as port:
+                logger.info(
+                    f"Prometheus metrics for grpc server can be viewed at http://127.0.0.1:{port}/"
+                )
+            self._metrics_client.start_http_server(port)
+
+        server = aio.server(
+            ThreadPoolExecutor(self._thread_pool_size),
+            interceptors=self.interceptors,
+            options=self.options,
+            maximum_concurrent_rpcs=self._maximum_concurrent_rpcs,
+        )
 
         # Create a health check servicer. We use the non-blocking implementation
         # to avoid thread starvation.
@@ -99,7 +113,7 @@ class GRPCAppFactory:
         bento_servicer = create_bento_servicer(self.bento_service)
 
         return GRPCServer(
-            server=self.server,
+            server=server,
             on_startup=self.on_startup,
             on_shutdown=self.on_shutdown,
             _health_servicer=health_servicer,
@@ -132,25 +146,20 @@ class GRPCAppFactory:
             AsyncOpenTelemetryServerInterceptor as AsyncOtelInterceptor,
         )
 
-        interceptors: list[aio.ServerInterceptor] = [
-            GenericHeadersServerInterceptor(),
-            AsyncOtelInterceptor(),
+        interceptors: list[t.Type[aio.ServerInterceptor]] = [
+            GenericHeadersServerInterceptor,
+            AsyncOtelInterceptor,
         ]
 
         if self.enable_metrics:
-            from ..utils import reserve_free_port
             from .grpc.interceptors.prometheus import PrometheusServerInterceptor
 
-            prometheus_interceptor = PrometheusServerInterceptor(
-                bento_service=self.bento_service
+            prometheus_interceptor = functools.partial(
+                PrometheusServerInterceptor,
+                bento_service=self.bento_service,
+                metrics_client=self._metrics_client,
             )
-            interceptors.append(prometheus_interceptor)  # type: ignore
-
-            with reserve_free_port() as port:
-                logger.info(
-                    f"Prometheus metrics for grpc server can be viewed at http://127.0.0.1:{port}/"
-                )
-                prometheus_interceptor.metrics_client.start_http_server(port)
+            interceptors.append(prometheus_interceptor)
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
@@ -158,9 +167,9 @@ class GRPCAppFactory:
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:
-                interceptors.append(AccessLogServerInterceptor())
+                interceptors.append(AccessLogServerInterceptor)
 
         # add users-defined interceptors.
-        interceptors.extend(map(lambda x: x(), self.bento_service.interceptors))
+        interceptors.extend(self.bento_service.interceptors)
 
-        return interceptors
+        return list(map(lambda x: x(), interceptors))

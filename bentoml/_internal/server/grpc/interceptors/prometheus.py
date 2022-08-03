@@ -7,12 +7,9 @@ from timeit import default_timer
 from typing import TYPE_CHECKING
 
 from grpc import aio
-from simple_di import inject
-from simple_di import Provide
 
 from ....utils.grpc import to_http_status
 from ....utils.grpc import wrap_rpc_handler
-from ....configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..types import Request
@@ -32,11 +29,10 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
     An async interceptor for prometheus metrics
     """
 
-    @inject
     def __init__(
         self,
         bento_service: Service,
-        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
+        metrics_client: PrometheusClient,
     ):
         self.metrics_client = metrics_client
 
@@ -96,7 +92,9 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                     api_name=api_name,
                     service_version=self.service_version,
                     http_response_code=to_http_status(context.code()),
-                ).observe(max(default_timer() - start, 0))
+                ).observe(
+                    max(default_timer() - start, 0)
+                )
                 start = 0
 
                 # instrument request in progress

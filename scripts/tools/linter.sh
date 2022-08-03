@@ -12,7 +12,7 @@ pylint --rcfile="./pyproject.toml" --fail-under 9.5 bentoml
 
 INFO "(pylint) Linting examples..."
 
-pylint --rcfile="./pyproject.toml" --fail-under 9.0 examples
+pylint --rcfile="./pyproject.toml" --fail-under 9.0 --disable=W0621,E0611 examples
 
 INFO "(pylint) Linting tests..."
 

@@ -11,6 +11,7 @@ from grpc import aio
 from simple_di import inject
 from simple_di import Provide
 
+from ....utils.grpc import to_http_status
 from ....utils.grpc import wrap_rpc_handler
 from ....configuration.containers import BentoMLContainer
 
@@ -53,12 +54,12 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
         self.metrics_request_duration = metrics_client.Histogram(
             name=f"{self.service_name}_request_duration_seconds",
             documentation=f"{self.service_name} API GRPC request duration in seconds",
-            labelnames=["api_name", "service_version", "grpc_response_code"],
+            labelnames=["api_name", "service_version", "http_response_code"],
         )
         self.metrics_request_total = metrics_client.Counter(
             name=f"{self.service_name}_request_total",
             documentation="Total number of GRPC requests",
-            labelnames=["api_name", "service_version", "grpc_response_code"],
+            labelnames=["api_name", "service_version", "http_response_code"],
         )
         self.metrics_request_in_progress = metrics_client.Gauge(
             name=f"{self.service_name}_request_in_progress",
@@ -89,7 +90,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                 self.metrics_request_total.labels(
                     api_name=api_name,
                     service_version=self.service_version,
-                    grpc_response_code=context.code(),
+                    http_response_code=to_http_status(context.code()),
                 ).inc()
 
                 # instrument request duration
@@ -98,7 +99,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                 self.metrics_request_duration.labels(  # type: ignore
                     api_name=api_name,
                     service_version=self.service_version,
-                    grpc_response_code=context.code(),
+                    http_response_code=to_http_status(context.code()),
                 ).observe(total_time)
                 START_TIME_VAR.set(0)
 

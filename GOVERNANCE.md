@@ -34,7 +34,7 @@ As a contributor, you may find yourself doing one or more of the following:
     relevant to you in BentoML's [issue tracker](https://github.com/bentoml/BentoML/issues).
 * Investigate bugs and reviewing other developer's pull requests.
 * Contribute code or documentation to the project by submitting a Github pull request.
-* Create new example projects and contribute it to [bentoml/gallery](https://github.com/bentoml/gallery).
+* Create new example projects and contribute it to [bentoml/examples](https://github.com/bentoml/BentoML/tree/main/examples).
 
 
 Contributors engage with the project through the issue tracker and mailing list. They 

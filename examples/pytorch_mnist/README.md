@@ -6,7 +6,7 @@ In this project, we will train a digit recognition model using PyTorch on the MN
 an ML service for the model, serve the model behind an HTTP endpoint, and containerize the model
 server as a docker image for production deployment.
 
-This project is also available to run from a notebook: https://github.com/bentoml/gallery/blob/main/pytorch_mnist/pytorch_mnist_demo.ipynb
+This project is also available to run from a notebook: https://github.com/bentoml/BentoML/blob/main/examples/pytorch_mnist/pytorch_mnist_demo.ipynb
 
 ### Install Dependencies
 

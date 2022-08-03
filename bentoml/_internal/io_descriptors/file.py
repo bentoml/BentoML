@@ -31,60 +31,72 @@ FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 class File(IODescriptor[FileType]):
     """
-    :code:`File` defines API specification for the inputs/outputs of a Service, where either
+    :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
     specified in your API function signature.
 
-    Sample implementation of a ViT service:
+    A sample ViT service:
 
     .. code-block:: python
+       :caption: `service.py`
 
-        # vit_svc.py
-        import bentoml
-        from bentoml.io import File
+       from __future__ import annotations
 
-        svc = bentoml.Service("vit-object-detection")
+       import io
+       from typing import TYPE_CHECKING
+       from typing import Any
 
-        @svc.api(input=File(), output=File())
-        def predict(input_pdf):
-            return input_pdf
+       import bentoml
+       from bentoml.io import File
+
+       if TYPE_CHECKING:
+           from numpy.typing import NDArray
+
+       runner = bentoml.tensorflow.get('image-classification:latest').to_runner()
+
+       svc = bentoml.Service("vit-pdf-classifier", runners=[runner])
+
+       @svc.api(input=File(), output=NumpyNdarray(dtype="float32"))
+       async def predict(input_pdf: io.BytesIO[Any]) -> NDArray[Any]:
+           return await runner.async_run(input_pdf)
 
     Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
-        % bentoml serve ./vit_svc.py:svc --auto-reload
-
-        (Press CTRL+C to quit)
-        [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "vit-object-detection" defined in "vit_svc.py"
-        [INFO] API Server running on http://0.0.0.0:3000
+        % bentoml serve ./service.py:svc --reload
 
     Users can then send requests to the newly started services with any client:
 
-    .. tabs::
+    .. tab-set::
 
-        .. code-tab:: python
+        .. tab-item:: Bash
 
-            import requests
-            requests.post(
-                "http://0.0.0.0:3000/predict",
-                files = {"upload_file": open('test.pdf', 'rb')},
-                headers = {"content-type": "multipart/form-data"}
-            ).text
+            .. code-block:: bash
 
+               % curl -H "Content-Type: multipart/form-data" \\
+                      -F 'fileobj=@test.pdf;type=application/pdf' \\
+                      http://0.0.0.0:3000/predict
 
-        .. code-tab:: bash
+        .. tab-item:: Python
 
-            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:3000/predict
+           .. code-block:: python
+              :caption: `request.py`
+
+              import requests
+
+              requests.post(
+                  "http://0.0.0.0:3000/predict",
+                  files = {"upload_file": open('test.pdf', 'rb')},
+                  headers = {"content-type": "multipart/form-data"}
+              ).text
 
     Args:
-        mime_type (:code:`str`, `optional`, default to :code:`None`):
-            Return MIME type of the :code:`starlette.response.Response`, only available
-            when used as output descriptor
+        kind: The kind of file-like object to be used. Currently, the only accepted value is ``binaryio``.
+        mime_type: Return MIME type of the :code:`starlette.response.Response`, only available when used as output descriptor
 
     Returns:
-        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that file-like objects.
+        :obj:`File`: IO Descriptor that represents file-like objects.
 
     """
 

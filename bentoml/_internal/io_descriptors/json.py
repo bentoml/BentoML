@@ -71,74 +71,101 @@ class DefaultJsonEncoder(json.JSONEncoder):
 
 class JSON(IODescriptor[JSONType]):
     """
-    :code:`JSON` defines API specification for the inputs/outputs of a Service, where either
+    :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
     as specified in your API function signature.
 
-    Sample implementation of a sklearn service:
+    A sample service implementation:
 
     .. code-block:: python
+       :caption: `service.py`
 
-        import typing
-        import numpy as np
-        import pandas as pd
-        import bentoml
-        from bentoml.io import NumpyNdarray, JSON
-        from pydantic import BaseModel
+       from __future__ import annotations
 
-        iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
+       import typing
+       from typing import TYPE_CHECKING
+       from typing import Any
+       from typing import Optional
 
-        svc = bentoml.Service("iris_classifier_pydantic", runners=[iris_clf_runner])
+       import bentoml
+       from bentoml.io import NumpyNdarray
+       from bentoml.io import JSON
 
-        class IrisFeatures(BaseModel):
-            sepal_len: float
-            sepal_width: float
-            petal_len: float
-            petal_width: float
+       import numpy as np
+       import pandas as pd
+       from pydantic import BaseModel
 
-            # Optional field
-            request_id: typing.Optional[int]
+       iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
 
-            # Use custom Pydantic config for additional validation options
-            class Config:
-                extra = 'forbid'
+       svc = bentoml.Service("iris_classifier_pydantic", runners=[iris_clf_runner])
+
+       class IrisFeatures(BaseModel):
+           sepal_len: float
+           sepal_width: float
+           petal_len: float
+           petal_width: float
+
+           # Optional field
+           request_id: Optional[int]
+
+           # Use custom Pydantic config for additional validation options
+           class Config:
+               extra = 'forbid'
 
 
-        input_spec = JSON(pydantic_model=IrisFeatures)
+       input_spec = JSON(pydantic_model=IrisFeatures)
 
-        @svc.api(input=input_spec, output=NumpyNdarray())
-        def classify(input_data: IrisFeatures) -> np.ndarray:
-            if input_data.request_id is not None:
-                print("Received request ID: ", input_data.request_id)
+       @svc.api(input=input_spec, output=NumpyNdarray())
+       def classify(input_data: IrisFeatures) -> NDArray[Any]:
+           if input_data.request_id is not None:
+               print("Received request ID: ", input_data.request_id)
 
-            input_df = pd.DataFrame([input_data.dict(exclude={"request_id"})])
-            return iris_clf_runner.predict.run(input_df)
-
+           input_df = pd.DataFrame([input_data.dict(exclude={"request_id"})])
+           return iris_clf_runner.run(input_df)
 
     Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
-        % bentoml serve ./service.py:svc
-
-        [INFO] [cli] Starting development BentoServer from "service.py:svc" running on http://127.0.0.1:3000 (Press CTRL+C to quit)
+        % bentoml serve ./service.py:svc --reload
 
     Users can then send requests to the newly started services with any client:
 
-        % curl -X POST -H "content-type: application/json" \
-            --data '{"sepal_len": 6.2, "sepal_width": 3.2, "petal_len": 5.2, "petal_width": 2.2}' \
-            http://127.0.0.1:3000/classify
+    .. tab-set::
 
-        [2]%
+        .. tab-item:: Bash
+
+            .. code-block:: bash
+
+               % curl -X POST -H "content-type: application/json" \\
+                   --data '{"sepal_len": 6.2, "sepal_width": 3.2, "petal_len": 5.2, "petal_width": 2.2}' \\
+                   http://127.0.0.1:3000/classify
+
+               # [2]%
+
+        .. tab-item:: Python
+
+            .. code-block:: python
+               :caption: `request.py`
+
+                import requests
+
+                requests.post(
+                    "http://0.0.0.0:3000/predict",
+                    headers={"content-type": "application/json"},
+                    data='{"sepal_len": 6.2, "sepal_width": 3.2, "petal_len": 5.2, "petal_width": 2.2}'
+                ).text
 
     Args:
-        pydantic_model (:code:`pydantic.BaseModel`, `optional`, default to :code:`None`):
-            Pydantic model schema. When used, inference API callback will receive an instance of the specified pydantic_model class
-        json_encoder (:code:`Type[json.JSONEncoder]`, default to :code:`~bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
-            JSON encoder class.
+        pydantic_model: Pydantic model schema. When used, inference API callback
+                        will receive an instance of the specified ``pydantic_model`` class.
+        json_encoder: JSON encoder class. By default BentoML implements a custom JSON encoder that
+                      provides additional serialization supports for numpy arrays, pandas dataframes,
+                      dataclass-like (`attrs <https://www.attrs.org/en/stable/>`_, dataclass, etc.).
+                      If you wish to use a custom encoder, make sure to support the aforementioned object.
 
     Returns:
-        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that in JSON format.
+        :obj:`JSON`: IO Descriptor that represents JSON format.
     """
 
     _mime_type: str = MIME_TYPE_JSON

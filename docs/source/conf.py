@@ -66,8 +66,11 @@ pygments_dark_style = "monokai"
 myst_enable_extensions = ["colon_fence"]
 
 # Remove the prompt when copying examples
-copybutton_prompt_text = r">>> |\.\.\.|» |$ |% "
+copybutton_prompt_text = r">>> |\.\.\.|» |\% |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
+copybutton_line_continuation_character = "\\"
+copybutton_here_doc_delimiter = "EOT"
+copybutton_selector = "div:not(.no-copybutton) > div.highlight > pre"
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "furo"

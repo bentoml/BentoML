@@ -54,75 +54,85 @@ def _is_matched_shape(
 
 class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     """
-    :code:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
+    :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
     :code:`numpy.ndarray` as specified in your API function signature.
 
-    Sample implementation of a sklearn service:
+    A sample service implementation:
 
     .. code-block:: python
+       :caption: `service.py`
 
-        # sklearn_svc.py
-        import bentoml
-        from bentoml.io import NumpyNdarray
-        import bentoml.sklearn
+       from __future__ import annotations
 
-        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
+       from typing import TYPE_CHECKING, Any
 
-        svc = bentoml.Service("iris-classifier", runners=[runner])
+       import bentoml
+       from bentoml.io import NumpyNdarray
 
-        @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-        def predict(input_arr):
-            res = runner.run(input_arr)
-            return res
+       if TYPE_CHECKING:
+           from numpy.typing import NDArray
+
+       runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
+
+       svc = bentoml.Service("iris-classifier", runners=[runner])
+
+       @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+       def predict(input_arr: NDArray[Any]) -> NDArray[Any]:
+           return runner.run(input_arr)
 
     Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
-        % bentoml serve ./sklearn_svc.py:svc --auto-reload
-
-        (Press CTRL+C to quit)
-        [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
-        [INFO] API Server running on http://0.0.0.0:3000
+        % bentoml serve ./service.py:svc --reload
 
     Users can then send requests to the newly started services with any client:
 
-    .. tabs::
+    .. tab-set::
 
-    .. code-block:: bash
+        .. tab-item:: Bash
 
-        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:3000/predict
+            .. code-block:: bash
 
-        [1]%
+                % curl -X POST -H "Content-Type: application/json" \\
+                        --data '[[5,4,3,2]]' http://0.0.0.0:3000/predict
 
-    Args:
-        dtype (:code:`numpy.typings.DTypeLike`, `optional`, default to :code:`None`):
-            Data Type users wish to convert their inputs/outputs to. Refers to `arrays dtypes <https://numpy.org/doc/stable/reference/arrays.dtypes.html>`_ for more information.
-        enforce_dtype (:code:`bool`, `optional`, default to :code:`False`):
-            Whether to enforce a certain data type. if :code:`enforce_dtype=True` then :code:`dtype` must be specified.
-        shape (:code:`Tuple[int, ...]`, `optional`, default to :code:`None`):
-            Given shape that an array will be converted to. For example:
+                # [1]%
+
+        .. tab-item:: Python
 
             .. code-block:: python
+               :caption: `request.py`
 
-                from bentoml.io import NumpyNdarray
+                import requests
 
-                @svc.api(input=NumpyNdarray(shape=(2,2), enforce_shape=False), output=NumpyNdarray())
-                def predict(input_array: np.ndarray) -> np.ndarray:
-                    # input_array will be reshaped to (2,2)
-                    result = await runner.run(input_array)
+                requests.post(
+                    "http://0.0.0.0:3000/predict",
+                    headers={"content-type": "application/json"},
+                    data='[{"0":5,"1":4,"2":3,"3":2}]'
+                ).text
 
-            When `enforce_shape=True` is provided, BentoML will raise an exception if
-            the input array received does not match the `shape` provided.
+    Args:
+        dtype: Data type users wish to convert their inputs/outputs to. Refers to `arrays dtypes <https://numpy.org/doc/stable/reference/arrays.dtypes.html>`_ for more information.
+        enforce_dtype: Whether to enforce a certain data type. if :code:`enforce_dtype=True` then :code:`dtype` must be specified.
+        shape: Given shape that an array will be converted to. For example:
 
-        enforce_shape (:code:`bool`, `optional`, default to :code:`False`):
-            Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
-            must be specified.
+               .. code-block:: python
+                  :caption: `service.py`
+
+                  from bentoml.io import NumpyNdarray
+
+                  @svc.api(input=NumpyNdarray(shape=(2,2), enforce_shape=False), output=NumpyNdarray())
+                  async def predict(input_array: np.ndarray) -> np.ndarray:
+                      # input_array will be reshaped to (2,2)
+                      result = await runner.run(input_array)
+
+               When ``enforce_shape=True`` is provided, BentoML will raise an exception if the input array received does not match the `shape` provided.
+        enforce_shape: Whether to enforce a certain shape. If ``enforce_shape=True`` then ``shape`` must be specified.
 
     Returns:
-        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
+        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that represents a :code:`np.ndarray`.
     """
 
     def __init__(
@@ -237,14 +247,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
     async def from_http_request(self, request: Request) -> "ext.NpNDArray":
         """
-        Process incoming requests and convert incoming
-         objects to `numpy.ndarray`
+        Process incoming requests and convert incoming objects to ``numpy.ndarray``.
 
         Args:
-            request (`starlette.requests.Requests`):
-                Incoming Requests
+            request: Incoming Requests
+
         Returns:
-            a `numpy.ndarray` object. This can then be used
+            a ``numpy.ndarray`` object. This can then be used
              inside users defined logics.
         """
         obj = await request.json()
@@ -260,10 +269,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         Process given objects and convert it to HTTP response.
 
         Args:
-            obj (`np.ndarray`):
-                `np.ndarray` that will be serialized to JSON
+            obj: ``np.ndarray`` that will be serialized to JSON
+            ctx: ``Context`` object that contains information about the request.
+
         Returns:
-            HTTP Response of type `starlette.responses.Response`. This can
+            HTTP Response of type ``starlette.responses.Response``. This can
              be accessed via cURL or any external web traffic.
         """
         obj = self._verify_ndarray(obj, InternalServerError)
@@ -287,34 +297,42 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         enforce_shape: bool = True,
     ) -> NumpyNdarray:
         """
-        Create a NumpyNdarray IO Descriptor from given inputs.
+        Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
 
         Args:
-            sample_input (:code:`np.ndarray`): Given sample np.ndarray data
-            enforce_dtype (;code:`bool`, `optional`, default to :code:`True`):
-                Enforce a certain data type. :code:`dtype` must be specified at function
-                signature. If you don't want to enforce a specific dtype then change
-                :code:`enforce_dtype=False`.
-            enforce_shape (:code:`bool`, `optional`, default to :code:`False`):
-                Enforce a certain shape. :code:`shape` must be specified at function
-                signature. If you don't want to enforce a specific shape then change
-                :code:`enforce_shape=False`.
+            sample_input: Given sample ``np.ndarray`` data
+            enforce_dtype: Enforce a certain data type. :code:`dtype` must be specified at function
+                           signature. If you don't want to enforce a specific dtype then change
+                           :code:`enforce_dtype=False`.
+            enforce_shape: Enforce a certain shape. :code:`shape` must be specified at function
+                           signature. If you don't want to enforce a specific shape then change
+                           :code:`enforce_shape=False`.
 
         Returns:
-            :obj:`~bentoml._internal.io_descriptors.NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
+            :obj:`NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
 
         Example:
 
         .. code-block:: python
+           :caption: `service.py`
 
-            import numpy as np
-            from bentoml.io import NumpyNdarray
-            arr = [[1,2,3]]
-            inp = NumpyNdarray.from_sample(arr)
+           from __future__ import annotations
 
-            ...
-            @svc.api(input=inp, output=NumpyNdarray())
-            def predict() -> np.ndarray:...
+           from typing import TYPE_CHECKING, Any
+
+           import bentoml
+           from bentoml.io import NumpyNdarray
+
+           import numpy as np
+
+           if TYPE_CHECKING:
+               from numpy.typing import NDArray
+
+           input_spec = NumpyNdarray.from_sample(np.array([[1,2,3]]))
+
+           @svc.api(input=input_spec, output=NumpyNdarray())
+           async def predict(input: NDArray[np.int16]) -> NDArray[Any]:
+               return await runner.async_run(input)
         """
         if isinstance(sample_input, np.generic):
             raise BentoMLException(

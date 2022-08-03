@@ -25,66 +25,65 @@ MIME_TYPE = "text/plain"
 
 class Text(IODescriptor[str]):
     """
-    :code:`Text` defines API specification for the inputs/outputs of a Service. :code:`Text`
+    :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
     your API function signature.
 
-    Sample implementation of a GPT2 service:
+    A sample GPT2 service implementation:
 
     .. code-block:: python
+       :caption: `service.py`
 
-        # gpt2_svc.py
-        import bentoml
-        from bentoml.io import Text
-        import bentoml.transformers
+       from __future__ import annotations
 
-        # If you don't have a gpt2 model previously saved under BentoML modelstore
-        # tag = bentoml.transformers.import_from_huggingface_hub('gpt2')
-        runner = bentoml.tensorflow.get('gpt2').to_runner()
+       import bentoml
+       from bentoml.io import Text
 
-        svc = bentoml.Service("gpt2-generation", runners=[runner])
+       runner = bentoml.tensorflow.get('gpt2:latest').to_runner()
 
-        @svc.api(input=Text(), output=Text())
-        def predict(input_arr):
-            res = runner.run(input_arr)
-            return res['generated_text']
+       svc = bentoml.Service("gpt2-generation", runners=[runner])
+
+       @svc.api(input=Text(), output=Text())
+       def predict(text: str) -> str:
+           res = runner.run(text)
+           return res['generated_text']
 
     Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
-        % bentoml serve ./gpt2_svc.py:svc --auto-reload
-
-        (Press CTRL+C to quit)
-        [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "gpt2-generation" defined in "gpt2_svc.py"
-        [INFO] API Server running on http://0.0.0.0:3000
+       % bentoml serve ./service.py:svc --reload
 
     Users can then send requests to the newly started services with any client:
 
-    .. tabs::
+    .. tab-set::
 
-        .. code-block:: python
+        .. tab-item:: Bash
 
-            import requests
-            requests.post(
-                "http://0.0.0.0:3000/predict",
-                headers = {"content-type":"text/plain"},
-                data = 'Not for nothing did Orin say that people outdoors down here just scuttle in vectors from air conditioning to air conditioning.'
-            ).text
+           .. code-block:: bash
 
-        .. code-block:: bash
+              % curl -X POST -H "Content-Type: text/plain" \\
+                      --data 'Not for nothing did Orin say that people outdoors.' \\
+                      http://0.0.0.0:3000/predict
 
-            % curl -X POST -H "Content-Type: text/plain" --data 'Not for nothing did Orin
-            say that people outdoors down here just scuttle in vectors from air
-            conditioning to air conditioning.' http://0.0.0.0:3000/predict
+        .. tab-item:: Python
+
+           .. code-block:: python
+              :caption: `request.py`
+
+              import requests
+              requests.post(
+                  "http://0.0.0.0:3000/predict",
+                  headers = {"content-type":"text/plain"},
+                  data = 'Not for nothing did Orin say that people outdoors.'
+              ).text
 
     .. note::
 
-        `Text` is not designed to take any `args` or `kwargs` during initialization
+        :obj:`Text` is not designed to take any ``args`` or ``kwargs`` during initialization.
 
     Returns:
-        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that strings type.
+        :obj:`Text`: IO Descriptor that represents strings type.
     """
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):

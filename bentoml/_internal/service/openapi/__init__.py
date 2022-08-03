@@ -73,32 +73,17 @@ def make_infra_endpoints() -> dict[str, PathItem]:
     }
 
 
-def generate_info(svc: Service) -> Info:
-    # default version if svc.tag is None
-    version = "0.0.0"
-    if svc.tag and svc.tag.version:
-        version = svc.tag.version
-
-    # TODO: add support for readme via 'description'
-    # summary="A BentoService built for inference."
-    # description=svc.doc
-    return Info(
-        title=svc.name,
-        summary="A BentoService built for inference.",
-        description=svc.bento.doc
-        if svc.bento
-        else get_default_bento_readme(svc, add_headers=False),
-        version=version,
-        contact=Contact(name="BentoML Team", email="contact@bentoml.ai"),
-        license=Apache2,
-    )
-
-
 def generate_service_components(svc: Service) -> Components:
     components: dict[str, t.Any] = {}
     for api in svc.apis.values():
-        api_components = api.input.openapi_components()
-        merger.merge(api_components, api.output.openapi_components())
+        api_components = {}
+        input_components = api.input.openapi_components()
+        if input_components:
+            merger.merge(api_components, input_components)
+        output_components = api.output.openapi_components()
+        if output_components:
+            merger.merge(api_components, output_components)
+
         merger.merge(components, api_components)
 
     # merge exception at last
@@ -111,9 +96,18 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
     return OpenAPISpecification(
         openapi=openapi_version,
-        info=generate_info(svc),
         tags=[INFRA_TAG, APP_TAG],
         components=generate_service_components(svc),
+        info=Info(
+            title=svc.name,
+            summary="A BentoService built for inference.",
+            description=svc.bento.doc
+            if svc.bento
+            else get_default_bento_readme(svc, add_headers=False),
+            version=svc.tag.version if svc.tag and svc.tag.version else "0.0.0",
+            contact=Contact(name="BentoML Team", email="contact@bentoml.ai"),
+            license=Apache2,
+        ),
         paths={
             # setup infra endpoints
             **make_infra_endpoints(),

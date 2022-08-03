@@ -179,7 +179,7 @@ class JSON(IODescriptor[JSONType]):
             )[0]
         )
 
-    def openapi_components(self) -> dict[str, t.Any]:
+    def openapi_components(self) -> dict[str, t.Any] | None:
         if not self._pydantic_model:
             return {}
 

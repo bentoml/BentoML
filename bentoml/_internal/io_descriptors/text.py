@@ -6,8 +6,12 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
+from bentoml.exceptions import BentoMLException
+
 from .base import IODescriptor
 from ..utils.http import set_cookies
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
     from ..context import InferenceApiContext as Context
@@ -84,31 +88,34 @@ class Text(IODescriptor[str]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that strings type.
     """
 
+    def __init__(self, *args: t.Any, **kwargs: t.Any):
+        if args or kwargs:
+            raise BentoMLException(
+                "'Text' is not designed to take any args or kwargs during initialization."
+            )
+
+        self._mime_type = MIME_TYPE
+
     def input_type(self) -> t.Type[str]:
         return str
 
     def openapi_schema(self) -> Schema | Reference:
-        pass
+        return Schema(type="string")
 
-    def openapi_components(self) -> dict[str, t.Any]:
+    def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
     def openapi_request_body(self) -> RequestBody:
-        pass
+        return RequestBody(
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+            required=True,
+        )
 
     def openapi_responses(self) -> OpenAPIResponse:
-        pass
-
-    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        return {"type": "string"}
-
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE: {"schema": self.openapi_schema_type()}}
-
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE: {"schema": self.openapi_schema_type()}}
+        return OpenAPIResponse(
+            description=SUCCESS_DESCRIPTION,
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+        )
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()

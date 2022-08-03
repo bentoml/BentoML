@@ -10,10 +10,12 @@ from starlette.responses import Response
 from .base import IODescriptor
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
@@ -135,6 +137,7 @@ class Multipart(IODescriptor[t.Any]):
                     "Multipart IO can not contain nested Multipart IO descriptor"
                 )
         self._inputs: dict[str, t.Any] = inputs
+        self._mime_type = "multipart/form-data"
 
     def input_type(
         self,
@@ -151,32 +154,27 @@ class Multipart(IODescriptor[t.Any]):
         return res
 
     def openapi_schema(self) -> Schema | Reference:
-        pass
+        return Schema(
+            type="object",
+            properties={
+                io_type: io.openapi_schema() for io_type, io in self._inputs.items()
+            },
+        )
 
-    def openapi_components(self) -> dict[str, t.Any]:
+    def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
     def openapi_request_body(self) -> RequestBody:
-        pass
+        return RequestBody(
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+            required=True,
+        )
 
     def openapi_responses(self) -> OpenAPIResponse:
-        pass
-
-    def openapi_schema_type(self) -> dict[str, t.Any]:
-        return {
-            "type": "object",
-            "properties": {
-                k: io.openapi_schema_type() for (k, io) in self._inputs.items()
-            },
-        }
-
-    def openapi_request_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for incoming requests"""
-        return {"multipart/form-data": {"schema": self.openapi_schema_type()}}
-
-    def openapi_responses_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for outcoming responses"""
-        return {"multipart/form-data": {"schema": self.openapi_schema_type()}}
+        return OpenAPIResponse(
+            description=SUCCESS_DESCRIPTION,
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+        )
 
     async def from_http_request(self, request: Request) -> dict[str, t.Any]:
         ctype, _ = parse_options_header(request.headers["content-type"])

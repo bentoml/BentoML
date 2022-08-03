@@ -15,6 +15,7 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
+from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
@@ -122,6 +123,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
     """
 
+    _input_sample: ext.NpNDArray | None = None
+
     def __init__(
         self,
         dtype: t.Optional[t.Union[str, "np.dtype[t.Any]"]] = None,
@@ -145,51 +148,55 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
 
-    def _infer_types(self) -> str:  # pragma: no cover
+    def _openapi_types(self) -> str:  # pragma: no cover
+        # convert numpy dtypes to openapi compatible types.
+        var_type = "integer"
         if self._dtype is not None:
             name = self._dtype.name
-            if name.startswith("int") or name.startswith("uint"):
-                var_type = "integer"
-            elif name.startswith("float") or name.startswith("complex"):
+            if name.startswith("float") or name.startswith("complex"):
                 var_type = "number"
-            else:
-                var_type = "object"
-        else:
-            var_type = "object"
         return var_type
 
-    def _items_schema(self) -> t.Dict[str, t.Any]:
-        if self._shape is not None:
-            if len(self._shape) > 1:
-                return {"type": "array", "items": {"type": self._infer_types()}}
-            return {"type": self._infer_types()}
-        return {}
-
-    def input_type(self) -> LazyType["ext.NpNDArray"]:
+    def input_type(self) -> LazyType[ext.NpNDArray]:
         return LazyType("numpy", "ndarray")
 
     def openapi_schema(self) -> Schema | Reference:
-        return Schema(type="array", items=self._items_schema())
+        items = Schema(type=self._openapi_types())
+        if self._shape and len(self._shape) > 1:
+            items = Schema(type="array", items=Schema(type=self._openapi_types()))
 
-    def openapi_components(self) -> dict[str, t.Any]:
+        return Schema(type="array", items=items, nullable=True)
+
+    def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
     def openapi_request_body(self) -> RequestBody:
-        pass
+        example = (
+            self._input_sample.tolist() if self._input_sample is not None else None
+        )
+
+        return RequestBody(
+            content={
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=example
+                )
+            },
+            required=True,
+        )
 
     def openapi_responses(self) -> OpenAPIResponse:
-        pass
+        example = (
+            self._input_sample.tolist() if self._input_sample is not None else None
+        )
 
-    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        return {"type": "array", "items": self._items_schema()}
-
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
-
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE_JSON: MediaType(schema=self.openapi_schema_type())}
+        return OpenAPIResponse(
+            description=SUCCESS_DESCRIPTION,
+            content={
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=example
+                )
+            },
+        )
 
     def _verify_ndarray(
         self,
@@ -271,10 +278,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     @classmethod
     def from_sample(
         cls,
-        sample_input: "ext.NpNDArray",
+        sample_input: ext.NpNDArray,
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
-    ) -> "NumpyNdarray":
+    ) -> NumpyNdarray:
         """
         Create a NumpyNdarray IO Descriptor from given inputs.
 
@@ -305,9 +312,12 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             @svc.api(input=inp, output=NumpyNdarray())
             def predict() -> np.ndarray:...
         """
-        return cls(
+        inst = cls(
             dtype=sample_input.dtype,
             shape=sample_input.shape,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
+        inst._input_sample = sample_input
+
+        return inst

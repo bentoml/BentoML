@@ -16,8 +16,10 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
+from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Reference
 from ..service.openapi.specification import RequestBody
 
@@ -156,16 +158,22 @@ class Image(IODescriptor[ImageType]):
         return ImageType
 
     def openapi_schema(self) -> Schema | Reference:
-        pass
+        return Schema(type="string", format="binary")
 
-    def openapi_components(self) -> dict[str, t.Any]:
+    def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
     def openapi_request_body(self) -> RequestBody:
-        pass
+        return RequestBody(
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+            required=True,
+        )
 
     def openapi_responses(self) -> OpenAPIResponse:
-        pass
+        return OpenAPIResponse(
+            description=SUCCESS_DESCRIPTION,
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+        )
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])

@@ -30,15 +30,6 @@ if TYPE_CHECKING:
 IOType = t.TypeVar("IOType")
 
 
-def simplify(obj: t.Any) -> str:
-    if isinstance(obj, type):
-        # We only need __qualname__ instead of repr
-        return obj.__qualname__
-    elif isinstance(obj, str):
-        return obj
-    return repr(obj)
-
-
 class IODescriptor(ABC, t.Generic[IOType]):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
@@ -54,10 +45,9 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     def __new__(cls: t.Type[Self], *args: t.Any, **kwargs: t.Any) -> Self:
         self = super().__new__(cls)
-        arg_strs = tuple(map(simplify, args)) + tuple(
-            f"{k}={simplify(v)}" for k, v in kwargs.items()
-        )
-        setattr(self, "_init_str", f"{cls.__name__}({','.join(arg_strs)})")
+        # default mime type is application/json
+        self._mime_type = "application/json"
+        self._init_str = cls.__qualname__
 
         return self
 
@@ -73,7 +63,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
         raise NotImplementedError
 
     @abstractmethod
-    def openapi_components(self) -> dict[str, t.Any]:
+    def openapi_components(self) -> dict[str, t.Any] | None:
         raise NotImplementedError
 
     @abstractmethod

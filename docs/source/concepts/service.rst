@@ -100,7 +100,7 @@ example, to debug a service called ``svc`` in ``service.py``:
 Service APIs
 ------------
 
-Inference APIs define how the service functionality can be called remotely. A service can 
+Inference APIs define how the service can be invoked remotely. A service can 
 have one or more APIs. An API consists of its input/output specs and a callback function:
 
 .. code:: python

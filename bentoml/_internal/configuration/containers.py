@@ -116,7 +116,7 @@ SCHEMA = Schema(
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
             "sample_rate": Or(And(float, lambda i: i >= 0 and i <= 1), None),
-            "excluded_urls": Or(str, None),
+            "excluded_urls": Or([str], str, None),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
@@ -412,11 +412,17 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def tracing_excluded_urls(
-        excluded_urls: t.Optional[str] = Provide[config.tracing.excluded_urls],
+        excluded_urls: t.Optional[t.Union[str, t.List[str]]] = Provide[
+            config.tracing.excluded_urls
+        ],
     ):
+        from opentelemetry.util.http import ExcludeList
         from opentelemetry.util.http import parse_excluded_urls
 
-        return parse_excluded_urls(excluded_urls)
+        if isinstance(excluded_urls, list):
+            return ExcludeList(excluded_urls)
+        else:
+            return parse_excluded_urls(excluded_urls)
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]]({})

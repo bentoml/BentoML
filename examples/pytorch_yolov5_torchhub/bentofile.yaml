@@ -1,0 +1,13 @@
+service: "service:svc"
+description: "file: ./README.md"
+labels:
+  owner: bentoml-team
+  stage: demo
+include:
+- "*.py"
+- "/home/agent/.cache/torch/hub/ultralytics_yolov5_master/models/common.py"
+exclude:
+- "tests/"
+- "locustfile.py"
+python:
+  requirements_txt: ./requirements.txt

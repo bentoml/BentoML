@@ -1,6 +1,7 @@
 import typing as t
 
 import numpy as np
+import PIL.Image
 from PIL.Image import Image as PILImage
 
 import bentoml

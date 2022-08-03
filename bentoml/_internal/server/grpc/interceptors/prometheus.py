@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 import logging
 import functools
-import contextvars
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
@@ -26,7 +25,6 @@ if TYPE_CHECKING:
     from ...metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
-START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")
 
 
 class PrometheusServerInterceptor(aio.ServerInterceptor):
@@ -78,8 +76,6 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
             return handler
 
         def wrapper(behaviour: AsyncHandlerMethod[Response]):
-            START_TIME_VAR.set(default_timer())
-
             @functools.wraps(behaviour)
             async def new_behavior(
                 request: Request, context: BentoServicerContext
@@ -94,14 +90,13 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                 ).inc()
 
                 # instrument request duration
-                assert START_TIME_VAR.get() != 0
-                total_time = max(default_timer() - START_TIME_VAR.get(), 0)
+                start = default_timer()
                 self.metrics_request_duration.labels(  # type: ignore
                     api_name=api_name,
                     service_version=self.service_version,
                     http_response_code=to_http_status(context.code()),
-                ).observe(total_time)
-                START_TIME_VAR.set(0)
+                ).observe(max(default_timer() - start, 0))
+                start = 0
 
                 # instrument request in progress
                 with self.metrics_request_in_progress.labels(

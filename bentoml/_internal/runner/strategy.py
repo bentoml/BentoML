@@ -7,7 +7,7 @@ import typing as t
 import logging
 
 from .runnable import Runnable
-from ..resource import NvidiaGpuResource, get_resource
+from ..resource import get_resource
 from ..resource import system_resources
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,6 @@ THREAD_ENVS = [
 
 
 class DefaultStrategy(Strategy):
-
     @classmethod
     def get_worker_count(
         cls,
@@ -102,16 +101,14 @@ class DefaultStrategy(Strategy):
         nvidia_gpus = get_resource(resource_request, "nvidia.com/gpu")
         if (
             nvidia_gpus is not None
-            and nvidia_gpus > 0
+            and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            gpu_resource = NvidiaGpuResource.from_spec({"devices": [worker_index-1]})
-            gpu_resource.apply()
-            # os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index - 1)
-            # logger.info(
-            #     "Setting up worker: set CUDA_VISIBLE_DEVICES to %s",
-            #     worker_index - 1,
-            # )
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(nvidia_gpus[worker_index - 1])
+            logger.info(
+                "Setting up worker: set CUDA_VISIBLE_DEVICES to %s",
+                worker_index - 1,
+            )
             return
 
         # use CPU

@@ -171,9 +171,10 @@ class RunnerAppFactory(BaseAppFactory):
             assert self._is_ready
             if not requests:
                 return []
-            params_list = await asyncio.gather(
-                *tuple(multipart_to_payload_params(r) for r in requests)
-            )
+            params_list = []
+            for r in requests:
+                r_ = await r.body()
+                params_list.append(pickle.loads(r_))
 
             input_batch_dim, output_batch_dim = runner_method.config.batch_dim
 

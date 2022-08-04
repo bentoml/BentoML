@@ -148,7 +148,7 @@ class RemoteRunnerClient(RunnerHandle):
         path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
         async with self._client.post(
             f"{self._addr}/{path}",
-            data=pickle.dump(payload_params),
+            data=pickle.dumps(payload_params),
             headers={
                 "Bento-Name": component_context.bento_name,
                 "Bento-Version": component_context.bento_version,

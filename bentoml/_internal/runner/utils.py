@@ -121,7 +121,7 @@ class Params(t.Generic[T]):
 PAYLOAD_META_HEADER = "Bento-Payload-Meta"
 
 
-def payload_paramss_to_batch_params(
+def payload_params_to_batch_params(
     paramss: t.Sequence[Params[Payload]],
     batch_dim: int,
     # TODO: support mapping from arg to batch dimension
@@ -144,50 +144,3 @@ def payload_paramss_to_batch_params(
             f"argument lengths for parameters do not matchs: {tuple(indice_params.items())}"
         )
     return batched_params, indice_params.sample
-
-
-def payload_params_to_multipart(params: Params[Payload]) -> MultipartWriter:
-    import json
-
-    from multidict import CIMultiDict
-    from aiohttp.multipart import MultipartWriter
-
-    multipart = MultipartWriter(subtype="form-data")
-    for key, payload in params.items():
-        multipart.append(
-            payload.data,
-            headers=CIMultiDict(
-                (
-                    (PAYLOAD_META_HEADER, json.dumps(payload.meta)),
-                    ("Content-Type", f"application/vnd.bentoml.{payload.container}"),
-                    ("Content-Disposition", f'form-data; name="{key}"'),
-                )
-            ),
-        )
-    return multipart
-
-
-async def multipart_to_payload_params(request: Request) -> Params[Payload]:
-    import json
-
-    from bentoml._internal.runner.container import Payload
-    from bentoml._internal.utils.formparser import populate_multipart_requests
-
-    parts = await populate_multipart_requests(request)
-    max_arg_index = -1
-    kwargs: t.Dict[str, Payload] = {}
-    args_map: t.Dict[int, Payload] = {}
-    for field_name, req in parts.items():
-        payload = Payload(
-            data=await req.body(),
-            meta=json.loads(req.headers[PAYLOAD_META_HEADER]),
-            container=req.headers["Content-Type"].strip("application/vnd.bentoml."),
-        )
-        if field_name.isdigit():
-            arg_index = int(field_name)
-            args_map[arg_index] = payload
-            max_arg_index = max(max_arg_index, arg_index)
-        else:
-            kwargs[field_name] = payload
-    args = tuple(args_map[i] for i in range(max_arg_index + 1))
-    return Params(*args, **kwargs)

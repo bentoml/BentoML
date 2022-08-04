@@ -125,27 +125,25 @@ class RemoteRunnerClient(RunnerHandle):
 
     async def async_run_method(
         self,
-        __bentoml_method: RunnerMethod[t.Any, P, R],
+        __bentoml_method__: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> R:
         from ...runner.container import AutoContainer
 
-        # TODO: validate call signature
-
-        inp_batch_dim = __bentoml_method.config.batch_dim[0]
+        inp_batch_dim = __bentoml_method__.config.batch_dim[0]
 
         payload_params = Params[Payload](*args, **kwargs).map(
             functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
         )
 
-        if __bentoml_method.config.batchable:
+        if __bentoml_method__.config.batchable:
             if not payload_params.map(lambda i: i.batch_size).all_equal():
                 raise ValueError(
                     "All batchable arguments must have the same batch size."
                 )
 
-        path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
+        path = "" if __bentoml_method__.name == "__call__" else __bentoml_method__.name
         async with self._client.post(
             f"{self._addr}/{path}",
             data=pickle.dumps(payload_params),

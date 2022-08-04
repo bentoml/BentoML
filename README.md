@@ -70,7 +70,7 @@ print(f"Model saved: {saved_model}")
 # Model saved: Model(tag="fraud_detect:3qee3zd7lc4avuqj", path="~/bentoml/models/fraud_detect/3qee3zd7lc4avuqj/")
 ```
 
-BentoML saves the model artifact files in a local model store, a long with necessary metadata. 
+BentoML saves the model artifact files in a local model store, along with necessary metadata. 
 A new version tag is automatically generated for the model.
 
 Optionally, you may provide the `signatures` of your model for running inference with

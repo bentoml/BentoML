@@ -8,6 +8,7 @@ api_server:
   metrics:
     enabled: True
     namespace: BENTOML
+    port: 9090
   logging:
     access:
       enabled: True

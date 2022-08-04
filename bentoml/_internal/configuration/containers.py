@@ -89,7 +89,11 @@ SCHEMA = Schema(
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),
-            "metrics": {"enabled": bool, "namespace": str},
+            "metrics": {
+                "enabled": bool,
+                "namespace": str,
+                "port": And(int, _larger_than_zero),
+            },
             "logging": {
                 # TODO add logging level configuration
                 "access": {

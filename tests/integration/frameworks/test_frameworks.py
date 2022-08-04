@@ -172,7 +172,7 @@ def test_runner_batching(
     saved_model: bentoml.Model,
 ):
     from bentoml._internal.runner.utils import Params
-    from bentoml._internal.runner.utils import payload_paramss_to_batch_params
+    from bentoml._internal.runner.utils import payload_params_to_batch_params
     from bentoml._internal.runner.container import AutoContainer
 
     ran_tests = False
@@ -198,7 +198,7 @@ def test_runner_batching(
                 for inp in inputs
             ]
 
-            params, indices = payload_paramss_to_batch_params(paramss, batch_dim[0])
+            params, indices = payload_params_to_batch_params(paramss, batch_dim[0])
 
             batch_res = getattr(runner, meth).run(*params.args, **params.kwargs)
 

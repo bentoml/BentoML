@@ -11,9 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from aiohttp import MultipartWriter
-    from starlette.requests import Request
-
     from ..runner.container import Payload
 
 

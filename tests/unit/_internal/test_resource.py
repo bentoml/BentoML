@@ -64,19 +64,24 @@ def test_CpuResource():
 
 
 def test_NvidiaGpuResource():
-    assert NvidiaGpuResource.from_system() >= 0  # TODO: real from_system tests
+    assert len(NvidiaGpuResource.from_system()) >= 0  # TODO: real from_system tests
 
     with pytest.raises(BentoMLConfigException):
-        NvidiaGpuResource.validate(NvidiaGpuResource.from_system() + 1)
+        NvidiaGpuResource.validate(NvidiaGpuResource.from_system() + [1])
     with pytest.raises(BentoMLConfigException):
-        NvidiaGpuResource.validate(-2)
+        NvidiaGpuResource.validate([-2])
 
-    NvidiaGpuResource.validate(-1)
-    NvidiaGpuResource.validate(0)
+    NvidiaGpuResource.validate([-1])
+    NvidiaGpuResource.validate([0])
     # NvidiaGpuResource.validate(1)  # TODO: work out how to skip this on systems with no GPU
 
-    assert NvidiaGpuResource.from_spec(1) == 1
-    assert NvidiaGpuResource.from_spec("5") == 5.0
+    assert NvidiaGpuResource.from_spec(1) == [0]
+    assert NvidiaGpuResource.from_spec("5") == [0, 1, 2, 3, 4]
+    assert NvidiaGpuResource.from_spec(1) == [0]
+    assert NvidiaGpuResource.from_spec(2) == [0, 1]
+    assert NvidiaGpuResource.from_spec("3") == [0, 1, 2]
+    assert NvidiaGpuResource.from_spec([1, 3]) == [1, 3]
+    assert NvidiaGpuResource.from_spec(["1", "3"]) == [1, 3]
 
     with pytest.raises(TypeError):
         NvidiaGpuResource.from_spec((1, 2, 3))

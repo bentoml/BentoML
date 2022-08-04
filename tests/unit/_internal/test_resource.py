@@ -72,7 +72,7 @@ def test_NvidiaGpuResource():
         NvidiaGpuResource.validate([-2])
 
     NvidiaGpuResource.validate([-1])
-    NvidiaGpuResource.validate([0])
+    NvidiaGpuResource.validate([])
     # NvidiaGpuResource.validate(1)  # TODO: work out how to skip this on systems with no GPU
 
     assert NvidiaGpuResource.from_spec(1) == [0]

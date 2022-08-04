@@ -89,11 +89,7 @@ SCHEMA = Schema(
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),
-            "metrics": {
-                "enabled": bool,
-                "namespace": str,
-                "port": And(int, _larger_than_zero),
-            },
+            "metrics": {"enabled": bool, "namespace": str},
             "logging": {
                 # TODO add logging level configuration
                 "access": {
@@ -115,6 +111,8 @@ SCHEMA = Schema(
             },
             "grpc": {
                 "max_concurrent_streams": Or(int, None),
+                "metrics_port": And(int, _larger_than_zero),
+                "metrics_host": And(str, _is_ip_address),
                 "max_message_length": Or(int, None),
                 "maximum_concurrent_rpcs": Or(int, None),
             },

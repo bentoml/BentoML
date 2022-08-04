@@ -48,15 +48,17 @@ class GRPCAppFactory:
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-        metrics_port: int = Provide[BentoMLContainer.api_server_config.metrics.port],
+        metrics_port: int = Provide[BentoMLContainer.grpc.metrics_port],
+        metrics_host: str = Provide[BentoMLContainer.grpc.metrics_host],
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
         self._metrics_port = metrics_port
+        self._metrics_host = metrics_host
+        self._metrics_client = metrics_client
         self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
         self._thread_pool_size = _thread_pool_size
-        self._metrics_client = metrics_client
 
     @property
     def name(self) -> str:
@@ -99,10 +101,15 @@ class GRPCAppFactory:
 
         if self.enable_metrics:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                if sock.connect_ex(("localhost", self._metrics_port)) != 0:
-                    self._metrics_client.start_http_server(self._metrics_port)
+                output_host = self._metrics_host
+                if output_host == "0.0.0.0":
+                    output_host = "127.0.0.1"
+                if sock.connect_ex(("127.0.0.1", self._metrics_port)) != 0:
+                    self._metrics_client.start_http_server(
+                        port=self._metrics_port, addr=self._metrics_host
+                    )
                     logger.info(
-                        f"Prometheus metrics for grpc server can be accessed at http://127.0.0.1:{self._metrics_port}"
+                        f"Prometheus metrics for grpc server can be accessed at http://{output_host}:{self._metrics_port}"
                     )
                 else:
                     logger.warning(

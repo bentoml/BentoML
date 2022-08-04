@@ -1,4 +1,3 @@
-import socket
 import logging
 import contextvars
 from timeit import default_timer
@@ -34,20 +33,8 @@ class MetricsMiddleware:
     def _setup(
         self,
         metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
-        metrics_port: int = Provide[BentoMLContainer.api_server_config.metrics.port],
     ):
         self.metrics_client = metrics_client
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            if sock.connect_ex(("localhost", metrics_port)) != 0:
-                self.metrics_client.start_http_server(metrics_port)
-                logger.info(
-                    f"Prometheus metrics can be accessed at http://127.0.0.1:{metrics_port}"
-                )
-            else:
-                logger.warning(
-                    f"Port {metrics_port} is already in use. Metrics can still be accessed at `/metrics` endpoint."
-                )
 
         service_name = self.bento_service.name
         # a valid tag name may includes invalid characters, so we need to escape them

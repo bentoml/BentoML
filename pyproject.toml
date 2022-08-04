@@ -38,10 +38,10 @@ testpaths = ["tests"]
 markers = ["gpus"]
 
 [tool.pylint.master]
-ignore=".ipynb_checkpoints,typings,bentoml/_internal/external_typings"
+ignore=".ipynb_checkpoints,typings,bentoml/_internal/external_typing"
 ignore-paths=".*.pyi"
 unsafe-load-any-extension="no"
-extension-pkg-whitelist="numpy,tensorflow,torch,paddle,keras"
+extension-pkg-whitelist="numpy,tensorflow,torch,paddle,keras,pydantic"
 jobs=4
 persistent="yes"
 suggestion-mode="yes"
@@ -63,7 +63,7 @@ max-nested-blocks=5
 never-returning-functions="optparse.Values,sys.exit"
 
 [tool.pylint.miscellaneous]
-notes="FIXME,XXX,TODO"
+notes="FIXME,XXX,TODO,NOTE"
 
 [tool.pylint.typecheck]
 ignored-classes="Namespace"

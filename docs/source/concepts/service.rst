@@ -100,8 +100,8 @@ example, to debug a service called ``svc`` in ``service.py``:
 Service APIs
 ------------
 
-Inference APIs define how the service functionality can be accessed remotely. An API
-consist of its input/output spec and a callback function:
+Inference APIs define how the service functionality can be called remotely. A service can 
+have one or more APIs. An API consists of its input/output specs and a callback function:
 
 .. code:: python
 
@@ -114,14 +114,15 @@ consist of its input/output spec and a callback function:
         # Define post-processing logic
         return result
 
-By decorating a function with :code:`@svc.api`, we declare that the function will be
-invoked when this API is accessed. The API function is a great place to define your
-serving logic, such as fetching additional features from your database, preprocess
-features, and running inference via Runners.
+By decorating a function with :code:`@svc.api`, we declare that the function shall be
+invoked when this API is called. The API function is a great place for defining your
+serving logic, such as feature fetching, pre and post processing, and model inferences 
+via Runners.
 
-When running :code:`bentoml serve` with the example above, this API definition
-translates into an HTTP endpoint :code:`/predict`, that takes in a NumPy Ndarray
-serialized as json format, and returns a NumPy Ndarray:
+When running :code:`bentoml serve` with the example above, this API function is
+transformed into an HTTP endpoint, :code:`/predict`, that takes in a ``np.ndarray`` as 
+input, and returns a ``np.ndarray`` as output. The endpoint can be called with the following
+``curl`` command:
 
 .. code:: bash
 
@@ -137,6 +138,9 @@ serialized as json format, and returns a NumPy Ndarray:
     BentoML also plan to support translating the same Service API definition into a gRPC
     server endpoint, in addition to the default HTTP server. See :issue:`703`.
 
+Route
+^^^^^
+
 By default, the function name becomes the endpoint URL. Users can also customize
 this URL via the :code:`route` option, e.g.:
 
@@ -151,15 +155,48 @@ this URL via the :code:`route` option, e.g.:
         return runner.run(input_array)
 
 
-A service can have one or many APIs. The :code:`input` and :code:`output` arguments of
-the `@svc.api` decorator further defines the expect IO formats of the API. In the above
-example, the API defines the IO types as :code:`numpy.ndarray` through a
-:ref:`bentoml.io.NumpyNdarray<reference/api_io_descriptors:NumPy ndarray>` instance.
-
-
 .. note::
     BentoML aims to parallelize API logic by starting multiple instances of the API
     server based on available system resources.
+
+Inference Context
+^^^^^^^^^^^^^^^^^
+
+The context of an inference call can be accessed through the additional ``bentoml.Context``
+argument added to the service API function. Both the request and response contexts can be 
+accessed through the inference context for getting and setting the headers, cookies, and
+status codes.
+
+.. code:: python
+
+    @svc.api(
+        input=NumpyNdarray(),
+        output=NumpyNdarray(),
+    )
+    def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
+        # get request headers
+        request_headers = ctx.request.headers
+
+        result = runner.run(input_array)
+
+        # set response headers, cookies, and status code 
+        ctx.response.status_code = 202
+        ctx.response.cookies = [
+            bentoml.Cookie(
+                key="key",
+                value="value",
+                max_age=None,
+                expires=None,
+                path="/predict",
+                domain=None,
+                secure=True,
+                httponly=True,
+                samesite="None"
+            )
+        ]
+        ctx.response.headers.append("X-Custom-Header", "value")
+        
+        return result
 
 
 IO Descriptors

@@ -43,6 +43,7 @@ from ._internal.runner import Runner
 from ._internal.runner import Runnable
 from ._internal.context import InferenceApiContext as Context
 from ._internal.service import Service
+from ._internal.utils.http import Cookie
 from ._internal.yatai_client import YataiClient
 from ._internal.service.loader import load
 
@@ -115,6 +116,7 @@ else:
 __all__ = [
     "__version__",
     "Context",
+    "Cookie",
     "Service",
     "models",
     "io",

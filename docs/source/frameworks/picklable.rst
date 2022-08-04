@@ -44,4 +44,4 @@ Load the model as a local Runner to test out its inference API:
     runner.run([7])
 
 
-Full code example can be found at `Gallery: Custom Python Model <https://github.com/bentoml/gallery/tree/main/custom_python_model>`_.
+Full code example can be found at `Gallery: Custom Python Model <https://github.com/bentoml/BentoML/tree/main/examples/custom_python_model>`_.

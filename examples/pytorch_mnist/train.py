@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import os
 import random
 import argparse
@@ -28,7 +29,7 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
 
-def _dataloader_init_fn(worker_id):
+def _dataloader_init_fn():
     np.random.seed(seed)
 
 
@@ -69,7 +70,7 @@ def test_model(model, test_loader, device="cpu"):
     correct, total = 0, 0
     model.eval()
     with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(test_loader):
+        for _, (inputs, targets) in enumerate(test_loader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
@@ -127,12 +128,12 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS):
     # Print fold results
     print(f"K-FOLD CROSS VALIDATION RESULTS FOR {K_FOLDS} FOLDS")
     print("--------------------------------")
-    sum = 0.0
+    sum_ = 0.0
     for key, value in results.items():
         print(f"Fold {key}: {value} %")
-        sum += value
+        sum_ += value
 
-    print(f"Average: {sum/len(results.items())} %")
+    print(f"Average: {sum_/len(results.items())} %")
 
     return results
 

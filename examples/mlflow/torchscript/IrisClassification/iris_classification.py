@@ -1,4 +1,4 @@
-# pylint: disable=abstract-method
+# pylint: disable=abstract-method,redefined-outer-name
 import argparse
 
 import numpy as np

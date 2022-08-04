@@ -44,7 +44,7 @@ Here's an example using PyTorch with BentoML:
 
 .. note::
 
-   You can find more examples for **PyTorch** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
+   You can find more examples for **PyTorch** in our `bentoml/examples https://github.com/bentoml/BentoML/tree/main/examples`_ directory.
 
 .. currentmodule:: bentoml.pytorch
 

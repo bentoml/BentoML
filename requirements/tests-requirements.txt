@@ -4,7 +4,7 @@ codecov
 coverage>=4.4
 isort>=5.0.0
 pydantic
-pylint>=2.11.0
+pylint>=2.14.0
 pytest-cov>=3.0.0
 pytest>=6.2.0
 pytest-asyncio

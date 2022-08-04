@@ -5,6 +5,7 @@ This is a sample project demonstrating basic usage of BentoML with XGBoost.
 ### Install Dependencies
 
 Install python packages required for running this project:
+
 ```bash
 pip install -r ./requirements.txt
 ```
@@ -31,7 +32,12 @@ import bentoml
 
 runner = bentoml.xgboost.load_runner("agaricus:latest")
 
-runner.run([0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])  # => array(0.01241208, dtype=float32)
+runner.run([0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+            0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+            0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])  # => array(0.01241208, dtype=float32)
 ```
 
 ### Create ML Service
@@ -68,12 +74,11 @@ bentoml serve agaricus:svc --reload
 With the `--reload` flag, the API server will automatically restart when the source
 file `agaricus.py` is being edited, to boost your development productivity.
 
-
 Verify the endpoint can be accessed locally:
+
 ```bash
 curl -X POST -H "content-type: application/json" --data "[[0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]]" http://127.0.0.1:3000/classify
 ```
-
 
 ### Build Bento for deployment
 
@@ -86,12 +91,12 @@ labels:
   owner: bentoml-team
   stage: demo
 include:
- - "*.py"
+  - "*.py"
 exclude:
- - "locustfile.py"
+  - "locustfile.py"
 python:
   packages:
-   - xgboost
+    - xgboost
 ```
 
 Simply run `bentoml build` from this directory to build a Bento with the latest version of the
@@ -159,7 +164,6 @@ on top of it. By default, Bentos are managed under the `~/bentoml/bentos` direct
 9 directories, 14 files
 ```
 
-
 ### Containerize Bento for deployment
 
 Make sure you have docker installed and the docker daemon is running. The following command will use
@@ -172,5 +176,5 @@ bentoml containerize agaricus:latest
 To test out the newly created docker image:
 
 ```bash
-docker run agaricus:<bento tag output> -p 5000:5000
+docker run agaricus:<bento tag output> -p 3000:3000
 ```

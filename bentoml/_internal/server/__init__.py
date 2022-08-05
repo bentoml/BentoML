@@ -107,11 +107,11 @@ def serve_development(
     if grpc:
         watcher_name = "grpc_dev_api_server"
         script_to_use = SCRIPT_GRPC_DEV_API_SERVER
-        socket_path = f"tcp://{host}:{port}"
+        bind_address = f"tcp://{host}:{port}"
     else:
         watcher_name = "dev_api_server"
         script_to_use = SCRIPT_DEV_API_SERVER
-        socket_path = f"fd://$(circus.sockets.{API_SERVER_NAME})"
+        bind_address = f"fd://$(circus.sockets.{API_SERVER_NAME})"
 
     circus_sockets: list[CircusSocket] = []
     circus_sockets.append(
@@ -127,7 +127,7 @@ def serve_development(
                 script_to_use,
                 bento_identifier,
                 "--bind",
-                socket_path,
+                bind_address,
                 "--working-dir",
                 working_dir,
                 "--prometheus-dir",

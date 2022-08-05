@@ -102,10 +102,10 @@ apis:
   output_type: NumpyNdarray
 docker:
   distro: debian
-  grpc: false
   python_version: '{python_version}'
   cuda_version: null
   env: null
+  grpc: false
   system_packages: null
   setup_script: null
   base_image: null

@@ -1,10 +1,7 @@
 import socket
 import typing as t
-from urllib.parse import urlparse
 
 import click
-import psutil
-import uvicorn
 
 
 @click.command()
@@ -24,6 +21,11 @@ def main(
     backlog: int,
     prometheus_dir: t.Optional[str],
 ):
+
+    from urllib.parse import urlparse
+
+    import psutil
+    import uvicorn
 
     from bentoml import load
     from bentoml._internal.log import configure_server_logging

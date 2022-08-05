@@ -1,12 +1,7 @@
 from __future__ import annotations
 
-import sys
-import socket
 import typing as t
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
-
-import psutil
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -58,6 +53,12 @@ def main(
         working_dir: (Optional) the working directory
         worker_id: (Optional) if set, the runner will be started as a worker with the given ID
     """
+
+    import sys
+    import socket
+    from urllib.parse import urlparse
+
+    import psutil
 
     from bentoml import load
     from bentoml._internal.context import component_context
@@ -124,7 +125,7 @@ def main(
     app = t.cast("ASGI3Application", RunnerAppFactory(runner, worker_index=worker_id)())
 
     parsed = urlparse(bind)
-    uvicorn_options = {
+    uvicorn_options: dict[str, int | None | str] = {
         "log_config": None,
         "workers": 1,
     }
@@ -142,6 +143,8 @@ def main(
             **uvicorn_options,
         )
     elif parsed.scheme == "tcp":
+        assert parsed.hostname is not None
+        assert parsed.port is not None
         uvicorn.run(
             app,
             host=parsed.hostname,

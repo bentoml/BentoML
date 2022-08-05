@@ -5,12 +5,13 @@ from abc import ABCMeta
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from starlette.requests import Request
+from starlette.responses import Response
+
 if TYPE_CHECKING:
     from types import UnionType
 
     from typing_extensions import Self
-    from starlette.requests import Request
-    from starlette.responses import Response
 
     from bentoml.grpc.v1.service_pb2 import Request as GRPCRequest
     from bentoml.grpc.v1.service_pb2 import Response as GRPCResponse
@@ -22,13 +23,6 @@ if TYPE_CHECKING:
     from ..service.openapi.specification import Response as OpenAPIResponse
     from ..service.openapi.specification import Reference
     from ..service.openapi.specification import RequestBody
-
-    InputType = (
-        UnionType
-        | t.Type[t.Any]
-        | LazyType[t.Any]
-        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
-    )
 
 
 IOType = t.TypeVar("IOType")
@@ -84,7 +78,14 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_fields=Non
         return self._proto_fields
 
     @abstractmethod
-    def input_type(self) -> InputType:
+    def input_type(
+        self,
+    ) -> t.Union[
+        "UnionType",
+        t.Type[t.Any],
+        "LazyType[t.Any]",
+        t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]],
+    ]:
         ...
 
     @abstractmethod

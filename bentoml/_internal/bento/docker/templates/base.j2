@@ -61,7 +61,14 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 RUN {{ __pip_cache__ }} bash -euxo pipefail {{ __install_python_scripts__ }}
 
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
-RUN bash -euxo pipefail {{ __setup_script__ }}
+RUN bash <<EOF
+set -euxo pipefail
+
+if [ -f {{ __setup_script__ }} ]; then
+    echo "Installing custom setup script..."
+    bash {{ __setup_script__ }}
+fi
+EOF
 
 {% endblock %}
 

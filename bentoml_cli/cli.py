@@ -13,7 +13,7 @@ from bentoml_cli.models import add_model_management_commands
 from bentoml_cli.containerize import add_containerize_command
 
 
-def create_bentoml_cli():
+def create_bentoml_cli() -> click.Group:
 
     from bentoml._internal.context import component_context
 
@@ -23,23 +23,23 @@ def create_bentoml_cli():
 
     @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
     @click.version_option(BENTOML_VERSION, "-v", "--version")
-    def cli():
+    def bentoml_cli():
         """BentoML CLI"""
 
     # Add top-level CLI commands
-    add_env_command(cli)
-    add_login_command(cli)
-    add_bento_management_commands(cli)
-    add_model_management_commands(cli)
-    add_serve_command(cli)
-    add_containerize_command(cli)
+    add_env_command(bentoml_cli)
+    add_login_command(bentoml_cli)
+    add_bento_management_commands(bentoml_cli)
+    add_model_management_commands(bentoml_cli)
+    add_serve_command(bentoml_cli)
+    add_containerize_command(bentoml_cli)
 
     if psutil.WINDOWS:
         import sys
 
         sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
 
-    return cli
+    return bentoml_cli
 
 
 cli = create_bentoml_cli()

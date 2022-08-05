@@ -1,4 +1,5 @@
-# type: ignore[reportUnusedFunction]
+from __future__ import annotations
+
 import logging
 
 import click
@@ -10,7 +11,7 @@ from bentoml._internal.yatai_rest_api_client.config import add_context
 from bentoml._internal.yatai_rest_api_client.config import YataiClientContext
 from bentoml._internal.yatai_rest_api_client.config import default_context_name
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("bentoml")
 
 
 def add_login_command(cli: click.Group) -> None:
@@ -18,12 +19,13 @@ def add_login_command(cli: click.Group) -> None:
     def yatai_cli():
         """Yatai Subcommands Groups"""
 
-    @yatai_cli.command(help="Login to Yatai server")
+    @yatai_cli.command()
     @click.option(
         "--endpoint", type=click.STRING, help="Yatai endpoint, i.e: https://yatai.com"
     )
     @click.option("--api-token", type=click.STRING, help="Yatai user API token")
-    def login(endpoint: str, api_token: str) -> None:
+    def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
+        """Login to Yatai server."""
         if not endpoint:
             raise CLIException("need --endpoint")
 

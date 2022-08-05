@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import socket
 import typing as t
 import asyncio
 import logging
@@ -9,7 +8,6 @@ from typing import TYPE_CHECKING
 import grpc
 from grpc import aio
 
-from bentoml.exceptions import UnprocessableEntity
 from bentoml.exceptions import MissingDependencyException
 
 from ...utils import LazyLoader
@@ -65,32 +63,15 @@ class GRPCServer:
     def _loop(self) -> asyncio.AbstractEventLoop:
         return asyncio.get_event_loop()
 
-    def run(
-        self,
-        *,
-        bind_addr: str | None = None,
-        sockets: list[socket.socket] | None = None,
-    ) -> None:
+    def run(self, bind_addr: str) -> None:
         try:
-            self._loop.run_until_complete(
-                self.serve(bind_addr=bind_addr, sockets=sockets)
-            )
+            self._loop.run_until_complete(self.serve(bind_addr=bind_addr))
         finally:
             self._loop.run_until_complete(*self._cleanup)
             self._loop.close()
 
-    async def serve(
-        self, bind_addr: str | None = None, sockets: list[socket.socket] | None = None
-    ) -> None:
-        if bind_addr and sockets:
-            raise UnprocessableEntity(
-                "Cannot bind to both address and sockets. Specify either one."
-            )
-        if bind_addr:
-            self.add_insecure_port(bind_addr)
-        elif sockets:
-            # TODO: impl
-            pass
+    async def serve(self, bind_addr: str) -> None:
+        self.add_insecure_port(bind_addr)
 
         await self.startup()
 

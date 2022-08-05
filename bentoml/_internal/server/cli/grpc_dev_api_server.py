@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-import socket
 import asyncio
 from urllib.parse import urlparse
 
 import click
 import psutil
-
-from bentoml import load
-from bentoml._internal.log import configure_server_logging
-from bentoml._internal.context import component_context
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 
 @click.command()
@@ -28,6 +22,10 @@ def main(
     working_dir: str | None,
     prometheus_dir: str | None,
 ):
+    from bentoml import load
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     component_context.component_name = "grpc_dev_api_server"
 
@@ -51,11 +49,7 @@ def main(
 
     parsed = urlparse(bind)
 
-    if parsed.scheme == "fd":
-        fd = int(parsed.netloc)
-        sock = socket.socket(fileno=fd)
-        svc.grpc_server.run(sockets=[sock])
-    elif parsed.scheme == "tcp":
+    if parsed.scheme == "tcp":
         svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")

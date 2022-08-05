@@ -2,15 +2,9 @@ from __future__ import annotations
 
 import sys
 import json
-import socket
-import typing as t
 from urllib.parse import urlparse
 
 import click
-import psutil
-
-import bentoml
-from bentoml._internal.context import component_context
 
 
 @click.command()
@@ -26,9 +20,6 @@ from bentoml._internal.context import component_context
     type=click.STRING,
     envvar="BENTOML_RUNNER_MAP",
     help="JSON string of runners map, default sets to envars `BENTOML_RUNNER_MAP`",
-)
-@click.option(
-    "--backlog", type=click.INT, default=2048, help="Backlog size for the socket"
 )
 @click.option(
     "--working-dir",
@@ -53,7 +44,6 @@ def main(
     bento_identifier: str,
     bind: str,
     runner_map: str | None,
-    backlog: int,
     working_dir: str | None,
     worker_id: int | None,
     prometheus_dir: str | None,
@@ -64,9 +54,9 @@ def main(
     This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
     """
 
-    import uvicorn
-
+    import bentoml
     from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     configure_server_logging()
@@ -82,17 +72,16 @@ def main(
         from bentoml._internal.server import ensure_prometheus_dir
         from bentoml._internal.utils.click import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
-        from bentoml._internal.utils.circus import create_circus_socket_from_uri
 
         ensure_prometheus_dir()
-        circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
+        parsed = urlparse(bind)
         params = ctx.params
-        params["bind"] = "fd://$(circus.sockets._bento_api_server)"
+        params["max_concurrent_streams"] = f"tcp://0.0.0.0:{parsed.port}"
         params["worker_id"] = "$(circus.wid)"
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,
-            args=["-m", "bentoml._internal.server.cli.http_api_server"]
+            args=["-m", "bentoml._internal.server.cli.grpc_api_server"]
             + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
@@ -100,7 +89,7 @@ def main(
             use_sockets=True,
             working_dir=working_dir,
         )
-        arbiter = create_standalone_arbiter(watchers=[watcher], sockets=[circus_socket])
+        arbiter = create_standalone_arbiter(watchers=[watcher])
         arbiter.start()
         return
 
@@ -119,25 +108,10 @@ def main(
         component_context.bento_version = svc.tag.version
 
     parsed = urlparse(bind)
-    uvicorn_options: dict[str, t.Any] = {
-        "backlog": backlog,
-        "log_config": None,
-        "workers": 1,
-    }
-    if psutil.WINDOWS:
-        uvicorn_options["loop"] = "asyncio"
-        import asyncio
+    assert parsed.scheme == "tcp"
 
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
-
-    assert parsed.scheme == "fd"
-
-    # skip the uvicorn internal supervisor
-    fd = int(parsed.netloc)
-    sock = socket.socket(fileno=fd)
-    config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
-    uvicorn.Server(config).run(sockets=[sock])
+    svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
 
 
 if __name__ == "__main__":
-    main()  # pylint: disable=no-value-for-parameter
+    main()

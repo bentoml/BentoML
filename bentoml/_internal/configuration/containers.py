@@ -110,6 +110,7 @@ SCHEMA = Schema(
                 "access_control_expose_headers": Or([str], str, None),
             },
             "grpc": {
+                "max_concurrent_streams": Or(int, None),
                 "max_message_length": Or(int, None),
                 "maximum_concurrent_rpcs": Or(int, None),
             },

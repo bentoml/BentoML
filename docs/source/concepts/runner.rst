@@ -233,7 +233,7 @@ Sequential Runs
 
     svc = bentoml.Service("sentiment_analysis", runners=[transformers_runner, ocr_runner])
 
-    @svc.api(input=Image())
+    @svc.api(input=Image(),output=Text())
     def classify(input: PIL.Image.Image) -> str:
         ocr_text = ocr_runner.run(input)
         return transformers_runner.run(ocr_text)

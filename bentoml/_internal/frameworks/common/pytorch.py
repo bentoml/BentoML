@@ -89,15 +89,17 @@ def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tens
         params = Params(*args, **kwargs)
 
         def _mapping(
-            item: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
-        ) -> torch.Tensor:
+            item: ext.PdDataFrame | ext.NpNDArray | torch.Tensor | t.Any,
+        ) -> torch.Tensor | t.Any:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return torch.Tensor(item, device=self.device_id)
             if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
                 return torch.Tensor(item.to_numpy(), device=self.device_id)
             if LazyType["torch.Tensor"]("torch.Tensor").isinstance(item):
-                return item.to(self.device_id)
-            return item  # type: ignore # the overhead is trivial if it is already on the right device
+                return item.to(
+                    self.device_id
+                )  # the overhead is trivial if it is already on the device
+            return item
 
         with inference_mode_ctx():
             params = params.map(_mapping)

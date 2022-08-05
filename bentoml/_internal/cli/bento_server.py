@@ -54,6 +54,13 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
+        "--max-concurrent-streams",
+        type=click.INT,
+        default=BentoMLContainer.grpc.max_concurrent_streams.get(),
+        help="Maximum number of concurrent incoming streams to allow on a HTTP/2 connection.",
+        show_default=True,
+    )
+    @click.option(
         "--reload",
         type=click.BOOL,
         is_flag=True,
@@ -82,6 +89,7 @@ def add_serve_command(cli: click.Group) -> None:
         host: t.Optional[str],
         api_workers: t.Optional[int],
         backlog: int,
+        max_concurrent_streams: int,
         reload: bool,
         working_dir: str,
         grpc: bool,
@@ -127,10 +135,6 @@ def add_serve_command(cli: click.Group) -> None:
                 logger.warning(
                     "'--reload' is not supported with '--production'; ignoring"
                 )
-            if grpc:
-                logger.warning(
-                    "'--grpc' is not supported with '--production' yet; ignoring"
-                )
 
             from ..server import serve_production
 
@@ -140,7 +144,9 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=BentoMLContainer.service_host.get() if host is None else host,
                 backlog=backlog,
+                max_concurrent_streams=max_concurrent_streams,
                 api_workers=api_workers,
+                grpc=grpc,
             )
         else:
             from ..server import serve_development

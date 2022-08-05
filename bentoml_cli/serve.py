@@ -136,7 +136,7 @@ def add_serve_command(cli: click.Group) -> None:
                     "'--reload' is not supported with '--production'; ignoring"
                 )
 
-            from bentoml._internal.server import serve_production
+            from bentoml.serve import serve_production
 
             serve_production(
                 bento,
@@ -149,7 +149,7 @@ def add_serve_command(cli: click.Group) -> None:
                 grpc=grpc,
             )
         else:
-            from bentoml._internal.server import serve_development
+            from bentoml.serve import serve_development
 
             serve_development(
                 bento,

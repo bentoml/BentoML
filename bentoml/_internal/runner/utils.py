@@ -118,7 +118,7 @@ class Params(t.Generic[T]):
 PAYLOAD_META_HEADER = "Bento-Payload-Meta"
 
 
-def payload_params_to_batch_params(
+def payload_paramss_to_batch_params(
     paramss: t.Sequence[Params[Payload]],
     batch_dim: int,
     # TODO: support mapping from arg to batch dimension

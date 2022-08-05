@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 import typing as t
 import logging
 import functools
@@ -47,13 +48,17 @@ class GRPCAppFactory:
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
+        metrics_port: int = Provide[BentoMLContainer.grpc.metrics_port],
+        metrics_host: str = Provide[BentoMLContainer.grpc.metrics_host],
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
+        self._metrics_port = metrics_port
+        self._metrics_host = metrics_host
+        self._metrics_client = metrics_client
         self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
         self._thread_pool_size = _thread_pool_size
-        self._metrics_client = metrics_client
 
     @property
     def name(self) -> str:
@@ -94,17 +99,23 @@ class GRPCAppFactory:
             )
         from .grpc.servicer import create_bento_servicer
 
-        # NOTE: disable metrics server for production
-        # The reason being to create a CircusWatcher for this
-        # and refactor this outside of GrpcAppFactory
-        # from ..utils import reserve_free_port
-        # if self.enable_metrics:
-        #     with reserve_free_port() as port:
-        #         logger.info(
-        #             f"Prometheus metrics for grpc server can be viewed at http://127.0.0.1:{port}/"
-        #         )
-        #     self._metrics_client.start_http_server(port)
-        # TODO: add support for compression when it is fully supported from gRPC.
+        if self.enable_metrics:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                output_host = self._metrics_host
+                if output_host == "0.0.0.0":
+                    output_host = "127.0.0.1"
+                if sock.connect_ex(("127.0.0.1", self._metrics_port)) != 0:
+                    self._metrics_client.start_http_server(
+                        port=self._metrics_port, addr=self._metrics_host
+                    )
+                    logger.info(
+                        f"Prometheus metrics for grpc server can be accessed at http://{output_host}:{self._metrics_port}"
+                    )
+                else:
+                    logger.warning(
+                        f"Port {self._metrics_port} is already in use. Try using a different port."
+                    )
+
         server = aio.server(
             migration_thread_pool=ThreadPoolExecutor(self._thread_pool_size),
             handlers=self.handlers,

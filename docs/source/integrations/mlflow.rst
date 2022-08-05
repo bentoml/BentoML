@@ -30,7 +30,7 @@ Examples
 --------
 
 Besides this documentation, also check out code samples demonstrating BentoML and MLflow
-integration at: `bentoml/gallery: MLflow Examples <https://github.com/bentoml/gallery/tree/main/mlflow>`_.
+integration at: `bentoml/examples: MLflow Examples <https://github.com/bentoml/BentoML/tree/main/examples/mlflow>`_.
 
 
 Import an MLflow model
@@ -215,7 +215,7 @@ Here's an example ``bentoml.Service`` built with a MLflow model:
     def predict(input_arr):
         return mnist_runner.predict.run(input_arr)
 
-To try out the full example, visit `bentoml/gallery: MLflow Pytorch Example <https://github.com/bentoml/gallery/tree/main/mlflow/pytorch>`_.
+To try out the full example, visit `bentoml/examples: MLflow Pytorch Example <https://github.com/bentoml/BentoML/tree/main/examples/mlflow/pytorch>`_.
 
 
 MLflow 🤝 BentoML Workflow
@@ -227,7 +227,7 @@ There are numerous ways you can integrate BentoML with your MLflow workflow for 
 
 .. code-block:: python
 
-    # https://github.com/bentoml/gallery/tree/main/mlflow/sklearn_logistic_regression
+    # https://github.com/bentoml/BentoML/tree/main/examples/mlflow/sklearn_logistic_regression
     logged_model = mlflow.sklearn.log_model(lr, "model")
     print("Model saved in run %s" % mlflow.active_run().info.run_uuid)
 
@@ -239,7 +239,7 @@ There are numerous ways you can integrate BentoML with your MLflow workflow for 
 
 .. code-block:: python
 
-    # https://github.com/bentoml/gallery/tree/main/mlflow/pytorch
+    # https://github.com/bentoml/BentoML/tree/main/examples/mlflow/pytorch
     with mlflow.start_run():
         ...
         mlflow.pytorch.log_model(model, artifact_path="pytorch-model")

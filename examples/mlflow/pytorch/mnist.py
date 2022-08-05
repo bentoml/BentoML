@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 #
 # Trains an MNIST digit recognizer using PyTorch, and uses tensorboardX to log training metrics
 # and weights in TensorBoard event format to the MLflow run's artifact directory. This stores the
@@ -190,7 +191,7 @@ def test(epoch):
     log_scalar("test_accuracy", test_accuracy, step)
 
 
-def log_scalar(name, value, step):
+def log_scalar(name, value, _):
     """Log a scalar value to both MLflow and TensorBoard"""
     mlflow.log_metric(name, value)
 

@@ -42,8 +42,8 @@ Learn BentoML
 
         Best practices and example usages by the ML framework used for model training.
 
-    .. grid-item-card:: `🎨 Gallery Projects <https://github.com/bentoml/gallery>`_
-        :link: https://github.com/bentoml/gallery
+    .. grid-item-card:: `🎨 Gallery Projects <https://github.com/bentoml/BentoML/tree/main/examples>`_
+        :link: https://github.com/bentoml/BentoML/tree/main/examples
         :link-type: url
 
         Example projects demonstrating BentoML usage in a variety of different scenarios.

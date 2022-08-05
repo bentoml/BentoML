@@ -78,5 +78,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", "{{ bento__path }}", "--production", {% if __options__grpc is true %}"--grpc"{% else %}{% endif %} ]
+CMD [ "bentoml", "serve", "{{ bento__path }}", "--production",{% if __options__grpc is true %} "--grpc"{% else %}{% endif %} ]
 {% endblock %}

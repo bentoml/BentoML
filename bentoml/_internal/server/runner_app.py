@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import json
+import pickle
 import typing as t
-import asyncio
 import logging
 import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
 from ..context import trace_context
+from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
-from ..runner.utils import multipart_to_payload_params
 from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
@@ -170,20 +170,19 @@ class RunnerAppFactory(BaseAppFactory):
             assert self._is_ready
             if not requests:
                 return []
-            params_list = await asyncio.gather(
-                *tuple(multipart_to_payload_params(r) for r in requests)
-            )
+            params_list: list[Params[t.Any]] = []
+            for r in requests:
+                r_ = await r.body()
+                params_list.append(pickle.loads(r_))
 
             input_batch_dim, output_batch_dim = runner_method.config.batch_dim
 
             batched_params, indices = payload_paramss_to_batch_params(
-                params_list,
-                input_batch_dim,
+                params_list, input_batch_dim
             )
 
             batch_ret = await runner_method.async_run(
-                *batched_params.args,
-                **batched_params.kwargs,
+                *batched_params.args, **batched_params.kwargs
             )
 
             payloads = AutoContainer.batch_to_payloads(
@@ -215,7 +214,8 @@ class RunnerAppFactory(BaseAppFactory):
         async def _run(request: Request) -> Response:
             assert self._is_ready
 
-            params = await multipart_to_payload_params(request)
+            params = pickle.loads(await request.body())
+
             params = params.map(AutoContainer.from_payload)
             ret = await runner_method.async_run(*params.args, **params.kwargs)
 

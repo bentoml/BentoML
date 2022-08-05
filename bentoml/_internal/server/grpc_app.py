@@ -146,7 +146,7 @@ class GRPCAppFactory:
             AsyncOpenTelemetryServerInterceptor as AsyncOtelInterceptor,
         )
 
-        interceptors: list[t.Type[aio.ServerInterceptor]] = [
+        interceptors: list[t.Callable[[], aio.ServerInterceptor]] = [
             GenericHeadersServerInterceptor,
             AsyncOtelInterceptor,
         ]

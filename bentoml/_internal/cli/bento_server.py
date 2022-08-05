@@ -127,10 +127,6 @@ def add_serve_command(cli: click.Group) -> None:
                 logger.warning(
                     "'--reload' is not supported with '--production'; ignoring"
                 )
-            if grpc:
-                logger.warning(
-                    "'--grpc' is not supported with '--production' yet; ignoring"
-                )
 
             from ..server import serve_production
 
@@ -141,6 +137,7 @@ def add_serve_command(cli: click.Group) -> None:
                 host=BentoMLContainer.service_host.get() if host is None else host,
                 backlog=backlog,
                 api_workers=api_workers,
+                grpc=grpc,
             )
         else:
             from ..server import serve_development

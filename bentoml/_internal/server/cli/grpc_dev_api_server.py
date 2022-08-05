@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 import asyncio
 from urllib.parse import urlparse
 
@@ -50,7 +51,14 @@ def main(
 
     parsed = urlparse(bind)
 
-    svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
+    if parsed.scheme == "fd":
+        fd = int(parsed.netloc)
+        sock = socket.socket(fileno=fd)
+        svc.grpc_server.run(sockets=[sock])
+    elif parsed.scheme == "tcp":
+        svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
+    else:
+        raise ValueError(f"Unsupported bind scheme: {bind}")
 
 
 if __name__ == "__main__":

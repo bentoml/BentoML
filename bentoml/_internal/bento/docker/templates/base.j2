@@ -59,6 +59,10 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 # install python packages with install.sh
 RUN {{ __pip_cache__ }} bash -euxo pipefail {{ __install_python_scripts__ }}
 
+{% if __options__grpc is true %}
+RUN {{ __pip_cache__ }} pip install --no-warn-script-location "bentoml[grpc]"
+{% endif %}
+
 {% if __options__setup_script is not none %}
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
 RUN chmod +x {{ __setup_script__ }}
@@ -78,5 +82,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", "{{ bento__path }}", "--production" ]
+CMD [ "bentoml", "serve", "{{ bento__path }}", "--production"{% if __options__grpc is true %}, "--grpc"{% else %}{% endif %} ]
 {% endblock %}

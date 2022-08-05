@@ -80,7 +80,7 @@ def main(
         watcher = Watcher(
             name=f"runner_{runner_name}",
             cmd=sys.executable,
-            args=["-m", "bentoml._internal.server.cli.runner"]
+            args=["-m", "bentoml_cli.server.runner"]
             + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,

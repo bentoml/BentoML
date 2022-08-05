@@ -28,6 +28,8 @@ api_server:
     max_concurrent_streams: ~
     max_message_length: ~
     maximum_concurrent_rpcs: ~
+    metrics_port: 9090
+    metrics_host: 0.0.0.0
 
 runners:
   batching:

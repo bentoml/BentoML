@@ -248,6 +248,7 @@ def add_containerize_command(cli: click.Group) -> None:
                 key, value = label_str.split("=")
                 labels[key] = value
 
+        output_ = None
         if output:
             output_ = {}
             for arg in output:
@@ -257,18 +258,15 @@ def add_containerize_command(cli: click.Group) -> None:
                         output_[k] = v
                 key, value = arg.split("=")
                 output_[key] = value
-        else:
-            output_ = None
 
-        if not platform:
-            load = True
-        else:
-            if len(platform) > 1:
+        load = True
+        if platform and len(platform) > 1:
+            if not push:
                 logger.warning(
                     "Multiple `--platform` arguments were found. Make sure to also use `--push` to push images to a repository or generated images will not be saved. For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
                 )
-            else:
-                load = True
+        if push:
+            load = False
 
         exit_code = not containerize_bento(
             bento_tag,

@@ -16,6 +16,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
+from bentoml.exceptions import UnprocessableEntity
 
 from ..log import SERVER_LOGGING_CONFIG
 from ..utils import reserve_free_port
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
 SCRIPT_API_SERVER = "bentoml._internal.server.cli.http_api_server"
+SCRIPT_GRPC_API_SERVER = "bentoml._internal.server.cli.grpc_api_server"
 SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.http_dev_api_server"
 SCRIPT_GRPC_DEV_API_SERVER = "bentoml._internal.server.cli.grpc_dev_api_server"
 
@@ -105,11 +107,11 @@ def serve_development(
     if grpc:
         watcher_name = "grpc_dev_api_server"
         script_to_use = SCRIPT_GRPC_DEV_API_SERVER
-        socket_path = f"tcp://{host}:{port}"
+        bind_address = f"tcp://{host}:{port}"
     else:
         watcher_name = "dev_api_server"
         script_to_use = SCRIPT_DEV_API_SERVER
-        socket_path = f"fd://$(circus.sockets.{API_SERVER_NAME})"
+        bind_address = f"fd://$(circus.sockets.{API_SERVER_NAME})"
 
     circus_sockets: list[CircusSocket] = []
     circus_sockets.append(
@@ -125,7 +127,7 @@ def serve_development(
                 script_to_use,
                 bento_identifier,
                 "--bind",
-                socket_path,
+                bind_address,
                 "--working-dir",
                 working_dir,
                 "--prometheus-dir",
@@ -182,7 +184,9 @@ def serve_production(
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     api_workers: t.Optional[int] = None,
+    grpc: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -190,12 +194,17 @@ def serve_production(
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
-    watchers: t.List[Watcher] = []
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
-    runner_bind_map: t.Dict[str, str] = {}
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
+    runner_bind_map: dict[str, str] = {}
     uds_path = None
 
     prometheus_dir = ensure_prometheus_dir()
+
+    if grpc and psutil.WINDOWS:
+        raise UnprocessableEntity(
+            "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
+        )
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -283,28 +292,40 @@ def serve_production(
 
     logger.debug("Runner map: %s", runner_bind_map)
 
+    if grpc:
+        watcher_name = "grpc_api_server"
+        script_to_use = SCRIPT_GRPC_API_SERVER
+        socket_path = f"tcp://{host}:{port}"
+        # num_connect_args = ["--max-concurrent-streams", f"{max_concurrent_streams}"]
+        num_connect_args = []
+    else:
+        watcher_name = "api_server"
+        script_to_use = SCRIPT_API_SERVER
+        socket_path = f"fd://$(circus.sockets.{API_SERVER_NAME})"
+        num_connect_args = ["--backlog", f"{backlog}"]
+
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,
         host=host,
         port=port,
         backlog=backlog,
     )
+
     watchers.append(
         Watcher(
-            name="api_server",
+            name=watcher_name,
             cmd=sys.executable,
             args=[
                 "-m",
-                SCRIPT_API_SERVER,
+                script_to_use,
                 bento_identifier,
                 "--bind",
-                f"fd://$(circus.sockets.{API_SERVER_NAME})",
+                socket_path,
                 "--runner-map",
                 json.dumps(runner_bind_map),
                 "--working-dir",
                 working_dir,
-                "--backlog",
-                f"{backlog}",
+                *num_connect_args,
                 "--worker-id",
                 "$(CIRCUS.WID)",
                 "--prometheus-dir",

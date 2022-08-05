@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..bento import Bento
-    from .openapi.specification import OpenAPISpecification
     from ..server.grpc import GRPCServer
+    from .openapi.specification import OpenAPISpecification
 
     WSGI_APP = t.Callable[
         [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]

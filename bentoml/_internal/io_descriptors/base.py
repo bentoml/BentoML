@@ -17,12 +17,11 @@ if TYPE_CHECKING:
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
+    from ..server.grpc.types import BentoServicerContext
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Response as OpenAPIResponse
     from ..service.openapi.specification import Reference
     from ..service.openapi.specification import RequestBody
-
-    from ..server.grpc.types import BentoServicerContext
 
     InputType = (
         UnionType

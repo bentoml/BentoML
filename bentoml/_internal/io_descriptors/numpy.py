@@ -16,12 +16,12 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
+from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
-from ...exceptions import UnprocessableEntity
 
 if TYPE_CHECKING:
     import numpy as np

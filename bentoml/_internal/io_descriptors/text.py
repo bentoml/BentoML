@@ -7,15 +7,20 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from bentoml.exceptions import BentoMLException
-from bentoml.grpc.v1 import service_pb2
 
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
+from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
+    from bentoml.grpc.v1 import service_pb2 as _service_pb2
+
     from ..context import InferenceApiContext as Context
+    from ...server.grpc.types import BentoServicerContext
+else:
+    _service_pb2 = LazyLoader("_service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
@@ -133,11 +138,17 @@ class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
         else:
             return Response(obj, media_type=MIME_TYPE)
 
-    async def from_grpc_request(self, request: service_pb2.Request, context) -> str:
+    async def from_grpc_request(
+        self,
+        request: _service_pb2.Request,
+        context: BentoServicerContext,  # pylint: disable=unused-argument
+    ) -> str:
         return str(request.input.string_value)
 
-    async def to_grpc_response(self, obj: str, context) -> service_pb2.Response:
-        return service_pb2.Response(output=service_pb2.Value(string_value=obj))
+    async def to_grpc_response(
+        self, obj: str, context: BentoServicerContext  # pylint: disable=unused-argument
+    ) -> _service_pb2.Response:
+        return _service_pb2.Response(output=_service_pb2.Value(string_value=obj))
 
     def generate_protobuf(self):
         pass

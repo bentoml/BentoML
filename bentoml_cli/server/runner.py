@@ -92,7 +92,7 @@ def main(
         return
 
     component_context.component_name = f"runner:{runner_name}:{worker_id}"
-    from ...log import configure_server_logging
+    from bentoml._internal.log import configure_server_logging
 
     configure_server_logging()
     import uvicorn  # type: ignore

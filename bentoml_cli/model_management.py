@@ -13,12 +13,12 @@ from rich.syntax import Syntax
 
 from bentoml import Tag
 from bentoml.models import import_model
+from bentoml_cli.utils import is_valid_bento_tag
+from bentoml_cli.utils import BentoMLCommandGroup
+from bentoml_cli.utils import is_valid_bento_name
 from bentoml._internal.utils import rich_console as console
 from bentoml._internal.utils import calc_dir_size
 from bentoml._internal.utils import human_readable_size
-from bentoml_cli.click_utils import is_valid_bento_tag
-from bentoml_cli.click_utils import BentoMLCommandGroup
-from bentoml_cli.click_utils import is_valid_bento_name
 from bentoml._internal.yatai_client import yatai_client
 from bentoml._internal.configuration.containers import BentoMLContainer
 

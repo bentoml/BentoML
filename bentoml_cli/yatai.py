@@ -3,8 +3,8 @@ import logging
 
 import click
 
+from bentoml_cli.utils import BentoMLCommandGroup
 from bentoml.exceptions import CLIException
-from bentoml_cli.click_utils import BentoMLCommandGroup
 from bentoml._internal.yatai_rest_api_client.yatai import YataiRESTApiClient
 from bentoml._internal.yatai_rest_api_client.config import add_context
 from bentoml._internal.yatai_rest_api_client.config import YataiClientContext

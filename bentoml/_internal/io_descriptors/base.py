@@ -5,12 +5,13 @@ from abc import ABCMeta
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from starlette.requests import Request
+from starlette.responses import Response
+
 if TYPE_CHECKING:
     from types import UnionType
 
     from typing_extensions import Self
-    from starlette.requests import Request
-    from starlette.responses import Response
 
     from bentoml.grpc.v1.service_pb2 import Request as GRPCRequest
     from bentoml.grpc.v1.service_pb2 import Response as GRPCResponse
@@ -18,13 +19,6 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..server.grpc.types import BentoServicerContext
-
-    InputType = (
-        UnionType
-        | t.Type[t.Any]
-        | LazyType[t.Any]
-        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
-    )
 
 
 IOPyObj = t.TypeVar("IOPyObj")
@@ -81,19 +75,26 @@ class IODescriptor(t.Generic[IOPyObj], metaclass=DescriptorMeta, proto_fields=No
         return self._proto_fields
 
     @abstractmethod
-    def input_type(self) -> InputType:
+    def input_type(
+        self,
+    ) -> t.Union[
+        "UnionType",
+        t.Type[t.Any],
+        "LazyType[t.Any]",
+        t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]],
+    ]:
         ...
 
     @abstractmethod
-    def openapi_schema_type(self) -> dict[str, str]:
+    def openapi_schema_type(self) -> t.Dict[str, str]:
         ...
 
     @abstractmethod
-    def openapi_request_schema(self) -> dict[str, t.Any]:
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         ...
 
     @abstractmethod
-    def openapi_responses_schema(self) -> dict[str, t.Any]:
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         ...
 
     @abstractmethod

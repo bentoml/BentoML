@@ -11,16 +11,16 @@ import click
 from click import ClickException
 from click.exceptions import UsageError
 
-from ..log import configure_logging
-from ...exceptions import BentoMLException
-from ..configuration import CONFIG_ENV_VAR
-from ..configuration import set_debug_mode
-from ..configuration import set_quiet_mode
-from ..configuration import load_global_config
-from ..utils.analytics import track
-from ..utils.analytics import CliEvent
-from ..utils.analytics import cli_events_map
-from ..utils.analytics import BENTOML_DO_NOT_TRACK
+from bentoml.exceptions import BentoMLException
+from bentoml._internal.log import configure_logging
+from bentoml._internal.configuration import CONFIG_ENV_VAR
+from bentoml._internal.configuration import set_debug_mode
+from bentoml._internal.configuration import set_quiet_mode
+from bentoml._internal.configuration import load_global_config
+from bentoml._internal.utils.analytics import track
+from bentoml._internal.utils.analytics import CliEvent
+from bentoml._internal.utils.analytics import cli_events_map
+from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -215,7 +215,7 @@ class BentoMLCommandGroup(click.Group):
 
 def is_valid_bento_tag(value: str) -> bool:
     try:
-        from ..tag import Tag
+        from bentoml._internal.tag import Tag
 
         Tag.from_str(value)
         return True

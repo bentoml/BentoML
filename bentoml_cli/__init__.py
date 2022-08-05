@@ -4,19 +4,18 @@ import click
 import psutil
 
 from bentoml import __version__ as BENTOML_VERSION
-
-from .env import add_env_command
-from .yatai import add_login_command
-from .click_utils import BentoMLCommandGroup
-from .bento_server import add_serve_command
-from .containerize import add_containerize_command
-from .bento_management import add_bento_management_commands
-from .model_management import add_model_management_commands
+from bentoml_cli.env import add_env_command
+from bentoml_cli.yatai import add_login_command
+from bentoml_cli.click_utils import BentoMLCommandGroup
+from bentoml_cli.bento_server import add_serve_command
+from bentoml_cli.containerize import add_containerize_command
+from bentoml_cli.bento_management import add_bento_management_commands
+from bentoml_cli.model_management import add_model_management_commands
 
 
 def create_bentoml_cli():
 
-    from ..context import component_context
+    from bentoml._internal.context import component_context
 
     component_context.component_name = "cli"
 

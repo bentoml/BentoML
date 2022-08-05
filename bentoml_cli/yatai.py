@@ -4,12 +4,11 @@ import logging
 import click
 
 from bentoml.exceptions import CLIException
-
-from ..cli.click_utils import BentoMLCommandGroup
-from ..yatai_rest_api_client.yatai import YataiRESTApiClient
-from ..yatai_rest_api_client.config import add_context
-from ..yatai_rest_api_client.config import YataiClientContext
-from ..yatai_rest_api_client.config import default_context_name
+from bentoml_cli.click_utils import BentoMLCommandGroup
+from bentoml._internal.yatai_rest_api_client.yatai import YataiRESTApiClient
+from bentoml._internal.yatai_rest_api_client.config import add_context
+from bentoml._internal.yatai_rest_api_client.config import YataiClientContext
+from bentoml._internal.yatai_rest_api_client.config import default_context_name
 
 logger = logging.getLogger(__name__)
 

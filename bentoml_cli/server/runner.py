@@ -8,11 +8,6 @@ from urllib.parse import urlparse
 
 import psutil
 
-from bentoml import load
-from bentoml._internal.utils.uri import uri_to_path
-
-from ...context import component_context
-
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
 
@@ -63,6 +58,11 @@ def main(
         working_dir: (Optional) the working directory
         worker_id: (Optional) if set, the runner will be started as a worker with the given ID
     """
+
+    from bentoml import load
+    from bentoml._internal.context import component_context
+    from bentoml._internal.utils.uri import uri_to_path
+
     if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher

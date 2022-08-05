@@ -29,11 +29,11 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 
-SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
-SCRIPT_API_SERVER = "bentoml._internal.server.cli.http_api_server"
-SCRIPT_GRPC_API_SERVER = "bentoml._internal.server.cli.grpc_api_server"
-SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.http_dev_api_server"
-SCRIPT_GRPC_DEV_API_SERVER = "bentoml._internal.server.cli.grpc_dev_api_server"
+SCRIPT_RUNNER = "bentoml_cli.server.runner"
+SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
+SCRIPT_GRPC_API_SERVER = "bentoml_cli.server.grpc_api_server"
+SCRIPT_DEV_API_SERVER = "bentoml_cli.server.http_dev_api_server"
+SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.server.grpc_dev_api_server"
 
 MAX_AF_UNIX_PATH_LENGTH = 103
 

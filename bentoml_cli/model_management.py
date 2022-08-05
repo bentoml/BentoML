@@ -13,19 +13,18 @@ from rich.syntax import Syntax
 
 from bentoml import Tag
 from bentoml.models import import_model
-
-from ..utils import rich_console as console
-from ..utils import calc_dir_size
-from ..utils import human_readable_size
-from .click_utils import is_valid_bento_tag
-from .click_utils import BentoMLCommandGroup
-from .click_utils import is_valid_bento_name
-from ..yatai_client import yatai_client
-from ..configuration.containers import BentoMLContainer
+from bentoml._internal.utils import rich_console as console
+from bentoml._internal.utils import calc_dir_size
+from bentoml._internal.utils import human_readable_size
+from bentoml_cli.click_utils import is_valid_bento_tag
+from bentoml_cli.click_utils import BentoMLCommandGroup
+from bentoml_cli.click_utils import is_valid_bento_name
+from bentoml._internal.yatai_client import yatai_client
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
 
-    from ..models import ModelStore
+    from bentoml._internal.models import ModelStore
 
 logger = logging.getLogger(__name__)
 

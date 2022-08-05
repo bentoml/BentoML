@@ -9,9 +9,6 @@ from urllib.parse import urlparse
 import click
 import psutil
 
-import bentoml
-from bentoml._internal.context import component_context
-
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
@@ -66,7 +63,9 @@ def main(
 
     import uvicorn
 
+    import bentoml
     from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     configure_server_logging()

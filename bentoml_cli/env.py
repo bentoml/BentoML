@@ -11,9 +11,8 @@ import click
 
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml.exceptions import CLIException
-
-from ..utils.pkg import get_pkg_version
-from ..utils.pkg import PackageNotFoundError
+from bentoml._internal.utils.pkg import get_pkg_version
+from bentoml._internal.utils.pkg import PackageNotFoundError
 
 conda_packages_name = "conda_packages"
 

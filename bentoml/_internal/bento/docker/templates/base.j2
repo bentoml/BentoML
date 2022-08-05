@@ -58,6 +58,10 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
 {{ common.run_script(__install_python_scripts__, "install.sh to install python packages", run_args=__pip_cache__) }}
 
+{% if __options__grpc is true %}
+RUN {{ __pip_cache__ }} pip install --no-warn-script-location "bentoml[grpc]"
+{% endif %}
+
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
 {{ common.run_script(__setup_script__, "user setup scripts") }}
 
@@ -74,5 +78,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", "{{ bento__path }}", "--production" ]
+CMD [ "bentoml", "serve", "{{ bento__path }}", "--production"{% if __options__grpc is true %}, "--grpc"{% else %}{% endif %} ]
 {% endblock %}

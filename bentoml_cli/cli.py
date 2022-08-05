@@ -8,9 +8,9 @@ from bentoml_cli.env import add_env_command
 from bentoml_cli.serve import add_serve_command
 from bentoml_cli.utils import BentoMLCommandGroup
 from bentoml_cli.yatai import add_login_command
+from bentoml_cli.bentos import add_bento_management_commands
+from bentoml_cli.models import add_model_management_commands
 from bentoml_cli.containerize import add_containerize_command
-from bentoml_cli.bento_management import add_bento_management_commands
-from bentoml_cli.model_management import add_model_management_commands
 
 
 def create_bentoml_cli():

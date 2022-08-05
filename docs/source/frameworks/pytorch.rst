@@ -76,7 +76,7 @@ For common PyTorch models with single input:
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(2):
+    for epoch in range(2):  # a small epoch just for demostration purpose
         for i, data in enumerate(trainloader, 0):
             # get the inputs
             inputs, labels = data
@@ -171,7 +171,7 @@ Create a BentoML service with the previously saved `my_torch_model` pipeline usi
     Follow the steps to get the best performance out of your PyTorch model.
     #. Apply adaptive batching if possible.
     #. Serve on GPUs if applicable.
-    #. See performance guide from [PyTorch Doc]
+    #. See performance guide from `PyTorch Model Opt Doc <https://pytorch.org/tutorials/beginner/profiler.html>`_
 
 
 Adaptive Batching

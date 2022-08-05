@@ -7,12 +7,11 @@ BentoML provides native support for serving and deploying models trained from Py
 Preface
 -------
 
-If you have already compiled your PyTorch model to TorchScript, you might consider to use :doc:`bentoml.torchscript </reference/frameworks/torchscript>`. BentoML provides first-class support for TorchScript, and hence using ``bentoml.torchscript`` are less prone to bugs during production.
+If you have already compiled your PyTorch model to TorchScript, you might consider to use :doc:`bentoml.torchscript </reference/frameworks/torchscript>`. BentoML provides first-class support for TorchScript, hence using ``bentoml.torchscript`` is less prone to compatibility issues during production.
 
 .. note::
 
-    :bdg-info:`Remarks:` We recommend users to apply model optimization techniques such as `distillation <https://arxiv.org/abs/1503.02531>`_ or `quantization <https://pytorch.org/docs/stable/quantization.html#general-quantization-flow>`_ .
-    Alternatively, PyTorch models can also be converted to :doc:`/frameworks/onnx` models and leverage different runtimes (e.g. TensorRT, Apache TVM, etc.).
+    :bdg-info:`Remarks:` We recommend users to apply model optimization techniques such as `distillation <https://arxiv.org/abs/1503.02531>`_ or `quantization <https://pytorch.org/docs/stable/quantization.html#general-quantization-flow>`_ . Alternatively, PyTorch models can also be converted to :doc:`/frameworks/onnx` models and leverage different runtimes (e.g. TensorRT, Apache TVM, etc.) for better performance.
 
 
 Saving a Trained Model
@@ -138,7 +137,7 @@ For common PyTorch models with single input:
 .. note::
 
     :code:`bentoml.pytorch.save_model` has parameter ``signatures``.
-    ``signatures`` refers to a general :ref:`Model Signatures <concepts/model:Model Signatures>`_ that dictates which methods can be used for inference in the Runner context. This signatures dictionary will be used during the creation process of a Runner instance.
+    The ``signatures`` argument of type :ref:`Model Signatures <concepts/model:Model Signatures>`_ in :code:`bentoml.pytorch.save_model` is used to express which methods should be used for inference and exposed in the Runner. This signatures dictionary will be used during the creation process of a Runner instance.
 
 The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
 

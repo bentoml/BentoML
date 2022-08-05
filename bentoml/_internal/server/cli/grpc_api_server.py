@@ -86,7 +86,6 @@ def main(
             copy_env=True,
             numprocesses=1,
             stop_children=True,
-            use_sockets=True,
             working_dir=working_dir,
         )
         arbiter = create_standalone_arbiter(watchers=[watcher])

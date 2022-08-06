@@ -33,13 +33,14 @@ test_arr = t.cast("np.ndarray[t.Any, np.dtype[np.int32]]", np.array([[1]]))
             '{"name":"test","endpoints":["predict","health"]}',
         ),
         (test_arr, "[[1]]"),
+        (None, None),
     ],
 )
 def test_json_encoder(
     obj: t.Union[
-        _ExampleSchema, pydantic.BaseModel, "np.ndarray[t.Any, np.dtype[t.Any]]"
+        _ExampleSchema, pydantic.BaseModel, "np.ndarray[t.Any, np.dtype[t.Any]]", None
     ],
-    expected: str,
+    expected: t.Union[str, None],
 ) -> None:
     from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 

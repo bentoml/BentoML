@@ -69,9 +69,11 @@ def _validate_docker_tag(tag: str) -> str:
 def validate_tag(
     ctx: Context, param: Parameter, tag: str | tuple[str] | None
 ) -> str | tuple[str] | None:
-    if tag is None:
+    if not tag:
         return tag
     elif isinstance(tag, tuple):
         return tuple(map(_validate_docker_tag, tag))
-    else:
+    elif isinstance(tag, str):
         return _validate_docker_tag(tag)
+    else:
+        raise BentoMLException(f"Invalid tag type. Got {type(tag)}")

@@ -22,17 +22,24 @@ test_arr = t.cast("np.ndarray[t.Any, np.dtype[np.int32]]", np.array([[1]]))
 
 
 @pytest.mark.parametrize(
-    "obj",
+    "obj,expected",
     [
-        _ExampleSchema(name="test", endpoints=["predict", "health"]),
-        _Schema(name="test", endpoints=["predict", "health"]),
-        test_arr,
+        (
+            _ExampleSchema(name="test", endpoints=["predict", "health"]),
+            '{"name":"test","endpoints":["predict","health"]}',
+        ),
+        (
+            _Schema(name="test", endpoints=["predict", "health"]),
+            '{"name":"test","endpoints":["predict","health"]}',
+        ),
+        (test_arr, "[[1]]"),
     ],
 )
 def test_json_encoder(
     obj: t.Union[
         _ExampleSchema, pydantic.BaseModel, "np.ndarray[t.Any, np.dtype[t.Any]]"
-    ]
+    ],
+    expected: str,
 ) -> None:
     from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
@@ -44,7 +51,4 @@ def test_json_encoder(
         indent=None,
         separators=(",", ":"),
     )
-    assert (
-        dumped == '{"name":"test","endpoints":["predict","health"]}'
-        or dumped == "[[1]]"
-    )
+    assert expected == dumped

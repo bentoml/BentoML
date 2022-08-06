@@ -86,7 +86,7 @@ def add_containerize_command(cli: click.Group) -> None:
         "--load",
         is_flag=True,
         default=False,
-        help="Shorthand for '--output=type=docker'.",
+        help="Shorthand for '--output=type=docker'. Note that '--push' and '--load' are mutually exclusive.",
     )
     @click.option(
         "--metadata-file",
@@ -136,7 +136,7 @@ def add_containerize_command(cli: click.Group) -> None:
         "--push",
         is_flag=True,
         default=False,
-        help="Shorthand for '--output=type=registry'.",
+        help="Shorthand for '--output=type=registry'. Note that '--push' and '--load' are mutually exclusive.",
     )
     @click.option(
         "--secret",

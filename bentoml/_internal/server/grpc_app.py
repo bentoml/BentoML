@@ -99,22 +99,22 @@ class GRPCAppFactory:
             )
         from .grpc.servicer import create_bento_servicer
 
-        if self.enable_metrics:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                output_host = self._metrics_host
-                if output_host == "0.0.0.0":
-                    output_host = "127.0.0.1"
-                if sock.connect_ex(("127.0.0.1", self._metrics_port)) != 0:
-                    self._metrics_client.start_http_server(
-                        port=self._metrics_port, addr=self._metrics_host
-                    )
-                    logger.info(
-                        f"Prometheus metrics for grpc server can be accessed at http://{output_host}:{self._metrics_port}"
-                    )
-                else:
-                    logger.warning(
-                        f"Port {self._metrics_port} is already in use. Try using a different port."
-                    )
+        # if self.enable_metrics:
+        #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        #         output_host = self._metrics_host
+        #         if output_host == "0.0.0.0":
+        #             output_host = "127.0.0.1"
+        #         if sock.connect_ex(("127.0.0.1", self._metrics_port)) != 0:
+        #             self._metrics_client.start_http_server(
+        #                 port=self._metrics_port, addr=self._metrics_host
+        #             )
+        #             logger.info(
+        #                 f"Prometheus metrics for grpc server can be accessed at http://{output_host}:{self._metrics_port}"
+        #             )
+        #         else:
+        #             logger.warning(
+        #                 f"Port {self._metrics_port} is already in use. Try using a different port."
+        #             )
 
         server = aio.server(
             migration_thread_pool=ThreadPoolExecutor(self._thread_pool_size),
@@ -147,13 +147,12 @@ class GRPCAppFactory:
             BentoMLContainer.grpc.max_concurrent_streams
         ],
     ) -> aio.ChannelArgumentType:
-        # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h
-        #
         # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h#L294
         # Eventhough GRPC_ARG_ALLOW_REUSEPORT is set to 1 by default, we want still
         # want to explicitly set it to 1 so that we can spawn multiple gRPC servers in
-        # production settings.
-        options: list[tuple[str, t.Any]] = [("grpc.so_reuseport", 1)]
+        # production settings: ("grpc.so_reuseport", 1)
+
+        options: list[tuple[str, t.Any]] = []
         if max_concurrent_streams:
             # TODO: refactor max_concurrent_streams this to be configurable
             options.append(("grpc.max_concurrent_streams", max_concurrent_streams))
@@ -165,7 +164,7 @@ class GRPCAppFactory:
                     ("grpc.max_send_message_length", max_message_length),
                 )
             )
-        return options
+        return tuple(options)
 
     @property
     def handlers(self) -> t.Sequence[grpc.GenericRpcHandler] | None:

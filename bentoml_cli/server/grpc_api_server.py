@@ -72,11 +72,12 @@ def main(
         from bentoml.serve import ensure_prometheus_dir
         from bentoml._internal.utils.click import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
+        from bentoml._internal.utils.circus import create_circus_socket_from_uri
 
+        circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
         ensure_prometheus_dir()
-        parsed = urlparse(bind)
         params = ctx.params
-        params["bind"] = f"tcp://0.0.0.0:{parsed.port}"
+        params["bind"] = "fd://$(circus.sockets._bento_api_server)"
         params["worker_id"] = "$(circus.wid)"
         watcher = Watcher(
             name="bento_api_server",
@@ -86,9 +87,10 @@ def main(
             copy_env=True,
             numprocesses=1,
             stop_children=True,
+            use_sockets=True,
             working_dir=working_dir,
         )
-        arbiter = create_standalone_arbiter(watchers=[watcher])
+        arbiter = create_standalone_arbiter(watchers=[watcher], sockets=[circus_socket])
         arbiter.start()
         return
 
@@ -106,10 +108,7 @@ def main(
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version
 
-    parsed = urlparse(bind)
-    # assert parsed.scheme == "tcp"
-
-    svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
+    svc.grpc_server.run(bind_addr=bind)
 
 
 if __name__ == "__main__":

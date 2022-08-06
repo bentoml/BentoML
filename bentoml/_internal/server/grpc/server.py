@@ -43,7 +43,7 @@ class GRPCServer:
         on_startup: t.Sequence[t.Callable[[], t.Any]] | None = None,
         on_shutdown: t.Sequence[t.Callable[[], t.Any]] | None = None,
         *,
-        _grace_period: int = 5,
+        _grace_period: int | None = None,
         _bento_servicer: service_pb2_grpc.BentoServiceServicer,
         _health_servicer: health.aio.HealthServicer,
     ):
@@ -67,8 +67,12 @@ class GRPCServer:
         try:
             self._loop.run_until_complete(self.serve(bind_addr=bind_addr))
         finally:
-            self._loop.run_until_complete(*self._cleanup)
-            self._loop.close()
+            if self._cleanup:
+                self._loop.run_until_complete(*self._cleanup)
+                self._loop.close()
+            raise RuntimeError(
+                "Server failed unexpectedly. enable GRPC_VERBOSITY=debug for more information."
+            ) from None
 
     async def serve(self, bind_addr: str) -> None:
         self.add_insecure_port(bind_addr)

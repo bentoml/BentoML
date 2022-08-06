@@ -5,6 +5,7 @@ import sys
 import json
 import math
 import shutil
+import socket
 import typing as t
 import logging
 import tempfile
@@ -81,6 +82,19 @@ def ensure_prometheus_dir(
     )
     BentoMLContainer.prometheus_multiproc_dir.set(alternative)
     return alternative
+
+
+@contextlib.contextmanager
+def reserve_reuse_port():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 0:
+        raise RuntimeError("Failed to set SO_REUSEPORT.")
+    sock.bind(("", 0))
+    try:
+        yield sock.getsockname()[1]
+    finally:
+        sock.close()
 
 
 @inject
@@ -206,6 +220,18 @@ def serve_production(
             "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
         )
 
+    def create_watcher(name: str, args: list[str], numprocesses: int) -> Watcher:
+        return Watcher(
+            name=name,
+            cmd=sys.executable,
+            args=args,
+            copy_env=True,
+            stop_children=True,
+            use_sockets=True,
+            working_dir=working_dir,
+            numprocesses=numprocesses,
+        )
+
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
@@ -221,9 +247,8 @@ def serve_production(
             )
 
             watchers.append(
-                Watcher(
+                create_watcher(
                     name=f"runner_{runner.name}",
-                    cmd=sys.executable,
                     args=[
                         "-m",
                         SCRIPT_RUNNER,
@@ -237,10 +262,6 @@ def serve_production(
                         "--worker-id",
                         "$(CIRCUS.WID)",
                     ],
-                    copy_env=True,
-                    stop_children=True,
-                    working_dir=working_dir,
-                    use_sockets=True,
                     numprocesses=runner.scheduled_worker_count,
                 )
             )
@@ -261,9 +282,8 @@ def serve_production(
                 )
 
                 watchers.append(
-                    Watcher(
+                    create_watcher(
                         name=f"runner_{runner.name}",
-                        cmd=sys.executable,
                         args=[
                             "-m",
                             SCRIPT_RUNNER,
@@ -278,10 +298,6 @@ def serve_production(
                             "--worker-id",
                             "$(CIRCUS.WID)",
                         ],
-                        copy_env=True,
-                        stop_children=True,
-                        use_sockets=True,
-                        working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
                     )
                 )
@@ -293,55 +309,73 @@ def serve_production(
     logger.debug("Runner map: %s", runner_bind_map)
 
     if grpc:
-        watcher_name = "grpc_api_server"
-        script_to_use = SCRIPT_GRPC_API_SERVER
-        bind_address = f"fd://$(circus.sockets.{API_SERVER_NAME})"
-        # num_connect_args = ["--max-concurrent-streams", f"{max_concurrent_streams}"]
-        num_connect_args = []
+
+        with contextlib.ExitStack() as port_stack:
+            api_port = port_stack.enter_context(reserve_reuse_port())
+            api_host = "127.0.0.1"
+            circus_socket_map[API_SERVER_NAME] = CircusSocket(
+                name=API_SERVER_NAME,
+                host=api_host,
+                port=api_port,
+            )
+            # reserve one more to avoid conflicts
+            port_stack.enter_context(reserve_reuse_port())
+
+            watchers.append(
+                create_watcher(
+                    name="grpc_api_server",
+                    args=[
+                        "-m",
+                        SCRIPT_GRPC_API_SERVER,
+                        bento_identifier,
+                        "--bind",
+                        f"tcp://{api_host}:{api_port}",
+                        "--runner-map",
+                        json.dumps(runner_bind_map),
+                        "--working-dir",
+                        working_dir,
+                        "--worker-id",
+                        "$(CIRCUS.WID)",
+                        "--prometheus-dir",
+                        prometheus_dir,
+                    ],
+                    numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+                )
+            )
     else:
-        watcher_name = "api_server"
-        script_to_use = SCRIPT_API_SERVER
-        bind_address = f"fd://$(circus.sockets.{API_SERVER_NAME})"
-        num_connect_args = ["--backlog", f"{backlog}"]
-
-    circus_socket_map[API_SERVER_NAME] = CircusSocket(
-        name=API_SERVER_NAME,
-        host=host,
-        port=port,
-        backlog=backlog,
-    )
-
-    watchers.append(
-        Watcher(
-            name=watcher_name,
-            cmd=sys.executable,
-            args=[
-                "-m",
-                script_to_use,
-                bento_identifier,
-                "--bind",
-                bind_address,
-                "--runner-map",
-                json.dumps(runner_bind_map),
-                "--working-dir",
-                working_dir,
-                *num_connect_args,
-                "--worker-id",
-                "$(CIRCUS.WID)",
-                "--prometheus-dir",
-                prometheus_dir,
-            ],
-            copy_env=True,
-            numprocesses=api_workers or math.ceil(CpuResource.from_system()),
-            stop_children=True,
-            use_sockets=True,
-            working_dir=working_dir,
+        circus_socket_map[API_SERVER_NAME] = CircusSocket(
+            name=API_SERVER_NAME,
+            host=host,
+            port=port,
+            backlog=backlog,
         )
-    )
+
+        watchers.append(
+            create_watcher(
+                name="api_server",
+                args=[
+                    "-m",
+                    SCRIPT_API_SERVER,
+                    bento_identifier,
+                    "--bind",
+                    f"fd://$(circus.sockets.{API_SERVER_NAME})",
+                    "--runner-map",
+                    json.dumps(runner_bind_map),
+                    "--working-dir",
+                    working_dir,
+                    "--backlog",
+                    f"{backlog}",
+                    "--worker-id",
+                    "$(CIRCUS.WID)",
+                    "--prometheus-dir",
+                    prometheus_dir,
+                ],
+                numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+            )
+        )
 
     arbiter = create_standalone_arbiter(
-        watchers=watchers,
-        sockets=list(circus_socket_map.values()),
+        watchers=watchers, sockets=list(circus_socket_map.values())
     )
 
     with track_serve(svc, production=True):

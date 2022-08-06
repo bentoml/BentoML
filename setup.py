@@ -30,9 +30,6 @@ def get_args(parent_path: str, *paths: str, grpc_out: bool = False) -> list[str]
 
 if __name__ == "__main__":
 
-    # run setuptools.setup()
-    setup()
-
     binary = [sys.executable, "-m", "grpc_tools.protoc"]
 
     for version, file_map in _VERSION_MAP.items():
@@ -41,3 +38,6 @@ if __name__ == "__main__":
         # Generate bentoml stubs
         for paths, options in file_map.items():
             subprocess.check_call([*binary, *get_args(version_path, *paths, **options)])
+
+    # run setuptools.setup()
+    setup()

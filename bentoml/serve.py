@@ -295,13 +295,13 @@ def serve_production(
     if grpc:
         watcher_name = "grpc_api_server"
         script_to_use = SCRIPT_GRPC_API_SERVER
-        socket_path = f"tcp://{host}:{port}"
+        bind_address = f"fd://$(circus.sockets.{API_SERVER_NAME})"
         # num_connect_args = ["--max-concurrent-streams", f"{max_concurrent_streams}"]
         num_connect_args = []
     else:
         watcher_name = "api_server"
         script_to_use = SCRIPT_API_SERVER
-        socket_path = f"fd://$(circus.sockets.{API_SERVER_NAME})"
+        bind_address = f"fd://$(circus.sockets.{API_SERVER_NAME})"
         num_connect_args = ["--backlog", f"{backlog}"]
 
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
@@ -320,7 +320,7 @@ def serve_production(
                 script_to_use,
                 bento_identifier,
                 "--bind",
-                socket_path,
+                bind_address,
                 "--runner-map",
                 json.dumps(runner_bind_map),
                 "--working-dir",

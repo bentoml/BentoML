@@ -76,7 +76,7 @@ def main(
         ensure_prometheus_dir()
         parsed = urlparse(bind)
         params = ctx.params
-        params["max_concurrent_streams"] = f"tcp://0.0.0.0:{parsed.port}"
+        params["bind"] = f"tcp://0.0.0.0:{parsed.port}"
         params["worker_id"] = "$(circus.wid)"
         watcher = Watcher(
             name="bento_api_server",
@@ -107,7 +107,7 @@ def main(
         component_context.bento_version = svc.tag.version
 
     parsed = urlparse(bind)
-    assert parsed.scheme == "tcp"
+    # assert parsed.scheme == "tcp"
 
     svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
 

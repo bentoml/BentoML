@@ -4,6 +4,7 @@ import os
 import logging
 
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import MissingDependencyException
 
 from ..utils.pkg import source_locations
 from ..configuration import is_pypi_installed_bentoml
@@ -11,6 +12,7 @@ from ..configuration import is_pypi_installed_bentoml
 logger = logging.getLogger(__name__)
 
 BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
+_exc_message = f"'{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package. Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
 
 
 def build_bentoml_editable_wheel(target_path: str) -> None:
@@ -26,6 +28,12 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         # skip this entirely if BentoML is installed from PyPI
         return
 
+    try:
+        from build import ProjectBuilder
+        from build.env import IsolatedEnvBuilder
+    except ModuleNotFoundError:
+        raise MissingDependencyException(_exc_message)
+
     # Find bentoml module path
     module_location = source_locations("bentoml")
     if not module_location:
@@ -40,15 +48,6 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         logger.info(
             "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento."
         )
-
-        try:
-            from build.env import IsolatedEnvBuilder
-
-            from build import ProjectBuilder
-        except ModuleNotFoundError:
-            raise BentoMLException(
-                f"'{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package. Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
-            )
 
         with IsolatedEnvBuilder() as env:
             builder = ProjectBuilder(os.path.dirname(pyproject))

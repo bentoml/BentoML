@@ -1,10 +1,19 @@
 import json
 import typing as t
 from dataclasses import dataclass
+import asyncio
 
 import numpy as np
+from bentoml._internal.io_descriptors.json import JSON
 import pytest
 import pydantic
+
+
+@pytest.fixture
+def loop():
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 @dataclass
@@ -33,7 +42,6 @@ test_arr = t.cast("np.ndarray[t.Any, np.dtype[np.int32]]", np.array([[1]]))
             '{"name":"test","endpoints":["predict","health"]}',
         ),
         (test_arr, "[[1]]"),
-        (None, None),
     ],
 )
 def test_json_encoder(
@@ -53,3 +61,12 @@ def test_json_encoder(
         separators=(",", ":"),
     )
     assert expected == dumped
+
+
+def test_json_description_to_http_response(loop: asyncio.AbstractEventLoop):
+
+    json_description = JSON()
+
+    response = loop.run_until_complete(json_description.to_http_response(None))
+
+    assert b"" == response.body

@@ -1,12 +1,13 @@
 import json
 import typing as t
-from dataclasses import dataclass
 import asyncio
+from dataclasses import dataclass
 
 import numpy as np
-from bentoml._internal.io_descriptors.json import JSON
 import pytest
 import pydantic
+
+from bentoml._internal.io_descriptors.json import JSON
 
 
 @pytest.fixture

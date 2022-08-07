@@ -22,6 +22,7 @@ from ..utils import reserve_free_port
 from ..resource import CpuResource
 from ..utils.uri import path_to_uri
 from ..utils.circus import create_standalone_arbiter
+from ..configuration import get_debug_mode
 from ..utils.analytics import track_serve
 from ..configuration.containers import BentoMLContainer
 
@@ -124,6 +125,10 @@ def serve_development(
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,
+            # if debug mode is enabled, we don't want to close stdin for
+            # child process in case user use debugger.
+            # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
+            close_child_stdin=not get_debug_mode(),
         )
     )
 

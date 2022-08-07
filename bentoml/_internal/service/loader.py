@@ -21,6 +21,7 @@ from ...exceptions import ImportServiceError
 from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
+from ..configuration import get_debug_mode
 from ..configuration import BENTOML_VERSION
 from ..bento.build_config import BentoBuildConfig
 from ..configuration.containers import BentoMLContainer
@@ -135,6 +136,11 @@ def import_service(
         # Import the service using the Bento's own model store
         try:
             module = importlib.import_module(module_name, package=working_dir)
+            # check if import pdb is present inside service.py
+            if "pdb" in dir(module) and not get_debug_mode():
+                raise ImportError(
+                    "Debug mode is disabled, 'import pdb' is not allowed. Either pass '--debug', 'BENTOML_DEBUG=True' to use pdb with your service code, or remove 'import pdb' completely."
+                )
         except ImportError as e:
             raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
         if not standalone_load:

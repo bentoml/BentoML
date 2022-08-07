@@ -219,7 +219,7 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
     def from_spec(cls, spec: int | str | list[int | str]) -> list[int]:
         if not isinstance(spec, (int, str, list)):
             raise TypeError(
-                "NVidia GPU resource limit must be int, str or a list specifing the exact GPUs to use."
+                "NVidia GPU device IDs must be int, str or a list specifing the exact GPUs to use."
             )
 
         try:
@@ -247,6 +247,7 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
             device_count = pynvml.nvmlDeviceGetCount()
             return list(range(device_count))
         except (pynvml.nvml.NVMLError, OSError):
+            logger.warning("GPU not detected. Unable to initialize pynvml lib.")
             return []
         finally:
             try:

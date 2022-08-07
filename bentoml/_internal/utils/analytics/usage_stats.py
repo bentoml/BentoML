@@ -52,8 +52,8 @@ def _usage_event_debugging() -> bool:
     return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
 
 
-def slient(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
-    # Slient errors when tracking
+def silent(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
+    # Silent errors when tracking
     @wraps(func)
     def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
         try:
@@ -94,7 +94,7 @@ def get_payload(
     ).to_dict()
 
 
-@slient
+@silent
 def track(
     event_properties: EventMeta,
 ):
@@ -104,8 +104,6 @@ def track(
 
     if _usage_event_debugging():
         # For internal debugging purpose
-        global SERVE_USAGE_TRACKING_INTERVAL_SECONDS  # pylint: disable=global-statement
-        SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 5
         logger.info("Tracking Payload: %s", payload)
         return
 
@@ -205,19 +203,26 @@ def track_serve(
 
     _track_serve_init(svc, production)
 
+    if _usage_event_debugging():
+        tracking_interval = 5
+    else:
+        tracking_interval = SERVE_USAGE_TRACKING_INTERVAL_SECONDS
+
     stop_event = threading.Event()
 
-    @slient
+    @silent
     def loop() -> t.NoReturn:  # type: ignore
-        while not stop_event.wait(SERVE_USAGE_TRACKING_INTERVAL_SECONDS):
+        last_tracked_timestamp: datetime = serve_info.serve_started_timestamp
+        while not stop_event.wait(tracking_interval):
             now = datetime.now(timezone.utc)
             event_properties = ServeUpdateEvent(
                 serve_id=serve_info.serve_id,
                 production=production,
                 triggered_at=now,
-                duration_in_seconds=(now - serve_info.serve_started_timestamp).seconds,
+                duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),
                 metrics=get_metrics_report(metrics_client),
             )
+            last_tracked_timestamp = now
             track(event_properties)
 
     tracking_thread = threading.Thread(target=loop, daemon=True)

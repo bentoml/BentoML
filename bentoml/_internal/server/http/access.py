@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from contextvars import ContextVar
 
 if TYPE_CHECKING:
-    from bentoml._internal import external_typing as ext
+    from ... import external_typing as ext
 
 REQ_CONTENT_LENGTH = "REQUEST_CONTENT_LENGTH"
 REQ_CONTENT_TYPE = "REQUEST_CONTENT_TYPE"

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-PROM_MESSAGE = "Prometheus metrics for {server_type} BentoServer from {bento_identifier} can be accessed at {addr}"
+PROMETHEUS_MESSAGE = "Prometheus metrics for {server_type} BentoServer from {bento_identifier} can be accessed at {addr}"
 
 
 SCRIPT_RUNNER = "bentoml_cli.server.runner"
@@ -203,7 +203,7 @@ def serve_development(
                 )
             )
             logger.info(
-                PROM_MESSAGE.format(
+                PROMETHEUS_MESSAGE.format(
                     bento_identifier=bento_identifier,
                     server_type="gRPC",
                     addr=f"http://{metrics_host}:{metrics_port}",
@@ -228,7 +228,7 @@ def serve_development(
             )
         )
         logger.info(
-            PROM_MESSAGE.format(
+            PROMETHEUS_MESSAGE.format(
                 bento_identifier=bento_identifier,
                 server_type="HTTP",
                 addr=f"http://{host}:{port}/metrics",
@@ -437,7 +437,7 @@ def serve_production(
                 )
             )
             logger.info(
-                PROM_MESSAGE.format(
+                PROMETHEUS_MESSAGE.format(
                     bento_identifier=bento_identifier,
                     server_type="gRPC",
                     addr=f"http://{metrics_host}:{metrics_port}",
@@ -476,7 +476,7 @@ def serve_production(
             )
         )
         logger.info(
-            PROM_MESSAGE.format(
+            PROMETHEUS_MESSAGE.format(
                 bento_identifier=bento_identifier,
                 server_type="HTTP",
                 addr=f"http://{host}:{port}/metrics",

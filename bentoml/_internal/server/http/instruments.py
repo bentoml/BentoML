@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml._internal.configuration.containers import BentoMLContainer
+from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from bentoml._internal import external_typing as ext
-    from bentoml._internal.service import Service
-    from bentoml._internal.server.metrics.prometheus import PrometheusClient
+    from ... import external_typing as ext
+    from ...service import Service
+    from ...server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
 START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")

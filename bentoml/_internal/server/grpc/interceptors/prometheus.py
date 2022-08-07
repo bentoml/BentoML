@@ -45,7 +45,6 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
         self,
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ):
-        self.metrics_client = metrics_client
 
         # a valid tag name may includes invalid characters, so we need to escape them
         # ref: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels

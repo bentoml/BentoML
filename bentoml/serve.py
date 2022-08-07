@@ -33,17 +33,20 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+PROM_MESSAGE = "Prometheus metrics for {server_type} BentoServer from {bento_identifier} can be accessed at {addr}"
 
 
 SCRIPT_RUNNER = "bentoml_cli.server.runner"
 SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
 SCRIPT_GRPC_API_SERVER = "bentoml_cli.server.grpc_api_server"
+SCRIPT_GRPC_PROMETHEUS_SERVER = "bentoml_cli.server.grpc_prometheus_server"
 SCRIPT_DEV_API_SERVER = "bentoml_cli.server.http_dev_api_server"
 SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.server.grpc_dev_api_server"
 
 MAX_AF_UNIX_PATH_LENGTH = 103
 
 API_SERVER_NAME = "_bento_api_server"
+PROMETHEUS_SERVER_NAME = "_prometheus_server"
 
 
 @inject
@@ -168,6 +171,44 @@ def serve_development(
                 working_dir=working_dir,
             )
         )
+        if BentoMLContainer.api_server_config.metrics.enabled.get():
+            metrics_host = BentoMLContainer.grpc.metrics_host.get()
+            metrics_port = BentoMLContainer.grpc.metrics_port.get()
+
+            circus_sockets.append(
+                CircusSocket(
+                    name=PROMETHEUS_SERVER_NAME,
+                    host=metrics_host,
+                    port=metrics_port,
+                    backlog=backlog,
+                )
+            )
+
+            watchers.append(
+                create_watcher(
+                    name="prom_server",
+                    args=[
+                        "-m",
+                        SCRIPT_GRPC_PROMETHEUS_SERVER,
+                        "--bind",
+                        f"fd://$(circus.sockets.{PROMETHEUS_SERVER_NAME})",
+                        "--prometheus-dir",
+                        prometheus_dir,
+                        "--backlog",
+                        f"{backlog}",
+                    ],
+                    working_dir=working_dir,
+                    numprocesses=1,
+                    singleton=True,
+                )
+            )
+            logger.info(
+                PROM_MESSAGE.format(
+                    bento_identifier=bento_identifier,
+                    server_type="gRPC",
+                    addr=f"http://{metrics_host}:{metrics_port}",
+                )
+            )
     else:
         watchers.append(
             create_watcher(
@@ -184,6 +225,13 @@ def serve_development(
                     prometheus_dir,
                 ],
                 working_dir=working_dir,
+            )
+        )
+        logger.info(
+            PROM_MESSAGE.format(
+                bento_identifier=bento_identifier,
+                server_type="HTTP",
+                addr=f"http://{host}:{port}/metrics",
             )
         )
 
@@ -358,6 +406,43 @@ def serve_production(
                     numprocesses=api_workers or math.ceil(CpuResource.from_system()),
                 )
             )
+
+        if BentoMLContainer.api_server_config.metrics.enabled.get():
+            metrics_host = BentoMLContainer.grpc.metrics_host.get()
+            metrics_port = BentoMLContainer.grpc.metrics_port.get()
+
+            circus_socket_map[PROMETHEUS_SERVER_NAME] = CircusSocket(
+                name=PROMETHEUS_SERVER_NAME,
+                host=metrics_host,
+                port=metrics_port,
+                backlog=backlog,
+            )
+
+            watchers.append(
+                create_watcher(
+                    name="prom_server",
+                    args=[
+                        "-m",
+                        SCRIPT_GRPC_PROMETHEUS_SERVER,
+                        "--bind",
+                        f"fd://$(circus.sockets.{PROMETHEUS_SERVER_NAME})",
+                        "--prometheus-dir",
+                        prometheus_dir,
+                        "--backlog",
+                        f"{backlog}",
+                    ],
+                    working_dir=working_dir,
+                    numprocesses=1,
+                    singleton=True,
+                )
+            )
+            logger.info(
+                PROM_MESSAGE.format(
+                    bento_identifier=bento_identifier,
+                    server_type="gRPC",
+                    addr=f"http://{metrics_host}:{metrics_port}",
+                )
+            )
     else:
         circus_socket_map[API_SERVER_NAME] = CircusSocket(
             name=API_SERVER_NAME,
@@ -388,6 +473,13 @@ def serve_production(
                 ],
                 working_dir=working_dir,
                 numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+            )
+        )
+        logger.info(
+            PROM_MESSAGE.format(
+                bento_identifier=bento_identifier,
+                server_type="HTTP",
+                addr=f"http://{host}:{port}/metrics",
             )
         )
 

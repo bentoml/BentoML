@@ -76,8 +76,7 @@ def main(
         ensure_prometheus_dir()
 
         params = ctx.params
-        params["bind"] = bind
-        params["worker_id"] = "$(circus.wid)"
+        params.update({"bind": bind, "worker_id": "$(circus.wid)"})
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,

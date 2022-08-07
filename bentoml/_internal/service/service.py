@@ -22,10 +22,6 @@ if TYPE_CHECKING:
     from ..bento import Bento
     from ..server.grpc import GRPCServer
 
-    WSGI_APP = t.Callable[
-        [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
-    ]
-
 logger = logging.getLogger(__name__)
 
 
@@ -239,7 +235,7 @@ class Service:
 
     def mount_wsgi_app(
         self,
-        app: WSGI_APP,
+        app: ext.WSGIApp,
         path: str = "/",
         name: str | None = None,
     ) -> None:

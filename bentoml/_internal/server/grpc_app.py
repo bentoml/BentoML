@@ -51,7 +51,7 @@ class GRPCAppFactory:
         self.enable_metrics = enable_metrics
         self.max_workers = max_workers
 
-        self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
+        self.maximum_concurrent_rpcs = maximum_concurrent_rpcs
 
     @property
     def name(self) -> str:
@@ -91,7 +91,7 @@ class GRPCAppFactory:
             handlers=self.handlers,
             interceptors=self.interceptors,
             options=self.options,
-            maximum_concurrent_rpcs=self._maximum_concurrent_rpcs,
+            maximum_concurrent_rpcs=self.maximum_concurrent_rpcs,
         )
 
         # Create a health check servicer. We use the non-blocking implementation

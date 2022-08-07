@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     from grpc.aio._typing import MetadataValue
     from opentelemetry.trace import Span
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.util.http import ExcludeList
 
     from ..types import Request
     from ..types import Response

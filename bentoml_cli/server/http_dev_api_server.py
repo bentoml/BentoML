@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import socket
-import typing as t
 
 import click
 
@@ -17,9 +18,9 @@ import click
 def main(
     bento_identifier: str,
     bind: str,
-    working_dir: t.Optional[str],
+    working_dir: str | None,
     backlog: int,
-    prometheus_dir: t.Optional[str],
+    prometheus_dir: str | None,
 ):
 
     from urllib.parse import urlparse

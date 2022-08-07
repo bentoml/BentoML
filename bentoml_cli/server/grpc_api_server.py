@@ -70,10 +70,11 @@ def main(
         from circus.watcher import Watcher
 
         from bentoml.serve import ensure_prometheus_dir
-        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml_cli.utils import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
 
         ensure_prometheus_dir()
+
         params = ctx.params
         params["bind"] = bind
         params["worker_id"] = "$(circus.wid)"

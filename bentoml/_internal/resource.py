@@ -216,7 +216,7 @@ def query_os_cpu_count() -> int:
 
 class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
     @classmethod
-    def from_spec(cls, spec: t.Union[int, str, t.List[int | str]]) -> t.List[int]:
+    def from_spec(cls, spec: int | str | list[int | str]) -> list[int]:
         if not isinstance(spec, (int, str, list)):
             raise TypeError(
                 "NVidia GPU resource limit must be int, str or a list specifing the exact GPUs to use."

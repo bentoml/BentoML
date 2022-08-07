@@ -222,7 +222,7 @@ Thanks to all of our amazing contributors!
 
 ### Usage Reporting ###
 
-BentoML collects anonymous usage data that helps our team to improve the product.
+BentoML collects usage data that helps our team to improve the product.
 Only BentoML's internal API calls are being reported. We strip out as much potentially 
 sensitive information as possible, and we will never collect user code, model data, model names, or stack traces.
 Here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.

@@ -186,8 +186,7 @@ def serve_development(
     with track_serve(svc, production=False):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                f'Starting development BentoServer from "{bento_identifier}" '
-                f"running on http://{host}:{port} (Press CTRL+C to quit)"
+                f'Starting development {"HTTP" if not grpc else "gRPC"} BentoServer from "{bento_identifier}" running on http://{host}:{port} (Press CTRL+C to quit)'
             ),
         )
 
@@ -378,8 +377,7 @@ def serve_production(
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
-                    f'Starting production BentoServer from "{bento_identifier}" '
-                    f"running on http://{host}:{port} (Press CTRL+C to quit)"
+                    f'Starting production {"HTTP" if not grpc else "gRPC"} BentoServer from "{bento_identifier}" running on http://{host}:{port} (Press CTRL+C to quit)'
                 ),
             )
         finally:

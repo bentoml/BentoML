@@ -384,14 +384,10 @@ class _BentoMLContainerClass:
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:
             # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.zipkin.json import (
-                ZipkinExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.zipkin.json import ZipkinExporter
 
-            exporter = ZipkinExporter(  # type: ignore (no opentelemetry types)
-                endpoint=zipkin_server_url,
-            )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            exporter = ZipkinExporter(endpoint=zipkin_server_url)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
         elif (
             tracer_type == "jaeger"
@@ -399,15 +395,12 @@ class _BentoMLContainerClass:
             and jaeger_server_port is not None
         ):
             # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.jaeger.thrift import (
-                JaegerExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 
-            exporter = JaegerExporter(  # type: ignore (no opentelemetry types)
-                agent_host_name=jaeger_server_address,
-                agent_port=jaeger_server_port,
+            exporter = JaegerExporter(
+                agent_host_name=jaeger_server_address, agent_port=jaeger_server_port
             )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
         else:
             return provider

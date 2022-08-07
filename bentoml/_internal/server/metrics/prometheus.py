@@ -1,4 +1,5 @@
-# type: ignore[reportMissingTypeStubs]
+from __future__ import annotations
+
 import os
 import sys
 import typing as t
@@ -14,7 +15,7 @@ class PrometheusClient:
         *,
         namespace: str = "",
         multiproc: bool = True,
-        multiproc_dir: t.Optional[str] = None,
+        multiproc_dir: str | None = None,
     ):
         """
         Set up multiproc_dir for prometheus to work in multiprocess mode,

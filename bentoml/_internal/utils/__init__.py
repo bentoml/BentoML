@@ -19,6 +19,7 @@ from datetime import timedelta
 import fs
 import attr
 import fs.copy
+from rich.console import Console
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -43,6 +44,7 @@ C = t.TypeVar("C")
 T = t.TypeVar("T")
 _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
+rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
@@ -53,6 +55,7 @@ __all__ = [
     "LazyLoader",
     "validate_or_create_dir",
     "display_path_under_home",
+    "rich_console",
 ]
 
 
@@ -224,11 +227,14 @@ def copy_file_to_fs_folder(
 
 
 def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
-    """Resolve the abspath of a filepath provided by user, which may contain "~" or may
-    be a relative path base on ctx dir.
+    """Resolve the abspath of a filepath provided by user. User provided file path can:
+    * be a relative path base on ctx dir
+    * contain leading "~" for HOME directory
+    * contain environment variables such as "$HOME/workspace"
     """
     # Return if filepath exist after expanduser
-    _path = os.path.expanduser(filepath)
+
+    _path = os.path.expanduser(os.path.expandvars(filepath))
     if os.path.exists(_path):
         return os.path.realpath(_path)
 

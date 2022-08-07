@@ -2,7 +2,8 @@
 LightGBM
 ========
 
-Users can now use LightGBM with BentoML with the following API: :code:`load`, :code:`save`, and :code:`load_runner` as follow:
+Users can now use LightGBM with BentoML with the following API: :code:`load_model`,
+:code:`save_model`, and :code:`get` as follow:
 
 .. code-block:: python
 
@@ -38,27 +39,22 @@ Users can now use LightGBM with BentoML with the following API: :code:`load`, :c
    )
 
    # `save` a given classifier and retrieve coresponding tag:
-   tag = bentoml.lightgbm.save("my_lightgbm_model", gbm, booster_params=params)
+   bentoml.lightgbm.save_model("my_lightgbm_model", gbm, booster_params=params)
 
    # retrieve metadata with `bentoml.models.get`:
-   metadata = bentoml.models.get(tag)
+   bento_model = bentoml.models.get("my_lightgbm_model:latest")
 
    # `load` the model back in memory:
-   model = bentoml.lightgbm.load("my_lightgbm_model")
+   loaded_model = bentoml.lightgbm.load_model("my_lightgbm_model")
 
    # Run a given model under `Runner` abstraction with `to_runner`
    input_data = pd.from_csv("/path/to/csv")
    runner = bentoml.lightgbm.get("my_lightgbm_model:latest").to_runner()
+   runner.init_local()
    runner.run(input_data)
 
 .. note::
 
-   You can find more examples for **LightGBM** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
+   You can find more examples for **LightGBM** in our `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ repo.
 
-.. currentmodule:: bentoml.lightgbm
 
-.. autofunction:: bentoml.lightgbm.save
-
-.. autofunction:: bentoml.lightgbm.load
-
-.. autofunction:: bentoml.lightgbm.load_runner

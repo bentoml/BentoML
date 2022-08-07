@@ -108,11 +108,13 @@ class InferenceApiContext:
         metadata: Metadata
         cookies: list[Cookie]
         headers: Metadata
-        status_code: int = 200
+        status_code: int
 
         def __init__(self):
             self.metadata = starlette.datastructures.MutableHeaders()  # type: ignore (coercing Starlette headers to Metadata)
             self.headers = self.metadata  # type: ignore (coercing Starlette headers to Metadata)
+            self.cookies = []
+            self.status_code = 200
 
         def set_cookie(
             self,

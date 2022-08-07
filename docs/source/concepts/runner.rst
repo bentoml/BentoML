@@ -51,6 +51,8 @@ methods.
     runner.predict.run( MODEL_INPUT )
 
 
+.. _custom-runner:
+
 Custom Runner
 -------------
 
@@ -63,8 +65,8 @@ runs custom logic. Here's an example, creating an NLTK runner that does sentimen
 analysis with a pre-trained model:
 
 .. code:: python
+    :caption: `service.py`
 
-    # service.py
     import bentoml
     import nltk
     from bentoml.io import Text, JSON
@@ -73,12 +75,10 @@ analysis with a pre-trained model:
 
 
     class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ()
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = False
 
         def __init__(self):
-            nltk.download('vader_lexicon')
-            nltk.download('punkt')
             self.sia = SentimentIntensityAnalyzer()
 
         @bentoml.Runnable.method(batchable=False)
@@ -89,7 +89,7 @@ analysis with a pre-trained model:
             ]
             return mean(scores) > 0
 
-    nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable)
+    nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name='nltk_sentiment')
 
     svc = bentoml.Service('sentiment_analyzer', runners=[nltk_runner])
 
@@ -98,19 +98,9 @@ analysis with a pre-trained model:
         is_positive = nltk_runner.is_positive.run(input_text)
         return { "is_positive": is_positive }
 
-Run the service:
+.. note::
 
-.. code:: bash
-
-    bentoml serve service.py:svc
-
-Send a test request:
-
-.. code:: bash
-
-    curl -X POST -H "content-type: application/text" --data "BentoML is great" http://127.0.0.1:3000/analysis
-
-    {"is_positive":true}%
+    Full code example can be found `here <https://github.com/bentoml/BentoML/tree/main/examples/custom_runner/nltk_pretrained_model>`_.
 
 
 The constant attribute ``SUPPORTED_RESOURCES`` indicates which resources this Runnable class
@@ -120,14 +110,13 @@ implementation supports. The only currently pre-defined resources are ``"cpu"`` 
 The constant attribute ``SUPPORTS_CPU_MULTI_THREADING`` indicates whether or not the runner supports
 CPU multi-threading.
 
-Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods; it must be
-declared at the class level. This is a result of the fact that the runner is not instantiated in the
-scheduling code, as instantiating runners can be quite expensive.
+.. tip::
 
-Since the NLTK library doesn't support utilizing GPU or multiple CPU cores natively, no resources
-are specified, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
-This information is used by the BentoServer scheduler to determine the worker pool size of this
-runner.
+    Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods, as they are class-level attributes. The reason being BentoML’s scheduling policy is not invoked in runners’ initialization code, as instantiating runners can be quite expensive.
+
+Since NLTK library doesn't support utilizing GPU or multiple CPU cores natively, supported resources
+is specified as :code:`("cpu",)`, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
+This information is then used by the BentoServer scheduler to determine the worker pool size for this runner.
 
 The :code:`bentoml.Runnable.method` decorator is used for creating
 :code:`RunnableMethod` - the decorated method will be exposed as the runner interface
@@ -143,6 +132,7 @@ different scenarios. The same Runnable class can also be used to create multiple
 and used in the same service. For example:
 
 .. code:: python
+    :caption: `service.py`
 
     import bentoml
     import torch
@@ -183,98 +173,164 @@ and used in the same service. For example:
     name are a key to configuring individual runner at deploy time and to runner related
     logging and tracing features.
 
-.. TODO::
-    Add example Runnable implementation with a batchable method
 
 Custom Model Runner
 ^^^^^^^^^^^^^^^^^^^
 
-.. TODO::
-    Document creating custom Runnable with models from BentoML model store
+Custom Runnable built with Model from BentoML's model store:
 
 .. code::
 
+    from typing import Any
+
     import bentoml
-    import torch
+    from bentoml.io import JSON
+    from bentoml.io import NumpyNdarray
+    from numpy.typing import NDArray
 
-    bento_model = bentoml.pytorch.get("fraud_detect:latest")
+    bento_model = bentoml.pytorch.get("spam_detection:latest")
 
-    class MyPytorchRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ()
+    class SpamDetectionRunnable(bentoml.Runnable):
+        SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
-            self.model = torch.load_model(bento_model.path)
+            # load the model instance
+            self.classifier = bentoml.sklearn.load_model(bento_model)
 
-        @bentoml.Runnable.method(
-            batchable=True,
-            batch_dim=0,
+        @bentoml.Runnable.method(batchable=False)
+        def is_spam(self, input_data: NDArray[Any]) -> NDArray[Any]:
+            return self.classifier.predict(input_data)
+
+    spam_detection_runner = bentoml.Runner(SpamDetectionRunnable, models=[bento_model])
+    svc = bentoml.Service("spam_detector", runners=[spam_detection_runner])
+
+    @svc.api(input=NumpyNdarray(), output=JSON())
+    def analysis(input_text: NDArray[Any]) -> dict[str, Any]:
+        return {"res": spam_detection_runner.is_spam.run(input_text)}
+
+
+Serving Multiple Models via Runner
+----------------------------------
+
+Serving multiple models in the same workflow is also a common pattern in BentoML’s prediction framework. This pattern can be achieved by simply instantiating multiple runners up front and passing them to the service that’s being created. Each runner/model will be configured with its’ own resources and run autonomously. If no configuration is passed, BentoML will then determine the optimal resources to allocate to each runner.
+
+
+Sequential Runs
+^^^^^^^^^^^^^^^
+
+.. code:: python
+
+    import asyncio
+    import bentoml
+    import PIL.Image
+
+    import bentoml
+    from bentoml.io import Image, Text
+
+    transformers_runner = bentoml.transformers.get("sentiment_model:latest").to_runner()
+    ocr_runner = bentoml.easyocr.get("ocr_model:latest").to_runner()
+
+    svc = bentoml.Service("sentiment_analysis", runners=[transformers_runner, ocr_runner])
+
+    @svc.api(input=Image(),output=Text())
+    def classify(input: PIL.Image.Image) -> str:
+        ocr_text = ocr_runner.run(input)
+        return transformers_runner.run(ocr_text)
+
+It’s as simple as creating two runners and invoking them synchronously in your prediction endpoint. Note that an async endpoint is often preferred in these use cases as the primary event loop is yielded while waiting for other IO-expensive tasks. 
+
+For example, the same API above can be achieved as an ``async`` endpoint:
+
+
+.. code:: python
+
+    @svc.api(input=Image(),output=Text())
+    async def classify_async(input: PIL.Image.Image) -> str:
+        ocr_text = await ocr_runner.async_run(input)
+        return await transformers_runner.async_run(ocr_text)
+
+
+Concurrent Runs
+^^^^^^^^^^^^^^^
+
+In cases where certain steps can be executed concurrently, :code:`asyncio.gather` can be used to aggregate results from multiple concurrent runs. For instance, if you are running two models simultaneously, you could invoke ``asyncio.gather`` as follows:
+
+.. code-block:: python
+
+    import asyncio
+    import PIL.Image
+
+    import bentoml
+    from bentoml.io import Image, Text
+
+    preprocess_runner = bentoml.Runner(MyPreprocessRunnable)
+    model_a_runner = bentoml.xgboost.get('model_a:latest').to_runner()
+    model_b_runner = bentoml.pytorch.get('model_b:latest').to_runner()
+
+    svc = bentoml.Service('inference_graph_demo', runners=[
+        preprocess_runner,
+        model_a_runner,
+        model_b_runner
+    ])
+
+    @svc.api(input=Image(), output=Text())
+    async def predict(input_image: PIL.Image.Image) -> str:
+        model_input = await preprocess_runner.async_run(input_image)
+
+        results = await asyncio.gather(
+            model_a_runner.async_run(model_input),
+            model_b_runner.async_run(model_input),
         )
-        def predict(self, input_tensor):
-            return self.model(input_tensor)
 
-    my_runner = bentoml.Runner(MyPytorchRunnable, models=[bento_model])
+        return post_process(
+            results[0], # model a result
+            results[1], # model b result
+        )
 
 
-Runner Options
---------------
+Once each model completes, the results can be compared and logged as a post processing
+step.
+
+
+Runner Definition
+-----------------
 
 .. TODO::
     Document detailed list of Runner options
 
-.. code:: python
+    .. code:: python
 
-    my_runner = bentoml.Runner(
-        MyRunnable,
-        runnable_init_params={"foo": foo, "bar": bar},
-        name="custom_runner_name",
-        strategy=None, # default strategy will be selected depending on the SUPPORTED_RESOURCES and SUPPORTS_CPU_MULTI_THREADING flag on runnable
-        models=[..],
+        my_runner = bentoml.Runner(
+            MyRunnable,
+            runnable_init_params={"foo": foo, "bar": bar},
+            name="custom_runner_name",
+            strategy=None, # default strategy will be selected depending on the SUPPORTED_RESOURCES and SUPPORTS_CPU_MULTI_THREADING flag on runnable
+            models=[..],
 
-        # below are also configurable via config file:
+            # below are also configurable via config file:
 
-        # default configs:
-        max_batch_size=..  # default max batch size will be applied to all run methods, unless override in the runnable_method_configs
-        max_latency_ms=.. # default max latency will be applied to all run methods, unless override in the runnable_method_configs
+            # default configs:
+            max_batch_size=..  # default max batch size will be applied to all run methods, unless override in the runnable_method_configs
+            max_latency_ms=.. # default max latency will be applied to all run methods, unless override in the runnable_method_configs
 
-        runnable_method_configs=[
-            {
-                method_name="predict",
-                max_batch_size=..,
-                max_latency_ms=..,
-            }
-        ],
-    )
+            runnable_method_configs=[
+                {
+                    method_name="predict",
+                    max_batch_size=..,
+                    max_latency_ms=..,
+                }
+            ],
+        )
 
-
-Specifying Required Resources
------------------------------
+Runner Configuration
+--------------------
 
 .. TODO::
+
     Document Runner resource specification, how it works, and how to override it with
     runtime configuration
 
-.. code:: python
-
-    my_runner = bentoml.Runner(MyRunnable, cpu=1)
-
-    my_model_runner = bentoml.pytorch.get("my_model:latest").to_runner(gpu=1)
-
-
-.. code:: yaml
-
-    runners:
-      - name: iris_clf
-        cpu: 4
-        nvidia_gpu: 0  # requesting 0 GPU
-        max_batch_size: 20
-      - name: my_custom_runner
-        cpu: 2
-        nvidia_gpu: 2  # requesting 2 GPUs
-        runnable_method_configs:
-          - name: "predict"
-            max_batch_size: 10
-            max_latency_ms: 500
 
 
 Distributed Runner with Yatai

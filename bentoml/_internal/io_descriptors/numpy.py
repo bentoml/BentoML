@@ -13,6 +13,7 @@ from .json import MIME_TYPE_JSON
 from ..types import LazyType
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
+from ...exceptions import BentoMLException
 from ...exceptions import InternalServerError
 
 if TYPE_CHECKING:
@@ -100,14 +101,17 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
                 from bentoml.io import NumpyNdarray
 
-                @svc.api(input=NumpyNdarray(shape=(3,1), enforce_shape=True), output=NumpyNdarray())
+                @svc.api(input=NumpyNdarray(shape=(2,2), enforce_shape=False), output=NumpyNdarray())
                 def predict(input_array: np.ndarray) -> np.ndarray:
-                    # input_array will have shape (3,1)
+                    # input_array will be reshaped to (2,2)
                     result = await runner.run(input_array)
+
+            When `enforce_shape=True` is provided, BentoML will raise an exception if
+            the input array received does not match the `shape` provided.
 
         enforce_shape (:code:`bool`, `optional`, default to :code:`False`):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
-            must be specified
+            must be specified.
 
     Returns:
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that :code:`np.ndarray`.
@@ -122,8 +126,14 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     ):
         import numpy as np
 
-        if isinstance(dtype, str):
-            dtype = np.dtype(dtype)
+        if dtype is not None and not isinstance(dtype, np.dtype):
+            # Convert from primitive type or type string, e.g.:
+            # np.dtype(float)
+            # np.dtype("float64")
+            try:
+                dtype = np.dtype(dtype)
+            except TypeError as e:
+                raise BentoMLException(f'NumpyNdarray: Invalid dtype "{dtype}": {e}')
 
         self._dtype = dtype
         self._shape = shape
@@ -169,25 +179,29 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         obj: "ext.NpNDArray",
         exception_cls: t.Type[Exception] = BadInput,
     ) -> "ext.NpNDArray":
+        import numpy as np
+
         if self._dtype is not None and self._dtype != obj.dtype:
-            if self._enforce_dtype:
-                raise exception_cls(
-                    f"{self.__class__.__name__}: enforced dtype mismatch"
-                )
-            try:
-                obj = obj.astype(self._dtype)  # type: ignore
-            except ValueError as e:
-                logger.warning(f"{self.__class__.__name__}: {e}")
+            # ‘same_kind’ means only safe casts or casts within a kind, like float64
+            # to float32, are allowed.
+            if np.can_cast(obj.dtype, self._dtype, casting="same_kind"):
+                obj = obj.astype(self._dtype, casting="same_kind")  # type: ignore
+            else:
+                msg = f'{self.__class__.__name__}: Expecting ndarray of dtype "{self._dtype}", but "{obj.dtype}" was received.'
+                if self._enforce_dtype:
+                    raise exception_cls(msg)
+                else:
+                    logger.debug(msg)
 
         if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
+            msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{obj.shape}" was received.'
             if self._enforce_shape:
-                raise exception_cls(
-                    f"{self.__class__.__name__}: enforced shape mismatch"
-                )
+                raise exception_cls(msg)
             try:
                 obj = obj.reshape(self._shape)
             except ValueError as e:
-                logger.warning(f"{self.__class__.__name__}: {e}")
+                logger.debug(f"{msg} Failed to reshape: {e}.")
+
         return obj
 
     async def from_http_request(self, request: Request) -> "ext.NpNDArray":

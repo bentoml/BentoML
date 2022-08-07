@@ -2,7 +2,7 @@
 Unified Model Serving Framework
 ===============================
 
-|pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
+|github_stars| |pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
 
 ----
 
@@ -16,15 +16,8 @@ ML models at production scale. Data Scientists and ML Engineers use BentoML to:
 * Provide a flexible MLOps platform that grows with your Data Science needs
 
 
-.. caution::
-    The BentoML version 1.0 is currently under beta preview release. For our most recent
-    stable release, see the
-    `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/>`_.
-
-
 Learn BentoML
 -------------
-
 
 .. grid:: 1 2 2 2
     :gutter: 3
@@ -43,14 +36,14 @@ Learn BentoML
 
         A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
 
-    .. grid-item-card:: :doc:`🧮 ML Framework Specific Guide <frameworks/index>`
+    .. grid-item-card:: :doc:`🧮 ML Framework Guides <frameworks/index>`
         :link: frameworks/index
         :link-type: doc
 
         Best practices and example usages by the ML framework used for model training.
 
-    .. grid-item-card:: `🎨 Gallery Projects <https://github.com/bentoml/gallery>`_
-        :link: https://github.com/bentoml/gallery
+    .. grid-item-card:: `🎨 Gallery Projects <https://github.com/bentoml/BentoML/tree/main/examples>`_
+        :link: https://github.com/bentoml/BentoML/tree/main/examples
         :link-type: url
 
         Example projects demonstrating BentoML usage in a variety of different scenarios.
@@ -61,6 +54,12 @@ Learn BentoML
 
         Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and performance optimization.
 
+    .. grid-item-card:: :doc:`⚙️ Integrations & Ecosystem <integrations/index>`
+        :link: integrations/index
+        :link-type: doc
+
+        Learn how BentoML works together with other tools and products in the Data/ML ecosystem
+
     .. grid-item-card:: `💬 BentoML Community <https://l.linklyhq.com/l/ktOX>`_
         :link: https://l.linklyhq.com/l/ktOX
         :link-type: url
@@ -68,18 +67,19 @@ Learn BentoML
         Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
 
 
-For MLOps engineers:
+Beyond Model Serving
+--------------------
 
-.. grid::  1 2 2 2
+.. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
-    :padding: 0
+    :padding: 3 4 0 0
 
     .. grid-item-card:: `🦄️ Yatai <https://github.com/bentoml/Yatai>`_
         :link: https://github.com/bentoml/Yatai
         :link-type: url
 
-        Model Deployment at scale on Kubernetes.
+        Production-first ML platform on Kubernetes.
 
     .. grid-item-card:: `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_
         :link: https://github.com/bentoml/bentoctl
@@ -145,18 +145,18 @@ contributing to the project, helping other users and discuss all things MLOps.
    concepts/index
    frameworks/index
    guides/index
-   yatai/index
-   bentoctl/index
+   integrations/index
    reference/index
-   faq
    Community <https://l.linklyhq.com/l/ktOX>
    GitHub <https://github.com/bentoml/BentoML>
+   Blog <https://modelserving.com>
+
 
 .. spelling::
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML
-.. |downloads| image:: https://pepy.tech/badge/bentoml
+.. |downloads| image:: https://pepy.tech/badge/bentoml?style=flat-square
    :target: https://pepy.tech/project/bentoml
 .. |actions_status| image:: https://github.com/bentoml/bentoml/workflows/CI/badge.svg
    :target: https://github.com/bentoml/bentoml/actions
@@ -164,3 +164,5 @@ contributing to the project, helping other users and discuss all things MLOps.
    :target: https://docs.bentoml.org/
 .. |join_slack| image:: https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square
    :target: https://l.linklyhq.com/l/ktOX
+.. |github_stars| image:: https://img.shields.io/github/stars/bentoml/BentoML?color=%23c9378a&label=github&logo=github&style=flat-square
+   :target: https://github.com/bentoml/bentoml

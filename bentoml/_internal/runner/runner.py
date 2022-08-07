@@ -13,12 +13,12 @@ from .runnable import Runnable
 from .strategy import Strategy
 from .strategy import DefaultStrategy
 from ...exceptions import StateException
+from ..models.model import Model
 from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ..models import Model
     from .runnable import RunnableMethodConfig
 
 T = t.TypeVar("T", bound=Runnable)
@@ -63,6 +63,10 @@ class Runner:
 
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
+    if TYPE_CHECKING:
+        run: t.Callable[..., t.Any]
+        async_run: t.Callable[..., t.Awaitable[t.Any]]
+
     def __init__(
         self,
         runnable_class: t.Type[Runnable],
@@ -88,12 +92,17 @@ class Runner:
         """
 
         if name is None:
-            name = runnable_class.__name__
+            lname = runnable_class.__name__.lower()
+            logger.warning(
+                f"Using lowercased runnable class name '{lname}' for runner."
+            )
+        else:
+            lname = name.lower()
 
-        lname = name.lower()
-
-        if name != lname:
-            logger.warning(f"Converting runner name '{name}' to lowercase: '{lname}'")
+            if name != lname:
+                logger.warning(
+                    f"Converting runner name '{name}' to lowercase: '{lname}'"
+                )
 
         try:
             validate_tag_str(lname)
@@ -108,8 +117,13 @@ class Runner:
             config = runners_config[name]
         else:
             config = runners_config
-
-        models = [] if models is None else models
+        if models is None:
+            models = []
+        else:
+            if not all(isinstance(model, Model) for model in models):
+                raise ValueError(
+                    f"models must be a list of 'bentoml.Model'. Got { {type(model) for model in models if isinstance(model, Model)} } instead."
+                )
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runnable_init_params = (
             {} if runnable_init_params is None else runnable_init_params
@@ -177,7 +191,7 @@ class Runner:
             )
         else:
             default_method = None
-            logger.warning(
+            logger.debug(
                 f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`'
             )
 

@@ -62,7 +62,7 @@ def test_model_options_init(
 
     for configuration in test_model.configurations:
         from_kwargs = ModelOptions(**configuration.load_kwargs)
-        from_with_options = ModelOptions().with_options(**configuration.load_kwargs)
+        from_with_options = from_kwargs.with_options(**configuration.load_kwargs)
         assert from_kwargs == from_with_options
         assert from_kwargs.to_dict() == from_with_options.to_dict()
 
@@ -107,7 +107,6 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
         assert bento_model.info.signatures[meth] == ModelSignature.from_dict(kwargs["signatures"][meth])  # type: ignore
 
     assert bento_model.info.labels == kwargs["labels"]
-    # print(bento_model.custom_objects)
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].mean_[0] == 5.5
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].var_[0] == 4.75
     assert bento_model.info.metadata == kwargs["metadata"]

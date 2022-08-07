@@ -42,6 +42,11 @@ import click
     help="Working directory for the API server",
 )
 @click.option(
+    "--prometheus-dir",
+    type=click.Path(exists=True),
+    help="Required by prometheus to pass the metrics in multi-process mode",
+)
+@click.option(
     "--worker-id",
     required=False,
     type=click.INT,
@@ -57,12 +62,25 @@ def main(
     backlog: int,
     working_dir: str | None,
     worker_id: int | None,
+    prometheus_dir: str | None,
 ):
     """
     Start BentoML API server.
     \b
     This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
     """
+
+    import uvicorn
+
+    from ...log import configure_server_logging
+    from ...configuration.containers import BentoMLContainer
+
+    configure_server_logging()
+
+    BentoMLContainer.development_mode.set(False)
+    if prometheus_dir is not None:
+        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
+
     if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
@@ -94,19 +112,9 @@ def main(
 
     component_context.component_name = f"api_server:{worker_id}"
 
-    from ...log import configure_server_logging
-    from ...configuration.containers import BentoMLContainer
-
-    BentoMLContainer.development_mode.set(False)
-    configure_server_logging()
-
-    import uvicorn  # type: ignore
-
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
-    svc = bentoml.load(
-        bento_identifier, working_dir=working_dir, change_global_cwd=True
-    )
+    svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
     if svc.tag is None:

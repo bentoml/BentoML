@@ -2,7 +2,7 @@
 Scikit-Learn
 ============
 
-here's a simple example of using scikit-learn with BentoML:
+Below is a simple example of using scikit-learn with BentoML:
 
 .. code:: python
 
@@ -33,13 +33,4 @@ here's a simple example of using scikit-learn with BentoML:
 
 .. note::
 
-   You can find more examples for **scikit-learn** in our `gallery <https://github.com/bentoml/gallery>`_ repo.
-
-
-.. currentmodule:: bentoml.sklearn
-
-.. autofunction:: bentoml.sklearn.save_model
-
-.. autofunction:: bentoml.sklearn.load_model
-
-.. autofunction:: bentoml.sklearn.get
+   You can find more examples for **scikit-learn** in our `bentoml/examples https://github.com/bentoml/BentoML/tree/main/examples`_ directory.

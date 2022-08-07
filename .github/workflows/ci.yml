@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
   schedule:
-    - cron: '0 0 * * 1/2'
+    - cron: "0 0 * * 1/2"
 
 env:
   BENTOML_DO_NOT_TRACK: True
@@ -14,7 +14,6 @@ env:
   COLUMNS: 120
 
 jobs:
-
   diff:
     runs-on: ubuntu-latest
     outputs:
@@ -22,11 +21,11 @@ jobs:
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          base: 'main'
+          base: "main"
           filters: |
             related: &related
               - .github/workflows/ci.yml
@@ -40,6 +39,7 @@ jobs:
               - *related
               - "bentoml/**"
               - "tests/**"
+              - "examples/**"
             docs:
               - *related
               - requirements/docs-requirements.txt
@@ -56,10 +56,10 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
           architecture: x64
@@ -70,15 +70,15 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Setup node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: '17'
+          node-version: "17"
       - name: install pyright
         run: |
           npm install -g npm@^7 pyright
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -107,12 +107,12 @@ jobs:
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.docs == 'true') || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
 
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
@@ -122,7 +122,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -149,7 +149,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     defaults:
       run:
         shell: bash
@@ -159,12 +159,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
 
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
@@ -175,7 +175,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -196,7 +196,7 @@ jobs:
         shell: bash
 
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           name: codecov-${{ matrix.os }}-python${{ matrix.python-version }}
           fail_ci_if_error: true
@@ -204,7 +204,6 @@ jobs:
           directory: ./
           files: ./unit.xml
           verbose: true
-
 
   bento_server_e2e_tests:
     needs:
@@ -214,7 +213,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     defaults:
       run:
         shell: bash
@@ -229,11 +228,11 @@ jobs:
       BENTOML_BUNDLE_LOCAL_BUILD: True
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
@@ -252,7 +251,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -268,10 +267,10 @@ jobs:
         run: export GITHUB_ACTION=true
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh general_features -- -x -s
+        run: ./scripts/ci/run_tests.sh general_features
 
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           flags: e2e-tests
           directory: ./

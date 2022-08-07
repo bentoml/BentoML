@@ -119,7 +119,8 @@ there are two ways to include fastai as a dependency, via ``python`` or
       .. code-block:: yaml
 
          python:
-         - fastai
+	   packages:
+	     - fastai
 
    .. tab-item:: conda
 
@@ -154,7 +155,7 @@ Using PyTorch layer
 
 Since fastai is built on top of PyTorch, it is also possible to use PyTorch
 models from within a fastai learner directly for inference. Note that by using
-the PyTorch layer, you will not be able to use the fastai :~obj:`Learner`'s
+the PyTorch layer, you will not be able to use the fastai :obj:`Learner`'s
 features such as :code:`.predict()`, :code:`.get_preds()`, etc.
 
 To get the PyTorch model, access it via ``learner.model``:

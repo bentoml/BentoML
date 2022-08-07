@@ -184,6 +184,5 @@ class Multipart(IODescriptor[t.Any]):
         res_mapping: dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]
-            resp = io_.init_http_response()
-            res_mapping[k] = await io_.finalize_http_response(resp, data)
+            res_mapping[k] = await io_.to_http_response(data, ctx)
         return await concat_to_multipart_response(res_mapping, ctx)

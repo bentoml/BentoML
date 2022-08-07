@@ -52,6 +52,23 @@ class KerasOptions(ModelOptions):
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
+    """
+    Get the BentoML model with the given tag.
+
+    Args:
+        tag_like: The tag of the model to retrieve from the model store.
+
+    Returns:
+        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
+
+    Example:
+
+    .. code-block:: python
+
+       import bentoml
+       # target model must be from the BentoML model store
+       model = bentoml.keras.get("keras_resnet50")
+    """
     model = bentoml.models.get(tag_like)
     if model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -96,6 +113,16 @@ def load_model(
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
+
+    if "GPU" in device_name:
+        physical_devices = tf.config.list_physical_devices("GPU")
+        try:
+            # an optimization for GPU memory growth. But it will raise an error if any
+            # tensorflow session is already created. That happens when users test runners
+            # in a notebook or Python interactive shell. Thus we just ignore the error.
+            tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        except RuntimeError:
+            pass
 
     with tf.device(device_name):
         return keras.models.load_model(
@@ -142,8 +169,9 @@ def save_model(
             Custom metadata for given model.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
-        the user-defined model's name, and a generated `version` by BentoML.
+
+        :obj:`~bentoml.Model`: A BentoML model containing the saved
+        Keras model instance.
 
     Examples:
 
@@ -299,7 +327,13 @@ def get_runnable(
 
             with tf.device(runnable_self.device_name):
                 params = params.map(_mapping)
-                res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(params.args)
+                if len(params.args) == 1:
+                    arg = params.args[0]
+                else:
+                    arg = params.args
+
+                res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(arg)
+
                 if LazyType["tf_ext.EagerTensor"](
                     "tensorflow.python.framework.ops._EagerTensorBase"
                 ).isinstance(res):

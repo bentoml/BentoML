@@ -5,7 +5,6 @@ import typing as t
 import logging
 import functools
 import itertools
-import contextlib
 from typing import TYPE_CHECKING
 
 from simple_di import inject
@@ -41,6 +40,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+if hasattr(torch, "inference_mode"):  # pytorch>=1.9
+    inference_mode_ctx = torch.inference_mode
+else:
+    inference_mode_ctx = torch.no_grad
+
 
 def partial_class(
     cls: t.Type[PytorchModelRunnable], *args: t.Any, **kwargs: t.Any
@@ -74,17 +78,6 @@ class PytorchModelRunnable(bentoml.Runnable):
             self.device_id = "cpu"
         self.model: ModelType = loader(bento_model, device_id=self.device_id)
         self.model.train(False)  # to turn off dropout and batchnorm
-        self._no_grad_context = contextlib.ExitStack()
-        if hasattr(torch, "inference_mode"):  # pytorch>=1.9
-            self._no_grad_context.enter_context(torch.inference_mode())
-        else:
-            self._no_grad_context.enter_context(torch.no_grad())
-
-    def __del__(self):
-        self._no_grad_context.close()
-        # no need for now because our worker process will quit and return the gpu memory
-        # if self.device_id == "cuda":
-        # torch.cuda.empty_cache()
 
 
 def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:
@@ -95,18 +88,19 @@ def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tens
     ) -> torch.Tensor:
         params = Params(*args, **kwargs)
 
-        def _mapping(
-            item: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
-        ) -> torch.Tensor:
+        def _mapping(item: t.Any) -> t.Any:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return torch.Tensor(item, device=self.device_id)
             if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
                 return torch.Tensor(item.to_numpy(), device=self.device_id)
+            if LazyType["torch.Tensor"]("torch.Tensor").isinstance(item):
+                return item.to(self.device_id)
             else:
-                return item.to(self.device_id)  # type: ignore # the overhead is trivial if it is already on the right device
+                return item
 
-        params = params.map(_mapping)
-        return getattr(self.model, method_name)(*params.args, **params.kwargs)
+        with inference_mode_ctx():
+            params = params.map(_mapping)
+            return getattr(self.model, method_name)(*params.args, **params.kwargs)
 
     return _run
 
@@ -144,7 +138,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         batch_dim: int = 0,
         plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
-        batch = batch.numpy()
+        batch = batch.cpu().numpy()
         if plasma_db:
             return cls.create_payload(
                 plasma_db.put(batch).binary(),
@@ -173,7 +167,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
 
         else:
             ret = pickle.loads(payload.data)
-        return torch.Tensor(ret)
+        return torch.Tensor(ret).requires_grad_(False)
 
     @classmethod
     @inject

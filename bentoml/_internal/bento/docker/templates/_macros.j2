@@ -1,18 +1,22 @@
+{%- macro mount_cache(target, extra_args="") -%}--mount=type=cache,target={{ target }}{{ extra_args }}{%- endmacro -%}
+
+
 {%- macro setup_conda(python_version, bento_path, conda_path=None) -%}
 {% set environment_yml=expands_bento_path("env", "conda", "environment.yml", bento_path=bento_path) %}
 {% if conda_path is none -%}
 {% set conda_path = ["/opt", "conda"] | join("/") -%}
 {% endif -%}
 {% set __conda_exec__ = [conda_path, "bin", "conda"] | join("/") %}
+{% set __conda_pkg__ = [conda_path, "pkg"] | join("/") %}
 
-RUN --mount=type=cache,mode=0777,target={{ conda_path }}/pkgs bash <<EOF
+RUN {{ mount_cache(__conda_pkg__) }} bash <<EOF
 set -euxo pipefail
 
 echo "Installing Python $PYTHON_VERSION with conda..."
 {{ __conda_exec__ }} install -y -n base pkgs/main::python={{ python_version }} pip
 EOF
 
-RUN --mount=type=cache,mode=0777,target={{ conda_path }}/pkgs bash <<EOF
+RUN {{ mount_cache(__conda_pkg__) }} bash <<EOF
 set -euxo pipefail
 
 if [ -f {{ environment_yml }} ]; then
@@ -29,7 +33,7 @@ EOF
 
 {%- macro run_script(path, echo_msg, run_args="") -%}
 # Running {{ echo_msg }}
-RUN {{ additional_run_arg }} bash <<EOF
+RUN {{ run_args }} bash <<EOF
 set -euxo pipefail
 
 if [ -f {{ path }} ]; then
@@ -39,3 +43,4 @@ if [ -f {{ path }} ]; then
 fi
 EOF
 {%- endmacro -%}
+

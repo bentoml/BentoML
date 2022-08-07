@@ -1,11 +1,10 @@
 # Tests dependencies
-aiohttp==3.8.1
-black==22.3.0
+black[jupyter]==22.3.0
 codecov
 coverage>=4.4
 isort>=5.0.0
 pydantic
-pylint>=2.11.0
+pylint>=2.14.0
 pytest-cov>=3.0.0
 pytest>=6.2.0
 pytest-asyncio
@@ -14,3 +13,5 @@ scikit-learn
 imageio>=2.5.0
 watchfiles>=0.15.0
 pyarrow
+build >=0.8.0
+yamllint

@@ -1,6 +1,9 @@
-{% import '_macros.j2' as common %}
 {% extends "base_debian.j2" %}
 {% block SETUP_BENTO_COMPONENTS %}
 {{ common.setup_conda(__python_version__, bento__path) }}
+{{ super() }}
+{% endblock %}
+{% block SETUP_BENTO_ENTRYPOINT %}
+RUN rm -rf /var/lib/{apt,cache,log}
 {{ super() }}
 {% endblock %}

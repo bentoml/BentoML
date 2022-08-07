@@ -38,7 +38,7 @@ There are three ways to complete this tutorial:
 
 #. Run with Google Colab in your browser
 
-   👉 `Open Tutorial Notebook on Colab <https://colab.research.google.com/github/bentoml/gallery/blob/main/quickstart/iris_classifier.ipynb>`_
+   👉 `Open Tutorial Notebook on Colab <https://colab.research.google.com/github/bentoml/BentoML/blob/main/examples/quickstart/iris_classifier.ipynb>`_
    side by side with this guide. As you go through this guide, you can simply run the
    sample code from the Colab Notebook.
 
@@ -57,12 +57,12 @@ There are three ways to complete this tutorial:
 
 #. Local Development Environment
 
-   Download the source code of this tutorial from `bentoml/Gallery <https://github.com/bentoml/gallery/>`_:
+   Download the source code of this tutorial from `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_:
 
    .. code:: bash
 
-      git clone --depth=1 git@github.com:bentoml/gallery.git
-      cd gallery/quickstart/
+      git clone --depth=1 git@github.com:bentoml/BentoML.git
+      cd bentoml/examples/quickstart/
 
    BentoML supports Linux, Windows and MacOS. You will need Python 3.7 or above to run
    this tutorial. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
@@ -72,8 +72,7 @@ There are three ways to complete this tutorial:
 
    .. code-block:: bash
 
-       pip install --pre bentoml
-       pip install scikit-learn pandas
+       pip install bentoml scikit-learn pandas
 
 
 Saving Models with BentoML
@@ -100,7 +99,7 @@ managing all your trained models locally as well as accessing them for serving.
    clf.fit(X, y)
 
    # Save model to the BentoML local model store
-   bentoml.sklearn.save_model("iris_clf", clf)
+   saved_model = bentoml.sklearn.save_model("iris_clf", clf)
    print(f"Model saved: {saved_model}")
 
    # Model saved: Model(tag="iris_clf:zy3dfgxzqkjrlgxi")

@@ -218,7 +218,7 @@ class ServiceAppFactory(BaseAppFactory):
         middlewares.append(
             Middleware(
                 otel_asgi.OpenTelemetryMiddleware,
-                excluded_urls=None,
+                excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
                 default_span_details=None,
                 server_request_hook=None,
                 client_request_hook=client_request_hook,

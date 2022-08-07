@@ -3,6 +3,7 @@ import uuid
 import typing as t
 import logging
 import multiprocessing
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
@@ -116,6 +117,7 @@ SCHEMA = Schema(
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
             "sample_rate": Or(And(float, lambda i: i >= 0 and i <= 1), None),
+            "excluded_urls": Or([str], str, None),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
@@ -172,27 +174,21 @@ class BentoMLConfiguration:
                 override_config = yaml.safe_load(f)
             config_merger.merge(self.config, override_config)
 
+            global_runner_cfg = {
+                k: self.config["runners"][k]
+                for k in ("batching", "resources", "logging")
+            }
             for key in self.config["runners"]:
                 if key not in ["batching", "resources", "logging"]:
                     runner_cfg = self.config["runners"][key]
 
                     # key is a runner name
-                    override_resources = False
-                    resource_cfg = None
-                    if "resources" in runner_cfg:
-                        override_resources = True
-                        resource_cfg = runner_cfg["resources"]
-                        if resource_cfg == "system":
-                            resource_cfg = system_resources()
+                    if runner_cfg.get("resources") == "system":
+                        runner_cfg["resources"] = system_resources()
 
                     self.config["runners"][key] = config_merger.merge(
-                        self.config["runners"], runner_cfg
+                        deepcopy(global_runner_cfg), runner_cfg
                     )
-
-                    if override_resources:
-                        # we don't want to merge resource configuration, override
-                        # it with previous resource config if it was set
-                        self.config["runners"][key]["resources"] = resource_cfg
 
             if validate_schema:
                 try:
@@ -407,6 +403,21 @@ class _BentoMLContainerClass:
             return provider
         else:
             return provider
+
+    @providers.SingletonFactory
+    @staticmethod
+    def tracing_excluded_urls(
+        excluded_urls: t.Optional[t.Union[str, t.List[str]]] = Provide[
+            config.tracing.excluded_urls
+        ],
+    ):
+        from opentelemetry.util.http import ExcludeList
+        from opentelemetry.util.http import parse_excluded_urls
+
+        if isinstance(excluded_urls, list):
+            return ExcludeList(excluded_urls)
+        else:
+            return parse_excluded_urls(excluded_urls)
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]]({})

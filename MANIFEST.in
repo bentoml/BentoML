@@ -1,32 +1,23 @@
 # All files tracked by Git are included in PyPI distribution
 
 # Files to exclude in PyPI distribution
-exclude .gitignore
-exclude .readthedocs.yml
-exclude .pep8speaks.yml
-exclude codecov.yml
-exclude CONTRIBUTING.md
-exclude GOVERNANCE.md
-exclude CODE_OF_CONDUCT.md
-exclude DEVELOPMENT.md
-exclude SECURITY.md
-exclude Makefile
-exclude MANIFEST.in
+exclude CONTRIBUTING.md GOVERNANCE.md CODE_OF_CONDUCT.md DEVELOPMENT.md SECURITY.md
+exclude Makefile MANIFEST.in
+exclude *.yml
+exclude .git*
 
 # Directories to exclude in PyPI package
 prune requirements
 prune tests
-prune docker
 prune typings
 prune scripts
 prune hooks
 prune docs
-prune .github
+prune examples
+prune .git*
+prune */__pycache__
+prune */.DS_Store
+prune */.ipynb_checkpoints
 
 # Patterns to exclude from any directory
-global-exclude *~
-global-exclude *.pyc
-global-exclude *.pyo
-global-exclude .ipynb_checkpoints
-global-exclude __pycache__
-global-exclude .DS_Store
+global-exclude *.py[cod]

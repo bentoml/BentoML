@@ -2,9 +2,8 @@
 Framework Guides
 ================
 
-Here are the all of the supported ML frameworks for BentoML. You can find the official
-BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__
-repository.
+Here is the list of supported ML libraries and formats in BentoML. You can also find example
+projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
 
 
 .. grid:: 1 2 2 2
@@ -12,12 +11,28 @@ repository.
     :margin: 0
     :padding: 3 4 0 0
 
+    .. grid-item-card:: :doc:`/frameworks/catboost`
+        :link: /frameworks/catboost
+        :link-type: doc
+
+    .. grid-item-card:: :doc:`/frameworks/fastai`
+        :link: /frameworks/fastai
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/frameworks/keras`
         :link: /frameworks/keras
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/picklable`
-        :link: /frameworks/picklable
+    .. grid-item-card:: :doc:`/frameworks/lightgbm`
+        :link: /frameworks/lightgbm
+        :link-type: doc
+
+    .. grid-item-card:: :doc:`/integrations/mlflow`
+        :link: /integrations/mlflow
+        :link-type: doc
+
+    .. grid-item-card:: :doc:`/frameworks/onnx`
+        :link: /frameworks/onnx
         :link-type: doc
 
     .. grid-item-card:: :doc:`/frameworks/pytorch`
@@ -44,38 +59,46 @@ repository.
         :link: /frameworks/xgboost
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/fastai`
-        :link: /frameworks/fastai
+
+Custom Models
+-------------
+
+.. grid:: 1 2 2 2
+    :gutter: 3
+    :margin: 0
+    :padding: 3 4 0 0
+
+    .. grid-item-card:: :doc:`/frameworks/picklable`
+        :link: /frameworks/picklable
         :link-type: doc
 
+    .. grid-item-card:: :ref:`concepts/runner:Custom Runner`
+        :link: custom-runner
+        :link-type: ref
 
-The following frameworks are supported in BentoML prior to 1.0.0 release and is still
-being migrated to the new API design. Before they are officially supported in BentoML
-1.0, users may use :ref:`Custom Runner <concepts/runner:Custom Runner>` to serve models
-from these ML libraries with BentoML.
 
-- Catboost
+Roadmap
+-------
+
+The following frameworks are supported in pre-1.0 BentoML versions and are being migrated to the new 1.0 API. In the meantime, users may use :ref:`Custom Models <frameworks/index:Custom Models>` as a workaround.
+
 - Detectron
 - EasyOCR
 - EvalML
 - FastText
+- Flax
 - Gluon
 - H2O
-- LightGBM
-- MLFlow
-- ONNX
+- Jax
+- Neuropod
 - ONNX-MLIR
 - PaddlePaddle
 - PyCaret
-- Spacy
-- Statsmodels
-- Flax
-- Jax
-- Neuropod
 - PyTorch ignite
-- Spark MLlib
 - SnapML
-
+- Spacy
+- Spark MLlib
+- Statsmodels
 
 
 .. admonition:: Help us improve the project!
@@ -88,15 +111,17 @@ from these ML libraries with BentoML.
 
 
 .. toctree::
-  :hidden:
+    :hidden:
 
-  picklable
-  pytorch
-  pytorch_lightning
-  keras
-  sklearn
-  tensorflow
-  transformers
-  fastai
-  xgboost
-
+    catboost
+    fastai
+    keras
+    lightgbm
+    onnx
+    picklable_model
+    pytorch
+    pytorch_lightning
+    sklearn
+    tensorflow
+    transformers
+    xgboost

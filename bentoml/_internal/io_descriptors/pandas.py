@@ -336,7 +336,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 logger.warning(
                     "`columns` is None or undefined, while `apply_column_names`=True"
                 )
-            elif len(self._columns) == res.shape[1]:
+            elif len(self._columns) != res.shape[1]:
                 raise BadInput(
                     "length of `columns` does not match the columns of incoming data"
                 )
@@ -655,9 +655,6 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
                     if left != -1 and right != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
-
-    async def init_http_response(self) -> Response:
-        return Response(None, media_type=MIME_TYPE_JSON)
 
     async def to_http_response(
         self, obj: t.Any, ctx: Context | None = None

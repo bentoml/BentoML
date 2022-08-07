@@ -48,7 +48,7 @@ autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 10
 
 ogp_site_url = "http://docs.bentoml.org"
-ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-readme-header.jpeg"
+ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-banner.png"
 ogp_site_name = "BentoML Documentation"
 ogp_use_first_image = True
 
@@ -127,5 +127,6 @@ autodoc_mock_imports = [
     "transformers",
     "transformers.file_utils",
     "xgboost",
+    "catboost",
     "bentoml._internal.models.model.ModelSignatureDict",
 ]

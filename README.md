@@ -41,13 +41,10 @@ things MLOps.
 
 ## Getting Started ##
 
-__The BentoML version 1.0 is in pre-view release.__ You can be of great help by testing out the preview release, 
-reporting issues, contribute to the documentation and create sample gallery projects.  For our most recent stable release, see the [0.13-LTS branch](https://github.com/bentoml/BentoML/tree/0.13-LTS).
-
 - [Documentation](https://docs.bentoml.org/) - Overview of the BentoML docs and related resources
 - [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
 - [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
-- [Examples](https://github.com/bentoml/gallery) - Gallery of sample projects using BentoML
+- [Examples](https://github.com/bentoml/BentoML/tree/main/examples) - Gallery of sample projects using BentoML
 - [ML Framework Sepecific Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) - Learn about BentoML's internals, architecture and advanced features
 
@@ -55,7 +52,7 @@ reporting issues, contribute to the documentation and create sample gallery proj
 ## Installation ##
 
 ```bash
-pip install bentoml --pre
+pip install bentoml
 ```
 
 ## Quick Tour ##
@@ -73,7 +70,7 @@ print(f"Model saved: {saved_model}")
 # Model saved: Model(tag="fraud_detect:3qee3zd7lc4avuqj", path="~/bentoml/models/fraud_detect/3qee3zd7lc4avuqj/")
 ```
 
-BentoML saves the model artifact files in a local model store, a long with necessary metadata. 
+BentoML saves the model artifact files in a local model store, along with necessary metadata. 
 A new version tag is automatically generated for the model.
 
 Optionally, you may provide the `signatures` of your model for running inference with
@@ -225,7 +222,7 @@ Thanks to all of our amazing contributors!
 
 ### Usage Reporting ###
 
-BentoML collects anonymous usage data that helps our team to improve the product.
+BentoML collects usage data that helps our team to improve the product.
 Only BentoML's internal API calls are being reported. We strip out as much potentially 
 sensitive information as possible, and we will never collect user code, model data, model names, or stack traces.
 Here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.

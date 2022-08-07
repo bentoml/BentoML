@@ -49,7 +49,7 @@ jobs:
       transformers: ${{ steps.filter.outputs.transformers }}
       xgboost: ${{ steps.filter.outputs.xgboost }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -226,11 +226,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -240,7 +240,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -258,7 +258,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.catboost == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./catboost.xml
@@ -271,11 +271,11 @@ jobs:
     #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -285,7 +285,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -303,7 +303,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.detectron2 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./detectron2.xml
@@ -316,11 +316,11 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -330,7 +330,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -348,7 +348,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.easyocr == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./easyocr.xml
@@ -365,11 +365,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -379,7 +379,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -407,7 +407,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.fastai == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./fastai.xml,./fastai.unit.xml
@@ -420,11 +420,11 @@ jobs:
     #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.gluon == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -434,7 +434,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -452,7 +452,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.gluon == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./gluon.xml
@@ -465,11 +465,11 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -479,7 +479,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -497,7 +497,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.h2o == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./h2o.xml
@@ -509,11 +509,11 @@ jobs:
   #   if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       with:
   #         fetch-depth: 0 # fetch all tags and branches
   #     - name: Setup python
-  #       uses: actions/setup-python@v2
+  #       uses: actions/setup-python@v4
   #       with:
   #         python-version: 3.7.10
 
@@ -523,7 +523,7 @@ jobs:
   #         echo ::set-output name=dir::$(pip cache dir)
 
   #     - name: Cache pip dependencies
-  #       uses: actions/cache@v2
+  #       uses: actions/cache@v3
   #       id: cache-pip
   #       with:
   #         path: ${{ steps.cache-dir.outputs.dir }}
@@ -541,7 +541,7 @@ jobs:
 
   #     - name: Upload test coverage to Codecov
   #       if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
-  #       uses: codecov/codecov-action@v2
+  #       uses: codecov/codecov-action@v3
   #       with:
   #         directory: ./
   #         files: ./keras_tf1.xml
@@ -553,11 +553,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7.10
 
@@ -567,7 +567,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -585,7 +585,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf2 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./keras_tf2.xml
@@ -597,11 +597,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -611,7 +611,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -629,7 +629,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.lightgbm == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./lightgbm.xml
@@ -638,15 +638,14 @@ jobs:
 
   mlflow_integration_tests:
     needs: diff
-    #if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.mlflow == 'true') || github.event_name == 'push' }}
-    if: ${{ false }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.mlflow == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -656,7 +655,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -674,7 +673,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.mlflow == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./mlflow.xml
@@ -686,11 +685,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -700,7 +699,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -718,7 +717,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnx == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./onnx.xml
@@ -733,11 +732,11 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -747,7 +746,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -765,7 +764,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./paddle.xml
@@ -777,11 +776,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.picklable_model == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -791,7 +790,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -809,7 +808,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./picklable_model.xml
@@ -822,11 +821,11 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -836,7 +835,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -854,7 +853,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pycaret == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./pycaret.xml
@@ -868,11 +867,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -882,7 +881,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -910,7 +909,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./pytorch.xml,./pytorch.unit.xml
@@ -922,11 +921,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch_lightning == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -936,7 +935,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -954,7 +953,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./pytorch_lightning.xml
@@ -966,11 +965,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.torchscript == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -980,7 +979,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -998,7 +997,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.torchscript == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./torchscript.xml
@@ -1010,11 +1009,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.sklearn == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -1024,7 +1023,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -1042,7 +1041,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.sklearn == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./sklearn.xml
@@ -1055,11 +1054,11 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -1069,7 +1068,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -1087,7 +1086,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.spacy == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./spacy.xml
@@ -1100,11 +1099,11 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -1114,7 +1113,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -1132,7 +1131,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.statsmodels == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./statsmodels.xml
@@ -1145,11 +1144,11 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
 
@@ -1159,7 +1158,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -1177,7 +1176,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf1 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./tf1.xml
@@ -1189,11 +1188,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.tf2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -1203,7 +1202,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -1241,7 +1240,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./tf2.xml,./tf2.unit.xml,./tf2.unit.no_eager.xml
@@ -1253,11 +1252,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.transformers == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -1267,7 +1266,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -1283,9 +1282,19 @@ jobs:
         run: make tests-transformers
         shell: bash
 
+      - name: Run unit test for transformers
+        shell: bash
+        run: |
+          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"transformers.unit.xml" --cov-report term-missing:skip-covered)
+          python -m pytest ./tests/integration/frameworks/test_transformers_unit.py "${OPTS[@]}" || ERR=1
+          if [ $ERR -eq 1 ]; then
+            echo "unit tests for transformers failed!"
+            exit 1
+          fi
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./transformers.xml
@@ -1297,11 +1306,11 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.xgboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -1311,7 +1320,7 @@ jobs:
           echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
@@ -1329,7 +1338,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.xgboost == 'true' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           directory: ./
           files: ./xgboost.xml

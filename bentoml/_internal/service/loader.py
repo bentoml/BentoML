@@ -152,16 +152,6 @@ def import_service(
                         raise BentoMLException(
                             exception_message.format(mode="Debug mode", clause=clause)
                         )
-                    elif not BentoMLContainer.development_mode.get():
-                        raise BentoMLException(
-                            exception_message.format(
-                                mode="Development mode", clause=clause
-                            )
-                        )
-                    else:
-                        logger.warning(
-                            f"'{clause}' is detected inside '{module_name}'. This could means you are importing '{clause}' lazily. Make sure to remove it when finish debugging."
-                        )
         except ImportError as e:
             raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
         if not standalone_load:

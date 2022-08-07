@@ -136,11 +136,20 @@ def import_service(
         # Import the service using the Bento's own model store
         try:
             module = importlib.import_module(module_name, package=working_dir)
-            # check if import pdb is present inside service.py
-            if "pdb" in dir(module) and not get_debug_mode():
-                raise ImportError(
-                    "Debug mode is disabled, 'import pdb' is not allowed. Either pass '--debug', 'BENTOML_DEBUG=True' to use pdb with your service code, or remove 'import pdb' completely."
-                )
+            # eager check if import pdb is present inside service.py.
+            # Note that there is no way to do a lazy check if users import pdb lazily
+            # in their service.py. We can only perform lazy check via parsing AST.
+            # However, this is not ideal due to the performance penalty.
+            if "pdb" in dir(module):
+                exception_message = "{mode} is disabled, 'import pdb' is not allowed. Either pass '--debug', 'BENTOML_DEBUG=True' to use pdb with your service code, or remove 'import pdb' completely."
+                if not get_debug_mode():
+                    raise ImportError(exception_message.format(mode="Debug mode"))
+                elif not BentoMLContainer.development_mode.get():
+                    raise ImportError(exception_message.format(mode="Development mode"))
+                else:
+                    logger.warning(
+                        f"'import pdb' is detected inside {module_name}, but neither debug mode nor development mode is enabled. This could means that you are in production mode. However, it is NOT RECOMMENDED to use 'pdb' inside production mode."
+                    )
         except ImportError as e:
             raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
         if not standalone_load:

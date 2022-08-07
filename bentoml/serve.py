@@ -85,12 +85,13 @@ def ensure_prometheus_dir(
 
 
 @contextlib.contextmanager
-def reserve_reuse_port():
+def enable_so_reuseport(port: int) -> t.Generator[int, None, None]:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 0:
         raise RuntimeError("Failed to set SO_REUSEPORT.")
-    sock.bind(("", 0))
+
+    sock.bind(("", port))
     try:
         yield sock.getsockname()[1]
     finally:
@@ -220,14 +221,16 @@ def serve_production(
             "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
         )
 
-    def create_watcher(name: str, args: list[str], numprocesses: int) -> Watcher:
+    def create_watcher(
+        name: str, args: list[str], numprocesses: int, *, use_sockets: bool = True
+    ) -> Watcher:
         return Watcher(
             name=name,
             cmd=sys.executable,
             args=args,
             copy_env=True,
             stop_children=True,
-            use_sockets=True,
+            use_sockets=use_sockets,
             working_dir=working_dir,
             numprocesses=numprocesses,
         )
@@ -309,17 +312,9 @@ def serve_production(
     logger.debug("Runner map: %s", runner_bind_map)
 
     if grpc:
-
         with contextlib.ExitStack() as port_stack:
-            api_port = port_stack.enter_context(reserve_reuse_port())
+            api_port = port_stack.enter_context(enable_so_reuseport(port))
             api_host = "127.0.0.1"
-            circus_socket_map[API_SERVER_NAME] = CircusSocket(
-                name=API_SERVER_NAME,
-                host=api_host,
-                port=api_port,
-            )
-            # reserve one more to avoid conflicts
-            port_stack.enter_context(reserve_reuse_port())
 
             watchers.append(
                 create_watcher(
@@ -340,8 +335,10 @@ def serve_production(
                         prometheus_dir,
                     ],
                     numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+                    use_sockets=False,
                 )
             )
+            # port = api_port
     else:
         circus_socket_map[API_SERVER_NAME] = CircusSocket(
             name=API_SERVER_NAME,

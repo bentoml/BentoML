@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import socket
+# import socket
 import typing as t
 import logging
 import functools
@@ -42,7 +42,7 @@ class GRPCAppFactory:
         self,
         bento_service: Service,
         *,
-        _thread_pool_size: int = 10,
+        max_workers: int = 10,
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
         enable_metrics: bool = Provide[
@@ -58,7 +58,7 @@ class GRPCAppFactory:
         self._metrics_host = metrics_host
         self._metrics_client = metrics_client
         self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
-        self._thread_pool_size = _thread_pool_size
+        self.max_workers = max_workers
 
     @property
     def name(self) -> str:
@@ -117,7 +117,7 @@ class GRPCAppFactory:
         #             )
 
         server = aio.server(
-            migration_thread_pool=ThreadPoolExecutor(self._thread_pool_size),
+            migration_thread_pool=ThreadPoolExecutor(self.max_workers),
             handlers=self.handlers,
             interceptors=self.interceptors,
             options=self.options,

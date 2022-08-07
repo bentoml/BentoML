@@ -236,7 +236,7 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
 
     @classmethod
     @functools.lru_cache(maxsize=1)
-    def from_system(cls) -> t.List[int]:
+    def from_system(cls) -> list[int]:
         """
         query nvidia gpu count, available on Windows and Linux
         """

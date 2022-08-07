@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import typing as t
+import inspect
 import logging
 import importlib
 from typing import TYPE_CHECKING
@@ -136,20 +138,30 @@ def import_service(
         # Import the service using the Bento's own model store
         try:
             module = importlib.import_module(module_name, package=working_dir)
-            # eager check if import pdb is present inside service.py.
-            # Note that there is no way to do a lazy check if users import pdb lazily
-            # in their service.py. We can only perform lazy check via parsing AST.
-            # However, this is not ideal due to the performance penalty.
-            if "pdb" in dir(module):
-                exception_message = "{mode} is disabled, 'import pdb' is not allowed. Either pass '--debug', 'BENTOML_DEBUG=True' to use pdb with your service code, or remove 'import pdb' completely."
-                if not get_debug_mode():
-                    raise ImportError(exception_message.format(mode="Debug mode"))
-                elif not BentoMLContainer.development_mode.get():
-                    raise ImportError(exception_message.format(mode="Development mode"))
-                else:
-                    logger.warning(
-                        f"'import pdb' is detected inside {module_name}, but neither debug mode nor development mode is enabled. This could means that you are in production mode. However, it is NOT RECOMMENDED to use 'pdb' inside production mode."
-                    )
+            source = inspect.getsource(module).split("\n")
+            # eager check if import pdb is present inside service definition.
+            # For breakpoint see https://peps.python.org/pep-0553/
+            checks = {
+                "breakpoint()": re.compile(r"^(?:\s+)|(breakpoint\(\))"),
+                "pdb": re.compile(r"^(?:\s+)|(import|from)+\s(pdb)+"),
+            }
+            for clause, rgx in checks.items():
+                if any(rgx.match(line) for line in source):
+                    exception_message = "{mode} is disabled, '{clause}' is not allowed. Either pass '--debug', 'BENTOML_DEBUG=True' to use '{clause}' with your service code, or remove '{clause}' completely."
+                    if not get_debug_mode():
+                        raise BentoMLException(
+                            exception_message.format(mode="Debug mode", clause=clause)
+                        )
+                    elif not BentoMLContainer.development_mode.get():
+                        raise BentoMLException(
+                            exception_message.format(
+                                mode="Development mode", clause=clause
+                            )
+                        )
+                    else:
+                        logger.warning(
+                            f"'{clause}' is detected inside '{module_name}'. This could means you are importing '{clause}' lazily. Make sure to remove it when finish debugging."
+                        )
         except ImportError as e:
             raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
         if not standalone_load:

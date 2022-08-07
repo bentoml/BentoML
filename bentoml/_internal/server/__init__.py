@@ -128,7 +128,8 @@ def serve_development(
             # if debug mode is enabled, we don't want to close stdin for
             # child process in case user use debugger.
             # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
-            close_child_stdin=not get_debug_mode(),
+            close_child_stdin=not get_debug_mode()
+            or not BentoMLContainer.development_mode.get(),
         )
     )
 

@@ -73,8 +73,6 @@ def main(
         from bentoml._internal.utils.click import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
 
-        # from bentoml._internal.utils.circus import create_circus_socket_from_uri
-        # circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
         ensure_prometheus_dir()
         params = ctx.params
         params["bind"] = bind

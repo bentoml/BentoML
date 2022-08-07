@@ -338,7 +338,6 @@ def serve_production(
                     use_sockets=False,
                 )
             )
-            # port = api_port
     else:
         circus_socket_map[API_SERVER_NAME] = CircusSocket(
             name=API_SERVER_NAME,

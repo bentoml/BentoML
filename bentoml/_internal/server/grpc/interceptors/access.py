@@ -65,9 +65,7 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
 
                 start = default_timer()
                 try:
-                    response = behaviour(request, context)
-                    if not hasattr(response, "__aiter__"):
-                        response = await response
+                    response = await behaviour(request, context)
                 except Exception as e:
                     context.set_code(grpc.StatusCode.INTERNAL)
                     context.set_details(str(e))

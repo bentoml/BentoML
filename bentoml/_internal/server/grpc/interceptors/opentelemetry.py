@@ -255,10 +255,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
 
                         # And now we run the actual RPC.
                         try:
-                            response = behaviour(request, wrapped_context)
-                            if not hasattr(response, "__aiter__"):
-                                response = await response
-                            return response
+                            return await behaviour(request, wrapped_context)
                         except Exception as e:
                             # We are interested in uncaught exception, otherwise
                             # it will be handled by gRPC.

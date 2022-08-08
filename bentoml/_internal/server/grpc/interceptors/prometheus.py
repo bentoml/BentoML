@@ -12,6 +12,7 @@ from grpc import aio
 from simple_di import inject
 from simple_di import Provide
 
+from ....utils import LazyLoader
 from ....utils.grpc import to_http_status
 from ....utils.grpc import wrap_rpc_handler
 from ....configuration.containers import BentoMLContainer
@@ -19,6 +20,8 @@ from ....configuration.containers import BentoMLContainer
 START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")
 
 if TYPE_CHECKING:
+    from bentoml.grpc.v1 import service_pb2
+
     from ..types import Request
     from ..types import Response
     from ..types import RpcMethodHandler
@@ -27,6 +30,9 @@ if TYPE_CHECKING:
     from ..types import BentoServicerContext
     from ....service import Service
     from ...metrics.prometheus import PrometheusClient
+else:
+    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +98,9 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
             async def new_behavior(
                 request: Request, context: BentoServicerContext
             ) -> Response | t.Awaitable[Response]:
+                if not isinstance(request, service_pb2.Request):
+                    return await behaviour(request, context)
+
                 api_name = request.api_name
 
                 # instrument request total count
@@ -106,13 +115,15 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                 # instrument request duration
                 assert START_TIME_VAR.get() != 0
                 total_time = max(default_timer() - START_TIME_VAR.get(), 0)
-                self.metrics_request_duration.labels(
+                self.metrics_request_duration.labels(  # type: ignore (unfinished prometheus types)
                     api_name=api_name,
                     service_version=service_version,
                     http_response_code=to_http_status(
                         t.cast(grpc.StatusCode, context.code())
                     ),
-                ).observe(total_time)
+                ).observe(
+                    total_time
+                )
 
                 START_TIME_VAR.set(0)
 

@@ -10,13 +10,6 @@ import pydantic
 from bentoml.io import JSON
 
 
-@pytest.fixture
-def loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
 @dataclass
 class _ExampleSchema:
     name: str
@@ -64,10 +57,10 @@ def test_json_encoder(
     assert expected == dumped
 
 
-def test_json_description_to_http_response(loop: asyncio.AbstractEventLoop):
-
-    json_description = JSON()
-
-    response = loop.run_until_complete(json_description.to_http_response(None))
-
-    assert b"" == response.body
+def test_json_description_to_http_response():
+    loop = asyncio.new_event_loop()
+    try:
+        response = loop.run_until_complete(JSON().to_http_response(None))
+        assert b"" == response.body
+    finally:
+        loop.close()

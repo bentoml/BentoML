@@ -280,10 +280,15 @@ def serve_production(
 
     prometheus_dir = ensure_prometheus_dir()
 
-    if grpc and psutil.WINDOWS:
-        raise UnprocessableEntity(
-            "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
-        )
+    if grpc:
+        if psutil.WINDOWS:
+            raise UnprocessableEntity(
+                "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
+            )
+        if psutil.MACOS or psutil.FREEBSD:
+            logger.warning(
+                f"Due to gRPC implementation on exposing SO_REUSEPORT, '--production' behaviour on {'MacOS' if psutil.MACOS else 'FreeBSD'} is not correct. We recommend to containerize BentoServer as a Linux container instead."
+            )
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus

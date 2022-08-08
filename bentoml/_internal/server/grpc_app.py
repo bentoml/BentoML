@@ -40,7 +40,6 @@ class GRPCAppFactory:
         self,
         bento_service: Service,
         *,
-        max_workers: int = 10,
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
         enable_metrics: bool = Provide[
@@ -49,8 +48,15 @@ class GRPCAppFactory:
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
-        self.max_workers = max_workers
 
+        # Note that the max_workers are used inside ThreadPoolExecutor.
+        # This ThreadPoolExecutor are used by aio.Server() to execute non-AsyncIO RPC handlers.
+        # Setting it to 1 makes it thread-safe for sync APIs.
+        self.max_workers = 1
+
+        # maximum_concurrent_rpcs defines the maximum number of concurrent RPCs this server
+        # will service before returning RESOURCE_EXHAUSTED status.
+        # Set to None will indicate no limit.
         self.maximum_concurrent_rpcs = maximum_concurrent_rpcs
 
     @property
@@ -87,7 +93,7 @@ class GRPCAppFactory:
         from .grpc.servicer import create_bento_servicer
 
         server = aio.server(
-            migration_thread_pool=ThreadPoolExecutor(self.max_workers),
+            migration_thread_pool=ThreadPoolExecutor(max_workers=self.max_workers),
             handlers=self.handlers,
             interceptors=self.interceptors,
             options=self.options,

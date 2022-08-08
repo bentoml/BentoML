@@ -197,13 +197,17 @@ class JSON(IODescriptor[JSONType]):
         if isinstance(obj, pydantic.BaseModel):
             obj = obj.dict()
 
-        json_str = json.dumps(
-            obj,
-            cls=self._json_encoder,
-            ensure_ascii=False,
-            allow_nan=False,
-            indent=None,
-            separators=(",", ":"),
+        json_str = (
+            json.dumps(
+                obj,
+                cls=self._json_encoder,
+                ensure_ascii=False,
+                allow_nan=False,
+                indent=None,
+                separators=(",", ":"),
+            )
+            if obj is not None
+            else None
         )
 
         if ctx is not None:

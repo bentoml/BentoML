@@ -85,8 +85,10 @@ def test_NvidiaGpuResource():
     assert NvidiaGpuResource.from_spec(["1", "3"]) == [1, 3]
     assert NvidiaGpuResource.from_spec(-1) == []
     assert NvidiaGpuResource.from_spec("-1") == []
-    # Currently this is not supported and is considered invalid
-    # assert NvidiaGpuResource.from_spec("[1, 2, 3]") == [1, 2, 3]
+
+    with pytest.raises(BentoMLConfigException):
+        # Currently this is not supported and is considered invalid
+        assert NvidiaGpuResource.from_spec("[1, 2, 3]") == [1, 2, 3]
 
     with pytest.raises(TypeError):
         NvidiaGpuResource.from_spec((1, 2, 3))

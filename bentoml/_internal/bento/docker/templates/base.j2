@@ -71,6 +71,10 @@ RUN {{ __pip_cache__ }} pip install --no-warn-script-location "bentoml[grpc]"
 {% block SETUP_BENTO_ENTRYPOINT %}
 # Default port for BentoServer
 EXPOSE 3000
+{% if __options__grpc is true %}
+# expose Prometheus port
+EXPOSE 9090
+{% endif %}
 
 RUN chmod +x {{ bento__entrypoint }}
 

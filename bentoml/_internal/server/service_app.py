@@ -38,7 +38,7 @@ DEFAULT_INDEX_HTML = """\
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Swagger UI</title>
+    <title>BentoML Prediction Service</title>
     <link rel="stylesheet" type="text/css" href="./static_content/swagger-ui.css" />
     <link rel="stylesheet" type="text/css" href="./static_content/index.css" />
     <link rel="icon" type="image/png" href="./static_content/favicon-32x32.png" sizes="32x32" />
@@ -106,6 +106,7 @@ class ServiceAppFactory(BaseAppFactory):
         """
         from starlette.responses import Response
 
+        # TODO: add readme description.
         return Response(
             content=DEFAULT_INDEX_HTML.format(readme=self.bento_service.doc),
             status_code=200,
@@ -115,8 +116,7 @@ class ServiceAppFactory(BaseAppFactory):
     async def docs_view_func(self, _: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        docs = self.bento_service.openapi_doc()
-        return JSONResponse(docs)
+        return JSONResponse(self.bento_service.openapi_spec.asdict())
 
     @property
     def routes(self) -> list[BaseRoute]:

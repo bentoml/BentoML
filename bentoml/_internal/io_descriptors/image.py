@@ -16,6 +16,11 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -32,10 +37,7 @@ else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = f"""\
-    `Pillow` is required to use {__name__}
-    Instructions: `pip install -U Pillow`
-    """
+    _exc = f"'Pillow' is required to use {__name__}. Install with: 'pip install -U Pillow'."
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
@@ -49,76 +51,89 @@ DEFAULT_PIL_MODE = "RGB"
 
 class Image(IODescriptor[ImageType]):
     """
-    :code:`Image` defines API specification for the inputs/outputs of a Service, where either
+    :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
     in your API function signature.
 
-    Sample implementation of a transformers service for object detection:
+    A sample object detection service:
 
     .. code-block:: python
+       :caption: `service.py`
 
-        #obj_detc.py
-        import bentoml
-        from bentoml.io import Image, JSON
+       from __future__ import annotations
 
-        tag='google_vit_large_patch16_224:latest'
-        runner = bentoml.tensorflow.get('image-classification').to_runner()
+       from typing import TYPE_CHECKING
+       from typing import Any
 
-        svc = bentoml.Service("vit-object-detection", runners=[runner])
+       import bentoml
+       from bentoml.io import Image
+       from bentoml.io import NumpyNdarray
 
-        @svc.api(input=Image(), output=JSON())
-        def predict(input_img):
-            res = runner.run(input_img)
-            return res
+       if TYPE_CHECKING:
+           from PIL.Image import Image
+           from numpy.typing import NDArray
+
+       runner = bentoml.tensorflow.get('image-classification:latest').to_runner()
+
+       svc = bentoml.Service("vit-object-detection", runners=[runner])
+
+       @svc.api(input=Image(), output=NumpyNdarray(dtype="float32"))
+       async def predict_image(f: Image) -> NDArray[Any]:
+           assert isinstance(f, Image)
+           arr = np.array(f) / 255.0
+           assert arr.shape == (28, 28)
+
+           # We are using greyscale image and our PyTorch model expect one
+           # extra channel dimension
+           arr = np.expand_dims(arr, (0, 3)).astype("float32")  # reshape to [1, 28, 28, 1]
+           return await runner.async_run(arr)
 
     Users then can then serve this service with :code:`bentoml serve`:
 
     .. code-block:: bash
 
-        % bentoml serve ./obj_detc.py:svc --auto-reload
-
-        (Press CTRL+C to quit)
-        [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "vit-object-detection" defined in "obj_detc.py"
-        [INFO] API Server running on http://0.0.0.0:3000
+        % bentoml serve ./service.py:svc --reload
 
     Users can then send requests to the newly started services with any client:
 
-    .. tabs::
+    .. tab-set::
 
-        .. code-tab:: python
+        .. tab-item:: Bash
 
-            import requests
-            requests.post(
-                "http://0.0.0.0:3000/predict",
-                files = {"upload_file": open('test.jpg', 'rb')},
-                headers = {"content-type": "multipart/form-data"}
-            ).text
+            .. code-block:: bash
 
-        .. code-tab:: bash
+               # we will run on our input image test.png
+               # image can get from http://images.cocodataset.org/val2017/000000039769.jpg
+               % curl -H "Content-Type: multipart/form-data" \\
+                      -F 'fileobj=@test.jpg;type=image/jpeg' \\
+                      http://0.0.0.0:3000/predict_image
 
-            # we will run on our input image test.png
-            # image can get from http://images.cocodataset.org/val2017/000000039769.jpg
-            % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:3000/predict
+               # [{"score":0.8610631227493286,"label":"Egyptian cat"},
+               # {"score":0.08770329505205154,"label":"tabby, tabby cat"},
+               # {"score":0.03540956228971481,"label":"tiger cat"},
+               # {"score":0.004140055272728205,"label":"lynx, catamount"},
+               # {"score":0.0009498853469267488,"label":"Siamese cat, Siamese"}]%
 
-            [{"score":0.8610631227493286,"label":"Egyptian cat"},
-            {"score":0.08770329505205154,"label":"tabby, tabby cat"},
-            {"score":0.03540956228971481,"label":"tiger cat"},
-            {"score":0.004140055272728205,"label":"lynx, catamount"},
-            {"score":0.0009498853469267488,"label":"Siamese cat, Siamese"}]%
+        .. tab-item:: Python
+
+           .. code-block:: python
+              :caption: `request.py`
+
+              import requests
+
+              requests.post(
+                  "http://0.0.0.0:3000/predict_image",
+                  files = {"upload_file": open('test.jpg', 'rb')},
+                  headers = {"content-type": "multipart/form-data"}
+              ).text
 
     Args:
-        pilmode (:code:`str`, `optional`, default to :code:`RGB`):
-            Color mode for PIL.
-        mime_type (:code:`str`, `optional`, default to :code:`image/jpeg`):
-            Return MIME type of the :code:`starlette.response.Response`, only available
-            when used as output descriptor.
+        pilmode: Color mode for PIL. Default to ``RGB``.
+        mime_type: Return MIME type of the :code:`starlette.response.Response`, only available when used as output descriptor.
 
     Returns:
-        :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray`
-        representing an image.
-
-    """  # noqa
+        :obj:`Image`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray` representing an image.
+    """
 
     MIME_EXT_MAPPING: t.Dict[str, str] = {}
 
@@ -154,16 +169,23 @@ class Image(IODescriptor[ImageType]):
     def input_type(self) -> UnionType:
         return ImageType
 
-    def openapi_schema_type(self) -> dict[str, str]:
-        return {"type": "string", "format": "binary"}
+    def openapi_schema(self) -> Schema:
+        return Schema(type="string", format="binary")
 
-    def openapi_request_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for incoming requests"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+    def openapi_components(self) -> dict[str, t.Any] | None:
+        pass
 
-    def openapi_responses_schema(self) -> dict[str, t.Any]:
-        """Returns OpenAPI schema for outcoming responses"""
-        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+    def openapi_request_body(self) -> RequestBody:
+        return RequestBody(
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+            required=True,
+        )
+
+    def openapi_responses(self) -> OpenAPIResponse:
+        return OpenAPIResponse(
+            description=SUCCESS_DESCRIPTION,
+            content={self._mime_type: MediaType(schema=self.openapi_schema())},
+        )
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])

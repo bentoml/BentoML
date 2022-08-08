@@ -53,9 +53,12 @@ BENTO_README_FILENAME = "README.md"
 DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
 
-def get_default_bento_readme(svc: "Service"):
-    doc = f'# BentoML Service "{svc.name}"\n\n'
-    doc += "This is a Machine Learning Service created with BentoML. \n\n"
+def get_default_bento_readme(svc: Service, *, add_headers: bool = True) -> str:
+    doc = ""
+
+    if add_headers:
+        doc = f'# BentoML Service "{svc.name}"\n\n'
+        doc += "This is a Machine Learning Service created with BentoML. \n\n"
 
     if svc.apis:
         doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
@@ -66,24 +69,15 @@ def get_default_bento_readme(svc: "Service"):
             doc += f"* Output: {api.output.__class__.__name__}\n\n"
 
     doc += """
-## Customize This Message
+## Customization
 
 This is the default generated `bentoml.Service` doc. You may customize it in your Bento
 build file, e.g.:
 
 ```yaml
-service: "image_classifier.py:svc"
+...
 description: "file: ./readme.md"
-labels:
-  foo: bar
-  team: abc
-docker:
-  distro: debian
-  gpu: True
-python:
-  packages:
-    - tensorflow
-    - numpy
+...
 ```
 """
     # TODO: add links to documentation that may help with API client development
@@ -229,7 +223,7 @@ class Bento(StoreItem):
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
         with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
-            yaml.dump(svc.openapi_doc(), f)
+            yaml.dump(svc.openapi_spec, f)
 
         res = Bento(
             tag,

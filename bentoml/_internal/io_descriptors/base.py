@@ -5,23 +5,32 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from starlette.requests import Request
-from starlette.responses import Response
-
 if TYPE_CHECKING:
     from types import UnionType
 
+    from typing_extensions import Self
+    from starlette.requests import Request
+    from starlette.responses import Response
+
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
+    from ..service.openapi.specification import Schema
+    from ..service.openapi.specification import Response as OpenAPIResponse
+    from ..service.openapi.specification import Reference
+    from ..service.openapi.specification import RequestBody
+
+    InputType = (
+        UnionType
+        | t.Type[t.Any]
+        | LazyType[t.Any]
+        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
+    )
 
 
-IOPyObj = t.TypeVar("IOPyObj")
+IOType = t.TypeVar("IOType")
 
 
-_T = t.TypeVar("_T")
-
-
-class IODescriptor(ABC, t.Generic[IOPyObj]):
+class IODescriptor(ABC, t.Generic[IOType]):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
@@ -29,14 +38,16 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     """
 
     HTTP_METHODS = ["POST"]
+
     _init_str: str = ""
 
-    def __new__(cls: t.Type[_T], *args: t.Any, **kwargs: t.Any) -> _T:
+    _mime_type: str
+
+    def __new__(cls: t.Type[Self], *args: t.Any, **kwargs: t.Any) -> Self:
         self = super().__new__(cls)
-        arg_strs = tuple(repr(i) for i in args) + tuple(
-            f"{k}={repr(v)}" for k, v in kwargs.items()
-        )
-        setattr(self, "_init_str", f"{cls.__name__}({', '.join(arg_strs)})")
+        # default mime type is application/json
+        self._mime_type = "application/json"
+        self._init_str = cls.__qualname__
 
         return self
 
@@ -44,44 +55,31 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         return self._init_str
 
     @abstractmethod
-    def input_type(
-        self,
-    ) -> t.Union[
-        "UnionType",
-        t.Type[t.Any],
-        "LazyType[t.Any]",
-        t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]],
-    ]:
+    def input_type(self) -> InputType:
         ...
 
     @abstractmethod
-    def openapi_schema_type(self) -> t.Dict[str, str]:
-        ...
+    def openapi_schema(self) -> Schema | Reference:
+        raise NotImplementedError
 
     @abstractmethod
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        ...
+    def openapi_components(self) -> dict[str, t.Any] | None:
+        raise NotImplementedError
 
     @abstractmethod
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        ...
+    def openapi_request_body(self) -> RequestBody:
+        raise NotImplementedError
 
     @abstractmethod
-    async def from_http_request(self, request: Request) -> IOPyObj:
+    def openapi_responses(self) -> OpenAPIResponse:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def from_http_request(self, request: Request) -> IOType:
         ...
 
     @abstractmethod
     async def to_http_response(
-        self, obj: IOPyObj, ctx: Context | None = None
+        self, obj: IOType, ctx: Context | None = None
     ) -> Response:
         ...
-
-    # TODO: gRPC support
-    # @abstractmethod
-    # def generate_protobuf(self): ...
-
-    # @abstractmethod
-    # async def from_grpc_request(self, request: GRPCRequest) -> IOType: ...
-
-    # @abstractmethod
-    # async def to_grpc_response(self, obj: IOType) -> GRPCResponse: ...

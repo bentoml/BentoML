@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import os
-import re
 import sys
 import typing as t
-import inspect
 import logging
 import importlib
 from typing import TYPE_CHECKING
@@ -23,7 +21,6 @@ from ...exceptions import ImportServiceError
 from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
-from ..configuration import get_debug_mode
 from ..configuration import BENTOML_VERSION
 from ..bento.build_config import BentoBuildConfig
 from ..configuration.containers import BentoMLContainer
@@ -138,20 +135,6 @@ def import_service(
         # Import the service using the Bento's own model store
         try:
             module = importlib.import_module(module_name, package=working_dir)
-            source = inspect.getsource(module).split("\n")
-            # eager check if import pdb is present inside service definition.
-            # For breakpoint see https://peps.python.org/pep-0553/
-            checks = {
-                "breakpoint()": re.compile(r"^(?:\s+)?(breakpoint\(\))"),
-                "pdb": re.compile(r"^(?:\s+)?(import|from)+\s(pdb)+"),
-            }
-            for clause, rgx in checks.items():
-                if any(rgx.match(line) for line in source):
-                    exception_message = "{mode} is disabled, '{clause}' is not allowed. Either pass '--debug', 'BENTOML_DEBUG=True' to use '{clause}' with your service code, or remove '{clause}' completely."
-                    if not get_debug_mode():
-                        raise BentoMLException(
-                            exception_message.format(mode="Debug mode", clause=clause)
-                        )
         except ImportError as e:
             raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
         if not standalone_load:

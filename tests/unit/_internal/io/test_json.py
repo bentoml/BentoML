@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import pydantic
 
-from bentoml._internal.io_descriptors.json import JSON
+from bentoml.io import JSON
 
 
 @pytest.fixture

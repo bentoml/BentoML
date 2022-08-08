@@ -124,6 +124,9 @@ def serve_development(
             stop_children=True,
             use_sockets=True,
             working_dir=working_dir,
+            # we don't want to close stdin for child process in case user use debugger.
+            # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
+            close_child_stdin=False,
         )
     )
 

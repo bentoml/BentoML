@@ -12,6 +12,7 @@ from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
 from ..types import FileLike
+from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
 from ..service.openapi import SUCCESS_DESCRIPTION
@@ -23,9 +24,15 @@ from ..service.openapi.specification import RequestBody
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from bentoml.grpc.v1 import service_pb2
+
     from ..context import InferenceApiContext as Context
+    from ..server.grpc.types import BentoServicerContext
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
+else:
+    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
@@ -158,11 +165,16 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
     def generate_protobuf(self):
         pass
 
-    async def from_grpc_request(self, request, context) -> t.Any:
-        pass
+    async def to_grpc_response(
+        self, obj: FileType, context: BentoServicerContext
+    ) -> service_pb2.Response:
+        if isinstance(obj, bytes):
+            body = obj
+        else:
+            body = obj.read()
 
-    async def to_grpc_response(self, obj, context) -> t.Any:
-        pass
+        response = service_pb2.Response()
+        value = service_pb2.Value()
 
 
 class BytesIOFile(File):
@@ -192,3 +204,8 @@ class BytesIOFile(File):
         raise BentoMLException(
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )
+
+    async def from_grpc_request(
+        self, request: service_pb2.Request, context: BentoServicerContext
+    ) -> t.IO[bytes]:
+        pass

@@ -1,17 +1,7 @@
 from __future__ import annotations
 
-import sys
-import socket
 import typing as t
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
-
-import psutil
-
-from bentoml import load
-from bentoml._internal.utils.uri import uri_to_path
-
-from ...context import component_context
 
 if TYPE_CHECKING:
     from asgiref.typing import ASGI3Application
@@ -63,6 +53,17 @@ def main(
         working_dir: (Optional) the working directory
         worker_id: (Optional) if set, the runner will be started as a worker with the given ID
     """
+
+    import sys
+    import socket
+    from urllib.parse import urlparse
+
+    import psutil
+
+    from bentoml import load
+    from bentoml._internal.context import component_context
+    from bentoml._internal.utils.uri import uri_to_path
+
     if worker_id is None:
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
@@ -79,7 +80,7 @@ def main(
         watcher = Watcher(
             name=f"runner_{runner_name}",
             cmd=sys.executable,
-            args=["-m", "bentoml._internal.server.cli.runner"]
+            args=["-m", "bentoml_cli.server.runner"]
             + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
@@ -92,7 +93,7 @@ def main(
         return
 
     component_context.component_name = f"runner:{runner_name}:{worker_id}"
-    from ...log import configure_server_logging
+    from bentoml._internal.log import configure_server_logging
 
     configure_server_logging()
     import uvicorn  # type: ignore
@@ -124,7 +125,7 @@ def main(
     app = t.cast("ASGI3Application", RunnerAppFactory(runner, worker_index=worker_id)())
 
     parsed = urlparse(bind)
-    uvicorn_options = {
+    uvicorn_options: dict[str, int | None | str] = {
         "log_config": None,
         "workers": 1,
     }
@@ -142,6 +143,8 @@ def main(
             **uvicorn_options,
         )
     elif parsed.scheme == "tcp":
+        assert parsed.hostname is not None
+        assert parsed.port is not None
         uvicorn.run(
             app,
             host=parsed.hostname,

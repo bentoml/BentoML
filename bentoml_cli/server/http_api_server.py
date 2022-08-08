@@ -9,9 +9,6 @@ from urllib.parse import urlparse
 import click
 import psutil
 
-import bentoml
-from bentoml._internal.context import component_context
-
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
@@ -66,7 +63,9 @@ def main(
 
     import uvicorn
 
+    import bentoml
     from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     configure_server_logging()
@@ -79,7 +78,7 @@ def main(
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
 
-        from bentoml._internal.server import ensure_prometheus_dir
+        from bentoml.serve import ensure_prometheus_dir
         from bentoml._internal.utils.click import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
         from bentoml._internal.utils.circus import create_circus_socket_from_uri
@@ -92,7 +91,7 @@ def main(
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,
-            args=["-m", "bentoml._internal.server.cli.http_api_server"]
+            args=["-m", "bentoml_cli.server.http_api_server"]
             + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,

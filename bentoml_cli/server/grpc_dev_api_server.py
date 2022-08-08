@@ -1,22 +1,16 @@
-import socket
-import typing as t
+from __future__ import annotations
+
+import asyncio
 from urllib.parse import urlparse
 
 import click
 import psutil
-import uvicorn
-
-from bentoml import load
-from bentoml._internal.log import configure_server_logging
-from bentoml._internal.context import component_context
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, type=click.Path(), default=None)
-@click.option("--backlog", type=click.INT, default=2048)
 @click.option(
     "--prometheus-dir",
     type=click.Path(exists=True),
@@ -25,11 +19,15 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 def main(
     bento_identifier: str,
     bind: str,
-    working_dir: t.Optional[str],
-    backlog: int,
-    prometheus_dir: t.Optional[str],
+    working_dir: str | None,
+    prometheus_dir: str | None,
 ):
-    component_context.component_name = "dev_api_server"
+    from bentoml import load
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
+    component_context.component_name = "grpc_dev_api_server"
 
     configure_server_logging()
 
@@ -46,29 +44,16 @@ def main(
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version
 
+    if psutil.WINDOWS:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
+
     parsed = urlparse(bind)
 
-    if parsed.scheme == "fd":
-        fd = int(parsed.netloc)
-        sock = socket.socket(fileno=fd)
-
-        uvicorn_options = {
-            "backlog": backlog,
-            "log_config": None,
-            "workers": 1,
-            "lifespan": "on",
-        }
-        if psutil.WINDOWS:
-            uvicorn_options["loop"] = "asyncio"
-            import asyncio
-
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
-
-        config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
-        uvicorn.Server(config).run(sockets=[sock])
+    if parsed.scheme == "tcp":
+        svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

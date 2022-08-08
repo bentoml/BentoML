@@ -1,15 +1,7 @@
 import socket
 import typing as t
-from urllib.parse import urlparse
 
 import click
-import psutil
-import uvicorn
-
-from bentoml import load
-from bentoml._internal.log import configure_server_logging
-from bentoml._internal.context import component_context
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 
 @click.command()
@@ -29,6 +21,17 @@ def main(
     backlog: int,
     prometheus_dir: t.Optional[str],
 ):
+
+    from urllib.parse import urlparse
+
+    import psutil
+    import uvicorn
+
+    from bentoml import load
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     component_context.component_name = "dev_api_server"
 
     configure_server_logging()
@@ -71,4 +74,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

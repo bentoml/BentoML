@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 import fs
 import attr
 import yaml
+import psutil
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
 from pathspec import PathSpec
@@ -226,9 +227,12 @@ class DockerOptions:
             except FileNotFoundError as e:
                 raise InvalidArgument(f"Invalid setup_script file: {e}")
             if not os.access(setup_script, os.X_OK):
-                raise InvalidArgument(
-                    f"{setup_script} is not executable. Make it executable with 'chmod +x {setup_script}' if you are on Unix."
-                )
+                message = f"{setup_script} is not executable."
+                if not psutil.WINDOWS:
+                    raise InvalidArgument(
+                        f"{message} Make sure to 'chmod +x {setup_script}'."
+                    )
+                raise InvalidArgument(message)
             copy_file_to_fs_folder(
                 setup_script, bento_fs, docker_folder, "setup_script"
             )

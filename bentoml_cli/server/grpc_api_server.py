@@ -70,14 +70,13 @@ def main(
         from circus.watcher import Watcher
 
         from bentoml.serve import ensure_prometheus_dir
-        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml_cli.utils import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
 
         ensure_prometheus_dir()
-        parsed = urlparse(bind)
+
         params = ctx.params
-        params["max_concurrent_streams"] = f"tcp://0.0.0.0:{parsed.port}"
-        params["worker_id"] = "$(circus.wid)"
+        params.update({"bind": bind, "worker_id": "$(circus.wid)"})
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,
@@ -86,6 +85,7 @@ def main(
             copy_env=True,
             numprocesses=1,
             stop_children=True,
+            use_sockets=False,
             working_dir=working_dir,
         )
         arbiter = create_standalone_arbiter(watchers=[watcher])
@@ -109,7 +109,7 @@ def main(
     parsed = urlparse(bind)
     assert parsed.scheme == "tcp"
 
-    svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
+    svc.grpc_server.run(bind_addr=parsed.netloc)
 
 
 if __name__ == "__main__":

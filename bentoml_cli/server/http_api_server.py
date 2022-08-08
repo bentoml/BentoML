@@ -79,11 +79,12 @@ def main(
         from circus.watcher import Watcher
 
         from bentoml.serve import ensure_prometheus_dir
-        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml_cli.utils import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
         from bentoml._internal.utils.circus import create_circus_socket_from_uri
 
         ensure_prometheus_dir()
+
         circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
         params = ctx.params
         params["bind"] = "fd://$(circus.sockets._bento_api_server)"

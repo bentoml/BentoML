@@ -23,10 +23,6 @@ if TYPE_CHECKING:
     from ..server.grpc import GRPCServer
     from .openapi.specification import OpenAPISpecification
 
-    WSGI_APP = t.Callable[
-        [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
-    ]
-
 logger = logging.getLogger(__name__)
 
 
@@ -92,7 +88,7 @@ class Service:
     runners: t.List[Runner]
     models: t.List[Model]
 
-    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
+    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str | None]] = attr.field(
         init=False, factory=list
     )
     middlewares: t.List[
@@ -226,23 +222,29 @@ class Service:
         return GRPCAppFactory(self)()
 
     @property
-    def asgi_app(self) -> "ext.ASGIApp":
-        from ..server.service_app import ServiceAppFactory
+    def asgi_app(self) -> ext.ASGIApp:
+        from ..server.http_app import HTTPAppFactory
 
-        return ServiceAppFactory(self)()
+        return HTTPAppFactory(self)()
 
     def mount_asgi_app(
-        self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
+        self,
+        app: ext.ASGIApp,
+        path: str = "/",
+        name: str | None = None,
     ) -> None:
-        self.mount_apps.append((app, path, name))  # type: ignore
+        self.mount_apps.append((app, path, name))
 
     def mount_wsgi_app(
-        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
+        self,
+        app: ext.WSGIApp,
+        path: str = "/",
+        name: str | None = None,
     ) -> None:
         # TODO: Migrate to a2wsgi
         from starlette.middleware.wsgi import WSGIMiddleware
 
-        self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
+        self.mount_apps.append((WSGIMiddleware(app), path, name))
 
     def add_asgi_middleware(
         self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any

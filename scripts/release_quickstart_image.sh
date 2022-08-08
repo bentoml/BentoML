@@ -37,4 +37,4 @@ ENV NB_USER=bentoml \
     DOCKER_STACKS_JUPYTER_CMD=notebook \ 
     NOTEBOOK_ARGS="./iris_classifier.ipynb" \
     BENTOML_HOST=0.0.0.0
-#EOF
+EOF

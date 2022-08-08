@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import logging
 from timeit import default_timer
 from typing import TYPE_CHECKING
 from contextvars import ContextVar
 
 if TYPE_CHECKING:
-    from .. import external_typing as ext
+    from ... import external_typing as ext
 
 REQ_CONTENT_LENGTH = "REQUEST_CONTENT_LENGTH"
 REQ_CONTENT_TYPE = "REQUEST_CONTENT_TYPE"
@@ -41,7 +43,7 @@ class AccessLogMiddleware:
 
     def __init__(
         self,
-        app: "ext.ASGIApp",
+        app: ext.ASGIApp,
         has_request_content_length: bool = False,
         has_request_content_type: bool = False,
         has_response_content_length: bool = False,
@@ -56,9 +58,9 @@ class AccessLogMiddleware:
 
     async def __call__(
         self,
-        scope: "ext.ASGIScope",
-        receive: "ext.ASGIReceive",
-        send: "ext.ASGISend",
+        scope: ext.ASGIScope,
+        receive: ext.ASGIReceive,
+        send: ext.ASGISend,
     ) -> None:
         if not scope["type"].startswith("http"):
             await self.app(scope, receive, send)

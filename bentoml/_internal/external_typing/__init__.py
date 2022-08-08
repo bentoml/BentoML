@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Literal
 
+    F = t.Callable[..., t.Any]
+
     from pandas import Series as _PdSeries
     from pandas import DataFrame as PdDataFrame
     from pyarrow.plasma import ObjectID
@@ -30,6 +32,8 @@ if TYPE_CHECKING:
     from .starlette import ASGIReceive
     from .starlette import AsgiMiddleware
 
+    WSGIApp = t.Callable[[F, t.Mapping[str, t.Any]], t.Iterable[bytes]]
+
     __all__ = [
         "PdSeries",
         "PdDataFrame",
@@ -51,4 +55,6 @@ if TYPE_CHECKING:
         "ASGISend",
         "ASGIReceive",
         "ASGIMessage",
+        # misc
+        "WSGIApp",
     ]

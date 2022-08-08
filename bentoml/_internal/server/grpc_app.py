@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import socket
 import typing as t
 import logging
 import functools
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
+import psutil
 from grpc import aio
 from simple_di import inject
 from simple_di import Provide
@@ -22,9 +22,9 @@ if TYPE_CHECKING:
     import grpc
 
     from ..service import Service
-    from ..server.metrics.prometheus import PrometheusClient
 
     OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
+    Interceptors = list[t.Callable[[], aio.ServerInterceptor]]
 
 
 class GRPCAppFactory:
@@ -35,44 +35,37 @@ class GRPCAppFactory:
     Note that even though the code are similar with BaseAppFactory, gRPC protocol is different from ASGI.
     """
 
-    _is_ready: bool = False
-
     @inject
     def __init__(
         self,
         bento_service: Service,
         *,
-        _thread_pool_size: int = 10,
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-        metrics_port: int = Provide[BentoMLContainer.grpc.metrics_port],
-        metrics_host: str = Provide[BentoMLContainer.grpc.metrics_host],
-        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
-        self._metrics_port = metrics_port
-        self._metrics_host = metrics_host
-        self._metrics_client = metrics_client
-        self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
-        self._thread_pool_size = _thread_pool_size
+
+        # Note that the max_workers are used inside ThreadPoolExecutor.
+        # This ThreadPoolExecutor are used by aio.Server() to execute non-AsyncIO RPC handlers.
+        # Setting it to 1 makes it thread-safe for sync APIs.
+        self.max_workers = 1
+
+        # maximum_concurrent_rpcs defines the maximum number of concurrent RPCs this server
+        # will service before returning RESOURCE_EXHAUSTED status.
+        # Set to None will indicate no limit.
+        self.maximum_concurrent_rpcs = maximum_concurrent_rpcs
 
     @property
     def name(self) -> str:
         return self.bento_service.name
 
-    def mark_as_ready(self) -> None:
-        self._is_ready = True
-
     @property
     def on_startup(self) -> OnStartup:
-        on_startup: OnStartup = [
-            self.mark_as_ready,
-            self.bento_service.on_grpc_server_startup,
-        ]
+        on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(functools.partial(runner.init_local, quiet=True))
@@ -99,42 +92,24 @@ class GRPCAppFactory:
             )
         from .grpc.servicer import create_bento_servicer
 
-        if self.enable_metrics:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                output_host = self._metrics_host
-                if output_host == "0.0.0.0":
-                    output_host = "127.0.0.1"
-                if sock.connect_ex(("127.0.0.1", self._metrics_port)) != 0:
-                    self._metrics_client.start_http_server(
-                        port=self._metrics_port, addr=self._metrics_host
-                    )
-                    logger.info(
-                        f"Prometheus metrics for grpc server can be accessed at http://{output_host}:{self._metrics_port}"
-                    )
-                else:
-                    logger.warning(
-                        f"Port {self._metrics_port} is already in use. Try using a different port."
-                    )
-
         server = aio.server(
-            migration_thread_pool=ThreadPoolExecutor(self._thread_pool_size),
+            migration_thread_pool=ThreadPoolExecutor(max_workers=self.max_workers),
             handlers=self.handlers,
             interceptors=self.interceptors,
             options=self.options,
-            maximum_concurrent_rpcs=self._maximum_concurrent_rpcs,
+            maximum_concurrent_rpcs=self.maximum_concurrent_rpcs,
         )
 
         # Create a health check servicer. We use the non-blocking implementation
         # to avoid thread starvation.
         health_servicer = health.aio.HealthServicer()
-        bento_servicer = create_bento_servicer(self.bento_service)
 
         return GRPCServer(
             server=server,
             on_startup=self.on_startup,
             on_shutdown=self.on_shutdown,
             _health_servicer=health_servicer,
-            _bento_servicer=bento_servicer,
+            _bento_servicer=create_bento_servicer(self.bento_service),
         )
 
     @property
@@ -147,16 +122,19 @@ class GRPCAppFactory:
             BentoMLContainer.grpc.max_concurrent_streams
         ],
     ) -> aio.ChannelArgumentType:
-        # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h
-        #
-        # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h#L294
-        # Eventhough GRPC_ARG_ALLOW_REUSEPORT is set to 1 by default, we want still
-        # want to explicitly set it to 1 so that we can spawn multiple gRPC servers in
-        # production settings.
-        options: list[tuple[str, t.Any]] = [("grpc.so_reuseport", 1)]
+        # TODO: refactor out a separate gRPC config class.
+        options: list[tuple[str, t.Any]] = []
+        if not psutil.WINDOWS:
+            # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h#L294
+            # Eventhough GRPC_ARG_ALLOW_REUSEPORT is set to 1 by default, we want still
+            # want to explicitly set it to 1 so that we can spawn multiple gRPC servers in
+            # production settings.
+            options.append(("grpc.so_reuseport", 1))
+
         if max_concurrent_streams:
             # TODO: refactor max_concurrent_streams this to be configurable
             options.append(("grpc.max_concurrent_streams", max_concurrent_streams))
+
         if max_message_length:
             options.extend(
                 (
@@ -165,7 +143,7 @@ class GRPCAppFactory:
                     ("grpc.max_send_message_length", max_message_length),
                 )
             )
-        return options
+        return tuple(options)
 
     @property
     def handlers(self) -> t.Sequence[grpc.GenericRpcHandler] | None:
@@ -180,28 +158,25 @@ class GRPCAppFactory:
     def interceptors(self) -> list[aio.ServerInterceptor]:
         # Note that order of interceptors is important here.
         from .grpc.interceptors import GenericHeadersServerInterceptor
-        from .grpc.interceptors.opentelemetry import (
-            AsyncOpenTelemetryServerInterceptor as AsyncOtelInterceptor,
-        )
+        from .grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
 
-        interceptors: list[t.Callable[[], aio.ServerInterceptor]] = [
+        interceptors: Interceptors = [
             GenericHeadersServerInterceptor,
-            AsyncOtelInterceptor,
+            AsyncOpenTelemetryServerInterceptor,
         ]
 
         if self.enable_metrics:
             from .grpc.interceptors.prometheus import PrometheusServerInterceptor
 
-            prometheus_interceptor = functools.partial(
-                PrometheusServerInterceptor,
-                bento_service=self.bento_service,
-                metrics_client=self._metrics_client,
+            interceptors.append(
+                functools.partial(
+                    PrometheusServerInterceptor,
+                    bento_service=self.bento_service,
+                )
             )
-            interceptors.append(prometheus_interceptor)
 
-        access_log_config = BentoMLContainer.api_server_config.logging.access
-        if access_log_config.enabled.get():
-            from .grpc.interceptors import AccessLogServerInterceptor
+        if BentoMLContainer.api_server_config.logging.access.enabled.get():
+            from .grpc.interceptors.access import AccessLogServerInterceptor
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:

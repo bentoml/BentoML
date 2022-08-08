@@ -5,7 +5,6 @@ import sys
 import json
 import math
 import shutil
-import socket
 import typing as t
 import logging
 import tempfile
@@ -90,20 +89,6 @@ def ensure_prometheus_dir(
     )
     BentoMLContainer.prometheus_multiproc_dir.set(alternative)
     return alternative
-
-
-@contextlib.contextmanager
-def enable_so_reuseport(port: int) -> t.Generator[int, None, None]:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-    if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 0:
-        raise RuntimeError("Failed to set SO_REUSEPORT.")
-
-    sock.bind(("", port))
-    try:
-        yield sock.getsockname()[1]
-    finally:
-        sock.close()
 
 
 def create_watcher(
@@ -379,33 +364,29 @@ def serve_production(
     logger.debug("Runner map: %s", runner_bind_map)
 
     if grpc:
-        with contextlib.ExitStack() as port_stack:
-            api_port = port_stack.enter_context(enable_so_reuseport(port))
-            api_host = "127.0.0.1"
-
-            watchers.append(
-                create_watcher(
-                    name="grpc_api_server",
-                    args=[
-                        "-m",
-                        SCRIPT_GRPC_API_SERVER,
-                        bento_identifier,
-                        "--bind",
-                        f"tcp://{api_host}:{api_port}",
-                        "--runner-map",
-                        json.dumps(runner_bind_map),
-                        "--working-dir",
-                        working_dir,
-                        "--worker-id",
-                        "$(CIRCUS.WID)",
-                        "--prometheus-dir",
-                        prometheus_dir,
-                    ],
-                    use_sockets=False,
-                    working_dir=working_dir,
-                    numprocesses=api_workers or math.ceil(CpuResource.from_system()),
-                )
+        watchers.append(
+            create_watcher(
+                name="grpc_api_server",
+                args=[
+                    "-m",
+                    SCRIPT_GRPC_API_SERVER,
+                    bento_identifier,
+                    "--bind",
+                    f"tcp://{host}:{port}",
+                    "--runner-map",
+                    json.dumps(runner_bind_map),
+                    "--working-dir",
+                    working_dir,
+                    "--worker-id",
+                    "$(CIRCUS.WID)",
+                    "--prometheus-dir",
+                    prometheus_dir,
+                ],
+                use_sockets=False,
+                working_dir=working_dir,
+                numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             )
+        )
 
         if BentoMLContainer.api_server_config.metrics.enabled.get():
             metrics_host = BentoMLContainer.grpc.metrics_host.get()

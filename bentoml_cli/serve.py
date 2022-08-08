@@ -1,12 +1,13 @@
-# type: ignore[reportUnusedFunction]
+from __future__ import annotations
+
 import sys
 import typing as t
 import logging
 
 import click
 
-from ..log import configure_server_logging
-from ..configuration.containers import BentoMLContainer
+from bentoml._internal.log import configure_server_logging
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +121,7 @@ def add_serve_command(cli: click.Group) -> None:
                     "'--reload' is not supported with '--production'; ignoring"
                 )
 
-            from ..server import serve_production
+            from bentoml.serve import serve_production
 
             serve_production(
                 bento,
@@ -131,7 +132,7 @@ def add_serve_command(cli: click.Group) -> None:
                 api_workers=api_workers,
             )
         else:
-            from ..server import serve_development
+            from bentoml.serve import serve_development
 
             serve_development(
                 bento,

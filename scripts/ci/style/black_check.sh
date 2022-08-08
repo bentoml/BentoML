@@ -10,7 +10,7 @@ echo "Running black format check..."
 
 set_on_failed_callback "[FAIL] black format check failed"
 
-if ! (black --check --config "./pyproject.toml" bentoml examples tests typings); then
+if ! (black --check --config "./pyproject.toml" bentoml bentoml_cli examples tests typings); then
   FAIL "black format check failed"
   echo "Make sure to run \`make format\`"
   exit 1

@@ -17,19 +17,19 @@ from simple_di import Provide
 
 from bentoml import load
 
-from ..log import SERVER_LOGGING_CONFIG
-from ..utils import reserve_free_port
-from ..resource import CpuResource
-from ..utils.uri import path_to_uri
-from ..utils.circus import create_standalone_arbiter
-from ..utils.analytics import track_serve
-from ..configuration.containers import BentoMLContainer
+from ._internal.log import SERVER_LOGGING_CONFIG
+from ._internal.utils import reserve_free_port
+from ._internal.resource import CpuResource
+from ._internal.utils.uri import path_to_uri
+from ._internal.utils.circus import create_standalone_arbiter
+from ._internal.utils.analytics import track_serve
+from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-SCRIPT_RUNNER = "bentoml._internal.server.cli.runner"
-SCRIPT_API_SERVER = "bentoml._internal.server.cli.api_server"
-SCRIPT_DEV_API_SERVER = "bentoml._internal.server.cli.dev_api_server"
+SCRIPT_RUNNER = "bentoml_cli.server.runner"
+SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
+SCRIPT_DEV_API_SERVER = "bentoml_cli.server.http_dev_api_server"
 
 
 @inject

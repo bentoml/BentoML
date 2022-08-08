@@ -142,8 +142,8 @@ def import_service(
             # eager check if import pdb is present inside service definition.
             # For breakpoint see https://peps.python.org/pep-0553/
             checks = {
-                "breakpoint()": re.compile(r"^(?:\s+)|(breakpoint\(\))"),
-                "pdb": re.compile(r"^(?:\s+)|(import|from)+\s(pdb)+"),
+                "breakpoint()": re.compile(r"^(?:\s+)?(breakpoint\(\))"),
+                "pdb": re.compile(r"^(?:\s+)?(import|from)+\s(pdb)+"),
             }
             for clause, rgx in checks.items():
                 if any(rgx.match(line) for line in source):

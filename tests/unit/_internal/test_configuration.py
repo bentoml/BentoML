@@ -76,7 +76,7 @@ def test_bentoml_configuration_runner_override():
 def test_runner_gpu_configuration():
     GPU_INDEX = """
 runners:
-    resources: 
+    resources:
         nvidia.com/gpu: [1, 2, 4]
 """
     bentoml_cfg = get_BentoMLConfiguration_from_str(GPU_INDEX)
@@ -84,7 +84,7 @@ runners:
 
     GPU_INDEX_WITH_STRING = """
 runners:
-    resources: 
+    resources:
         nvidia.com/gpu: "[1, 2, 4]"
 """
     bentoml_cfg = get_BentoMLConfiguration_from_str(GPU_INDEX_WITH_STRING)

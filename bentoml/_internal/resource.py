@@ -224,9 +224,11 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
 
         try:
             if isinstance(spec, int):
+                if spec < -1:
+                    raise ValueError
                 return list(range(spec))
             elif isinstance(spec, str):
-                return list(range(int(spec)))
+                return cls.from_spec(int(spec))
             else:
                 return [int(x) for x in spec]
         except ValueError:
@@ -257,10 +259,8 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
 
     @classmethod
     def validate(cls, val: t.List[int]):
-        if any([gpu_index < -1 for gpu_index in val]):
-            raise BentoMLConfigException(
-                f"Invalid negative GPU resource limit in {val}."
-            )
+        if any([gpu_index < 0 for gpu_index in val]):
+            raise BentoMLConfigException(f"Negative GPU device in {val}.")
         if any([gpu_index >= len(cls.from_system()) for gpu_index in val]):
             raise BentoMLConfigException(
                 f"GPU device index in {val} is greater than the system available: {cls.from_system()}"

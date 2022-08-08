@@ -70,8 +70,9 @@ def test_NvidiaGpuResource():
         NvidiaGpuResource.validate(NvidiaGpuResource.from_system() + [1])
     with pytest.raises(BentoMLConfigException):
         NvidiaGpuResource.validate([-2])
+    with pytest.raises(BentoMLConfigException):
+        NvidiaGpuResource.validate([-1])
 
-    NvidiaGpuResource.validate([-1])
     NvidiaGpuResource.validate([])
     # NvidiaGpuResource.validate(1)  # TODO: work out how to skip this on systems with no GPU
 
@@ -82,12 +83,22 @@ def test_NvidiaGpuResource():
     assert NvidiaGpuResource.from_spec("3") == [0, 1, 2]
     assert NvidiaGpuResource.from_spec([1, 3]) == [1, 3]
     assert NvidiaGpuResource.from_spec(["1", "3"]) == [1, 3]
+    assert NvidiaGpuResource.from_spec(-1) == []
+    assert NvidiaGpuResource.from_spec("-1") == []
+    # Currently this is not supported and is considered invalid
+    # assert NvidiaGpuResource.from_spec("[1, 2, 3]") == [1, 2, 3]
 
     with pytest.raises(TypeError):
         NvidiaGpuResource.from_spec((1, 2, 3))
 
     with pytest.raises(BentoMLConfigException):
         NvidiaGpuResource.from_spec("100m")
+
+    with pytest.raises(BentoMLConfigException):
+        assert NvidiaGpuResource.from_spec(-2)
+
+    with pytest.raises(BentoMLConfigException):
+        assert NvidiaGpuResource.from_spec("-2")
 
     with pytest.raises(TypeError):
         NvidiaGpuResource.from_spec(1.5)

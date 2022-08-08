@@ -29,13 +29,18 @@ runners:
 """
 
 
-def test_bentoml_configuration_runner_override():
+def get_BentoMLConfiguration_from_str(config_str: str):
     tmpfile = NamedTemporaryFile(mode="w+", delete=False)
-    tmpfile.write(OVERRIDE_RUNNERS)
+    tmpfile.write(config_str)
     tmpfile.flush()
     tmpfile.close()
 
     bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
+    return bentoml_cfg
+
+
+def test_bentoml_configuration_runner_override():
+    bentoml_cfg = get_BentoMLConfiguration_from_str(OVERRIDE_RUNNERS)
     runner_cfg = bentoml_cfg["runners"]
 
     # test_runner_1
@@ -66,3 +71,22 @@ def test_bentoml_configuration_runner_override():
     assert test_runner_batching["batching"]["max_batch_size"] == 10
     assert test_runner_batching["logging"]["access"]["enabled"] is True
     assert test_runner_batching["resources"]["cpu"] == 4  # should use global
+
+
+def test_runner_gpu_configuration():
+    GPU_INDEX = """
+runners:
+    resources: 
+        nvidia.com/gpu: [1, 2, 4]
+"""
+    bentoml_cfg = get_BentoMLConfiguration_from_str(GPU_INDEX)
+    assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": [1, 2, 4]}
+
+    GPU_INDEX_WITH_STRING = """
+runners:
+    resources: 
+        nvidia.com/gpu: "[1, 2, 4]"
+"""
+    bentoml_cfg = get_BentoMLConfiguration_from_str(GPU_INDEX_WITH_STRING)
+    # this behaviour can be confusing
+    assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": "[1, 2, 4]"}

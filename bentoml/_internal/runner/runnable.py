@@ -8,14 +8,17 @@ from typing import TYPE_CHECKING
 import attr
 
 from ..types import LazyType
-from ..types import ParamSpec
 from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from ..types import AnyType
+    from ..types import ParamSpec
+
+    P = ParamSpec("P")
+else:
+    P = t.TypeVar("P")
 
 T = t.TypeVar("T", bound="Runnable")
-P = ParamSpec("P")
 R = t.TypeVar("R")
 
 logger = logging.getLogger(__name__)

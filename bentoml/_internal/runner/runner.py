@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import attr
 
 from ..tag import validate_tag_str
-from ..types import ParamSpec
 from ..utils import first_not_none
 from .runnable import Runnable
 from .strategy import Strategy
@@ -19,11 +18,16 @@ from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from ..types import ParamSpec
     from .runnable import RunnableMethodConfig
 
+    P = ParamSpec("P")
+else:
+    P = t.TypeVar("P")
+
 T = t.TypeVar("T", bound=Runnable)
-P = ParamSpec("P")
 R = t.TypeVar("R")
+
 
 logger = logging.getLogger(__name__)
 

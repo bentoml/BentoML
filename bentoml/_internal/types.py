@@ -16,19 +16,55 @@ from dataclasses import dataclass
 from .utils.dataclasses import json_serializer
 
 if sys.version_info < (3, 8):
-    from typing_extensions import get_args
-    from typing_extensions import get_origin
+    import collections
+
+    GenericClass = type(t.List)
+
+    BUILTINS_MAPPING = {
+        t.List: list,
+        t.Set: set,
+        t.Dict: dict,
+        t.Tuple: tuple,
+        t.ByteString: bytes,  # https://docs.python.org/3/library/typing.html#typing.ByteString
+        t.Callable: collections.abc.Callable,
+        t.Sequence: collections.abc.Sequence,
+        type(None): None,
+    }
+
+    def _normalize_aliases(type_: t.Type) -> t.Type:
+        if isinstance(type_, t.TypeVar):
+            return type_
+
+        if type_ in BUILTINS_MAPPING:
+            return BUILTINS_MAPPING[type_]
+        return type_
+
+    def get_args(type_: t.Type) -> tuple[t.Type]:
+        if isinstance(type_, GenericClass) and not type_._special:
+            res = type_.__args__
+            if get_origin(type_) is collections.abc.Callable and res[0] is not Ellipsis:
+                res = (list(res[:-1]), res[-1])
+        else:
+            res = ()
+
+        return res
+
+    def get_origin(type_: t.Type) -> t.Type:
+        if isinstance(type_, GenericClass) and not type_._special:
+            ori = type_.__origin__
+        elif hasattr(type_, "_special") and type_._special:
+            ori = type_
+        elif type_ is t.Generic:
+            ori = t.Generic
+        else:
+            ori = None
+        return ori
+
 else:
     from typing import get_args
     from typing import get_origin
 
-if sys.version_info < (3, 10):
-    from typing_extensions import ParamSpec
-else:
-    from typing import ParamSpec
-
 __all__ = [
-    "ParamSpec",
     "MetadataType",
     "MetadataDict",
     "JSONSerializable",
@@ -36,6 +72,22 @@ __all__ = [
     "is_compatible_type",
     "FileLike",
 ]
+
+if TYPE_CHECKING:
+    if sys.version_info < (3, 10):
+        from typing_extensions import ParamSpec
+    else:
+        from typing import ParamSpec
+
+    __all__ = [
+        "ParamSpec",
+        "MetadataType",
+        "MetadataDict",
+        "JSONSerializable",
+        "LazyType",
+        "is_compatible_type",
+        "FileLike",
+    ]
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +100,7 @@ HEADER_CHARSET = "latin1"
 JSON_CHARSET = "utf-8"
 
 if TYPE_CHECKING:
-    PathType = str | os.PathLike[str]
+    PathType: t.TypeAlias = str | os.PathLike[str]
 else:
     PathType = t.Union[str, os.PathLike]
 

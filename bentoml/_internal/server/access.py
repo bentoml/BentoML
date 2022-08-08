@@ -111,7 +111,7 @@ class AccessLogMiddleware:
 
                 latency = max(default_timer() - start, 0)
 
-                self.logger.info(
+                self.logger.debug(
                     "%s (%s) (%s) %.3fms",
                     address,
                     ",".join(request),

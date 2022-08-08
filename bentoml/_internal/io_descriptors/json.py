@@ -38,7 +38,7 @@ else:
     )
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
+JSONType = t.Optional[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
 
 MIME_TYPE_JSON = "application/json"
 

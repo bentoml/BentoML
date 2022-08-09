@@ -4,15 +4,10 @@ import sys
 import json
 import socket
 import typing as t
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-import psutil
-
-if TYPE_CHECKING:
-    from asgiref.typing import ASGI3Application
-
 import click
+import psutil
 
 
 @click.command()
@@ -84,11 +79,12 @@ def main(
         from circus.watcher import Watcher
 
         from bentoml.serve import ensure_prometheus_dir
-        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml_cli.utils import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
         from bentoml._internal.utils.circus import create_circus_socket_from_uri
 
         ensure_prometheus_dir()
+
         circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
         params = ctx.params
         params["bind"] = "fd://$(circus.sockets._bento_api_server)"
@@ -134,13 +130,12 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    app = t.cast("ASGI3Application", svc.asgi_app)
     assert parsed.scheme == "fd"
 
     # skip the uvicorn internal supervisor
     fd = int(parsed.netloc)
     sock = socket.socket(fileno=fd)
-    config = uvicorn.Config(app, **uvicorn_options)
+    config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
     uvicorn.Server(config).run(sockets=[sock])
 
 

@@ -131,10 +131,6 @@ def serve_development(
     watchers: list[Watcher] = []
 
     circus_sockets: list[CircusSocket] = []
-    if not grpc:
-        circus_sockets.append(
-            CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
-        )
 
     if grpc:
         watchers.append(
@@ -153,6 +149,9 @@ def serve_development(
                 ],
                 use_sockets=False,
                 working_dir=working_dir,
+                # we don't want to close stdin for child process in case user use debugger.
+                # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
+                close_child_stdin=False,
             )
         )
         if BentoMLContainer.api_server_config.metrics.enabled.get():
@@ -194,6 +193,10 @@ def serve_development(
                 )
             )
     else:
+        circus_sockets.append(
+            CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
+        )
+
         watchers.append(
             create_watcher(
                 name="dev_api_server",
@@ -209,6 +212,9 @@ def serve_development(
                     prometheus_dir,
                 ],
                 working_dir=working_dir,
+                # we don't want to close stdin for child process in case user use debugger.
+                # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
+                close_child_stdin=False,
             )
         )
         logger.info(

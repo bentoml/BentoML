@@ -24,6 +24,13 @@ if TYPE_CHECKING:
     from ..service.openapi.specification import Reference
     from ..service.openapi.specification import RequestBody
 
+    InputType = (
+        UnionType
+        | t.Type[t.Any]
+        | LazyType[t.Any]
+        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
+    )
+
 
 IOType = t.TypeVar("IOType")
 
@@ -78,14 +85,7 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_fields=Non
         return self._proto_fields
 
     @abstractmethod
-    def input_type(
-        self,
-    ) -> t.Union[
-        "UnionType",
-        t.Type[t.Any],
-        "LazyType[t.Any]",
-        t.Dict[str, t.Union[t.Type[t.Any], "UnionType", "LazyType[t.Any]"]],
-    ]:
+    def input_type(self) -> InputType:
         ...
 
     @abstractmethod

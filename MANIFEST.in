@@ -8,6 +8,7 @@ exclude Makefile MANIFEST.in
 exclude *.yml
 exclude .git*
 exclude bentoml/grpc/buf.yaml
+exclude bentoml/_internal/frameworks/FRAMEWORK_TEMPLATE_PY
 
 # Directories to exclude in PyPI package
 prune requirements

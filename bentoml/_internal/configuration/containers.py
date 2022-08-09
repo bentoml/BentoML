@@ -418,7 +418,7 @@ class _BentoMLContainerClass:
         if isinstance(excluded_urls, list):
             return ExcludeList(excluded_urls)
         else:
-            return parse_excluded_urls(excluded_urls)
+            return parse_excluded_urls(excluded_urls)  # type: ignore (already handle None)
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]]({})

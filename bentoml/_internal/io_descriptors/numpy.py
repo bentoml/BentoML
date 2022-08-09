@@ -188,12 +188,16 @@ class NumpyNdarray(
             try:
                 dtype = np.dtype(dtype)
             except TypeError as e:
-                raise UnprocessableEntity(f'NumpyNdarray: Invalid dtype "{dtype}": {e}')
+                raise UnprocessableEntity(
+                    f'NumpyNdarray: Invalid dtype "{dtype}": {e}'
+                ) from e
 
-        self._dtype: ext.NpDTypeLike | None = dtype
+        self._dtype = dtype
         self._shape = shape
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
+
+        self._sample_input = None
 
         # whether to use packed representation of numpy while sending protobuf
         # this means users should be using raw_value instead of array_value or multi_dimensional_array_value
@@ -206,8 +210,6 @@ class NumpyNdarray(
             bytesorder = "C"  # default from numpy (C-order)
             # https://numpy.org/doc/stable/user/basics.byteswapping.html#introduction-to-byte-ordering-and-ndarrays
         self._bytesorder: t.Literal["C", "F", "A"] = bytesorder
-
-        self._sample_input = None
 
     def _openapi_types(self) -> str:
         # convert numpy dtypes to openapi compatible types.
@@ -270,11 +272,11 @@ class NumpyNdarray(
 
     def _verify_ndarray(
         self,
-        obj: "ext.NpNDArray",
-        dtype: np.dtype[t.Any] | None,
+        obj: ext.NpNDArray,
+        dtype: ext.NpDTypeLike | None,
         shape: tuple[int, ...] | None,
         exception_cls: t.Type[Exception] = BadInput,
-    ) -> "ext.NpNDArray":
+    ) -> ext.NpNDArray:
         if dtype is not None and dtype != obj.dtype:
             # ‘same_kind’ means only safe casts or casts within a kind, like float64
             # to float32, are allowed.
@@ -408,6 +410,7 @@ class NumpyNdarray(
         else:
             # {'float_contents': [1.0, 2.0, 3.0]}
             array = serialized
+            shape = self._shape
 
         dtype_string, content = get_array_proto(array)
         dtype = np.dtype(_VALUES_TO_NP_DTYPE_MAP[dtype_string])

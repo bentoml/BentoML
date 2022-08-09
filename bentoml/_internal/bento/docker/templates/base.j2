@@ -56,10 +56,14 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
-{{ common.run_script(__install_python_scripts__, "install.sh to install python packages", run_args=__pip_cache__) }}
+# install python packages with install.sh
+RUN {{ __pip_cache__ }} bash -euxo pipefail {{ __install_python_scripts__ }}
 
+{% if __options__setup_script is not none %}
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
-{{ common.run_script(__setup_script__, "user setup scripts") }}
+RUN chmod +x {{ __setup_script__ }}
+RUN {{ __setup_script__ }}
+{% endif %}
 
 {% endblock %}
 

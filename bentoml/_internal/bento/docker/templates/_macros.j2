@@ -30,17 +30,3 @@ fi
 EOF
 
 {%- endmacro -%}
-
-{%- macro run_script(path, echo_msg, run_args="") -%}
-# Running {{ echo_msg }}
-RUN {{ run_args }} bash <<EOF
-set -euxo pipefail
-
-if [ -f {{ path }} ]; then
-  echo "{{ echo_msg }}..."
-  chmod +x {{ path }}
-  {{ path }}
-fi
-EOF
-{%- endmacro -%}
-

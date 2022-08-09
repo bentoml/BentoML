@@ -84,6 +84,13 @@ def serve_development(
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
+    ssl_keyfile: t.Optional[str] = None,
+    ssl_certfile: t.Optional[str] = None,
+    ssl_keyfile_password: t.Optional[str] = None,
+    ssl_version: t.Optional[int] = None,
+    ssl_cert_reqs: t.Optional[int] = None,
+    ssl_ca_certs: t.Optional[str] = None,
+    ssl_ciphers: t.Optional[str] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -105,11 +112,7 @@ def serve_development(
         )
     )
 
-    watchers.append(
-        Watcher(
-            name="dev_api_server",
-            cmd=sys.executable,
-            args=[
+    api_server_watcher_args=[
                 "-m",
                 SCRIPT_DEV_API_SERVER,
                 bento_identifier,
@@ -119,7 +122,21 @@ def serve_development(
                 working_dir,
                 "--prometheus-dir",
                 prometheus_dir,
-            ],
+            ]
+    # Add optional SSL args if they exist
+    api_server_watcher_args.extend(["--ssl-keyfile", ssl_keyfile]) if ssl_keyfile is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-certfile", ssl_certfile]) if ssl_certfile is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-keyfile-password", ssl_keyfile_password]) if ssl_keyfile_password is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-version", str(ssl_version)]) if ssl_version is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)]) if ssl_cert_reqs is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-ca-certs", ssl_ca_certs]) if ssl_ca_certs is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-ciphers", ssl_ciphers]) if ssl_ciphers is not None else None # pylint: disable=W0106
+
+    watchers.append(
+        Watcher(
+            name="dev_api_server",
+            cmd=sys.executable,
+            args=api_server_watcher_args,
             copy_env=True,
             stop_children=True,
             use_sockets=True,
@@ -178,6 +195,13 @@ def serve_production(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: t.Optional[int] = None,
+    ssl_keyfile: t.Optional[str] = None,
+    ssl_certfile: t.Optional[str] = None,
+    ssl_keyfile_password: t.Optional[str] = None,
+    ssl_version: t.Optional[int] = None,
+    ssl_cert_reqs: t.Optional[int] = None,
+    ssl_ca_certs: t.Optional[str] = None,
+    ssl_ciphers: t.Optional[str] = None,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -285,11 +309,8 @@ def serve_production(
         port=port,
         backlog=backlog,
     )
-    watchers.append(
-        Watcher(
-            name="api_server",
-            cmd=sys.executable,
-            args=[
+
+    api_server_watcher_args=[
                 "-m",
                 SCRIPT_API_SERVER,
                 bento_identifier,
@@ -305,7 +326,21 @@ def serve_production(
                 "$(CIRCUS.WID)",
                 "--prometheus-dir",
                 prometheus_dir,
-            ],
+            ]
+    # Add optional SSL args if they exist
+    api_server_watcher_args.extend(["--ssl-keyfile", ssl_keyfile]) if ssl_keyfile is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-certfile", ssl_certfile]) if ssl_certfile is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-keyfile-password", ssl_keyfile_password]) if ssl_keyfile_password is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-version", str(ssl_version)]) if ssl_version is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)]) if ssl_cert_reqs is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-ca-certs", ssl_ca_certs]) if ssl_ca_certs is not None else None # pylint: disable=W0106
+    api_server_watcher_args.extend(["--ssl-ciphers", ssl_ciphers]) if ssl_ciphers is not None else None # pylint: disable=W0106
+
+    watchers.append(
+        Watcher(
+            name="api_server",
+            cmd=sys.executable,
+            args=api_server_watcher_args,
             copy_env=True,
             numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             stop_children=True,

@@ -69,6 +69,51 @@ def add_serve_command(cli: click.Group) -> None:
         default=".",
         show_default=True,
     )
+    @click.option(
+        "--ssl-keyfile",
+        type=click.STRING,
+        help="SSL key file",
+        default=None,
+    )
+    @click.option(
+        "--ssl-certfile",
+        type=click.STRING,
+        help="SSL certificate file",
+        default=None,
+    )
+    @click.option(
+        "--ssl-keyfile-password",
+        type=click.STRING,
+        help="SSL keyfile password",
+        default=None,
+    )
+    @click.option(
+        "--ssl-version",
+        type=click.INT,
+        help="SSL version to use (see stdlib ssl module's)",
+        default=None,
+        # default=17 # TODO: default here, or set default to None and allow uvicorn to handle default?
+    )
+    @click.option(
+        "--ssl-cert-reqs",
+        type=click.INT,
+        help="Whether client certificate is required (see stdlib ssl module's)",
+        default=None,
+        # default=0 # TODO: default here, or set default to None and allow uvicorn to handle default?
+    )
+    @click.option(
+        "--ssl-ca-certs",
+        type=click.STRING,
+        help="CA certificates file",
+        default=None,
+    )
+    @click.option(
+        "--ssl-ciphers",
+        type=click.STRING,
+        help="CA certificates file",
+        default=None,
+        # default="TLSv1" # TODO: default here, or set default to None and allow uvicorn to handle default?
+    )
     def serve(
         bento: str,
         production: bool,
@@ -78,6 +123,13 @@ def add_serve_command(cli: click.Group) -> None:
         backlog: int,
         reload: bool,
         working_dir: str,
+        ssl_keyfile: t.Optional[str],
+        ssl_certfile: t.Optional[str],
+        ssl_keyfile_password: t.Optional[str],
+        ssl_version: t.Optional[int],
+        ssl_cert_reqs: t.Optional[int],
+        ssl_ca_certs: t.Optional[str],
+        ssl_ciphers: t.Optional[str],
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
@@ -130,6 +182,13 @@ def add_serve_command(cli: click.Group) -> None:
                 host=BentoMLContainer.service_host.get() if host is None else host,
                 backlog=backlog,
                 api_workers=api_workers,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ca_certs=ssl_ca_certs,
+                ssl_ciphers=ssl_ciphers,
             )
         else:
             from bentoml.serve import serve_development
@@ -140,4 +199,11 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=DEFAULT_DEV_SERVER_HOST if host is None else host,
                 reload=reload,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ca_certs=ssl_ca_certs,
+                ssl_ciphers=ssl_ciphers,
             )

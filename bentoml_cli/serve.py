@@ -92,14 +92,12 @@ def add_serve_command(cli: click.Group) -> None:
         type=click.INT,
         help="SSL version to use (see stdlib ssl module's)",
         default=None,
-        # default=17 # TODO: default here, or set default to None and allow uvicorn to handle default?
     )
     @click.option(
         "--ssl-cert-reqs",
         type=click.INT,
         help="Whether client certificate is required (see stdlib ssl module's)",
         default=None,
-        # default=0 # TODO: default here, or set default to None and allow uvicorn to handle default?
     )
     @click.option(
         "--ssl-ca-certs",
@@ -112,7 +110,6 @@ def add_serve_command(cli: click.Group) -> None:
         type=click.STRING,
         help="CA certificates file",
         default=None,
-        # default="TLSv1" # TODO: default here, or set default to None and allow uvicorn to handle default?
     )
     def serve(
         bento: str,

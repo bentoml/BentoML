@@ -83,7 +83,10 @@ def test_numpy_openapi_responses():
 
 def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     partial_check = partial(
-        from_example._verify_ndarray, exception_cls=BentoMLException  # type: ignore (test internal check)
+        from_example._verify_ndarray,  # type: ignore (test internal check)
+        dtype=from_example._dtype,  # type: ignore (test internal check)
+        shape=from_example._shape,  # type: ignore (test internal check)
+        exception_cls=BentoMLException,
     )
 
     with pytest.raises(BentoMLException) as ex:
@@ -99,5 +102,5 @@ def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     example._enforce_shape = False  # type: ignore (test internal check)
     example._enforce_dtype = False  # type: ignore (test internal check)
     with caplog.at_level(logging.DEBUG):
-        example._verify_ndarray(np.array("asdf"))
+        example._verify_ndarray(np.array("asdf"))  # type: ignore (test internal check)
     assert "Failed to reshape" in caplog.text

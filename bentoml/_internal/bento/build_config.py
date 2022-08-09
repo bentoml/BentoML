@@ -230,7 +230,7 @@ class DockerOptions:
                 message = f"{setup_script} is not executable."
                 if not psutil.WINDOWS:
                     raise InvalidArgument(
-                        f"{message} Make sure to 'chmod +x {setup_script}'."
+                        f"{message} Ensure the script has a shebang line, then run 'chmod +x {setup_script}'."
                     )
                 raise InvalidArgument(message)
             copy_file_to_fs_folder(

@@ -107,6 +107,8 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
 
     """
 
+    _kind: str
+
     def __new__(  # pylint: disable=arguments-differ # returning subclass from new
         cls, kind: FileKind = "binaryio", mime_type: str | None = None
     ) -> File:
@@ -118,6 +120,8 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
             raise ValueError(f"invalid File kind '{kind}'")
 
         res._mime_type = mime_type
+        res._kind = kind
+
         return res
 
     def input_type(self) -> t.Type[t.Any]:
@@ -166,8 +170,12 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
         pass
 
     async def to_grpc_response(
-        self, obj: FileType, context: BentoServicerContext
+        self,
+        obj: FileType,
+        context: BentoServicerContext,  # pylint: disable=unused-argument
     ) -> service_pb2.Response:
+        from ..configuration import get_debug_mode
+
         if isinstance(obj, bytes):
             body = obj
         else:
@@ -175,6 +183,19 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
 
         response = service_pb2.Response()
         value = service_pb2.Value()
+
+        raw = service_pb2.Raw(
+            kind=self._kind, metadata={"Content-Type": self._mime_type}, content=body
+        )
+        value.raw_value.CopyFrom(raw)
+        response.output.CopyFrom(value)
+
+        if get_debug_mode():
+            logger.debug(
+                f"Response proto: {response.SerializeToString(deterministic=True)}"
+            )
+
+        return response
 
 
 class BytesIOFile(File):
@@ -208,4 +229,8 @@ class BytesIOFile(File):
     async def from_grpc_request(
         self, request: service_pb2.Request, context: BentoServicerContext
     ) -> t.IO[bytes]:
-        pass
+        import grpc
+
+        from ..utils.grpc import deserialize_proto
+
+        _, serialized = deserialize_proto(self, request)

@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING
 from grpc import aio
 
 from ....utils import LazyLoader
-from ....utils.grpc import ProtoCodec
 from ....utils.grpc import wrap_rpc_handler
-from ....utils.grpc import get_grpc_content_type
 
 if TYPE_CHECKING:
 
@@ -19,9 +17,16 @@ if TYPE_CHECKING:
     from ..types import AsyncHandlerMethod
     from ..types import HandlerCallDetails
     from ..types import BentoServicerContext
-    from ....utils.grpc.codec import Codec
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+
+
+# content-type is always application/grpc
+GRPC_CONTENT_TYPE = "application/grpc"
+
+
+def get_grpc_content_type(message_format: str | None = None) -> str:
+    return f"{GRPC_CONTENT_TYPE}" + f"+{message_format}" if message_format else ""
 
 
 class GenericHeadersServerInterceptor(aio.ServerInterceptor):
@@ -30,11 +35,11 @@ class GenericHeadersServerInterceptor(aio.ServerInterceptor):
     Refers to https://chromium.googlesource.com/external/github.com/grpc/grpc/+/HEAD/doc/PROTOCOL-HTTP2.md
     """
 
-    def __init__(self, *, codec: Codec | None = None):
-        if not codec:
-            # By default, we use ProtoCodec.
-            codec = ProtoCodec()
-        self._codec = codec
+    def __init__(self, *, message_format: str | None = None):
+        if not message_format:
+            # By default, we are sending proto message.
+            message_format = "proto"
+        self._message_format = message_format
 
     def set_trailing_metadata(self, context: BentoServicerContext):
         # We want to send some initial metadata to the client.
@@ -42,7 +47,9 @@ class GenericHeadersServerInterceptor(aio.ServerInterceptor):
         # of the current request. gRPC instead uses trailers for this purpose, and
         # trailers are sent during `send_trailing_metadata` call
         # For now we are sending over the content-type header.
-        headers = [("content-type", get_grpc_content_type(codec=self._codec))]
+        headers = [
+            ("content-type", get_grpc_content_type(message_format=self._message_format))
+        ]
         context.set_trailing_metadata(headers)
 
     async def intercept_service(

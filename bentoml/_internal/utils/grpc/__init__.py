@@ -12,8 +12,6 @@ import grpc
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
 
-from .codec import ProtoCodec
-from .codec import get_grpc_content_type
 from ..lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
@@ -30,8 +28,6 @@ __all__ = [
     "parse_method_name",
     "deserialize_proto",
     "to_http_status",
-    "get_grpc_content_type",
-    "ProtoCodec",
 ]
 
 logger = logging.getLogger(__name__)

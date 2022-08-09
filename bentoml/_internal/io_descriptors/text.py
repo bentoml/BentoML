@@ -12,19 +12,18 @@ from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as _service_pb2
 
     from ..context import InferenceApiContext as Context
-    from ...server.grpc.types import BentoServicerContext
+    from ..server.grpc.types import BentoServicerContext
 else:
     _service_pb2 = LazyLoader("_service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
-
-from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
-from ..service.openapi.specification import RequestBody
 
 MIME_TYPE = "text/plain"
 
@@ -92,13 +91,14 @@ class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    def __init__(self, *args: t.Any, **kwargs: t.Any):
+    def __init__(self, *args: t.Any, packed: bool = False, **kwargs: t.Any):
         if args or kwargs:
             raise BentoMLException(
                 "'Text' is not designed to take any args or kwargs during initialization."
             )
 
         self._mime_type = MIME_TYPE
+        self._packed = packed
 
     def input_type(self) -> t.Type[str]:
         return str
@@ -139,16 +139,43 @@ class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
             return Response(obj, media_type=MIME_TYPE)
 
     async def from_grpc_request(
-        self,
-        request: _service_pb2.Request,
-        context: BentoServicerContext,  # pylint: disable=unused-argument
+        self, request: _service_pb2.Request, context: BentoServicerContext
     ) -> str:
-        return str(request.input.string_value)
+        import grpc
+
+        from ..utils.grpc import deserialize_proto
+
+        field, serialized = deserialize_proto(self, request)
+
+        if self._packed and field != "raw_value":
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details(f"'packed={self._packed}' only accepts 'raw_value'.")
+
+        if field == "string_value":
+            return str(serialized)
+
+        # { 'content': b'string_content' }
+        if "content" not in serialized:
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details("'content' cannot be None.")
+
+        value: bytes = serialized["content"]
+        return value.decode("utf-8")
 
     async def to_grpc_response(
         self, obj: str, context: BentoServicerContext  # pylint: disable=unused-argument
     ) -> _service_pb2.Response:
-        return _service_pb2.Response(output=_service_pb2.Value(string_value=obj))
+        response = _service_pb2.Response()
+        value = _service_pb2.Value()
+
+        if self._packed:
+            raw = _service_pb2.Raw(content=obj.encode("utf-8"))
+            value.raw_value.CopyFrom(raw)
+            response.output.CopyFrom(value)
+        else:
+            value.string_value = obj
+            response.output.CopyFrom(value)
+        return response
 
     def generate_protobuf(self):
         pass

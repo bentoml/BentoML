@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import grpc
 from grpc import aio
 
+from . import GRPC_CONTENT_TYPE
 from ....utils import LazyLoader
 from ....utils.grpc import to_http_status
 from ....utils.grpc import wrap_rpc_handler
-from ....utils.grpc.codec import GRPC_CONTENT_TYPE
 
 if TYPE_CHECKING:
     from grpc.aio._typing import MetadataType

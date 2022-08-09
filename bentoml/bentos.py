@@ -39,7 +39,7 @@ BENTOML_FIGLET = """
 
 
 @inject
-def list_(
+def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> "t.List[Bento]":
@@ -380,7 +380,7 @@ def build_bentofile(
 @inject
 def containerize(
     tag: Tag | str,
-    docker_image_tag: str | list[str] | None = None,
+    docker_image_tag: str | t.List[str] | None = None,
     *,
     add_host: dict[str, str] | None = None,
     allow: t.List[str] | None = None,
@@ -476,7 +476,7 @@ def containerize(
 
 
 __all__ = [
-    "list_",
+    "list",
     "get",
     "delete",
     "import_bento",

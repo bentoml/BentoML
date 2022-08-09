@@ -29,9 +29,9 @@ from . import models
 
 # Bento management APIs
 from .bentos import get
+from .bentos import list  # pylint: disable=W0622
 from .bentos import pull
 from .bentos import push
-from .bentos import list_ as list  # pylint: disable=W0622
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento

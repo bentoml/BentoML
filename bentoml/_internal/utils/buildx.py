@@ -165,7 +165,7 @@ def build(
     shm_size: str | int | None,
     rm: bool,
     ssh: str | None,
-    tags: str | list[str],
+    tags: str | t.Iterable[str],
     target: str | None,
     ulimit: str | None,
 ) -> None:
@@ -175,7 +175,7 @@ def build(
 
     if isinstance(tags, str):
         cmds.extend(["--tag", tags])
-    elif isinstance(tags, list) or isinstance(tags, tuple):
+    elif isinstance(tags, t.Iterable):
         for tag in tags:
             cmds.extend(["--tag", tag])
 

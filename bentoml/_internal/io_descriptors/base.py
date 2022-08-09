@@ -9,13 +9,12 @@ if TYPE_CHECKING:
     from types import UnionType
 
     from typing_extensions import Self
-    import grpc
     from starlette.requests import Request
     from starlette.responses import Response
 
     from ..types import LazyType
-    from ...protos import service_pb2
     from ..context import InferenceApiContext as Context
+    from ..server.grpc.utils import BentoServicerContext
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Response as OpenAPIResponse
     from ..service.openapi.specification import Reference
@@ -92,10 +91,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     @abstractmethod
     async def from_grpc_request(
-        self, request: service_pb2.RouteCallRequest, context: grpc.ServicerContext
-    ) -> IOPyObj:
+        self, request: CallRequest, context: BentoServicerContext
+    ) -> IOType:
         ...
 
     @abstractmethod
-    async def to_grpc_response(self, obj: IOPyObj) -> service_pb2.RouteCallResponse:
+    async def to_grpc_response(
+        self, obj: IOType, context: BentoServicerContext
+    ) -> CallResponse:
         ...

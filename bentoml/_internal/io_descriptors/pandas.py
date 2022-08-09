@@ -419,7 +419,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     async def from_grpc_request(self, request, context) -> t.Any:
         pass
 
-    async def to_grpc_response(self, obj) -> t.Any:
+    async def to_grpc_response(self, obj, context) -> t.Any:
         pass
 
     @classmethod
@@ -697,5 +697,5 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
     async def from_grpc_request(self, request, context) -> t.Any:
         pass
 
-    async def to_grpc_response(self, obj) -> t.Any:
+    async def to_grpc_response(self, obj, context) -> t.Any:
         pass

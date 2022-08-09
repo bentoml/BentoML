@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import typing as t
 import logging
-import datetime
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -12,6 +11,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 from ..types import LazyType
+from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import BentoMLException
@@ -27,8 +27,9 @@ if TYPE_CHECKING:
     import grpc
     import numpy as np
 
+    from bentoml.grpc.v1 import service_pb2
+
     from .. import external_typing as ext
-    from ...protos import service_pb2
     from ..context import InferenceApiContext as Context
 else:
     np = LazyLoader("np", globals(), "numpy")
@@ -291,64 +292,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         else:
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
-    def handle_tuple(self, proto_tuple):
-        """
-        Convert given protobuf tuple to a tuple list
-        """
-        from google.protobuf.duration_pb2 import Duration
-        from google.protobuf.timestamp_pb2 import Timestamp
-
-        from bentoml.protos import payload_pb2
-
-        tuple_arr = [i for i in getattr(proto_tuple, "value")]
-
-        if not tuple_arr:
-            raise ValueError("Provided tuple is either empty or invalid.")
-
-        return_arr = []
-
-        for item in tuple_arr:
-            val = getattr(item, item.WhichOneof("value"))
-
-            if not val:
-                raise ValueError("Provided protobuf tuple is missing a value.")
-
-            if item.WhichOneof("value") == "timestamp_value":
-                val = Timestamp.ToDatetime(val)
-            elif item.WhichOneof("value") == "duration_value":
-                val = Duration.ToTimedelta(val)
-
-            if isinstance(val, payload_pb2.Array):
-                val = self.proto_to_arr(val)
-            elif isinstance(val, payload_pb2.Tuple):
-                val = self.handle_tuple(val)
-            return_arr.append(val)
-
-        return return_arr
-
-    def WhichArray(self, proto_arr):
-        """
-        Check which repeated field has data in given `proto_arr` and return field name.
-        """
-        from bentoml.protos import payload_pb2
-
-        if not proto_arr:
-            return ""
-
-        arr_types = [field.name for field in payload_pb2.Array.DESCRIPTOR.fields]
-
-        return_type = ""
-        for arr_type in arr_types:
-            if len(getattr(proto_arr, arr_type)) != 0:
-                if not return_type:
-                    return_type = arr_type
-                else:
-                    raise ValueError(
-                        "More than one repeated Array fields contain data."
-                    )
-
-        return return_type
-
     def proto_to_arr(self, proto_arr):
         """
         Convert given protobuf array to python list
@@ -356,7 +299,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         from google.protobuf.duration_pb2 import Duration
         from google.protobuf.timestamp_pb2 import Timestamp
 
-        from bentoml.protos import payload_pb2
+        from bentoml.grpc import service_pb2
 
         array_type = self.WhichArray(proto_arr)
         if not array_type:
@@ -370,28 +313,26 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return_arr = [Duration.ToTimedelta(td) for td in return_arr]
 
         for i, item in enumerate(return_arr):
-            if isinstance(item, payload_pb2.Array):
+            if isinstance(item, service_pb2.Array):
                 return_arr[i] = self.proto_to_arr(item)
-            elif isinstance(item, payload_pb2.Tuple):
+            elif isinstance(item, service_pb2.Tuple):
                 return_arr[i] = self.handle_tuple(item)
 
         return return_arr
 
     async def from_grpc_request(
-        self, request: service_pb2.RouteCallRequest, context: grpc.ServicerContext
+        self, request: service_pb2.Request, context: grpc.ServicerContext
     ) -> ext.NpNDArray:
         """
         Process incoming protobuf request and convert it to `numpy.ndarray`
 
         Args:
-            request (`payload_pb2.Array`):
-                Incoming Requests
+            request: Incoming Requests
+
         Returns:
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        import numpy as np
-
         res: "ext.NpNDArray"
         try:
             res = np.array(self.proto_to_arr(request), dtype=self._dtype)
@@ -400,153 +341,9 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         res = self._verify_ndarray(res, BadInput)
         return res
 
-    def is_supported(self, data):
-        """
-        Checks if the given type is within `supported_datatypes` dictionary
-        """
-        import numpy as np
-
-        supported_datatypes = {
-            np.float32: "float_value",
-            np.float64: "double_value",
-            np.bytes_: "bytes_value",
-            np.bool_: "bool_value",
-            np.str_: "string_value",
-            np.uint32: "uint32_value",
-            np.int32: "sint32_value",
-            np.datetime64: "timestamp_value",
-            np.timedelta64: "duration_value",
-            np.ndarray: "array_value",
-            np.uint64: "uint64_value",
-            np.int64: "sint64_value"
-            # TODO : complex types, lower byte integers(8,16)
-        }
-
-        found_dtype = ""
-        for key in supported_datatypes:
-            if np.dtype(type(data)) == key:
-                found_dtype = supported_datatypes[key]
-                if found_dtype == "array_value":
-                    if isinstance(data, datetime.datetime) or isinstance(
-                        data, datetime.date
-                    ):
-                        found_dtype = "timestamp_value"
-                    elif isinstance(data, datetime.timedelta):
-                        found_dtype = "duration_value"
-                break
-
-        return found_dtype
-
-    def create_tuple_proto(self, tuple):
-        """
-        Convert given tuple list or tuple array to protobuf
-        """
-        import numpy as np
-        from google.protobuf.duration_pb2 import Duration
-        from google.protobuf.timestamp_pb2 import Timestamp
-
-        from bentoml.protos import payload_pb2
-
-        if len(tuple) == 0:
-            raise ValueError("Provided tuple is either empty or invalid.")
-
-        tuple_arr = []
-        for item in tuple:
-            dtype = self.is_supported(item)
-
-            if not dtype:
-                raise ValueError(
-                    f'Invalid datatype "{type(item).__name__}" within tuple.'
-                )
-            elif dtype == "timestamp_value":
-                if isinstance(item, np.datetime64):
-                    item = item.astype(datetime.datetime)
-                if isinstance(item, datetime.date):
-                    item = datetime.datetime(item.year, item.month, item.day)
-                t = Timestamp()
-                t.FromDatetime(item)
-                tuple_arr.append(payload_pb2.Value(**{"timestamp_value": t}))
-            elif dtype == "duration_value":
-                if isinstance(item, np.timedelta64):
-                    item = item.astype(datetime.timedelta)
-                d = Duration()
-                d.FromTimedelta(item)
-                tuple_arr.append(payload_pb2.Value(**{"duration_value": d}))
-            elif dtype == "array_value":
-                if not all(isinstance(x, type(item[0])) for x in item):
-                    val = self.create_tuple_proto(item)
-                    tuple_arr.append(payload_pb2.Value(tuple_value=val))
-                else:
-                    val = self.arr_to_proto(item)
-                    tuple_arr.append(payload_pb2.Value(array_value=val))
-            else:
-                tuple_arr.append(payload_pb2.Value(**{f"{dtype}": item}))
-
-        return payload_pb2.Tuple(value=tuple_arr)
-
-    def arr_to_proto(self, arr):
-        """
-        Convert given list or array to protobuf
-        """
-        import numpy as np
-        from google.protobuf.duration_pb2 import Duration
-        from google.protobuf.timestamp_pb2 import Timestamp
-
-        from bentoml.protos import payload_pb2
-
-        if len(arr) == 0:
-            raise ValueError("Provided array is either empty or invalid.")
-        if not all(isinstance(x, type(arr[0])) for x in arr):
-            raise ValueError("Entered tuple, expecting array.")
-
-        dtype = self.is_supported(arr[0])
-        if not dtype:
-            raise ValueError("Dtype is not supported.")
-
-        if dtype == "timestamp_value":
-            timestamp_arr = []
-            for dt in arr:
-                if isinstance(dt, np.datetime64):
-                    dt = dt.astype(datetime.datetime)
-                if isinstance(dt, datetime.date):
-                    dt = datetime.datetime(dt.year, dt.month, dt.day)
-                t = Timestamp()
-                t.FromDatetime(dt)
-                timestamp_arr.append(t)
-            return payload_pb2.Array(timestamp_value=timestamp_arr)
-        elif dtype == "duration_value":
-            duration_arr = []
-            for td in arr:
-                if isinstance(td, np.timedelta64):
-                    td = td.astype(datetime.timedelta)
-                d = Duration()
-                d.FromTimedelta(td)
-                duration_arr.append(t)
-            return payload_pb2.Array(duration_value=duration_arr)
-        elif dtype != "array_value":
-            return payload_pb2.Array(**{f"{dtype}": arr})
-
-        # Handle nested arrays or tuples
-        return_arr = []
-        is_tuple = False
-        for item in arr:
-            if not all(isinstance(x, type(item[0])) for x in item):
-                is_tuple = True
-                val = self.create_tuple_proto(item)
-            else:
-                val = self.arr_to_proto(item)
-            return_arr.append(val)
-
-        if is_tuple:
-            return_arr = payload_pb2.Array(tuple_value=return_arr)
-        else:
-            return_arr = payload_pb2.Array(array_value=return_arr)
-
-        return return_arr
-
     async def to_grpc_response(
-        self, obj: ext.NpNDArray
-    ) -> service_pb2.RouteCallResponse:
+        self, obj: ext.NpNDArray, context: grpc.ServicerContext
+    ) -> service_pb2.Response:
         """
         Process given objects and convert it to grpc protobuf response.
 

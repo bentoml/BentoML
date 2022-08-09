@@ -7,9 +7,8 @@ import logging
 import click
 
 from bentoml.bentos import containerize as containerize_bento
-
-from ..utils import kwargs_transformers
-from ..utils.docker import validate_tag
+from bentoml._internal.utils import kwargs_transformers
+from bentoml._internal.utils.docker import validate_tag
 
 logger = logging.getLogger("bentoml")
 

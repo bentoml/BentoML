@@ -8,6 +8,6 @@ BentoML CLI
     running :code:`bentoml --help`. The :code:`--help` flag also applies to sub-commands
     for viewing detailed usage of a command, e.g.: :ccode:`bentoml serve --help`.
 
-.. click:: bentoml._internal.cli:cli
+.. click:: bentoml_cli.cli:cli
   :prog: bentoml
   :nested: full

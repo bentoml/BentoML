@@ -18,10 +18,10 @@ from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ..types import ParamSpec
     from .runnable import RunnableMethodConfig
 
-    P = ParamSpec("P")
+    # only use ParamSpec in type checking, as it's only in 3.10
+    P = t.ParamSpec("P")
 else:
     P = t.TypeVar("P")
 

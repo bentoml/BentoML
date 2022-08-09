@@ -12,9 +12,9 @@ from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from ..types import AnyType
-    from ..types import ParamSpec
 
-    P = ParamSpec("P")
+    # only use ParamSpec in type checking, as it's only in 3.10
+    P = t.ParamSpec("P")
 else:
     P = t.TypeVar("P")
 

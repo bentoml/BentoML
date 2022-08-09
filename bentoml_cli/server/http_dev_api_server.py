@@ -1,14 +1,8 @@
+from __future__ import annotations
+
 import socket
-import typing as t
-from urllib.parse import urlparse
 
 import click
-import psutil
-
-from bentoml import load
-
-from ...context import component_context
-from ...configuration.containers import BentoMLContainer
 
 
 @click.command()
@@ -24,13 +18,22 @@ from ...configuration.containers import BentoMLContainer
 def main(
     bento_identifier: str,
     bind: str,
-    working_dir: t.Optional[str],
+    working_dir: str | None,
     backlog: int,
-    prometheus_dir: t.Optional[str],
+    prometheus_dir: str | None,
 ):
-    component_context.component_name = "dev_api_server"
 
-    from ...log import configure_server_logging
+    from urllib.parse import urlparse
+
+    import psutil
+    import uvicorn
+
+    from bentoml import load
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
+    component_context.component_name = "dev_api_server"
 
     configure_server_logging()
 
@@ -64,8 +67,6 @@ def main(
             import asyncio
 
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
-
-        import uvicorn  # type: ignore
 
         config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
         uvicorn.Server(config).run(sockets=[sock])

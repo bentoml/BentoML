@@ -36,6 +36,8 @@ IOType = t.TypeVar("IOType")
 
 
 class DescriptorMeta(ABCMeta):
+    _proto_fields: list[str]
+
     def __new__(
         cls: type[Self],
         name: str,
@@ -46,8 +48,11 @@ class DescriptorMeta(ABCMeta):
     ) -> Self:
         if not proto_fields:
             proto_fields = []
-        namespace["_proto_fields"] = proto_fields
-        return super().__new__(cls, name, bases, namespace)
+
+        klass = super().__new__(cls, name, bases, namespace)
+        klass._proto_fields = proto_fields
+
+        return klass
 
 
 class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_fields=None):

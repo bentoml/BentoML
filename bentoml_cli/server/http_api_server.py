@@ -4,10 +4,8 @@ import sys
 import json
 import socket
 import typing as t
-from urllib.parse import urlparse
 
 import click
-import psutil
 
 
 @click.command()
@@ -61,7 +59,9 @@ def main(
     This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
     """
 
-    import uvicorn
+    from urllib.parse import urlparse
+
+    import psutil
 
     import bentoml
     from bentoml._internal.log import configure_server_logging
@@ -131,6 +131,8 @@ def main(
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
     assert parsed.scheme == "fd"
+
+    import uvicorn
 
     # skip the uvicorn internal supervisor
     fd = int(parsed.netloc)

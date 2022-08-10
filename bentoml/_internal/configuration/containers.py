@@ -97,6 +97,7 @@ RUNNER_CFG_SCHEMA = {
             Optional("response_content_type"): Or(bool, None),
         },
     },
+    Optional("timeout"): And(int, _larger_than_zero),
 }
 
 SCHEMA = Schema(
@@ -216,10 +217,10 @@ class BentoMLConfiguration:
 
             global_runner_cfg = {
                 k: self.config["runners"][k]
-                for k in ("batching", "resources", "logging")
+                for k in ("batching", "resources", "logging", "timeout")
             }
             for key in self.config["runners"]:
-                if key not in ["batching", "resources", "logging"]:
+                if key not in ["batching", "resources", "logging", "timeout"]:
                     runner_cfg = self.config["runners"][key]
 
                     # key is a runner name

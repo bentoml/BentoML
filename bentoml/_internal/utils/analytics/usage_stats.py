@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import typing as t
 import logging
@@ -40,7 +42,7 @@ USAGE_REQUEST_TIMEOUT_SECONDS = 1
 
 
 @lru_cache(maxsize=1)
-def do_not_track() -> bool:
+def do_not_track() -> bool:  # pragma: no cover
     # Returns True if and only if the environment variable is defined and has value True.
     # The function is cached for better performance.
     return os.environ.get(BENTOML_DO_NOT_TRACK, str(False)).lower() == "true"
@@ -52,10 +54,10 @@ def _usage_event_debugging() -> bool:
     return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
 
 
-def silent(func: "t.Callable[P, T]") -> "t.Callable[P, T]":  # pragma: no cover
+def silent(func: t.Callable[P, T]) -> t.Callable[P, T]:  # pragma: no cover
     # Silent errors when tracking
     @wraps(func)
-    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
         try:
             return func(*args, **kwargs)
         except Exception as err:  # pylint: disable=broad-except
@@ -95,9 +97,7 @@ def get_payload(
 
 
 @silent
-def track(
-    event_properties: EventMeta,
-):
+def track(event_properties: EventMeta):
     if do_not_track():
         return
     payload = get_payload(event_properties=event_properties)
@@ -114,7 +114,7 @@ def track(
 
 @inject
 def _track_serve_init(
-    svc: "t.Optional[Service]",
+    svc: Service,
     production: bool,
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ):
@@ -161,13 +161,15 @@ EXCLUDE_PATHS = {"/docs.json", "/livez", "/healthz", "/readyz"}
 
 
 def get_metrics_report(
-    metrics_client,
-) -> t.List[t.Dict[str, t.Union[str, float]]]:
-    metrics_text = metrics_client.generate_latest().decode()
+    metrics_client: PrometheusClient,
+) -> list[dict[str, str | float]]:
+    metrics_text = metrics_client.generate_latest().decode("utf-8")
     if not metrics_text:
         return []
 
-    from prometheus_client.parser import text_string_to_metric_families
+    from prometheus_client.parser import (
+        text_string_to_metric_families,  # type: ignore (unfinished prometheus types)
+    )
 
     for metric in text_string_to_metric_families(metrics_text):
         # Searching for the metric BENTOML_{service_name}_request of type Counter
@@ -192,11 +194,11 @@ def get_metrics_report(
 @inject
 @contextlib.contextmanager
 def track_serve(
-    svc: "t.Optional[Service]",
+    svc: Service,
     production: bool,
-    metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
+    metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
-):  # pragma: no cover
+) -> t.Generator[None, None, None]:
     if do_not_track():
         yield
         return

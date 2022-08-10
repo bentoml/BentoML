@@ -53,7 +53,7 @@ fi
 
 echo "Generating PyPI source distribution..."
 cd "$GIT_ROOT"
-python3 -m build
+python3 -m build -s -w
 
 # Use testpypi by default, run script with: "REPO=pypi release.sh" for
 # releasing to Pypi.org

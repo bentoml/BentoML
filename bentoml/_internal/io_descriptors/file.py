@@ -15,6 +15,7 @@ from ..types import FileLike
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
+from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
@@ -225,12 +226,21 @@ class BytesIOFile(File):
         )
 
     async def from_grpc_request(
-        self,
-        request: pb.Request,
-        context: BentoServicerContext,  # pylint: disable=unused-argument
+        self, request: pb.Request, context: BentoServicerContext
     ) -> FileLike[bytes]:
         from ..utils.grpc import check_field
+        from ..utils.grpc import raise_grpc_exception
+        from ..utils.grpc import validate_content_type
 
+        if self._mime_type.startswith("multipart"):
+            raise_grpc_exception(
+                "'multipart' Content-Type is not supported in gRPC.",
+                context=context,
+                exc_cls=UnprocessableEntity,
+            )
+
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
         # check if the request message has the correct field
         check_field(request, self)
 

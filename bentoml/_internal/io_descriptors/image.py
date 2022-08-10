@@ -16,6 +16,7 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
+from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
@@ -27,8 +28,11 @@ if TYPE_CHECKING:
 
     import PIL.Image
 
+    from bentoml.grpc.v1 import service_pb2 as pb
+
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
+    from ..server.grpc.types import BentoServicerContext
 
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
@@ -40,6 +44,8 @@ else:
     _exc = f"'Pillow' is required to use {__name__}. Install with: 'pip install -U Pillow'."
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
+
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
@@ -142,12 +148,6 @@ class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
         pilmode: _Mode | None = DEFAULT_PIL_MODE,
         mime_type: str = "image/jpeg",
     ):
-        try:
-            import PIL.Image
-        except ImportError:
-            raise InternalServerError(
-                "`Pillow` is required to use {__name__}\n Instructions: `pip install -U Pillow`"
-            )
         PIL.Image.init()
         self.MIME_EXT_MAPPING.update({v: k for k, v in PIL.Image.MIME.items()})
 
@@ -197,8 +197,7 @@ class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
             bytes_ = await request.body()
         else:
             raise BadInput(
-                f"{self.__class__.__name__} should get `multipart/form-data`, "
-                f"`{self._mime_type}` or `image/*`, got {content_type} instead"
+                f"{self.__class__.__name__} should get 'multipart/form-data', '{self._mime_type}' or 'image/*', got '{content_type}' instead."
             )
         return PIL.Image.open(io.BytesIO(bytes_))
 
@@ -211,8 +210,7 @@ class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
             image = obj
         else:
             raise InternalServerError(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
-                " only supports `np.ndarray` and `PIL.Image`"
+                f"Unsupported Image type received: '{type(obj)}', '{self.__class__.__name__}' only supports 'np.ndarray' and 'PIL.Image'."
             )
         filename = f"output.{self._format.lower()}"
 
@@ -246,11 +244,57 @@ class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
                 headers={"content-disposition": content_disposition},
             )
 
+    async def from_grpc_request(
+        self, request: pb.Request, context: BentoServicerContext
+    ) -> ImageType:
+        from ..utils.grpc import check_field
+        from ..utils.grpc import raise_grpc_exception
+        from ..utils.grpc import validate_content_type
+
+        if self._mime_type.startswith("multipart"):
+            raise_grpc_exception(
+                "'multipart' Content-Type is not supported in gRPC.",
+                context=context,
+                exc_cls=UnprocessableEntity,
+            )
+
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
+        # check if the request message has the correct field
+        check_field(request, self)
+
+        return PIL.Image.open(io.BytesIO(request.input.raw_value.content))
+
+    async def to_grpc_response(
+        self, obj: ImageType, context: BentoServicerContext
+    ) -> pb.Response:
+        from ..utils.grpc import raise_grpc_exception
+
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
+            image = PIL.Image.fromarray(obj, mode=self._pilmode)
+        elif LazyType[PIL.Image.Image]("PIL.Image.Image").isinstance(obj):
+            image = obj
+        else:
+            raise_grpc_exception(
+                f"Unsupported Image type received: '{type(obj)}', '{self.__class__.__name__}' only supports 'np.ndarray' and 'PIL.Image'.",
+                context=context,
+                exc_cls=InternalServerError,
+            )
+        ret = io.BytesIO()
+        image.save(ret, format=self._format)
+
+        return pb.Response(
+            output=pb.Value(
+                raw_value=pb.Raw(
+                    metadata={
+                        "mimetypes": self._mime_type,
+                        "pilmode": self._pilmode or "",
+                        "format": self._format,
+                    },
+                    content=ret.getvalue(),
+                )
+            )
+        )
+
     def generate_protobuf(self):
-        pass
-
-    async def from_grpc_request(self, request, context) -> t.Any:
-        pass
-
-    async def to_grpc_response(self, obj, context) -> t.Any:
         pass

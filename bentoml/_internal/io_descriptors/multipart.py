@@ -21,8 +21,11 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     from types import UnionType
 
+    from bentoml.grpc.v1 import service_pb2 as pb
+
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
+    from ..server.grpc.types import BentoServicerContext
 
 
 class Multipart(IODescriptor[t.Any]):
@@ -225,8 +228,28 @@ class Multipart(IODescriptor[t.Any]):
     def generate_protobuf(self):
         raise RuntimeError("Multipart IO is not supported in gRPC.")
 
-    async def from_grpc_request(self, request, context) -> t.Any:
-        raise RuntimeError("Multipart IO is not supported in gRPC.")
+    async def from_grpc_request(
+        self,
+        request: pb.Request,  # pylint: disable=unused-argument
+        context: BentoServicerContext,
+    ) -> t.Any:
+        from ..utils.grpc import raise_grpc_exception
 
-    async def to_grpc_response(self, obj, context) -> t.Any:
-        raise RuntimeError("Multipart IO is not supported in gRPC.")
+        raise_grpc_exception(
+            "Multipart IO is not supported in gRPC.",
+            context=context,
+            exc_cls=BentoMLException,
+        )
+
+    async def to_grpc_response(
+        self,
+        obj: t.Any,  # pylint: disable=unused-argument
+        context: BentoServicerContext,
+    ) -> pb.Response:
+        from ..utils.grpc import raise_grpc_exception
+
+        raise_grpc_exception(
+            "Multipart IO is not supported in gRPC.",
+            context=context,
+            exc_cls=BentoMLException,
+        )

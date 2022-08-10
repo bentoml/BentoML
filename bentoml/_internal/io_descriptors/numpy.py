@@ -405,6 +405,13 @@ class NumpyNdarray(
                     )
 
             return np.reshape(np.frombuffer(raw.content, dtype=dtype), self._shape)
+        else:
+            if field == "raw_value":
+                raise_grpc_exception(
+                    "'raw_value' requires 'packed=True'.",
+                    context=context,
+                    exc_cls=UnprocessableEntity,
+                )
 
         # TODO: C serde
         deserialized = deserialize_proto(request)[field]

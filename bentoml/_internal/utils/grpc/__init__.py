@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 import grpc
 
+from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
 
@@ -44,6 +45,7 @@ __all__ = [
     "raise_grpc_exception",
     "get_grpc_content_type",
     "GRPC_CONTENT_TYPE",
+    "validate_content_type",
 ]
 
 logger = logging.getLogger(__name__)
@@ -51,6 +53,40 @@ logger = logging.getLogger(__name__)
 
 # content-type is always application/grpc
 GRPC_CONTENT_TYPE = "application/grpc"
+
+
+def validate_content_type(
+    context: BentoServicerContext, descriptor: IODescriptor[t.Any]
+) -> None:
+    metadata = context.invocation_metadata()
+    if metadata:
+        maybe_content_type = metadata.get_all("content-type")
+        if maybe_content_type:
+            maybe_content_type = list(map(str, maybe_content_type))
+            if len(maybe_content_type) > 1:
+                raise_grpc_exception(
+                    f"{maybe_content_type} should only contain one 'Content-Type' headers.",
+                    context=context,
+                    exc_cls=InvalidArgument,
+                )
+
+            content_type = maybe_content_type[0]
+            rpc_content_type = (
+                f"{GRPC_CONTENT_TYPE}+{descriptor._mime_type.split('/')[-1]}"
+            )
+
+            if not content_type.startswith(GRPC_CONTENT_TYPE):
+                raise_grpc_exception(
+                    f"{content_type} should startwith {GRPC_CONTENT_TYPE}.",
+                    context=context,
+                    exc_cls=InvalidArgument,
+                )
+            if content_type != rpc_content_type:
+                raise_grpc_exception(
+                    f"{descriptor.__class__.__name__} sets Content-Type '{rpc_content_type}', got {content_type} instead",
+                    context=context,
+                    exc_cls=BentoMLException,
+                )
 
 
 def get_grpc_content_type(message_format: str | None = None) -> str:

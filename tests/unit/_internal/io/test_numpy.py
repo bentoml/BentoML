@@ -97,10 +97,10 @@ def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
         partial_check(np.array([[1]]))
     assert f'Expecting ndarray of shape "{from_example._shape}"' in str(e.value)  # type: ignore (testing message)
 
-    # test cases whwere reshape is failed
+    # test cases where reshape is failed
     example = NumpyNdarray.from_sample(np.ones((2, 2, 3)))
     example._enforce_shape = False  # type: ignore (test internal check)
     example._enforce_dtype = False  # type: ignore (test internal check)
     with caplog.at_level(logging.DEBUG):
-        example._verify_ndarray(np.array("asdf"))  # type: ignore (test internal check)
+        example._verify_ndarray(np.array("asdf"), shape=(2, 2, 3))  # type: ignore (test internal check)
     assert "Failed to reshape" in caplog.text

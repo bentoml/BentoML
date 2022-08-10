@@ -63,8 +63,8 @@ message Array {
 // Raw represents raw bytes types.
 // This can be files, images, etc.
 message Raw {
-  // KindType represents the type of given raw contents.
-  enum KindType {
+  // KType represents the type of given raw contents.
+  enum KType {
     KTYPE_UNSPECIFIED = 0;
     KTYPE_STRING = 1;
     KTYPE_BYTES = 2;
@@ -89,7 +89,7 @@ message Raw {
     KTYPE_DENSE = 32;
     KTYPE_SPARSE = 33;
   }
-  optional KindType kind = 1;
+  optional KType kind = 1;
   map<string, string> metadata = 2;
 
   // contents of file as bytes.

@@ -177,14 +177,21 @@ def main(
         "workers": 1,
     }
     # Add optional SSL args if they exist
-    if ssl_keyfile: uvicorn_options["ssl_keyfile"] = ssl_keyfile
-    if ssl_certfile: uvicorn_options["ssl_certfile"] = ssl_certfile
-    if ssl_keyfile_password: uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
-    if ssl_version: uvicorn_options["ssl_version"] = ssl_version
-    if ssl_cert_reqs: uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
-    if ssl_ca_certs: uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
-    if ssl_ciphers: uvicorn_options["ssl_ciphers"] = ssl_ciphers
-    
+    if ssl_keyfile:
+        uvicorn_options["ssl_keyfile"] = ssl_keyfile
+    if ssl_certfile:
+        uvicorn_options["ssl_certfile"] = ssl_certfile
+    if ssl_keyfile_password:
+        uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
+    if ssl_version:
+        uvicorn_options["ssl_version"] = ssl_version
+    if ssl_cert_reqs:
+        uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
+    if ssl_ca_certs:
+        uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
+    if ssl_ciphers:
+        uvicorn_options["ssl_ciphers"] = ssl_ciphers
+
     if psutil.WINDOWS:
         uvicorn_options["loop"] = "asyncio"
         import asyncio

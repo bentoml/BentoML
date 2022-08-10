@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import os
 import typing as t
 
+if t.TYPE_CHECKING:
+    from _pytest.monkeypatch import MonkeyPatch
+
 import bentoml
 from bentoml._internal.runner import strategy
-from bentoml._internal.resource import get_resource as resource_get_resource
+from bentoml._internal.resource import get_resource
 from bentoml._internal.runner.strategy import DefaultStrategy
 
 
@@ -12,10 +17,10 @@ class GPURunnable(bentoml.Runnable):
 
 
 def unvalidated_get_resource(x: t.Dict[str, t.Any], y: str):
-    return resource_get_resource(x, y, validate=False)
+    return get_resource(x, y, validate=False)
 
 
-def test_default_gpu_strategy(monkeypatch):
+def test_default_gpu_strategy(monkeypatch: MonkeyPatch):
     monkeypatch.setattr(strategy, "get_resource", unvalidated_get_resource)
     assert DefaultStrategy.get_worker_count(GPURunnable, {"nvidia.com/gpu": 2}) == 2
     assert DefaultStrategy.get_worker_count(GPURunnable, {"nvidia.com/gpu": 0}) == 1

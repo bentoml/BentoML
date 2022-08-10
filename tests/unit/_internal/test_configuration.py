@@ -2,7 +2,19 @@ from tempfile import NamedTemporaryFile
 
 from bentoml._internal.configuration.containers import BentoMLConfiguration
 
-OVERRIDE_RUNNERS = """
+
+def get_bentomlconfiguration_from_str(config_str: str):
+    tmpfile = NamedTemporaryFile(mode="w+", delete=False)
+    tmpfile.write(config_str)
+    tmpfile.flush()
+    tmpfile.close()
+
+    bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
+    return bentoml_cfg
+
+
+def test_bentoml_configuration_runner_override():
+    OVERRIDE_RUNNERS = """\
 runners:
     batching:
         enabled: False
@@ -28,19 +40,7 @@ runners:
                 enabled: True
 """
 
-
-def get_BentoMLConfiguration_from_str(config_str: str):
-    tmpfile = NamedTemporaryFile(mode="w+", delete=False)
-    tmpfile.write(config_str)
-    tmpfile.flush()
-    tmpfile.close()
-
-    bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
-    return bentoml_cfg
-
-
-def test_bentoml_configuration_runner_override():
-    bentoml_cfg = get_BentoMLConfiguration_from_str(OVERRIDE_RUNNERS)
+    bentoml_cfg = get_bentomlconfiguration_from_str(OVERRIDE_RUNNERS)
     runner_cfg = bentoml_cfg["runners"]
 
     # test_runner_1
@@ -74,19 +74,19 @@ def test_bentoml_configuration_runner_override():
 
 
 def test_runner_gpu_configuration():
-    GPU_INDEX = """
+    GPU_INDEX = """\
 runners:
     resources:
         nvidia.com/gpu: [1, 2, 4]
 """
-    bentoml_cfg = get_BentoMLConfiguration_from_str(GPU_INDEX)
+    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX)
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": [1, 2, 4]}
 
-    GPU_INDEX_WITH_STRING = """
+    GPU_INDEX_WITH_STRING = """\
 runners:
     resources:
         nvidia.com/gpu: "[1, 2, 4]"
 """
-    bentoml_cfg = get_BentoMLConfiguration_from_str(GPU_INDEX_WITH_STRING)
+    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX_WITH_STRING)
     # this behaviour can be confusing
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": "[1, 2, 4]"}

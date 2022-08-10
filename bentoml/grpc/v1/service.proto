@@ -13,7 +13,7 @@ option py_generic_services = true;
 
 // a gRPC BentoServer.
 service BentoService {
-  // Infer handles unary API.
+  // Call handles unary API.
   rpc Call(Request) returns (Response) {}
 }
 
@@ -31,7 +31,7 @@ message Response {
   Value output = 1;
 }
 
-// Represents an n-dimensional array.
+// MultiDimensionalArray represents an n-dimensional array.
 message MultiDimensionalArray {
   // The shape of the array.
   repeated int32 shape = 1;
@@ -39,7 +39,7 @@ message MultiDimensionalArray {
   optional Array array = 2;
 }
 
-// This represents a 1-d array.
+// Array represents a 1-d array.
 message Array {
   repeated bool bool_values = 5 [packed = true];
   repeated float float_values = 1 [packed = true];
@@ -60,11 +60,38 @@ message Array {
   reserved 10 to 15;
 }
 
-// Represents raw bytes types.
+// Raw represents raw bytes types.
+// This can be files, images, etc.
 message Raw {
-  // type of file, let it be csv, text ,parquet, tensor type, etc.
-  optional string kind = 1;
+  // KindType represents the type of given raw contents.
+  enum KindType {
+    KTYPE_UNSPECIFIED = 0;
+    KTYPE_STRING = 1;
+    KTYPE_BYTES = 2;
+
+    // others
+    KTYPE_OTHERS = 100;
+
+    // file type
+    KTYPE_PLAINTEXT = 10;
+    KTYPE_CSV = 11;
+    KTYPE_PARQUET = 12;
+
+    // image type
+    KTYPE_PNG = 20;
+    KTYPE_JPEG = 21;
+    KTYPE_SVG = 22;
+    KTYPE_TIFF = 23;
+
+    // array type
+    KTYPE_FLAT = 30;
+    KTYPE_NDARRAY = 31;
+    KTYPE_DENSE = 32;
+    KTYPE_SPARSE = 33;
+  }
+  optional KindType kind = 1;
   map<string, string> metadata = 2;
+
   // contents of file as bytes.
   bytes content = 3;
 }
@@ -75,7 +102,7 @@ message MapValue {
   map<string, Value> fields = 1;
 }
 
-// Representing contents of a given rpc call.
+// Value is the contents of a given rpc call.
 message Value {
   oneof kind {
     // Text()

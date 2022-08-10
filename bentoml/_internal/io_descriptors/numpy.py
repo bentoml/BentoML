@@ -10,6 +10,7 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
+from .json import process_array_payload
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
@@ -56,19 +57,6 @@ _VALUES_TO_NP_DTYPE_MAP = {
     "uint32_values": "uint32",
     "uint64_values": "uint64",
 }
-
-
-# array_descriptor -> {"float_contents": [1, 2, 3]}
-def process_deserialize_array(array: dict[str, t.Any]) -> tuple[str, list[t.Any]]:
-    # returns the array contents with whether the result is using bytes.
-    accepted_fields = list(pb.Array.DESCRIPTOR.fields_by_name)
-    if len(set(array) - set(accepted_fields)) > 0:
-        raise UnprocessableEntity("Given array has unsupported fields.")
-    if len(array) != 1:
-        raise BadInput(
-            f"Array contents can only be one of {accepted_fields} as key. Use one of {list(array)} only."
-        )
-    return tuple(array.items())[0]
 
 
 def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
@@ -273,8 +261,8 @@ class NumpyNdarray(
     def _verify_ndarray(
         self,
         obj: ext.NpNDArray,
-        dtype: ext.NpDTypeLike | None,
-        shape: tuple[int, ...] | None,
+        dtype: ext.NpDTypeLike | None = None,
+        shape: tuple[int, ...] | None = None,
         exception_cls: t.Type[Exception] = BadInput,
     ) -> ext.NpNDArray:
         if dtype is not None and dtype != obj.dtype:
@@ -404,6 +392,8 @@ class NumpyNdarray(
                         exc_cls=BentoMLException,
                     )
 
+            # We can only call reshape once since this
+            # operation is not in-place (contiguous in memory).
             return np.reshape(np.frombuffer(raw.content, dtype=dtype), self._shape)
         else:
             if field == "raw_value":
@@ -453,7 +443,7 @@ class NumpyNdarray(
             # {'float_contents': [1.0, 2.0, 3.0]}
             array = deserialized
 
-        dtype_string, content = process_deserialize_array(array)
+        dtype_string, content = process_array_payload(array)
         dtype = self._dtype
         if dtype:
             if not self._enforce_dtype:

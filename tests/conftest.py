@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import typing as t
+import logging
 import pathlib
+from typing import TYPE_CHECKING
 
 import yaml
 import pytest
@@ -13,9 +15,79 @@ from bentoml._internal.models import ModelStore
 from bentoml._internal.models import ModelContext
 from bentoml._internal.bento.build_config import BentoBuildConfig
 
+if TYPE_CHECKING:
+    from _pytest.python import Metafunc
+
 TEST_MODEL_CONTEXT = ModelContext(
     framework_name="testing", framework_versions={"testing": "v1"}
 )
+
+
+def pytest_generate_tests(metafunc: Metafunc) -> None:
+    from bentoml._internal.utils import analytics
+
+    analytics.usage_stats.do_not_track.cache_clear()
+    analytics.usage_stats._usage_event_debugging.cache_clear()  # type: ignore (private warning)
+
+    # used for local testing, on CI we already set DO_NOT_TRACK
+    os.environ["__BENTOML_DEBUG_USAGE"] = "False"
+    os.environ["BENTOML_DO_NOT_TRACK"] = "True"
+
+
+@pytest.fixture(scope="function")
+def noop_service(dummy_model_store: ModelStore) -> bentoml.Service:
+    import cloudpickle
+
+    from bentoml.io import Text
+
+    class NoopModel:
+        def predict(self, data: t.Any) -> t.Any:
+            return data
+
+    with bentoml.models.create(
+        "noop_model",
+        context=TEST_MODEL_CONTEXT,
+        module=__name__,
+        signatures={"predict": {"batchable": True}},
+        _model_store=dummy_model_store,
+    ) as model:
+        with open(model.path_of("test.pkl"), "wb") as f:
+            cloudpickle.dump(NoopModel(), f)
+
+    ref = bentoml.models.get("noop_model", _model_store=dummy_model_store)
+
+    class NoopRunnable(bentoml.Runnable):
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
+
+        def __init__(self):
+            self._model: NoopModel = bentoml.picklable_model.load_model(ref)
+
+        @bentoml.Runnable.method(batchable=True)
+        def predict(self, data: t.Any) -> t.Any:
+            return self._model.predict(data)
+
+    svc = bentoml.Service(
+        name="noop_service",
+        runners=[bentoml.Runner(NoopRunnable, models=[ref])],
+    )
+
+    @svc.api(input=Text(), output=Text())
+    def noop_sync(data: str) -> str:  # type: ignore
+        return data
+
+    return svc
+
+
+@pytest.fixture(scope="function", autouse=True, name="propagate_logs")
+def fixture_propagate_logs() -> t.Generator[None, None, None]:
+    logger = logging.getLogger("bentoml")
+    # bentoml sets propagate to False by default, so we need to set it to True
+    # for pytest caplog to recognize logs
+    logger.propagate = True
+    yield
+    # restore propagate to False after tests
+    logger.propagate = False
 
 
 @pytest.fixture(scope="function")

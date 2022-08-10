@@ -201,7 +201,7 @@ class ServeUpdateEvent(EventMeta):
     production: bool
     triggered_at: datetime
     duration_in_seconds: int
-    metrics: t.List[str] = attr.field(factory=list)
+    metrics: t.List[t.Any] = attr.field(factory=list)
 
 
 ALL_EVENT_TYPES = t.Union[

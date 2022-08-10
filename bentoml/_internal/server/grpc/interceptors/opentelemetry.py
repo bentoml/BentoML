@@ -18,9 +18,9 @@ from opentelemetry.trace.status import Status
 from opentelemetry.trace.status import StatusCode
 from opentelemetry.semconv.trace import SpanAttributes
 
-from . import GRPC_CONTENT_TYPE
 from ....utils.pkg import get_pkg_version
 from ....utils.grpc import wrap_rpc_handler
+from ....utils.grpc import GRPC_CONTENT_TYPE
 from ....utils.grpc import parse_method_name
 from ....configuration.containers import BentoMLContainer
 

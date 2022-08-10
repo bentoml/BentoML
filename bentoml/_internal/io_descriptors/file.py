@@ -166,34 +166,34 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
             res = Response(body)
         return res
 
-    def generate_protobuf(self):
-        pass
-
     async def to_grpc_response(
-        self, obj: FileType, context: BentoServicerContext
+        self,
+        obj: FileType,
+        context: BentoServicerContext,
     ) -> pb.Response:
-        from ..configuration import get_debug_mode
+        from ..utils.grpc import get_grpc_content_type
 
         if isinstance(obj, bytes):
             body = obj
         else:
             body = obj.read()
 
-        response = pb.Response()
-        value = pb.Value()
+        # the format of content-type would be application/grpc+pdf
+        content_type = get_grpc_content_type(self._mime_type.split("/")[-1])
+        context.set_trailing_metadata((("content-type", content_type),))
 
-        raw = pb.Raw(
-            kind=self._kind, metadata={"Content-Type": self._mime_type}, content=body
-        )
-        value.raw_value.CopyFrom(raw)
-        response.output.CopyFrom(value)
-
-        if get_debug_mode():
-            logger.debug(
-                f"Response proto: {response.SerializeToString(deterministic=True)}"
+        return pb.Response(
+            output=pb.Value(
+                raw_value=pb.Raw(
+                    kind=self._kind,
+                    metadata={"mimetypes": self._mime_type},
+                    content=body,
+                )
             )
+        )
 
-        return response
+    def generate_protobuf(self):
+        pass
 
 
 class BytesIOFile(File):
@@ -225,10 +225,15 @@ class BytesIOFile(File):
         )
 
     async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> t.IO[bytes]:
-        import grpc
+        self,
+        request: pb.Request,
+        context: BentoServicerContext,  # pylint: disable=unused-argument
+    ) -> FileLike[bytes]:
+        from ..utils.grpc import check_field
 
-        from ..utils.grpc import deserialize_proto
+        # check if the request message has the correct field
+        check_field(request, self)
 
-        _, serialized = deserialize_proto(request, self)
+        return FileLike[bytes](
+            io.BytesIO(request.input.raw_value.content), "<raw_value content>"
+        )

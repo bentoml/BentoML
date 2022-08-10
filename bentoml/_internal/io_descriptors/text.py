@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
+from bentoml.exceptions import BadInput
 from bentoml.exceptions import BentoMLException
 
 from .base import IODescriptor
@@ -141,41 +142,48 @@ class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> str:
-        import grpc
-
+        from ..utils.grpc import check_field
         from ..utils.grpc import deserialize_proto
+        from ..utils.grpc import raise_grpc_exception
 
-        field, serialized = deserialize_proto(self, request)
+        field = check_field(request, self)
+
+        deserialized = deserialize_proto(request)[field]
 
         if self._packed and field != "raw_value":
-            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
-            context.set_details(f"'packed={self._packed}' only accepts 'raw_value'.")
+            raise_grpc_exception(
+                f"'packed={self._packed}' only accepts 'raw_value'.",
+                context=context,
+                exc_cls=BadInput,
+            )
 
         if field == "string_value":
-            return str(serialized)
+            return str(deserialized)
 
         # { 'content': b'string_content' }
-        if "content" not in serialized:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("'content' cannot be None.")
+        if "content" not in deserialized:
+            raise_grpc_exception(
+                "'content' cannot be None.", context=context, exc_cls=BentoMLException
+            )
 
-        value: bytes = serialized["content"]
+        value = deserialized["content"]
         return value.decode("utf-8")
 
     async def to_grpc_response(
-        self, obj: str, context: BentoServicerContext  # pylint: disable=unused-argument
+        self, obj: str, context: BentoServicerContext
     ) -> pb.Response:
-        response = pb.Response()
-        value = pb.Value()
+        from ..utils.grpc import get_grpc_content_type
+
+        context.set_trailing_metadata(
+            (("content-type", get_grpc_content_type(message_format="text")),)
+        )
 
         if self._packed:
-            raw = pb.Raw(content=obj.encode("utf-8"))
-            value.raw_value.CopyFrom(raw)
-            response.output.CopyFrom(value)
-        else:
-            value.string_value = obj
-            response.output.CopyFrom(value)
-        return response
+            return pb.Response(
+                output=pb.Value(raw_value=pb.Raw(content=obj.encode("utf-8")))
+            )
+
+        return pb.Response(output=pb.Value(string_value=obj))
 
     def generate_protobuf(self):
         pass

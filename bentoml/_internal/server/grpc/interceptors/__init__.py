@@ -8,6 +8,7 @@ from grpc import aio
 
 from ....utils import LazyLoader
 from ....utils.grpc import wrap_rpc_handler
+from ....utils.grpc import get_grpc_content_type
 
 if TYPE_CHECKING:
 
@@ -19,14 +20,6 @@ if TYPE_CHECKING:
     from ..types import BentoServicerContext
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
-
-
-# content-type is always application/grpc
-GRPC_CONTENT_TYPE = "application/grpc"
-
-
-def get_grpc_content_type(message_format: str | None = None) -> str:
-    return f"{GRPC_CONTENT_TYPE}" + f"+{message_format}" if message_format else ""
 
 
 class GenericHeadersServerInterceptor(aio.ServerInterceptor):

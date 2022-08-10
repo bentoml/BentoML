@@ -42,9 +42,19 @@ __all__ = [
     "check_field",
     "serialize_proto",
     "raise_grpc_exception",
+    "get_grpc_content_type",
+    "GRPC_CONTENT_TYPE",
 ]
 
 logger = logging.getLogger(__name__)
+
+
+# content-type is always application/grpc
+GRPC_CONTENT_TYPE = "application/grpc"
+
+
+def get_grpc_content_type(message_format: str | None = None) -> str:
+    return f"{GRPC_CONTENT_TYPE}" + f"+{message_format}" if message_format else ""
 
 
 def check_field(req: pb.Request, descriptor: IODescriptor[t.Any]) -> RequestKey:
@@ -57,9 +67,6 @@ def check_field(req: pb.Request, descriptor: IODescriptor[t.Any]) -> RequestKey:
 
 
 def deserialize_proto(req: pb.Request, **kwargs: t.Any) -> DeserializeDict:
-    if not isinstance(req, pb.Request):
-        raise TypeError(f"{req} is not a valid Request proto message.")
-
     # Deserialize a pb.Request to dict.
     from google.protobuf.json_format import MessageToDict
 

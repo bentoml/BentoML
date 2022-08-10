@@ -24,14 +24,14 @@ from ..service.openapi.specification import RequestBody
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from bentoml.grpc.v1 import service_pb2
+    from bentoml.grpc.v1 import service_pb2 as pb
 
     from ..context import InferenceApiContext as Context
     from ..server.grpc.types import BentoServicerContext
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:
-    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
@@ -170,10 +170,8 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
         pass
 
     async def to_grpc_response(
-        self,
-        obj: FileType,
-        context: BentoServicerContext,  # pylint: disable=unused-argument
-    ) -> service_pb2.Response:
+        self, obj: FileType, context: BentoServicerContext
+    ) -> pb.Response:
         from ..configuration import get_debug_mode
 
         if isinstance(obj, bytes):
@@ -181,10 +179,10 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
         else:
             body = obj.read()
 
-        response = service_pb2.Response()
-        value = service_pb2.Value()
+        response = pb.Response()
+        value = pb.Value()
 
-        raw = service_pb2.Raw(
+        raw = pb.Raw(
             kind=self._kind, metadata={"Content-Type": self._mime_type}, content=body
         )
         value.raw_value.CopyFrom(raw)
@@ -227,10 +225,10 @@ class BytesIOFile(File):
         )
 
     async def from_grpc_request(
-        self, request: service_pb2.Request, context: BentoServicerContext
+        self, request: pb.Request, context: BentoServicerContext
     ) -> t.IO[bytes]:
         import grpc
 
         from ..utils.grpc import deserialize_proto
 
-        _, serialized = deserialize_proto(self, request)
+        _, serialized = deserialize_proto(request, self)

@@ -26,14 +26,14 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     import numpy as np
 
-    from bentoml.grpc.v1 import service_pb2
+    from bentoml.grpc.v1 import service_pb2 as pb
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
     from ..server.grpc.types import BentoServicerContext
 else:
     np = LazyLoader("np", globals(), "numpy")
-    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +59,9 @@ _VALUES_TO_NP_DTYPE_MAP = {
 
 
 # array_descriptor -> {"float_contents": [1, 2, 3]}
-def get_array_proto(array: dict[str, t.Any]) -> tuple[str, list[t.Any]]:
+def process_deserialize_array(array: dict[str, t.Any]) -> tuple[str, list[t.Any]]:
     # returns the array contents with whether the result is using bytes.
-    accepted_fields = list(service_pb2.Array.DESCRIPTOR.fields_by_name)
+    accepted_fields = list(pb.Array.DESCRIPTOR.fields_by_name)
     if len(set(array) - set(accepted_fields)) > 0:
         raise UnprocessableEntity("Given array has unsupported fields.")
     if len(array) != 1:
@@ -346,84 +346,118 @@ class NumpyNdarray(
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     async def from_grpc_request(
-        self, request: service_pb2.Request, context: BentoServicerContext
+        self, request: pb.Request, context: BentoServicerContext
     ) -> ext.NpNDArray:
         """
-        Process incoming protobuf request and convert it to `numpy.ndarray`
+        Process incoming protobuf request and convert it to ``numpy.ndarray``
 
         Args:
             request: Incoming Requests
 
         Returns:
-            a `numpy.ndarray` object. This can then be used
+            a ``numpy.ndarray`` object. This can then be used
              inside users defined logics.
         """
-        import grpc
 
+        from ..utils.grpc import check_field
         from ..utils.grpc import deserialize_proto
+        from ..utils.grpc import raise_grpc_exception
 
-        # TODO: deserialize is pretty inefficient, but ok for first pass.
-        field, serialized = deserialize_proto(self, request)
+        field = check_field(request, self)
 
         if self._packed:
-            if field != "raw_value":
-                raise BentoMLException(
-                    f"'packed={self._packed}' requires to use 'raw_value' instead of {field}."
-                )
             if not self._shape:
-                raise UnprocessableEntity("'shape' is required when 'packed' is set.")
+                raise_grpc_exception(
+                    "'shape' is required when using 'raw_value'.",
+                    context=context,
+                    exc_cls=UnprocessableEntity,
+                )
+            if field != "raw_value":
+                raise_grpc_exception(
+                    f"'packed={self._packed}' requires to use 'raw_value' instead of {field}.",
+                    context=context,
+                    exc_cls=UnprocessableEntity,
+                )
 
-            metadata = serialized["metadata"]
-            if not self._dtype:
-                if "dtype" not in metadata:
-                    raise BentoMLException(
-                        f"'dtype' is not found in both {repr(self)} and {metadata}. Set either 'dtype' in {self.__class__.__name__} or add 'dtype' to metadata for 'raw_value' message."
+            if not self._shape:
+                raise_grpc_exception(
+                    "'shape' is required when 'packed' is set.",
+                    context=context,
+                    exc_cls=UnprocessableEntity,
+                )
+            raw = request.input.raw_value
+
+            if not raw.metadata:
+                raise_grpc_exception(
+                    "'metadata' is required if 'dtype' is not set.",
+                    context=context,
+                    exc_cls=UnprocessableEntity,
+                )
+
+            dtype = self._dtype
+            if not dtype:
+                dtype = raw.metadata.get("dtype", None)
+                if not dtype:
+                    raise_grpc_exception(
+                        f"'dtype' is not found in both {repr(self)} and {raw.metadata}. Set either 'dtype' in {self.__class__.__name__} or add 'dtype' to metadata for 'raw_value' message.",
+                        context=context,
+                        exc_cls=BentoMLException,
                     )
-                dtype = metadata["dtype"]
-            else:
-                dtype = self._dtype
-            obj = np.frombuffer(serialized["content"], dtype=dtype)
 
-            return np.reshape(obj, self._shape)
+            return np.reshape(np.frombuffer(raw.content, dtype=dtype), self._shape)
 
+        # TODO: C serde
+        deserialized = deserialize_proto(request)[field]
+
+        shape = self._shape
         if field == "multi_dimensional_array_value":
-            # {'shape': [2, 3], 'array': {'dtype': 'DT_FLOAT', ...}}
-            if "array" not in serialized:
-                msg = "'array' cannot be None."
-                context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-                context.set_details(msg)
-                raise BadInput(msg)
+            # {'shape': [2, 3], 'array': {'float_contents': [1.0, 2.0, 3.0]}}
+            if "array" not in deserialized:
+                raise_grpc_exception(
+                    "'array' cannot be None.", context=context, exc_cls=BadInput
+                )
 
-            shape = tuple(serialized["shape"])
-            if self._shape:
-                if not self._enforce_shape:
-                    logger.warning(
-                        f"'shape={self._shape},enforce_shape={self._enforce_shape}' is set with {self.__class__.__name__}, while 'shape' field is present in request message. To avoid this warning, set 'enforce_shape=True'. Using 'shape={shape}' from request message."
-                    )
-                else:
+            array = deserialized["array"]
+
+            if "shape" in deserialized:
+                if self._enforce_shape:
+                    if not shape:
+                        raise_grpc_exception(
+                            f"'shape' is required when 'enforce_shape={self._enforce_shape}'",
+                            context=context,
+                            exc_cls=BentoMLException,
+                        )
                     logger.debug(
                         f"'enforce_shape={self._enforce_shape}', ignoring 'shape' field in request message."
                     )
-                    shape = self._shape
-
-            array = serialized["array"]
+                else:
+                    shape = tuple(deserialized["shape"])
+                    logger.warning(
+                        f"'enforce_shape={self._enforce_shape}', while 'shape' field is present in request message. Using 'shape={shape}' from request message. To avoid this warning, set 'enforce_shape=True' in {self.__class__.__name__}."
+                    )
+            else:
+                if not shape:
+                    raise_grpc_exception(
+                        f"'shape' is not set in either request message or {self.__class__.__name__}.",
+                        context=context,
+                        exc_cls=BadInput,
+                    )
         else:
             # {'float_contents': [1.0, 2.0, 3.0]}
-            array = serialized
-            shape = self._shape
+            array = deserialized
 
-        dtype_string, content = get_array_proto(array)
-        dtype = np.dtype(_VALUES_TO_NP_DTYPE_MAP[dtype_string])
-        if self._dtype:
+        dtype_string, content = process_deserialize_array(array)
+        dtype = self._dtype
+        if dtype:
             if not self._enforce_dtype:
+                dtype = np.dtype(_VALUES_TO_NP_DTYPE_MAP[dtype_string])
                 logger.warning(
-                    f"'dtype={self._dtype},enforce_dtype={self._enforce_dtype}' is set with {self.__class__.__name__}, while 'dtype' field is present in request message. To avoid this warning, set 'enforce_dtype=True'. Using 'dtype={dtype}' from request message."
+                    f"'dtype={self._dtype}' while 'enforce_dtype={self._enforce_dtype}'.To enforce given dtypes from {self.__class__.__name__}, set 'enforce_dtype=True'. Using inferred dtype from request message."
                 )
             else:
                 logger.debug(
-                    f"'enforce_dtype={self._enforce_dtype}', ignoring 'dtype' field in request message."
+                    f"'enforce_dtype={self._enforce_dtype}', ignoring inferred dtype from request message."
                 )
-                dtype = self._dtype
 
         try:
             res = np.array(content, dtype=dtype)
@@ -434,7 +468,7 @@ class NumpyNdarray(
 
     async def to_grpc_response(
         self, obj: ext.NpNDArray, context: BentoServicerContext
-    ) -> service_pb2.Response:
+    ) -> pb.Response:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -445,8 +479,11 @@ class NumpyNdarray(
             `io_descriptor_pb2.Array`:
                 Protobuf representation of given `np.ndarray`
         """
-        from ..utils.grpc import grpc_status_code
-        from ..configuration import get_debug_mode
+        from ..utils.grpc import serialize_proto
+        from ..utils.grpc import raise_grpc_exception
+
+        if TYPE_CHECKING:
+            from ..utils.grpc import SerializeDict
 
         _NP_TO_VALUE_MAP = {np.dtype(v): k for k, v in _VALUES_TO_NP_DTYPE_MAP.items()}
         value_key = _NP_TO_VALUE_MAP[obj.dtype]
@@ -459,42 +496,32 @@ class NumpyNdarray(
                 exception_cls=InternalServerError,
             )
         except InternalServerError as e:
-            context.set_code(grpc_status_code(e))
-            context.set_details(e.message)
-            raise
-
-        response = service_pb2.Response()
-        value = service_pb2.Value()
+            raise_grpc_exception(e.message, context=context, exc_cls=e.__class__)
 
         if self._packed:
-            raw = service_pb2.Raw(
-                metadata={"dtype": str(obj.dtype)},
-                content=obj.tobytes(order=self._bytesorder),
+            return pb.Response(
+                output=pb.Value(
+                    raw_value=pb.Raw(
+                        metadata={"dtype": obj.dtype.name},
+                        content=obj.tobytes(order=self._bytesorder),
+                    )
+                )
             )
-            value.raw_value.CopyFrom(raw)
         else:
+            output: SerializeDict = {}
             if self._bytesorder and self._bytesorder != "C":
                 logger.warning(
                     f"'bytesorder={self._bytesorder}' is ignored when 'packed={self._packed}'."
                 )
             # we just need a view of the array, instead of copy it to contiguous memory.
-            array = service_pb2.Array(**{value_key: obj.ravel().tolist()})
+            array = {value_key: obj.ravel().tolist()}
             if obj.ndim != 1:
-                ndarray = service_pb2.MultiDimensionalArray(
-                    shape=tuple(obj.shape), array=array
-                )
-                value.multi_dimensional_array_value.CopyFrom(ndarray)
+                ndarray = {"shape": tuple(obj.shape), "array": array}
+                output["multi_dimensional_array_value"] = ndarray
             else:
-                value.array_value.CopyFrom(array)
+                output["array_value"] = array
 
-        response.output.CopyFrom(value)
-
-        if get_debug_mode():
-            logger.debug(
-                f"Response proto: {response.SerializeToString(deterministic=True)}"
-            )
-
-        return response
+            return serialize_proto(output)
 
     def generate_protobuf(self):
         pass

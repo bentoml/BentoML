@@ -18,12 +18,12 @@ from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
-    from bentoml.grpc.v1 import service_pb2 as _service_pb2
+    from bentoml.grpc.v1 import service_pb2 as pb
 
     from ..context import InferenceApiContext as Context
     from ..server.grpc.types import BentoServicerContext
 else:
-    _service_pb2 = LazyLoader("_service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 MIME_TYPE = "text/plain"
 
@@ -139,7 +139,7 @@ class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
             return Response(obj, media_type=MIME_TYPE)
 
     async def from_grpc_request(
-        self, request: _service_pb2.Request, context: BentoServicerContext
+        self, request: pb.Request, context: BentoServicerContext
     ) -> str:
         import grpc
 
@@ -164,12 +164,12 @@ class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
 
     async def to_grpc_response(
         self, obj: str, context: BentoServicerContext  # pylint: disable=unused-argument
-    ) -> _service_pb2.Response:
-        response = _service_pb2.Response()
-        value = _service_pb2.Value()
+    ) -> pb.Response:
+        response = pb.Response()
+        value = pb.Value()
 
         if self._packed:
-            raw = _service_pb2.Raw(content=obj.encode("utf-8"))
+            raw = pb.Raw(content=obj.encode("utf-8"))
             value.raw_value.CopyFrom(raw)
             response.output.CopyFrom(value)
         else:

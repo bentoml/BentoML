@@ -17,40 +17,72 @@ from ..lazy_loader import LazyLoader
 if TYPE_CHECKING:
 
     from bentoml.io import IODescriptor
-    from bentoml.grpc.v1 import service_pb2
+    from bentoml.grpc.v1 import service_pb2 as pb
 
     from ...server.grpc.types import RpcMethodHandler
+    from ...server.grpc.types import BentoServicerContext
+
+    RequestKey = t.Literal[
+        "string_value",
+        "raw_value",
+        "array_value",
+        "multi_dimensional_array_value",
+        "map_value",
+    ]
+    DeserializeDict = dict[RequestKey, t.Any]
+    SerializeDict = dict[RequestKey, t.Any]
 else:
-    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 __all__ = [
     "grpc_status_code",
     "parse_method_name",
     "deserialize_proto",
     "to_http_status",
+    "check_field",
+    "serialize_proto",
+    "raise_grpc_exception",
 ]
 
 logger = logging.getLogger(__name__)
 
 
-def deserialize_proto(
-    io_descriptor: IODescriptor[t.Any],
-    req: service_pb2.Request,
-    **kwargs: t.Any,
-) -> tuple[str, dict[str, t.Any]]:
-    # Deserialize a service_pb2.Request to dict.
+def check_field(req: pb.Request, descriptor: IODescriptor[t.Any]) -> RequestKey:
+    kind = req.input.WhichOneof("kind")
+    if kind not in descriptor.accepted_proto_fields:
+        raise UnprocessableEntity(
+            f"{kind} is not supported for {descriptor.__class__.__name__}. Supported protobuf message fields are: {descriptor.accepted_proto_fields}"
+        )
+    return kind
+
+
+def deserialize_proto(req: pb.Request, **kwargs: t.Any) -> DeserializeDict:
+    if not isinstance(req, pb.Request):
+        raise TypeError(f"{req} is not a valid Request proto message.")
+
+    # Deserialize a pb.Request to dict.
     from google.protobuf.json_format import MessageToDict
 
     if "preserving_proto_field_name" not in kwargs:
         kwargs.setdefault("preserving_proto_field_name", True)
 
-    kind = req.input.WhichOneof("kind")
-    if kind not in io_descriptor.accepted_proto_fields:
-        raise UnprocessableEntity(
-            f"{kind} is not supported for {io_descriptor.__class__.__name__}. Supported protobuf message fields are: {io_descriptor.accepted_proto_fields}"
-        )
+    return t.cast("DeserializeDict", MessageToDict(req.input, **kwargs))
 
-    return kind, MessageToDict(getattr(req.input, kind), **kwargs)
+
+def serialize_proto(output: SerializeDict, **kwargs: t.Any) -> pb.Response:
+    from google.protobuf.json_format import ParseDict
+
+    return ParseDict({"output": output}, pb.Response(), **kwargs)
+
+
+def raise_grpc_exception(
+    msg: str, context: BentoServicerContext, exc_cls: t.Type[BentoMLException]
+):
+    context.set_code(
+        _STATUS_CODE_MAPPING.get(exc_cls.error_code, grpc.StatusCode.UNKNOWN)
+    )
+    context.set_details(msg)
+    raise exc_cls(msg)
 
 
 # Maps HTTP status code to grpc.StatusCode

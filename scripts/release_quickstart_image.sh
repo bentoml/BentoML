@@ -9,7 +9,6 @@ fi
 
 export DOCKER_BUILDKIT=1
 
-#docker build -t local-test -f- . <<EOF
 docker buildx build --platform=linux/arm64,linux/amd64 -t bentoml/quickstart:$BENTOML_VERSION -t bentoml/quickstart:latest --pull -o type=image,push=True -f- . <<EOF
 FROM jupyter/minimal-notebook:python-3.9.13
 
@@ -17,11 +16,9 @@ FROM jupyter/minimal-notebook:python-3.9.13
 USER root
 WORKDIR /home/bentoml
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip pip install -U pip
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip pip install bentoml==${BENTOML_VERSION}
 
 COPY ../examples/quickstart .
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip pip install -r ./requirements.txt
+RUN pip install -U pip bentoml==${BENTOML_VERSION} && pip install -r ./requirements.txt
 
 # For jupyter notebook UI
 EXPOSE 8888
@@ -37,4 +34,4 @@ ENV NB_USER=bentoml \
     DOCKER_STACKS_JUPYTER_CMD=notebook \ 
     NOTEBOOK_ARGS="./iris_classifier.ipynb" \
     BENTOML_HOST=0.0.0.0
-#EOF
+EOF

@@ -179,20 +179,13 @@ class YataiClient:
             self.spinner_progress.stop_task(task_id)
             self.spinner_progress.update(task_id, visible=False)
 
-    @inject
-    def push_bento(
-        self,
-        bento: "Bento",
-        *,
-        force: bool = False,
-    ):
+    def push_bento(self, bento: "Bento", *, force: bool = False):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
             self._do_push_bento(bento, upload_task_id, force=force)
 
-    @inject
     def _do_push_bento(
         self,
         bento: "Bento",
@@ -454,7 +447,7 @@ class YataiClient:
                     f'Failed to download bento "{_tag}": {response.text}'
                 )
             total_size_in_bytes = int(response.headers.get("content-length", 0))
-            block_size = 1024  # 1 Kibibyte
+            block_size = 1024  # 1 KiB
             with NamedTemporaryFile() as tar_file:
                 self.transmission_progress.update(
                     download_task_id,

@@ -27,8 +27,9 @@ def pytest_generate_tests(metafunc: Metafunc) -> None:
     from bentoml._internal.utils import analytics
 
     analytics.usage_stats.do_not_track.cache_clear()
-    analytics.usage_stats._usage_event_debugging.cache_clear()
+    analytics.usage_stats._usage_event_debugging.cache_clear()  # type: ignore (private warning)
 
+    # used for local testing, on CI we already set DO_NOT_TRACK
     os.environ["__BENTOML_DEBUG_USAGE"] = "False"
     os.environ["BENTOML_DO_NOT_TRACK"] = "True"
 
@@ -36,6 +37,7 @@ def pytest_generate_tests(metafunc: Metafunc) -> None:
 @pytest.fixture(scope="function")
 def noop_service(dummy_model_store: ModelStore) -> bentoml.Service:
     import cloudpickle
+
     from bentoml.io import Text
 
     class NoopModel:
@@ -52,9 +54,22 @@ def noop_service(dummy_model_store: ModelStore) -> bentoml.Service:
         with open(model.path_of("test.pkl"), "wb") as f:
             cloudpickle.dump(NoopModel(), f)
 
+    ref = bentoml.models.get("noop_model", _model_store=dummy_model_store)
+
+    class NoopRunnable(bentoml.Runnable):
+        SUPPORTED_RESOURCES = ("cpu",)
+        SUPPORTS_CPU_MULTI_THREADING = True
+
+        def __init__(self):
+            self._model: NoopModel = bentoml.picklable_model.load_model(ref)
+
+        @bentoml.Runnable.method(batchable=True)
+        def predict(self, data: t.Any) -> t.Any:
+            return self._model.predict(data)
+
     svc = bentoml.Service(
         name="noop_service",
-        runners=[bentoml.picklable_model.get("noop_model").to_runner()],
+        runners=[bentoml.Runner(NoopRunnable, models=[ref])],
     )
 
     @svc.api(input=Text(), output=Text())

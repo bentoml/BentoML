@@ -215,7 +215,7 @@ def track_serve(
     @silent
     def loop() -> t.NoReturn:  # type: ignore
         last_tracked_timestamp: datetime = serve_info.serve_started_timestamp
-        while not stop_event.wait(tracking_interval):
+        while not stop_event.wait(tracking_interval):  # pragma: no cover
             now = datetime.now(timezone.utc)
             event_properties = ServeUpdateEvent(
                 serve_id=serve_info.serve_id,

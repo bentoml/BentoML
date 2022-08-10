@@ -241,7 +241,7 @@ BENTOML_noop_request_in_progress{endpoint="/classify",service_version=""} 0.0
         "value": 9.0,
     } in output
 
-    endpoints = [l["endpoint"] for l in output]
+    endpoints = [filtered["endpoint"] for filtered in output]
 
     assert not any(x in endpoints for x in analytics.usage_stats.EXCLUDE_PATHS)
 

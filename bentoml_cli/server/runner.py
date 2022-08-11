@@ -100,7 +100,7 @@ def main(
         assert (
             worker_id in env_map
         ), f"worker_id {worker_id} not found in worker_env_map: {worker_env_map}"
-        os.environ.update(env_map[worker_id])
+        os.environ.update(env_map[worker_id - 1])
 
     import socket
     from urllib.parse import urlparse

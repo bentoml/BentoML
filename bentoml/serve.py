@@ -84,13 +84,27 @@ def serve_development(
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     reload: bool = False,
-    ssl_keyfile: t.Optional[str] = None,
-    ssl_certfile: t.Optional[str] = None,
-    ssl_keyfile_password: t.Optional[str] = None,
-    ssl_version: t.Optional[int] = None,
-    ssl_cert_reqs: t.Optional[int] = None,
-    ssl_ca_certs: t.Optional[str] = None,
-    ssl_ciphers: t.Optional[str] = None,
+    ssl_keyfile: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.keyfile
+    ],
+    ssl_certfile: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.certfile
+    ],
+    ssl_keyfile_password: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.keyfile_password
+    ],
+    ssl_version: t.Optional[int] = Provide[
+        BentoMLContainer.api_server_config.ssl.version
+    ],
+    ssl_cert_reqs: t.Optional[int] = Provide[
+        BentoMLContainer.api_server_config.ssl.cert_reqs
+    ],
+    ssl_ca_certs: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.ca_certs
+    ],
+    ssl_ciphers: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.ciphers
+    ],
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -209,13 +223,27 @@ def serve_production(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: t.Optional[int] = None,
-    ssl_keyfile: t.Optional[str] = None,
-    ssl_certfile: t.Optional[str] = None,
-    ssl_keyfile_password: t.Optional[str] = None,
-    ssl_version: t.Optional[int] = None,
-    ssl_cert_reqs: t.Optional[int] = None,
-    ssl_ca_certs: t.Optional[str] = None,
-    ssl_ciphers: t.Optional[str] = None,
+    ssl_keyfile: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.keyfile
+    ],
+    ssl_certfile: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.certfile
+    ],
+    ssl_keyfile_password: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.keyfile_password
+    ],
+    ssl_version: t.Optional[int] = Provide[
+        BentoMLContainer.api_server_config.ssl.version
+    ],
+    ssl_cert_reqs: t.Optional[int] = Provide[
+        BentoMLContainer.api_server_config.ssl.cert_reqs
+    ],
+    ssl_ca_certs: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.ca_certs
+    ],
+    ssl_ciphers: t.Optional[str] = Provide[
+        BentoMLContainer.api_server_config.ssl.ciphers
+    ],
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)

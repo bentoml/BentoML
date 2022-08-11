@@ -25,12 +25,12 @@ class Strategy(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def setup_worker(
+    def get_worker_env(
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any],
         worker_index: int,
-    ) -> None:
+    ) -> dict[str, t.Any]:
         ...
 
 
@@ -88,12 +88,13 @@ class DefaultStrategy(Strategy):
         )
 
     @classmethod
-    def setup_worker(
+    def get_worker_env(
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any] | None,
         worker_index: int,
-    ) -> None:
+    ) -> dict[str, t.Any]:
+        environ: dict[str, t.Any] = {}
         if resource_request is None:
             resource_request = system_resources()
 
@@ -104,26 +105,26 @@ class DefaultStrategy(Strategy):
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(nvidia_gpus[worker_index - 1])
-            logger.info(
-                "Setting up worker: set CUDA_VISIBLE_DEVICES to %s",
-                worker_index - 1,
-            )
-            return
+            dev = str(nvidia_gpus[worker_index])
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(dev)
+            logger.info("Setting up worker: set CUDA_VISIBLE_DEVICES to %s", dev)
+            return environ
 
         # use CPU
         cpus = get_resource(resource_request, "cpu")
         if cpus is not None and cpus > 0:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # disable gpu
+            environ["CUDA_VISIBLE_DEVICES"] = "-1"  # disable gpu
             if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
                 thread_count = math.ceil(cpus)
                 for thread_env in THREAD_ENVS:
-                    os.environ[thread_env] = str(thread_count)
+                    environ[thread_env] = str(thread_count)
                 logger.info(
                     "Setting up worker: set CPU thread count to %s", thread_count
                 )
-                return
+                return environ
             else:
                 for thread_env in THREAD_ENVS:
-                    os.environ[thread_env] = "1"
-                return
+                    environ[thread_env] = "1"
+                return environ
+
+        return environ

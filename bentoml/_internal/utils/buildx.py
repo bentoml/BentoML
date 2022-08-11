@@ -165,7 +165,7 @@ def build(
     shm_size: str | int | None,
     rm: bool,
     ssh: str | None,
-    tags: str | list[str] | None,
+    tags: str | t.Iterable[str],
     target: str | None,
     ulimit: str | None,
 ) -> None:
@@ -173,11 +173,11 @@ def build(
 
     cmds += ["--progress", progress]
 
-    if tags is None:
-        tags = []
-    tags = [tags] if not isinstance(tags, list) else tags
-    for tag in tags:
-        cmds.extend(["--tag", tag])
+    if isinstance(tags, str):
+        cmds.extend(["--tag", tags])
+    elif isinstance(tags, t.Iterable):
+        for tag in tags:
+            cmds.extend(["--tag", tag])
 
     if add_host is not None:
         hosts = [f"{k}:{v}" for k, v in add_host.items()]

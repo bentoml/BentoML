@@ -32,6 +32,7 @@ def add_containerize_command(cli: click.Group) -> None:
         help="Name and optionally a tag (format: 'name:tag'), defaults to bento tag.",
         required=False,
         callback=validate_tag,
+        multiple=True,
     )
     @click.option(
         "--add-host",
@@ -162,7 +163,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @kwargs_transformers(transformer=containerize_transformer)
     def containerize(  # type: ignore
         bento_tag: str,
-        docker_image_tag: str,
+        docker_image_tag: list[str],
         add_host: t.Iterable[str],
         allow: t.Iterable[str],
         build_arg: t.List[str],

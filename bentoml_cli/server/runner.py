@@ -99,7 +99,7 @@ def main(
         env_map: dict[int, dict[str, t.Any]] = json.loads(worker_env_map)
         assert (
             worker_id in env_map
-        ), f"worker_id {worker_id} not found in worker_env_map"
+        ), f"worker_id {worker_id} not found in worker_env_map: {worker_env_map}"
         os.environ.update(env_map[worker_id])
 
     import socket

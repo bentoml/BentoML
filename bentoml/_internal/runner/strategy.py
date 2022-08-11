@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import abc
 import math
 import typing as t
@@ -31,6 +30,16 @@ class Strategy(abc.ABC):
         resource_request: dict[str, t.Any],
         worker_index: int,
     ) -> dict[str, t.Any]:
+        """
+        Parameters
+        ----------
+        runnable_class : type[Runnable]
+            The runnable class to be run.
+        resource_request : dict[str, Any]
+            The resource request of the runnable.
+        worker_index : int
+            The index of the worker, start from 0.
+        """
         ...
 
 
@@ -106,8 +115,12 @@ class DefaultStrategy(Strategy):
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
             dev = str(nvidia_gpus[worker_index])
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(dev)
-            logger.info("Setting up worker: set CUDA_VISIBLE_DEVICES to %s", dev)
+            environ["CUDA_VISIBLE_DEVICES"] = dev
+            logger.info(
+                "Environ for worker %s: set CUDA_VISIBLE_DEVICES to %s",
+                worker_index,
+                dev,
+            )
             return environ
 
         # use CPU
@@ -119,7 +132,8 @@ class DefaultStrategy(Strategy):
                 for thread_env in THREAD_ENVS:
                     environ[thread_env] = str(thread_count)
                 logger.info(
-                    "Setting up worker: set CPU thread count to %s", thread_count
+                    f"Environ for worker {worker_index}: set CPU thread count to %s",
+                    thread_count,
                 )
                 return environ
             else:

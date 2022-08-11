@@ -237,6 +237,7 @@ def test_runner_cpu_multi_threading(
             strategy = DefaultStrategy()
 
             import os
+
             os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 0))
 
             runner.init_local()
@@ -282,8 +283,9 @@ def test_runner_cpu(
 
         for meth, inputs in config.test_inputs.items():
             strategy = DefaultStrategy()
-            
+
             import os
+
             os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 0))
 
             runner.init_local()
@@ -333,6 +335,7 @@ def test_runner_nvidia_gpu(
             strategy = DefaultStrategy()
 
             import os
+
             os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 0))
 
             runner.init_local()

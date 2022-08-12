@@ -208,7 +208,7 @@ def run_bento_server(
     workdir: t.Optional[str] = None,
     config_file: t.Optional[str] = None,
     dev_server: bool = False,
-    timeout: float = 90,
+    timeout: float = 5,
 ):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.

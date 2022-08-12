@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 import socket
-from typing import TYPE_CHECKING
 
 import click
-
-if TYPE_CHECKING:
-    from bentoml._internal.types import PathType
 
 
 @click.command()
@@ -74,12 +70,12 @@ def main(
     working_dir: str | None,
     backlog: int,
     prometheus_dir: str | None,
-    ssl_certfile: PathType | None,
-    ssl_keyfile: PathType | None,
+    ssl_certfile: str | None,
+    ssl_keyfile: str | None,
     ssl_keyfile_password: str | None,
     ssl_version: int | None,
     ssl_cert_reqs: int | None,
-    ssl_ca_certs: PathType | None,
+    ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
 ):
 
@@ -121,14 +117,22 @@ def main(
             "log_config": None,
             "workers": 1,
             "lifespan": "on",
-            "ssl_certfile": ssl_certfile,
-            "ssl_keyfile": ssl_keyfile,
-            "ssl_keyfile_password": ssl_keyfile_password,
-            "ssl_version": ssl_version,
-            "ssl_cert_reqs": ssl_cert_reqs,
-            "ssl_ca_certs": ssl_ca_certs,
-            "ssl_ciphers": ssl_ciphers,
         }
+
+        if ssl_certfile:
+            uvicorn_options["ssl_certfile"] = ssl_certfile
+        if ssl_keyfile:
+            uvicorn_options["ssl_keyfile"] = ssl_keyfile
+        if ssl_keyfile_password:
+            uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
+        if ssl_version:
+            uvicorn_options["ssl_version"] = ssl_version
+        if ssl_cert_reqs:
+            uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
+        if ssl_ca_certs:
+            uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
+        if ssl_ciphers:
+            uvicorn_options["ssl_ciphers"] = ssl_ciphers
 
         if psutil.WINDOWS:
             uvicorn_options["loop"] = "asyncio"

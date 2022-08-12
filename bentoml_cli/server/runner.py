@@ -14,7 +14,7 @@ import click
     "--runner-name",
     type=click.STRING,
     required=True,
-    env="RUNNER_NAME",
+    envvar="RUNNER_NAME",
 )
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")

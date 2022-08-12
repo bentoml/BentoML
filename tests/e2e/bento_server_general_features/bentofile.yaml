@@ -1,3 +1,6 @@
 service: service:svc
 python:
   requirements_txt: ./requirements.txt
+exclude:
+  - pickle_model.py
+  - train.py

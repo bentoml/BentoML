@@ -1,4 +1,5 @@
 import typing as t
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -30,6 +31,7 @@ def save_test_model(
     metadata: t.Dict[str, t.Any],
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+    external_modules: t.List[ModuleType] | None = None,
 ) -> "Tag":
     model, _ = sklearn_model_data(clf=RandomForestClassifier)
     tag_info = bentoml.sklearn.save_model(
@@ -38,6 +40,7 @@ def save_test_model(
         metadata=metadata,
         labels=labels,
         custom_objects=custom_objects,
+        external_modules=external_modules,
     )
     return tag_info
 

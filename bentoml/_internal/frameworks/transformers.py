@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import attr
@@ -245,6 +246,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -283,6 +285,9 @@ def save_model(
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
 
                         Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
+        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
+            user-defined additional python modules to be saved alongside the model or custom objects,
+            e.g. a tokenizer module, preprocessor module, model configuration module
         metadata: Custom metadata for given model.
 
     .. note::
@@ -406,6 +411,7 @@ def save_model(
             options=options,
             signatures=signatures,
             custom_objects=custom_objects,
+            external_modules=external_modules,
             metadata=metadata,
         ) as bento_model:
             pipeline.save_pretrained(bento_model.path)
@@ -427,6 +433,7 @@ def save_model(
             options=options,
             signatures=signatures,
             custom_objects=custom_objects,
+            external_modules=external_modules,
             metadata=metadata,
         ) as bento_model:
             pipeline.save_pretrained(bento_model.path)

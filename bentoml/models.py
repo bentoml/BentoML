@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+from types import ModuleType
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
@@ -230,6 +231,7 @@ def create(
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     context: ModelContext,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
@@ -247,18 +249,24 @@ def create(
         metadata=metadata,
         context=context,
     )
+    external_modules = [] if external_modules is None else external_modules
+    imported_modules = []
     try:
+        res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
-    finally:
+    except Exception as e:
+        raise e
+    else:
         res.flush()
         res.save(_model_store)
-
         track(
             ModelSaveEvent(
                 module=res.info.module,
                 model_size_in_kb=calc_dir_size(res.path_of("/")) / 1024,
             ),
         )
+    finally:
+        res.exit_cloudpickle_context(imported_modules)
 
 
 __all__ = [

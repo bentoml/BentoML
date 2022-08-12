@@ -245,6 +245,50 @@ class Model(StoreItem):
     def path_of(self, item: str) -> str:
         return self._fs.getsyspath(item)
 
+    @classmethod
+    def enter_cloudpickle_context(
+        cls,
+        external_modules: list[ModuleType],
+        imported_modules: list[ModuleType],
+    ) -> list[ModuleType]:
+        """
+        Enter a context for cloudpickle to pickle custom objects defined in external modules.
+
+        Args:
+            external_modules: list of external modules to pickle
+            imported_modules: list to added modules, needs to be surely unregistered after pickling
+
+        Returns:
+            list[ModuleType]: list of module names that were imported in the context
+
+        Raise:
+            ValueError: if any of the external modules is not importable
+        """
+        if not external_modules:
+            return []
+
+        registed_before: set[str] = cloudpickle.list_registry_pickle_by_value()
+        for mod in external_modules:
+            if mod.__name__ in registed_before:
+                continue
+            cloudpickle.register_pickle_by_value(mod)
+            imported_modules.append(mod)
+
+        return imported_modules
+
+    @classmethod
+    def exit_cloudpickle_context(cls, imported_modules: list[ModuleType]) -> None:
+        """
+        Exit the context for cloudpickle, unregister imported external modules.
+
+        Needs to be called after self.flush
+        """
+        if not imported_modules:
+            return
+
+        for mod in imported_modules:
+            cloudpickle.unregister_pickle_by_value(mod)
+
     def flush(self):
         self._write_info()
         self._write_custom_objects()

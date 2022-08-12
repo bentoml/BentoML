@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import sys
-import typing as t
 import logging
+from typing import TYPE_CHECKING
 
 import click
 
-from bentoml._internal.log import configure_server_logging
-from bentoml._internal.configuration.containers import BentoMLContainer
+if TYPE_CHECKING:
+    from bentoml._internal.types import PathType
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,10 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 
 
 def add_serve_command(cli: click.Group) -> None:
+
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     @cli.command()
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
@@ -70,63 +74,70 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
-        "--ssl-keyfile",
-        type=click.STRING,
-        help="SSL key file",
+        "--ssl-certfile",
+        type=str,
         default=None,
+        help="SSL certificate file",
+        show_default=True,
     )
     @click.option(
-        "--ssl-certfile",
-        type=click.STRING,
-        help="SSL certificate file",
+        "--ssl-keyfile",
+        type=str,
         default=None,
+        help="SSL key file",
+        show_default=True,
     )
     @click.option(
         "--ssl-keyfile-password",
-        type=click.STRING,
-        help="SSL keyfile password",
+        type=str,
         default=None,
+        help="SSL keyfile password",
+        show_default=True,
     )
     @click.option(
         "--ssl-version",
-        type=click.INT,
-        help="SSL version to use (see stdlib ssl module's)",
+        type=int,
         default=None,
+        help="SSL version to use (see stdlib 'ssl' module)",
+        show_default=True,
     )
     @click.option(
         "--ssl-cert-reqs",
-        type=click.INT,
-        help="Whether client certificate is required (see stdlib ssl module's)",
+        type=int,
         default=None,
+        help="Whether client certificate is required (see stdlib ssl module's)",
+        show_default=True,
     )
     @click.option(
         "--ssl-ca-certs",
-        type=click.STRING,
-        help="CA certificates file",
+        type=str,
         default=None,
+        help="CA certificates file",
+        show_default=True,
     )
     @click.option(
         "--ssl-ciphers",
-        type=click.STRING,
-        help="CA certificates file",
+        type=str,
         default=None,
+        help="Ciphers to use (see stdlib ssl module's)",
+        show_default=True,
     )
-    def serve(
+    def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,
         port: int,
-        host: t.Optional[str],
-        api_workers: t.Optional[int],
+        host: str | None,
+        api_workers: int | None,
         backlog: int,
         reload: bool,
         working_dir: str,
-        ssl_keyfile: t.Optional[str],
-        ssl_certfile: t.Optional[str],
-        ssl_keyfile_password: t.Optional[str],
-        ssl_version: t.Optional[int],
-        ssl_cert_reqs: t.Optional[int],
-        ssl_ca_certs: t.Optional[str],
-        ssl_ciphers: t.Optional[str],
+        ssl_certfile: PathType | None,
+        ssl_keyfile: PathType | None,
+        ssl_keyfile_password: str | None,
+        ssl_version: int | None,
+        ssl_cert_reqs: int | None,
+        ssl_ca_certs: PathType | None,
+        ssl_ciphers: str | None,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 

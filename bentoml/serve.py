@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import ssl
 import sys
 import json
 import math
@@ -18,6 +19,7 @@ from simple_di import Provide
 from bentoml import load
 
 from ._internal.log import SERVER_LOGGING_CONFIG
+from ._internal.types import PathType
 from ._internal.utils import reserve_free_port
 from ._internal.resource import CpuResource
 from ._internal.utils.uri import path_to_uri
@@ -83,28 +85,19 @@ def serve_development(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
+    ssl_certfile: PathType
+    | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
+    ssl_keyfile: PathType
+    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
+    ssl_keyfile_password: str
+    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile_password],
+    ssl_version: int | None = Provide[BentoMLContainer.api_server_config.ssl.version],
+    ssl_cert_reqs: int
+    | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
+    ssl_ca_certs: PathType
+    | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
+    ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     reload: bool = False,
-    ssl_keyfile: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.keyfile
-    ],
-    ssl_certfile: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.certfile
-    ],
-    ssl_keyfile_password: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.keyfile_password
-    ],
-    ssl_version: t.Optional[int] = Provide[
-        BentoMLContainer.api_server_config.ssl.version
-    ],
-    ssl_cert_reqs: t.Optional[int] = Provide[
-        BentoMLContainer.api_server_config.ssl.cert_reqs
-    ],
-    ssl_ca_certs: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.ca_certs
-    ],
-    ssl_ciphers: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.ciphers
-    ],
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -126,7 +119,7 @@ def serve_development(
         )
     )
 
-    api_server_watcher_args = [
+    args = [
         "-m",
         SCRIPT_DEV_API_SERVER,
         bento_identifier,
@@ -137,34 +130,33 @@ def serve_development(
         "--prometheus-dir",
         prometheus_dir,
     ]
+
     # Add optional SSL args if they exist
-    api_server_watcher_args.extend(
-        ["--ssl-keyfile", ssl_keyfile]
-    ) if ssl_keyfile is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-certfile", ssl_certfile]
-    ) if ssl_certfile is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-keyfile-password", ssl_keyfile_password]
-    ) if ssl_keyfile_password is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-version", str(ssl_version)]
-    ) if ssl_version is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-cert-reqs", str(ssl_cert_reqs)]
-    ) if ssl_cert_reqs is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-ca-certs", ssl_ca_certs]
-    ) if ssl_ca_certs is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-ciphers", ssl_ciphers]
-    ) if ssl_ciphers is not None else None  # pylint: disable=W0106
+    if ssl_certfile:
+        args.extend(["--ssl-certfile", str(ssl_certfile)])
+    if ssl_keyfile:
+        args.extend(["--ssl-keyfile", str(ssl_keyfile)])
+    if ssl_keyfile_password:
+        args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
+    if ssl_ca_certs:
+        args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
+
+    # match with default uvicorn values.
+    if not ssl_version:
+        ssl_version = ssl.PROTOCOL_TLS_SERVER
+    args.extend(["--ssl-version", str(ssl_version)])
+    if not ssl_cert_reqs:
+        ssl_cert_reqs = ssl.CERT_NONE
+    args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
+    if not ssl_ciphers:
+        ssl_ciphers = "TLSv1"
+    args.extend(["--ssl-ciphers", ssl_ciphers])
 
     watchers.append(
         Watcher(
             name="dev_api_server",
             cmd=sys.executable,
-            args=api_server_watcher_args,
+            args=args,
             copy_env=True,
             stop_children=True,
             use_sockets=True,
@@ -223,27 +215,18 @@ def serve_production(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: t.Optional[int] = None,
-    ssl_keyfile: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.keyfile
-    ],
-    ssl_certfile: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.certfile
-    ],
-    ssl_keyfile_password: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.keyfile_password
-    ],
-    ssl_version: t.Optional[int] = Provide[
-        BentoMLContainer.api_server_config.ssl.version
-    ],
-    ssl_cert_reqs: t.Optional[int] = Provide[
-        BentoMLContainer.api_server_config.ssl.cert_reqs
-    ],
-    ssl_ca_certs: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.ca_certs
-    ],
-    ssl_ciphers: t.Optional[str] = Provide[
-        BentoMLContainer.api_server_config.ssl.ciphers
-    ],
+    ssl_certfile: PathType
+    | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
+    ssl_keyfile: PathType
+    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
+    ssl_keyfile_password: str
+    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile_password],
+    ssl_version: int | None = Provide[BentoMLContainer.api_server_config.ssl.version],
+    ssl_cert_reqs: int
+    | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
+    ssl_ca_certs: PathType
+    | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
+    ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -352,7 +335,7 @@ def serve_production(
         backlog=backlog,
     )
 
-    api_server_watcher_args = [
+    args = [
         "-m",
         SCRIPT_API_SERVER,
         bento_identifier,
@@ -369,34 +352,33 @@ def serve_production(
         "--prometheus-dir",
         prometheus_dir,
     ]
+
     # Add optional SSL args if they exist
-    api_server_watcher_args.extend(
-        ["--ssl-keyfile", ssl_keyfile]
-    ) if ssl_keyfile is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-certfile", ssl_certfile]
-    ) if ssl_certfile is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-keyfile-password", ssl_keyfile_password]
-    ) if ssl_keyfile_password is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-version", str(ssl_version)]
-    ) if ssl_version is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-cert-reqs", str(ssl_cert_reqs)]
-    ) if ssl_cert_reqs is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-ca-certs", ssl_ca_certs]
-    ) if ssl_ca_certs is not None else None  # pylint: disable=W0106
-    api_server_watcher_args.extend(
-        ["--ssl-ciphers", ssl_ciphers]
-    ) if ssl_ciphers is not None else None  # pylint: disable=W0106
+    if ssl_certfile:
+        args.extend(["--ssl-certfile", str(ssl_certfile)])
+    if ssl_keyfile:
+        args.extend(["--ssl-keyfile", str(ssl_keyfile)])
+    if ssl_keyfile_password:
+        args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
+    if ssl_ca_certs:
+        args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
+
+    # match with default uvicorn values.
+    if not ssl_version:
+        ssl_version = ssl.PROTOCOL_TLS_SERVER
+    args.extend(["--ssl-version", str(ssl_version)])
+    if not ssl_cert_reqs:
+        ssl_cert_reqs = ssl.CERT_NONE
+    args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
+    if not ssl_ciphers:
+        ssl_ciphers = "TLSv1"
+    args.extend(["--ssl-ciphers", ssl_ciphers])
 
     watchers.append(
         Watcher(
             name="api_server",
             cmd=sys.executable,
-            args=api_server_watcher_args,
+            args=args,
             copy_env=True,
             numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             stop_children=True,

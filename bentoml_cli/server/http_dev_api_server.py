@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import socket
+from typing import TYPE_CHECKING
 
 import click
+
+if TYPE_CHECKING:
+    from bentoml._internal.types import PathType
 
 
 @click.command()
@@ -16,49 +20,53 @@ import click
     help="Required by prometheus to pass the metrics in multi-process mode",
 )
 @click.option(
-    "--ssl-keyfile",
-    type=click.STRING,
-    help="SSL key file",
+    "--ssl-certfile",
+    type=str,
     default=None,
+    help="SSL certificate file",
+    show_default=True,
 )
 @click.option(
-    "--ssl-certfile",
-    type=click.STRING,
-    help="SSL certificate file",
+    "--ssl-keyfile",
+    type=str,
     default=None,
+    help="SSL key file",
+    show_default=True,
 )
 @click.option(
     "--ssl-keyfile-password",
-    type=click.STRING,
-    help="SSL keyfile password",
+    type=str,
     default=None,
+    help="SSL keyfile password",
+    show_default=True,
 )
 @click.option(
     "--ssl-version",
-    type=click.INT,
-    help="SSL version to use (see stdlib ssl module's)",
+    type=int,
     default=None,
-    # default=17 # TODO: default here, or set default to None and allow uvicorn to handle default?
+    help="SSL version to use (see stdlib 'ssl' module)",
+    show_default=True,
 )
 @click.option(
     "--ssl-cert-reqs",
-    type=click.INT,
-    help="Whether client certificate is required (see stdlib ssl module's)",
+    type=int,
     default=None,
-    # default=0 # TODO: default here, or set default to None and allow uvicorn to handle default?
+    help="Whether client certificate is required (see stdlib ssl module's)",
+    show_default=True,
 )
 @click.option(
     "--ssl-ca-certs",
-    type=click.STRING,
-    help="CA certificates file",
+    type=str,
     default=None,
+    help="CA certificates file",
+    show_default=True,
 )
 @click.option(
     "--ssl-ciphers",
-    type=click.STRING,
-    help="CA certificates file",
+    type=str,
     default=None,
-    # default="TLSv1" # TODO: default here, or set default to None and allow uvicorn to handle default?
+    help="Ciphers to use (see stdlib ssl module's)",
+    show_default=True,
 )
 def main(
     bento_identifier: str,
@@ -66,12 +74,12 @@ def main(
     working_dir: str | None,
     backlog: int,
     prometheus_dir: str | None,
-    ssl_keyfile: str | None,
-    ssl_certfile: str | None,
+    ssl_certfile: PathType | None,
+    ssl_keyfile: PathType | None,
     ssl_keyfile_password: str | None,
     ssl_version: int | None,
     ssl_cert_reqs: int | None,
-    ssl_ca_certs: str | None,
+    ssl_ca_certs: PathType | None,
     ssl_ciphers: str | None,
 ):
 
@@ -113,22 +121,14 @@ def main(
             "log_config": None,
             "workers": 1,
             "lifespan": "on",
+            "ssl_certfile": ssl_certfile,
+            "ssl_keyfile": ssl_keyfile,
+            "ssl_keyfile_password": ssl_keyfile_password,
+            "ssl_version": ssl_version,
+            "ssl_cert_reqs": ssl_cert_reqs,
+            "ssl_ca_certs": ssl_ca_certs,
+            "ssl_ciphers": ssl_ciphers,
         }
-        # Add optional SSL args if they exist
-        if ssl_keyfile:
-            uvicorn_options["ssl_keyfile"] = ssl_keyfile
-        if ssl_certfile:
-            uvicorn_options["ssl_certfile"] = ssl_certfile
-        if ssl_keyfile_password:
-            uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
-        if ssl_version:
-            uvicorn_options["ssl_version"] = ssl_version
-        if ssl_cert_reqs:
-            uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
-        if ssl_ca_certs:
-            uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
-        if ssl_ciphers:
-            uvicorn_options["ssl_ciphers"] = ssl_ciphers
 
         if psutil.WINDOWS:
             uvicorn_options["loop"] = "asyncio"

@@ -63,7 +63,7 @@ def log_exception(request: Request, exc_info: t.Any) -> None:
     :attr:`logger`.
     """
     logger.error(
-        "Exception on %s [%s]", request.url.path, request.method, exc_info=exc_info
+        f"Exception on {request.url.path} [{request.method}]", exc_info=exc_info
     )
 
 

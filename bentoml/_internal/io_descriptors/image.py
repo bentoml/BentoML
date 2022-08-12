@@ -29,10 +29,10 @@ if TYPE_CHECKING:
     import PIL.Image
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.types import BentoServicerContext
 
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
@@ -55,7 +55,7 @@ ImageType: t.TypeAlias = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 DEFAULT_PIL_MODE = "RGB"
 
 
-class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
+class Image(IODescriptor[ImageType], proto_field="file"):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
@@ -247,7 +247,7 @@ class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> ImageType:
-        from ..utils.grpc import check_field
+        from ..utils.grpc import get_field
         from ..utils.grpc import raise_grpc_exception
         from ..utils.grpc import validate_content_type
 
@@ -261,7 +261,7 @@ class Image(IODescriptor[ImageType], proto_fields=["raw_value"]):
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
         # check if the request message has the correct field
-        check_field(request, self)
+        get_field(request, self)
 
         return PIL.Image.open(io.BytesIO(request.input.raw_value.content))
 

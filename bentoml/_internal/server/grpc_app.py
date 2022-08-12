@@ -108,6 +108,7 @@ class GRPCAppFactory:
             server=server,
             on_startup=self.on_startup,
             on_shutdown=self.on_shutdown,
+            mount_servicers=self.bento_service.mount_servicers,
             _health_servicer=health_servicer,
             _bento_servicer=create_bento_servicer(self.bento_service),
         )

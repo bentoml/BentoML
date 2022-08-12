@@ -19,19 +19,9 @@ if TYPE_CHECKING:
 
     from bentoml.io import IODescriptor
     from bentoml.grpc.v1 import service_pb2 as pb
-
-    from ...server.grpc.types import RpcMethodHandler
-    from ...server.grpc.types import BentoServicerContext
-
-    RequestKey = t.Literal[
-        "string_value",
-        "raw_value",
-        "array_value",
-        "multi_dimensional_array_value",
-        "map_value",
-    ]
-    DeserializeDict = dict[RequestKey, t.Any]
-    SerializeDict = dict[RequestKey, t.Any]
+    from bentoml.grpc.types import MessageType
+    from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import BentoServicerContext
 else:
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
@@ -40,12 +30,13 @@ __all__ = [
     "parse_method_name",
     "deserialize_proto",
     "to_http_status",
-    "check_field",
+    "get_field",
     "serialize_proto",
     "raise_grpc_exception",
     "get_grpc_content_type",
     "GRPC_CONTENT_TYPE",
     "validate_content_type",
+    "VALUES_TO_NP_DTYPE_MAP",
 ]
 
 logger = logging.getLogger(__name__)
@@ -53,6 +44,27 @@ logger = logging.getLogger(__name__)
 
 # content-type is always application/grpc
 GRPC_CONTENT_TYPE = "application/grpc"
+
+
+# TODO: support the following types for for protobuf message:
+# - support complex64, complex128, object and struct types
+# - BFLOAT16, QINT32, QINT16, QUINT16, QINT8, QUINT8
+#
+# For int16, uint16, int8, uint8 -> specify types in NumpyNdarray + using int_values.
+#
+# For bfloat16, half (float16) -> specify types in NumpyNdarray + using float_values.
+#
+# for string_values, use <U for np.dtype instead of S (zero-terminated bytes).
+VALUES_TO_NP_DTYPE_MAP = {
+    "bool_values": "bool",
+    "float_values": "float32",
+    "string_values": "<U",
+    "double_values": "float64",
+    "int_values": "int32",
+    "long_values": "int64",
+    "uint32_values": "uint32",
+    "uint64_values": "uint64",
+}
 
 
 def validate_content_type(
@@ -72,7 +84,7 @@ def validate_content_type(
 
             content_type = maybe_content_type[0]
             rpc_content_type = (
-                f"{GRPC_CONTENT_TYPE}+{descriptor._mime_type.split('/')[-1]}"
+                f"{GRPC_CONTENT_TYPE}+{descriptor.mimetype.split('/')[-1]}"
             )
 
             if not content_type.startswith(GRPC_CONTENT_TYPE):
@@ -93,13 +105,12 @@ def get_grpc_content_type(message_format: str | None = None) -> str:
     return f"{GRPC_CONTENT_TYPE}" + f"+{message_format}" if message_format else ""
 
 
-def check_field(req: pb.Request, descriptor: IODescriptor[t.Any]) -> RequestKey:
-    kind = req.input.WhichOneof("kind")
-    if kind not in descriptor.accepted_proto_fields:
+def get_field(req: pb.Request, descriptor: IODescriptor[t.Any]) -> MessageType[t.Any]:
+    if not req.HasField(descriptor.proto_field):
         raise UnprocessableEntity(
-            f"{kind} is not supported for {descriptor.__class__.__name__}. Supported protobuf message fields are: {descriptor.accepted_proto_fields}"
+            f"Missing required '{descriptor.proto_field}' for {descriptor.__class__.__name__}."
         )
-    return kind
+    return getattr(req, descriptor.proto_field)
 
 
 def deserialize_proto(req: pb.Request, **kwargs: t.Any) -> DeserializeDict:

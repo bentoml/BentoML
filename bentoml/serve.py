@@ -395,7 +395,7 @@ def serve_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug("Runner map: %s", runner_bind_map)
+    logger.debug(f"Runner map: {runner_bind_map}")
 
     if grpc:
         with contextlib.ExitStack() as port_stack:

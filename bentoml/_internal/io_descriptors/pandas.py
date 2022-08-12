@@ -12,7 +12,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from .json import MIME_TYPE_JSON
 from ..types import LazyType
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
@@ -134,9 +133,7 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
         )
 
 
-class PandasDataFrame(
-    IODescriptor["ext.PdDataFrame"], proto_fields=["map_value", "raw_value"]
-):
+class PandasDataFrame(IODescriptor["ext.PdDataFrame"], proto_field="dataframe"):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
     where either inputs will be converted to or outputs will be converted from type
@@ -205,7 +202,7 @@ class PandasDataFrame(
                 - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
                 - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
                 - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` -> {``index`` ↠ ``value``}}
+                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
         apply_column_names: Whether to update incoming DataFrame columns. If :code:`apply_column_names=True`,
@@ -415,15 +412,6 @@ class PandasDataFrame(
         else:
             return Response(resp, media_type=serialization_format.mime_type)
 
-    def generate_protobuf(self):
-        pass
-
-    async def from_grpc_request(self, request, context) -> t.Any:
-        pass
-
-    async def to_grpc_response(self, obj, context) -> t.Any:
-        pass
-
     @classmethod
     def from_sample(
         cls,
@@ -446,7 +434,7 @@ class PandasDataFrame(
                     - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
                     - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
                     - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                    - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` -> {``index`` ↠ ``value``}}
+                    - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                     - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
             apply_column_names: Update incoming DataFrame columns. ``columns`` must be specified at
                                 function signature. If you don't want to enforce a specific columns
@@ -496,10 +484,17 @@ class PandasDataFrame(
 
         return inst
 
+    def generate_protobuf(self):
+        pass
 
-class PandasSeries(
-    IODescriptor["ext.PdSeries"], proto_fields=["map_value", "raw_value"]
-):
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj, context) -> t.Any:
+        pass
+
+
+class PandasSeries(IODescriptor["ext.PdSeries"], proto_field="series"):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -564,7 +559,7 @@ class PandasSeries(
                 - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
                 - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
                 - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` -> {``index`` ↠ ``value``}}
+                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
         apply_column_names (`bool`, `optional`, default to :code:`False`):
@@ -594,8 +589,6 @@ class PandasSeries(
     Returns:
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
-
-    _mime_type: str = MIME_TYPE_JSON
 
     def __init__(
         self,
@@ -686,14 +679,16 @@ class PandasSeries(
         if ctx is not None:
             res = Response(
                 obj.to_json(orient=self._orient),
-                media_type=MIME_TYPE_JSON,
+                media_type=self._mime_type,
                 headers=ctx.response.headers,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(obj.to_json(orient=self._orient), media_type=MIME_TYPE_JSON)
+            return Response(
+                obj.to_json(orient=self._orient), media_type=self._mime_type
+            )
 
     def generate_protobuf(self):
         pass

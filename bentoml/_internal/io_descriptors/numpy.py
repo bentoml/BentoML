@@ -9,10 +9,9 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from .json import MIME_TYPE_JSON
-from .json import process_array_payload
 from ..types import LazyType
 from ..utils import LazyLoader
+from ..utils.grpc import VALUES_TO_NP_DTYPE_MAP
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import BentoMLException
@@ -28,35 +27,15 @@ if TYPE_CHECKING:
     import numpy as np
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.types import BentoServicerContext
 else:
     np = LazyLoader("np", globals(), "numpy")
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 logger = logging.getLogger(__name__)
-
-# TODO: support the following types for for protobuf message:
-# - support complex64, complex128, object and struct types
-# - BFLOAT16, QINT32, QINT16, QUINT16, QINT8, QUINT8
-#
-# For int16, uint16, int8, uint8 -> specify types in NumpyNdarray + using int_values.
-#
-# For bfloat16, half (float16) -> specify types in NumpyNdarray + using float_values.
-#
-# for string_values, use <U for np.dtype instead of S (zero-terminated bytes).
-_VALUES_TO_NP_DTYPE_MAP = {
-    "bool_values": "bool",
-    "float_values": "float32",
-    "string_values": "<U",
-    "double_values": "float64",
-    "int_values": "int32",
-    "long_values": "int64",
-    "uint32_values": "uint32",
-    "uint64_values": "uint64",
-}
 
 
 def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
@@ -76,10 +55,7 @@ def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
 
 
 # TODO: when updating docs, add examples with gRPCurl
-class NumpyNdarray(
-    IODescriptor["ext.NpNDArray"],
-    proto_fields=["multi_dimensional_array_value", "array_value", "raw_value"],
-):
+class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -168,7 +144,6 @@ class NumpyNdarray(
         enforce_dtype: bool = False,
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
-        packed: bool = False,
         bytesorder: t.Literal["C", "F", "A", None] = None,
     ):
         if dtype and not isinstance(dtype, np.dtype):
@@ -176,9 +151,7 @@ class NumpyNdarray(
             try:
                 dtype = np.dtype(dtype)
             except TypeError as e:
-                raise UnprocessableEntity(
-                    f'NumpyNdarray: Invalid dtype "{dtype}": {e}'
-                ) from e
+                raise UnprocessableEntity(f'Invalid dtype "{dtype}": {e}') from e
 
         self._dtype = dtype
         self._shape = shape
@@ -187,16 +160,14 @@ class NumpyNdarray(
 
         self._sample_input = None
 
-        # whether to use packed representation of numpy while sending protobuf
-        # this means users should be using raw_value instead of array_value or multi_dimensional_array_value
-        self._packed = packed
         if bytesorder and bytesorder not in ["C", "F", "A"]:
             raise BadInput(
                 f"'bytesorder' must be one of ['C', 'F', 'A'], got {bytesorder} instead."
             )
         if not bytesorder:
-            bytesorder = "C"  # default from numpy (C-order)
             # https://numpy.org/doc/stable/user/basics.byteswapping.html#introduction-to-byte-ordering-and-ndarrays
+            bytesorder = "C"  # default from numpy (C-order)
+
         self._bytesorder: t.Literal["C", "F", "A"] = bytesorder
 
     def _openapi_types(self) -> str:
@@ -324,204 +295,14 @@ class NumpyNdarray(
         if ctx is not None:
             res = Response(
                 json.dumps(obj.tolist()),
-                media_type=MIME_TYPE_JSON,
+                media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
-
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> ext.NpNDArray:
-        """
-        Process incoming protobuf request and convert it to ``numpy.ndarray``
-
-        Args:
-            request: Incoming Requests
-
-        Returns:
-            a ``numpy.ndarray`` object. This can then be used
-             inside users defined logics.
-        """
-
-        from ..utils.grpc import check_field
-        from ..utils.grpc import deserialize_proto
-        from ..utils.grpc import raise_grpc_exception
-
-        field = check_field(request, self)
-
-        if self._packed:
-            if not self._shape:
-                raise_grpc_exception(
-                    "'shape' is required when using 'raw_value'.",
-                    context=context,
-                    exc_cls=UnprocessableEntity,
-                )
-            if field != "raw_value":
-                raise_grpc_exception(
-                    f"'packed={self._packed}' requires to use 'raw_value' instead of {field}.",
-                    context=context,
-                    exc_cls=UnprocessableEntity,
-                )
-
-            if not self._shape:
-                raise_grpc_exception(
-                    "'shape' is required when 'packed' is set.",
-                    context=context,
-                    exc_cls=UnprocessableEntity,
-                )
-            raw = request.input.raw_value
-
-            if not raw.metadata:
-                raise_grpc_exception(
-                    "'metadata' is required if 'dtype' is not set.",
-                    context=context,
-                    exc_cls=UnprocessableEntity,
-                )
-
-            dtype = self._dtype
-            if not dtype:
-                dtype = raw.metadata.get("dtype", None)
-                if not dtype:
-                    raise_grpc_exception(
-                        f"'dtype' is not found in both {repr(self)} and {raw.metadata}. Set either 'dtype' in {self.__class__.__name__} or add 'dtype' to metadata for 'raw_value' message.",
-                        context=context,
-                        exc_cls=BentoMLException,
-                    )
-
-            # We can only call reshape once since this
-            # operation is not in-place (contiguous in memory).
-            return np.reshape(np.frombuffer(raw.content, dtype=dtype), self._shape)
-        else:
-            if field == "raw_value":
-                raise_grpc_exception(
-                    "'raw_value' requires 'packed=True'.",
-                    context=context,
-                    exc_cls=UnprocessableEntity,
-                )
-
-        # TODO: C serde
-        deserialized = deserialize_proto(request)[field]
-
-        shape = self._shape
-        if field == "multi_dimensional_array_value":
-            # {'shape': [2, 3], 'array': {'float_contents': [1.0, 2.0, 3.0]}}
-            if "array" not in deserialized:
-                raise_grpc_exception(
-                    "'array' cannot be None.", context=context, exc_cls=BadInput
-                )
-
-            array = deserialized["array"]
-
-            if "shape" in deserialized:
-                if self._enforce_shape:
-                    if not shape:
-                        raise_grpc_exception(
-                            f"'shape' is required when 'enforce_shape={self._enforce_shape}'",
-                            context=context,
-                            exc_cls=BentoMLException,
-                        )
-                    logger.debug(
-                        f"'enforce_shape={self._enforce_shape}', ignoring 'shape' field in request message."
-                    )
-                else:
-                    shape = tuple(deserialized["shape"])
-                    logger.warning(
-                        f"'enforce_shape={self._enforce_shape}', while 'shape' field is present in request message. Using 'shape={shape}' from request message. To avoid this warning, set 'enforce_shape=True' in {self.__class__.__name__}."
-                    )
-            else:
-                if not shape:
-                    raise_grpc_exception(
-                        f"'shape' is not set in either request message or {self.__class__.__name__}.",
-                        context=context,
-                        exc_cls=BadInput,
-                    )
-        else:
-            # {'float_contents': [1.0, 2.0, 3.0]}
-            array = deserialized
-
-        dtype_string, content = process_array_payload(array)
-        dtype = self._dtype
-        if dtype:
-            if not self._enforce_dtype:
-                dtype = np.dtype(_VALUES_TO_NP_DTYPE_MAP[dtype_string])
-                logger.warning(
-                    f"'dtype={self._dtype}' while 'enforce_dtype={self._enforce_dtype}'.To enforce given dtypes from {self.__class__.__name__}, set 'enforce_dtype=True'. Using inferred dtype from request message."
-                )
-            else:
-                logger.debug(
-                    f"'enforce_dtype={self._enforce_dtype}', ignoring inferred dtype from request message."
-                )
-
-        try:
-            res = np.array(content, dtype=dtype)
-        except ValueError:
-            res = np.array(content)
-
-        return self._verify_ndarray(res, dtype=dtype, shape=shape)
-
-    async def to_grpc_response(
-        self, obj: ext.NpNDArray, context: BentoServicerContext
-    ) -> pb.Response:
-        """
-        Process given objects and convert it to grpc protobuf response.
-
-        Args:
-            obj: `np.ndarray` that will be serialized to protobuf
-            context: grpc.aio.ServicerContext from grpc.aio.Server
-        Returns:
-            `io_descriptor_pb2.Array`:
-                Protobuf representation of given `np.ndarray`
-        """
-        from ..utils.grpc import serialize_proto
-        from ..utils.grpc import raise_grpc_exception
-
-        if TYPE_CHECKING:
-            from ..utils.grpc import SerializeDict
-
-        _NP_TO_VALUE_MAP = {np.dtype(v): k for k, v in _VALUES_TO_NP_DTYPE_MAP.items()}
-        value_key = _NP_TO_VALUE_MAP[obj.dtype]
-
-        try:
-            obj = self._verify_ndarray(
-                obj,
-                dtype=self._dtype,
-                shape=self._shape,
-                exception_cls=InternalServerError,
-            )
-        except InternalServerError as e:
-            raise_grpc_exception(e.message, context=context, exc_cls=e.__class__)
-
-        if self._packed:
-            return pb.Response(
-                output=pb.Value(
-                    raw_value=pb.Raw(
-                        metadata={"dtype": obj.dtype.name},
-                        content=obj.tobytes(order=self._bytesorder),
-                    )
-                )
-            )
-        else:
-            output: SerializeDict = {}
-            if self._bytesorder and self._bytesorder != "C":
-                logger.warning(
-                    f"'bytesorder={self._bytesorder}' is ignored when 'packed={self._packed}'."
-                )
-            # we just need a view of the array, instead of copy it to contiguous memory.
-            array = {value_key: obj.ravel().tolist()}
-            if obj.ndim != 1:
-                ndarray = {"shape": tuple(obj.shape), "array": array}
-                output["multi_dimensional_array_value"] = ndarray
-            else:
-                output["array_value"] = array
-
-            return serialize_proto(output)
-
-    def generate_protobuf(self):
-        pass
+            return Response(json.dumps(obj.tolist()), media_type=self._mime_type)
 
     @classmethod
     def from_sample(
@@ -582,3 +363,82 @@ class NumpyNdarray(
         inst.sample_input = sample_input
 
         return inst
+
+    async def from_grpc_request(
+        self, request: pb.Request, context: BentoServicerContext
+    ) -> ext.NpNDArray:
+        """
+        Process incoming protobuf request and convert it to ``numpy.ndarray``
+
+        Args:
+            request: Incoming Requests
+
+        Returns:
+            a ``numpy.ndarray`` object. This can then be used
+             inside users defined logics.
+        """
+
+        from ..utils.grpc import get_field
+        from ..utils.grpc import deserialize_proto
+        from ..utils.grpc import raise_grpc_exception
+
+        field = get_field(request, self)
+
+        try:
+            res = np.array(content, dtype=dtype)
+        except ValueError:
+            res = np.array(content)
+
+        return self._verify_ndarray(res, dtype=dtype, shape=shape)
+
+    async def to_grpc_response(
+        self, obj: ext.NpNDArray, context: BentoServicerContext
+    ) -> pb.Response:
+        """
+        Process given objects and convert it to grpc protobuf response.
+
+        Args:
+            obj: `np.ndarray` that will be serialized to protobuf
+            context: grpc.aio.ServicerContext from grpc.aio.Server
+        Returns:
+            `io_descriptor_pb2.Array`:
+                Protobuf representation of given `np.ndarray`
+        """
+        from ..utils.grpc import serialize_proto
+        from ..utils.grpc import raise_grpc_exception
+
+        _NP_TO_VALUE_MAP = {np.dtype(v): k for k, v in VALUES_TO_NP_DTYPE_MAP.items()}
+        value_key = _NP_TO_VALUE_MAP[obj.dtype]
+
+        try:
+            obj = self._verify_ndarray(
+                obj,
+                dtype=self._dtype,
+                shape=self._shape,
+                exception_cls=InternalServerError,
+            )
+        except InternalServerError as e:
+            raise_grpc_exception(e.message, context=context, exc_cls=e.__class__)
+
+        return serialize_proto(output)
+
+    def generate_protobuf(self):
+        pass
+
+
+# array_descriptor -> {"float_contents": [1, 2, 3]}
+def process_array_payload(array: ArrayPayload) -> tuple[str, ListT]:
+    # returns the array contents with whether the result is using bytes.
+    accepted_fields = list(pb.Array.DESCRIPTOR.fields_by_name)
+    if len(set(array) - set(accepted_fields)) > 0:
+        raise UnprocessableEntity("Given array has unsupported fields.")
+    if len(array) != 1:
+        raise BadInput(
+            f"Array contents can only be one of {accepted_fields} as key. Use one of {list(array)} only."
+        )
+
+    # since TypedDict returns tuple[str, object], hence the cast.
+    return t.cast(t.Tuple[str, ListT], tuple(array.items())[0])
+
+
+_ENUM_TYPES = set(pb.NDArray.DESCRIPTOR.enum_values_by_name)

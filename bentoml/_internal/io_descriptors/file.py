@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
 
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.types import BentoServicerContext
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:
@@ -36,8 +36,10 @@ else:
 
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
+OCTET_STREAM_MIMETYPE = "application/octet-stream"
 
-class File(IODescriptor[FileType], proto_fields=["raw_value"]):
+
+class File(IODescriptor[FileType], proto_field="file"):
     """
     :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -113,7 +115,7 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
     def __new__(  # pylint: disable=arguments-differ # returning subclass from new
         cls, kind: FileKind = "binaryio", mime_type: str | None = None
     ) -> File:
-        mime_type = mime_type if mime_type is not None else "application/octet-stream"
+        mime_type = mime_type if mime_type else OCTET_STREAM_MIMETYPE
 
         if kind == "binaryio":
             res = object.__new__(BytesIOFile)
@@ -146,11 +148,7 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
             content={self._mime_type: MediaType(schema=self.openapi_schema())},
         )
 
-    async def to_http_response(
-        self,
-        obj: FileType,
-        ctx: Context | None = None,
-    ):
+    async def to_http_response(self, obj: FileType, ctx: Context | None = None):
         if isinstance(obj, bytes):
             body = obj
         else:
@@ -168,11 +166,11 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
         return res
 
     async def to_grpc_response(
-        self,
-        obj: FileType,
-        context: BentoServicerContext,
+        self, obj: FileType, context: BentoServicerContext
     ) -> pb.Response:
+        from ..utils.grpc import GRPC_CONTENT_TYPE
         from ..utils.grpc import get_grpc_content_type
+        from ..utils.grpc.mapping import file_enum_from_mimetype
 
         if isinstance(obj, bytes):
             body = obj
@@ -180,16 +178,16 @@ class File(IODescriptor[FileType], proto_fields=["raw_value"]):
             body = obj.read()
 
         # the format of content-type would be application/grpc+pdf
-        content_type = get_grpc_content_type(self._mime_type.split("/")[-1])
-        context.set_trailing_metadata((("content-type", content_type),))
+        rpc_content_type = get_grpc_content_type(self._mime_type.split("/")[-1])
+        if self._mime_type != OCTET_STREAM_MIMETYPE:
+            rpc_content_type = GRPC_CONTENT_TYPE
+
+        context.set_trailing_metadata((("content-type", rpc_content_type),))
 
         return pb.Response(
-            output=pb.Value(
-                raw_value=pb.Raw(
-                    kind=self._kind,
-                    metadata={"mimetypes": self._mime_type},
-                    content=body,
-                )
+            file=pb.File(
+                kind=file_enum_from_mimetype(self._mime_type),
+                content=body,
             )
         )
 
@@ -228,22 +226,30 @@ class BytesIOFile(File):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> FileLike[bytes]:
-        from ..utils.grpc import check_field
+        from ..utils.grpc import get_field
         from ..utils.grpc import raise_grpc_exception
         from ..utils.grpc import validate_content_type
+        from ..utils.grpc.mapping import mimetype_from_file_enum
 
         if self._mime_type.startswith("multipart"):
             raise_grpc_exception(
-                "'multipart' Content-Type is not supported in gRPC.",
+                "'multipart' Content-Type is not supported for parsing files in gRPC. Use Multipart() instead.",
                 context=context,
                 exc_cls=UnprocessableEntity,
             )
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
-        # check if the request message has the correct field
-        check_field(request, self)
 
-        return FileLike[bytes](
-            io.BytesIO(request.input.raw_value.content), "<raw_value content>"
-        )
+        # check if the request message has the correct field
+        field: pb.File = get_field(request, self)
+        if field.kind:
+            mime_type = mimetype_from_file_enum(field.kind)
+            if mime_type != self._mime_type:
+                raise_grpc_exception(
+                    f"Inferred mime_type from 'kind' is '{mime_type}', while '{self.__class__.__qualname__}' is expecting '{self._mime_type}'",
+                    context=context,
+                    exc_cls=BentoMLException,
+                )
+
+        return FileLike[bytes](io.BytesIO(field.content), "<content>")

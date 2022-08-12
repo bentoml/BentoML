@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2
     from bentoml.grpc.v1 import service_pb2_grpc
+    from bentoml.grpc.types import AddServicerFn
+    from bentoml.grpc.types import ServicerClass
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
     service_pb2_grpc = LazyLoader(
@@ -42,6 +44,7 @@ class GRPCServer:
         server: aio.Server,
         on_startup: t.Sequence[t.Callable[[], t.Any]] | None = None,
         on_shutdown: t.Sequence[t.Callable[[], t.Any]] | None = None,
+        mount_servicers: t.Sequence[tuple[ServicerClass, AddServicerFn]] | None = None,
         *,
         _grace_period: int | None = None,
         _bento_servicer: service_pb2_grpc.BentoServiceServicer,
@@ -58,6 +61,7 @@ class GRPCServer:
 
         self.on_startup = [] if on_startup is None else list(on_startup)
         self.on_shutdown = [] if on_shutdown is None else list(on_shutdown)
+        self.mount_servicers = [] if mount_servicers is None else list(mount_servicers)
 
     @cached_property
     def _loop(self) -> asyncio.AbstractEventLoop:
@@ -104,6 +108,11 @@ class GRPCServer:
             self._bento_servicer, self.server  # type: ignore (unfinished async types)
         )
         health_pb2_grpc.add_HealthServicer_to_server(self._health_servicer, self.server)
+
+        # register custom servicer
+        for servicer, add_servicer_fn in self.mount_servicers:
+            # TODO: Annotated types are not contravariant
+            add_servicer_fn(servicer(), self.server)
 
         services = tuple(
             service.full_name

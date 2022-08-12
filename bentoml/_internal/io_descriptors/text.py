@@ -20,16 +20,16 @@ from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
 
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.types import BentoServicerContext
 else:
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
+class Text(IODescriptor[str], proto_field="text"):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -142,11 +142,11 @@ class Text(IODescriptor[str], proto_fields=["string_value", "raw_value"]):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> str:
-        from ..utils.grpc import check_field
+        from ..utils.grpc import get_field
         from ..utils.grpc import deserialize_proto
         from ..utils.grpc import raise_grpc_exception
 
-        field = check_field(request, self)
+        field = get_field(request, self)
 
         deserialized = deserialize_proto(request)[field]
 

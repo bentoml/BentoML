@@ -11,8 +11,8 @@ import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
+import bentoml
 from bentoml.exceptions import BadInput
-from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
 
 from .base import IODescriptor
@@ -30,43 +30,15 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     from types import UnionType
 
-    import numpy as np
     import pydantic
     import pydantic.schema as schema
 
+    import bentoml.io
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
-    from ..server.grpc.types import BentoServicerContext
-
-    class RawPayload(t.TypedDict, total=False):
-        kind: str
-        metadata: t.Dict[str, str]
-        content: bytes
-
-    class ArrayPayload(t.TypedDict, total=False):
-        bool_values: t.List[bool]
-        float_values: t.List[float]
-        string_values: t.List[str]
-        double_values: t.List[float]
-        int_values: t.List[int]
-        long_values: t.List[int]
-        uint32_values: t.List[int]
-        uint64_values: t.List[int]
-
-    class NDArrayPayload(t.TypedDict, total=False):
-        shape: int
-        array: ArrayPayload
-
-    class MapPayload(t.TypedDict):
-        fields: dict[str, ValuePayload]
-
-    class ValuePayload(t.TypedDict, total=False):
-        string_value: str
-        raw_value: RawPayload
-        array_value: ArrayPayload
-        map_value: MapPayload
 
 else:
     _exc_msg = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install pydantic'."
@@ -77,13 +49,12 @@ else:
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
     # lazy load numpy for processing ndarray.
     np = LazyLoader("np", globals(), "numpy")
+    bentoml.io = LazyLoader("bentoml.io", globals(), "bentoml.io")
 
 
 ListT = t.List[t.Union[int, bool, float, str]]
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
-
-MIME_TYPE_JSON = "application/json"
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +84,7 @@ class DefaultJsonEncoder(json.JSONEncoder):
     multi_dimensional_array_value: NDArrayPayload
 
 
-class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
+class JSON(IODescriptor[JSONType], proto_field="json"):
     """
     :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
@@ -211,8 +182,6 @@ class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
     Returns:
         :obj:`JSON`: IO Descriptor that represents JSON format.
     """
-
-    _mime_type: str = MIME_TYPE_JSON
 
     def __init__(
         self,
@@ -318,14 +287,14 @@ class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
         if ctx is not None:
             res = Response(
                 json_str,
-                media_type=MIME_TYPE_JSON,
+                media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json_str, media_type=MIME_TYPE_JSON)
+            return Response(json_str, media_type=self._mime_type)
 
     def generate_protobuf(self):
         pass
@@ -333,11 +302,11 @@ class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> JSONType | pydantic.BaseModel:
-        from ..utils.grpc import check_field
+        from ..utils.grpc import get_field
         from ..utils.grpc import deserialize_proto
         from ..utils.grpc import raise_grpc_exception
 
-        field = check_field(request, self)
+        field = get_field(request, self)
 
         if self._packed:
             if field != "raw_value":
@@ -376,12 +345,10 @@ class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
 
         deserialized = deserialize_proto(request)[field]["fields"]
         iterator = ((k, v) for k, v in deserialized.items())
-        print([(k, v) for k, v in iterator])
 
         with ThreadPoolExecutor(max_workers=self._chunk_workers) as executor:
             json_obj = list(executor.map(process_payload, iterator))
             json_obj = {k: v for k, v in json_obj}
-        print(json_obj)
 
         if self._pydantic_model:
             try:
@@ -398,7 +365,6 @@ class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
     async def to_grpc_response(
         self, obj: JSONType | pydantic.BaseModel, context: BentoServicerContext
     ) -> pb.Response:
-        from ..utils.grpc import serialize_proto
         from ..utils.grpc import raise_grpc_exception
 
         json_str = None
@@ -428,64 +394,9 @@ class JSON(IODescriptor[JSONType], proto_fields=["map_value", "raw_value"]):
             )
 
 
-def process_payload(iterator: tuple[str, ValuePayload]) -> tuple[str, t.Any]:
-    key, payload = iterator
-
-    if len(payload) > 1:
-        raise BadInput("Only oneOf 'service_pb2.Value' is allowed.")
-
-    # We include TYPE_CHECKING logic here since
-    # 'elif' check already ensure the value to be not None.
-    if payload.get("string_value"):
-        res = payload.get("string_value")
-    elif payload.get("raw_value"):
-        raw = payload.get("raw_value")
-        if TYPE_CHECKING:
-            assert raw
-        res = process_raw_payload(raw)
-    elif payload.get("array_value"):
-        arr = payload.get("array_value")
-        if TYPE_CHECKING:
-            assert arr
-        # we only care about the array itself here.
-        res = process_array_payload(arr)[1]
-    elif payload.get("multi_dimensional_array_value"):
-        ndarr = payload.get("multi_dimensional_array_value")
-        if TYPE_CHECKING:
-            assert ndarr
-        res = process_multi_dimensional_array_payload(ndarr)
-    elif payload.get("map_value"):
-        mval = payload.get("map_value")
-        if TYPE_CHECKING:
-            assert mval
-        res = process_map_payload(mval)
-    else:
-        raise BentoMLException("Invalid payload.")
-    return key, res
-
-
-def process_raw_payload(payload: RawPayload):
-    ...
-
-
-def process_map_payload(payload: MapPayload):
-    ...
-
-
-def process_multi_dimensional_array_payload(payload: NDArrayPayload):
-    ...
-
-
-# array_descriptor -> {"float_contents": [1, 2, 3]}
-def process_array_payload(array: ArrayPayload) -> tuple[str, ListT]:
-    # returns the array contents with whether the result is using bytes.
-    accepted_fields = list(pb.Array.DESCRIPTOR.fields_by_name)
-    if len(set(array) - set(accepted_fields)) > 0:
-        raise UnprocessableEntity("Given array has unsupported fields.")
-    if len(array) != 1:
-        raise BadInput(
-            f"Array contents can only be one of {accepted_fields} as key. Use one of {list(array)} only."
-        )
-
-    # since TypedDict returns tuple[str, object], hence the cast.
-    return t.cast(t.Tuple[str, ListT], tuple(array.items())[0])
+_WIRE_TYPES_TO_DESCRIPTOR = {
+    ("TYPE_FLAT", "TYPE_NDARRAY", "TYPE_DENSE", "TYPE_SPARSE"): "NumpyNdarray",
+    ("TYPE_BYTES", "TYPE_CSV", "TYPE_PLAINTEXT", "TYPE_JSON", "TYPE_PARQUET"): "File",
+    ("TYPE_PNG", "TYPE_JPEG", "TYPE_GIF", "TYPE_BMP"): "Image",
+    ("TYPE_STRING",): "Text",
+}

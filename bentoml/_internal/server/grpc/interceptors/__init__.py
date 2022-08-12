@@ -12,12 +12,12 @@ from ....utils.grpc import get_grpc_content_type
 
 if TYPE_CHECKING:
 
-    from ..types import Request
-    from ..types import Response
-    from ..types import RpcMethodHandler
-    from ..types import AsyncHandlerMethod
-    from ..types import HandlerCallDetails
-    from ..types import BentoServicerContext
+    from bentoml.grpc.types import Request
+    from bentoml.grpc.types import Response
+    from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import HandlerCallDetails
+    from bentoml.grpc.types import BentoServicerContext
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 
@@ -71,4 +71,4 @@ class GenericHeadersServerInterceptor(aio.ServerInterceptor):
 
             return new_behaviour
 
-        return wrap_rpc_handler(wrapper, handler)
+        return t.cast("RpcMethodHandler", wrap_rpc_handler(wrapper, handler))

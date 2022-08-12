@@ -68,7 +68,7 @@ def main(
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
 
-        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml_cli.utils import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
         from bentoml._internal.utils.circus import create_circus_socket_from_uri
 

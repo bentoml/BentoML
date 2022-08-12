@@ -92,14 +92,13 @@ class Text(IODescriptor[str], proto_field="text"):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    def __init__(self, *args: t.Any, packed: bool = False, **kwargs: t.Any):
+    def __init__(self, *args: t.Any, **kwargs: t.Any):
         if args or kwargs:
             raise BentoMLException(
                 "'Text' is not designed to take any args or kwargs during initialization."
             )
 
         self._mime_type = MIME_TYPE
-        self._packed = packed
 
     def input_type(self) -> t.Type[str]:
         return str
@@ -122,6 +121,10 @@ class Text(IODescriptor[str], proto_field="text"):
             content={self._mime_type: MediaType(schema=self.openapi_schema())},
         )
 
+    @property
+    def grpc_content_type(self) -> str:
+        return "application/grpc+proto"
+
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()
         return str(obj.decode("utf-8"))
@@ -142,48 +145,30 @@ class Text(IODescriptor[str], proto_field="text"):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> str:
+        import ast
+
         from ..utils.grpc import get_field
-        from ..utils.grpc import deserialize_proto
-        from ..utils.grpc import raise_grpc_exception
+        from ..utils.grpc import validate_content_type
 
-        field = get_field(request, self)
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
 
-        deserialized = deserialize_proto(request)[field]
+        field = ast.literal_eval(get_field(request, self))
 
-        if self._packed and field != "raw_value":
-            raise_grpc_exception(
-                f"'packed={self._packed}' only accepts 'raw_value'.",
-                context=context,
-                exc_cls=BadInput,
-            )
+        try:
+            return bytes(field, "ascii").decode("utf-8")
+        except TypeError:
+            import base64
 
-        if field == "string_value":
-            return str(deserialized)
-
-        # { 'content': b'string_content' }
-        if "content" not in deserialized:
-            raise_grpc_exception(
-                "'content' cannot be None.", context=context, exc_cls=BentoMLException
-            )
-
-        value = deserialized["content"]
-        return value.decode("utf-8")
+            return base64.b64decode(field).decode("utf-8")
 
     async def to_grpc_response(
         self, obj: str, context: BentoServicerContext
     ) -> pb.Response:
-        from ..utils.grpc import get_grpc_content_type
 
-        context.set_trailing_metadata(
-            (("content-type", get_grpc_content_type(message_format="text")),)
-        )
+        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
 
-        if self._packed:
-            return pb.Response(
-                output=pb.Value(raw_value=pb.Raw(content=obj.encode("utf-8")))
-            )
-
-        return pb.Response(output=pb.Value(string_value=obj))
+        return pb.Response(text=obj)
 
     def generate_protobuf(self):
         pass

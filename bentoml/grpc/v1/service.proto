@@ -53,7 +53,7 @@ message Request {
   File file = 6;
 
   // Text represents a string inputs.
-  string text = 7;
+  optional string text = 7;
 
   // JSON is represented by using google.protobuf.Value.
   // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
@@ -87,7 +87,7 @@ message Response {
   File file = 2;
 
   // Text represents a string inputs.
-  string text = 6;
+  optional string text = 6;
 
   // JSON is represented by using google.protobuf.Value.
   // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto

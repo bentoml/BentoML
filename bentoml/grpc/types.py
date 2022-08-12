@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any
     from typing import Type
-    from typing import Union
     from typing import Literal
     from typing import TypeVar
     from typing import Callable
@@ -86,9 +85,9 @@ if TYPE_CHECKING:
 
     ProtoField = Literal["dataframe", "file", "json", "ndarray", "series"]
 
-    ProtoFieldT = TypeVar("ProtoFieldT")
+    ProtoType = TypeVar("ProtoType")
     MessageType = Annotated[
-        ProtoFieldT, str, NDArray, DataFrame, Series, File, dict[str, Part]
+        ProtoType, str, NDArray, DataFrame, Series, File, dict[str, Part]
     ]
 
     __all__ = [

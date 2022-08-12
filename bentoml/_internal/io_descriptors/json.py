@@ -52,8 +52,6 @@ else:
     bentoml.io = LazyLoader("bentoml.io", globals(), "bentoml.io")
 
 
-ListT = t.List[t.Union[int, bool, float, str]]
-
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
 
 logger = logging.getLogger(__name__)
@@ -80,8 +78,6 @@ class DefaultJsonEncoder(json.JSONEncoder):
             return bentoml_cattr.unstructure(o)
 
         return super().default(o)
-
-    multi_dimensional_array_value: NDArrayPayload
 
 
 class JSON(IODescriptor[JSONType], proto_field="json"):
@@ -189,7 +185,6 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
         pydantic_model: t.Type[pydantic.BaseModel] | None = None,
         validate_json: bool | None = None,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
-        packed: bool = False,
         _chunk_workers: int = 10,
     ):
         if pydantic_model:
@@ -200,7 +195,6 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
 
-        self._packed = packed
         self._chunk_workers = _chunk_workers
 
         # Remove validate_json in version 1.0.2
@@ -302,53 +296,18 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> JSONType | pydantic.BaseModel:
+        from google.protobuf.json_format import MessageToDict
+
         from ..utils.grpc import get_field
-        from ..utils.grpc import deserialize_proto
         from ..utils.grpc import raise_grpc_exception
+        from ..utils.grpc import validate_content_type
 
-        field = get_field(request, self)
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
 
-        if self._packed:
-            if field != "raw_value":
-                raise_grpc_exception(
-                    f"'packed={self._packed}' requires to use 'raw_value' instead of {field}.",
-                    context=context,
-                    exc_cls=UnprocessableEntity,
-                )
-
-            raw = request.input.raw_value
-
-            if self._pydantic_model:
-                try:
-                    return self._pydantic_model.parse_raw(raw.content)
-                except pydantic.ValidationError as e:
-                    raise_grpc_exception(
-                        f"Invalid JSON input received: {e}",
-                        context=context,
-                        exc_cls=UnprocessableEntity,
-                    )
-            try:
-                return json.loads(raw.content)
-            except json.JSONDecodeError as e:
-                raise_grpc_exception(
-                    f"Invalid JSON input received: {e}",
-                    context=context,
-                    exc_cls=BadInput,
-                )
-
-        if field == "raw_value":
-            raise_grpc_exception(
-                "'raw_value' requires 'packed=True'.",
-                context=context,
-                exc_cls=UnprocessableEntity,
-            )
-
-        deserialized = deserialize_proto(request)[field]["fields"]
-        iterator = ((k, v) for k, v in deserialized.items())
-
-        with ThreadPoolExecutor(max_workers=self._chunk_workers) as executor:
-            json_obj = list(executor.map(process_payload, iterator))
-            json_obj = {k: v for k, v in json_obj}
+        json_obj = MessageToDict(
+            get_field(request, self), preserving_proto_field_name=True
+        )
 
         if self._pydantic_model:
             try:
@@ -365,9 +324,10 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
     async def to_grpc_response(
         self, obj: JSONType | pydantic.BaseModel, context: BentoServicerContext
     ) -> pb.Response:
-        from ..utils.grpc import raise_grpc_exception
+        from google.protobuf.struct_pb2 import Value
+        from google.protobuf.json_format import Parse
 
-        json_str = None
+        from ..utils.grpc import raise_grpc_exception
 
         # use pydantic model for validation.
         if self._pydantic_model:
@@ -393,10 +353,6 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
                 separators=(",", ":"),
             )
 
+            return pb.Response(json=Parse(json_str, Value()))
 
-_WIRE_TYPES_TO_DESCRIPTOR = {
-    ("TYPE_FLAT", "TYPE_NDARRAY", "TYPE_DENSE", "TYPE_SPARSE"): "NumpyNdarray",
-    ("TYPE_BYTES", "TYPE_CSV", "TYPE_PLAINTEXT", "TYPE_JSON", "TYPE_PARQUET"): "File",
-    ("TYPE_PNG", "TYPE_JPEG", "TYPE_GIF", "TYPE_BMP"): "Image",
-    ("TYPE_STRING",): "Text",
-}
+        return pb.Response(json=Value())

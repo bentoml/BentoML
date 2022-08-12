@@ -5,15 +5,44 @@ For all function in this module, make sure to lazy load the generated protobuf.
 """
 from __future__ import annotations
 
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
 from ..lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
+    from enum import Enum
+
+    import grpc
+
     from bentoml.grpc.v1 import service_pb2 as pb
 else:
+    grpc = LazyLoader(
+        "grpc",
+        globals(),
+        "grpc",
+        exc_msg="'grpc' is required. Install with 'pip install grpcio'.",
+    )
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
+
+
+# Maps HTTP status code to grpc.StatusCode
+@lru_cache(maxsize=1)
+def status_code_mapping() -> dict[Enum, grpc.StatusCode]:
+    return {
+        HTTPStatus.OK: grpc.StatusCode.OK,
+        HTTPStatus.UNAUTHORIZED: grpc.StatusCode.UNAUTHENTICATED,
+        HTTPStatus.FORBIDDEN: grpc.StatusCode.PERMISSION_DENIED,
+        HTTPStatus.NOT_FOUND: grpc.StatusCode.UNIMPLEMENTED,
+        HTTPStatus.TOO_MANY_REQUESTS: grpc.StatusCode.UNAVAILABLE,
+        HTTPStatus.BAD_GATEWAY: grpc.StatusCode.UNAVAILABLE,
+        HTTPStatus.SERVICE_UNAVAILABLE: grpc.StatusCode.UNAVAILABLE,
+        HTTPStatus.GATEWAY_TIMEOUT: grpc.StatusCode.DEADLINE_EXCEEDED,
+        HTTPStatus.BAD_REQUEST: grpc.StatusCode.INVALID_ARGUMENT,
+        HTTPStatus.INTERNAL_SERVER_ERROR: grpc.StatusCode.INTERNAL,
+        HTTPStatus.UNPROCESSABLE_ENTITY: grpc.StatusCode.FAILED_PRECONDITION,
+    }
 
 
 @lru_cache(maxsize=1)

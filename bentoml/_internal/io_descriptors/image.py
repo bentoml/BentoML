@@ -50,7 +50,7 @@ else:
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
 #  that enable a new way to type hint an ndarray.
-ImageType: t.TypeAlias = t.Union["PIL.Image.Image", "ext.NpNDArray"]
+ImageType = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 
 DEFAULT_PIL_MODE = "RGB"
 
@@ -250,25 +250,49 @@ class Image(IODescriptor[ImageType], proto_field="file"):
         from ..utils.grpc import get_field
         from ..utils.grpc import raise_grpc_exception
         from ..utils.grpc import validate_content_type
+        from ..utils.grpc.mapping import file_enum_mapping
+        from ..utils.grpc.mapping import mimetype_from_file_enum
 
         if self._mime_type.startswith("multipart"):
             raise_grpc_exception(
-                "'multipart' Content-Type is not supported in gRPC.",
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
                 context=context,
                 exc_cls=UnprocessableEntity,
             )
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
-        # check if the request message has the correct field
-        get_field(request, self)
 
-        return PIL.Image.open(io.BytesIO(request.input.raw_value.content))
+        # check if the request message has the correct field
+        field = get_field(request, self)
+        if field.kind:
+            try:
+                mime_type = mimetype_from_file_enum(field.kind)
+                if mime_type != self._mime_type:
+                    raise_grpc_exception(
+                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                        context=context,
+                    )
+            except KeyError:
+                raise_grpc_exception(
+                    f"{field.kind} is not a valid File kind. Accepted file kind: {set(file_enum_mapping())}",
+                    context=context,
+                )
+
+        return PIL.Image.open(io.BytesIO(field.content))
 
     async def to_grpc_response(
         self, obj: ImageType, context: BentoServicerContext
     ) -> pb.Response:
         from ..utils.grpc import raise_grpc_exception
+        from ..utils.grpc.mapping import file_enum_from_mimetype
+
+        if self._mime_type.startswith("multipart"):
+            raise_grpc_exception(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
+                context=context,
+                exc_cls=UnprocessableEntity,
+            )
 
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
@@ -283,18 +307,17 @@ class Image(IODescriptor[ImageType], proto_field="file"):
         ret = io.BytesIO()
         image.save(ret, format=self._format)
 
-        return pb.Response(
-            output=pb.Value(
-                raw_value=pb.Raw(
-                    metadata={
-                        "mimetypes": self._mime_type,
-                        "pilmode": self._pilmode or "",
-                        "format": self._format,
-                    },
-                    content=ret.getvalue(),
-                )
+        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
+
+        try:
+            kind = file_enum_from_mimetype(self._mime_type)
+        except KeyError:
+            raise_grpc_exception(
+                f"{self._mime_type} doesn't have a corresponding File 'kind'",
+                context=context,
             )
-        )
+
+        return pb.Response(file=pb.File(kind=kind, content=ret.getvalue()))
 
     def generate_protobuf(self):
         pass

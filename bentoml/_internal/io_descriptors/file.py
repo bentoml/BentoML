@@ -36,8 +36,6 @@ else:
 
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
-OCTET_STREAM_MIMETYPE = "application/octet-stream"
-
 
 class File(IODescriptor[FileType], proto_field="file"):
     """
@@ -115,7 +113,7 @@ class File(IODescriptor[FileType], proto_field="file"):
     def __new__(  # pylint: disable=arguments-differ # returning subclass from new
         cls, kind: FileKind = "binaryio", mime_type: str | None = None
     ) -> File:
-        mime_type = mime_type if mime_type else OCTET_STREAM_MIMETYPE
+        mime_type = mime_type if mime_type else "application/octet-stream"
 
         if kind == "binaryio":
             res = object.__new__(BytesIOFile)
@@ -168,28 +166,32 @@ class File(IODescriptor[FileType], proto_field="file"):
     async def to_grpc_response(
         self, obj: FileType, context: BentoServicerContext
     ) -> pb.Response:
-        from ..utils.grpc import GRPC_CONTENT_TYPE
-        from ..utils.grpc import get_grpc_content_type
+        from ..utils.grpc import raise_grpc_exception
         from ..utils.grpc.mapping import file_enum_from_mimetype
+
+        if self._mime_type.startswith("multipart"):
+            raise_grpc_exception(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
+                context=context,
+                exc_cls=UnprocessableEntity,
+            )
 
         if isinstance(obj, bytes):
             body = obj
         else:
             body = obj.read()
 
-        # the format of content-type would be application/grpc+pdf
-        rpc_content_type = get_grpc_content_type(self._mime_type.split("/")[-1])
-        if self._mime_type != OCTET_STREAM_MIMETYPE:
-            rpc_content_type = GRPC_CONTENT_TYPE
+        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
 
-        context.set_trailing_metadata((("content-type", rpc_content_type),))
-
-        return pb.Response(
-            file=pb.File(
-                kind=file_enum_from_mimetype(self._mime_type),
-                content=body,
+        try:
+            kind = file_enum_from_mimetype(self._mime_type)
+        except KeyError:
+            raise_grpc_exception(
+                f"{self._mime_type} doesn't have a corresponding File 'kind'",
+                context=context,
             )
-        )
+
+        return pb.Response(file=pb.File(kind=kind, content=body))
 
     def generate_protobuf(self):
         pass
@@ -229,11 +231,12 @@ class BytesIOFile(File):
         from ..utils.grpc import get_field
         from ..utils.grpc import raise_grpc_exception
         from ..utils.grpc import validate_content_type
+        from ..utils.grpc.mapping import file_enum_mapping
         from ..utils.grpc.mapping import mimetype_from_file_enum
 
         if self._mime_type.startswith("multipart"):
             raise_grpc_exception(
-                "'multipart' Content-Type is not supported for parsing files in gRPC. Use Multipart() instead.",
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
                 context=context,
                 exc_cls=UnprocessableEntity,
             )
@@ -242,14 +245,19 @@ class BytesIOFile(File):
         validate_content_type(context, self)
 
         # check if the request message has the correct field
-        field: pb.File = get_field(request, self)
+        field = get_field(request, self)
         if field.kind:
-            mime_type = mimetype_from_file_enum(field.kind)
-            if mime_type != self._mime_type:
+            try:
+                mime_type = mimetype_from_file_enum(field.kind)
+                if mime_type != self._mime_type:
+                    raise_grpc_exception(
+                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                        context=context,
+                    )
+            except KeyError:
                 raise_grpc_exception(
-                    f"Inferred mime_type from 'kind' is '{mime_type}', while '{self.__class__.__qualname__}' is expecting '{self._mime_type}'",
+                    f"{field.kind} is not a valid File kind. Accepted file kind: {set(file_enum_mapping())}",
                     context=context,
-                    exc_cls=BentoMLException,
                 )
 
         return FileLike[bytes](io.BytesIO(field.content), "<content>")

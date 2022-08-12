@@ -4,36 +4,49 @@ import enum
 import typing as t
 import logging
 from http import HTTPStatus
+from typing import overload
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
-
-import grpc
 
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
 
+from .mapping import status_code_mapping
 from ..lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
+    import grpc
+    from grpc import aio
+    from grpc.aio._typing import MetadatumType
+    from google.protobuf.struct_pb2 import Value
 
+    from bentoml.io import File
+    from bentoml.io import JSON
+    from bentoml.io import Text
+    from bentoml.io import Image
+    from bentoml.io import Multipart
     from bentoml.io import IODescriptor
+    from bentoml.io import NumpyNdarray
+    from bentoml.io import PandasSeries
+    from bentoml.io import PandasDataFrame
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.types import MessageType
     from bentoml.grpc.types import RpcMethodHandler
     from bentoml.grpc.types import BentoServicerContext
 else:
+    exc_msg = "'grpc' is required. Install with 'pip install grpcio'."
+    grpc = LazyLoader("grpc", globals(), "grpc", exc_msg=exc_msg)
+    aio = LazyLoader("aio", globals(), "grpc.aio", exc_msg=exc_msg)
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 __all__ = [
     "grpc_status_code",
     "parse_method_name",
-    "deserialize_proto",
     "to_http_status",
     "get_field",
     "serialize_proto",
     "raise_grpc_exception",
-    "get_grpc_content_type",
     "GRPC_CONTENT_TYPE",
     "validate_content_type",
     "VALUES_TO_NP_DTYPE_MAP",
@@ -70,11 +83,14 @@ VALUES_TO_NP_DTYPE_MAP = {
 def validate_content_type(
     context: BentoServicerContext, descriptor: IODescriptor[t.Any]
 ) -> None:
-    metadata = context.invocation_metadata()
+    """
+    Validate 'content-type' from invocation metadata.
+    """
+    metadata = t.cast("tuple[MetadatumType] | None", context.invocation_metadata())
     if metadata:
-        maybe_content_type = metadata.get_all("content-type")
+        metas = aio.Metadata.from_tuple(metadata)
+        maybe_content_type = metas.get_all("content-type")
         if maybe_content_type:
-            maybe_content_type = list(map(str, maybe_content_type))
             if len(maybe_content_type) > 1:
                 raise_grpc_exception(
                     f"{maybe_content_type} should only contain one 'Content-Type' headers.",
@@ -82,10 +98,7 @@ def validate_content_type(
                     exc_cls=InvalidArgument,
                 )
 
-            content_type = maybe_content_type[0]
-            rpc_content_type = (
-                f"{GRPC_CONTENT_TYPE}+{descriptor.mimetype.split('/')[-1]}"
-            )
+            content_type = str(maybe_content_type[0])
 
             if not content_type.startswith(GRPC_CONTENT_TYPE):
                 raise_grpc_exception(
@@ -93,73 +106,91 @@ def validate_content_type(
                     context=context,
                     exc_cls=InvalidArgument,
                 )
-            if content_type != rpc_content_type:
+            if content_type != descriptor.grpc_content_type:
                 raise_grpc_exception(
-                    f"{descriptor.__class__.__name__} sets Content-Type '{rpc_content_type}', got {content_type} instead",
+                    f"'{content_type}' is found while '{repr(descriptor)}' requires '{descriptor.grpc_content_type}'.",
                     context=context,
-                    exc_cls=BentoMLException,
+                    exc_cls=InvalidArgument,
                 )
 
 
-def get_grpc_content_type(message_format: str | None = None) -> str:
-    return f"{GRPC_CONTENT_TYPE}" + f"+{message_format}" if message_format else ""
+@overload
+def get_field(req: pb.Request, descriptor: File) -> MessageType[pb.File]:
+    ...
+
+
+@overload
+def get_field(req: pb.Request, descriptor: Image) -> MessageType[pb.File]:
+    ...
+
+
+@overload
+def get_field(req: pb.Request, descriptor: JSON) -> MessageType[Value]:
+    ...
+
+
+@overload
+def get_field(
+    req: pb.Request, descriptor: Multipart
+) -> MessageType[dict[str, pb.Part]]:
+    ...
+
+
+@overload
+def get_field(req: pb.Request, descriptor: NumpyNdarray) -> MessageType[pb.NDArray]:
+    ...
+
+
+@overload
+def get_field(
+    req: pb.Request, descriptor: PandasDataFrame
+) -> MessageType[pb.DataFrame]:
+    ...
+
+
+@overload
+def get_field(req: pb.Request, descriptor: PandasSeries) -> MessageType[pb.Series]:
+    ...
+
+
+@overload
+def get_field(req: pb.Request, descriptor: Text) -> MessageType[str]:
+    ...
 
 
 def get_field(req: pb.Request, descriptor: IODescriptor[t.Any]) -> MessageType[t.Any]:
-    if not req.HasField(descriptor.proto_field):
+    try:
+        _ = req.HasField(descriptor.proto_field)
+    except KeyError as e:
         raise UnprocessableEntity(
-            f"Missing required '{descriptor.proto_field}' for {descriptor.__class__.__name__}."
-        )
+            f"Missing required '{descriptor.proto_field}' for {descriptor.__class__.__name__}.: {str(e)}"
+        ) from e
     return getattr(req, descriptor.proto_field)
 
 
-def deserialize_proto(req: pb.Request, **kwargs: t.Any) -> DeserializeDict:
-    # Deserialize a pb.Request to dict.
-    from google.protobuf.json_format import MessageToDict
-
-    if "preserving_proto_field_name" not in kwargs:
-        kwargs.setdefault("preserving_proto_field_name", True)
-
-    return t.cast("DeserializeDict", MessageToDict(req.input, **kwargs))
-
-
-def serialize_proto(output: SerializeDict, **kwargs: t.Any) -> pb.Response:
+def serialize_proto(output: dict[str, t.Any], **kwargs: t.Any) -> pb.Response:
     from google.protobuf.json_format import ParseDict
 
-    return ParseDict({"output": output}, pb.Response(), **kwargs)
+    return ParseDict(output, pb.Response(), **kwargs)
 
 
 def raise_grpc_exception(
-    msg: str, context: BentoServicerContext, exc_cls: t.Type[BentoMLException]
+    msg: str,
+    context: BentoServicerContext,
+    exc_cls: t.Type[BentoMLException] = BentoMLException,
 ):
     context.set_code(
-        _STATUS_CODE_MAPPING.get(exc_cls.error_code, grpc.StatusCode.UNKNOWN)
+        status_code_mapping().get(exc_cls.error_code, grpc.StatusCode.UNKNOWN)
     )
     context.set_details(msg)
     raise exc_cls(msg)
-
-
-# Maps HTTP status code to grpc.StatusCode
-_STATUS_CODE_MAPPING = {
-    HTTPStatus.OK: grpc.StatusCode.OK,
-    HTTPStatus.UNAUTHORIZED: grpc.StatusCode.UNAUTHENTICATED,
-    HTTPStatus.FORBIDDEN: grpc.StatusCode.PERMISSION_DENIED,
-    HTTPStatus.NOT_FOUND: grpc.StatusCode.UNIMPLEMENTED,
-    HTTPStatus.TOO_MANY_REQUESTS: grpc.StatusCode.UNAVAILABLE,
-    HTTPStatus.BAD_GATEWAY: grpc.StatusCode.UNAVAILABLE,
-    HTTPStatus.SERVICE_UNAVAILABLE: grpc.StatusCode.UNAVAILABLE,
-    HTTPStatus.GATEWAY_TIMEOUT: grpc.StatusCode.DEADLINE_EXCEEDED,
-    HTTPStatus.BAD_REQUEST: grpc.StatusCode.INVALID_ARGUMENT,
-    HTTPStatus.INTERNAL_SERVER_ERROR: grpc.StatusCode.INTERNAL,
-    HTTPStatus.UNPROCESSABLE_ENTITY: grpc.StatusCode.FAILED_PRECONDITION,
-}
 
 
 def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:
     """
     Convert BentoMLException.error_code to grpc.StatusCode.
     """
-    return _STATUS_CODE_MAPPING.get(err.error_code, grpc.StatusCode.UNKNOWN)
+    return status_code_mapping().get(err.error_code, grpc.StatusCode.UNKNOWN)
 
 
 def to_http_status(status_code: grpc.StatusCode) -> int:
@@ -167,7 +198,7 @@ def to_http_status(status_code: grpc.StatusCode) -> int:
     Convert grpc.StatusCode to HTTPStatus.
     """
     try:
-        status = {v: k for k, v in _STATUS_CODE_MAPPING.items()}[status_code]
+        status = {v: k for k, v in status_code_mapping().items()}[status_code]
     except KeyError:
         status = HTTPStatus.INTERNAL_SERVER_ERROR
 
@@ -225,7 +256,7 @@ def wrap_rpc_handler(
 
     # The reason we are using TYPE_CHECKING for assert here
     # is that if the following bool request_streaming and response_streaming
-    # are set, then it is guaranteed that RpcMethodHandler are not None.
+    # are set, then it is guaranteed that one of the RpcMethodHandler are not None.
     if not handler.request_streaming and not handler.response_streaming:
         if TYPE_CHECKING:
             assert handler.unary_unary

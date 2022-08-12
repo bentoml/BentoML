@@ -377,12 +377,15 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
             a ``numpy.ndarray`` object. This can then be used
              inside users defined logics.
         """
-
         from ..utils.grpc import get_field
-        from ..utils.grpc import deserialize_proto
         from ..utils.grpc import raise_grpc_exception
+        from ..utils.grpc import validate_content_type
+
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
 
         field = get_field(request, self)
+        print(field)
 
         try:
             res = np.array(content, dtype=dtype)
@@ -427,18 +430,18 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
 
 
 # array_descriptor -> {"float_contents": [1, 2, 3]}
-def process_array_payload(array: ArrayPayload) -> tuple[str, ListT]:
-    # returns the array contents with whether the result is using bytes.
-    accepted_fields = list(pb.Array.DESCRIPTOR.fields_by_name)
-    if len(set(array) - set(accepted_fields)) > 0:
-        raise UnprocessableEntity("Given array has unsupported fields.")
-    if len(array) != 1:
-        raise BadInput(
-            f"Array contents can only be one of {accepted_fields} as key. Use one of {list(array)} only."
-        )
+# def process_array_payload(array: ArrayPayload) -> tuple[str, ListT]:
+#     # returns the array contents with whether the result is using bytes.
+#     accepted_fields = list(pb.Array.DESCRIPTOR.fields_by_name)
+#     if len(set(array) - set(accepted_fields)) > 0:
+#         raise UnprocessableEntity("Given array has unsupported fields.")
+#     if len(array) != 1:
+#         raise BadInput(
+#             f"Array contents can only be one of {accepted_fields} as key. Use one of {list(array)} only."
+#         )
 
-    # since TypedDict returns tuple[str, object], hence the cast.
-    return t.cast(t.Tuple[str, ListT], tuple(array.items())[0])
+#     # since TypedDict returns tuple[str, object], hence the cast.
+#     return t.cast(t.Tuple[str, ListT], tuple(array.items())[0])
 
 
-_ENUM_TYPES = set(pb.NDArray.DESCRIPTOR.enum_values_by_name)
+# _ENUM_TYPES = set(pb.NDArray.DESCRIPTOR.enum_values_by_name)

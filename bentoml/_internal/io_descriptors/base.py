@@ -93,11 +93,11 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
         return t.cast("ProtoField", self._proto_field)
 
     @property
-    def mimetype(self):
-        """
-        Returns the mime type of the IODescriptor.
-        """
-        return self._mime_type
+    def grpc_content_type(self) -> str:
+        rpc_content_type = "application/grpc"
+        if self._mime_type == "application/octet-stream":
+            return rpc_content_type
+        return f"{rpc_content_type}+{self._mime_type.split('/')[-1]}"
 
     @abstractmethod
     def input_type(self) -> InputType:

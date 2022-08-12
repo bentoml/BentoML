@@ -137,8 +137,9 @@ class Bento(StoreItem):
     ) -> Bento:
         from ..service.loader import import_service
 
+        cwd = os.getcwd()
         build_ctx = (
-            os.getcwd()
+            cwd
             if build_ctx is None
             else os.path.realpath(os.path.expanduser(build_ctx))
         )
@@ -244,6 +245,8 @@ class Bento(StoreItem):
         )
         # Create bento.yaml
         res.flush_info()
+        # Return cwd
+        os.path.expanduser(cwd)
 
         return res
 

@@ -63,10 +63,10 @@ class DefaultStrategy(Strategy):
         nvidia_gpus = get_resource(resource_request, "nvidia.com/gpu")
         if (
             nvidia_gpus is not None
-            and nvidia_gpus > 0
+            and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            return math.ceil(nvidia_gpus)
+            return len(nvidia_gpus)
 
         # use CPU
         cpus = get_resource(resource_request, "cpu")
@@ -101,10 +101,10 @@ class DefaultStrategy(Strategy):
         nvidia_gpus = get_resource(resource_request, "nvidia.com/gpu")
         if (
             nvidia_gpus is not None
-            and nvidia_gpus > 0
+            and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(worker_index - 1)
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(nvidia_gpus[worker_index - 1])
             logger.info(
                 "Setting up worker: set CUDA_VISIBLE_DEVICES to %s",
                 worker_index - 1,

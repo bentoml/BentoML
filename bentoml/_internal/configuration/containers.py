@@ -89,6 +89,15 @@ SCHEMA = Schema(
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),
+            Optional("ssl"): {
+                Optional("keyfile"): Or(str, None),
+                Optional("certfile"): Or(str, None),
+                Optional("keyfile_password"): Or(str, None),
+                Optional("version"): Or(And(int, _larger_than_zero), None),
+                Optional("cert_reqs"): Or(int, None),
+                Optional("ca_certs"): Or(str, None),
+                Optional("ciphers"): Or(str, None),
+            },
             "metrics": {"enabled": bool, "namespace": str},
             "logging": {
                 # TODO add logging level configuration

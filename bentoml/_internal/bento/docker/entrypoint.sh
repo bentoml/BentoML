@@ -13,7 +13,7 @@ _main() {
 	# if first arg looks like a flag
 	if [ "${1:0:1}" = '-' ]; then
 		if [[ -v YATAI_VERSION ]]; then
-			if [ "$BENTOML_COMPONENT" == "RUNNER_SERVER" ]; then
+			if [ "$BENTOML_SERVER_COMPONENT" == "RUNNER" ]; then
 				set -- python -m bentoml_cli.server.runner "$@" "$BENTO_PATH"
 			else
 				set -- python -m bentoml_cli.server.http_api_server "$@" "$BENTO_PATH"

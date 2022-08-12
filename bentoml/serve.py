@@ -119,7 +119,7 @@ def serve_development(
         )
     )
 
-    args = [
+    args: list[str | int] = [
         "-m",
         SCRIPT_DEV_API_SERVER,
         bento_identifier,
@@ -144,10 +144,10 @@ def serve_development(
     # match with default uvicorn values.
     if not ssl_version:
         ssl_version = ssl.PROTOCOL_TLS_SERVER
-    args.extend(["--ssl-version", str(ssl_version)])
+    args.extend(["--ssl-version", int(ssl_version)])
     if not ssl_cert_reqs:
         ssl_cert_reqs = ssl.CERT_NONE
-    args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
+    args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
     if not ssl_ciphers:
         ssl_ciphers = "TLSv1"
     args.extend(["--ssl-ciphers", ssl_ciphers])
@@ -335,7 +335,7 @@ def serve_production(
         backlog=backlog,
     )
 
-    args = [
+    args: list[str | int] = [
         "-m",
         SCRIPT_API_SERVER,
         bento_identifier,
@@ -366,10 +366,10 @@ def serve_production(
     # match with default uvicorn values.
     if not ssl_version:
         ssl_version = ssl.PROTOCOL_TLS_SERVER
-    args.extend(["--ssl-version", str(ssl_version)])
+    args.extend(["--ssl-version", int(ssl_version)])
     if not ssl_cert_reqs:
         ssl_cert_reqs = ssl.CERT_NONE
-    args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
+    args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
     if not ssl_ciphers:
         ssl_ciphers = "TLSv1"
     args.extend(["--ssl-ciphers", ssl_ciphers])

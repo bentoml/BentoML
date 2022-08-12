@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     "--ssl-cert-reqs",
     type=int,
     default=None,
-    help="Whether client certificate is required (see stdlib ssl module's)",
+    help="Whether client certificate is required (see stdlib 'ssl' module)",
     show_default=True,
 )
 @click.option(
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     "--ssl-ciphers",
     type=str,
     default=None,
-    help="Ciphers to use (see stdlib ssl module's)",
+    help="Ciphers to use (see stdlib 'ssl' module)",
     show_default=True,
 )
 def main(

@@ -11,7 +11,12 @@ import click
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
-@click.option("--runner-name", type=click.STRING, required=True)
+@click.option(
+    "--runner-name",
+    type=click.STRING,
+    required=True,
+    env="RUNNER_NAME",
+)
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
 @click.option(

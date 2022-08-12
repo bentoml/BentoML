@@ -11,7 +11,7 @@ _is_sourced() {
 
 _main() {
 	# if first arg looks like a flag
-	if [ "${1:0:1}" = '-' ]; then
+	if [ -z "$1" ] || [ "${1:0:1}" = '-' ]; then
 		if [[ -v YATAI_VERSION ]]; then
 			if [ "$BENTOML_SERVER_COMPONENT" == "RUNNER" ]; then
 				set -- python -m bentoml_cli.server.runner "$@" "$BENTO_PATH"

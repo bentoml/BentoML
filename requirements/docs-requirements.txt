@@ -1,7 +1,8 @@
 # Docs dependencies
 -r tests-requirements.txt
 mypy-protobuf
-setuptools>=62.0.0
+# locking according to pyproject.toml
+setuptools==63.4.0
 sphinx==4.5.0
 myst-parser
 sphinx-click>=3.0.2

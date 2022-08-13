@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import uuid
 import typing as t
@@ -90,8 +92,8 @@ SCHEMA = Schema(
             "timeout": And(int, _larger_than_zero),
             "max_request_size": And(int, _larger_than_zero),
             Optional("ssl"): {
-                Optional("keyfile"): Or(str, None),
                 Optional("certfile"): Or(str, None),
+                Optional("keyfile"): Or(str, None),
                 Optional("keyfile_password"): Or(str, None),
                 Optional("version"): Or(And(int, _larger_than_zero), None),
                 Optional("cert_reqs"): Or(int, None),
@@ -293,7 +295,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def serve_info() -> "ServeInfo":
+    def serve_info() -> ServeInfo:
         from ..utils.analytics import get_serve_info
 
         return get_serve_info()

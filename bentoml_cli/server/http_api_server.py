@@ -43,49 +43,46 @@ import click
     help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
 @click.option(
-    "--ssl-keyfile",
-    type=click.STRING,
-    help="SSL key file",
+    "--ssl-certfile",
+    type=str,
     default=None,
+    help="SSL certificate file",
 )
 @click.option(
-    "--ssl-certfile",
-    type=click.STRING,
-    help="SSL certificate file",
+    "--ssl-keyfile",
+    type=str,
     default=None,
+    help="SSL key file",
 )
 @click.option(
     "--ssl-keyfile-password",
-    type=click.STRING,
-    help="SSL keyfile password",
+    type=str,
     default=None,
+    help="SSL keyfile password",
 )
 @click.option(
     "--ssl-version",
-    type=click.INT,
-    help="SSL version to use (see stdlib ssl module's)",
+    type=int,
     default=None,
-    # default=17 # TODO: default here, or set default to None and allow uvicorn to handle default?
+    help="SSL version to use (see stdlib 'ssl' module)",
 )
 @click.option(
     "--ssl-cert-reqs",
-    type=click.INT,
-    help="Whether client certificate is required (see stdlib ssl module's)",
+    type=int,
     default=None,
-    # default=0 # TODO: default here, or set default to None and allow uvicorn to handle default?
+    help="Whether client certificate is required (see stdlib 'ssl' module)",
 )
 @click.option(
     "--ssl-ca-certs",
-    type=click.STRING,
-    help="CA certificates file",
+    type=str,
     default=None,
+    help="CA certificates file",
 )
 @click.option(
     "--ssl-ciphers",
-    type=click.STRING,
-    help="CA certificates file",
+    type=str,
     default=None,
-    # default="TLSv1" # TODO: default here, or set default to None and allow uvicorn to handle default?
+    help="Ciphers to use (see stdlib 'ssl' module)",
 )
 @click.pass_context
 def main(
@@ -97,8 +94,8 @@ def main(
     working_dir: str | None,
     worker_id: int | None,
     prometheus_dir: str | None,
-    ssl_keyfile: str | None,
     ssl_certfile: str | None,
+    ssl_keyfile: str | None,
     ssl_keyfile_password: str | None,
     ssl_version: int | None,
     ssl_cert_reqs: int | None,
@@ -176,21 +173,27 @@ def main(
         "log_config": None,
         "workers": 1,
     }
-    # Add optional SSL args if they exist
-    if ssl_keyfile:
-        uvicorn_options["ssl_keyfile"] = ssl_keyfile
+
     if ssl_certfile:
+        import ssl
+
         uvicorn_options["ssl_certfile"] = ssl_certfile
-    if ssl_keyfile_password:
-        uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
-    if ssl_version:
-        uvicorn_options["ssl_version"] = ssl_version
-    if ssl_cert_reqs:
-        uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
-    if ssl_ca_certs:
-        uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
-    if ssl_ciphers:
-        uvicorn_options["ssl_ciphers"] = ssl_ciphers
+        if ssl_keyfile:
+            uvicorn_options["ssl_keyfile"] = ssl_keyfile
+        if ssl_keyfile_password:
+            uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
+        if ssl_ca_certs:
+            uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
+
+        if not ssl_version:
+            ssl_version = ssl.PROTOCOL_TLS_SERVER
+            uvicorn_options["ssl_version"] = ssl_version
+        if not ssl_cert_reqs:
+            ssl_cert_reqs = ssl.CERT_NONE
+            uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
+        if not ssl_ciphers:
+            ssl_ciphers = "TLSv1"
+            uvicorn_options["ssl_ciphers"] = ssl_ciphers
 
     if psutil.WINDOWS:
         uvicorn_options["loop"] = "asyncio"

@@ -23,7 +23,7 @@ from .._internal.utils import reserve_free_port
 from .._internal.utils import cached_contextmanager
 from .._internal.utils.platform import kill_subprocess_tree
 
-logger = logging.getLogger("bentoml.tests")
+logger = logging.getLogger("bentoml")
 
 
 if TYPE_CHECKING:

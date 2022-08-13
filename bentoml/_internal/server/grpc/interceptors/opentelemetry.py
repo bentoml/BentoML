@@ -18,10 +18,11 @@ from opentelemetry.trace.status import Status
 from opentelemetry.trace.status import StatusCode
 from opentelemetry.semconv.trace import SpanAttributes
 
+from bentoml.grpc.utils import wrap_rpc_handler
+from bentoml.grpc.utils import GRPC_CONTENT_TYPE
+from bentoml.grpc.utils import parse_method_name
+
 from ....utils.pkg import get_pkg_version
-from ....utils.grpc import wrap_rpc_handler
-from ....utils.grpc import parse_method_name
-from ....utils.grpc.codec import GRPC_CONTENT_TYPE
 from ....configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -31,12 +32,12 @@ if TYPE_CHECKING:
     from opentelemetry.trace import Span
     from opentelemetry.sdk.trace import TracerProvider
 
-    from ..types import Request
-    from ..types import Response
-    from ..types import RpcMethodHandler
-    from ..types import AsyncHandlerMethod
-    from ..types import HandlerCallDetails
-    from ..types import BentoServicerContext
+    from bentoml.grpc.types import Request
+    from bentoml.grpc.types import Response
+    from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import HandlerCallDetails
+    from bentoml.grpc.types import BentoServicerContext
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +222,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             if ip in ("[::1]", "127.0.0.1"):
                 attributes[SpanAttributes.NET_PEER_NAME] = "localhost"
         except IndexError:
-            logger.warning("Failed to parse peer address '%s'", context.peer())
+            logger.warning(f"Failed to parse peer address '{context.peer()}'")
 
         return self._tracer.start_as_current_span(
             name=method_name,
@@ -265,4 +266,4 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
 
             return new_behaviour
 
-        return wrap_rpc_handler(wrapper, handler)
+        return t.cast("RpcMethodHandler", wrap_rpc_handler(wrapper, handler))

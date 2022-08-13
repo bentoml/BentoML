@@ -222,9 +222,6 @@ class Multipart(IODescriptor[t.Any], proto_field="multipart"):
         }
         return await concat_to_multipart_response(res_mapping, ctx)
 
-    def generate_protobuf(self):
-        pass
-
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> dict[str, t.Any]:

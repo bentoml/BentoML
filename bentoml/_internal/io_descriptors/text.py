@@ -164,6 +164,3 @@ class Text(IODescriptor[str], proto_field="text"):
         context.set_trailing_metadata((("content-type", self.grpc_content_type),))
 
         return pb.Response(text=obj)
-
-    def generate_protobuf(self):
-        pass

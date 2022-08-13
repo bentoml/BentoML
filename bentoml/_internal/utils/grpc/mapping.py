@@ -5,7 +5,6 @@ For all function in this module, make sure to lazy load the generated protobuf.
 """
 from __future__ import annotations
 
-from http import HTTPStatus
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
@@ -30,9 +29,12 @@ else:
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
     np = LazyLoader("np", globals(), "numpy")
 
-# Maps HTTP status code to grpc.StatusCode
+
 @lru_cache(maxsize=1)
 def http_status_to_grpc_status_map() -> dict[Enum, grpc.StatusCode]:
+    # Maps HTTP status code to grpc.StatusCode
+    from http import HTTPStatus
+
     return {
         HTTPStatus.OK: grpc.StatusCode.OK,
         HTTPStatus.UNAUTHORIZED: grpc.StatusCode.UNAUTHENTICATED,

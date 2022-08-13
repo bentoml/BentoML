@@ -110,15 +110,12 @@ def _infer_serialization_format_from_request(
         return SerializationFormat.CSV
     elif content_type:
         logger.debug(
-            "Unknown content-type (%s), falling back to %s serialization format.",
-            content_type,
-            default_format,
+            f"Unknown content-type ('{content_type}'), falling back to '{default_format}' serialization format.",
         )
         return default_format
     else:
         logger.debug(
-            "Content-type not specified, falling back to %s serialization format.",
-            default_format,
+            f"Content-type not specified, falling back to '{default_format}' serialization format.",
         )
         return default_format
 
@@ -484,9 +481,6 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"], proto_field="dataframe"):
 
         return inst
 
-    def generate_protobuf(self):
-        pass
-
     async def from_grpc_request(self, request, context) -> t.Any:
         pass
 
@@ -689,9 +683,6 @@ class PandasSeries(IODescriptor["ext.PdSeries"], proto_field="series"):
             return Response(
                 obj.to_json(orient=self._orient), media_type=self._mime_type
             )
-
-    def generate_protobuf(self):
-        pass
 
     async def from_grpc_request(self, request, context) -> t.Any:
         pass

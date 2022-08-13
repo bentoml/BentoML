@@ -195,8 +195,13 @@ class File(IODescriptor[FileType], proto_field="file"):
 
         return pb.Response(file=pb.File(kind=kind, content=body))
 
-    def generate_protobuf(self):
-        pass
+    async def from_http_request(self, request: Request) -> FileType:
+        raise NotImplementedError("File.from_http_request is not implemented.")
+
+    async def from_grpc_request(
+        self, request: pb.Request, context: BentoServicerContext
+    ) -> FileType:
+        raise NotImplementedError("File.from_grpc_request is not implemented.")
 
 
 class BytesIOFile(File):

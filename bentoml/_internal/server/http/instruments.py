@@ -29,7 +29,7 @@ class PrometheusMiddleware:
     def _setup(
         self,
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
-    ):
+    ):  # pylint: disable=attribute-defined-outside-init
         self.metrics_client = metrics_client
 
         service_name = self.bento_service.name

@@ -321,6 +321,3 @@ class Image(IODescriptor[ImageType], proto_field="file"):
             )
 
         return pb.Response(file=pb.File(kind=kind, content=ret.getvalue()))
-
-    def generate_protobuf(self):
-        pass

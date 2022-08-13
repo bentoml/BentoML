@@ -532,6 +532,3 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
                 f"Unsupported dtype '{obj.dtype}' for response message.",
                 context=context,
             )
-
-    def generate_protobuf(self):
-        pass

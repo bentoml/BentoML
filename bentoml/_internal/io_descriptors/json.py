@@ -10,7 +10,6 @@ import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
-import bentoml
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import UnprocessableEntity
 
@@ -287,9 +286,6 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
         else:
             return Response(json_str, media_type=self._mime_type)
 
-    def generate_protobuf(self):
-        pass
-
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> JSONType | pydantic.BaseModel:
@@ -331,7 +327,7 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
             try:
                 self._pydantic_model.parse_obj(obj)
             except pydantic.ValidationError as e:
-                raise raise_grpc_exception(
+                raise_grpc_exception(
                     f"Invalid JSON input received: {e}",
                     context=context,
                     exception_cls=BadInput,

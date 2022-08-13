@@ -11,8 +11,6 @@ try:
 except ModuleNotFoundError:
     import importlib_metadata
 
-import yaml
-
 try:
     import bentoml._version as version_mod
 except ImportError:
@@ -149,6 +147,8 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
 
 
 def save_global_config(config_file_handle: t.IO[t.Any]):
+    import yaml
+
     from ..configuration.containers import BentoMLContainer
 
     content = yaml.safe_dump(BentoMLContainer.config)

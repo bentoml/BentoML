@@ -19,7 +19,6 @@ from ..lazy_loader import LazyLoader
 if TYPE_CHECKING:
     import grpc
     from grpc import aio
-    from grpc.aio._typing import MetadatumType  # pylint: disable=unused-import
     from google.protobuf.struct_pb2 import Value
 
     from bentoml.io import File
@@ -65,8 +64,13 @@ def validate_content_type(
     """
     Validate 'content-type' from invocation metadata.
     """
-    metadata = t.cast("tuple[MetadatumType] | None", context.invocation_metadata())
+    metadata = context.invocation_metadata()
     if metadata:
+        if TYPE_CHECKING:
+            from grpc.aio._typing import MetadatumType
+
+            metadata = t.cast(tuple[MetadatumType], metadata)
+
         metas = aio.Metadata.from_tuple(metadata)
         maybe_content_type = metas.get_all("content-type")
         if maybe_content_type:

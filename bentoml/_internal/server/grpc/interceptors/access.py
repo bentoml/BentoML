@@ -69,7 +69,7 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                 finally:
                     if TYPE_CHECKING:
                         assert response
-                    latency = max(default_timer() - start, 0)
+                    latency = max(default_timer() - start, 0) * 1000
 
                     req = [
                         "scheme=http",  # TODO: support https when ssl is added

@@ -141,10 +141,6 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
     ) -> Response:
         ...
 
-    @abstractmethod
-    def generate_protobuf(self):
-        ...
-
     @overload
     @abstractmethod
     async def from_grpc_request(
@@ -170,3 +166,6 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
         self, obj: IOType, context: BentoServicerContext
     ) -> GRPCResponse:
         ...
+
+    # feat: add generate_protobuf(self)
+    # to generate protobuf from python object

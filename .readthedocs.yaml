@@ -25,6 +25,8 @@ python:
       extra_requirements:
         - grpc
         - tracing
+    - method: setuptools
+      path: .
   system_packages: true
 
 formats:

@@ -1,11 +1,12 @@
 import math
+import typing as t
 
 from bentoml._internal.utils.metrics import INF
 from bentoml._internal.utils.metrics import linear_buckets
 from bentoml._internal.utils.metrics import exponential_buckets
 
 
-def _assert_equal(actual: tuple[float, ...], expected: tuple[float, ...]):
+def _assert_equal(actual: t.Tuple[float, ...], expected: t.Tuple[float, ...]):
     assert len(actual) == len(expected)
     for i in range(len(actual)):
         assert math.isclose(actual[i], expected[i])

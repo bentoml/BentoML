@@ -1,5 +1,6 @@
 import logging
 import contextvars
+import typing as t
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
@@ -33,7 +34,7 @@ class MetricsMiddleware:
     def _setup(
         self,
         metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
-        duration_buckets: tuple[float, ...] = Provide[
+        duration_buckets: t.Tuple[float, ...] = Provide[
             BentoMLContainer.duration_buckets
         ],
     ):

@@ -445,8 +445,8 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        metrics: t.Dict[str, t.Any] = Provide[config.api_server.metrics],
-    ) -> t.Tuple[float, ...]:
+        metrics: dict[str, t.Any] = Provide[config.api_server.metrics],
+    ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,
         the Prometheus default is returned; otherwise, a set of exponential buckets
@@ -458,7 +458,7 @@ class _BentoMLContainerClass:
         if "duration" not in metrics:
             return DEFAULT_BUCKET
         else:
-            duration: t.Dict[str, float] = metrics["duration"]
+            duration: dict[str, float] = metrics["duration"]
             if duration.keys() >= {"min", "max", "factor"}:
                 return exponential_buckets(
                     duration["min"], duration["factor"], duration["max"]

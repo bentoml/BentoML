@@ -1,4 +1,4 @@
-import typing as t
+from __future__ import annotations
 
 INF = float("inf")
 
@@ -23,7 +23,7 @@ DEFAULT_BUCKET = (
 MAX_BUCKET_COUNT = 100
 
 
-def exponential_buckets(start: float, factor: float, end: float) -> t.Tuple[float, ...]:
+def exponential_buckets(start: float, factor: float, end: float) -> tuple[float, ...]:
     """
     Creates buckets of a Prometheus histogram where the lowest bucket has an upper
     bound of start and the upper bound of each following bucket is factor times the
@@ -47,7 +47,7 @@ def exponential_buckets(start: float, factor: float, end: float) -> t.Tuple[floa
     return tuple(buckets) + (end, INF)
 
 
-def linear_buckets(start: float, step: float, end: float) -> t.Tuple[float, ...]:
+def linear_buckets(start: float, step: float, end: float) -> tuple[float, ...]:
     """
     Creates buckets of a Prometheus histogram where the lowest bucket has an upper
     bound of start and the upper bound of each following bucket is the previous

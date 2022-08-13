@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import ssl
 import sys
 import json
 import math
@@ -19,7 +18,6 @@ from simple_di import Provide
 from bentoml import load
 
 from ._internal.log import SERVER_LOGGING_CONFIG
-from ._internal.types import PathType
 from ._internal.utils import reserve_free_port
 from ._internal.resource import CpuResource
 from ._internal.utils.uri import path_to_uri
@@ -85,17 +83,14 @@ def serve_development(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
-    ssl_certfile: PathType
-    | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
-    ssl_keyfile: PathType
-    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
+    ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
     ssl_keyfile_password: str
     | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile_password],
     ssl_version: int | None = Provide[BentoMLContainer.api_server_config.ssl.version],
     ssl_cert_reqs: int
     | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
-    ssl_ca_certs: PathType
-    | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     reload: bool = False,
 ) -> None:
@@ -142,15 +137,12 @@ def serve_development(
         args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
 
     # match with default uvicorn values.
-    if not ssl_version:
-        ssl_version = ssl.PROTOCOL_TLS_SERVER
-    args.extend(["--ssl-version", int(ssl_version)])
-    if not ssl_cert_reqs:
-        ssl_cert_reqs = ssl.CERT_NONE
-    args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
-    if not ssl_ciphers:
-        ssl_ciphers = "TLSv1"
-    args.extend(["--ssl-ciphers", ssl_ciphers])
+    if ssl_version:
+        args.extend(["--ssl-version", int(ssl_version)])
+    if ssl_cert_reqs:
+        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
+    if ssl_ciphers:
+        args.extend(["--ssl-ciphers", ssl_ciphers])
 
     watchers.append(
         Watcher(
@@ -214,18 +206,15 @@ def serve_production(
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    api_workers: t.Optional[int] = None,
-    ssl_certfile: PathType
-    | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
-    ssl_keyfile: PathType
-    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
+    api_workers: int | None = None,
+    ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
     ssl_keyfile_password: str
     | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile_password],
     ssl_version: int | None = Provide[BentoMLContainer.api_server_config.ssl.version],
     ssl_cert_reqs: int
     | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
-    ssl_ca_certs: PathType
-    | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
@@ -364,15 +353,12 @@ def serve_production(
         args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
 
     # match with default uvicorn values.
-    if not ssl_version:
-        ssl_version = ssl.PROTOCOL_TLS_SERVER
-    args.extend(["--ssl-version", int(ssl_version)])
-    if not ssl_cert_reqs:
-        ssl_cert_reqs = ssl.CERT_NONE
-    args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
-    if not ssl_ciphers:
-        ssl_ciphers = "TLSv1"
-    args.extend(["--ssl-ciphers", ssl_ciphers])
+    if ssl_version:
+        args.extend(["--ssl-version", int(ssl_version)])
+    if ssl_cert_reqs:
+        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
+    if ssl_ciphers:
+        args.extend(["--ssl-ciphers", ssl_ciphers])
 
     watchers.append(
         Watcher(

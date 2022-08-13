@@ -2,12 +2,8 @@ from __future__ import annotations
 
 import sys
 import logging
-from typing import TYPE_CHECKING
 
 import click
-
-if TYPE_CHECKING:
-    from bentoml._internal.types import PathType
 
 logger = logging.getLogger(__name__)
 
@@ -78,49 +74,42 @@ def add_serve_command(cli: click.Group) -> None:
         type=str,
         default=None,
         help="SSL certificate file",
-        show_default=True,
     )
     @click.option(
         "--ssl-keyfile",
         type=str,
         default=None,
         help="SSL key file",
-        show_default=True,
     )
     @click.option(
         "--ssl-keyfile-password",
         type=str,
         default=None,
         help="SSL keyfile password",
-        show_default=True,
     )
     @click.option(
         "--ssl-version",
         type=int,
         default=None,
         help="SSL version to use (see stdlib 'ssl' module)",
-        show_default=True,
     )
     @click.option(
         "--ssl-cert-reqs",
         type=int,
         default=None,
         help="Whether client certificate is required (see stdlib 'ssl' module)",
-        show_default=True,
     )
     @click.option(
         "--ssl-ca-certs",
         type=str,
         default=None,
         help="CA certificates file",
-        show_default=True,
     )
     @click.option(
         "--ssl-ciphers",
         type=str,
         default=None,
         help="Ciphers to use (see stdlib 'ssl' module)",
-        show_default=True,
     )
     def serve(  # type: ignore (unused warning)
         bento: str,
@@ -131,12 +120,12 @@ def add_serve_command(cli: click.Group) -> None:
         backlog: int,
         reload: bool,
         working_dir: str,
-        ssl_certfile: PathType | None,
-        ssl_keyfile: PathType | None,
+        ssl_certfile: str | None,
+        ssl_keyfile: str | None,
         ssl_keyfile_password: str | None,
         ssl_version: int | None,
         ssl_cert_reqs: int | None,
-        ssl_ca_certs: PathType | None,
+        ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱

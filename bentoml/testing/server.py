@@ -23,7 +23,7 @@ from .._internal.utils import reserve_free_port
 from .._internal.utils import cached_contextmanager
 from .._internal.utils.platform import kill_subprocess_tree
 
-logger = logging.getLogger("bentoml.tests")
+logger = logging.getLogger("bentoml")
 
 
 if TYPE_CHECKING:
@@ -208,7 +208,7 @@ def run_bento_server(
     workdir: t.Optional[str] = None,
     config_file: t.Optional[str] = None,
     dev_server: bool = False,
-    timeout: float = 5,
+    timeout: float = 90,
 ):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.

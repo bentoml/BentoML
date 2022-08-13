@@ -20,49 +20,42 @@ import click
     type=str,
     default=None,
     help="SSL certificate file",
-    show_default=True,
 )
 @click.option(
     "--ssl-keyfile",
     type=str,
     default=None,
     help="SSL key file",
-    show_default=True,
 )
 @click.option(
     "--ssl-keyfile-password",
     type=str,
     default=None,
     help="SSL keyfile password",
-    show_default=True,
 )
 @click.option(
     "--ssl-version",
     type=int,
     default=None,
     help="SSL version to use (see stdlib 'ssl' module)",
-    show_default=True,
 )
 @click.option(
     "--ssl-cert-reqs",
     type=int,
     default=None,
     help="Whether client certificate is required (see stdlib 'ssl' module)",
-    show_default=True,
 )
 @click.option(
     "--ssl-ca-certs",
     type=str,
     default=None,
     help="CA certificates file",
-    show_default=True,
 )
 @click.option(
     "--ssl-ciphers",
     type=str,
     default=None,
     help="Ciphers to use (see stdlib 'ssl' module)",
-    show_default=True,
 )
 def main(
     bento_identifier: str,
@@ -120,19 +113,25 @@ def main(
         }
 
         if ssl_certfile:
+            import ssl
+
             uvicorn_options["ssl_certfile"] = ssl_certfile
-        if ssl_keyfile:
-            uvicorn_options["ssl_keyfile"] = ssl_keyfile
-        if ssl_keyfile_password:
-            uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
-        if ssl_version:
-            uvicorn_options["ssl_version"] = ssl_version
-        if ssl_cert_reqs:
-            uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
-        if ssl_ca_certs:
-            uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
-        if ssl_ciphers:
-            uvicorn_options["ssl_ciphers"] = ssl_ciphers
+            if ssl_keyfile:
+                uvicorn_options["ssl_keyfile"] = ssl_keyfile
+            if ssl_keyfile_password:
+                uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
+            if ssl_ca_certs:
+                uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
+
+            if not ssl_version:
+                ssl_version = ssl.PROTOCOL_TLS_SERVER
+                uvicorn_options["ssl_version"] = ssl_version
+            if not ssl_cert_reqs:
+                ssl_cert_reqs = ssl.CERT_NONE
+                uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
+            if not ssl_ciphers:
+                ssl_ciphers = "TLSv1"
+                uvicorn_options["ssl_ciphers"] = ssl_ciphers
 
         if psutil.WINDOWS:
             uvicorn_options["loop"] = "asyncio"

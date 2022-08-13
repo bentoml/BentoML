@@ -1,6 +1,6 @@
+import typing as t
 import logging
 import contextvars
-import typing as t
 from timeit import default_timer
 from typing import TYPE_CHECKING
 

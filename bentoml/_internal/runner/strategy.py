@@ -82,10 +82,10 @@ class DefaultStrategy(Strategy):
             return math.ceil(cpus)
 
         # this should not be reached by user since we always read system resource as default
-        logger.warning(
-            "No resource request found, falling back to using a single worker"
+        raise ValueError(
+            f"No known supported resource available for {runnable_class}. Please check your resource request. "
+            "Leaving it blank will allow BentoML to use system resources."
         )
-        return 1
 
     @classmethod
     def setup_worker(

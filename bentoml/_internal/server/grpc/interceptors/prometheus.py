@@ -12,22 +12,23 @@ from grpc import aio
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml.grpc.utils import to_http_status
+from bentoml.grpc.utils import wrap_rpc_handler
+
 from ....utils import LazyLoader
-from ....utils.grpc import to_http_status
-from ....utils.grpc import wrap_rpc_handler
 from ....configuration.containers import BentoMLContainer
 
 START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2
+    from bentoml.grpc.types import Request
+    from bentoml.grpc.types import Response
+    from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import HandlerCallDetails
+    from bentoml.grpc.types import BentoServicerContext
 
-    from ..types import Request
-    from ..types import Response
-    from ..types import RpcMethodHandler
-    from ..types import AsyncHandlerMethod
-    from ..types import HandlerCallDetails
-    from ..types import BentoServicerContext
     from ....service import Service
     from ...metrics.prometheus import PrometheusClient
 else:
@@ -50,7 +51,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
     def _setup(
         self,
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
-    ):
+    ):  # pylint: disable=attribute-defined-outside-init
 
         # a valid tag name may includes invalid characters, so we need to escape them
         # ref: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
@@ -138,4 +139,4 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
 
             return new_behavior
 
-        return wrap_rpc_handler(wrapper, handler)
+        return t.cast("RpcMethodHandler", wrap_rpc_handler(wrapper, handler))

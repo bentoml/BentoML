@@ -10,10 +10,10 @@ import anyio
 
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
+from bentoml.grpc.utils import grpc_status_code
 from bentoml._internal.service.service import Service
 
 from ...utils import LazyLoader
-from ...utils.grpc import grpc_status_code
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,7 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2 as _service_pb2
     from bentoml.grpc.v1 import service_pb2_grpc as _service_pb2_grpc
-
-    from .types import BentoServicerContext
+    from bentoml.grpc.types import BentoServicerContext
 else:
     _service_pb2 = LazyLoader("_service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
     _service_pb2_grpc = LazyLoader(
@@ -45,7 +44,7 @@ def create_bento_servicer(service: Service) -> _service_pb2_grpc.BentoServiceSer
     class BentoServiceServicer(_service_pb2_grpc.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
 
-        async def Call(  # type: ignore (no async types)
+        async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
             self,
             request: _service_pb2.Request,
             context: BentoServicerContext,
@@ -59,12 +58,12 @@ def create_bento_servicer(service: Service) -> _service_pb2_grpc.BentoServiceSer
             response = _service_pb2.Response()
 
             try:
-                input = await api.input.from_grpc_request(request, context)
+                input_ = await api.input.from_grpc_request(request, context)
 
                 if asyncio.iscoroutinefunction(api.func):
-                    output = await api.func(input)
+                    output = await api.func(input_)
                 else:
-                    output = await anyio.to_thread.run_sync(api.func, input)
+                    output = await anyio.to_thread.run_sync(api.func, input_)
 
                 response = await api.output.to_grpc_response(output, context)
             except BentoMLException as e:
@@ -76,7 +75,7 @@ def create_bento_servicer(service: Service) -> _service_pb2_grpc.BentoServiceSer
                     code=grpc.StatusCode.INTERNAL,
                     details="An internal runtime error has occurred, check out error details in server logs.",
                 )
-            except Exception:  # type: ignore (generic exception)
+            except Exception:  # pylint: disable=broad-except
                 log_exception(request, sys.exc_info())
                 await context.abort(
                     code=grpc.StatusCode.UNKNOWN,

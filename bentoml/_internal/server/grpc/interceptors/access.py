@@ -9,26 +9,24 @@ from typing import TYPE_CHECKING
 import grpc
 from grpc import aio
 
+from bentoml.grpc.utils import to_http_status
+from bentoml.grpc.utils import wrap_rpc_handler
+from bentoml.grpc.utils import GRPC_CONTENT_TYPE
+
 from ....utils import LazyLoader
-from ....utils.grpc import to_http_status
-from ....utils.grpc import wrap_rpc_handler
-from ....utils.grpc.codec import GRPC_CONTENT_TYPE
 
 if TYPE_CHECKING:
     from grpc.aio._typing import MetadataType
 
     from bentoml.grpc.v1 import service_pb2
-
-    from ..types import Request
-    from ..types import Response
-    from ..types import RpcMethodHandler
-    from ..types import AsyncHandlerMethod
-    from ..types import HandlerCallDetails
-    from ..types import BentoServicerContext
+    from bentoml.grpc.types import Request
+    from bentoml.grpc.types import Response
+    from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import HandlerCallDetails
+    from bentoml.grpc.types import BentoServicerContext
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
-
-logger = logging.getLogger(__name__)
 
 
 class AccessLogServerInterceptor(aio.ServerInterceptor):
@@ -66,13 +64,13 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                 start = default_timer()
                 try:
                     response = await behaviour(request, context)
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     context.set_code(grpc.StatusCode.INTERNAL)
                     context.set_details(str(e))
                 finally:
                     if TYPE_CHECKING:
                         assert response
-                    latency = max(default_timer() - start, 0)
+                    latency = max(default_timer() - start, 0) * 1000
 
                     req = [
                         "scheme=http",  # TODO: support https when ssl is added
@@ -96,4 +94,4 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
 
             return new_behaviour
 
-        return wrap_rpc_handler(wrapper, handler)
+        return t.cast("RpcMethodHandler", wrap_rpc_handler(wrapper, handler))

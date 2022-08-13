@@ -5,6 +5,7 @@ import sys
 import json
 import math
 import shutil
+import socket
 import typing as t
 import logging
 import tempfile
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-PROMETHEUS_MESSAGE = "Prometheus metrics for {server_type} BentoServer from {bento_identifier} can be accessed at {addr}"
+PROMETHEUS_MESSAGE = "Prometheus metrics for {server_type} BentoServer of '{bento_identifier}' can be accessed at '{addr}'."
 
 SCRIPT_RUNNER = "bentoml_cli.server.runner"
 SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
@@ -88,6 +89,26 @@ def ensure_prometheus_dir(
     return alternative
 
 
+@contextlib.contextmanager
+def enable_so_reuseport(host: str, port: int) -> t.Generator[int, None, None]:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if psutil.WINDOWS:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    elif psutil.MACOS or psutil.FREEBSD:
+        sock.setsockopt(socket.SOL_SOCKET, 0x10000, 1)  # SO_REUSEPORT_LB
+    else:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+
+        if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 0:
+            raise RuntimeError("Failed to set SO_REUSEPORT.")
+
+    sock.bind((host, port))
+    try:
+        yield sock.getsockname()[1]
+    finally:
+        sock.close()
+
+
 def create_watcher(
     name: str,
     args: list[str],
@@ -106,6 +127,58 @@ def create_watcher(
         use_sockets=use_sockets,
         **kwargs,
     )
+
+
+def log_grpcui_message(port: int) -> None:
+    message = "To use gRPC UI, run the following command: 'docker run -it --rm {network_args} fullstorydev/grpcui -plaintext {platform_deps}:{port}', followed by opening 'http://0.0.0.0:8080' in your browser of choice."
+
+    if psutil.WINDOWS or psutil.MACOS:
+        logger.info(
+            message.format(
+                platform_deps="host.docker.internal",
+                port=port,
+                network_args="-p 8080:8080",
+            )
+        )
+    else:
+        logger.info(
+            message.format(
+                platform_deps="localhost",
+                port=port,
+                network_args="--network=host",
+            )
+        )
+
+
+def ssl_args(
+    ssl_certfile: str | None,
+    ssl_keyfile: str | None,
+    ssl_keyfile_password: str | None,
+    ssl_version: int | None,
+    ssl_cert_reqs: int | None,
+    ssl_ca_certs: str | None,
+    ssl_ciphers: str | None,
+) -> list[str | int]:
+    args: list[str | int] = []
+
+    # Add optional SSL args if they exist
+    if ssl_certfile:
+        args.extend(["--ssl-certfile", str(ssl_certfile)])
+    if ssl_keyfile:
+        args.extend(["--ssl-keyfile", str(ssl_keyfile)])
+    if ssl_keyfile_password:
+        args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
+    if ssl_ca_certs:
+        args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
+
+    # match with default uvicorn values.
+    if ssl_version:
+        args.extend(["--ssl-version", int(ssl_version)])
+    if ssl_cert_reqs:
+        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
+    if ssl_ciphers:
+        args.extend(["--ssl-ciphers", ssl_ciphers])
+    return args
 
 
 @inject
@@ -139,58 +212,31 @@ def serve_development(
 
     circus_sockets: list[CircusSocket] = []
 
-    args: list[str | int] = [
-        "-m",
-        SCRIPT_DEV_API_SERVER,
-        bento_identifier,
-        "--bind",
-        "fd://$(circus.sockets._bento_api_server)",
-        "--working-dir",
-        working_dir,
-        "--prometheus-dir",
-        prometheus_dir,
-    ]
-
-    # Add optional SSL args if they exist
-    if ssl_certfile:
-        args.extend(["--ssl-certfile", str(ssl_certfile)])
-    if ssl_keyfile:
-        args.extend(["--ssl-keyfile", str(ssl_keyfile)])
-    if ssl_keyfile_password:
-        args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
-    if ssl_ca_certs:
-        args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
-
-    # match with default uvicorn values.
-    if ssl_version:
-        args.extend(["--ssl-version", int(ssl_version)])
-    if ssl_cert_reqs:
-        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
-    if ssl_ciphers:
-        args.extend(["--ssl-ciphers", ssl_ciphers])
-
     if grpc:
-        watchers.append(
-            create_watcher(
-                name="grpc_dev_api_server",
-                args=[
-                    "-m",
-                    SCRIPT_GRPC_DEV_API_SERVER,
-                    bento_identifier,
-                    "--bind",
-                    f"tcp://{host}:{port}",
-                    "--working-dir",
-                    working_dir,
-                    "--prometheus-dir",
-                    prometheus_dir,
-                ],
-                use_sockets=False,
-                working_dir=working_dir,
-                # we don't want to close stdin for child process in case user use debugger.
-                # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
-                close_child_stdin=False,
+        with contextlib.ExitStack() as port_stack:
+            api_port = port_stack.enter_context(enable_so_reuseport(host, port))
+            watchers.append(
+                create_watcher(
+                    name="grpc_dev_api_server",
+                    args=[
+                        "-m",
+                        SCRIPT_GRPC_DEV_API_SERVER,
+                        bento_identifier,
+                        "--bind",
+                        f"tcp://{host}:{api_port}",
+                        "--working-dir",
+                        working_dir,
+                        "--prometheus-dir",
+                        prometheus_dir,
+                    ],
+                    use_sockets=False,
+                    working_dir=working_dir,
+                    # we don't want to close stdin for child process in case user use debugger.
+                    # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
+                    close_child_stdin=False,
+                )
             )
-        )
+
         if BentoMLContainer.api_server_config.metrics.enabled.get():
             metrics_host = BentoMLContainer.grpc.metrics_host.get()
             metrics_port = BentoMLContainer.grpc.metrics_port.get()
@@ -222,6 +268,9 @@ def serve_development(
                     singleton=True,
                 )
             )
+
+            log_grpcui_message(port)
+
             logger.info(
                 PROMETHEUS_MESSAGE.format(
                     bento_identifier=bento_identifier,
@@ -247,6 +296,15 @@ def serve_development(
                     working_dir,
                     "--prometheus-dir",
                     prometheus_dir,
+                    *ssl_args(
+                        ssl_certfile=ssl_certfile,
+                        ssl_keyfile=ssl_keyfile,
+                        ssl_keyfile_password=ssl_keyfile_password,
+                        ssl_version=ssl_version,
+                        ssl_cert_reqs=ssl_cert_reqs,
+                        ssl_ca_certs=ssl_ca_certs,
+                        ssl_ciphers=ssl_ciphers,
+                    ),
                 ],
                 working_dir=working_dir,
                 # we don't want to close stdin for child process in case user use debugger.
@@ -421,68 +479,37 @@ def serve_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug("Runner map: %s", runner_bind_map)
-
-    args: list[str | int] = [
-        "-m",
-        SCRIPT_API_SERVER,
-        bento_identifier,
-        "--bind",
-        "fd://$(circus.sockets._bento_api_server)",
-        "--runner-map",
-        json.dumps(runner_bind_map),
-        "--working-dir",
-        working_dir,
-        "--backlog",
-        f"{backlog}",
-        "--worker-id",
-        "$(CIRCUS.WID)",
-        "--prometheus-dir",
-        prometheus_dir,
-    ]
-
-    # Add optional SSL args if they exist
-    if ssl_certfile:
-        args.extend(["--ssl-certfile", str(ssl_certfile)])
-    if ssl_keyfile:
-        args.extend(["--ssl-keyfile", str(ssl_keyfile)])
-    if ssl_keyfile_password:
-        args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
-    if ssl_ca_certs:
-        args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
-
-    # match with default uvicorn values.
-    if ssl_version:
-        args.extend(["--ssl-version", int(ssl_version)])
-    if ssl_cert_reqs:
-        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
-    if ssl_ciphers:
-        args.extend(["--ssl-ciphers", ssl_ciphers])
+    logger.debug(f"Runner map: {runner_bind_map}")
 
     if grpc:
-        watchers.append(
-            create_watcher(
-                name="grpc_api_server",
-                args=[
-                    "-m",
-                    SCRIPT_GRPC_API_SERVER,
-                    bento_identifier,
-                    "--bind",
-                    f"tcp://{host}:{port}",
-                    "--runner-map",
-                    json.dumps(runner_bind_map),
-                    "--working-dir",
-                    working_dir,
-                    "--worker-id",
-                    "$(CIRCUS.WID)",
-                    "--prometheus-dir",
-                    prometheus_dir,
-                ],
-                use_sockets=False,
-                working_dir=working_dir,
-                numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+        with contextlib.ExitStack() as port_stack:
+            api_port = port_stack.enter_context(enable_so_reuseport(host, port))
+
+            watchers.append(
+                create_watcher(
+                    name="grpc_api_server",
+                    args=[
+                        "-m",
+                        SCRIPT_GRPC_API_SERVER,
+                        bento_identifier,
+                        "--bind",
+                        f"tcp://{host}:{api_port}",
+                        "--runner-map",
+                        json.dumps(runner_bind_map),
+                        "--working-dir",
+                        working_dir,
+                        "--worker-id",
+                        "$(CIRCUS.WID)",
+                        "--prometheus-dir",
+                        prometheus_dir,
+                    ],
+                    use_sockets=False,
+                    working_dir=working_dir,
+                    numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+                )
             )
-        )
+
+        log_grpcui_message(port)
 
         if BentoMLContainer.api_server_config.metrics.enabled.get():
             metrics_host = BentoMLContainer.grpc.metrics_host.get()
@@ -547,11 +574,21 @@ def serve_production(
                     "$(CIRCUS.WID)",
                     "--prometheus-dir",
                     prometheus_dir,
+                    *ssl_args(
+                        ssl_certfile=ssl_certfile,
+                        ssl_keyfile=ssl_keyfile,
+                        ssl_keyfile_password=ssl_keyfile_password,
+                        ssl_version=ssl_version,
+                        ssl_cert_reqs=ssl_cert_reqs,
+                        ssl_ca_certs=ssl_ca_certs,
+                        ssl_ciphers=ssl_ciphers,
+                    ),
                 ],
                 working_dir=working_dir,
                 numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             )
         )
+
         logger.info(
             PROMETHEUS_MESSAGE.format(
                 bento_identifier=bento_identifier,

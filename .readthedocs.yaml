@@ -20,11 +20,6 @@ sphinx:
 python:
   install:
     - requirements: requirements/docs-requirements.txt
-    - method: pip
-      path: .
-      extra_requirements:
-        - grpc
-        - tracing
     - method: setuptools
       path: .
   system_packages: true

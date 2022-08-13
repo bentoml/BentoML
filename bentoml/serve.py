@@ -185,6 +185,16 @@ def serve_development(
                     singleton=True,
                 )
             )
+
+            if psutil.WINDOWS:
+                logger.info(
+                    f'To interact with gRPC server using `gRPC UI`, use: "docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext host.docker.internal:{port}"'
+                )
+            else:
+                logger.info(
+                    f'To interact with gRPC server using `gRPC UI`, use: "docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext localhost:{port}"'
+                )
+
             logger.info(
                 PROMETHEUS_MESSAGE.format(
                     bento_identifier=bento_identifier,
@@ -465,6 +475,10 @@ def serve_production(
                 working_dir=working_dir,
                 numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             )
+        )
+
+        logger.info(
+            f'To interact with gRPC server using `gRPC UI`, use: "docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext localhost:{port}"'
         )
         logger.info(
             PROMETHEUS_MESSAGE.format(

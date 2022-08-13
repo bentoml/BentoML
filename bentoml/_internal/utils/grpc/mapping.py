@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from enum import Enum
 
     import grpc
+    import numpy as np
 
     from bentoml.grpc.v1 import service_pb2 as pb
 
@@ -27,9 +28,7 @@ else:
         exc_msg="'grpc' is required. Install with 'pip install grpcio'.",
     )
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
-
-# Lazily load numpy
-np = LazyLoader("np", globals(), "numpy")
+    np = LazyLoader("np", globals(), "numpy")
 
 # Maps HTTP status code to grpc.StatusCode
 @lru_cache(maxsize=1)

@@ -438,7 +438,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
                 raise_grpc_exception(
                     f"field '{field_values}' (required for '{dtype}') is missing.",
                     context=context,
-                    exc_cls=UnprocessableEntity,
+                    exception_cls=UnprocessableEntity,
                 )
         else:
             dtypepb = field.dtype
@@ -466,7 +466,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
                     raise_grpc_exception(
                         f"Array contents can only be one of given values key. Use one of {fieldpb} instead.",
                         context=context,
-                        exc_cls=BadInput,
+                        exception_cls=BadInput,
                     )
                 dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
                 values_arr = getattr(field, fieldpb[0])
@@ -513,7 +513,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
                 exception_cls=InternalServerError,
             )
         except InternalServerError as e:
-            raise_grpc_exception(e.message, context=context, exc_cls=e.__class__)
+            raise_grpc_exception(e.message, context=context, exception_cls=e.__class__)
 
         context.set_trailing_metadata((("content-type", self.grpc_content_type),))
 

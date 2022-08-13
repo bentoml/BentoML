@@ -256,7 +256,7 @@ class Image(IODescriptor[ImageType], proto_field="file"):
             raise_grpc_exception(
                 "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
                 context=context,
-                exc_cls=UnprocessableEntity,
+                exception_cls=UnprocessableEntity,
             )
 
         # validate gRPC content type if content type is specified
@@ -292,7 +292,7 @@ class Image(IODescriptor[ImageType], proto_field="file"):
             raise_grpc_exception(
                 "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
                 context=context,
-                exc_cls=UnprocessableEntity,
+                exception_cls=UnprocessableEntity,
             )
 
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
@@ -303,7 +303,7 @@ class Image(IODescriptor[ImageType], proto_field="file"):
             raise_grpc_exception(
                 f"Unsupported Image type received: '{type(obj)}', '{self.__class__.__name__}' only supports 'np.ndarray' and 'PIL.Image'.",
                 context=context,
-                exc_cls=InternalServerError,
+                exception_cls=InternalServerError,
             )
         ret = io.BytesIO()
         image.save(ret, format=self._format)

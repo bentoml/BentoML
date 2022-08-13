@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 from abc import ABCMeta
 from abc import abstractmethod
+from typing import overload
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.types import ProtoField
     from bentoml.grpc.types import BentoServicerContext
+    from bentoml.grpc.v1.service_pb2 import Part as GRPCPart
     from bentoml.grpc.v1.service_pb2 import Request as GRPCRequest
     from bentoml.grpc.v1.service_pb2 import Response as GRPCResponse
 
@@ -67,6 +69,7 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
 
     _proto_field: str
     _mime_type: str
+    _rpc_content_type: str
 
     def __new__(  # pylint: disable=unused-argument
         cls: t.Type[Self],
@@ -77,6 +80,8 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
 
         # default mime type is application/json
         self._mime_type = "application/json"
+        # default grpc content type is application/grpc
+        self._rpc_content_type = "application/grpc"
 
         return self
 
@@ -94,10 +99,17 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
 
     @property
     def grpc_content_type(self) -> str:
-        rpc_content_type = "application/grpc"
-        if self._mime_type == "application/octet-stream":
-            return rpc_content_type
-        return f"{rpc_content_type}+{self._mime_type.split('/')[-1]}"
+        generic_content_type = ["application/octet-stream", "text/plain"]
+        if self._mime_type in generic_content_type or self._mime_type.startswith(
+            "multipart"
+        ):
+            return f"{self._rpc_content_type}+proto"
+
+        return f"{self._rpc_content_type}+{self._mime_type.split('/')[-1]}"
+
+    @grpc_content_type.setter
+    def grpc_content_type(self, value: str) -> None:
+        self._rpc_content_type = value
 
     @abstractmethod
     def input_type(self) -> InputType:
@@ -133,9 +145,23 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
     def generate_protobuf(self):
         ...
 
+    @overload
     @abstractmethod
     async def from_grpc_request(
         self, request: GRPCRequest, context: BentoServicerContext
+    ) -> IOType:
+        ...
+
+    @overload
+    @abstractmethod
+    async def from_grpc_request(
+        self, request: GRPCPart, context: BentoServicerContext
+    ) -> IOType:
+        ...
+
+    @abstractmethod
+    async def from_grpc_request(
+        self, request: GRPCRequest | GRPCPart, context: BentoServicerContext
     ) -> IOType:
         ...
 

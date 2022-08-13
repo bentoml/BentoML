@@ -19,7 +19,7 @@ from ..lazy_loader import LazyLoader
 if TYPE_CHECKING:
     import grpc
     from grpc import aio
-    from grpc.aio._typing import MetadatumType
+    from grpc.aio._typing import MetadatumType  # pylint: disable=unused-import
     from google.protobuf.struct_pb2 import Value
 
     from bentoml.io import File
@@ -74,7 +74,7 @@ def validate_content_type(
                 raise_grpc_exception(
                     f"{maybe_content_type} should only contain one 'Content-Type' headers.",
                     context=context,
-                    exc_cls=InvalidArgument,
+                    exception_cls=InvalidArgument,
                 )
 
             content_type = str(maybe_content_type[0])
@@ -83,13 +83,13 @@ def validate_content_type(
                 raise_grpc_exception(
                     f"{content_type} should startwith {GRPC_CONTENT_TYPE}.",
                     context=context,
-                    exc_cls=InvalidArgument,
+                    exception_cls=InvalidArgument,
                 )
             if content_type != descriptor.grpc_content_type:
                 raise_grpc_exception(
                     f"'{content_type}' is found while '{repr(descriptor)}' requires '{descriptor.grpc_content_type}'.",
                     context=context,
-                    exc_cls=InvalidArgument,
+                    exception_cls=InvalidArgument,
                 )
 
 
@@ -156,14 +156,14 @@ def serialize_proto(output: dict[str, t.Any], **kwargs: t.Any) -> pb.Response:
 def raise_grpc_exception(
     msg: str,
     context: BentoServicerContext,
-    exc_cls: t.Type[BentoMLException] = BentoMLException,
+    exception_cls: t.Type[BentoMLException] = BentoMLException,
 ):
     code = http_status_to_grpc_status_map().get(
-        exc_cls.error_code, grpc.StatusCode.UNKNOWN
+        exception_cls.error_code, grpc.StatusCode.UNKNOWN
     )
     context.set_code(code)
     context.set_details(msg)
-    raise exc_cls(msg)
+    raise exception_cls(msg)
 
 
 def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:

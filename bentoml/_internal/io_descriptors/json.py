@@ -5,7 +5,6 @@ import typing as t
 import logging
 import dataclasses
 from typing import TYPE_CHECKING
-from concurrent.futures import ThreadPoolExecutor
 
 import attr
 from starlette.requests import Request
@@ -33,7 +32,6 @@ if TYPE_CHECKING:
     import pydantic
     import pydantic.schema as schema
 
-    import bentoml.io
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.types import BentoServicerContext
 
@@ -49,7 +47,6 @@ else:
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
     # lazy load numpy for processing ndarray.
     np = LazyLoader("np", globals(), "numpy")
-    bentoml.io = LazyLoader("bentoml.io", globals(), "bentoml.io")
 
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
@@ -316,7 +313,7 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
                 raise_grpc_exception(
                     f"Invalid JSON input received: {e}",
                     context=context,
-                    exc_cls=UnprocessableEntity,
+                    exception_cls=UnprocessableEntity,
                 )
 
         return json_obj
@@ -337,7 +334,7 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
                 raise raise_grpc_exception(
                     f"Invalid JSON input received: {e}",
                     context=context,
-                    exc_cls=BadInput,
+                    exception_cls=BadInput,
                 )
 
         if isinstance(obj, pydantic.BaseModel):

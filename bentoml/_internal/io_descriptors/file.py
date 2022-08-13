@@ -173,7 +173,7 @@ class File(IODescriptor[FileType], proto_field="file"):
             raise_grpc_exception(
                 "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
                 context=context,
-                exc_cls=UnprocessableEntity,
+                exception_cls=UnprocessableEntity,
             )
 
         if isinstance(obj, bytes):
@@ -239,7 +239,7 @@ class BytesIOFile(File):
             raise_grpc_exception(
                 "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
                 context=context,
-                exc_cls=UnprocessableEntity,
+                exception_cls=UnprocessableEntity,
             )
 
         # validate gRPC content type if content type is specified

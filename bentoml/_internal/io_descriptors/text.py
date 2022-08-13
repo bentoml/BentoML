@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
-from bentoml.exceptions import BadInput
 from bentoml.exceptions import BentoMLException
 
 from .base import IODescriptor
@@ -120,10 +119,6 @@ class Text(IODescriptor[str], proto_field="text"):
             description=SUCCESS_DESCRIPTION,
             content={self._mime_type: MediaType(schema=self.openapi_schema())},
         )
-
-    @property
-    def grpc_content_type(self) -> str:
-        return "application/grpc+proto"
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()

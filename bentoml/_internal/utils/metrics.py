@@ -1,5 +1,23 @@
 INF = float("inf")
-DEFAULT_BUCKET = (.005, .01, .025, .05, .075, .1, .25, .5, .75, 1.0, 2.5, 5.0, 7.5, 10.0, INF)
+
+DEFAULT_BUCKET = (
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.075,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    2.5,
+    5.0,
+    7.5,
+    10.0,
+    INF,
+)
+
 MAX_BUCKET_COUNT = 100
 
 
@@ -14,13 +32,13 @@ def exponential_buckets(start: float, factor: float, end: float) -> tuple[float]
     assert start > 0.0
     assert start < end
     assert factor > 1.0
-    
+
     bound = start
     buckets: list[float] = []
     while bound < end:
         buckets.append(bound)
         bound *= factor
-    
+
     if len(buckets) > MAX_BUCKET_COUNT:
         buckets = buckets[:MAX_BUCKET_COUNT]
 
@@ -38,14 +56,14 @@ def linear_buckets(start: float, step: float, end: float) -> tuple[float]:
     assert start > 0.0
     assert start < end
     assert step > 0.0
-    
+
     bound = start
     buckets: list[float] = []
     while bound < end:
         buckets.append(bound)
         bound += step
-    
+
     if len(buckets) > MAX_BUCKET_COUNT:
         buckets = buckets[:MAX_BUCKET_COUNT]
-    
+
     return tuple(buckets) + (end, INF)

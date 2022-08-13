@@ -33,7 +33,9 @@ class MetricsMiddleware:
     def _setup(
         self,
         metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
-        duration_buckets: tuple[float, ...] = Provide[BentoMLContainer.duration_buckets],
+        duration_buckets: tuple[float, ...] = Provide[
+            BentoMLContainer.duration_buckets
+        ],
     ):
         self.metrics_client = metrics_client
         service_name = self.bento_service.name

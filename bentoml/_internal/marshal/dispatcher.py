@@ -6,13 +6,14 @@ import functools
 import traceback
 import collections
 from typing import TYPE_CHECKING
+
 from simple_di import inject
 from simple_di import Provide
 
-from ..configuration.containers import BentoMLContainer
 from ..utils import cached_property
 from ..utils.alg import TokenBucket
 from ..utils.metrics import exponential_buckets
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..server.metrics.prometheus import PrometheusClient

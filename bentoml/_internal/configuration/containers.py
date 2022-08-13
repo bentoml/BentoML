@@ -104,9 +104,9 @@ SCHEMA = Schema(
                 "enabled": bool,
                 "namespace": str,
                 Optional("duration"): {
-                    "min": And(float, _larger_than_zero),
-                    "max": And(float, _larger_than_zero),
-                    "factor": And(float, _larger_than(1.0)),
+                    Optional("min"): And(float, _larger_than_zero),
+                    Optional("max"): And(float, _larger_than_zero),
+                    Optional("factor"): And(float, _larger_than(1.0)),
                 },
             },
             "logging": {
@@ -445,14 +445,29 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        duration: t.Optional[t.Dict[str, float]] = Provide[config.metrics.duration],
+        metrics: t.Dict[str, t.Any] = Provide[config.api_server.metrics],
     ) -> t.Tuple[float, ...]:
+        """
+        Returns a tuple of duration buckets in seconds. If not explicitly configured,
+        the Prometheus default is returned; otherwise, a set of exponential buckets
+        generated based on the configuration is returned.
+        """
         from ..utils.metrics import DEFAULT_BUCKET
         from ..utils.metrics import exponential_buckets
-        if duration is None:
+
+        if "duration" not in metrics:
             return DEFAULT_BUCKET
         else:
-            return exponential_buckets(duration.start, duration.factor, duration.end) # type: ignore
+            duration: t.Dict[str, float] = metrics["duration"]
+            if duration.keys() >= {"min", "max", "factor"}:
+                return exponential_buckets(
+                    duration["min"], duration["factor"], duration["max"]
+                )
+            else:
+                raise BentoMLConfigException(
+                    "Keys 'min', 'max', and 'factor' are required for "
+                    f"'duration' configuration, '{duration}'."
+                )
 
 
 BentoMLContainer = _BentoMLContainerClass()

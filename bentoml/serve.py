@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-PROMETHEUS_MESSAGE = "Prometheus metrics for {server_type} BentoServer from {bento_identifier} can be accessed at {addr}"
+PROMETHEUS_MESSAGE = "Prometheus metrics for {server_type} BentoServer of '{bento_identifier}' can be accessed at '{addr}'."
 
 SCRIPT_RUNNER = "bentoml_cli.server.runner"
 SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
@@ -108,6 +108,27 @@ def create_watcher(
         use_sockets=use_sockets,
         **kwargs,
     )
+
+
+def log_grpcui_message(port: int) -> None:
+    message = "To use gRPC UI, run the following command: 'docker run -it --rm {network_args} fullstorydev/grpcui -plaintext {platform_deps}:{port}', followed by opening 'http://0.0.0.0:8080' in your browser of choice."
+
+    if psutil.WINDOWS or psutil.MACOS:
+        logger.info(
+            message.format(
+                platform_deps="host.docker.internal",
+                port=port,
+                network_args="-p 8080:8080",
+            )
+        )
+    else:
+        logger.info(
+            message.format(
+                platform_deps="localhost",
+                port=port,
+                network_args="--network=host",
+            )
+        )
 
 
 @inject
@@ -186,14 +207,7 @@ def serve_development(
                 )
             )
 
-            if psutil.WINDOWS:
-                logger.info(
-                    f'To interact with gRPC server using `gRPC UI`, use: "docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext host.docker.internal:{port}"'
-                )
-            else:
-                logger.info(
-                    f'To interact with gRPC server using `gRPC UI`, use: "docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext localhost:{port}"'
-                )
+            log_grpcui_message(port)
 
             logger.info(
                 PROMETHEUS_MESSAGE.format(
@@ -408,6 +422,8 @@ def serve_production(
             )
         )
 
+        log_grpcui_message(port)
+
         if BentoMLContainer.api_server_config.metrics.enabled.get():
             metrics_host = BentoMLContainer.grpc.metrics_host.get()
             metrics_port = BentoMLContainer.grpc.metrics_port.get()
@@ -477,9 +493,6 @@ def serve_production(
             )
         )
 
-        logger.info(
-            f'To interact with gRPC server using `gRPC UI`, use: "docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext localhost:{port}"'
-        )
         logger.info(
             PROMETHEUS_MESSAGE.format(
                 bento_identifier=bento_identifier,

@@ -45,10 +45,10 @@ config_merger = Merger(
 logger = logging.getLogger(__name__)
 
 _check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
-_larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
+_larger_than: t.Callable[[int | float], t.Callable[[int | float], bool]] = (
     lambda target: lambda val: val > target
 )
-_larger_than_zero: t.Callable[[int], bool] = _larger_than(0)
+_larger_than_zero: t.Callable[[int | float], bool] = _larger_than(0)
 
 
 def _is_ip_address(addr: str) -> bool:
@@ -100,7 +100,15 @@ SCHEMA = Schema(
                 Optional("ca_certs"): Or(str, None),
                 Optional("ciphers"): Or(str, None),
             },
-            "metrics": {"enabled": bool, "namespace": str},
+            "metrics": {
+                "enabled": bool,
+                "namespace": str,
+                Optional("duration"): {
+                    "min": And(float, _larger_than_zero),
+                    "max": And(float, _larger_than_zero),
+                    "factor": And(float, _larger_than(1.0)),
+                },
+            },
             "logging": {
                 # TODO add logging level configuration
                 "access": {
@@ -433,6 +441,18 @@ class _BentoMLContainerClass:
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]]({})
     plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
+
+    @providers.SingletonFactory
+    @staticmethod
+    def duration_buckets(
+        duration: t.Optional[t.Dict[str, float]] = Provide[config.metrics.duration],
+    ) -> t.Tuple[float, ...]:
+        from ..utils.metrics import DEFAULT_BUCKET
+        from ..utils.metrics import exponential_buckets
+        if duration is None:
+            return DEFAULT_BUCKET
+        else:
+            return exponential_buckets(duration.start, duration.factor, duration.end) # type: ignore
 
 
 BentoMLContainer = _BentoMLContainerClass()

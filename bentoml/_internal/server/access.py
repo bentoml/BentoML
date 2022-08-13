@@ -109,9 +109,9 @@ class AccessLogMiddleware:
                 if self.has_response_content_length:
                     response.append(f"length={response_content_length.get().decode()}")
 
-                latency = max(default_timer() - start, 0)
+                latency = max(default_timer() - start, 0) * 1000
 
-                self.logger.debug(
+                self.logger.info(
                     "%s (%s) (%s) %.3fms",
                     address,
                     ",".join(request),

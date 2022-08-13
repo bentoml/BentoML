@@ -5,16 +5,14 @@ import logging
 import functools
 import traceback
 import collections
-
 from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-import numpy as np
-
 from ..configuration.containers import BentoMLContainer
 from ..utils import cached_property
 from ..utils.alg import TokenBucket
+from ..utils.metrics import exponential_buckets
 
 if TYPE_CHECKING:
     from ..server.metrics.prometheus import PrometheusClient
@@ -137,7 +135,8 @@ class CorkDispatcher:
         self.adaptive_batch_size_hist = metrics_client.Histogram(
             name=runner_name + "_adaptive_batch_size",
             documentation=runner_name + " Runner adaptive batch size",
-            labelnames=[], # TODO: add service version
+            labelnames=[],  # TODO: add service version
+            buckets=exponential_buckets(1, 2, max_batch_size),
         )
 
     def shutdown(self):

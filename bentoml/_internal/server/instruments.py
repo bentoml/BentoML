@@ -33,6 +33,7 @@ class MetricsMiddleware:
     def _setup(
         self,
         metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
+        duration_buckets: tuple[float, ...] = Provide[BentoMLContainer.duration_buckets],
     ):
         self.metrics_client = metrics_client
         service_name = self.bento_service.name
@@ -44,6 +45,7 @@ class MetricsMiddleware:
             name=service_name + "_request_duration_seconds",
             documentation=service_name + " API HTTP request duration in seconds",
             labelnames=["endpoint", "service_version", "http_response_code"],
+            buckets=duration_buckets,
         )
         self.metrics_request_total = metrics_client.Counter(
             name=service_name + "_request_total",

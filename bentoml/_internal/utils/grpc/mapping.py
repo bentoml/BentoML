@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     import grpc
 
     from bentoml.grpc.v1 import service_pb2 as pb
+
+    from ... import external_typing as ext
 else:
     grpc = LazyLoader(
         "grpc",
@@ -26,10 +28,12 @@ else:
     )
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
+# Lazily load numpy
+np = LazyLoader("np", globals(), "numpy")
 
 # Maps HTTP status code to grpc.StatusCode
 @lru_cache(maxsize=1)
-def status_code_mapping() -> dict[Enum, grpc.StatusCode]:
+def http_status_to_grpc_status_map() -> dict[Enum, grpc.StatusCode]:
     return {
         HTTPStatus.OK: grpc.StatusCode.OK,
         HTTPStatus.UNAUTHORIZED: grpc.StatusCode.UNAUTHENTICATED,
@@ -46,7 +50,12 @@ def status_code_mapping() -> dict[Enum, grpc.StatusCode]:
 
 
 @lru_cache(maxsize=1)
-def file_enum_mapping() -> dict[pb.File.FileType.ValueType, str]:
+def grpc_status_to_http_status_map() -> dict[grpc.StatusCode, Enum]:
+    return {v: k for k, v in http_status_to_grpc_status_map().items()}
+
+
+@lru_cache(maxsize=1)
+def filetype_pb_to_mimetype_map() -> dict[pb.File.FileType.ValueType, str]:
     return {
         pb.File.FILE_TYPE_CSV: "text/csv",
         pb.File.FILE_TYPE_PLAINTEXT: "text/plain",
@@ -63,9 +72,73 @@ def file_enum_mapping() -> dict[pb.File.FileType.ValueType, str]:
     }
 
 
-def mimetype_from_file_enum(pb_type: pb.File.FileType.ValueType) -> str:
-    return file_enum_mapping()[pb_type]
+@lru_cache(maxsize=1)
+def mimetype_to_filetype_pb_map() -> dict[str, pb.File.FileType.ValueType]:
+    return {v: k for k, v in filetype_pb_to_mimetype_map().items()}
 
 
-def file_enum_from_mimetype(mime_type: str) -> pb.File.FileType.ValueType:
-    return {v: k for k, v in file_enum_mapping().items()}[mime_type]
+# TODO: support the following types for for protobuf message:
+# - support complex64, complex128, object and struct types
+# - BFLOAT16, QINT32, QINT16, QUINT16, QINT8, QUINT8
+#
+# For int16, uint16, int8, uint8 -> specify types in NumpyNdarray + using int_values.
+#
+# For bfloat16, half (float16) -> specify types in NumpyNdarray + using float_values.
+#
+# for string_values, use <U for np.dtype instead of S (zero-terminated bytes).
+FIELDPB_TO_NPDTYPE_NAME_MAP = {
+    "bool_values": "bool",
+    "float_values": "float32",
+    "string_values": "<U",
+    "double_values": "float64",
+    "int32_values": "int32",
+    "int64_values": "int64",
+    "uint32_values": "uint32",
+    "uint64_values": "uint64",
+}
+
+
+@lru_cache(maxsize=1)
+def dtypepb_to_fieldpb_map() -> dict[pb.NDArray.DType.ValueType, str]:
+    return {
+        pb.NDArray.DTYPE_FLOAT: "float_values",
+        pb.NDArray.DTYPE_DOUBLE: "double_values",
+        pb.NDArray.DTYPE_INT32: "int32_values",
+        pb.NDArray.DTYPE_INT64: "int64_values",
+        pb.NDArray.DTYPE_UINT32: "uint32_values",
+        pb.NDArray.DTYPE_UINT64: "uint64_values",
+        pb.NDArray.DTYPE_BOOL: "bool_values",
+        pb.NDArray.DTYPE_STRING: "string_values",
+    }
+
+
+@lru_cache(maxsize=1)
+def fieldpb_to_dtypepb_map() -> dict[str, pb.NDArray.DType.ValueType]:
+    return {v: k for k, v in dtypepb_to_fieldpb_map().items()}
+
+
+@lru_cache(maxsize=1)
+def dtypepb_to_npdtype_map() -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]:
+    # pb.NDArray.Dtype -> np.dtype
+    return {
+        k: np.dtype(FIELDPB_TO_NPDTYPE_NAME_MAP[v])
+        for k, v in dtypepb_to_fieldpb_map().items()
+    }
+
+
+@lru_cache(maxsize=1)
+def npdtype_to_dtypepb_map() -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
+    # np.dtype -> pb.NDArray.Dtype
+    return {v: k for k, v in dtypepb_to_npdtype_map().items()}
+
+
+@lru_cache(maxsize=1)
+def fieldpb_to_npdtype_map() -> dict[str, ext.NpDTypeLike]:
+    # str -> np.dtype
+    return {k: np.dtype(v) for k, v in FIELDPB_TO_NPDTYPE_NAME_MAP.items()}
+
+
+@lru_cache(maxsize=1)
+def npdtype_to_fieldpb_map() -> dict[ext.NpDTypeLike, str]:
+    # np.dtype -> str
+    return {v: k for k, v in fieldpb_to_npdtype_map().items()}

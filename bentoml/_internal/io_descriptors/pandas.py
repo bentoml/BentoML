@@ -35,7 +35,7 @@ else:
         "pd",
         globals(),
         "pandas",
-        exc_msg="`pandas` is required to use PandasDataFrame or PandasSeries. Install with `pip install -U pandas`",
+        exc_msg="'pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install -U pandas'",
     )
 
 logger = logging.getLogger(__name__)

@@ -41,7 +41,7 @@ else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = f"'Pillow' is required to use {__name__}. Install with: 'pip install -U Pillow'."
+    _exc = f"'Pillow' is required to use '{__name__}.Image'. Install with: 'pip install -U Pillow'."
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
@@ -250,8 +250,7 @@ class Image(IODescriptor[ImageType], proto_field="file"):
         from ..utils.grpc import get_field
         from ..utils.grpc import raise_grpc_exception
         from ..utils.grpc import validate_content_type
-        from ..utils.grpc.mapping import file_enum_mapping
-        from ..utils.grpc.mapping import mimetype_from_file_enum
+        from ..utils.grpc.mapping import filetype_pb_to_mimetype_map
 
         if self._mime_type.startswith("multipart"):
             raise_grpc_exception(
@@ -265,9 +264,11 @@ class Image(IODescriptor[ImageType], proto_field="file"):
 
         # check if the request message has the correct field
         field = get_field(request, self)
+        mapping = filetype_pb_to_mimetype_map()
+
         if field.kind:
             try:
-                mime_type = mimetype_from_file_enum(field.kind)
+                mime_type = mapping[field.kind]
                 if mime_type != self._mime_type:
                     raise_grpc_exception(
                         f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
@@ -275,7 +276,7 @@ class Image(IODescriptor[ImageType], proto_field="file"):
                     )
             except KeyError:
                 raise_grpc_exception(
-                    f"{field.kind} is not a valid File kind. Accepted file kind: {set(file_enum_mapping())}",
+                    f"{field.kind} is not a valid File kind. Accepted file kind: {set(mapping)}",
                     context=context,
                 )
 
@@ -285,7 +286,7 @@ class Image(IODescriptor[ImageType], proto_field="file"):
         self, obj: ImageType, context: BentoServicerContext
     ) -> pb.Response:
         from ..utils.grpc import raise_grpc_exception
-        from ..utils.grpc.mapping import file_enum_from_mimetype
+        from ..utils.grpc.mapping import mimetype_to_filetype_pb_map
 
         if self._mime_type.startswith("multipart"):
             raise_grpc_exception(
@@ -309,8 +310,10 @@ class Image(IODescriptor[ImageType], proto_field="file"):
 
         context.set_trailing_metadata((("content-type", self.grpc_content_type),))
 
+        mapping = mimetype_to_filetype_pb_map()
+
         try:
-            kind = file_enum_from_mimetype(self._mime_type)
+            kind = mapping[self._mime_type]
         except KeyError:
             raise_grpc_exception(
                 f"{self._mime_type} doesn't have a corresponding File 'kind'",

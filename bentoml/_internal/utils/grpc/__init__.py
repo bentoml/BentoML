@@ -12,7 +12,8 @@ from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import UnprocessableEntity
 
-from .mapping import status_code_mapping
+from .mapping import grpc_status_to_http_status_map
+from .mapping import http_status_to_grpc_status_map
 from ..lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
@@ -49,7 +50,6 @@ __all__ = [
     "raise_grpc_exception",
     "GRPC_CONTENT_TYPE",
     "validate_content_type",
-    "VALUES_TO_NP_DTYPE_MAP",
 ]
 
 logger = logging.getLogger(__name__)
@@ -57,27 +57,6 @@ logger = logging.getLogger(__name__)
 
 # content-type is always application/grpc
 GRPC_CONTENT_TYPE = "application/grpc"
-
-
-# TODO: support the following types for for protobuf message:
-# - support complex64, complex128, object and struct types
-# - BFLOAT16, QINT32, QINT16, QUINT16, QINT8, QUINT8
-#
-# For int16, uint16, int8, uint8 -> specify types in NumpyNdarray + using int_values.
-#
-# For bfloat16, half (float16) -> specify types in NumpyNdarray + using float_values.
-#
-# for string_values, use <U for np.dtype instead of S (zero-terminated bytes).
-VALUES_TO_NP_DTYPE_MAP = {
-    "bool_values": "bool",
-    "float_values": "float32",
-    "string_values": "<U",
-    "double_values": "float64",
-    "int_values": "int32",
-    "long_values": "int64",
-    "uint32_values": "uint32",
-    "uint64_values": "uint64",
-}
 
 
 def validate_content_type(
@@ -179,9 +158,10 @@ def raise_grpc_exception(
     context: BentoServicerContext,
     exc_cls: t.Type[BentoMLException] = BentoMLException,
 ):
-    context.set_code(
-        status_code_mapping().get(exc_cls.error_code, grpc.StatusCode.UNKNOWN)
+    code = http_status_to_grpc_status_map().get(
+        exc_cls.error_code, grpc.StatusCode.UNKNOWN
     )
+    context.set_code(code)
     context.set_details(msg)
     raise exc_cls(msg)
 
@@ -190,17 +170,16 @@ def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:
     """
     Convert BentoMLException.error_code to grpc.StatusCode.
     """
-    return status_code_mapping().get(err.error_code, grpc.StatusCode.UNKNOWN)
+    return http_status_to_grpc_status_map().get(err.error_code, grpc.StatusCode.UNKNOWN)
 
 
 def to_http_status(status_code: grpc.StatusCode) -> int:
     """
     Convert grpc.StatusCode to HTTPStatus.
     """
-    try:
-        status = {v: k for k, v in status_code_mapping().items()}[status_code]
-    except KeyError:
-        status = HTTPStatus.INTERNAL_SERVER_ERROR
+    status = grpc_status_to_http_status_map().get(
+        status_code, HTTPStatus.INTERNAL_SERVER_ERROR
+    )
 
     return status.value
 

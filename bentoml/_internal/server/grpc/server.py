@@ -19,9 +19,12 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health
     from grpc_health.v1 import health_pb2
     from grpc_health.v1 import health_pb2_grpc
+    from google.protobuf.descriptor import ServiceDescriptor
 
     from bentoml.grpc.v1 import service_pb2
     from bentoml.grpc.v1 import service_pb2_grpc
+    from bentoml.grpc.types import AddServicerFn
+    from bentoml.grpc.types import ServicerClass
 else:
     service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
     service_pb2_grpc = LazyLoader(
@@ -42,8 +45,12 @@ class GRPCServer:
         server: aio.Server,
         on_startup: t.Sequence[t.Callable[[], t.Any]] | None = None,
         on_shutdown: t.Sequence[t.Callable[[], t.Any]] | None = None,
+        mount_servicers: t.Sequence[
+            tuple[ServicerClass, AddServicerFn, list[ServiceDescriptor]]
+        ]
+        | None = None,
         *,
-        _grace_period: int | None = None,
+        _grace_period: int = 5,
         _bento_servicer: service_pb2_grpc.BentoServiceServicer,
         _health_servicer: health.aio.HealthServicer,
     ):
@@ -58,6 +65,7 @@ class GRPCServer:
 
         self.on_startup = [] if on_startup is None else list(on_startup)
         self.on_shutdown = [] if on_shutdown is None else list(on_shutdown)
+        self.mount_servicers = [] if mount_servicers is None else list(mount_servicers)
 
     @cached_property
     def _loop(self) -> asyncio.AbstractEventLoop:
@@ -67,12 +75,14 @@ class GRPCServer:
         try:
             self._loop.run_until_complete(self.serve(bind_addr=bind_addr))
         finally:
-            if self._cleanup:
-                self._loop.run_until_complete(*self._cleanup)
-                self._loop.close()
-            raise RuntimeError(
-                "Server failed unexpectedly. enable GRPC_VERBOSITY=debug for more information."
-            ) from None
+            try:
+                if self._cleanup:
+                    self._loop.run_until_complete(*self._cleanup)
+                    self._loop.close()
+            except Exception as e:  # pylint: disable=broad-except
+                raise RuntimeError(
+                    f"Server failed unexpectedly. enable GRPC_VERBOSITY=debug for more information: {e}"
+                ) from e
 
     async def serve(self, bind_addr: str) -> None:
         self.add_insecure_port(bind_addr)
@@ -108,7 +118,15 @@ class GRPCServer:
         services = tuple(
             service.full_name
             for service in service_pb2.DESCRIPTOR.services_by_name.values()
-        ) + (health.SERVICE_NAME, reflection.SERVICE_NAME)
+        )
+
+        # register custom servicer
+        for servicer, add_servicer_fn, service_descriptor in self.mount_servicers:
+            # TODO: Annotated types are not contravariant
+            add_servicer_fn(servicer(), self.server)
+            services += tuple(service.full_name for service in service_descriptor)
+
+        services += (health.SERVICE_NAME, reflection.SERVICE_NAME)
         reflection.enable_server_reflection(services, self.server)
 
         # mark all services as healthy

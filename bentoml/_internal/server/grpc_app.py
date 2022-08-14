@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ..service import Service
+    from ..server.metrics.prometheus import PrometheusClient
 
     OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
 
@@ -41,14 +42,16 @@ class GRPCAppFactory:
         _thread_pool_size: int = 10,
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+        enable_metrics: bool = Provide[
+            BentoMLContainer.api_server_config.metrics.enabled
+        ],
+        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ) -> None:
         self.bento_service = bento_service
-        self.server = aio.server(
-            ThreadPoolExecutor(_thread_pool_size),
-            interceptors=self.interceptors,
-            options=self.options,
-            maximum_concurrent_rpcs=maximum_concurrent_rpcs,
-        )
+        self.enable_metrics = enable_metrics
+        self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
+        self._thread_pool_size = _thread_pool_size
+        self._metrics_client = metrics_client
 
     @property
     def name(self) -> str:
@@ -87,7 +90,22 @@ class GRPCAppFactory:
             raise MissingDependencyException(
                 "'grpcio-health-checking' is required for using health checking endpoints. Install with `pip install grpcio-health-checking`."
             )
+        from ..utils import reserve_free_port
         from .grpc.servicer import create_bento_servicer
+
+        if self.enable_metrics:
+            with reserve_free_port() as port:
+                logger.info(
+                    f"Prometheus metrics for grpc server can be viewed at http://127.0.0.1:{port}/"
+                )
+            self._metrics_client.start_http_server(port)
+
+        server = aio.server(
+            ThreadPoolExecutor(self._thread_pool_size),
+            interceptors=self.interceptors,
+            options=self.options,
+            maximum_concurrent_rpcs=self._maximum_concurrent_rpcs,
+        )
 
         # Create a health check servicer. We use the non-blocking implementation
         # to avoid thread starvation.
@@ -95,7 +113,7 @@ class GRPCAppFactory:
         bento_servicer = create_bento_servicer(self.bento_service)
 
         return GRPCServer(
-            server=self.server,
+            server=server,
             on_startup=self.on_startup,
             on_shutdown=self.on_shutdown,
             _health_servicer=health_servicer,
@@ -124,11 +142,24 @@ class GRPCAppFactory:
     def interceptors(self) -> list[aio.ServerInterceptor]:
         # Note that order of interceptors is important here.
         from .grpc.interceptors import GenericHeadersServerInterceptor
+        from .grpc.interceptors.opentelemetry import (
+            AsyncOpenTelemetryServerInterceptor as AsyncOtelInterceptor,
+        )
 
-        # TODO: prometheus interceptors.
         interceptors: list[t.Type[aio.ServerInterceptor]] = [
             GenericHeadersServerInterceptor,
+            AsyncOtelInterceptor,
         ]
+
+        if self.enable_metrics:
+            from .grpc.interceptors.prometheus import PrometheusServerInterceptor
+
+            prometheus_interceptor = functools.partial(
+                PrometheusServerInterceptor,
+                bento_service=self.bento_service,
+                metrics_client=self._metrics_client,
+            )
+            interceptors.append(prometheus_interceptor)
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():

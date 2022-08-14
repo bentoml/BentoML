@@ -86,7 +86,7 @@ class GenericHeadersServerInterceptor(aio.ServerInterceptor):
 
 class AccessLogServerInterceptor(aio.ServerInterceptor):
     """
-    An asyncio interceptors for access log.
+    An asyncio interceptor for access log.
     """
 
     async def intercept_service(

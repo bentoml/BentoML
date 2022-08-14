@@ -114,6 +114,7 @@ exclude = ["tests"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "*.pyi", "*_pb2*.py", "*.j2"]
+"bentoml._internal.configuration" = ["*.yaml", "*.py"]
 
 [tool.setuptools_scm]
 write_to = "bentoml/_version.py"

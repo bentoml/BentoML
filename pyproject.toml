@@ -1,9 +1,11 @@
 [build-system]
 requires = [
-  # sync with setup.py until we discard non-pep-517/518
-  "wheel",
+  "protobuf==3.19.4",
+  "grpcio-tools==1.47.0",
+  "mypy-protobuf==3.2.0",
   "setuptools>=59.0",
-  "setuptools-scm[toml]>=6.2.3",
+  "setuptools-scm[toml]>=7.0.0",
+  "wheel",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -12,6 +14,43 @@ write_to = "bentoml/_version.py"
 git_describe_command = "git describe --dirty --tags --long --first-parent"
 version_scheme = "post-release"
 fallback_version = "0.0.0"
+
+[tool.coverage.paths]
+source = ["bentoml"]
+
+[tool.coverage.run]
+branch = true
+source = ["bentoml", "bentoml_cli"]
+omit = [
+  "bentoml/**/*_pb2.py",
+  "bentoml/__main__.py",
+  "bentoml/_internal/types.py",
+  "bentoml/_internal/external_typing/*",
+  "bentoml/testing/*",
+  "bentoml/io.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+precision = 2
+omit = [
+  "bentoml/**/*_pb2*.py",
+  "bentoml/_internal/external_typing/*",
+  "bentoml/_internal/types.py",
+  "bentoml/testing/*",
+  'bentoml/__main__.py',
+  "bentoml/io.py",
+]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "raise MissingDependencyException",
+  "except ImportError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
 
 [tool.black]
 line-length = 88
@@ -26,157 +65,161 @@ exclude = '''
     | build
     | dist
     | typings
+    | bentoml/grpc
   )/
   | bentoml/_version.py
 )
 '''
+extend-exclude = "(_pb2.py$|_pb2_grpc.py$)"
 
 [tool.pytest.ini_options]
-addopts = "-rfEX -p pytester -p no:warnings"
-python_files = ["test_*.py","*_test.py"]
+addopts = "-rfEX -p pytester -p no:warnings -x"
+python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus"]
 
-[tool.pylint.master]
-ignore=".ipynb_checkpoints,typings,bentoml/_internal/external_typing"
-ignore-paths=".*.pyi"
-unsafe-load-any-extension="no"
-extension-pkg-whitelist="numpy,tensorflow,torch,paddle,keras,pydantic"
-jobs=4
-persistent="yes"
-suggestion-mode="yes"
-max-line-length=88
-
-[tool.pylint.messages_control]
-disable="import-error,print-statement,parameter-unpacking,unpacking-in-except,old-raise-syntax,backtick,import-star-module-level,raw-checker-failed,bad-inline-option,locally-disabled,file-ignored,suppressed-message,useless-suppression,deprecated-pragma,apply-builtin,basestring-builtin,buffer-builtin,cmp-builtin,coerce-builtin,execfile-builtin,file-builtin,long-builtin,raw_input-builtin,reduce-builtin,standarderror-builtin,unicode-builtin,xrange-builtin,coerce-method,delslice-method,getslice-method,setslice-method,no-absolute-import,old-division,dict-iter-method,dict-view-method,next-method-called,metaclass-assignment,indexing-exception,raising-string,reload-builtin,oct-method,hex-method,nonzero-method,cmp-method,input-builtin,round-builtin,intern-builtin,unichr-builtin,map-builtin-not-iterating,zip-builtin-not-iterating,range-builtin-not-iterating,filter-builtin-not-iterating,using-cmp-argument,div-method,idiv-method,rdiv-method,exception-message-attribute,invalid-str-codec,sys-max-int,bad-python3-import,deprecated-string-function,deprecated-str-translate-call,deprecated-itertools-function,deprecated-types-field,next-method-defined,dict-items-not-iterating,dict-keys-not-iterating,dict-values-not-iterating,deprecated-operator-function,deprecated-urllib-function,xreadlines-attribute,deprecated-sys-function,exception-escape,comprehension-escape,logging-fstring-interpolation,logging-format-interpolation,logging-not-lazy,C,R,fixme,protected-access,no-member,unsubscriptable-object,raise-missing-from,isinstance-second-argument-not-valid-type"
-enable="c-extension-no-member"
-
-[tool.pylint.reports]
-evaluation="10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
-msg-template="{msg_id}:{symbol} [{line:0>3d}:{column:0>2d}] {obj}: {msg}"
-output-format="colorized"
-reports="no"
-score="yes"
-
-[tool.pylint.refactoring]
-max-nested-blocks=5
-never-returning-functions="optparse.Values,sys.exit"
-
-[tool.pylint.miscellaneous]
-notes="FIXME,XXX,TODO,NOTE"
-
-[tool.pylint.typecheck]
-ignored-classes="Namespace"
-contextmanager-decorators="contextlib.contextmanager"
-
-[tool.pylint.format]
-indent-after-paren=4
-indent-string='    '
-max-line-length=100
-max-module-lines=1000
-single-line-class-stmt="no"
-single-line-if-stmt="no"
-
-[tool.pylint.imports]
-allow-wildcard-with-all="no"
-analyse-fallback-blocks="no"
+[tool.pylint.main]
+recursive = true
+extension-pkg-allow-list = [
+  "numpy",
+  "tensorflow",
+  "torch",
+  "paddle",
+  "onnxruntime",
+  "onnx",
+  "pydantic.schema",
+]
+ignore-paths = ["typings", "bentoml/_internal/external_typing", "bentoml/grpc"]
+disable = [
+  "import-error",
+  "print-statement",
+  "parameter-unpacking",
+  "unpacking-in-except",
+  "old-raise-syntax",
+  "backtick",
+  "raw-checker-failed",
+  "bad-inline-option",
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "useless-suppression",
+  "deprecated-pragma",
+  "apply-builtin",
+  "basestring-builtin",
+  "buffer-builtin",
+  "cmp-builtin",
+  "coerce-builtin",
+  "execfile-builtin",
+  "file-builtin",
+  "long-builtin",
+  "raw_input-builtin",
+  "reduce-builtin",
+  "standarderror-builtin",
+  "coerce-method",
+  "delslice-method",
+  "getslice-method",
+  "setslice-method",
+  "no-absolute-import",
+  "old-division",
+  "dict-iter-method",
+  "dict-view-method",
+  "next-method-called",
+  "metaclass-assignment",
+  "indexing-exception",
+  "raising-string",
+  "reload-builtin",
+  "oct-method",
+  "hex-method",
+  "nonzero-method",
+  "cmp-method",
+  "input-builtin",
+  "round-builtin",
+  "intern-builtin",
+  "unichr-builtin",
+  "map-builtin-not-iterating",
+  "zip-builtin-not-iterating",
+  "range-builtin-not-iterating",
+  "filter-builtin-not-iterating",
+  "using-cmp-argument",
+  "exception-message-attribute",
+  "invalid-str-codec",
+  "sys-max-int",
+  "bad-python3-import",
+  "deprecated-string-function",
+  "deprecated-str-translate-call",
+  "deprecated-itertools-function",
+  "deprecated-types-field",
+  "next-method-defined",
+  "dict-items-not-iterating",
+  "dict-keys-not-iterating",
+  "dict-values-not-iterating",
+  "deprecated-operator-function",
+  "deprecated-urllib-function",
+  "xreadlines-attribute",
+  "deprecated-sys-function",
+  "exception-escape",
+  "comprehension-escape",
+  "logging-fstring-interpolation",
+  "logging-format-interpolation",
+  "logging-not-lazy",
+  "C",
+  "R",
+  "fixme",
+  "protected-access",
+  "no-member",
+  "unsubscriptable-object",
+  "raise-missing-from",
+  "isinstance-second-argument-not-valid-type",
+]
+enable = ["c-extension-no-member"]
+evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
+msg-template = "{msg_id}:{symbol} [{line:0>3d}:{column:0>2d}] {obj}: {msg}"
+output-format = "colorized"
+score = true
 
 [tool.pylint.classes]
-defining-attr-methods="__init__,__new__,setUp"
-exclude-protected="_asdict,_fields,_replace,_source,_make"
-valid-classmethod-first-arg="cls"
-valid-metaclass-classmethod-first-arg="mcs"
+valid-metaclass-classmethod-first-arg = ["cls", "mcls", "kls"]
 
-[tool.pylint.design]
-# Maximum number of arguments for function / method
-max-args=5
-# Maximum number of attributes for a class (see R0902).
-max-attributes=7
-# Maximum number of boolean expressions in a if statement
-max-bool-expr=5
-# Maximum number of branch for function / method body
-max-branches=12
-# Maximum number of locals for function / method body
-max-locals=15
-# Maximum number of parents for a class (see R0901).
-max-parents=7
-# Maximum number of public methods for a class (see R0904).
-max-public-methods=20
-# Maximum number of return / yield for function / method body
-max-returns=6
-# Maximum number of statements in function / method body
-max-statements=50
-# Minimum number of public methods for a class (see R0903).
-min-public-methods=2
+[tool.pylint.logging]
+logging-format-style = "new" # using f-string formatter for logging.
+
+[tool.pylint.miscellaneous]
+notes = ["FIXME", "XXX", "TODO", "NOTE", "WARNING"]
+
+[tool.pylint.refactoring]
+never-returning-functions = [
+  "sys.exit",
+  "raise_grpc_exception",
+] # specify functions that should not return
+
+[tool.pylint.spelling]
+spelling-ignore-comment-directives = "fmt: on,fmt: off,noqa:,noqa,nosec,isort:skip,mypy:,pylint:,type:"
+
+[tool.pylint.variables]
+allowed-redefined-builtins = ["create_bento_servicer.BentoServiceServicer.Call"]
+init-import = true
 
 [tool.isort]
 profile = "black"
+line_length = 88
 length_sort = true
 force_single_line = true
 order_by_type = true
 force_alphabetical_sort_within_sections = true
-skip_glob = ["typings/*", "docs/*"]
+skip_glob = ["typings/*", "test/*", "**/*_pb2.py", "**/*_pb2_grpc.py"]
 
 [tool.pyright]
 pythonVersion = "3.10"
 include = ["bentoml"]
-exclude = ['bentoml/_version.py','bentoml/__main__.py']
-analysis.useLibraryCodeForTypes = true
-strictListInference = true
-strictDictionaryInference = true
-strictSetInference = true
-strictParameterNoneValue = true
-enableTypeIgnoreComments = true
-reportGeneralTypeIssues = "error"
-reportPropertyTypeMismatch = "error"
-reportFunctionMemberAccess = "error"
-reportMissingImports = "warning"
-reportMissingModuleSource = "warning"
-reportMissingTypeStubs = "warning"
-reportUnusedImport = "error"
-reportUnusedClass = "error"
-reportUnusedFunction = "error"
-reportUnusedVariable = "error"
-reportDuplicateImport = "error"
-reportWildcardImportFromLibrary = "error"
-reportOptionalSubscript = "error"
-reportOptionalMemberAccess = "error"
-reportOptionalCall = "error"
-reportOptionalIterable = "error"
-reportOptionalContextManager = "error"
-reportOptionalOperand = "error"
-reportTypedDictNotRequiredAccess = "error"
-reportUntypedFunctionDecorator = "error"
-reportUntypedClassDecorator = "error"
-reportUntypedBaseClass = "error"
-reportUntypedNamedTuple = "error"
-reportPrivateUsage = "error"
-reportPrivateImportUsage = "error"
-reportConstantRedefinition = "error"
-reportIncompatibleMethodOverride = "error"
-reportIncompatibleVariableOverride = "error"
-reportOverlappingOverload = "error"
-reportUninitializedInstanceVariable = "none"
-reportInvalidStringEscapeSequence = "error"
-reportUnknownParameterType = "error"
-reportUnknownArgumentType = "error"
-reportUnknownLambdaType = "error"
-reportUnknownVariableType = "error"
-reportUnknownMemberType = "warning"
-reportMissingParameterType = "error"
-reportMissingTypeArgument = "error"
-reportInvalidTypeVarUse = "error"
-reportCallInDefaultInitializer = "none"
-reportUnnecessaryIsInstance = "warning"
-reportUnnecessaryCast = "error"
-reportUnnecessaryComparison = "error"
-reportAssertAlwaysTrue = "error"
-reportSelfClsParameterName = "error"
-reportImplicitStringConcatenation = "none"
-reportUndefinedVariable = "error"
-reportUnboundVariable = "error"
-reportInvalidStubStatement = "error"
-reportIncompleteStub = "error"
-reportUnsupportedDunderAll = "error"
-reportUnusedCallResult = "none"
-reportUnusedCoroutine = "error"
+exclude = [
+  'bentoml/_version.py',
+  'bentoml/__main__.py',
+  'bentoml/_internal/external_typing',
+  'bentoml/grpc',
+  '**/*_pb2.py',
+  "**/*_pb2_grpc.py",
+]
+useLibraryCodeForTypes = true
+reportMissingImports = true
+reportMissingTypeStubs = false
+typeCheckingMode = "strict"

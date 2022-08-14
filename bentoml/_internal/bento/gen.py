@@ -5,14 +5,16 @@ import typing as t
 import logging
 from sys import version_info
 from typing import TYPE_CHECKING
+from dataclasses import asdict
+from dataclasses import dataclass
 
-import attr
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
+from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .docker import DistroSpec
-from ..configuration import CLEAN_BENTOML_VERSION
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
     from .build_config import DockerOptions
 
     TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
-    GenericFunc = t.Callable[P, t.Any]
+    F = t.Callable[P, t.Any]
 
 BENTO_UID_GID = 1034
 BENTO_USER = "bentoml"
@@ -45,33 +47,34 @@ def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
     return "/".join([bento_path, *path])
 
 
-J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
-    "expands_bento_path": expands_bento_path,
-}
+J2_FUNCTION: dict[str, F[t.Any]] = {"expands_bento_path": expands_bento_path}
+
+to_preserved_field: t.Callable[[str], str] = lambda s: f"__{s}__"
+to_bento_field: t.Callable[[str], str] = lambda s: f"bento__{s}"
+to_options_field: t.Callable[[str], str] = lambda s: f"__options__{s}"
 
 
-@attr.frozen(on_setattr=None, eq=False, repr=False)
+@dataclass
 class ReservedEnv:
     base_image: str
-    supported_architectures: list[str]
-    bentoml_version: str = attr.field(default=CLEAN_BENTOML_VERSION)
-    python_version: str = attr.field(
-        default=f"{version_info.major}.{version_info.minor}"
-    )
+    python_version: str = f"{version_info.major}.{version_info.minor}"
 
-    def todict(self):
-        return {f"__{k}__": v for k, v in attr.asdict(self).items()}
+    def asdict(self) -> dict[str, t.Any]:
+        return {
+            **{to_preserved_field(k): v for k, v in asdict(self).items()},
+            "__prometheus_port__": BentoMLContainer.grpc.metrics.port.get(),
+        }
 
 
-@attr.frozen(on_setattr=None, eq=False, repr=False)
+@dataclass
 class CustomizableEnv:
-    uid_gid: int = attr.field(default=BENTO_UID_GID)
-    user: str = attr.field(default=BENTO_USER)
-    home: str = attr.field(default=BENTO_HOME)
-    path: str = attr.field(default=BENTO_PATH)
+    uid_gid: int = BENTO_UID_GID
+    user: str = BENTO_USER
+    home: str = BENTO_HOME
+    path: str = BENTO_PATH
 
-    def todict(self) -> dict[str, str]:
-        return {f"bento__{k}": v for k, v in attr.asdict(self).items()}
+    def asdict(self) -> dict[str, t.Any]:
+        return {to_bento_field(k): v for k, v in asdict(self).items()}
 
 
 def get_templates_variables(
@@ -85,6 +88,9 @@ def get_templates_variables(
         distro = options.distro
         cuda_version = options.cuda_version
         python_version = options.python_version
+
+        assert distro and python_version
+
         spec = DistroSpec.from_distro(
             distro, cuda=cuda_version is not None, conda=use_conda
         )
@@ -97,28 +103,32 @@ def get_templates_variables(
             else:
                 python_version = python_version
             base_image = spec.image.format(spec_version=python_version)
-        supported_architecture = spec.supported_architectures
     else:
         base_image = options.base_image
-        # TODO: allow user to specify supported architectures of the base image
-        supported_architecture = ["amd64"]
         logger.info(
-            f"BentoML will not install Python to custom base images; ensure the base image '{base_image}' has Python installed."
+            "BentoML will not install Python to custom base images; ensure the base image '%s' has Python installed.",
+            base_image,
         )
 
     # environment returns are
-    # __base_image__, __supported_architectures__, __bentoml_version__, __python_version_full__
+    # __base_image__, __python_version__, __prometheus_port__
     # bento__uid_gid, bento__user, bento__home, bento__path
     # __options__distros, __options__base_image, __options_env, __options_system_packages, __options_setup_script
     return {
-        **{f"__options__{k}": v for k, v in attr.asdict(options).items()},
-        **CustomizableEnv().todict(),
-        **ReservedEnv(base_image, supported_architecture).todict(),
+        **{
+            to_options_field(k): v
+            for k, v in bentoml_cattr.unstructure(options).items()
+        },
+        **CustomizableEnv().asdict(),
+        **ReservedEnv(base_image=base_image).asdict(),
     }
 
 
 def generate_dockerfile(
-    options: DockerOptions, build_ctx: str, *, use_conda: bool
+    options: DockerOptions,
+    build_ctx: str,
+    *,
+    use_conda: bool,
 ) -> str:
     """
     Generate a Dockerfile that containerize a Bento.
@@ -179,6 +189,7 @@ def generate_dockerfile(
     if options.base_image is not None:
         base = "base.j2"
     else:
+        assert distro  # distro will be set via 'with_defaults()'
         spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
         base = f"{spec.release_type}_{distro}.j2"
 

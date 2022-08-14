@@ -120,6 +120,7 @@ python:
   extra_index_url: null
   pip_args: null
   wheels: null
+  extras_require: null
 conda:
   environment_yml: null
   channels: null

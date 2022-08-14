@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import attr
 
-from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
+from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -109,7 +109,7 @@ class DistroSpec:
         ),
     )
 
-    supported_cuda_versions: t.List[str] = attr.field(
+    supported_cuda_versions: t.Optional[t.List[str]] = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.deep_iterable(

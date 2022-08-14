@@ -64,7 +64,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            "BentoML will install the latest python%s instead of the specified version %s. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
+            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
             target_python_version,
             py_version,
         )
@@ -165,20 +165,27 @@ class DockerOptions:
         if self.base_image is not None:
             if self.distro is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'distro={self.distro}' option is ignored.",
+                    "docker base_image %s is used, 'distro=%s' option is ignored.",
+                    self.base_image,
+                    self.distro,
                 )
             if self.python_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'python={self.python_version}' option is ignored.",
+                    "docker base_image %s is used, 'python=%s' option is ignored.",
+                    self.base_image,
+                    self.python_version,
                 )
             if self.cuda_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'cuda_version={self.cuda_version}' option is ignored.",
+                    "docker base_image %s is used, 'cuda_version=%s' option is ignored.",
+                    self.base_image,
+                    self.cuda_version,
                 )
             if self.system_packages:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, "
-                    f"'system_packages={self.system_packages}' option is ignored.",
+                    "docker base_image %s is used, 'system_packages=%s' option is ignored.",
+                    self.base_image,
+                    self.system_packages,
                 )
 
         if self.distro is not None and self.cuda_version is not None:
@@ -225,14 +232,14 @@ class DockerOptions:
             try:
                 setup_script = resolve_user_filepath(self.setup_script, build_ctx)
             except FileNotFoundError as e:
-                raise InvalidArgument(f"Invalid setup_script file: {e}")
+                raise InvalidArgument(f"Invalid setup_script file: {e}") from None
             if not os.access(setup_script, os.X_OK):
                 message = f"{setup_script} is not executable."
                 if not psutil.WINDOWS:
                     raise InvalidArgument(
                         f"{message} Ensure the script has a shebang line, then run 'chmod +x {setup_script}'."
-                    )
-                raise InvalidArgument(message)
+                    ) from None
+                raise InvalidArgument(message) from None
             copy_file_to_fs_folder(
                 setup_script, bento_fs, docker_folder, "setup_script"
             )
@@ -376,6 +383,9 @@ class CondaOptions:
         )
 
 
+ADDITIONAL_COMPONENTS = ["tracing", "grpc", "zipkin", "jaeger", "otlp"]
+
+
 @attr.frozen
 class PythonOptions:
 
@@ -424,15 +434,27 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(list)),
     )
+    components: t.Optional[t.Dict[str, bool]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(
+            attr.validators.deep_mapping(
+                key_validator=attr.validators.in_(ADDITIONAL_COMPONENTS),
+                value_validator=attr.validators.instance_of(bool),
+            )
+        ),
+    )
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
             logger.warning(
-                f'Build option python: `requirements_txt="{self.requirements_txt}"` found, will ignore the option: `packages="{self.packages}"`.'
+                "Build option python: 'requirements_txt={self.requirements_txt}' found, will ignore the option: 'packages=%s'.",
+                self.requirements_txt,
+                self.packages,
             )
         if self.no_index and (self.index_url or self.extra_index_url):
             logger.warning(
-                f'Build option python: `no_index="{self.no_index}"` found, will ignore `index_url` and `extra_index_url` option when installing PyPI packages.'
+                "Build option python: 'no_index=%s' found, will ignore 'index_url' and 'extra_index_url' option when installing PyPI packages.",
+                self.no_index,
             )
 
     def is_empty(self) -> bool:
@@ -479,8 +501,10 @@ class PythonOptions:
             pip_args.extend(self.pip_args.split())
 
         with bento_fs.open(fs.path.combine(py_folder, "install.sh"), "w") as f:
-            args = " ".join(map(quote, pip_args)) if pip_args else ""
-            install_script_content = (
+            args = ["--no-warn-script-location"]
+            if pip_args:
+                args.extend(pip_args)
+            install_sh = (
                 """\
 #!/usr/bin/env bash
 set -exuo pipefail
@@ -488,8 +512,8 @@ set -exuo pipefail
 # Parent directory https://stackoverflow.com/a/246128/8643197
 BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
 
-PIP_ARGS=(--no-warn-script-location """
-                + args
+PIP_ARGS=("""
+                + " ".join(map(quote, args))
                 + """)
 
 # BentoML by default generates two requirement files:
@@ -525,11 +549,20 @@ if python -c "import bentoml" &> /dev/null; then
         echo "WARNING: using BentoML version ${existing_bentoml_version}"
     fi
 else
-pip install bentoml=="$BENTOML_VERSION"
+    pip install bentoml=="$BENTOML_VERSION"
 fi
 """
             )
-            f.write(install_script_content)
+            if self.components:
+                components = map(
+                    lambda t: t[0], filter(lambda t: t[1], self.components.items())
+                )
+                install_sh += f"""\
+
+# Install additional bentoml components
+pip install "bentoml[{','.join(components)}]"
+"""
+            f.write(install_sh)
 
         if self.requirements_txt is not None:
             requirements_txt_file = resolve_user_filepath(
@@ -591,6 +624,8 @@ fi
         if self.requirements_txt is None:
             if self.lock_packages is None:
                 defaults["lock_packages"] = True
+        if self.components is None:
+            defaults["components"] = {k: False for k in ADDITIONAL_COMPONENTS}
 
         return attr.evolve(self, **defaults)
 

@@ -16,6 +16,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml import load
+from bentoml.exceptions import UnprocessableEntity
 
 from ._internal.log import SERVER_LOGGING_CONFIG
 from ._internal.utils import reserve_free_port
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 SCRIPT_RUNNER = "bentoml_cli.server.runner"
 SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
+SCRIPT_GRPC_API_SERVER = "bentoml_cli.server.grpc_api_server"
 SCRIPT_DEV_API_SERVER = "bentoml_cli.server.http_dev_api_server"
 SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.server.grpc_dev_api_server"
 
@@ -106,7 +108,7 @@ def serve_development(
 
     watchers: t.List[Watcher] = []
 
-    circus_sockets: t.List[CircusSocket] = []
+    circus_sockets: list[CircusSocket] = []
     circus_sockets.append(
         CircusSocket(
             name="_bento_api_server",
@@ -254,6 +256,8 @@ def serve_production(
     | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
+    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    grpc: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -261,12 +265,17 @@ def serve_production(
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
-    watchers: t.List[Watcher] = []
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
-    runner_bind_map: t.Dict[str, str] = {}
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
+    runner_bind_map: dict[str, str] = {}
     uds_path = None
 
     prometheus_dir = ensure_prometheus_dir()
+
+    if grpc and psutil.WINDOWS:
+        raise UnprocessableEntity(
+            "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
+        )
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -355,6 +364,18 @@ def serve_production(
 
     logger.debug("Runner map: %s", runner_bind_map)
 
+    if grpc:
+        watcher_name = "grpc_api_server"
+        script_to_use = SCRIPT_GRPC_API_SERVER
+        socket_path = f"tcp://{host}:{port}"
+        # num_connect_args = ["--max-concurrent-streams", f"{max_concurrent_streams}"]
+        num_connect_args = []
+    else:
+        watcher_name = "api_server"
+        script_to_use = SCRIPT_API_SERVER
+        socket_path = "fd://$(circus.sockets._bento_api_server)"
+        num_connect_args = ["--backlog", f"{backlog}"]
+
     circus_socket_map["_bento_api_server"] = CircusSocket(
         name="_bento_api_server",
         host=host,
@@ -400,20 +421,19 @@ def serve_production(
 
     watchers.append(
         Watcher(
-            name="api_server",
+            name=watcher_name,
             cmd=sys.executable,
             args=[
                 "-m",
-                SCRIPT_API_SERVER,
+                script_to_use,
                 bento_identifier,
                 "--bind",
-                f"fd://$(circus.sockets._bento_api_server)",
+                socket_path,
                 "--runner-map",
                 json.dumps(runner_bind_map),
                 "--working-dir",
                 working_dir,
-                "--backlog",
-                f"{backlog}",
+                *num_connect_args,
                 "--worker-id",
                 "$(CIRCUS.WID)",
                 "--prometheus-dir",

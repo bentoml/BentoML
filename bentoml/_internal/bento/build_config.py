@@ -156,6 +156,7 @@ class DockerOptions:
         default=None,
         converter=_convert_env,
     )
+    grpc: bool = False
     system_packages: t.Optional[t.List[str]] = None
     setup_script: t.Optional[str] = None
     base_image: t.Optional[str] = None

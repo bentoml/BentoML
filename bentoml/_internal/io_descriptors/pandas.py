@@ -12,7 +12,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from .json import MIME_TYPE_JSON
 from ..types import LazyType
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
@@ -36,7 +35,7 @@ else:
         "pd",
         globals(),
         "pandas",
-        exc_msg="`pandas` is required to use PandasDataFrame or PandasSeries. Install with `pip install -U pandas`",
+        exc_msg="'pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install -U pandas'",
     )
 
 logger = logging.getLogger(__name__)
@@ -111,15 +110,12 @@ def _infer_serialization_format_from_request(
         return SerializationFormat.CSV
     elif content_type:
         logger.debug(
-            "Unknown content-type (%s), falling back to %s serialization format.",
-            content_type,
-            default_format,
+            f"Unknown content-type ('{content_type}'), falling back to '{default_format}' serialization format.",
         )
         return default_format
     else:
         logger.debug(
-            "Content-type not specified, falling back to %s serialization format.",
-            default_format,
+            f"Content-type not specified, falling back to '{default_format}' serialization format.",
         )
         return default_format
 
@@ -134,7 +130,7 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
         )
 
 
-class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
+class PandasDataFrame(IODescriptor["ext.PdDataFrame"], proto_field="dataframe"):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
     where either inputs will be converted to or outputs will be converted from type
@@ -203,7 +199,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
                 - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
                 - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` -> {``index`` ↠ ``value``}}
+                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
         apply_column_names: Whether to update incoming DataFrame columns. If :code:`apply_column_names=True`,
@@ -435,7 +431,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                     - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
                     - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
                     - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                    - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` -> {``index`` ↠ ``value``}}
+                    - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                     - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
             apply_column_names: Update incoming DataFrame columns. ``columns`` must be specified at
                                 function signature. If you don't want to enforce a specific columns
@@ -485,8 +481,14 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         return inst
 
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
 
-class PandasSeries(IODescriptor["ext.PdSeries"]):
+    async def to_grpc_response(self, obj, context) -> t.Any:
+        pass
+
+
+class PandasSeries(IODescriptor["ext.PdSeries"], proto_field="series"):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -551,7 +553,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
                 - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
                 - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
                 - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` -> {``index`` ↠ ``value``}}
+                - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
         apply_column_names (`bool`, `optional`, default to :code:`False`):
@@ -581,8 +583,6 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
     Returns:
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
-
-    _mime_type: str = MIME_TYPE_JSON
 
     def __init__(
         self,
@@ -673,11 +673,19 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         if ctx is not None:
             res = Response(
                 obj.to_json(orient=self._orient),
-                media_type=MIME_TYPE_JSON,
+                media_type=self._mime_type,
                 headers=ctx.response.headers,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(obj.to_json(orient=self._orient), media_type=MIME_TYPE_JSON)
+            return Response(
+                obj.to_json(orient=self._orient), media_type=self._mime_type
+            )
+
+    async def from_grpc_request(self, request, context) -> t.Any:
+        pass
+
+    async def to_grpc_response(self, obj, context) -> t.Any:
+        pass

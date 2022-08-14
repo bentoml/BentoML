@@ -11,19 +11,24 @@ from bentoml.exceptions import BentoMLException
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-
-if TYPE_CHECKING:
-    from ..context import InferenceApiContext as Context
-
+from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
+
+if TYPE_CHECKING:
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
+
+    from ..context import InferenceApiContext as Context
+else:
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str]):
+class Text(IODescriptor[str], proto_field="text"):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -131,3 +136,31 @@ class Text(IODescriptor[str]):
             return res
         else:
             return Response(obj, media_type=MIME_TYPE)
+
+    async def from_grpc_request(
+        self, request: pb.Request, context: BentoServicerContext
+    ) -> str:
+        import ast
+
+        from bentoml.grpc.utils import get_field
+        from bentoml.grpc.utils import validate_content_type
+
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
+
+        field = ast.literal_eval(get_field(request, self))
+
+        try:
+            return bytes(field, "ascii").decode("utf-8")
+        except TypeError:
+            import base64
+
+            return base64.b64decode(field).decode("utf-8")
+
+    async def to_grpc_response(
+        self, obj: str, context: BentoServicerContext
+    ) -> pb.Response:
+
+        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
+
+        return pb.Response(text=obj)

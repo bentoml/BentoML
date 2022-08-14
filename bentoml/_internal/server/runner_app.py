@@ -140,7 +140,7 @@ class RunnerAppFactory(BaseAppFactory):
 
         access_log_config = BentoMLContainer.runners_config.logging.access
         if access_log_config.enabled.get():
-            from .access import AccessLogMiddleware
+            from .http.access import AccessLogMiddleware
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:

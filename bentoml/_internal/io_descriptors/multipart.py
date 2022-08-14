@@ -21,11 +21,14 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     from types import UnionType
 
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
+
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
 
 
-class Multipart(IODescriptor[t.Any]):
+class Multipart(IODescriptor[t.Any], proto_field="multipart"):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -154,12 +157,11 @@ class Multipart(IODescriptor[t.Any]):
     """
 
     def __init__(self, **inputs: IODescriptor[t.Any]):
-        for descriptor in inputs.values():
-            if isinstance(descriptor, Multipart):  # pragma: no cover
-                raise InvalidArgument(
-                    "Multipart IO can not contain nested Multipart IO descriptor"
-                )
-        self._inputs: dict[str, t.Any] = inputs
+        if any(isinstance(descriptor, Multipart) for descriptor in inputs.values()):
+            raise InvalidArgument(
+                "Multipart IO can not contain nested Multipart IO descriptor"
+            )
+        self._inputs = inputs
         self._mime_type = "multipart/form-data"
 
     def input_type(
@@ -204,20 +206,69 @@ class Multipart(IODescriptor[t.Any]):
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             )
 
-        res: dict[str, t.Any] = dict()
         reqs = await populate_multipart_requests(request)
 
-        for k, i in self._inputs.items():
-            req = reqs[k]
-            v = await i.from_http_request(req)
-            res[k] = v
-        return res
+        return {
+            key: await io_.from_http_request(reqs[key])
+            for key, io_ in self._inputs.items()
+        }
 
     async def to_http_response(
         self, obj: dict[str, t.Any], ctx: Context | None = None
     ) -> Response:
-        res_mapping: dict[str, Response] = {}
-        for k, io_ in self._inputs.items():
-            data = obj[k]
-            res_mapping[k] = await io_.to_http_response(data, ctx)
+        res_mapping: dict[str, Response] = {
+            key: await io_.to_http_response(obj[key], ctx)
+            for key, io_ in self._inputs.items()
+        }
         return await concat_to_multipart_response(res_mapping, ctx)
+
+    async def from_grpc_request(
+        self, request: pb.Request, context: BentoServicerContext
+    ) -> dict[str, t.Any]:
+        from bentoml.grpc.utils import get_field
+        from bentoml.grpc.utils import raise_grpc_exception
+        from bentoml.grpc.utils import validate_content_type
+
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
+        field = get_field(request, self)
+
+        if len(set(field) - set(self._inputs)) != 0:
+            raise_grpc_exception(
+                f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as input fields. Invalid fields are: {set(field) - set(self._inputs)}",
+                context=context,
+            )
+
+        return {
+            key: await self._inputs[key].from_grpc_request(input_pb, context)
+            for key, input_pb in field.items()
+        }
+
+    async def to_grpc_response(
+        self, obj: dict[str, t.Any], context: BentoServicerContext
+    ) -> pb.Response:
+        from bentoml.grpc.utils import raise_grpc_exception
+        from bentoml.grpc.utils import validate_content_type
+
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
+
+        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
+
+        if len(set(obj) - set(self._inputs)) != 0:
+            raise_grpc_exception(
+                f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as output fields. Invalid fields are: {set(obj) - set(self._inputs)}",
+                context=context,
+                exception_cls=InvalidArgument,
+            )
+        multipart_map: dict[str, pb.Part] = {}
+
+        for key in obj:
+            io_descriptor = self._inputs[key]
+            resp = await io_descriptor.to_grpc_response(obj[key], context)
+            part = pb.Part(
+                **{io_descriptor.proto_field: getattr(resp, io_descriptor.proto_field)}
+            )
+            multipart_map[key] = part
+
+        return pb.Response(multipart=multipart_map)

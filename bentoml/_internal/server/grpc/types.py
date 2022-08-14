@@ -6,6 +6,7 @@ from __future__ import annotations
 from typing import TypeVar
 from typing import Callable
 from typing import Optional
+from typing import Awaitable
 from typing import NamedTuple
 from typing import TYPE_CHECKING
 
@@ -19,12 +20,13 @@ if TYPE_CHECKING:
 
     P = TypeVar("P")
 
-    BentoServicerContext = aio.ServicerContext[Response, Request]
+    BentoServicerContext = aio.ServicerContext[Request, Response]
 
     RequestDeserializerFn = Callable[[Request | None], object] | None
     ResponseSerializerFn = Callable[[bytes], Response | None] | None
 
     HandlerMethod = Callable[[Request, BentoServicerContext], P]
+    AsyncHandlerMethod = Callable[[Request, BentoServicerContext], Awaitable[P]]
 
     class RpcMethodHandler(
         NamedTuple(

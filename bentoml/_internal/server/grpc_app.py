@@ -10,6 +10,8 @@ from grpc import aio
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml.exceptions import MissingDependencyException
+
 from .grpc.server import GRPCServer
 from ..configuration.containers import BentoMLContainer
 
@@ -31,12 +33,21 @@ class GRPCAppFactory:
 
     _is_ready: bool = False
 
-    def __init__(self, bento_service: Service, *, _thread_pool_size: int = 10) -> None:
+    @inject
+    def __init__(
+        self,
+        bento_service: Service,
+        *,
+        _thread_pool_size: int = 10,
+        maximum_concurrent_rpcs: int
+        | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+    ) -> None:
         self.bento_service = bento_service
         self.server = aio.server(
             ThreadPoolExecutor(_thread_pool_size),
             interceptors=self.interceptors,
             options=self.options,
+            maximum_concurrent_rpcs=maximum_concurrent_rpcs,
         )
 
     @property
@@ -48,9 +59,6 @@ class GRPCAppFactory:
 
     @property
     def on_startup(self) -> OnStartup:
-        from .grpc import register_bento_servicer
-        from .grpc import register_health_servicer
-
         on_startup: OnStartup = [
             self.mark_as_ready,
             self.bento_service.on_grpc_server_startup,
@@ -61,17 +69,6 @@ class GRPCAppFactory:
         else:
             for runner in self.bento_service.runners:
                 on_startup.append(runner.init_client)
-
-        on_startup.extend(
-            [
-                functools.partial(
-                    register_bento_servicer,
-                    service=self.bento_service,
-                    server=self.server,
-                ),
-                functools.partial(register_health_servicer, server=self.server),
-            ]
-        )
 
         return on_startup
 
@@ -84,10 +81,25 @@ class GRPCAppFactory:
         return on_shutdown
 
     def __call__(self) -> GRPCServer:
+        try:
+            from grpc_health.v1 import health
+        except ImportError:
+            raise MissingDependencyException(
+                "'grpcio-health-checking' is required for using health checking endpoints. Install with `pip install grpcio-health-checking`."
+            )
+        from .grpc.servicer import create_bento_servicer
+
+        # Create a health check servicer. We use the non-blocking implementation
+        # to avoid thread starvation.
+        health_servicer = health.aio.HealthServicer()
+        bento_servicer = create_bento_servicer(self.bento_service)
+
         return GRPCServer(
             server=self.server,
             on_startup=self.on_startup,
             on_shutdown=self.on_shutdown,
+            _health_servicer=health_servicer,
+            _bento_servicer=bento_servicer,
         )
 
     @property
@@ -110,13 +122,23 @@ class GRPCAppFactory:
 
     @property
     def interceptors(self) -> list[aio.ServerInterceptor]:
-        from .grpc.interceptors import ExceptionHandlerInterceptor
+        # Note that order of interceptors is important here.
+        from .grpc.interceptors import GenericHeadersServerInterceptor
 
-        # # TODO: add access log, tracing, prometheus interceptors.
-        interceptors: list[aio.ServerInterceptor] = [ExceptionHandlerInterceptor()]
+        # TODO: prometheus interceptors.
+        interceptors: list[t.Type[aio.ServerInterceptor]] = [
+            GenericHeadersServerInterceptor,
+        ]
+
+        access_log_config = BentoMLContainer.api_server_config.logging.access
+        if access_log_config.enabled.get():
+            from .grpc.interceptors import AccessLogServerInterceptor
+
+            access_logger = logging.getLogger("bentoml.access")
+            if access_logger.getEffectiveLevel() <= logging.INFO:
+                interceptors.append(AccessLogServerInterceptor)
 
         # add users-defined interceptors.
-        interceptors.extend(
-            [interceptor() for interceptor in self.bento_service.interceptors]
-        )
-        return interceptors
+        interceptors.extend(self.bento_service.interceptors)
+
+        return list(map(lambda x: x(), interceptors))

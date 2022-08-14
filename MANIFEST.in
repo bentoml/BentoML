@@ -1,10 +1,14 @@
 # All files tracked by Git are included in PyPI distribution
+include bentoml/grpc/**/*_pb2*.py
+include bentoml/grpc/**/*.pyi
 
 # Files to exclude in PyPI distribution
 exclude CONTRIBUTING.md GOVERNANCE.md CODE_OF_CONDUCT.md DEVELOPMENT.md SECURITY.md
 exclude Makefile MANIFEST.in
 exclude *.yml
 exclude .git*
+exclude bentoml/grpc/buf.yaml
+exclude bentoml/_internal/frameworks/FRAMEWORK_TEMPLATE_PY
 
 # Directories to exclude in PyPI package
 prune requirements
@@ -18,6 +22,7 @@ prune .git*
 prune */__pycache__
 prune */.DS_Store
 prune */.ipynb_checkpoints
+prune */README*
 
 # Patterns to exclude from any directory
 global-exclude *.py[cod]

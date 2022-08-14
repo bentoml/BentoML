@@ -18,6 +18,8 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    import grpc
+
     from ..service import Service
     from ..server.metrics.prometheus import PrometheusClient
 
@@ -90,18 +92,11 @@ class GRPCAppFactory:
             raise MissingDependencyException(
                 "'grpcio-health-checking' is required for using health checking endpoints. Install with `pip install grpcio-health-checking`."
             )
-        from ..utils import reserve_free_port
         from .grpc.servicer import create_bento_servicer
 
-        if self.enable_metrics:
-            with reserve_free_port() as port:
-                logger.info(
-                    f"Prometheus metrics for grpc server can be viewed at http://127.0.0.1:{port}/"
-                )
-            self._metrics_client.start_http_server(port)
-
         server = aio.server(
-            ThreadPoolExecutor(self._thread_pool_size),
+            migration_thread_pool=ThreadPoolExecutor(self._thread_pool_size),
+            handlers=self.handlers,
             interceptors=self.interceptors,
             options=self.options,
             maximum_concurrent_rpcs=self._maximum_concurrent_rpcs,
@@ -126,17 +121,38 @@ class GRPCAppFactory:
         self,
         max_message_length: int
         | None = Provide[BentoMLContainer.grpc.max_message_length],
-    ) -> list[tuple[str, t.Any]]:
-        options: list[tuple[str, t.Any]] = []
+        max_concurrent_streams: int = Provide[
+            BentoMLContainer.grpc.max_concurrent_streams
+        ],
+    ) -> aio.ChannelArgumentType:
+        # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h
+        #
+        # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h#L294
+        # Eventhough GRPC_ARG_ALLOW_REUSEPORT is set to 1 by default, we want still
+        # want to explicitly set it to 1 so that we can spawn multiple gRPC servers in
+        # production settings.
+        options: list[tuple[str, t.Any]] = [("grpc.so_reuseport", 1)]
+        if max_concurrent_streams:
+            # TODO: refactor max_concurrent_streams this to be configurable
+            options.append(("grpc.max_concurrent_streams", max_concurrent_streams))
         if max_message_length:
             options.extend(
-                [
+                (
                     ("grpc.max_message_length", max_message_length),
                     ("grpc.max_receive_message_length", max_message_length),
                     ("grpc.max_send_message_length", max_message_length),
-                ]
+                )
             )
         return options
+
+    @property
+    def handlers(self) -> t.Sequence[grpc.GenericRpcHandler] | None:
+        # Note that currently BentoML doesn't provide any specific
+        # handlers for gRPC. If users have any specific handlers,
+        # BentoML will pass it through to grpc.aio.Server
+        if self.bento_service.grpc_handlers:
+            return self.bento_service.grpc_handlers
+        return
 
     @property
     def interceptors(self) -> list[aio.ServerInterceptor]:
@@ -146,7 +162,7 @@ class GRPCAppFactory:
             AsyncOpenTelemetryServerInterceptor as AsyncOtelInterceptor,
         )
 
-        interceptors: list[t.Type[aio.ServerInterceptor]] = [
+        interceptors: list[t.Callable[[], aio.ServerInterceptor]] = [
             GenericHeadersServerInterceptor,
             AsyncOtelInterceptor,
         ]

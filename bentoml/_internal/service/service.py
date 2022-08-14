@@ -99,10 +99,11 @@ class Service:
         t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
     ] = attr.field(init=False, factory=list)
 
-    # gRPC interceptors
+    # gRPC related
     interceptors: list[t.Type[grpc.aio.ServerInterceptor]] = attr.field(
         init=False, factory=list
     )
+    grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
 
     apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
@@ -252,6 +253,9 @@ class Service:
         self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor]
     ) -> None:
         self.interceptors.append(interceptor_cls)
+
+    def add_grpc_handlers(self, handlers: list[grpc.GenericRpcHandler]) -> None:
+        self.grpc_handlers.extend(handlers)
 
 
 def on_load_bento(svc: Service, bento: Bento):

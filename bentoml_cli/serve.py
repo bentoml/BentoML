@@ -55,6 +55,13 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
+        "--max-concurrent-streams",
+        type=click.INT,
+        default=BentoMLContainer.grpc.max_concurrent_streams.get(),
+        help="Maximum number of concurrent incoming streams to allow on a HTTP/2 connection.",
+        show_default=True,
+    )
+    @click.option(
         "--reload",
         type=click.BOOL,
         is_flag=True,
@@ -125,6 +132,7 @@ def add_serve_command(cli: click.Group) -> None:
         host: str | None,
         api_workers: int | None,
         backlog: int,
+        max_concurrent_streams: int,
         reload: bool,
         working_dir: str,
         ssl_certfile: str | None,
@@ -186,6 +194,7 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=BentoMLContainer.service_host.get() if host is None else host,
                 backlog=backlog,
+                max_concurrent_streams=max_concurrent_streams,
                 api_workers=api_workers,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
@@ -194,6 +203,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                grpc=grpc,
             )
         else:
             from bentoml.serve import serve_development

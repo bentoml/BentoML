@@ -1,172 +1,149 @@
 from __future__ import annotations
 
-import sys
 import typing as t
-import asyncio
 import logging
-from abc import ABCMeta
-from abc import abstractmethod
+import functools
+from timeit import default_timer
 from typing import TYPE_CHECKING
 
 import grpc
 from grpc import aio
 
-from bentoml.exceptions import BentoMLException
-
-from ....utils.grpc import get_rpc_handler
-from ....utils.grpc import grpc_status_code
-from ....utils.grpc import invoke_handler_factory
+from ....utils import LazyLoader
+from ....utils.grpc import ProtoCodec
+from ....utils.grpc import to_http_status
+from ....utils.grpc import wrap_rpc_handler
+from ....utils.grpc import get_grpc_content_type
+from ....utils.grpc.codec import GRPC_CONTENT_TYPE
 
 if TYPE_CHECKING:
+    from grpc.aio._typing import MetadataType
+
+    from bentoml.grpc.v1 import service_pb2
+
     from ..types import Request
     from ..types import Response
-    from ..types import HandlerMethod
     from ..types import RpcMethodHandler
+    from ..types import AsyncHandlerMethod
     from ..types import HandlerCallDetails
     from ..types import BentoServicerContext
-
-AsyncClientInterceptorReturn = type(
-    "AsyncClientInterceptorReturn", (aio.Call, grpc.Future), {}
-)
+    from ....utils.grpc.codec import Codec
+else:
+    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
 
 logger = logging.getLogger(__name__)
 
 
-# Modified from https://github.com/d5h-foss/grpc-interceptor
-# with addition of better typing that fits with BentoService signatures.
-class AsyncServerInterceptor(aio.ServerInterceptor, metaclass=ABCMeta):
+class GenericHeadersServerInterceptor(aio.ServerInterceptor):
     """
-    Base class for BentoService server-side interceptors.
-
-    To implement, subclass this class and override ``intercept`` method.
+    A light header interceptor that provides some initial metadata to the client.
+    TODO: https://chromium.googlesource.com/external/github.com/grpc/grpc/+/HEAD/doc/PROTOCOL-HTTP2.md
     """
 
-    @abstractmethod
-    async def intercept(
-        self,
-        method: HandlerMethod[t.Any],
-        request: Request,
-        context: BentoServicerContext,
-        method_name: str,
-    ) -> t.Any:
-        response_or_iterator = method(request, context)
-        if hasattr(response_or_iterator, "__aiter__"):
-            return response_or_iterator
-        else:
-            return await response_or_iterator
+    def __init__(self, *, codec: Codec | None = None):
+        if not codec:
+            # By default, we use ProtoCodec.
+            codec = ProtoCodec()
+        self._codec = codec
+
+    def set_trailing_metadata(self, context: BentoServicerContext):
+        # We want to send some initial metadata to the client.
+        # gRPC doesn't use `:status` pseudo header to indicate success or failure
+        # of the current request. gRPC instead uses trailers for this purpose, and
+        # trailers are sent during `send_trailing_metadata` call
+        # For now we are sending over the content-type header.
+        headers = [("content-type", get_grpc_content_type(codec=self._codec))]
+        context.set_trailing_metadata(headers)
 
     async def intercept_service(
         self,
         continuation: t.Callable[[HandlerCallDetails], t.Awaitable[RpcMethodHandler]],
         handler_call_details: HandlerCallDetails,
     ) -> RpcMethodHandler:
-        """
-        Implementation of grpc.aio.ServerInterceptor.
-        Don't override unless you know what you are doing.
-        """
         handler = await continuation(handler_call_details)
-        handler_factory, next_handler = get_rpc_handler(handler)
+
+        if handler and (handler.response_streaming or handler.request_streaming):
+            return handler
+
+        def wrapper(behaviour: AsyncHandlerMethod[Response]):
+            @functools.wraps(behaviour)
+            async def new_behaviour(
+                request: Request, context: BentoServicerContext
+            ) -> Response | t.Awaitable[Response]:
+                # setup metadata
+                self.set_trailing_metadata(context)
+
+                # for the rpc itself.
+                resp = behaviour(request, context)
+                if not hasattr(resp, "__aiter__"):
+                    resp = await resp
+                return resp
+
+            return new_behaviour
+
+        return wrap_rpc_handler(wrapper, handler)
+
+
+class AccessLogServerInterceptor(aio.ServerInterceptor):
+    """
+    An asyncio interceptors for access log.
+    """
+
+    async def intercept_service(
+        self,
+        continuation: t.Callable[[HandlerCallDetails], t.Awaitable[RpcMethodHandler]],
+        handler_call_details: HandlerCallDetails,
+    ) -> RpcMethodHandler:
+        logger = logging.getLogger("bentoml.access")
+        handler = await continuation(handler_call_details)
         method_name = handler_call_details.method
 
-        if handler.response_streaming:
+        if handler and (handler.response_streaming or handler.request_streaming):
+            return handler
 
-            async def invoke_intercept_streaming(
+        def wrapper(behaviour: AsyncHandlerMethod[Response]):
+            @functools.wraps(behaviour)
+            async def new_behaviour(
                 request: Request, context: BentoServicerContext
-            ) -> t.AsyncGenerator[Response, None]:
-                coroutine_or_asyncgen = await self.intercept(
-                    next_handler, request, context, method_name
-                )
+            ) -> Response | t.Awaitable[Response]:
 
-                # Async server streaming handlers return async_generator, because they
-                # use the async def + yield syntax. However, this is NOT a coroutine
-                # and hence is not awaitable. This can be a problem if the interceptor
-                # ignores the individual streaming response items and simply returns the
-                # result of method(request, context). In that case the interceptor IS a
-                # coroutine, and hence should be awaited. In both cases, we need
-                # something we can iterate over so that THIS function is an
-                # async_generator like the actual RPC method.
-                if asyncio.iscoroutine(coroutine_or_asyncgen):
-                    asyncgen = await coroutine_or_asyncgen
-                    # If a handler is using the read/write API, it will return None.
-                    if not asyncgen:
-                        return
-                else:
-                    asyncgen = coroutine_or_asyncgen
+                content_type = GRPC_CONTENT_TYPE
 
-                async for r in asyncgen:
-                    yield r
+                trailing_metadata: MetadataType | None = context.trailing_metadata()
+                if trailing_metadata:
+                    trailing = dict(trailing_metadata)
+                    content_type = trailing.get("content-type", GRPC_CONTENT_TYPE)
 
-            return invoke_handler_factory(
-                invoke_intercept_streaming, handler_factory, handler
-            )
-        else:
+                start = default_timer()
+                try:
+                    response = behaviour(request, context)
+                    if not hasattr(response, "__aiter__"):
+                        response = await response
+                except Exception as e:
+                    context.set_code(grpc.StatusCode.INTERNAL)
+                    context.set_details(str(e))
+                    response = service_pb2.Response()
+                finally:
+                    latency = max(default_timer() - start, 0)
+                    req = [
+                        "scheme=http",  # TODO: support https when ssl is added
+                        f"path={method_name}",
+                        f"type={content_type}",
+                        f"size={request.ByteSize()}",
+                    ]
+                    resp = [
+                        f"http_status={to_http_status(context.code())}",
+                        f"grpc_status={context.code().value[0]}",
+                        f"type={content_type}",
+                        f"size={response.ByteSize()}",
+                    ]
 
-            async def invoke_intercept_unary(
-                request: Request, context: BentoServicerContext
-            ) -> t.Awaitable[Response]:
-                return await self.intercept(next_handler, request, context, method_name)
+                    # TODO: fix ports
+                    logger.info(
+                        f"{context.peer()} ({','.join(req)}) ({','.join(resp)}) {latency:.3f}ms"
+                    )
+                return response
 
-            return invoke_handler_factory(
-                invoke_intercept_unary, handler_factory, handler
-            )
+            return new_behaviour
 
-
-class ExceptionHandlerInterceptor(AsyncServerInterceptor):
-    """An async interceptor that handles exceptions raised via BentoService."""
-
-    async def handle_exception(
-        self,
-        ex: Exception,
-        context: BentoServicerContext,
-        method_name: str,
-    ) -> None:
-        """Handle an exception raised by a method.
-
-        Args:
-            ex: The exception raised by the method.
-            context: The context of the RPC.
-            method_name: The name of the method.
-        """
-        logger.error(
-            f"Error while invoking {method_name}: {ex}", exc_info=sys.exc_info()
-        )
-        details = f"{ex.__class__.__name__}<{ex}>"
-        if isinstance(ex, BentoMLException):
-            status_code = grpc_status_code(ex)
-            details = ex.message
-        elif any(isinstance(ex, cls) for cls in (RuntimeError, TypeError)):
-            status_code = grpc.StatusCode.INTERNAL
-        else:
-            status_code = grpc.StatusCode.UNKNOWN
-
-        await context.abort(code=status_code, details=details)
-        raise ex
-
-    async def generate_responses(
-        self,
-        context: BentoServicerContext,
-        method_name: str,
-        response_iterator: t.AsyncIterable[Response],
-    ) -> t.AsyncGenerator[t.Any, None]:
-        """Yield all the responses, but check for errors along the way."""
-        try:
-            async for r in response_iterator:
-                yield r
-        except Exception as ex:
-            await self.handle_exception(ex, context, method_name)
-
-    async def intercept(
-        self,
-        method: HandlerMethod[t.Any],
-        request: Request,
-        context: BentoServicerContext,
-        method_name: str,
-    ) -> t.Any:
-        try:
-            response_or_iterator = method(request, context)
-            if not hasattr(response_or_iterator, "__aiter__"):
-                return await response_or_iterator
-        except Exception as ex:
-            await self.handle_exception(ex, context, method_name)
-
-        return self.generate_responses(context, method_name, response_or_iterator)  # type: ignore (unknown variable warning)
+        return wrap_rpc_handler(wrapper, handler)

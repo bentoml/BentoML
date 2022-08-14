@@ -23,6 +23,13 @@ api_server:
     access_control_allow_headers: Null
     access_control_max_age: Null
     access_control_expose_headers: Null
+  grpc:
+    # https://github.com/grpc/grpc/blob/ebfb028a29ef5f0f4be6f33c131c740ae0a32c84/src/core/ext/transport/chttp2/transport/http2_settings.cc#L51
+    max_concurrent_streams: ~
+    max_message_length: -1
+    maximum_concurrent_rpcs: ~
+    metrics_port: 9090
+    metrics_host: 0.0.0.0
 
 runners:
   batching:

@@ -144,6 +144,13 @@ SCHEMA = Schema(
                 "access_control_max_age": Or(int, None),
                 "access_control_expose_headers": Or([str], str, None),
             },
+            "grpc": {
+                "max_concurrent_streams": Or(int, None),
+                "metrics_port": And(int, _larger_than_zero),
+                "metrics_host": And(str, _is_ip_address),
+                "max_message_length": Or(int, None),
+                "maximum_concurrent_rpcs": Or(int, None),
+            },
         },
         "runners": {
             **RUNNER_CFG_SCHEMA,
@@ -318,6 +325,7 @@ class _BentoMLContainerClass:
 
     api_server_config = config.api_server
     runners_config = config.runners
+    grpc = config.api_server.grpc
 
     development_mode = providers.Static(True)
 

@@ -41,6 +41,7 @@ class MetricsMiddleware:
         ],
     ):
         self.metrics_client = metrics_client
+
         service_name = self.bento_service.name
 
         self.metrics_request_duration = metrics_client.Histogram(

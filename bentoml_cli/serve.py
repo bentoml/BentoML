@@ -111,6 +111,13 @@ def add_serve_command(cli: click.Group) -> None:
         default=None,
         help="Ciphers to use (see stdlib 'ssl' module)",
     )
+    @click.option(
+        "--grpc",
+        type=click.BOOL,
+        is_flag=True,
+        help="Start a BentoML gRPC server.",
+        default=False,
+    )
     def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,
@@ -127,6 +134,7 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        grpc: bool,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
@@ -203,4 +211,5 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                grpc=grpc,
             )

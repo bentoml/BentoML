@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 SCRIPT_RUNNER = "bentoml_cli.server.runner"
 SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
 SCRIPT_DEV_API_SERVER = "bentoml_cli.server.http_dev_api_server"
+SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.server.grpc_dev_api_server"
 
 
 @inject
@@ -93,6 +94,7 @@ def serve_development(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     reload: bool = False,
+    grpc: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)  # verify service loading
@@ -144,20 +146,56 @@ def serve_development(
     if ssl_ciphers:
         args.extend(["--ssl-ciphers", ssl_ciphers])
 
-    watchers.append(
-        Watcher(
-            name="dev_api_server",
-            cmd=sys.executable,
-            args=args,
-            copy_env=True,
-            stop_children=True,
-            use_sockets=True,
-            working_dir=working_dir,
-            # we don't want to close stdin for child process in case user use debugger.
-            # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
-            close_child_stdin=False,
+    if grpc:
+        watchers.append(
+            Watcher(
+                name="grpc_dev_api_server",
+                cmd=sys.executable,
+                args=[
+                    "-m",
+                    SCRIPT_GRPC_DEV_API_SERVER,
+                    bento_identifier,
+                    "--bind",
+                    "fd://$(circus.sockets._bento_api_server)",
+                    "--working-dir",
+                    working_dir,
+                    "--port",
+                    str(port),
+                ],
+                copy_env=True,
+                stop_children=True,
+                use_sockets=True,
+                working_dir=working_dir,
+                # we don't want to close stdin for child process in case user use debugger.
+                # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
+                close_child_stdin=False,
+            )
         )
-    )
+    else:
+        watchers.append(
+            Watcher(
+                name="dev_api_server",
+                cmd=sys.executable,
+                args=[
+                    "-m",
+                    SCRIPT_DEV_API_SERVER,
+                    bento_identifier,
+                    "--bind",
+                    "fd://$(circus.sockets._bento_api_server)",
+                    "--working-dir",
+                    working_dir,
+                    "--prometheus-dir",
+                    prometheus_dir,
+                ],
+                copy_env=True,
+                stop_children=True,
+                use_sockets=True,
+                working_dir=working_dir,
+                # we don't want to close stdin for child process in case user use debugger.
+                # See https://circus.readthedocs.io/en/latest/for-ops/configuration/
+                close_child_stdin=False,
+            )
+        )
 
     plugins = []
     if reload:
@@ -368,7 +406,23 @@ def serve_production(
         Watcher(
             name="api_server",
             cmd=sys.executable,
-            args=args,
+            args=[
+                "-m",
+                SCRIPT_API_SERVER,
+                bento_identifier,
+                "--bind",
+                f"fd://$(circus.sockets._bento_api_server)",
+                "--runner-map",
+                json.dumps(runner_bind_map),
+                "--working-dir",
+                working_dir,
+                "--backlog",
+                f"{backlog}",
+                "--worker-id",
+                "$(CIRCUS.WID)",
+                "--prometheus-dir",
+                prometheus_dir,
+            ],
             copy_env=True,
             numprocesses=api_workers or math.ceil(CpuResource.from_system()),
             stop_children=True,

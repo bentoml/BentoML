@@ -31,7 +31,7 @@ else:
 
 class AccessLogServerInterceptor(aio.ServerInterceptor):
     """
-    An asyncio interceptor for access log.
+    An asyncio interceptor for access logging.
     """
 
     async def intercept_service(
@@ -51,16 +51,13 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
             async def new_behaviour(
                 request: Request, context: BentoServicerContext
             ) -> Response | t.Awaitable[Response]:
-
                 content_type = GRPC_CONTENT_TYPE
-
                 trailing_metadata: MetadataType | None = context.trailing_metadata()
                 if trailing_metadata:
                     trailing = dict(trailing_metadata)
                     content_type = trailing.get("content-type", GRPC_CONTENT_TYPE)
 
                 response = pb.Response()
-
                 start = default_timer()
                 try:
                     response = await behaviour(request, context)
@@ -68,8 +65,6 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                     context.set_code(grpc.StatusCode.INTERNAL)
                     context.set_details(str(e))
                 finally:
-                    if TYPE_CHECKING:
-                        assert response
                     latency = max(default_timer() - start, 0) * 1000
 
                     req = [

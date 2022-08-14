@@ -14,8 +14,7 @@ from simple_di import Provide
 
 from bentoml.grpc.utils import to_http_status
 from bentoml.grpc.utils import wrap_rpc_handler
-
-from ....configuration.containers import BentoMLContainer
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")
 
@@ -27,9 +26,8 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
-
-    from ....service import Service
-    from ...metrics.prometheus import PrometheusClient
+    from bentoml._internal.service import Service
+    from bentoml._internal.server.metrics.prometheus import PrometheusClient
 else:
     from bentoml.grpc.utils import import_generated_stubs
 
@@ -53,25 +51,20 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
         self,
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ):  # pylint: disable=attribute-defined-outside-init
-
-        # a valid tag name may includes invalid characters, so we need to escape them
-        # ref: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
-        service_name = self.bento_service.name.replace("-", ":").replace(".", "::")
-
         self.metrics_request_duration = metrics_client.Histogram(
-            name=f"{service_name}_request_duration_seconds",
-            documentation=f"{service_name} API GRPC request duration in seconds",
-            labelnames=["api_name", "service_version", "http_response_code"],
+            name="request_duration_seconds",
+            documentation="API GRPC request duration in seconds",
+            labelnames=["api_name", "service_version", "http_response_code", "service"],
         )
         self.metrics_request_total = metrics_client.Counter(
-            name=f"{service_name}_request_total",
+            name="request_total",
             documentation="Total number of GRPC requests",
-            labelnames=["api_name", "service_version", "http_response_code"],
+            labelnames=["api_name", "service_version", "http_response_code", "service"],
         )
         self.metrics_request_in_progress = metrics_client.Gauge(
-            name=f"{service_name}_request_in_progress",
+            name="request_in_progress",
             documentation="Total number of GRPC requests in progress now",
-            labelnames=["api_name", "service_version"],
+            labelnames=["api_name", "service_version", "service"],
             multiprocess_mode="livesum",
         )
         self._is_setup = True
@@ -92,6 +85,9 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
         service_version = (
             self.bento_service.tag.version if self.bento_service.tag else ""
         )
+        # a valid tag name may includes invalid characters, so we need to escape them
+        # ref: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+        service_name = self.bento_service.name.replace("-", ":").replace(".", "::")
 
         START_TIME_VAR.set(default_timer())
 
@@ -112,6 +108,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                     http_response_code=to_http_status(
                         t.cast(grpc.StatusCode, context.code())
                     ),
+                    service=service_name,
                 ).inc()
 
                 # instrument request duration
@@ -123,6 +120,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                     http_response_code=to_http_status(
                         t.cast(grpc.StatusCode, context.code())
                     ),
+                    service=service_name,
                 ).observe(
                     total_time
                 )
@@ -131,7 +129,9 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
 
                 # instrument request in progress
                 with self.metrics_request_in_progress.labels(
-                    api_name=api_name, service_version=service_version
+                    api_name=api_name,
+                    service_version=service_version,
+                    service=service_name,
                 ).track_inprogress():
                     response = await behaviour(request, context)
                 return response

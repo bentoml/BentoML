@@ -47,13 +47,17 @@ class GRPCAppFactory:
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
+        metrics_port: int = Provide[BentoMLContainer.grpc.metrics_port],
+        metrics_host: str = Provide[BentoMLContainer.grpc.metrics_host],
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
+        self._metrics_port = metrics_port
+        self._metrics_host = metrics_host
+        self._metrics_client = metrics_client
         self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
         self._thread_pool_size = _thread_pool_size
-        self._metrics_client = metrics_client
 
     @property
     def name(self) -> str:

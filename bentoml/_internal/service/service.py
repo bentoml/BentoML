@@ -20,10 +20,6 @@ if TYPE_CHECKING:
     from ..bento import Bento
     from .openapi.specification import OpenAPISpecification
 
-    WSGI_APP = t.Callable[
-        [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
-    ]
-
 logger = logging.getLogger(__name__)
 
 
@@ -206,9 +202,9 @@ class Service:
 
     @property
     def asgi_app(self) -> "ext.ASGIApp":
-        from ..server.service_app import ServiceAppFactory
+        from ..server.http_app import ServiceAppFactory
 
-        return ServiceAppFactory(self)()
+        return HTTPAppFactory(self)()
 
     def mount_asgi_app(
         self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
@@ -216,7 +212,7 @@ class Service:
         self.mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(
-        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
+        self, app: ext.WSGIApp, path: str = "/", name: t.Optional[str] = None
     ) -> None:
         # TODO: Migrate to a2wsgi
         from starlette.middleware.wsgi import WSGIMiddleware

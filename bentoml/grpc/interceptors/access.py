@@ -6,15 +6,14 @@ import functools
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
-import grpc
-from grpc import aio
-
 from bentoml.grpc.utils import to_http_status
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import GRPC_CONTENT_TYPE
 
 if TYPE_CHECKING:
-    from grpc.aio._typing import MetadataType
+    import grpc
+    from grpc import aio
+    from grpc.aio._typing import MetadataType  # pylint: disable=unused-import
 
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
@@ -24,14 +23,16 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import BentoServicerContext
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 else:
+    from bentoml.grpc.utils import import_grpc
     from bentoml.grpc.utils import import_generated_stubs
 
     pb, _ = import_generated_stubs()
+    grpc, aio = import_grpc()
 
 
 class AccessLogServerInterceptor(aio.ServerInterceptor):
     """
-    An asyncio interceptor for access log.
+    An asyncio interceptor for access logging.
     """
 
     async def intercept_service(
@@ -51,16 +52,13 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
             async def new_behaviour(
                 request: Request, context: BentoServicerContext
             ) -> Response | t.Awaitable[Response]:
-
                 content_type = GRPC_CONTENT_TYPE
-
                 trailing_metadata: MetadataType | None = context.trailing_metadata()
                 if trailing_metadata:
                     trailing = dict(trailing_metadata)
                     content_type = trailing.get("content-type", GRPC_CONTENT_TYPE)
 
                 response = pb.Response()
-
                 start = default_timer()
                 try:
                     response = await behaviour(request, context)
@@ -68,8 +66,6 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                     context.set_code(grpc.StatusCode.INTERNAL)
                     context.set_details(str(e))
                 finally:
-                    if TYPE_CHECKING:
-                        assert response
                     latency = max(default_timer() - start, 0) * 1000
 
                     req = [
@@ -79,6 +75,9 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                         f"size={request.ByteSize()}",
                     ]
 
+                    # Note that in order AccessLogServerInterceptor to work, the
+                    # interceptor must be added to the server after AsyncOpenTeleServerInterceptor
+                    # and PrometheusServerInterceptor.
                     typed_context_code = t.cast(grpc.StatusCode, context.code())
                     resp = [
                         f"http_status={to_http_status(typed_context_code)}",

@@ -12,9 +12,9 @@ lint:
     - RPC_RESPONSE_STANDARD_NAME
   ignore_only:
     DEFAULT:
-      - bentoml/grpc/v1/service_test.proto
+      - bentoml/grpc/v1alpha1/service_test.proto
     ENUM_VALUE_PREFIX:
-      - bentoml/grpc/v1/service.proto
+      - bentoml/grpc/v1alpha1/service.proto
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: true
   rpc_allow_google_protobuf_empty_requests: true

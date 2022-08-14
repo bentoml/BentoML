@@ -6,8 +6,6 @@ import functools
 from typing import TYPE_CHECKING
 from contextlib import asynccontextmanager
 
-import grpc
-from grpc import aio
 from simple_di import inject
 from simple_di import Provide
 from opentelemetry import trace
@@ -21,11 +19,12 @@ from opentelemetry.semconv.trace import SpanAttributes
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import GRPC_CONTENT_TYPE
 from bentoml.grpc.utils import parse_method_name
-
-from ....utils.pkg import get_pkg_version
-from ....configuration.containers import BentoMLContainer
+from bentoml._internal.utils.pkg import get_pkg_version
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    import grpc
+    from grpc import aio
     from grpc.aio._typing import MetadataKey
     from grpc.aio._typing import MetadataType
     from grpc.aio._typing import MetadataValue
@@ -38,6 +37,10 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
+else:
+    from bentoml.grpc.utils import import_grpc
+
+    grpc, aio = import_grpc()
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +51,10 @@ class _OpenTelemetryServicerContext(aio.ServicerContext["Request", "Response"]):
         self._active_span = active_span
         self._code = grpc.StatusCode.OK
         self._details = ""
+        super().__init__()
+
+    def __getattr__(self, attr: str) -> t.Any:
+        return getattr(self._servicer_context, attr)
 
     async def read(self) -> Request:
         return await self._servicer_context.read()
@@ -156,15 +163,16 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
         self, servicer_context: BentoServicerContext
     ) -> t.AsyncGenerator[None, None]:
         metadata = servicer_context.invocation_metadata()
-        if not metadata:
+        if metadata:
+            md: dict[MetadataKey, MetadataValue] = {m.key: m.value for m in metadata}
+            ctx = extract(md)
+            token = attach(ctx)
+            try:
+                yield
+            finally:
+                detach(token)
+        else:
             yield
-        md: dict[MetadataKey, MetadataValue] = {m.key: m.value for m in metadata}
-        ctx = extract(md)
-        token = attach(ctx)
-        try:
-            yield
-        finally:
-            detach(token)
 
     def start_span(
         self,

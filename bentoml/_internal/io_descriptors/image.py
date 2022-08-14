@@ -16,6 +16,7 @@ from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
+from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
@@ -27,6 +28,9 @@ if TYPE_CHECKING:
 
     import PIL.Image
 
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import BentoServicerContext
+
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 
@@ -37,19 +41,21 @@ else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = f"'Pillow' is required to use {__name__}. Install with: 'pip install -U Pillow'."
+    _exc = f"'Pillow' is required to use '{__name__}.Image'. Install with: 'pip install -U Pillow'."
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
+
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
 #  that enable a new way to type hint an ndarray.
-ImageType: t.TypeAlias = t.Union["PIL.Image.Image", "ext.NpNDArray"]
+ImageType = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 
 DEFAULT_PIL_MODE = "RGB"
 
 
-class Image(IODescriptor[ImageType]):
+class Image(IODescriptor[ImageType], proto_field="file"):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
@@ -142,12 +148,6 @@ class Image(IODescriptor[ImageType]):
         pilmode: _Mode | None = DEFAULT_PIL_MODE,
         mime_type: str = "image/jpeg",
     ):
-        try:
-            import PIL.Image
-        except ImportError:
-            raise InternalServerError(
-                "`Pillow` is required to use {__name__}\n Instructions: `pip install -U Pillow`"
-            )
         PIL.Image.init()
         self.MIME_EXT_MAPPING.update({v: k for k, v in PIL.Image.MIME.items()})
 
@@ -197,8 +197,7 @@ class Image(IODescriptor[ImageType]):
             bytes_ = await request.body()
         else:
             raise BadInput(
-                f"{self.__class__.__name__} should get `multipart/form-data`, "
-                f"`{self._mime_type}` or `image/*`, got {content_type} instead"
+                f"{self.__class__.__name__} should get 'multipart/form-data', '{self._mime_type}' or 'image/*', got '{content_type}' instead."
             )
         return PIL.Image.open(io.BytesIO(bytes_))
 
@@ -211,8 +210,7 @@ class Image(IODescriptor[ImageType]):
             image = obj
         else:
             raise InternalServerError(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
-                " only supports `np.ndarray` and `PIL.Image`"
+                f"Unsupported Image type received: '{type(obj)}', '{self.__class__.__name__}' only supports 'np.ndarray' and 'PIL.Image'."
             )
         filename = f"output.{self._format.lower()}"
 
@@ -245,3 +243,81 @@ class Image(IODescriptor[ImageType]):
                 media_type=self._mime_type,
                 headers={"content-disposition": content_disposition},
             )
+
+    async def from_grpc_request(
+        self, request: pb.Request, context: BentoServicerContext
+    ) -> ImageType:
+        from bentoml.grpc.utils import get_field
+        from bentoml.grpc.utils import raise_grpc_exception
+        from bentoml.grpc.utils import validate_content_type
+        from bentoml.grpc.utils import filetype_pb_to_mimetype_map
+
+        if self._mime_type.startswith("multipart"):
+            raise_grpc_exception(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
+                context=context,
+                exception_cls=UnprocessableEntity,
+            )
+
+        # validate gRPC content type if content type is specified
+        validate_content_type(context, self)
+
+        # check if the request message has the correct field
+        field = get_field(request, self)
+        mapping = filetype_pb_to_mimetype_map()
+
+        if field.kind:
+            try:
+                mime_type = mapping[field.kind]
+                if mime_type != self._mime_type:
+                    raise_grpc_exception(
+                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                        context=context,
+                    )
+            except KeyError:
+                raise_grpc_exception(
+                    f"{field.kind} is not a valid File kind. Accepted file kind: {set(mapping)}",
+                    context=context,
+                )
+
+        return PIL.Image.open(io.BytesIO(field.content))
+
+    async def to_grpc_response(
+        self, obj: ImageType, context: BentoServicerContext
+    ) -> pb.Response:
+        from bentoml.grpc.utils import raise_grpc_exception
+        from bentoml.grpc.utils import mimetype_to_filetype_pb_map
+
+        if self._mime_type.startswith("multipart"):
+            raise_grpc_exception(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
+                context=context,
+                exception_cls=UnprocessableEntity,
+            )
+
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
+            image = PIL.Image.fromarray(obj, mode=self._pilmode)
+        elif LazyType[PIL.Image.Image]("PIL.Image.Image").isinstance(obj):
+            image = obj
+        else:
+            raise_grpc_exception(
+                f"Unsupported Image type received: '{type(obj)}', '{self.__class__.__name__}' only supports 'np.ndarray' and 'PIL.Image'.",
+                context=context,
+                exception_cls=InternalServerError,
+            )
+        ret = io.BytesIO()
+        image.save(ret, format=self._format)
+
+        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
+
+        mapping = mimetype_to_filetype_pb_map()
+
+        try:
+            kind = mapping[self._mime_type]
+        except KeyError:
+            raise_grpc_exception(
+                f"{self._mime_type} doesn't have a corresponding File 'kind'",
+                context=context,
+            )
+
+        return pb.Response(file=pb.File(kind=kind, content=ret.getvalue()))

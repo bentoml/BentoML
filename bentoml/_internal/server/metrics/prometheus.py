@@ -1,9 +1,14 @@
-# type: ignore[reportMissingTypeStubs]
+from __future__ import annotations
+
 import os
 import sys
 import typing as t
 import logging
+from typing import TYPE_CHECKING
 from functools import partial
+
+if TYPE_CHECKING:
+    from ... import external_typing as ext
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +19,7 @@ class PrometheusClient:
         *,
         namespace: str = "",
         multiproc: bool = True,
-        multiproc_dir: t.Optional[str] = None,
+        multiproc_dir: str | None = None,
     ):
         """
         Set up multiproc_dir for prometheus to work in multiprocess mode,
@@ -88,6 +93,9 @@ class PrometheusClient:
             addr=addr,
             registry=self.registry,
         )
+
+    def make_wsgi_app(self) -> ext.WSGIApp:
+        return self.prometheus_client.make_wsgi_app(registry=self.registry)  # type: ignore (unfinished prometheus types)
 
     def generate_latest(self):
         if self.multiproc:

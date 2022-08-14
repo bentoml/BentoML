@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-import asyncio
-from urllib.parse import urlparse
-
 import click
-import psutil
 
 
 @click.command()
@@ -22,6 +18,10 @@ def main(
     working_dir: str | None,
     prometheus_dir: str | None,
 ):
+    from urllib.parse import urlparse
+
+    import psutil
+
     from bentoml import load
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.context import component_context
@@ -45,6 +45,8 @@ def main(
         component_context.bento_version = svc.tag.version
 
     if psutil.WINDOWS:
+        import asyncio
+
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
     parsed = urlparse(bind)

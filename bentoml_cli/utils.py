@@ -244,13 +244,9 @@ def unparse_click_params(
     Unparse click call to a list of arguments. Used to modify some parameters and
     restore to system command. The goal is to unpack cases where parameters can be parsed multiple times.
 
-    Refers to ./buildx.py for examples of this usage. This is also used to unparse parameters for running API server.
-
     Args:
-        params (`dict[str, t.Any]`):
-            The dictionary of the parameters that is parsed from click.Context.
-        command_params (`list[click.Parameter]`):
-            The list of paramters (Arguments/Options) that is part of a given command.
+        params: The dictionary of the parameters that is parsed from click.Context.
+        command_params: The list of paramters (Arguments/Options) that is part of a given command.
 
     Returns:
         Unparsed list of arguments that can be redirected to system commands.

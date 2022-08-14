@@ -69,23 +69,23 @@ def main(
         # Start a standalone server with a supervisor process
         from circus.watcher import Watcher
 
-        from bentoml._internal.server import ensure_prometheus_dir
-        from bentoml._internal.utils.click import unparse_click_params
+        from bentoml.serve import ensure_prometheus_dir
+        from bentoml_cli.utils import unparse_click_params
         from bentoml._internal.utils.circus import create_standalone_arbiter
 
         ensure_prometheus_dir()
-        parsed = urlparse(bind)
+
         params = ctx.params
-        params["max_concurrent_streams"] = f"tcp://0.0.0.0:{parsed.port}"
-        params["worker_id"] = "$(circus.wid)"
+        params.update({"bind": bind, "worker_id": "$(circus.wid)"})
         watcher = Watcher(
             name="bento_api_server",
             cmd=sys.executable,
-            args=["-m", "bentoml._internal.server.cli.grpc_api_server"]
+            args=["-m", "bentoml_cli.server.grpc_api_server"]
             + unparse_click_params(params, ctx.command.params, factory=str),
             copy_env=True,
             numprocesses=1,
             stop_children=True,
+            use_sockets=False,
             working_dir=working_dir,
         )
         arbiter = create_standalone_arbiter(watchers=[watcher])
@@ -109,8 +109,8 @@ def main(
     parsed = urlparse(bind)
     assert parsed.scheme == "tcp"
 
-    svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
+    svc.grpc_server.run(bind_addr=parsed.netloc)
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

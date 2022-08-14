@@ -7,17 +7,8 @@ USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN {{ common.mount_cache(__lib_apt__) }} \ 
+RUN {{ common.mount_cache(__lib_apt__) }} \
     {{ common.mount_cache(__cache_apt__) }} \
-	apt-get update -y \
-    && apt-get install -q -y --no-install-recommends --allow-remove-essential \
-		ca-certificates gnupg2 bash build-essential
-
-{% if __options__system_packages is not none %}
-# Install user-defined system package
-RUN {{ common.mount_cache(__lib_apt__) }} \ 
-    {{ common.mount_cache(__cache_apt__) }} \
-    apt-get install -q -y --no-install-recommends --allow-remove-essential \
-    {{ __options__system_packages | join(' ') }}
-{% endif -%}
+    apt-get update -y \
+    && apt-get install -q -y --no-install-recommends --allow-remove-essential ca-certificates gnupg2 bash build-essential {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif -%}
 {% endblock %}

@@ -59,6 +59,7 @@ def main(
             - fd://12
         working_dir: (Optional) the working directory
         worker_id: (Optional) if set, the runner will be started as a worker with the given ID. Important: begin from 1.
+        worker_env_map: (Optional) the environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.
     """
     if worker_id is None:
 

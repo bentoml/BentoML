@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import typing as t
 from typing import TYPE_CHECKING
 from datetime import datetime
@@ -76,9 +77,13 @@ def test_store(tmpdir: "Path"):
     DummyItem.store = store
     oldtime = datetime.now()
     DummyItem.create("test:version1")
+    time.sleep(1)
     DummyItem.create("test:otherprefix")
+    time.sleep(1)
     DummyItem.create(Tag("test", "version2"))
+    time.sleep(1)
     DummyItem.create("test:version3", creation_time=oldtime)
+    time.sleep(1)
     DummyItem.create("test1:version1")
     with pytest.raises(BentoMLException):
         DummyItem.create("test:version2")

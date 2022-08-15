@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
 ln -sf "$PWD/.devcontainer/config" "$HOME/config" && set +x
+
+pip install --user -r requirements/dev-requirements.txt

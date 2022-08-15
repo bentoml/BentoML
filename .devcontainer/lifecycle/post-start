@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 
-git config pull.rebase true
-git config pull.ff only
+git config --global pull.rebase true
+git config --global pull.ff only
 
 # fetch all tags
 git fetch upstream --tags && git pull
 
 # install editable wheels & tools for bentoml
-
-pip install -e ".[tracing]"
-pip install -r requirements/dev-requirements.txt
+pip install --user -e ".[tracing]" --isolated

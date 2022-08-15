@@ -76,6 +76,14 @@
         "vim.highlightedyank.enable": true,
         "vim.hlsearch": true,
         "vim.visualstar": true,
+        "vim.easymotion": true,
+        "vim.useSystemClipboard": true,
+        "vim.insertModeKeyBindingsNonRecursive": [
+          {
+            "before": ["j", "j"],
+            "after": ["<esc>"]
+          }
+        ],
         "vim.visualModeKeyBindings": [
           {
             "before": [">"],
@@ -90,11 +98,6 @@
           {
             "before": ["<C-n>"],
             "commands": [":nohl"]
-          },
-          {
-            "before": [":"],
-            "commands": ["workbench.action.showCommands"],
-            "silent": true
           },
           {
             "before": ["leader", "w"],

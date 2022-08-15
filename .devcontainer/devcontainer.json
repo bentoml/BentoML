@@ -1,0 +1,69 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.245.0/containers/docker-from-docker
+{
+  "name": "BentoML",
+  "dockerFile": "Dockerfile",
+  "runArgs": ["--init"],
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
+  ],
+  "overrideCommand": false,
+
+  // Use this environment variable if you need to bind mount your local source code into a new container.
+  "remoteEnv": {
+    "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+  },
+
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "vscodevim.vim",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter"
+      ],
+      "settings": {
+        "files.watcherExclude": {
+          "**/.ipynb_checkpoint/**": true,
+          "**/build/**": true
+        },
+        "files.exclude": {
+          "**/__pycache__": true
+        },
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.analysis.useLibraryCodeForTypes": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnSave": true
+        },
+        "editor.formatOnSave": true,
+        "editor.wordWrapColumn": 88,
+        "vim.cursorStylePerMode.insert": "line",
+        "vim.cursorStylePerMode.normal": "block",
+        "vim.cursorStylePerMode.replace": "underline",
+        "vim.cursorStylePerMode.visual": "block",
+        "vim.cursorStylePerMode.visualblock": "block",
+        "vim.cursorStylePerMode.visualline": "block",
+        "vim.debug.loggingLevelForAlert": "verbose",
+        "vim.highlightedyank.enable": true,
+        "vim.hlsearch": true,
+        "vim.visualstar": true
+      }
+    }
+  },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [3000, 8080, 9090],
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  // "postCreateCommand": "docker --version",
+
+  // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+  "remoteUser": "vscode"
+}

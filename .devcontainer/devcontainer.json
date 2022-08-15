@@ -8,9 +8,7 @@
     "BENTOML_BUNDLE_LOCAL_BUILD": "True",
     "SETUPTOOLS_USE_DISTUTILS": "stdlib"
   },
-  "runArgs": [
-    "--init"
-  ],
+  "runArgs": ["--init"],
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
   ],
@@ -25,10 +23,10 @@
     "vscode": {
       "extensions": [
         "ms-azuretools.vscode-docker",
+        "ms-python.vscode-pylance",
         "vscodevim.vim",
         "ms-python.python",
         "ms-vsliveshare.vsliveshare",
-        "ms-python.vscode-pylance",
         "ms-python.black-formatter",
         "ms-python.pylint",
         "samuelcolvin.jinjahtml",
@@ -55,6 +53,7 @@
         "[jsonc]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode"
         },
+        "editor.minimap.enabled": true,
         "editor.formatOnSave": true,
         "editor.wordWrapColumn": 88,
         // Some default vim settings
@@ -66,7 +65,7 @@
         // ">": indent
         // "<": dedent
         "vim.vimrc.enable": true,
-        "vim.vimrc.path": "$HOME/.config/.vimrc",
+        "vim.vimrc.path": "$HOME/config/.vimrc",
         "vim.cursorStylePerMode.insert": "line",
         "vim.cursorStylePerMode.normal": "block",
         "vim.cursorStylePerMode.replace": "underline",
@@ -79,48 +78,27 @@
         "vim.visualstar": true,
         "vim.visualModeKeyBindings": [
           {
-            "before": [
-              ">"
-            ],
-            "commands": [
-              "editor.action.indentLines"
-            ]
+            "before": [">"],
+            "commands": ["editor.action.indentLines"]
           },
           {
-            "before": [
-              "<"
-            ],
-            "commands": [
-              "editor.action.outdentLines"
-            ]
+            "before": ["<"],
+            "commands": ["editor.action.outdentLines"]
           }
         ],
         "vim.normalModeKeyBindingsNonRecursive": [
           {
-            "before": [
-              "<C-n>"
-            ],
-            "commands": [
-              ":nohl"
-            ]
+            "before": ["<C-n>"],
+            "commands": [":nohl"]
           },
           {
-            "before": [
-              ":"
-            ],
-            "commands": [
-              "workbench.action.showCommands"
-            ],
+            "before": [":"],
+            "commands": ["workbench.action.showCommands"],
             "silent": true
           },
           {
-            "before": [
-              "leader",
-              "w"
-            ],
-            "commands": [
-              "workbench.action.files.save"
-            ]
+            "before": ["leader", "w"],
+            "commands": ["workbench.action.files.save"]
           }
         ],
         "vim.leader": ","
@@ -128,12 +106,7 @@
     }
   },
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [
-    3000,
-    8080,
-    9000,
-    9090
-  ],
+  "forwardPorts": [3000, 8080, 9000, 9090],
   // Link some default configs to codespace container.
   "postCreateCommand": "bash ./.devcontainer/lifecycle/post-create",
   // install BentoML and tools

@@ -50,6 +50,7 @@ class RunnerAppFactory(BaseAppFactory):
                 continue
             self.dispatchers[method.name] = CorkDispatcher(
                 runner_name=runner.name,
+                worker_index=worker_index,
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=method.max_batch_size,
                 fallback=TooManyRequests,

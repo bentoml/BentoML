@@ -3,22 +3,26 @@
 {
   "name": "BentoML",
   "dockerFile": "Dockerfile",
-  "runArgs": ["--init"],
+  "containerEnv": {
+    "BENTOML_DEBUG": "True",
+    "BENTOML_BUNDLE_LOCAL_BUILD": "True",
+    "SETUPTOOLS_USE_DISTUTILS": "stdlib"
+  },
+  "runArgs": [
+    "--init"
+  ],
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
   ],
   "overrideCommand": false,
-
   // Use this environment variable if you need to bind mount your local source code into a new container.
   "remoteEnv": {
     "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
   },
-
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
-      // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
         "ms-azuretools.vscode-docker",
         "vscodevim.vim",
@@ -26,7 +30,10 @@
         "ms-vsliveshare.vsliveshare",
         "ms-python.vscode-pylance",
         "ms-python.black-formatter",
-        "ms-python.pylint"
+        "ms-python.pylint",
+        "samuelcolvin.jinjahtml",
+        "GitHub.copilot",
+        "esbenp.prettier-vscode"
       ],
       "settings": {
         "files.watcherExclude": {
@@ -41,8 +48,12 @@
         "python.linting.pylintEnabled": true,
         "python.linting.flake8Enabled": false,
         "python.analysis.useLibraryCodeForTypes": true,
+        "python.analysis.stubPath": "./typings",
         "[python]": {
           "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
         },
         "editor.formatOnSave": true,
         "editor.wordWrapColumn": 88,
@@ -54,6 +65,8 @@
         // "<leader>w": save
         // ">": indent
         // "<": dedent
+        "vim.vimrc.enable": true,
+        "vim.vimrc.path": "$HOME/.config/.vimrc",
         "vim.cursorStylePerMode.insert": "line",
         "vim.cursorStylePerMode.normal": "block",
         "vim.cursorStylePerMode.replace": "underline",
@@ -64,50 +77,67 @@
         "vim.highlightedyank.enable": true,
         "vim.hlsearch": true,
         "vim.visualstar": true,
-        // enable sneak for faster motion
-        "vim.sneak": true,
-        "vim.insertModeKeyBindings": [
-          {
-            "before": ["j", "k"],
-            "after": ["<Esc>"]
-          }
-        ],
         "vim.visualModeKeyBindings": [
           {
-            "before": [">"],
-            "commands": ["editor.action.indentLines"]
+            "before": [
+              ">"
+            ],
+            "commands": [
+              "editor.action.indentLines"
+            ]
           },
           {
-            "before": ["<"],
-            "commands": ["editor.action.outdentLines"]
+            "before": [
+              "<"
+            ],
+            "commands": [
+              "editor.action.outdentLines"
+            ]
           }
         ],
         "vim.normalModeKeyBindingsNonRecursive": [
           {
-            "before": ["<C-n>"],
-            "commands": [":nohl"]
+            "before": [
+              "<C-n>"
+            ],
+            "commands": [
+              ":nohl"
+            ]
           },
           {
-            "before": [":"],
-            "commands": ["workbench.action.showCommands"],
+            "before": [
+              ":"
+            ],
+            "commands": [
+              "workbench.action.showCommands"
+            ],
             "silent": true
           },
           {
-            "before": ["leader", "w"],
-            "commands": ["workbench.action.files.save"]
+            "before": [
+              "leader",
+              "w"
+            ],
+            "commands": [
+              "workbench.action.files.save"
+            ]
           }
         ],
         "vim.leader": ","
       }
     }
   },
-
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [3000, 8080, 9000, 9090],
-
-  // install BentoML and setuptools tools
+  "forwardPorts": [
+    3000,
+    8080,
+    9000,
+    9090
+  ],
+  // Link some default configs to codespace container.
+  "postCreateCommand": "bash ./.devcontainer/lifecycle/post-create",
+  // install BentoML and tools
   "postStartCommand": "bash ./.devcontainer/lifecycle/post-start",
-
   // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
   "remoteUser": "vscode"
 }

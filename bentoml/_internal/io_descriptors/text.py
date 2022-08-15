@@ -140,22 +140,13 @@ class Text(IODescriptor[str], proto_field="text"):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> str:
-        import ast
-
         from bentoml.grpc.utils import get_field
         from bentoml.grpc.utils import validate_content_type
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
 
-        field = ast.literal_eval(get_field(request, self))
-
-        try:
-            return bytes(field, "ascii").decode("utf-8")
-        except TypeError:
-            import base64
-
-            return base64.b64decode(field).decode("utf-8")
+        return get_field(request, self)
 
     async def to_grpc_response(
         self, obj: str, context: BentoServicerContext

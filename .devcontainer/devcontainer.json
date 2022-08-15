@@ -86,6 +86,10 @@
         ],
         "vim.visualModeKeyBindings": [
           {
+            "before": [";"],
+            "after": [":"]
+          },
+          {
             "before": [">"],
             "commands": ["editor.action.indentLines"]
           },

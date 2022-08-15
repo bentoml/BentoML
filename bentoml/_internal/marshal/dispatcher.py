@@ -111,6 +111,7 @@ class CorkDispatcher:
         self,
         runner_name: str,
         worker_index: int,
+        method_name: str,
         max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
@@ -138,7 +139,7 @@ class CorkDispatcher:
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
         self.adaptive_batch_size_hist = metrics_client.Histogram(
-            name=metric_name(runner_name, worker_index, "adaptive_batch_size"),
+            name=metric_name(runner_name, worker_index, method_name, "adaptive_batch_size"),
             documentation=runner_name + " Runner adaptive batch size",
             labelnames=[],  # TODO: add service version
             buckets=exponential_buckets(1, 2, max_batch_size),

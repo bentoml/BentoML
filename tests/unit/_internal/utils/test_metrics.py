@@ -194,3 +194,4 @@ def test_metric_name():
     assert metric_name("runner_name", "metric.name") == "runner_name_metric::name"
     assert metric_name("runner_name", "metric-name") == "runner_name_metric:name"
     assert metric_name("runner_name", 1, "metric_name") == "runner_name_1_metric_name"
+    assert metric_name("runner_name", 1, "method_name", "metric_name") == "runner_name_1_method_name_metric_name"

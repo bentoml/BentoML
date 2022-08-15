@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from ..utils.metrics import metric_name
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -46,18 +47,18 @@ class MetricsMiddleware:
         service_name = service_name.replace("-", ":").replace(".", "::")
 
         self.metrics_request_duration = metrics_client.Histogram(
-            name=service_name + "_request_duration_seconds",
-            documentation=service_name + " API HTTP request duration in seconds",
+            name=metric_name(service_name, "request_duration_seconds"),
+            documentation="API HTTP request duration in seconds",
             labelnames=["endpoint", "service_version", "http_response_code"],
             buckets=duration_buckets,
         )
         self.metrics_request_total = metrics_client.Counter(
-            name=service_name + "_request_total",
+            name=metric_name(service_name, "request_total"),
             documentation="Total number of HTTP requests",
             labelnames=["endpoint", "service_version", "http_response_code"],
         )
         self.metrics_request_in_progress = metrics_client.Gauge(
-            name=service_name + "_request_in_progress",
+            name=metric_name(service_name, "request_in_progress"),
             documentation="Total number of HTTP requests in progress now",
             labelnames=["endpoint", "service_version"],
             multiprocess_mode="livesum",

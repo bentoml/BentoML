@@ -23,6 +23,13 @@ DEFAULT_BUCKET = (
 MAX_BUCKET_COUNT = 100
 
 
+def metric_name(*args: str) -> str:
+    """
+    Concatenates the given parts into a legal Prometheus metric name.
+    """
+    return "_".join([arg.replace("-", ":").replace(".", "::") for arg in args])  # type: ignore
+
+
 def exponential_buckets(start: float, factor: float, end: float) -> tuple[float, ...]:
     """
     Creates buckets of a Prometheus histogram where the lowest bucket has an upper

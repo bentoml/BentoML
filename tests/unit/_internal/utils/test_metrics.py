@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 
 from bentoml._internal.utils.metrics import INF
+from bentoml._internal.utils.metrics import metric_name
 from bentoml._internal.utils.metrics import linear_buckets
 from bentoml._internal.utils.metrics import exponential_buckets
 
@@ -184,3 +185,11 @@ def test_linear_buckets():
             INF,
         ),
     )
+
+
+def test_metric_name():
+    assert metric_name("runner_name", "metric_name") == "runner_name_metric_name"
+    assert metric_name("runner.name", "metric_name") == "runner::name_metric_name"
+    assert metric_name("runner-name", "metric_name") == "runner:name_metric_name"
+    assert metric_name("runner_name", "metric.name") == "runner_name_metric::name"
+    assert metric_name("runner_name", "metric-name") == "runner_name_metric:name"

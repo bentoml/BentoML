@@ -14,6 +14,7 @@ from simple_di import Provide
 
 from ..utils import cached_property
 from ..utils.alg import TokenBucket
+from ..utils.metrics import metric_name
 from ..utils.metrics import exponential_buckets
 from ..configuration.containers import BentoMLContainer
 
@@ -136,8 +137,7 @@ class CorkDispatcher:
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
         self.adaptive_batch_size_hist = metrics_client.Histogram(
-            # name=runner_name + "_adaptive_batch_size",
-            name="runner.name_adaptive_batch_size",
+            name=metric_name(runner_name, "adaptive_batch_size"),
             documentation=runner_name + " Runner adaptive batch size",
             labelnames=[],  # TODO: add service version
             buckets=exponential_buckets(1, 2, max_batch_size),

@@ -103,6 +103,16 @@ class DefaultStrategy(Strategy):
         resource_request: dict[str, t.Any] | None,
         worker_index: int,
     ) -> dict[str, t.Any]:
+        """
+        Parameters
+        ----------
+        runnable_class : type[Runnable]
+            The runnable class to be run.
+        resource_request : dict[str, Any]
+            The resource request of the runnable.
+        worker_index : int
+            The index of the worker, start from 0.
+        """
         environ: dict[str, t.Any] = {}
         if resource_request is None:
             resource_request = system_resources()

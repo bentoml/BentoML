@@ -23,8 +23,10 @@
         "ms-azuretools.vscode-docker",
         "vscodevim.vim",
         "ms-python.python",
+        "ms-vsliveshare.vsliveshare",
         "ms-python.vscode-pylance",
-        "ms-python.black-formatter"
+        "ms-python.black-formatter",
+        "ms-python.pylint"
       ],
       "settings": {
         "files.watcherExclude": {
@@ -37,13 +39,21 @@
         "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
+        "python.linting.flake8Enabled": false,
         "python.analysis.useLibraryCodeForTypes": true,
         "[python]": {
-          "editor.defaultFormatter": "ms-python.black-formatter",
-          "editor.formatOnSave": true
+          "editor.defaultFormatter": "ms-python.black-formatter"
         },
         "editor.formatOnSave": true,
         "editor.wordWrapColumn": 88,
+        // Some default vim settings
+        // Leader: ,
+        // "jk": faster escape
+        // "<C-n>": clear highlights
+        // ":": command mode
+        // "<leader>w": save
+        // ">": indent
+        // "<": dedent
         "vim.cursorStylePerMode.insert": "line",
         "vim.cursorStylePerMode.normal": "block",
         "vim.cursorStylePerMode.replace": "underline",
@@ -53,16 +63,50 @@
         "vim.debug.loggingLevelForAlert": "verbose",
         "vim.highlightedyank.enable": true,
         "vim.hlsearch": true,
-        "vim.visualstar": true
+        "vim.visualstar": true,
+        // enable sneak for faster motion
+        "vim.sneak": true,
+        "vim.insertModeKeyBindings": [
+          {
+            "before": ["j", "k"],
+            "after": ["<Esc>"]
+          }
+        ],
+        "vim.visualModeKeyBindings": [
+          {
+            "before": [">"],
+            "commands": ["editor.action.indentLines"]
+          },
+          {
+            "before": ["<"],
+            "commands": ["editor.action.outdentLines"]
+          }
+        ],
+        "vim.normalModeKeyBindingsNonRecursive": [
+          {
+            "before": ["<C-n>"],
+            "commands": [":nohl"]
+          },
+          {
+            "before": [":"],
+            "commands": ["workbench.action.showCommands"],
+            "silent": true
+          },
+          {
+            "before": ["leader", "w"],
+            "commands": ["workbench.action.files.save"]
+          }
+        ],
+        "vim.leader": ","
       }
     }
   },
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [3000, 8080, 9090],
+  "forwardPorts": [3000, 8080, 9000, 9090],
 
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "docker --version",
+  // install BentoML and setuptools tools
+  "postStartCommand": "bash ./.devcontainer/lifecycle/post-start",
 
   // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
   "remoteUser": "vscode"

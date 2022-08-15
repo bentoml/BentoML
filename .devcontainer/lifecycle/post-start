@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# fetch all tags
+
+git fetch upstream --tags
+
+# install editable wheels & tools for bentoml
+
+pip install -r requirements/dev-requirements.txt
+pip install -e ".[tracing]"

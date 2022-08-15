@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:master 
+# syntax=docker/dockerfile:1.4-labs
 
 FROM python:3-bullseye
 

@@ -76,7 +76,6 @@
         "vim.highlightedyank.enable": true,
         "vim.hlsearch": true,
         "vim.visualstar": true,
-        "vim.easymotion": true,
         "vim.useSystemClipboard": true,
         "vim.insertModeKeyBindingsNonRecursive": [
           {

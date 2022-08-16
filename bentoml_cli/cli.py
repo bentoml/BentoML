@@ -24,7 +24,15 @@ def create_bentoml_cli() -> click.Group:
     @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
     @click.version_option(BENTOML_VERSION, "-v", "--version")
     def bentoml_cli():
-        """BentoML CLI"""
+        """
+        \b
+        ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+        ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+        ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+        ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+        ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+        ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+        """
 
     # Add top-level CLI commands
     add_env_command(bentoml_cli)

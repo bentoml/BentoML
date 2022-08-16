@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any
     from typing import Type
-    from typing import Literal
     from typing import TypeVar
     from typing import Callable
     from typing import Optional
@@ -77,8 +76,6 @@ if TYPE_CHECKING:
     Servicer = Annotated[ServicerImpl, object]
     ServicerClass = Type[Servicer[Any]]
     AddServicerFn = Callable[[Servicer[Any], aio.Server | grpc.Server], None]
-
-    ProtoField = Literal["dataframe", "file", "json", "ndarray", "series"]
 
     __all__ = [
         "Request",

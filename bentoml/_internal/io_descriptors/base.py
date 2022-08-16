@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
 
-    from bentoml.grpc.types import ProtoField
     from bentoml.grpc.types import BentoServicerContext
     from bentoml.grpc.v1.service_pb2 import Part as GRPCPart
     from bentoml.grpc.v1.service_pb2 import Request as GRPCRequest
@@ -37,28 +36,7 @@ if TYPE_CHECKING:
 IOType = t.TypeVar("IOType")
 
 
-class DescriptorMeta(ABCMeta):
-    _proto_field: str
-
-    def __new__(
-        cls: type[Self],
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, t.Any],
-        *,
-        proto_field: str | None = None,
-        **kwargs: t.Any,
-    ) -> Self:
-        if not proto_field:
-            proto_field = ""
-
-        klass = super().__new__(cls, name, bases, namespace, **kwargs)
-        klass._proto_field = proto_field
-
-        return klass
-
-
-class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None):
+class IODescriptor(t.Generic[IOType], metaclass=ABCMeta):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
@@ -67,9 +45,9 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
 
     HTTP_METHODS = ["POST"]
 
-    _proto_field: str
     _mime_type: str
     _rpc_content_type: str
+    _proto_field: str
 
     def __new__(  # pylint: disable=unused-argument
         cls: t.Type[Self],
@@ -87,15 +65,6 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
 
     def __repr__(self) -> str:
         return self.__class__.__qualname__
-
-    @property
-    def proto_field(self) -> ProtoField:
-        """
-        Returns a list of kinds fields that the IODescriptor can accept.
-
-        Make sure to keep in sync with bentoml.grpc.v1.Request message.
-        """
-        return t.cast("ProtoField", self._proto_field)
 
     @property
     def grpc_content_type(self) -> str:
@@ -159,13 +128,13 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMeta, proto_field=None
     async def from_grpc_request(
         self, request: GRPCRequest | GRPCPart, context: BentoServicerContext
     ) -> IOType:
-        ...
+        pass
 
     @abstractmethod
     async def to_grpc_response(
         self, obj: IOType, context: BentoServicerContext
     ) -> GRPCResponse:
-        ...
+        pass
 
     # TODO: add generate_protobuf(self)
     # to generate protobuf from python object

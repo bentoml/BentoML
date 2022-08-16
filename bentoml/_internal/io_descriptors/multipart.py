@@ -10,6 +10,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
@@ -32,7 +33,7 @@ else:
     pb, _ = import_generated_stubs()
 
 
-class Multipart(IODescriptor[t.Any], proto_field="multipart"):
+class Multipart(IODescriptor[t.Any]):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -229,23 +230,29 @@ class Multipart(IODescriptor[t.Any], proto_field="multipart"):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> dict[str, t.Any]:
-        from bentoml.grpc.utils import get_field
         from bentoml.grpc.utils import raise_grpc_exception
         from bentoml.grpc.utils import validate_content_type
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
-        field = get_field(request, self)
 
-        if len(set(field) - set(self._inputs)) != 0:
+        if hasattr(request, "multipart"):
+            field = request.multipart
+            if len(set(field) - set(self._inputs)) != 0:
+                raise_grpc_exception(
+                    f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as input fields. Invalid fields are: {set(field) - set(self._inputs)}",
+                    context=context,
+                )
+        else:
             raise_grpc_exception(
-                f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as input fields. Invalid fields are: {set(field) - set(self._inputs)}",
+                f"'multipart' is not found in the request message for {self.__class__.__name__}",
                 context=context,
+                exception_cls=UnprocessableEntity,
             )
 
         return {
             key: await self._inputs[key].from_grpc_request(input_pb, context)
-            for key, input_pb in field.items()
+            for key, input_pb in request.multipart.items()
         }
 
     async def to_grpc_response(
@@ -265,14 +272,18 @@ class Multipart(IODescriptor[t.Any], proto_field="multipart"):
                 context=context,
                 exception_cls=InvalidArgument,
             )
-        multipart_map: dict[str, pb.Part] = {}
+
+        multimap: dict[str, pb.Part] = {}
 
         for key in obj:
             io_descriptor = self._inputs[key]
             resp = await io_descriptor.to_grpc_response(obj[key], context)
-            part = pb.Part(
-                **{io_descriptor.proto_field: getattr(resp, io_descriptor.proto_field)}
+            multimap[key] = pb.Part(
+                **{
+                    io_descriptor._proto_field: getattr(
+                        resp, io_descriptor._proto_field
+                    )
+                }
             )
-            multipart_map[key] = part
 
-        return pb.Response(multipart=multipart_map)
+        return pb.Response(multipart=multimap)

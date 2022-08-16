@@ -29,7 +29,7 @@ else:
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str], proto_field="text"):
+class Text(IODescriptor[str]):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -92,6 +92,8 @@ class Text(IODescriptor[str], proto_field="text"):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
+    _proto_field: str = "text"
+
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         if args or kwargs:
             raise BentoMLException(
@@ -141,13 +143,19 @@ class Text(IODescriptor[str], proto_field="text"):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> str:
-        from bentoml.grpc.utils import get_field
+        from bentoml.grpc.utils import raise_grpc_exception
         from bentoml.grpc.utils import validate_content_type
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
-
-        return get_field(request, self)
+        if request.HasField("text"):
+            return request.text
+        elif request.HasField("raw_bytes_contents"):
+            return request.raw_bytes_contents.decode("utf-8")
+        else:
+            raise_grpc_exception(
+                "Neither 'text' or 'raw_bytes_contents' is found is request message."
+            )
 
     async def to_grpc_response(
         self, obj: str, context: BentoServicerContext

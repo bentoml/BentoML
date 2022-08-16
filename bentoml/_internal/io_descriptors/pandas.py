@@ -130,7 +130,7 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
         )
 
 
-class PandasDataFrame(IODescriptor["ext.PdDataFrame"], proto_field="dataframe"):
+class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
     where either inputs will be converted to or outputs will be converted from type
@@ -243,6 +243,8 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"], proto_field="dataframe"):
     Returns:
         :obj:`PandasDataFrame`: IO Descriptor that represents a :code:`pd.DataFrame`.
     """
+
+    _proto_field: str = "dataframe"
 
     def __init__(
         self,
@@ -488,7 +490,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"], proto_field="dataframe"):
         pass
 
 
-class PandasSeries(IODescriptor["ext.PdSeries"], proto_field="series"):
+class PandasSeries(IODescriptor["ext.PdSeries"]):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -583,6 +585,8 @@ class PandasSeries(IODescriptor["ext.PdSeries"], proto_field="series"):
     Returns:
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
+
+    _proto_field: str = "series"
 
     def __init__(
         self,

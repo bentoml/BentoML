@@ -57,7 +57,7 @@ ImageType = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 DEFAULT_PIL_MODE = "RGB"
 
 
-class Image(IODescriptor[ImageType], proto_field="file"):
+class Image(IODescriptor[ImageType]):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
@@ -144,6 +144,8 @@ class Image(IODescriptor[ImageType], proto_field="file"):
     """
 
     MIME_EXT_MAPPING: t.Dict[str, str] = {}
+
+    _proto_field: str = "file"
 
     def __init__(
         self,
@@ -249,10 +251,9 @@ class Image(IODescriptor[ImageType], proto_field="file"):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> ImageType:
-        from bentoml.grpc.utils import get_field
         from bentoml.grpc.utils import raise_grpc_exception
         from bentoml.grpc.utils import validate_content_type
-        from bentoml.grpc.utils import filetype_pb_to_mimetype_map
+        from bentoml.grpc.utils.mapping import filetype_pb_to_mimetype_map
 
         if self._mime_type.startswith("multipart"):
             raise_grpc_exception(
@@ -264,31 +265,41 @@ class Image(IODescriptor[ImageType], proto_field="file"):
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
 
-        # check if the request message has the correct field
-        field = get_field(request, self)
         mapping = filetype_pb_to_mimetype_map()
 
-        if field.kind:
-            try:
-                mime_type = mapping[field.kind]
-                if mime_type != self._mime_type:
+        # check if the request message has the correct field
+        if request.HasField("file"):
+            field = request.file
+            if field.kind:
+                try:
+                    mime_type = mapping[field.kind]
+                    if mime_type != self._mime_type:
+                        raise_grpc_exception(
+                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                            context=context,
+                        )
+                except KeyError:
                     raise_grpc_exception(
-                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                        f"{field.kind} is not a valid File kind. Accepted file kind: {set(mapping)}",
                         context=context,
                     )
-            except KeyError:
-                raise_grpc_exception(
-                    f"{field.kind} is not a valid File kind. Accepted file kind: {set(mapping)}",
-                    context=context,
-                )
+            content = field.content
+        elif request.HasField("raw_bytes_contents"):
+            content = request.raw_bytes_contents
+        else:
+            raise_grpc_exception(
+                "Neither 'file' or 'raw_bytes_contents' field is found in the request message.",
+                context=context,
+                exception_cls=UnprocessableEntity,
+            )
 
-        return PIL.Image.open(io.BytesIO(field.content))
+        return PIL.Image.open(io.BytesIO(content))
 
     async def to_grpc_response(
         self, obj: ImageType, context: BentoServicerContext
     ) -> pb.Response:
         from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import mimetype_to_filetype_pb_map
+        from bentoml.grpc.utils.mapping import mimetype_to_filetype_pb_map
 
         if self._mime_type.startswith("multipart"):
             raise_grpc_exception(
@@ -312,10 +323,8 @@ class Image(IODescriptor[ImageType], proto_field="file"):
 
         context.set_trailing_metadata((("content-type", self.grpc_content_type),))
 
-        mapping = mimetype_to_filetype_pb_map()
-
         try:
-            kind = mapping[self._mime_type]
+            kind = mimetype_to_filetype_pb_map()[self._mime_type]
         except KeyError:
             raise_grpc_exception(
                 f"{self._mime_type} doesn't have a corresponding File 'kind'",

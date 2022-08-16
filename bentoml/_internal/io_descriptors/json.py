@@ -17,6 +17,7 @@ from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import bentoml_cattr
+from ..utils.pkg import pkg_version_info
 from ..utils.http import set_cookies
 from ..service.openapi import REF_PREFIX
 from ..service.openapi import SUCCESS_DESCRIPTION
@@ -79,7 +80,7 @@ class DefaultJsonEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-class JSON(IODescriptor[JSONType], proto_field="json"):
+class JSON(IODescriptor[JSONType]):
     """
     :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
@@ -178,23 +179,26 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
         :obj:`JSON`: IO Descriptor that represents JSON format.
     """
 
+    _proto_field: str = "json"
+
     def __init__(
         self,
         *,
         pydantic_model: t.Type[pydantic.BaseModel] | None = None,
         validate_json: bool | None = None,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
-        _chunk_workers: int = 10,
     ):
         if pydantic_model:
             assert issubclass(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
+            if pkg_version_info("pydantic")[0] >= 2:
+                raise UnprocessableEntity(
+                    "pydantic 2.x is not yet supported. Add upper bound to 'pydantic': 'pip install \"pydantic<2\"'"
+                )
 
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
-
-        self._chunk_workers = _chunk_workers
 
         # Remove validate_json in version 1.0.2
         if validate_json is not None:
@@ -294,26 +298,48 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
     ) -> JSONType | pydantic.BaseModel:
         from google.protobuf.json_format import MessageToDict
 
-        from bentoml.grpc.utils import get_field
         from bentoml.grpc.utils import raise_grpc_exception
         from bentoml.grpc.utils import validate_content_type
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
 
-        json_obj = MessageToDict(
-            get_field(request, self), preserving_proto_field_name=True
-        )
+        if request.HasField("json"):
+            json_obj = MessageToDict(request.json, preserving_proto_field_name=True)
 
-        if self._pydantic_model:
+            if self._pydantic_model:
+                try:
+                    return self._pydantic_model.parse_obj(json_obj)
+                except pydantic.ValidationError as e:
+                    raise_grpc_exception(
+                        f"Invalid JSON input received: {e}",
+                        context=context,
+                        exception_cls=UnprocessableEntity,
+                    )
+        elif request.HasField("raw_bytes_contents"):
+            content = request.raw_bytes_contents
+            if self._pydantic_model:
+                try:
+                    return self._pydantic_model.parse_raw(content)
+                except pydantic.ValidationError as e:
+                    raise_grpc_exception(
+                        f"Invalid JSON input received: {e}",
+                        context=context,
+                        exception_cls=UnprocessableEntity,
+                    )
             try:
-                return self._pydantic_model.parse_obj(json_obj)
-            except pydantic.ValidationError as e:
+                json_obj = json.loads(content)
+            except json.JSONDecodeError as e:
                 raise_grpc_exception(
                     f"Invalid JSON input received: {e}",
                     context=context,
                     exception_cls=UnprocessableEntity,
                 )
+        else:
+            raise_grpc_exception(
+                "Neither 'json' nor 'raw_bytes_contents' is found in the request message",
+                context=context,
+            )
 
         return json_obj
 
@@ -328,7 +354,7 @@ class JSON(IODescriptor[JSONType], proto_field="json"):
         # use pydantic model for validation.
         if self._pydantic_model:
             try:
-                self._pydantic_model.parse_obj(obj)
+                self._pydantic_model.validate(obj)
             except pydantic.ValidationError as e:
                 raise_grpc_exception(
                     f"Invalid JSON input received: {e}",

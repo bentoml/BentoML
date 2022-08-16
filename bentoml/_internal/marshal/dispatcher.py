@@ -7,9 +7,9 @@ import logging
 import functools
 import traceback
 import collections
-import numpy as np
 from typing import TYPE_CHECKING
 
+import numpy as np
 from simple_di import inject
 from simple_di import Provide
 

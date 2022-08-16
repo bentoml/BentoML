@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ..utils.metrics import metric_name
-from ..configuration.containers import BentoMLContainer
+from bentoml._internal.utils.metrics import metric_name
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from .. import external_typing as ext

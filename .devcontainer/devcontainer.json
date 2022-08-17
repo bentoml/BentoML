@@ -24,7 +24,6 @@
       "extensions": [
         "ms-azuretools.vscode-docker",
         "ms-python.vscode-pylance",
-        "vscodevim.vim",
         "ms-python.python",
         "ms-vsliveshare.vsliveshare",
         "ms-python.black-formatter",
@@ -56,58 +55,6 @@
         "editor.minimap.enabled": true,
         "editor.formatOnSave": true,
         "editor.wordWrapColumn": 88,
-        // Some default vim settings
-        // Leader: ,
-        // "jk": faster escape
-        // "<C-n>": clear highlights
-        // ":": command mode
-        // "<leader>w": save
-        // ">": indent
-        // "<": dedent
-        "vim.vimrc.enable": true,
-        "vim.vimrc.path": "$HOME/config/.vimrc",
-        "vim.cursorStylePerMode.insert": "line",
-        "vim.cursorStylePerMode.normal": "block",
-        "vim.cursorStylePerMode.replace": "underline",
-        "vim.cursorStylePerMode.visual": "block",
-        "vim.cursorStylePerMode.visualblock": "block",
-        "vim.cursorStylePerMode.visualline": "block",
-        "vim.debug.loggingLevelForAlert": "verbose",
-        "vim.highlightedyank.enable": true,
-        "vim.hlsearch": true,
-        "vim.visualstar": true,
-        "vim.useSystemClipboard": true,
-        "vim.insertModeKeyBindingsNonRecursive": [
-          {
-            "before": ["j", "j"],
-            "after": ["<esc>"]
-          }
-        ],
-        "vim.visualModeKeyBindings": [
-          {
-            "before": [";"],
-            "after": [":"]
-          },
-          {
-            "before": [">"],
-            "commands": ["editor.action.indentLines"]
-          },
-          {
-            "before": ["<"],
-            "commands": ["editor.action.outdentLines"]
-          }
-        ],
-        "vim.normalModeKeyBindingsNonRecursive": [
-          {
-            "before": ["<C-n>"],
-            "commands": [":nohl"]
-          },
-          {
-            "before": ["leader", "w"],
-            "commands": ["workbench.action.files.save"]
-          }
-        ],
-        "vim.leader": ","
       }
     }
   },

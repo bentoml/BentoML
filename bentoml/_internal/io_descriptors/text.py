@@ -11,7 +11,6 @@ from bentoml.exceptions import BentoMLException
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
@@ -23,7 +22,9 @@ if TYPE_CHECKING:
 
     from ..context import InferenceApiContext as Context
 else:
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 MIME_TYPE = "text/plain"
 
@@ -140,22 +141,13 @@ class Text(IODescriptor[str], proto_field="text"):
     async def from_grpc_request(
         self, request: pb.Request, context: BentoServicerContext
     ) -> str:
-        import ast
-
         from bentoml.grpc.utils import get_field
         from bentoml.grpc.utils import validate_content_type
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
 
-        field = ast.literal_eval(get_field(request, self))
-
-        try:
-            return bytes(field, "ascii").decode("utf-8")
-        except TypeError:
-            import base64
-
-            return base64.b64decode(field).decode("utf-8")
+        return get_field(request, self)
 
     async def to_grpc_response(
         self, obj: str, context: BentoServicerContext

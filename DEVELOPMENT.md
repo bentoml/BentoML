@@ -236,8 +236,9 @@ make type
 ## Editing proto files
 
 The proto files for the BentoML gRPC service are located under [`bentoml/grpc`](./bentoml/grpc/).
-The generated python files are not included in the git repository, and are instead generated on install.
-If you edit the proto files, make sure to run `pip install -e -U .` again to regenerate them.
+The generated python files are not checked in the git repository, and are instead generated via this [`script`](./scripts/generate-grpc-stubs).
+If you edit the proto files, make sure to run `./scripts/generate-grpc-stubs` to
+regenerate the proto stubs.
 
 ## Deploy with your changes
 

@@ -21,8 +21,6 @@ clean: ## Clean all generated files
 	@cd $(GIT_ROOT)/docs && make clean
 	@cd $(GIT_ROOT) || exit 1
 	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
-hooks: ## Install pre-defined hooks
-	@./scripts/install_hooks.sh
 
 
 ci-%:

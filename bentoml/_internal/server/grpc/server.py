@@ -21,15 +21,14 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health_pb2_grpc
     from google.protobuf.descriptor import ServiceDescriptor
 
-    from bentoml.grpc.v1 import service_pb2
-    from bentoml.grpc.v1 import service_pb2_grpc
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2_grpc as services
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
 else:
-    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
-    service_pb2_grpc = LazyLoader(
-        "service_pb2_grpc", globals(), "bentoml.grpc.v1.service_pb2_grpc"
-    )
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, services = import_generated_stubs()
     health = LazyLoader("health", globals(), "grpc_health.v1.health")
     health_pb2 = LazyLoader("health_pb2", globals(), "grpc_health.v1.health_pb2")
     health_pb2_grpc = LazyLoader(
@@ -51,7 +50,7 @@ class GRPCServer:
         | None = None,
         *,
         _grace_period: int = 5,
-        _bento_servicer: service_pb2_grpc.BentoServiceServicer,
+        _bento_servicer: services.BentoServiceServicer,
         _health_servicer: health.aio.HealthServicer,
     ):
         self._bento_servicer = _bento_servicer
@@ -110,27 +109,26 @@ class GRPCServer:
                 handler()
 
         # register bento servicer
-        service_pb2_grpc.add_BentoServiceServicer_to_server(
+        services.add_BentoServiceServicer_to_server(
             self._bento_servicer, self.server  # type: ignore (unfinished async types)
         )
         health_pb2_grpc.add_HealthServicer_to_server(self._health_servicer, self.server)
 
-        services = tuple(
-            service.full_name
-            for service in service_pb2.DESCRIPTOR.services_by_name.values()
+        service_name = tuple(
+            service.full_name for service in pb.DESCRIPTOR.services_by_name.values()
         )
 
         # register custom servicer
         for servicer, add_servicer_fn, service_descriptor in self.mount_servicers:
             # TODO: Annotated types are not contravariant
             add_servicer_fn(servicer(), self.server)
-            services += tuple(service.full_name for service in service_descriptor)
+            service_name += tuple(service.full_name for service in service_descriptor)
 
-        services += (health.SERVICE_NAME, reflection.SERVICE_NAME)
-        reflection.enable_server_reflection(services, self.server)
+        service_name += (health.SERVICE_NAME, reflection.SERVICE_NAME)
+        reflection.enable_server_reflection(service_name, self.server)
 
         # mark all services as healthy
-        for service in services:
+        for service in service_name:
             await self._health_servicer.set(
                 service, health_pb2.HealthCheckResponse.SERVING  # type: ignore (no types available)
             )

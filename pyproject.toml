@@ -1,13 +1,6 @@
 [build-system]
-requires = [
-  "protobuf==3.19.4",
-  "grpcio-tools==1.47.0",
-  "mypy-protobuf==3.2.0",
-  "setuptools>=59.0",
-  "setuptools-scm[toml]>=7.0.0",
-  "wheel",
-]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools", "setuptools-scm[toml]>=6.2.3", "wheel"]
+build-backend = "setuptools.build_meta:__legacy__"
 
 [tool.setuptools_scm]
 write_to = "bentoml/_version.py"
@@ -219,7 +212,62 @@ exclude = [
   '**/*_pb2.py',
   "**/*_pb2_grpc.py",
 ]
-useLibraryCodeForTypes = true
-reportMissingImports = true
-reportMissingTypeStubs = false
-typeCheckingMode = "strict"
+analysis.useLibraryCodeForTypes = true
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+strictParameterNoneValue = true
+enableTypeIgnoreComments = true
+reportGeneralTypeIssues = "error"
+reportPropertyTypeMismatch = "error"
+reportFunctionMemberAccess = "error"
+reportMissingImports = "warning"
+reportMissingModuleSource = "warning"
+reportMissingTypeStubs = "warning"
+reportUnusedImport = "error"
+reportUnusedClass = "error"
+reportUnusedFunction = "error"
+reportUnusedVariable = "error"
+reportDuplicateImport = "error"
+reportWildcardImportFromLibrary = "error"
+reportOptionalSubscript = "error"
+reportOptionalMemberAccess = "error"
+reportOptionalCall = "error"
+reportOptionalIterable = "error"
+reportOptionalContextManager = "error"
+reportOptionalOperand = "error"
+reportTypedDictNotRequiredAccess = "error"
+reportUntypedFunctionDecorator = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedBaseClass = "error"
+reportUntypedNamedTuple = "error"
+reportPrivateUsage = "error"
+reportPrivateImportUsage = "error"
+reportConstantRedefinition = "error"
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportOverlappingOverload = "error"
+reportUninitializedInstanceVariable = "none"
+reportInvalidStringEscapeSequence = "error"
+reportUnknownParameterType = "error"
+reportUnknownArgumentType = "error"
+reportUnknownLambdaType = "error"
+reportUnknownVariableType = "error"
+reportUnknownMemberType = "warning"
+reportMissingParameterType = "error"
+reportMissingTypeArgument = "error"
+reportInvalidTypeVarUse = "error"
+reportCallInDefaultInitializer = "none"
+reportUnnecessaryIsInstance = "warning"
+reportUnnecessaryCast = "error"
+reportUnnecessaryComparison = "error"
+reportAssertAlwaysTrue = "error"
+reportSelfClsParameterName = "error"
+reportImplicitStringConcatenation = "none"
+reportUndefinedVariable = "error"
+reportUnboundVariable = "error"
+reportInvalidStubStatement = "error"
+reportIncompleteStub = "error"
+reportUnsupportedDunderAll = "error"
+reportUnusedCallResult = "none"
+reportUnusedCoroutine = "error"

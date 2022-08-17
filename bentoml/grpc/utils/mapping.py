@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
-from bentoml._internal.utils.lazy_loader import LazyLoader
+from bentoml._internal.utils.lazy_loader import LazyLoader as _LazyLoader
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -19,14 +19,18 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml._internal import external_typing as ext
 else:
-    grpc = LazyLoader(
+    from bentoml.grpc.utils._import_hook import import_generated_stubs
+
+    grpc = _LazyLoader(
         "grpc",
         globals(),
         "grpc",
         exc_msg="'grpc' is required. Install with 'pip install grpcio'.",
     )
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
-    np = LazyLoader("np", globals(), "numpy")
+    np = _LazyLoader("np", globals(), "numpy")
+    pb, _ = import_generated_stubs()
+
+    del _LazyLoader
 
 
 @lru_cache(maxsize=1)
@@ -99,43 +103,30 @@ FIELDPB_TO_NPDTYPE_NAME_MAP = {
 
 
 @lru_cache(maxsize=1)
-def dtypepb_to_fieldpb_map() -> dict[pb.NDArray.DType.ValueType, str]:
-    return {
-        pb.NDArray.DTYPE_FLOAT: "float_values",
-        pb.NDArray.DTYPE_DOUBLE: "double_values",
-        pb.NDArray.DTYPE_INT32: "int32_values",
-        pb.NDArray.DTYPE_INT64: "int64_values",
-        pb.NDArray.DTYPE_UINT32: "uint32_values",
-        pb.NDArray.DTYPE_UINT64: "uint64_values",
-        pb.NDArray.DTYPE_BOOL: "bool_values",
-        pb.NDArray.DTYPE_STRING: "string_values",
-    }
-
-
-@lru_cache(maxsize=1)
-def fieldpb_to_dtypepb_map() -> dict[str, pb.NDArray.DType.ValueType]:
-    return {v: k for k, v in dtypepb_to_fieldpb_map().items()}
-
-
-@lru_cache(maxsize=1)
 def dtypepb_to_npdtype_map() -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]:
     # pb.NDArray.Dtype -> np.dtype
     return {
-        k: np.dtype(FIELDPB_TO_NPDTYPE_NAME_MAP[v])
-        for k, v in dtypepb_to_fieldpb_map().items()
+        pb.NDArray.DTYPE_FLOAT: np.dtype("float32"),
+        pb.NDArray.DTYPE_DOUBLE: np.dtype("double"),
+        pb.NDArray.DTYPE_INT32: np.dtype("int32"),
+        pb.NDArray.DTYPE_INT64: np.dtype("int64"),
+        pb.NDArray.DTYPE_UINT32: np.dtype("uint32"),
+        pb.NDArray.DTYPE_UINT64: np.dtype("uint64"),
+        pb.NDArray.DTYPE_BOOL: np.dtype("bool"),
+        pb.NDArray.DTYPE_STRING: np.dtype("<U"),
     }
-
-
-@lru_cache(maxsize=1)
-def npdtype_to_dtypepb_map() -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
-    # np.dtype -> pb.NDArray.Dtype
-    return {v: k for k, v in dtypepb_to_npdtype_map().items()}
 
 
 @lru_cache(maxsize=1)
 def fieldpb_to_npdtype_map() -> dict[str, ext.NpDTypeLike]:
     # str -> np.dtype
     return {k: np.dtype(v) for k, v in FIELDPB_TO_NPDTYPE_NAME_MAP.items()}
+
+
+@lru_cache(maxsize=1)
+def npdtype_to_dtypepb_map() -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
+    # np.dtype -> pb.NDArray.Dtype
+    return {v: k for k, v in dtypepb_to_npdtype_map().items()}
 
 
 @lru_cache(maxsize=1)

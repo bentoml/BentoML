@@ -44,7 +44,15 @@ config_merger = Merger(
 
 logger = logging.getLogger(__name__)
 
-_check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
+_check_tracing_type: t.Callable[[str], bool] = lambda s: s in (
+    "zipkin",
+    "jaeger",
+    "otlp",
+)
+_check_otlp_protocol: t.Callable[[str], bool] = lambda s: s in (
+    "grpc",
+    "http",
+)
 _larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
     lambda target: lambda val: val > target
 )
@@ -131,6 +139,10 @@ SCHEMA = Schema(
             "excluded_urls": Or([str], str, None),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
+            Optional("otlp"): {
+                "protocol": Or(And(str, Use(str.lower), _check_otlp_protocol), None),
+                "url": Or(str, None),
+            },
         },
         Optional("yatai"): {
             "default_server": Or(str, None),
@@ -366,6 +378,8 @@ class _BentoMLContainerClass:
         zipkin_server_url: t.Optional[str] = Provide[config.tracing.zipkin.url],
         jaeger_server_address: t.Optional[str] = Provide[config.tracing.jaeger.address],
         jaeger_server_port: t.Optional[int] = Provide[config.tracing.jaeger.port],
+        otlp_server_protocol: t.Optional[str] = Provide[config.tracing.otlp.protocol],
+        otlp_server_url: t.Optional[str] = Provide[config.tracing.otlp.url],
     ):
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -374,6 +388,9 @@ class _BentoMLContainerClass:
 
         if sample_rate is None:
             sample_rate = 0.0
+            logger.warning(
+                "sample_rate hasn't been set in the config and by default no traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+            )
 
         provider = TracerProvider(
             sampler=ParentBasedTraceIdRatio(sample_rate),
@@ -410,6 +427,29 @@ class _BentoMLContainerClass:
                 agent_host_name=jaeger_server_address,
                 agent_port=jaeger_server_port,
             )
+            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            return provider
+        elif (
+            tracer_type == "otlp"
+            and otlp_server_protocol is not None
+            and otlp_server_url is not None
+        ):
+            if otlp_server_protocol == "grpc":
+                # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
+                from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+                    OTLPSpanExporter,  # type: ignore (no opentelemetry types)
+                )
+
+            elif otlp_server_protocol == "http":
+                # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
+                from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+                    OTLPSpanExporter,  # type: ignore (no opentelemetry types)
+                )
+
+            exporter = OTLPSpanExporter(  # type: ignore (no opentelemetry types)
+                endpoint=otlp_server_url,
+            )
+
             provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
             return provider
         else:

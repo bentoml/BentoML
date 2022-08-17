@@ -2,26 +2,38 @@
 Tracing
 =======
 
-BentoML API server supports tracing with both `Zipkin <https://zipkin.io/>`_ and
-`Jaeger <https://www.jaegertracing.io/>`_. To config tracing server, user can provide a
-config YAML file specifying the tracer type and tracing server information:
+BentoML API server supports tracing with both `Zipkin <https://zipkin.io/>`_,
+`Jaeger <https://www.jaegertracing.io/>`_ and `OTLP <https://opentelemetry.io/>`_.
+To config tracing server, user can provide a config YAML file specifying the tracer type and tracing server information:
 
 .. code-block:: yaml
 
     tracing:
       type: jaeger
+      sample_rate: 1.0
       zipkin:
         url: http://localhost:9411/api/v2/spans
       jaeger:
         address: localhost
         port: 6831
+      otlp:
+        protocol: grpc
+        url: http://localhost:4317
 
-Here's an example config for tracing with a Zipkin server:
+First, bentoml must be installed with the extras "tracing".
+
+.. code-block:: bash
+
+    pip install bentoml[tracing]
+
+By default, no traces will be collected. Set sample_rate to your desired fraction in order to start collecting them.
+Here is an example config for tracing with a Zipkin server:
 
 .. code-block:: yaml
 
     tracing:
        type: zipkin
+       sample_rate: 1.0
        zipkin:
          url: http://localhost:9411/api/v2/spans
 
@@ -35,6 +47,7 @@ Here is another example config file for tracing with Jaeger and opentracing:
 
     tracing:
       type: jaeger
+      sample_rate: 1.0
       jaeger:
         address: localhost
         port: 6831
@@ -47,11 +60,35 @@ string of routes, or a list of strings.
 
     tracing:
       type: jaeger
+      sample_rate: 1.0
       jaeger:
         address: localhost
         port: 6831
       excluded_urls: readyz,livez,healthz,static_content,docs,metrics
 
+
+Finally, here is an example using OTLP. This allows easy integration with an OpenTelemetry Traces receiver.
+You may use either HTTP or gRPC as protocol. gRPC is the default, but HTTP may be easier to proxy or load-balance.
+
+.. code-block:: yaml
+
+    tracing:
+      type: otlp
+      sample_rate: 1.0
+      otlp:
+        protocol: grpc
+        url: http://localhost:4317
+
+If using HTTP, you must set the whole Traces receiver endpoint path (e.g. `/v1/traces` for OpenTelemetry Collector):
+
+.. code-block:: yaml
+
+    tracing:
+      type: otlp
+      sample_rate: 1.0
+      otlp:
+        protocol: http
+        url: http://localhost:4318/v1/traces
 
 When starting a BentoML API model server, provide the path to this config file via the
 CLI argument `--config`:

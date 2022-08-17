@@ -327,7 +327,7 @@ def get_runnable(
 
         def _run_method(
             runnable_self: KerasRunnable, *args: "KerasArgType"
-        ) -> "ext.NpNDArray":
+        ) -> "ext.NpNDArray" | t.Tuple["ext.NpNDArray", ...]:
 
             params = Params["KerasArgType"](*args)
 
@@ -345,6 +345,8 @@ def get_runnable(
                 ).isinstance(res):
                     return t.cast("ext.NpNDArray", res.numpy())
 
+                if isinstance(res, list):
+                    return tuple(res)
                 return res
 
         return _run_method

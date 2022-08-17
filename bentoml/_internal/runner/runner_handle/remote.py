@@ -189,6 +189,10 @@ class RemoteRunnerClient(RunnerHandle):
                 f"Bento payload decode error: invalid Content-Type '{content_type}'."
             )
 
+        if content_type == "application/vnd.bentoml.multiple_outputs":
+            payloads = pickle.loads(body)
+            return tuple(AutoContainer.from_payload(payload) for payload in payloads)
+
         container = content_type.strip("application/vnd.bentoml.")
 
         try:

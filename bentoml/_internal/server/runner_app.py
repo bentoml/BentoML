@@ -181,6 +181,41 @@ class RunnerAppFactory(BaseAppFactory):
                 *batched_params.args, **batched_params.kwargs
             )
 
+            server_str = f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}"
+
+            # multiple output branch
+            if isinstance(batch_ret, tuple):
+                output_num = len(batch_ret)
+                if isinstance(output_batch_dim, int):
+                    output_batch_dim = (output_batch_dim,) * output_num
+                else:
+                    assert (
+                        len(output_batch_dim) == output_num
+                    ), "output_batch_dim length should be equal to the number of outputs"
+
+                payloadss = [
+                    AutoContainer.batch_to_payloads(
+                        batch_ret[idx], indices, batch_dim=output_batch_dim[idx]
+                    )
+                    for idx in range(output_num)
+                ]
+
+                return [
+                    Response(
+                        pickle.dumps(payloads),
+                        headers={
+                            PAYLOAD_META_HEADER: json.dumps({}),
+                            "Content-Type": "application/vnd.bentoml.multiple_outputs",
+                            "Server": server_str,
+                        },
+                    )
+                    for payloads in zip(*payloadss)
+                ]
+
+            # single output branch
+            assert isinstance(
+                output_batch_dim, int
+            ), "output_batch_dim's should be int for single output"
             payloads = AutoContainer.batch_to_payloads(
                 batch_ret,
                 indices,
@@ -193,7 +228,7 @@ class RunnerAppFactory(BaseAppFactory):
                     headers={
                         PAYLOAD_META_HEADER: json.dumps(payload.meta),
                         "Content-Type": f"application/vnd.bentoml.{payload.container}",
-                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                        "Server": server_str,
                     },
                 )
                 for payload in payloads

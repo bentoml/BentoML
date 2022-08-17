@@ -3,6 +3,7 @@ syntax = "proto3";
 package bentoml.grpc.v1;
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -53,7 +54,7 @@ message Request {
   File file = 7;
 
   // Text represents a string inputs.
-  optional string text = 8;
+  google.protobuf.StringValue text = 8;
 
   // JSON is represented by using google.protobuf.Value.
   // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
@@ -90,7 +91,7 @@ message Response {
   File file = 6;
 
   // Text represents a string inputs.
-  optional string text = 7;
+  google.protobuf.StringValue text = 7;
 
   // JSON is represented by using google.protobuf.Value.
   // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
@@ -124,7 +125,7 @@ message Part {
     File file = 5;
 
     // Text represents a string inputs.
-    string text = 6;
+    google.protobuf.StringValue text = 6;
 
     // JSON is represented by using google.protobuf.Value.
     // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto

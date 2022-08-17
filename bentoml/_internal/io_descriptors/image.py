@@ -29,7 +29,6 @@ if TYPE_CHECKING:
     import PIL.Image
 
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import BentoServicerContext
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
@@ -248,22 +247,13 @@ class Image(IODescriptor[ImageType]):
                 headers={"content-disposition": content_disposition},
             )
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> ImageType:
-        from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import validate_content_type
+    async def from_proto(self, request: pb.Request) -> ImageType:
         from bentoml.grpc.utils.mapping import filetype_pb_to_mimetype_map
 
         if self._mime_type.startswith("multipart"):
-            raise_grpc_exception(
-                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
-                context=context,
-                exception_cls=UnprocessableEntity,
+            raise UnprocessableEntity(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead."
             )
-
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
 
         mapping = filetype_pb_to_mimetype_map()
 
@@ -274,38 +264,29 @@ class Image(IODescriptor[ImageType]):
                 try:
                     mime_type = mapping[field.kind]
                     if mime_type != self._mime_type:
-                        raise_grpc_exception(
+                        raise BadInput(
                             f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
-                            context=context,
                         )
                 except KeyError:
-                    raise_grpc_exception(
+                    raise BadInput(
                         f"{field.kind} is not a valid File kind. Accepted file kind: {set(mapping)}",
-                        context=context,
                     )
             content = field.content
         elif request.HasField("raw_bytes_contents"):
             content = request.raw_bytes_contents
         else:
-            raise_grpc_exception(
+            raise UnprocessableEntity(
                 "Neither 'file' or 'raw_bytes_contents' field is found in the request message.",
-                context=context,
-                exception_cls=UnprocessableEntity,
             )
 
         return PIL.Image.open(io.BytesIO(content))
 
-    async def to_grpc_response(
-        self, obj: ImageType, context: BentoServicerContext
-    ) -> pb.Response:
-        from bentoml.grpc.utils import raise_grpc_exception
+    async def to_proto(self, obj: ImageType) -> pb.File:
         from bentoml.grpc.utils.mapping import mimetype_to_filetype_pb_map
 
         if self._mime_type.startswith("multipart"):
-            raise_grpc_exception(
-                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
-                context=context,
-                exception_cls=UnprocessableEntity,
+            raise UnprocessableEntity(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead."
             )
 
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
@@ -313,22 +294,17 @@ class Image(IODescriptor[ImageType]):
         elif LazyType[PIL.Image.Image]("PIL.Image.Image").isinstance(obj):
             image = obj
         else:
-            raise_grpc_exception(
+            raise InternalServerError(
                 f"Unsupported Image type received: '{type(obj)}', '{self.__class__.__name__}' only supports 'np.ndarray' and 'PIL.Image'.",
-                context=context,
-                exception_cls=InternalServerError,
             )
         ret = io.BytesIO()
         image.save(ret, format=self._format)
 
-        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
-
         try:
             kind = mimetype_to_filetype_pb_map()[self._mime_type]
         except KeyError:
-            raise_grpc_exception(
+            raise BadInput(
                 f"{self._mime_type} doesn't have a corresponding File 'kind'",
-                context=context,
             )
 
-        return pb.Response(file=pb.File(kind=kind, content=ret.getvalue()))
+        return pb.File(kind=kind, content=ret.getvalue())

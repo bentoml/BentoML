@@ -31,9 +31,9 @@ if TYPE_CHECKING:
 
     import pydantic
     import pydantic.schema as schema
+    from google.protobuf import struct_pb2
 
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import BentoServicerContext
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
@@ -47,6 +47,7 @@ else:
 
     # lazy load our proto generated.
     pb, _ = import_generated_stubs()
+    struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
 
     # lazy load numpy for processing ndarray.
     np = LazyLoader("np", globals(), "numpy")
@@ -244,9 +245,7 @@ class JSON(IODescriptor[JSONType]):
             content={self._mime_type: MediaType(schema=self.openapi_schema())},
         )
 
-    async def from_http_request(
-        self, request: Request
-    ) -> JSONType | pydantic.BaseModel:
+    async def from_http_request(self, request: Request) -> JSONType:
         json_str = await request.body()
         try:
             json_obj = json.loads(json_str)
@@ -262,9 +261,7 @@ class JSON(IODescriptor[JSONType]):
         else:
             return json_obj
 
-    async def to_http_response(
-        self, obj: JSONType | pydantic.BaseModel, ctx: Context | None = None
-    ):
+    async def to_http_response(self, obj: JSONType, ctx: Context | None = None):
         if isinstance(obj, pydantic.BaseModel):
             obj = obj.dict()
 
@@ -293,16 +290,8 @@ class JSON(IODescriptor[JSONType]):
         else:
             return Response(json_str, media_type=self._mime_type)
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> JSONType | pydantic.BaseModel:
+    async def from_proto(self, request: pb.Request) -> JSONType:
         from google.protobuf.json_format import MessageToDict
-
-        from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import validate_content_type
-
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
 
         if request.HasField("json"):
             json_obj = MessageToDict(request.json, preserving_proto_field_name=True)
@@ -311,59 +300,40 @@ class JSON(IODescriptor[JSONType]):
                 try:
                     return self._pydantic_model.parse_obj(json_obj)
                 except pydantic.ValidationError as e:
-                    raise_grpc_exception(
-                        f"Invalid JSON input received: {e}",
-                        context=context,
-                        exception_cls=UnprocessableEntity,
-                    )
+                    raise UnprocessableEntity(f"Invalid JSON input received: {e}")
         elif request.HasField("raw_bytes_contents"):
             content = request.raw_bytes_contents
             if self._pydantic_model:
                 try:
                     return self._pydantic_model.parse_raw(content)
                 except pydantic.ValidationError as e:
-                    raise_grpc_exception(
-                        f"Invalid JSON input received: {e}",
-                        context=context,
-                        exception_cls=UnprocessableEntity,
-                    )
+                    raise UnprocessableEntity(f"Invalid JSON input received: {e}")
+
             try:
                 json_obj = json.loads(content)
             except json.JSONDecodeError as e:
-                raise_grpc_exception(
-                    f"Invalid JSON input received: {e}",
-                    context=context,
-                    exception_cls=UnprocessableEntity,
-                )
+                raise UnprocessableEntity(f"Invalid JSON input received: {e}")
         else:
-            raise_grpc_exception(
+            raise BadInput(
                 "Neither 'json' nor 'raw_bytes_contents' is found in the request message",
-                context=context,
             )
 
         return json_obj
 
-    async def to_grpc_response(
-        self, obj: JSONType | pydantic.BaseModel, context: BentoServicerContext
-    ) -> pb.Response:
-        from google.protobuf.struct_pb2 import Value
+    async def to_proto(self, obj: JSONType) -> struct_pb2.Value:
         from google.protobuf.json_format import Parse
-
-        from bentoml.grpc.utils import raise_grpc_exception
 
         # use pydantic model for validation.
         if self._pydantic_model:
             try:
                 self._pydantic_model.validate(obj)
             except pydantic.ValidationError as e:
-                raise_grpc_exception(
-                    f"Invalid JSON input received: {e}",
-                    context=context,
-                    exception_cls=BadInput,
-                )
+                raise UnprocessableEntity(f"Invalid JSON input received: {e}")
 
         if isinstance(obj, pydantic.BaseModel):
             obj = obj.dict()
+
+        msg = struct_pb2.Value()
 
         if obj:
             json_str = json.dumps(
@@ -375,6 +345,6 @@ class JSON(IODescriptor[JSONType]):
                 separators=(",", ":"),
             )
 
-            return pb.Response(json=Parse(json_str, Value()))
+            return Parse(json_str, msg)
 
-        return pb.Response(json=Value())
+        return msg

@@ -483,10 +483,10 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         return inst
 
-    async def from_grpc_request(self, request, context) -> t.Any:
+    async def from_proto(self, request) -> t.Any:
         pass
 
-    async def to_grpc_response(self, obj, context) -> t.Any:
+    async def to_proto(self, obj) -> t.Any:
         pass
 
 
@@ -688,8 +688,8 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
                 obj.to_json(orient=self._orient), media_type=self._mime_type
             )
 
-    async def from_grpc_request(self, request, context) -> t.Any:
+    async def from_proto(self, request) -> t.Any:
         pass
 
-    async def to_grpc_response(self, obj, context) -> t.Any:
+    async def to_proto(self, obj) -> t.Any:
         pass

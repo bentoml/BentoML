@@ -9,14 +9,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from types import UnionType
 
+    from google.protobuf import message
     from typing_extensions import Self
     from starlette.requests import Request
     from starlette.responses import Response
+    from google.protobuf.internal.containers import MessageMap
 
-    from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1.service_pb2 import Part as GRPCPart
-    from bentoml.grpc.v1.service_pb2 import Request as GRPCRequest
-    from bentoml.grpc.v1.service_pb2 import Response as GRPCResponse
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.types import ProtoField
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
@@ -63,22 +63,16 @@ class IODescriptor(t.Generic[IOType], metaclass=ABCMeta):
 
         return self
 
+    @property
+    def proto_field(self) -> ProtoField:
+        """
+        Returns a list of kinds fields that the IODescriptor can accept.
+        Make sure to keep in sync with bentoml.grpc.v1.Request message.
+        """
+        return t.cast("ProtoField", self._proto_field)
+
     def __repr__(self) -> str:
         return self.__class__.__qualname__
-
-    @property
-    def grpc_content_type(self) -> str:
-        generic_content_type = ["application/octet-stream", "text/plain"]
-        if self._mime_type in generic_content_type or self._mime_type.startswith(
-            "multipart"
-        ):
-            return f"{self._rpc_content_type}+proto"
-
-        return f"{self._rpc_content_type}+{self._mime_type.split('/')[-1]}"
-
-    @grpc_content_type.setter
-    def grpc_content_type(self, value: str) -> None:
-        self._rpc_content_type = value
 
     @abstractmethod
     def input_type(self) -> InputType:
@@ -112,29 +106,23 @@ class IODescriptor(t.Generic[IOType], metaclass=ABCMeta):
 
     @overload
     @abstractmethod
-    async def from_grpc_request(
-        self, request: GRPCRequest, context: BentoServicerContext
-    ) -> IOType:
+    async def from_proto(self, request: pb.Part) -> IOType:
         ...
 
     @overload
     @abstractmethod
-    async def from_grpc_request(
-        self, request: GRPCPart, context: BentoServicerContext
-    ) -> IOType:
+    async def from_proto(self, request: pb.Response) -> IOType:
+        ...
+
+    @overload
+    @abstractmethod
+    async def from_proto(self, request: pb.Request) -> IOType:
         ...
 
     @abstractmethod
-    async def from_grpc_request(
-        self, request: GRPCRequest | GRPCPart, context: BentoServicerContext
-    ) -> IOType:
-        pass
+    async def from_proto(self, request: message.Message) -> IOType:
+        ...
 
     @abstractmethod
-    async def to_grpc_response(
-        self, obj: IOType, context: BentoServicerContext
-    ) -> GRPCResponse:
-        pass
-
-    # TODO: add generate_protobuf(self)
-    # to generate protobuf from python object
+    async def to_proto(self, obj: IOType) -> MessageMap[str, pb.Part] | message.Message:
+        ...

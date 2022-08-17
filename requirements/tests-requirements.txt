@@ -11,9 +11,11 @@ pytest-asyncio
 pandas
 scikit-learn
 imageio>=2.5.0
-watchfiles>=0.15.0
 pyarrow
 build[virtualenv] >=0.8.0
 yamllint
-grpcio
-grpcio-tools
+setuptools<=60
+# There is memory leak in later Python GRPC (1.43.0 to be specific),
+# use known working version until the memory leak is resolved in the future
+# (see https://github.com/grpc/grpc/issues/28513)
+grpcio-tools<1.43.0

@@ -8,11 +8,14 @@ from typing import TYPE_CHECKING
 
 import attr
 from jinja2 import Environment
+from simple_di import inject
+from simple_di import Provide
 from jinja2.loaders import FileSystemLoader
+
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 from ..utils import resolve_user_filepath
 from .docker import DistroSpec
-from ..configuration import CLEAN_BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +57,21 @@ J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
 class ReservedEnv:
     base_image: str
     supported_architectures: list[str]
-    bentoml_version: str = attr.field(default=CLEAN_BENTOML_VERSION)
+    enable_grpc: bool
     python_version: str = attr.field(
         default=f"{version_info.major}.{version_info.minor}"
     )
 
-    def todict(self):
-        return {f"__{k}__": v for k, v in attr.asdict(self).items()}
+    @inject
+    def todict(
+        self,
+        prometheus_port: int = Provide[BentoMLContainer.grpc.metrics_port],
+        service_port: int = Provide[BentoMLContainer.service_port],
+    ):
+        return {
+            **{f"__{k}__": v for k, v in attr.asdict(self).items()},
+            "__prometheus_port__": prometheus_port,
+        }
 
 
 @attr.frozen(on_setattr=None, eq=False, repr=False)
@@ -75,7 +86,9 @@ class CustomizableEnv:
 
 
 def get_templates_variables(
-    options: DockerOptions, use_conda: bool
+    options: DockerOptions,
+    use_conda: bool,
+    enable_grpc: bool,
 ) -> dict[str, t.Any]:
     """
     Returns a dictionary of variables to be used in BentoML base templates.
@@ -107,18 +120,26 @@ def get_templates_variables(
         )
 
     # environment returns are
-    # __base_image__, __supported_architectures__, __bentoml_version__, __python_version_full__
+    # __base_image__, __supported_architectures__, __enable_grpc__, __python_version_full__
     # bento__uid_gid, bento__user, bento__home, bento__path
     # __options__distros, __options__base_image, __options_env, __options_system_packages, __options_setup_script
     return {
         **{f"__options__{k}": v for k, v in attr.asdict(options).items()},
         **CustomizableEnv().todict(),
-        **ReservedEnv(base_image, supported_architecture).todict(),
+        **ReservedEnv(
+            base_image=base_image,
+            supported_architectures=supported_architecture,
+            enable_grpc=enable_grpc,
+        ).todict(),
     }
 
 
 def generate_dockerfile(
-    options: DockerOptions, build_ctx: str, *, use_conda: bool
+    options: DockerOptions,
+    build_ctx: str,
+    *,
+    use_conda: bool,
+    enable_grpc: bool,
 ) -> str:
     """
     Generate a Dockerfile that containerize a Bento.
@@ -199,4 +220,6 @@ def generate_dockerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
-    return template.render(**get_templates_variables(options, use_conda=use_conda))
+    return template.render(
+        **get_templates_variables(options, use_conda=use_conda, enable_grpc=enable_grpc)
+    )

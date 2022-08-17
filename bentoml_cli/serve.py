@@ -26,6 +26,7 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
+        "-p",
         "--port",
         type=click.INT,
         default=BentoMLContainer.service_port.get(),
@@ -125,6 +126,12 @@ def add_serve_command(cli: click.Group) -> None:
         help="Start a BentoML gRPC server.",
         default=False,
     )
+    @click.option(
+        "--enable-reflection",
+        type=click.BOOL,
+        help="Enable reflection (Currently, only have effect in conjunction with '--grpc').",
+        default=False,
+    )
     def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,
@@ -143,6 +150,7 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
         grpc: bool,
+        enable_reflection: bool,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
@@ -204,6 +212,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
+                reflection=enable_reflection,
             )
         else:
             from bentoml.serve import serve_development
@@ -222,4 +231,5 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
+                reflection=enable_reflection,
             )

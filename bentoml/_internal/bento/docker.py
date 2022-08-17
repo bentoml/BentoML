@@ -109,7 +109,7 @@ class DistroSpec:
         ),
     )
 
-    supported_cuda_versions: t.List[str] = attr.field(
+    supported_cuda_versions: t.Optional[t.List[str]] = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.deep_iterable(

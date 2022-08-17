@@ -12,6 +12,7 @@ import tempfile
 import contextlib
 from typing import TYPE_CHECKING
 from pathlib import Path
+from functools import partial
 
 import psutil
 from simple_di import inject
@@ -130,24 +131,27 @@ def create_watcher(
 
 
 def log_grpcui_message(port: int) -> None:
-    message = "To use gRPC UI, run the following command: 'docker run -it --rm {network_args} fullstorydev/grpcui -plaintext {platform_deps}:{port}', followed by opening 'http://0.0.0.0:8080' in your browser of choice."
+    docker_run = partial(
+        "docker run -it --rm {network_args} fullstorydev/grpcui -plaintext {platform_deps}:{port}".format,
+        port=port,
+    )
+    message = "To use gRPC UI, run the following command: '{instruction}', followed by opening 'http://0.0.0.0:8080' in your browser of choice."
 
-    if psutil.WINDOWS or psutil.MACOS:
+    linux_instruction = docker_run(
+        platform_deps="0.0.0.0", network_args="--network=host"
+    )
+    mac_win_instruction = docker_run(
+        platform_deps="host.docker.internal", network_args="-p 8080:8080"
+    )
+
+    if os.path.exists("/.dockerenv"):
         logger.info(
-            message.format(
-                platform_deps="host.docker.internal",
-                port=port,
-                network_args="-p 8080:8080",
-            )
+            f"If your local machine either MacOS or Windows, then use '{mac_win_instruction}', otherwise use '{linux_instruction}'."
         )
-    else:
-        logger.info(
-            message.format(
-                platform_deps="localhost",
-                port=port,
-                network_args="--network=host",
-            )
-        )
+    elif psutil.WINDOWS or psutil.MACOS:
+        logger.info(message.format(instruction=mac_win_instruction))
+    elif psutil.LINUX:
+        logger.info(message.format(instruction=linux_instruction))
 
 
 def ssl_args(
@@ -200,6 +204,7 @@ def serve_development(
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     reload: bool = False,
     grpc: bool = False,
+    reflection: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
@@ -379,6 +384,7 @@ def serve_production(
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     grpc: bool = False,
+    reflection: bool = False,
 ) -> None:
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)

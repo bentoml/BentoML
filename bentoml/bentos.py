@@ -409,7 +409,7 @@ def containerize(
     ssh: str | None = None,
     target: str | None = None,
     ulimit: str | None = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> bool:
 
     from bentoml._internal.utils import buildx

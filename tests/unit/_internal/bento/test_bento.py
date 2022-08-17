@@ -105,7 +105,6 @@ docker:
   python_version: '{python_version}'
   cuda_version: null
   env: null
-  grpc: false
   system_packages: null
   setup_script: null
   base_image: null
@@ -121,6 +120,7 @@ python:
   extra_index_url: null
   pip_args: null
   wheels: null
+  extras_require: null
 conda:
   environment_yml: null
   channels: null

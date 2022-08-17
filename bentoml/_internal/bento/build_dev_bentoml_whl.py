@@ -31,8 +31,8 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     try:
         from build import ProjectBuilder
         from build.env import IsolatedEnvBuilder
-    except ModuleNotFoundError:
-        raise MissingDependencyException(_exc_message)
+    except ModuleNotFoundError as e:
+        raise MissingDependencyException(_exc_message) from e
 
     # Find bentoml module path
     module_location = source_locations("bentoml")

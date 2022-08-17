@@ -7,18 +7,21 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import UnprocessableEntity
 
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
+from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
+    from google.protobuf import wrappers_pb2
+
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import BentoServicerContext
 
     from ..context import InferenceApiContext as Context
 else:
@@ -26,10 +29,12 @@ else:
 
     pb, _ = import_generated_stubs()
 
+    wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
+
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str], proto_field="text"):
+class Text(IODescriptor[str]):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -92,6 +97,8 @@ class Text(IODescriptor[str], proto_field="text"):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
+    _proto_field: str = "text"
+
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         if args or kwargs:
             raise BentoMLException(
@@ -138,21 +145,15 @@ class Text(IODescriptor[str], proto_field="text"):
         else:
             return Response(obj, media_type=MIME_TYPE)
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> str:
-        from bentoml.grpc.utils import get_field
-        from bentoml.grpc.utils import validate_content_type
+    async def from_proto(self, request: pb.Request) -> str:
+        if request.HasField("text"):
+            return request.text.value
+        elif request.HasField("raw_bytes_contents"):
+            return request.raw_bytes_contents.decode("utf-8")
+        else:
+            raise UnprocessableEntity(
+                "Neither 'text' or 'raw_bytes_contents' is found is request message."
+            )
 
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
-
-        return get_field(request, self)
-
-    async def to_grpc_response(
-        self, obj: str, context: BentoServicerContext
-    ) -> pb.Response:
-
-        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
-
-        return pb.Response(text=obj)
+    async def to_proto(self, obj: str) -> wrappers_pb2.StringValue:
+        return wrappers_pb2.StringValue(value=obj)

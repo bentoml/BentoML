@@ -13,6 +13,7 @@ from starlette.datastructures import UploadFile
 from .base import IODescriptor
 from ..types import FileLike
 from ..utils.http import set_cookies
+from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
@@ -25,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import BentoServicerContext
 
     from ..context import InferenceApiContext as Context
 
@@ -38,7 +38,7 @@ else:
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
-class File(IODescriptor[FileType], proto_field="file"):
+class File(IODescriptor[FileType]):
     """
     :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -110,6 +110,7 @@ class File(IODescriptor[FileType], proto_field="file"):
     """
 
     _kind: str
+    _proto_field: str = "file"
 
     def __new__(  # pylint: disable=arguments-differ # returning subclass from new
         cls, kind: FileKind = "binaryio", mime_type: str | None = None
@@ -164,17 +165,12 @@ class File(IODescriptor[FileType], proto_field="file"):
             res = Response(body)
         return res
 
-    async def to_grpc_response(
-        self, obj: FileType, context: BentoServicerContext
-    ) -> pb.Response:
-        from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import mimetype_to_filetype_pb_map
+    async def to_proto(self, obj: FileType) -> pb.File:
+        from bentoml.grpc.utils.mapping import mimetype_to_filetype_pb_map
 
         if self._mime_type.startswith("multipart"):
-            raise_grpc_exception(
-                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
-                context=context,
-                exception_cls=UnprocessableEntity,
+            raise UnprocessableEntity(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead."
             )
 
         if isinstance(obj, bytes):
@@ -182,27 +178,25 @@ class File(IODescriptor[FileType], proto_field="file"):
         else:
             body = obj.read()
 
-        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
-
-        mapping = mimetype_to_filetype_pb_map()
-
         try:
-            kind = mapping[self._mime_type]
+            kind = mimetype_to_filetype_pb_map()[self._mime_type]
         except KeyError:
-            raise_grpc_exception(
-                f"{self._mime_type} doesn't have a corresponding File 'kind'",
-                context=context,
+            raise UnprocessableEntity(
+                f"{self._mime_type} doesn't have a corresponding File 'kind'"
             )
 
-        return pb.Response(file=pb.File(kind=kind, content=body))
+        return pb.File(kind=kind, content=body)
 
+    # These two functions below are to accomodate pylint
     async def from_http_request(self, request: Request) -> FileType:
-        raise NotImplementedError("File.from_http_request is not implemented.")
+        raise NotImplementedError(
+            f"'{self.__class__.__name__}.from_http_request' is not implemented."
+        )
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> FileType:
-        raise NotImplementedError("File.from_grpc_request is not implemented.")
+    async def from_proto(self, request: pb.Request) -> FileType:
+        raise NotImplementedError(
+            f"'{self.__class__.__name__}.from_proto' is not implemented."
+        )
 
 
 class BytesIOFile(File):
@@ -233,40 +227,36 @@ class BytesIOFile(File):
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> FileLike[bytes]:
-        from bentoml.grpc.utils import get_field
-        from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import validate_content_type
-        from bentoml.grpc.utils import filetype_pb_to_mimetype_map
+    async def from_proto(self, request: pb.Request) -> FileLike[bytes]:
+        from bentoml.grpc.utils.mapping import filetype_pb_to_mimetype_map
 
         if self._mime_type.startswith("multipart"):
-            raise_grpc_exception(
-                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead.",
-                context=context,
-                exception_cls=UnprocessableEntity,
+            raise UnprocessableEntity(
+                "'multipart' Content-Type is not yet supported for parsing files in gRPC. Use Multipart() instead."
             )
 
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
-
-        # check if the request message has the correct field
-        field = get_field(request, self)
         mapping = filetype_pb_to_mimetype_map()
 
-        if field.kind:
-            try:
-                mime_type = mapping[field.kind]
-                if mime_type != self._mime_type:
-                    raise_grpc_exception(
-                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
-                        context=context,
+        # check if the request message has the correct field
+        if request.HasField("file"):
+            field = request.file
+            if field.kind:
+                try:
+                    mime_type = mapping[field.kind]
+                    if mime_type != self._mime_type:
+                        raise BadInput(
+                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                        )
+                except KeyError:
+                    raise BadInput(
+                        f"{field.kind} is not a valid File kind. Accepted file kind: {set(mapping)}",
                     )
-            except KeyError:
-                raise_grpc_exception(
-                    f"{field.kind} is not a valid File kind. Accepted file kind: {set(mapping)}",
-                    context=context,
-                )
+            content = field.content
+        elif request.HasField("raw_bytes_contents"):
+            content = request.raw_bytes_contents
+        else:
+            raise UnprocessableEntity(
+                "Neither 'file' or 'raw_bytes_contents' field is found in the request message.",
+            )
 
-        return FileLike[bytes](io.BytesIO(field.content), "<content>")
+        return FileLike[bytes](io.BytesIO(content), "<content>")

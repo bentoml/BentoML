@@ -7,7 +7,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml.grpc.utils.mapping import grpc_status_to_http_status_map
 from bentoml.grpc.utils.mapping import http_status_to_grpc_status_map
@@ -15,13 +14,10 @@ from bentoml._internal.utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     import grpc
-    from grpc import aio
 
-    from bentoml.io import IODescriptor
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1 import service_pb2_grpc as services
     from bentoml.grpc.types import RpcMethodHandler
-    from bentoml.grpc.types import BentoServicerContext
 
     def import_generated_stubs(version: str = "v1") -> tuple[pb, services]:
         ...
@@ -39,9 +35,7 @@ __all__ = [
     "grpc_status_code",
     "parse_method_name",
     "to_http_status",
-    "raise_grpc_exception",
     "GRPC_CONTENT_TYPE",
-    "validate_content_type",
     "import_generated_stubs",
 ]
 
@@ -49,58 +43,6 @@ logger = logging.getLogger(__name__)
 
 # content-type is always application/grpc
 GRPC_CONTENT_TYPE = "application/grpc"
-
-
-def validate_content_type(
-    context: BentoServicerContext, descriptor: IODescriptor[t.Any]
-) -> None:
-    """
-    Validate 'content-type' from invocation metadata.
-    """
-    metadata = context.invocation_metadata()
-    if metadata:
-        if TYPE_CHECKING:
-            from grpc.aio._typing import MetadatumType
-
-            metadata = t.cast(tuple[MetadatumType], metadata)
-
-        metas = aio.Metadata.from_tuple(metadata)
-        maybe_content_type = metas.get_all("content-type")
-        if maybe_content_type:
-            if len(maybe_content_type) > 1:
-                raise_grpc_exception(
-                    f"{maybe_content_type} should only contain one 'Content-Type' headers.",
-                    context=context,
-                    exception_cls=InvalidArgument,
-                )
-
-            content_type = str(maybe_content_type[0])
-
-            if not content_type.startswith(GRPC_CONTENT_TYPE):
-                raise_grpc_exception(
-                    f"{content_type} should startwith {GRPC_CONTENT_TYPE}.",
-                    context=context,
-                    exception_cls=InvalidArgument,
-                )
-            if content_type != descriptor.grpc_content_type:
-                raise_grpc_exception(
-                    f"'{content_type}' is found while '{repr(descriptor)}' requires '{descriptor.grpc_content_type}'.",
-                    context=context,
-                    exception_cls=InvalidArgument,
-                )
-
-
-def raise_grpc_exception(
-    msg: str,
-    context: BentoServicerContext,
-    exception_cls: t.Type[BentoMLException] = BentoMLException,
-):
-    code = http_status_to_grpc_status_map().get(
-        exception_cls.error_code, grpc.StatusCode.UNKNOWN
-    )
-    context.set_code(code)
-    context.set_details(msg)
-    raise exception_cls(msg)
 
 
 def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:

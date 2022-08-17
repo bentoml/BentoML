@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     import numpy as np
 
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import BentoServicerContext
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
@@ -56,7 +55,7 @@ def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
 
 
 # TODO: when updating docs, add examples with gRPCurl
-class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
+class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -138,6 +137,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
     Returns:
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that represents a :code:`np.ndarray`.
     """
+
+    _proto_field: str = "ndarray"
 
     def __init__(
         self,
@@ -370,9 +371,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
 
         return klass
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> ext.NpNDArray:
+    async def from_proto(self, request: pb.Request) -> ext.NpNDArray:
         """
         Process incoming protobuf request and convert it to ``numpy.ndarray``
 
@@ -384,66 +383,78 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
             a ``numpy.ndarray`` object. This can then be used
              inside users defined logics.
         """
-        from bentoml.grpc.utils import get_field
-        from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import validate_content_type
         from bentoml.grpc.utils.mapping import dtypepb_to_npdtype_map
         from bentoml.grpc.utils.mapping import fieldpb_to_npdtype_map
 
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
+        if request.HasField("ndarray"):
+            if request.ndarray.dtype == pb.NDArray.DTYPE_UNSPECIFIED:
+                dtype = None
+            else:
+                try:
+                    dtype = dtypepb_to_npdtype_map()[request.ndarray.dtype]
+                except KeyError:
+                    raise BadInput(f"{request.ndarray.dtype} is invalid.")
 
-        field = get_field(request, self)
+            fieldpb = [
+                f.name
+                for f, _ in request.ndarray.ListFields()
+                if f.name.endswith("_values")
+            ]
 
-        shape = field.shape
-
-        if field.dtype == pb.NDArray.DTYPE_UNSPECIFIED:
-            dtype = None
-        else:
-            try:
-                dtype = dtypepb_to_npdtype_map()[field.dtype]
-            except KeyError:
-                raise_grpc_exception(
-                    f"{field.dtype} is invalid", context=context, exception_cls=BadInput
+            if len(fieldpb) == 0:
+                # input message doesn't have any fields.
+                return np.empty(shape=request.ndarray.shape or 0)
+            elif len(fieldpb) > 1:
+                # when there are more than two values provided in the proto.
+                raise BadInput(
+                    f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
                 )
 
-        fieldpb = [f.name for f, _ in field.ListFields() if f.name.endswith("_values")]
+            dtype: ext.NpDTypeLike = fieldpb_to_npdtype_map()[fieldpb[0]]
 
-        if len(fieldpb) == 0:
-            # input message doesn't have any fields.
-            return np.empty(shape=shape or 0)
-        elif len(fieldpb) > 1:
-            # when there are more than two values provided in the proto.
-            raise_grpc_exception(
-                f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
-                context=context,
-                exception_cls=BadInput,
+            if request.ndarray.shape and dtype in [np.float32, np.double, np.bool_]:
+                buffer = request.ndarray.SerializeToString()
+                num_entries = np.prod(request.ndarray.shape)
+
+                array = np.frombuffer(
+                    memoryview(buffer[-(dtype.itemsize * num_entries) :]),
+                    dtype=dtype,
+                    count=num_entries,
+                    offset=0,
+                ).reshape(request.ndarray.shape)
+            else:
+                values_array = getattr(request.ndarray, fieldpb[0])
+                try:
+                    array = np.array(values_array, dtype=dtype)
+                except ValueError:
+                    array = np.array(values_array)
+
+        elif request.HasField("raw_bytes_contents"):
+            buffer = request.raw_bytes_contents
+            if not self._dtype:
+                raise UnprocessableEntity(
+                    "'raw_bytes_contents' requires specifying 'dtype'."
+                )
+
+            dtype: ext.NpDTypeLike = self._dtype
+            if self._shape and dtype in [np.float32, np.double, np.bool_]:
+                num_entries = np.prod(self._shape)
+                array = np.frombuffer(
+                    memoryview(buffer[-(dtype.itemsize * num_entries) :]),
+                    dtype=self._dtype,
+                    count=num_entries,
+                    offset=0,
+                ).reshape(self._shape)
+            else:
+                array = np.frombuffer(request.raw_bytes_contents, dtype=self._dtype)
+        else:
+            raise UnprocessableEntity(
+                "Neither 'array' or 'raw_bytes_contents' is found in the request message.",
             )
 
-        dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
-        values_array = getattr(field, fieldpb[0])
+        return self.validate_array(array)
 
-        if shape and dtype in [np.float32, np.double, np.bool_]:
-            buffer = field.SerializeToString()
-            num_entries = np.prod(shape)
-
-            arr = np.frombuffer(
-                memoryview(buffer[-(dtype.itemsize * num_entries) :]),
-                dtype=dtype,
-                count=num_entries,
-                offset=0,
-            ).reshape(shape)
-        else:
-            try:
-                arr = np.array(values_array, dtype=dtype)
-            except ValueError:
-                arr = np.array(values_array)
-
-        return self.validate_array(arr)
-
-    async def to_grpc_response(
-        self, obj: ext.NpNDArray, context: BentoServicerContext
-    ) -> pb.Response:
+    async def to_proto(self, obj: ext.NpNDArray) -> pb.NDArray:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -454,29 +465,23 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
             `io_descriptor_pb2.Array`:
                 Protobuf representation of given `np.ndarray`
         """
-        from bentoml.grpc.utils import raise_grpc_exception
         from bentoml.grpc.utils.mapping import npdtype_to_dtypepb_map
         from bentoml.grpc.utils.mapping import npdtype_to_fieldpb_map
 
         try:
             obj = self.validate_array(obj, exception_cls=InternalServerError)
-        except InternalServerError as e:
-            raise_grpc_exception(e.message, context=context, exception_cls=e.__class__)
-
-        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
+        except InternalServerError:
+            raise
 
         try:
             fieldpb = npdtype_to_fieldpb_map()[obj.dtype]
             dtypepb = npdtype_to_dtypepb_map()[obj.dtype]
-            return pb.Response(
-                ndarray=pb.NDArray(
-                    dtype=dtypepb,
-                    shape=tuple(obj.shape),
-                    **{fieldpb: obj.ravel(order=self._bytesorder).tolist()},
-                )
+            return pb.NDArray(
+                dtype=dtypepb,
+                shape=tuple(obj.shape),
+                **{fieldpb: obj.ravel(order=self._bytesorder).tolist()},
             )
         except KeyError:
-            raise_grpc_exception(
+            raise BadInput(
                 f"Unsupported dtype '{obj.dtype}' for response message.",
-                context=context,
             )

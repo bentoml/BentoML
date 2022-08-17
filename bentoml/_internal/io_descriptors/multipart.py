@@ -10,6 +10,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
@@ -21,8 +22,9 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     from types import UnionType
 
+    from google.protobuf.internal.containers import MessageMap
+
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import BentoServicerContext
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
@@ -32,7 +34,7 @@ else:
     pb, _ = import_generated_stubs()
 
 
-class Multipart(IODescriptor[t.Any], proto_field="multipart"):
+class Multipart(IODescriptor[t.Any]):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -226,53 +228,35 @@ class Multipart(IODescriptor[t.Any], proto_field="multipart"):
         }
         return await concat_to_multipart_response(res_mapping, ctx)
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> dict[str, t.Any]:
-        from bentoml.grpc.utils import get_field
-        from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import validate_content_type
-
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
-        field = get_field(request, self)
-
-        if len(set(field) - set(self._inputs)) != 0:
-            raise_grpc_exception(
-                f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as input fields. Invalid fields are: {set(field) - set(self._inputs)}",
-                context=context,
+    async def from_proto(self, request: pb.Request) -> dict[str, t.Any]:
+        if hasattr(request, "multipart"):
+            field = request.multipart
+            if len(set(field) - set(self._inputs)) != 0:
+                raise InvalidArgument(
+                    f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as input fields. Invalid fields are: {set(field) - set(self._inputs)}",
+                )
+        else:
+            raise UnprocessableEntity(
+                f"'multipart' is not found in the request message for {self.__class__.__name__}",
             )
 
         return {
-            key: await self._inputs[key].from_grpc_request(input_pb, context)
-            for key, input_pb in field.items()
+            key: await self._inputs[key].from_proto(input_pb)
+            for key, input_pb in request.multipart.items()
         }
 
-    async def to_grpc_response(
-        self, obj: dict[str, t.Any], context: BentoServicerContext
-    ) -> pb.Response:
-        from bentoml.grpc.utils import raise_grpc_exception
-        from bentoml.grpc.utils import validate_content_type
-
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
-
-        context.set_trailing_metadata((("content-type", self.grpc_content_type),))
-
+    async def to_proto(self, obj: dict[str, t.Any]) -> MessageMap[str, pb.Part]:
         if len(set(obj) - set(self._inputs)) != 0:
-            raise_grpc_exception(
+            raise InvalidArgument(
                 f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as output fields. Invalid fields are: {set(obj) - set(self._inputs)}",
-                context=context,
-                exception_cls=InvalidArgument,
             )
-        multipart_map: dict[str, pb.Part] = {}
+
+        multimap: MessageMap[str, pb.Part] = t.cast("MessageMap[str, pb.Part]", {})
 
         for key in obj:
             io_descriptor = self._inputs[key]
-            resp = await io_descriptor.to_grpc_response(obj[key], context)
-            part = pb.Part(
-                **{io_descriptor.proto_field: getattr(resp, io_descriptor.proto_field)}
-            )
-            multipart_map[key] = part
+            proto_key = io_descriptor.proto_field
+            resp = await io_descriptor.to_proto(obj[key])
+            multimap[key] = pb.Part(**{proto_key: getattr(resp, proto_key)})
 
-        return pb.Response(multipart=multipart_map)
+        return multimap

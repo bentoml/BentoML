@@ -180,10 +180,8 @@ logging-format-style = "new" # using f-string formatter for logging.
 notes = ["FIXME", "XXX", "TODO", "NOTE", "WARNING"]
 
 [tool.pylint.refactoring]
-never-returning-functions = [
-  "sys.exit",
-  "raise_grpc_exception",
-] # specify functions that should not return
+# specify functions that should not return
+never-returning-functions = ["sys.exit"]
 
 [tool.pylint.spelling]
 spelling-ignore-comment-directives = "fmt: on,fmt: off,noqa:,noqa,nosec,isort:skip,mypy:,pylint:,type:"

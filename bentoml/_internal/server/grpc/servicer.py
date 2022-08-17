@@ -32,7 +32,7 @@ def log_exception(request: pb.Request, exc_info: ExcInfoType) -> None:
     logger.error(f"Exception on /{request.api_name} [POST]", exc_info=exc_info)
 
 
-def create_bentoservicer(service: Service) -> services.BentoServiceServicer:
+def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
     """
     This is the actual implementation of BentoServicer.
     Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
@@ -55,14 +55,15 @@ def create_bentoservicer(service: Service) -> services.BentoServiceServicer:
             response = pb.Response()
 
             try:
-                input_ = await api.input.from_grpc_request(request, context)
+                input_ = await api.input.from_proto(request)
 
                 if asyncio.iscoroutinefunction(api.func):
                     output = await api.func(input_)
                 else:
                     output = await anyio.to_thread.run_sync(api.func, input_)
 
-                response = await api.output.to_grpc_response(output, context)
+                protos = await api.output.to_proto(output)
+                response = pb.Response(**{api.output.proto_field: protos})
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 await context.abort(code=grpc_status_code(e), details=e.message)
@@ -70,7 +71,7 @@ def create_bentoservicer(service: Service) -> services.BentoServiceServicer:
                 log_exception(request, sys.exc_info())
                 await context.abort(
                     code=grpc.StatusCode.INTERNAL,
-                    details="An internal runtime error has occurred, check out error details in server logs.",
+                    details="A runtime error has occurred, check out stacktrace from logs.",
                 )
             except Exception:  # pylint: disable=broad-except
                 log_exception(request, sys.exc_info())

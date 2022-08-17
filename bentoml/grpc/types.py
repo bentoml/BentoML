@@ -78,7 +78,9 @@ if TYPE_CHECKING:
     ServicerClass = Type[Servicer[Any]]
     AddServicerFn = Callable[[Servicer[Any], aio.Server | grpc.Server], None]
 
-    ProtoField = Literal["dataframe", "file", "json", "ndarray", "series"]
+    ProtoField = Literal[
+        "dataframe", "file", "json", "ndarray", "series", "text", "raw_bytes_contents"
+    ]
 
     __all__ = [
         "Request",

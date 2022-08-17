@@ -3,6 +3,7 @@ syntax = "proto3";
 package bentoml.grpc.v1;
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
@@ -33,16 +34,53 @@ message Request {
   string api_name = 1;
 
   // NDArray represents a n-dimensional array of arbitrary type.
-  NDArray ndarray = 2;
+  NDArray ndarray = 3;
 
   // Tensor is similiar to ndarray but with a name
   // We are reserving it for now for future use.
-  // repeated Tensor tensors = 3;
-  reserved 3, 10 to 15;
+  // repeated Tensor tensors = 4;
+  reserved 4, 11 to 15;
 
   // DataFrame represents any tabular data type. We are using
   // DataFrame as a trivial representation for tabular type.
-  DataFrame dataframe = 4;
+  DataFrame dataframe = 5;
+
+  // Series portrays a series of values. This can be used for
+  // representing Series types in tabular data.
+  Series series = 6;
+
+  // File represents for any arbitrary file type. This can be
+  // plaintext, image, video, audio, etc.
+  File file = 7;
+
+  // Text represents a string inputs.
+  google.protobuf.StringValue text = 8;
+
+  // JSON is represented by using google.protobuf.Value.
+  // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
+  google.protobuf.Value json = 9;
+
+  // Multipart represents a multipart message.
+  // It comprises of a mapping from given type name to a subset of aforementioned types.
+  map<string, Part> multipart = 10;
+
+  // User can send their payload as `raw_bytes_contents`
+  optional bytes raw_bytes_contents = 2;
+}
+
+// Request message for incoming Call.
+message Response {
+  // NDArray represents a n-dimensional array of arbitrary type.
+  NDArray ndarray = 1;
+
+  // Tensor is similiar to ndarray but with a name
+  // We are reserving it for now for future use.
+  // repeated Tensor tensors = 4;
+  reserved 4, 10 to 15;
+
+  // DataFrame represents any tabular data type. We are using
+  // DataFrame as a trivial representation for tabular type.
+  DataFrame dataframe = 3;
 
   // Series portrays a series of values. This can be used for
   // representing Series types in tabular data.
@@ -53,7 +91,7 @@ message Request {
   File file = 6;
 
   // Text represents a string inputs.
-  optional string text = 7;
+  google.protobuf.StringValue text = 7;
 
   // JSON is represented by using google.protobuf.Value.
   // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
@@ -62,40 +100,9 @@ message Request {
   // Multipart represents a multipart message.
   // It comprises of a mapping from given type name to a subset of aforementioned types.
   map<string, Part> multipart = 9;
-}
 
-// Request message for incoming Call.
-message Response {
-  // NDArray represents a n-dimensional array of arbitrary type.
-  NDArray ndarray = 1;
-
-  // Tensor is similiar to ndarray but with a name
-  // We are reserving it for now for future use.
-  // repeated Tensor tensors = 3;
-  reserved 3, 10 to 15;
-
-  // DataFrame represents any tabular data type. We are using
-  // DataFrame as a trivial representation for tabular type.
-  DataFrame dataframe = 4;
-
-  // Series portrays a series of values. This can be used for
-  // representing Series types in tabular data.
-  Series series = 5;
-
-  // File represents for any arbitrary file type. This can be
-  // plaintext, image, video, audio, etc.
-  File file = 2;
-
-  // Text represents a string inputs.
-  optional string text = 6;
-
-  // JSON is represented by using google.protobuf.Value.
-  // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
-  google.protobuf.Value json = 7;
-
-  // Multipart represents a multipart message.
-  // It comprises of a mapping from given type name to a subset of aforementioned types.
-  map<string, Part> multipart = 8;
+  // User can send their payload as `raw_bytes_contents`
+  optional bytes raw_bytes_contents = 2;
 }
 
 // Part represents possible value types for multipart message.
@@ -103,32 +110,32 @@ message Response {
 message Part {
   oneof representation {
     // NDArray represents a n-dimensional array of arbitrary type.
-    NDArray ndarray = 2;
+    NDArray ndarray = 1;
 
     // DataFrame represents any tabular data type. We are using
     // DataFrame as a trivial representation for tabular type.
-    DataFrame dataframe = 4;
+    DataFrame dataframe = 3;
 
     // Series portrays a series of values. This can be used for
     // representing Series types in tabular data.
-    Series series = 5;
+    Series series = 4;
 
     // File represents for any arbitrary file type. This can be
     // plaintext, image, video, audio, etc.
-    File file = 6;
+    File file = 5;
 
     // Text represents a string inputs.
-    string text = 7;
+    google.protobuf.StringValue text = 6;
 
     // JSON is represented by using google.protobuf.Value.
     // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
-    google.protobuf.Value json = 8;
+    google.protobuf.Value json = 7;
   }
 
   // Tensor is similiar to ndarray but with a name
   // We are reserving it for now for future use.
-  // repeated Tensor tensors = 3;
-  reserved 3, 10 to 15;
+  // Tensor tensors = 2;
+  reserved 2, 10 to 15;
 }
 
 // File represents for any arbitrary file type. This can be

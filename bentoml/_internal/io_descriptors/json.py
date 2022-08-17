@@ -38,12 +38,15 @@ if TYPE_CHECKING:
     from ..context import InferenceApiContext as Context
 
 else:
+    from bentoml.grpc.utils import import_generated_stubs
+
     _exc_msg = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install pydantic'."
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=_exc_msg)
     schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=_exc_msg)
 
     # lazy load our proto generated.
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
+    pb, _ = import_generated_stubs()
+
     # lazy load numpy for processing ndarray.
     np = LazyLoader("np", globals(), "numpy")
 

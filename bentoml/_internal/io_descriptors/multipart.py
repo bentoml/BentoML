@@ -26,6 +26,10 @@ if TYPE_CHECKING:
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
+else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 
 class Multipart(IODescriptor[t.Any], proto_field="multipart"):

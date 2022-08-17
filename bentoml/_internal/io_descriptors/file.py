@@ -12,7 +12,6 @@ from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
 from ..types import FileLike
-from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
 from ...exceptions import UnprocessableEntity
@@ -32,7 +31,9 @@ if TYPE_CHECKING:
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 

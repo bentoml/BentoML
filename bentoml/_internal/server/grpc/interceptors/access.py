@@ -13,12 +13,10 @@ from bentoml.grpc.utils import to_http_status
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import GRPC_CONTENT_TYPE
 
-from ....utils import LazyLoader
-
 if TYPE_CHECKING:
     from grpc.aio._typing import MetadataType
 
-    from bentoml.grpc.v1 import service_pb2
+    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
@@ -26,7 +24,9 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
 else:
-    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 
 class AccessLogServerInterceptor(aio.ServerInterceptor):
@@ -59,7 +59,7 @@ class AccessLogServerInterceptor(aio.ServerInterceptor):
                     trailing = dict(trailing_metadata)
                     content_type = trailing.get("content-type", GRPC_CONTENT_TYPE)
 
-                response = service_pb2.Response()
+                response = pb.Response()
 
                 start = default_timer()
                 try:

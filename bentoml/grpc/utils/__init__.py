@@ -4,13 +4,11 @@ import enum
 import typing as t
 import logging
 from http import HTTPStatus
-from typing import overload
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import UnprocessableEntity
 from bentoml.grpc.utils.mapping import grpc_status_to_http_status_map
 from bentoml.grpc.utils.mapping import http_status_to_grpc_status_map
 from bentoml._internal.utils.lazy_loader import LazyLoader
@@ -18,40 +16,36 @@ from bentoml._internal.utils.lazy_loader import LazyLoader
 if TYPE_CHECKING:
     import grpc
     from grpc import aio
-    from google.protobuf.struct_pb2 import Value
 
-    from bentoml.io import File
-    from bentoml.io import JSON
-    from bentoml.io import Text
-    from bentoml.io import Image
-    from bentoml.io import Multipart
     from bentoml.io import IODescriptor
-    from bentoml.io import NumpyNdarray
-    from bentoml.io import PandasSeries
-    from bentoml.io import PandasDataFrame
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import MessageType
+    from bentoml.grpc.v1 import service_pb2_grpc as services
     from bentoml.grpc.types import RpcMethodHandler
     from bentoml.grpc.types import BentoServicerContext
+
+    def import_generated_stubs(version: str = "v1") -> tuple[pb, services]:
+        ...
+
 else:
+    from bentoml.grpc.utils._import_hook import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
+
     exc_msg = "'grpc' is required. Install with 'pip install grpcio'."
     grpc = LazyLoader("grpc", globals(), "grpc", exc_msg=exc_msg)
     aio = LazyLoader("aio", globals(), "grpc.aio", exc_msg=exc_msg)
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 __all__ = [
     "grpc_status_code",
     "parse_method_name",
     "to_http_status",
-    "get_field",
-    "serialize_proto",
     "raise_grpc_exception",
     "GRPC_CONTENT_TYPE",
     "validate_content_type",
+    "import_generated_stubs",
 ]
 
 logger = logging.getLogger(__name__)
-
 
 # content-type is always application/grpc
 GRPC_CONTENT_TYPE = "application/grpc"
@@ -94,66 +88,6 @@ def validate_content_type(
                     context=context,
                     exception_cls=InvalidArgument,
                 )
-
-
-@overload
-def get_field(req: pb.Request, descriptor: File) -> MessageType[pb.File]:
-    ...
-
-
-@overload
-def get_field(req: pb.Request, descriptor: Image) -> MessageType[pb.File]:
-    ...
-
-
-@overload
-def get_field(req: pb.Request, descriptor: JSON) -> MessageType[Value]:
-    ...
-
-
-@overload
-def get_field(
-    req: pb.Request, descriptor: Multipart
-) -> MessageType[dict[str, pb.Part]]:
-    ...
-
-
-@overload
-def get_field(req: pb.Request, descriptor: NumpyNdarray) -> MessageType[pb.NDArray]:
-    ...
-
-
-@overload
-def get_field(
-    req: pb.Request, descriptor: PandasDataFrame
-) -> MessageType[pb.DataFrame]:
-    ...
-
-
-@overload
-def get_field(req: pb.Request, descriptor: PandasSeries) -> MessageType[pb.Series]:
-    ...
-
-
-@overload
-def get_field(req: pb.Request, descriptor: Text) -> MessageType[str]:
-    ...
-
-
-def get_field(req: pb.Request, descriptor: IODescriptor[t.Any]) -> MessageType[t.Any]:
-    try:
-        _ = req.HasField(descriptor.proto_field)
-    except KeyError as e:
-        raise UnprocessableEntity(
-            f"Missing required '{descriptor.proto_field}' for {descriptor.__class__.__name__}.: {str(e)}"
-        ) from e
-    return getattr(req, descriptor.proto_field)
-
-
-def serialize_proto(output: dict[str, t.Any], **kwargs: t.Any) -> pb.Response:
-    from google.protobuf.json_format import ParseDict
-
-    return ParseDict(output, pb.Response(), **kwargs)
 
 
 def raise_grpc_exception(

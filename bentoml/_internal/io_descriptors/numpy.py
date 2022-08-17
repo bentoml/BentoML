@@ -31,8 +31,10 @@ if TYPE_CHECKING:
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
     np = LazyLoader("np", globals(), "numpy")
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 logger = logging.getLogger(__name__)
 
@@ -238,30 +240,26 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
         )
 
     def validate_array(
-        self,
-        arr: ext.NpNDArray,
-        dtype: ext.NpDTypeLike | None = None,
-        shape: tuple[int, ...] | None = None,
-        exception_cls: t.Type[Exception] = BadInput,
+        self, arr: ext.NpNDArray, exception_cls: t.Type[Exception] = BadInput
     ) -> ext.NpNDArray:
-        if dtype is not None and dtype != arr.dtype:
+        if self._dtype is not None and self._dtype != arr.dtype:
             # ‘same_kind’ means only safe casts or casts within a kind, like float64
             # to float32, are allowed.
-            if np.can_cast(arr.dtype, dtype, casting="same_kind"):
-                arr = arr.astype(dtype, casting="same_kind")  # type: ignore
+            if np.can_cast(arr.dtype, self._dtype, casting="same_kind"):
+                arr = arr.astype(self._dtype, casting="same_kind")  # type: ignore
             else:
-                msg = f'{self.__class__.__name__}: Expecting ndarray of dtype "{dtype}", but "{arr.dtype}" was received.'
+                msg = f'{self.__class__.__name__}: Expecting ndarray of dtype "{self._dtype}", but "{arr.dtype}" was received.'
                 if self._enforce_dtype:
                     raise exception_cls(msg)
                 else:
                     logger.debug(msg)
 
-        if shape is not None and not _is_matched_shape(shape, arr.shape):
-            msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{shape}", but "{arr.shape}" was received.'
+        if self._shape is not None and not _is_matched_shape(self._shape, arr.shape):
+            msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{arr.shape}" was received.'
             if self._enforce_shape:
                 raise exception_cls(msg)
             try:
-                arr = arr.reshape(shape)
+                arr = arr.reshape(self._shape)
             except ValueError as e:
                 logger.debug(f"{msg} Failed to reshape: {e}.")
 
@@ -283,7 +281,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
             res = np.array(obj, dtype=self._dtype)
         except ValueError:
             res = np.array(obj)
-        return self.validate_array(res, dtype=self._dtype, shape=self._shape)
+
+        return self.validate_array(res)
 
     async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
         """
@@ -297,9 +296,8 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
             HTTP Response of type ``starlette.responses.Response``. This can
              be accessed via cURL or any external web traffic.
         """
-        obj = self.validate_array(
-            obj, dtype=self._dtype, shape=self._shape, exception_cls=InternalServerError
-        )
+        obj = self.validate_array(obj, exception_cls=InternalServerError)
+
         if ctx is not None:
             res = Response(
                 json.dumps(obj.tolist()),
@@ -389,92 +387,47 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
         from bentoml.grpc.utils import get_field
         from bentoml.grpc.utils import raise_grpc_exception
         from bentoml.grpc.utils import validate_content_type
-        from bentoml.grpc.utils.mapping import dtypepb_to_fieldpb_map
         from bentoml.grpc.utils.mapping import dtypepb_to_npdtype_map
         from bentoml.grpc.utils.mapping import fieldpb_to_npdtype_map
-        from bentoml.grpc.utils.mapping import npdtype_to_fieldpb_map
 
         # validate gRPC content type if content type is specified
         validate_content_type(context, self)
 
         field = get_field(request, self)
 
-        # The logic behind processing shape is as follows:
-        # 1. If 'shape' is specified in the request message, then:
-        #    - if 'shape' is specified inside IO Descriptor, we will omit this value unless 'enforce_shape' is True.
-        #    - Otherwise, use 'shape' from message
-        #
-        # 2. If the 'shape' is not specified inside the request message, then:
-        #    - If 'shape' is not defined at the IO descriptor level, 'shape' value will be omitted unless 'enforce_shape' is True.
-        #    - Otherwise, we will use shape from the IO descriptor.
-        if self._enforce_shape:
-            logger.debug(
-                f"'enforce_shape={self._enforce_shape}', using '{self._shape}'..."
-            )
-            shape = self._shape
+        shape = field.shape
+
+        if field.dtype == pb.NDArray.DTYPE_UNSPECIFIED:
+            dtype = None
         else:
-            shapepb = field.shape  # this can be an empty list ([])
-            if shapepb:
-                shape = tuple(shapepb)
-                if self._shape:
-                    logger.warning(
-                        f"'shape={self._shape}' is ignored when 'shape' is specified in request message. Using '{shape}' from request message..."
-                    )
-            else:
-                shape = self._shape
-
-        # The same logic for 'shape' applies to 'dtype' with the additional:
-        #
-        # 2a. If 'dtype' message is not specified, then we will infer given numpy dtype from the entry.
-        if self._enforce_dtype:
-            logger.debug(
-                f"'enforce_dtype={self._enforce_dtype}', using '{self._dtype}'..."
-            )
-            dtype = self._dtype
-            field_values = npdtype_to_fieldpb_map()[dtype]
-
-            values_arr = getattr(field, field_values, None)
-            if not values_arr:
+            try:
+                dtype = dtypepb_to_npdtype_map()[field.dtype]
+            except KeyError:
                 raise_grpc_exception(
-                    f"field '{field_values}' (required for '{dtype}') is missing.",
-                    context=context,
-                    exception_cls=UnprocessableEntity,
+                    f"{field.dtype} is invalid", context=context, exception_cls=BadInput
                 )
-        else:
-            dtypepb = field.dtype
-            if dtypepb:
-                if dtypepb == pb.NDArray.DTYPE_UNSPECIFIED:
-                    dtype = None
-                else:
-                    dtype = dtypepb_to_npdtype_map()[dtypepb]
 
-                if self._dtype:
-                    logger.warning(
-                        f"'dtype={self._dtype}' is ignored when 'dtype' is specified in request message. Using '{dtype}' from request message..."
-                    )
+        fieldpb = [f.name for f, _ in field.ListFields() if f.name.endswith("_values")]
 
-                values_arr = getattr(field, dtypepb_to_fieldpb_map()[dtypepb])
+        if len(fieldpb) == 0:
+            # input message doesn't have any fields.
+            return np.empty(shape=shape or 0)
+        elif len(fieldpb) > 1:
+            # when there are more than two values provided in the proto.
+            raise_grpc_exception(
+                f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
+                context=context,
+                exception_cls=BadInput,
+            )
 
-                if not dtype:
-                    # This is the case where 'dtype' proto uses DTYPE_UNSPECIFIED
-                    return np.empty(shape=shape or 0)
-            else:
-                fieldpb = [
-                    f.name for f, _ in field.ListFields() if f.name.endswith("_values")
-                ]
-                if len(fieldpb) != 1:
-                    raise_grpc_exception(
-                        f"Array contents can only be one of given values key. Use one of {fieldpb} instead.",
-                        context=context,
-                        exception_cls=BadInput,
-                    )
-                dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
-                values_arr = getattr(field, fieldpb[0])
+        dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
+        values_array = getattr(field, fieldpb[0])
 
         if shape and dtype in [np.float32, np.double, np.bool_]:
             buffer = field.SerializeToString()
             num_entries = np.prod(shape)
-            return np.frombuffer(
+
+            arr = np.frombuffer(
                 memoryview(buffer[-(dtype.itemsize * num_entries) :]),
                 dtype=dtype,
                 count=num_entries,
@@ -482,11 +435,11 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
             ).reshape(shape)
         else:
             try:
-                res = np.array(values_arr, dtype=dtype)
+                arr = np.array(values_array, dtype=dtype)
             except ValueError:
-                res = np.array(values_arr)
+                arr = np.array(values_array)
 
-            return self.validate_array(res, dtype=dtype, shape=shape)
+        return self.validate_array(arr)
 
     async def to_grpc_response(
         self, obj: ext.NpNDArray, context: BentoServicerContext
@@ -506,12 +459,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"], proto_field="ndarray"):
         from bentoml.grpc.utils.mapping import npdtype_to_fieldpb_map
 
         try:
-            obj = self.validate_array(
-                obj,
-                dtype=self._dtype,
-                shape=self._shape,
-                exception_cls=InternalServerError,
-            )
+            obj = self.validate_array(obj, exception_cls=InternalServerError)
         except InternalServerError as e:
             raise_grpc_exception(e.message, context=context, exception_cls=e.__class__)
 

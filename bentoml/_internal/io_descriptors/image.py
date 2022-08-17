@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
     ]
 else:
+    from bentoml.grpc.utils import import_generated_stubs
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
@@ -45,7 +46,8 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
+    pb, _ = import_generated_stubs()
+
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.

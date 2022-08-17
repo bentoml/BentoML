@@ -19,13 +19,8 @@ if TYPE_CHECKING:
     import grpc
     from grpc import aio
 
-    from bentoml.grpc.v1.service_pb2 import File
-    from bentoml.grpc.v1.service_pb2 import Part
-    from bentoml.grpc.v1.service_pb2 import Series
-    from bentoml.grpc.v1.service_pb2 import NDArray
     from bentoml.grpc.v1.service_pb2 import Request
     from bentoml.grpc.v1.service_pb2 import Response
-    from bentoml.grpc.v1.service_pb2 import DataFrame
     from bentoml.grpc.v1.service_pb2_grpc import BentoServiceServicer
 
     P = TypeVar("P")
@@ -84,11 +79,6 @@ if TYPE_CHECKING:
     AddServicerFn = Callable[[Servicer[Any], aio.Server | grpc.Server], None]
 
     ProtoField = Literal["dataframe", "file", "json", "ndarray", "series"]
-
-    ProtoType = TypeVar("ProtoType")
-    MessageType = Annotated[
-        ProtoType, str, NDArray, DataFrame, Series, File, dict[str, Part]
-    ]
 
     __all__ = [
         "Request",

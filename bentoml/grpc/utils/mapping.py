@@ -19,14 +19,16 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml._internal import external_typing as ext
 else:
+    from bentoml.grpc.utils._import_hook import import_generated_stubs
+
     grpc = _LazyLoader(
         "grpc",
         globals(),
         "grpc",
         exc_msg="'grpc' is required. Install with 'pip install grpcio'.",
     )
-    pb = _LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
     np = _LazyLoader("np", globals(), "numpy")
+    pb, _ = import_generated_stubs()
 
     del _LazyLoader
 

@@ -13,49 +13,46 @@ from bentoml.exceptions import UnprocessableEntity
 from bentoml.grpc.utils import grpc_status_code
 from bentoml._internal.service.service import Service
 
-from ...utils import LazyLoader
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from logging import _ExcInfoType as ExcInfoType  # type: ignore (private warning)
 
-    from bentoml.grpc.v1 import service_pb2 as _service_pb2
-    from bentoml.grpc.v1 import service_pb2_grpc as _service_pb2_grpc
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2_grpc as services
     from bentoml.grpc.types import BentoServicerContext
 else:
-    _service_pb2 = LazyLoader("_service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
-    _service_pb2_grpc = LazyLoader(
-        "_service_pb2_grpc", globals(), "bentoml.grpc.v1.service_pb2_grpc"
-    )
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, services = import_generated_stubs()
 
 
-def log_exception(request: _service_pb2.Request, exc_info: ExcInfoType) -> None:
+def log_exception(request: pb.Request, exc_info: ExcInfoType) -> None:
     # gRPC will always send a POST request.
     logger.error(f"Exception on /{request.api_name} [POST]", exc_info=exc_info)
 
 
-def create_bento_servicer(service: Service) -> _service_pb2_grpc.BentoServiceServicer:
+def create_bentoservicer(service: Service) -> services.BentoServiceServicer:
     """
     This is the actual implementation of BentoServicer.
     Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
     """
 
-    class BentoServiceServicer(_service_pb2_grpc.BentoServiceServicer):
+    class BentoServiceServicer(services.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
 
         async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
             self,
-            request: _service_pb2.Request,
+            request: pb.Request,
             context: BentoServicerContext,
-        ) -> _service_pb2.Response | None:
+        ) -> pb.Response | None:
             if request.api_name not in service.apis:
                 raise UnprocessableEntity(
                     f"given 'api_name' is not defined in {service.name}",
                 )
 
             api = service.apis[request.api_name]
-            response = _service_pb2.Response()
+            response = pb.Response()
 
             try:
                 input_ = await api.input.from_grpc_request(request, context)

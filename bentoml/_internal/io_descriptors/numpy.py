@@ -31,8 +31,10 @@ if TYPE_CHECKING:
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
     np = LazyLoader("np", globals(), "numpy")
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
 
 logger = logging.getLogger(__name__)
 

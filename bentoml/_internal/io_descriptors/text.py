@@ -11,7 +11,6 @@ from bentoml.exceptions import BentoMLException
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
@@ -23,7 +22,9 @@ if TYPE_CHECKING:
 
     from ..context import InferenceApiContext as Context
 else:
-    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 MIME_TYPE = "text/plain"
 

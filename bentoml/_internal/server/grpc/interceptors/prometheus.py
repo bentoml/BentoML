@@ -15,13 +15,12 @@ from simple_di import Provide
 from bentoml.grpc.utils import to_http_status
 from bentoml.grpc.utils import wrap_rpc_handler
 
-from ....utils import LazyLoader
 from ....configuration.containers import BentoMLContainer
 
 START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")
 
 if TYPE_CHECKING:
-    from bentoml.grpc.v1 import service_pb2
+    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
@@ -32,7 +31,9 @@ if TYPE_CHECKING:
     from ....service import Service
     from ...metrics.prometheus import PrometheusClient
 else:
-    service_pb2 = LazyLoader("service_pb2", globals(), "bentoml.grpc.v1.service_pb2")
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
             async def new_behavior(
                 request: Request, context: BentoServicerContext
             ) -> Response | t.Awaitable[Response]:
-                if not isinstance(request, service_pb2.Request):
+                if not isinstance(request, pb.Request):
                     return await behaviour(request, context)
 
                 api_name = request.api_name

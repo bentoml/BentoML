@@ -21,8 +21,8 @@ ENV LC_ALL=C.UTF-8
 ENV PYTHONIOENCODING=UTF-8
 
 ENV PYTHONUNBUFFERED=1
-
 {% endblock %}
+
 
 # Block SETUP_BENTO_USER
 {% block SETUP_BENTO_USER %}
@@ -34,7 +34,6 @@ RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID 
 {% block SETUP_BENTO_ENVARS %}
 {% if __options__env is not none %}
 {% for key, value in __options__env.items() -%}
-
 ENV {{ key }}={{ value }}
 {% endfor -%}
 {% endif -%}
@@ -46,38 +45,29 @@ ENV BENTOML_HOME={{ bento__home }}
 RUN mkdir $BENTO_PATH && chown {{ bento__user }}:{{ bento__user }} $BENTO_PATH -R
 WORKDIR $BENTO_PATH
 
-# init related components
 COPY --chown={{ bento__user }}:{{ bento__user }} . ./
-
 {% endblock %}
 
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
-
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
 # install python packages with install.sh
 RUN {{ __pip_cache__ }} bash -euxo pipefail {{ __install_python_scripts__ }}
-
-{% if __options__grpc is true %}
-RUN {{ __pip_cache__ }} pip install --no-warn-script-location "bentoml[grpc]"
-{% endif %}
-
 {% if __options__setup_script is not none %}
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
 RUN chmod +x {{ __setup_script__ }}
 RUN {{ __setup_script__ }}
 {% endif %}
-
 {% endblock %}
 
 # Block SETUP_BENTO_ENTRYPOINT
 {% block SETUP_BENTO_ENTRYPOINT %}
 # Default port for BentoServer
 EXPOSE 3000
-{% if __options__grpc is true %}
+{% if __enable_grpc__ is true %}
 # expose Prometheus port
-EXPOSE 9090
+EXPOSE {{ __prometheus_port__ }}
 {% endif %}
 
 RUN chmod +x {{ bento__entrypoint }}
@@ -86,5 +76,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", "{{ bento__path }}", "--production"{% if __options__grpc is true %}, "--grpc"{% else %}{% endif %} ]
+CMD [ "bentoml", "serve", "{{ bento__path }}", "--production"{% if __enable_grpc__ is true %}, "--grpc"{% endif %} ]
 {% endblock %}

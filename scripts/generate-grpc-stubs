@@ -25,7 +25,7 @@ COPY <<-EOT /workspace/requirements.txt
     # There is memory leak in later Python GRPC (1.43.0 to be specific),
     # use known working version until the memory leak is resolved in the future
     # (see https://github.com/grpc/grpc/issues/28513)
-    grpcio-tools==1.41.0
+    grpcio-tools<1.43
     mypy-protobuf
 EOT
 

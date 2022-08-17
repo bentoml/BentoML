@@ -64,9 +64,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            "BentoML will install the latest python%s instead of the specified version %s. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
-            target_python_version,
-            py_version,
+            f"BentoML will install the latest 'python{target_python_version}' instead of the specified 'python{py_version}'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
         )
     return target_python_version
 
@@ -156,7 +154,6 @@ class DockerOptions:
         default=None,
         converter=_convert_env,
     )
-    grpc: bool = False
     system_packages: t.Optional[t.List[str]] = None
     setup_script: t.Optional[str] = None
     base_image: t.Optional[str] = None
@@ -203,9 +200,17 @@ class DockerOptions:
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self, bento_fs: FS, build_ctx: str, conda_options: CondaOptions
+        self,
+        bento_fs: FS,
+        build_ctx: str,
+        conda_options: CondaOptions,
+        python_options: PythonOptions,
     ) -> None:
         use_conda = not conda_options.is_empty()
+        enable_grpc = (
+            python_options.extras_require is not None
+            and "grpc" in python_options.extras_require
+        )
 
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
@@ -213,7 +218,12 @@ class DockerOptions:
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(
-                generate_dockerfile(self, build_ctx=build_ctx, use_conda=use_conda)
+                generate_dockerfile(
+                    self,
+                    build_ctx=build_ctx,
+                    use_conda=use_conda,
+                    enable_grpc=enable_grpc,
+                )
             )
 
         copy_file_to_fs_folder(
@@ -425,6 +435,16 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(list)),
     )
+    extras_require: t.Optional[t.List[str]] = attr.field(
+        default=None,
+        validator=attr.validators.optional(
+            attr.validators.deep_iterable(
+                # currently optional dependencies are grpc, tracing
+                member_validator=lambda _, __, value: value in ["tracing", "grpc"],
+                iterable_validator=attr.validators.instance_of(list),
+            )
+        ),
+    )
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
@@ -481,7 +501,7 @@ class PythonOptions:
 
         with bento_fs.open(fs.path.combine(py_folder, "install.sh"), "w") as f:
             args = " ".join(map(quote, pip_args)) if pip_args else ""
-            install_script_content = (
+            install_sh = (
                 """\
 #!/usr/bin/env bash
 set -exuo pipefail
@@ -521,16 +541,22 @@ fi
 
 # Install the BentoML from PyPI if it's not already installed
 if python -c "import bentoml" &> /dev/null; then
-    existing_bentoml_version=$(python -c "import bentoml; print(bentoml.__version__)")
-    if [ "$existing_bentoml_version" != "$BENTOML_VERSION" ]; then
-        echo "WARNING: using BentoML version ${existing_bentoml_version}"
+    CURRENT_BENTOML_VERSION=$(python -c "import bentoml; print(bentoml.__version__)")
+    if [ "$CURRENT_BENTOML_VERSION" != "$BENTOML_VERSION" ]; then
+        echo "WARNING: using BentoML version ${CURRENT_BENTOML_VERSION}"
     fi
 else
-pip install bentoml=="$BENTOML_VERSION"
+    pip install bentoml=="$BENTOML_VERSION"
 fi
 """
             )
-            f.write(install_script_content)
+            if self.extras_require:
+                install_sh += f"""\
+
+# Install additional bentoml dependencies
+pip install "bentoml[{','.join(self.extras_require)}]"
+"""
+            f.write(install_sh)
 
         if self.requirements_txt is not None:
             requirements_txt_file = resolve_user_filepath(

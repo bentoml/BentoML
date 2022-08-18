@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import sys
 import typing as t
 import logging
 
 import click
-
-from bentoml.bentos import containerize as containerize_bento
-from bentoml._internal.utils import kwargs_transformers
-from bentoml._internal.utils.docker import validate_tag
 
 logger = logging.getLogger("bentoml")
 
@@ -24,14 +19,17 @@ def containerize_transformer(
 
 
 def add_containerize_command(cli: click.Group) -> None:
-    @cli.command()
+    from bentoml_cli.utils import kwargs_transformers
+    from bentoml_cli.utils import validate_docker_tag
+
+    @cli.command(name="containerize")
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-t",
         "--docker-image-tag",
         help="Name and optionally a tag (format: 'name:tag'), defaults to bento tag.",
         required=False,
-        callback=validate_tag,
+        callback=validate_docker_tag,
         multiple=True,
     )
     @click.option(
@@ -161,7 +159,7 @@ def add_containerize_command(cli: click.Group) -> None:
         "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
     )
     @kwargs_transformers(transformer=containerize_transformer)
-    def containerize(  # type: ignore
+    def containerize_bento(  # type: ignore
         bento_tag: str,
         docker_image_tag: list[str],
         add_host: t.Iterable[str],
@@ -268,34 +266,37 @@ def add_containerize_command(cli: click.Group) -> None:
         if push:
             load = False
 
-        exit_code = not containerize_bento(
-            bento_tag,
-            docker_image_tag=docker_image_tag,
-            add_host=add_hosts,
-            allow=allow_,
-            build_args=build_args,
-            build_context=build_context_,
-            builder=builder,
-            cache_from=cache_from,
-            cache_to=cache_to,
-            cgroup_parent=cgroup_parent,
-            iidfile=iidfile,
-            labels=labels,
-            load=load,
-            metadata_file=metadata_file,
-            network=network,
-            no_cache=no_cache,
-            no_cache_filter=no_cache_filter,
-            output=output_,  # type: ignore
-            platform=platform,
-            progress=progress,
-            pull=pull,
-            push=push,
-            quiet=logger.getEffectiveLevel() == logging.ERROR,
-            secrets=secret,
-            shm_size=shm_size,
-            ssh=ssh,
-            target=target,
-            ulimit=ulimit,
+        from bentoml.bentos import containerize
+
+        raise SystemExit(
+            containerize(
+                bento_tag,
+                docker_image_tag=docker_image_tag,
+                add_host=add_hosts,
+                allow=allow_,
+                build_args=build_args,
+                build_context=build_context_,
+                builder=builder,
+                cache_from=cache_from,
+                cache_to=cache_to,
+                cgroup_parent=cgroup_parent,
+                iidfile=iidfile,
+                labels=labels,
+                load=load,
+                metadata_file=metadata_file,
+                network=network,
+                no_cache=no_cache,
+                no_cache_filter=no_cache_filter,
+                output=output_,  # type: ignore
+                platform=platform,
+                progress=progress,
+                pull=pull,
+                push=push,
+                quiet=logger.getEffectiveLevel() == logging.ERROR,
+                secrets=secret,
+                shm_size=shm_size,
+                ssh=ssh,
+                target=target,
+                ulimit=ulimit,
+            )
         )
-        sys.exit(exit_code)

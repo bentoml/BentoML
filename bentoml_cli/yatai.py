@@ -4,17 +4,13 @@ import logging
 
 import click
 
-from bentoml_cli.utils import BentoMLCommandGroup
-from bentoml.exceptions import CLIException
-from bentoml._internal.yatai_rest_api_client.yatai import YataiRESTApiClient
-from bentoml._internal.yatai_rest_api_client.config import add_context
-from bentoml._internal.yatai_rest_api_client.config import YataiClientContext
-from bentoml._internal.yatai_rest_api_client.config import default_context_name
-
 logger = logging.getLogger("bentoml")
 
 
 def add_login_command(cli: click.Group) -> None:
+
+    from bentoml_cli.utils import BentoMLCommandGroup
+
     @cli.group(name="yatai", cls=BentoMLCommandGroup)
     def yatai_cli():
         """Yatai Subcommands Groups"""
@@ -26,6 +22,12 @@ def add_login_command(cli: click.Group) -> None:
     @click.option("--api-token", type=click.STRING, help="Yatai user API token")
     def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
         """Login to Yatai server."""
+        from bentoml.exceptions import CLIException
+        from bentoml._internal.yatai_rest_api_client.yatai import YataiRESTApiClient
+        from bentoml._internal.yatai_rest_api_client.config import add_context
+        from bentoml._internal.yatai_rest_api_client.config import YataiClientContext
+        from bentoml._internal.yatai_rest_api_client.config import default_context_name
+
         if not endpoint:
             raise CLIException("need --endpoint")
 

@@ -10,21 +10,6 @@ import yaml
 import click
 from simple_di import inject
 from simple_di import Provide
-from rich.table import Table
-from rich.syntax import Syntax
-
-from bentoml import Tag
-from bentoml.bentos import import_bento
-from bentoml.bentos import build_bentofile
-from bentoml_cli.utils import is_valid_bento_tag
-from bentoml_cli.utils import is_valid_bento_name
-from bentoml._internal.utils import rich_console as console
-from bentoml._internal.utils import calc_dir_size
-from bentoml._internal.utils import human_readable_size
-from bentoml._internal.utils import display_path_under_home
-from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-from bentoml._internal.yatai_client import yatai_client
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from click import Group
@@ -39,6 +24,9 @@ logger = logging.getLogger("bentoml")
 def parse_delete_targets_argument_callback(
     ctx: Context, params: Parameter, value: t.Any  # pylint: disable=unused-argument
 ) -> list[str]:
+    from bentoml_cli.utils import is_valid_bento_tag
+    from bentoml_cli.utils import is_valid_bento_name
+
     if value is None:
         return value
     delete_targets = value.split(",")
@@ -53,11 +41,11 @@ def parse_delete_targets_argument_callback(
     return delete_targets
 
 
-@inject
-def add_bento_management_commands(
-    cli: Group,
-    bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-):
+def add_bento_management_commands(cli: Group):
+
+    from bentoml_cli.utils import console
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
@@ -66,7 +54,12 @@ def add_bento_management_commands(
         type=click.Choice(["json", "yaml", "path"]),
         default="yaml",
     )
-    def get(bento_tag: str, output: str) -> None:  # type: ignore (not accessed)
+    @inject
+    def get(  # type: ignore (not accessed)
+        bento_tag: str,
+        output: str,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:
         """Print Bento details by providing the bento_tag.
 
         \b
@@ -82,7 +75,7 @@ def add_bento_management_commands(
             console.print_json(info)
         else:
             info = yaml.dump(bento.info, indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml"))
+            console.print(info)
 
     @cli.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
@@ -97,7 +90,13 @@ def add_bento_management_commands(
         is_flag=False,
         help="Don't truncate the output",
     )
-    def list_bentos(bento_name: str, output: str, no_trunc: bool) -> None:  # type: ignore (not accessed)
+    @inject
+    def list_bentos(  # type: ignore (not accessed)
+        bento_name: str,
+        output: str,
+        no_trunc: bool,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:
         """List Bentos in local store
 
         \b
@@ -108,6 +107,11 @@ def add_bento_management_commands(
         # show all verions of bento with the name FraudDetector
         $ bentoml list FraudDetector
         """
+
+        from bentoml._internal.utils import calc_dir_size
+        from bentoml._internal.utils import human_readable_size
+        from bentoml._internal.utils import display_path_under_home
+
         bentos = bento_store.list(bento_name)
         res = [
             {
@@ -128,8 +132,10 @@ def add_bento_management_commands(
             console.print(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            console.print(Syntax(info, "yaml"))
+            console.print(info)
         else:
+            from rich.table import Table
+
             table = Table(box=None)
             table.add_column("Tag")
             table.add_column("Size")
@@ -158,7 +164,12 @@ def add_bento_management_commands(
         is_flag=True,
         help="Skip confirmation when deleting a specific bento bundle",
     )
-    def delete(delete_targets: list[str], yes: bool) -> None:  # type: ignore (not accessed)
+    @inject
+    def delete(  # type: ignore (not accessed)
+        delete_targets: list[str],
+        yes: bool,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:
         """Delete Bento in local bento store.
 
         \b
@@ -168,6 +179,7 @@ def add_bento_management_commands(
             * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
             * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
         """
+        from bentoml import Tag
 
         def delete_target(target: str) -> None:
             tag = Tag.from_str(target)
@@ -190,7 +202,7 @@ def add_bento_management_commands(
         for target in delete_targets:
             delete_target(target)
 
-    @cli.command()
+    @cli.command(name="export")
     @click.argument("bento_tag", type=click.STRING)
     @click.argument(
         "out_path",
@@ -198,7 +210,12 @@ def add_bento_management_commands(
         default="",
         required=False,
     )
-    def export(bento_tag: str, out_path: str) -> None:  # type: ignore (not accessed)
+    @inject
+    def export_bento(  # type: ignore (not accessed)
+        bento_tag: str,
+        out_path: str,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:
         """Export a Bento to an external file archive
 
         \b
@@ -222,7 +239,7 @@ def add_bento_management_commands(
 
     @cli.command(name="import")
     @click.argument("bento_path", type=click.STRING)
-    def import_bento_(bento_path: str) -> None:  # type: ignore (not accessed)
+    def import_bento(bento_path: str) -> None:  # type: ignore (not accessed)
         """Import a previously exported Bento archive file
 
         \b
@@ -234,6 +251,8 @@ def add_bento_management_commands(
             bentoml import ./my_bento.bento
             bentoml import s3://mybucket/bentos/my_bento.bento
         """
+        from bentoml.bentos import import_bento
+
         bento = import_bento(bento_path)
         logger.info(f"{bento} imported")
 
@@ -248,6 +267,8 @@ def add_bento_management_commands(
     )
     def pull(bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
         """Pull Bento from a yatai server."""
+        from bentoml._internal.yatai_client import yatai_client
+
         yatai_client.pull_bento(bento_tag, force=force)
 
     @cli.command()
@@ -259,21 +280,29 @@ def add_bento_management_commands(
         default=False,
         help="Forced push to yatai even if it exists in yatai",
     )
-    def push(bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
+    @inject
+    def push(  # type: ignore (not accessed)
+        bento_tag: str,
+        force: bool,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:
         """Push Bento to a yatai server."""
+        from bentoml._internal.yatai_client import yatai_client
+
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
         yatai_client.push_bento(bento_obj, force=force)
 
+    # sync with DEFAULT_BENTO_BUILD_FILE from bentoml._internal.bento.bento
     @cli.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
-    @click.option(
-        "-f", "--bentofile", type=click.STRING, default=DEFAULT_BENTO_BUILD_FILE
-    )
+    @click.option("-f", "--bentofile", type=click.STRING, default="bentofile.yaml")
     @click.option("--version", type=click.STRING, default=None)
     def build(build_ctx: str, bentofile: str, version: str) -> None:  # type: ignore (not accessed)
         """Build a new Bento from current directory."""
+        from bentoml.bentos import build_bentofile
+
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 

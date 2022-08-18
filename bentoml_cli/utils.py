@@ -7,28 +7,19 @@ import typing as t
 import difflib
 import logging
 import functools
+from typing import overload
 from typing import TYPE_CHECKING
 
 import click
 from click import ClickException
 from click.exceptions import UsageError
 
-from bentoml.exceptions import BentoMLException
-from bentoml._internal.log import configure_logging
-from bentoml._internal.configuration import CONFIG_ENV_VAR
-from bentoml._internal.configuration import set_debug_mode
-from bentoml._internal.configuration import set_quiet_mode
-from bentoml._internal.configuration import load_global_config
-from bentoml._internal.utils.analytics import track
-from bentoml._internal.utils.analytics import CliEvent
-from bentoml._internal.utils.analytics import cli_events_map
-from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
-
 if TYPE_CHECKING:
     from click import Option
     from click import Command
     from click import Context
     from click import Parameter
+    from rich.console import Console
 
     P = t.ParamSpec("P")
 
@@ -50,16 +41,136 @@ if TYPE_CHECKING:
 logger = logging.getLogger("bentoml")
 
 
+@overload
+def kwargs_transformers(
+    func: F[t.Concatenate[str, bool, t.Iterable[str], P]],
+    *,
+    transformer: F[t.Any],
+) -> F[t.Concatenate[str, t.Iterable[str], bool, P]]:
+    ...
+
+
+@overload
+def kwargs_transformers(func: None = None, *, transformer: F[t.Any]) -> F[t.Any]:
+    ...
+
+
+def kwargs_transformers(
+    _func: t.Callable[..., t.Any] | None = None,
+    *,
+    transformer: F[t.Any],
+) -> F[t.Any]:
+    def decorator(func: F[t.Any]) -> t.Callable[P, t.Any]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+            return func(*args, **{k: transformer(v) for k, v in kwargs.items()})
+
+        return wrapper
+
+    if _func is None:
+        return decorator
+    return decorator(_func)
+
+
+def to_valid_docker_image_name(name: str) -> str:
+    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+    return name.lower().strip("._-")
+
+
+def to_valid_docker_image_version(version: str) -> str:
+    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+    return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
+
+
+def _validate_docker_tag(tag: str) -> str:
+    from bentoml.exceptions import BentoMLException
+
+    if ":" in tag:
+        name, version = tag.split(":")[:2]
+    else:
+        name, version = tag, None
+
+    valid_name_pattern = re.compile(
+        r"""
+        ^(
+        [a-z0-9]+      # alphanumeric
+        (.|_{1,2}|-+)? # seperators
+        )*$
+        """,
+        re.VERBOSE,
+    )
+    valid_version_pattern = re.compile(
+        r"""
+        ^
+        [a-zA-Z0-9] # cant start with .-
+        [ -~]{,127} # ascii match rest, cap at 128
+        $
+        """,
+        re.VERBOSE,
+    )
+
+    if not valid_name_pattern.match(name):
+        raise BentoMLException(
+            f"Provided Docker Image tag {tag} is invalid. "
+            "Name components may contain lowercase letters, digits "
+            "and separators. A separator is defined as a period, "
+            "one or two underscores, or one or more dashes."
+        )
+    if version and not valid_version_pattern.match(version):
+        raise BentoMLException(
+            f"Provided Docker Image tag {tag} is invalid. "
+            "A tag name must be valid ASCII and may contain "
+            "lowercase and uppercase letters, digits, underscores, "
+            "periods and dashes. A tag name may not start with a period "
+            "or a dash and may contain a maximum of 128 characters."
+        )
+    return tag
+
+
+def validate_docker_tag(
+    ctx: Context,  # type: ignore # pylint: disable=unused-argument
+    param: Parameter,  # type: ignore # pylint: disable=unused-argument
+    tag: str | tuple[str] | None,
+) -> str | tuple[str] | None:
+    from bentoml.exceptions import BentoMLException
+
+    if not tag:
+        return tag
+    elif isinstance(tag, tuple):
+        return tuple(map(_validate_docker_tag, tag))
+    elif isinstance(tag, str):
+        return _validate_docker_tag(tag)
+    else:
+        raise BentoMLException(f"Invalid tag type. Got {type(tag)}")
+
+
+@functools.lru_cache(maxsize=1)
+def rich_console() -> Console:
+    from rich.console import Console
+
+    return Console(no_color=False)
+
+
+console = rich_console()
+
+
 class BentoMLCommandGroup(click.Group):
     """Click command class customized for BentoML CLI, allow specifying a default
     command for each group defined.
     """
 
-    NUMBER_OF_COMMON_PARAMS = 4
+    NUMBER_OF_COMMON_PARAMS = 5
 
     @staticmethod
-    def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool, str | None]:
+    def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool, str | None, bool]:
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
+
+        from bentoml._internal.log import configure_logging
+        from bentoml._internal.configuration import CONFIG_ENV_VAR
+        from bentoml._internal.configuration import set_debug_mode
+        from bentoml._internal.configuration import set_quiet_mode
+        from bentoml._internal.configuration import load_global_config
+        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
 
         @click.option(
             "-q",
@@ -88,16 +199,28 @@ class BentoMLCommandGroup(click.Group):
             envvar=CONFIG_ENV_VAR,
             help="BentoML configuration YAML file to apply",
         )
+        @click.option(
+            "--traceback",
+            is_flag=True,
+            default=False,
+            help="Enable showing stack trace.",
+        )
         @functools.wraps(func)
         def wrapper(
             quiet: bool,
             verbose: bool,
             config: str | None,
+            traceback: bool,
             *args: P.args,
             **kwargs: P.kwargs,
         ) -> t.Any:
             if config:
                 load_global_config(config)
+
+            if traceback:
+                from rich.traceback import install
+
+                install(console=console, suppress=[click], show_locals=True)
 
             if quiet:
                 set_quiet_mode(True)
@@ -114,10 +237,16 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_track_usage(
-        func: F[P] | WrappedCLI[bool, bool, str | None],
+        func: F[P] | WrappedCLI[bool, bool, str | None, bool],
         cmd_group: click.Group,
         **kwargs: t.Any,
     ) -> WrappedCLI[bool]:
+
+        from bentoml._internal.utils.analytics import track
+        from bentoml._internal.utils.analytics import CliEvent
+        from bentoml._internal.utils.analytics import cli_events_map
+        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
+
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
@@ -168,6 +297,8 @@ class BentoMLCommandGroup(click.Group):
     def raise_click_exception(
         func: F[P] | WrappedCLI[bool], cmd_group: click.Group, **kwargs: t.Any
     ) -> ClickFunctionWrapper[t.Any]:
+        from bentoml.exceptions import BentoMLException
+
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
@@ -244,13 +375,11 @@ def unparse_click_params(
     Unparse click call to a list of arguments. Used to modify some parameters and
     restore to system command. The goal is to unpack cases where parameters can be parsed multiple times.
 
-    Refers to ./buildx.py for examples of this usage. This is also used to unparse parameters for running API server.
+    Refers to ./server for for information. This is also used to unparse parameters for running API server.
 
     Args:
-        params (`dict[str, t.Any]`):
-            The dictionary of the parameters that is parsed from click.Context.
-        command_params (`list[click.Parameter]`):
-            The list of paramters (Arguments/Options) that is part of a given command.
+        params: The dictionary of the parameters that is parsed from click.Context.
+        command_params: The list of paramters (Arguments/Options) that is part of a given command.
 
     Returns:
         Unparsed list of arguments that can be redirected to system commands.
@@ -291,7 +420,6 @@ def unparse_click_params(
                     logger.warning(
                         f"{command_params} is a prompt, skip parsing it for now."
                     )
-                    pass
                 if command_param.is_flag:
                     args.append(command_param.opts[-1])
                 else:

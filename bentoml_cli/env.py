@@ -5,16 +5,8 @@ import sys
 import typing as t
 import platform
 import subprocess
-from gettext import gettext
 
 import click
-
-from bentoml import __version__ as BENTOML_VERSION
-from bentoml.exceptions import CLIException
-from bentoml._internal.utils.pkg import get_pkg_version
-from bentoml._internal.utils.pkg import PackageNotFoundError
-
-conda_packages_name = "conda_packages"
 
 
 def run_cmd(cmd: list[str]) -> list[str]:
@@ -22,6 +14,8 @@ def run_cmd(cmd: list[str]) -> list[str]:
 
 
 def format_dropdown(title: str, content: t.Iterable[str]) -> str:
+    conda_packages_name = "conda_packages"
+
     processed = "\n".join(content)
     return f"""\
 <details><summary><code>{title}</code></summary>
@@ -56,6 +50,8 @@ def pretty_format(
 
 
 def add_env_command(cli: click.Group) -> None:
+    from gettext import gettext
+
     @cli.command(help=gettext("Print environment info and exit"))
     @click.option(
         "-o",
@@ -67,6 +63,11 @@ def add_env_command(cli: click.Group) -> None:
     )
     @click.pass_context
     def env(ctx: click.Context, output: t.Literal["md", "plain"]) -> None:  # type: ignore (unused warning)
+        from bentoml import __version__ as BENTOML_VERSION
+        from bentoml.exceptions import CLIException
+        from bentoml._internal.utils.pkg import get_pkg_version
+        from bentoml._internal.utils.pkg import PackageNotFoundError
+
         if output not in ["md", "plain"]:
             raise CLIException(f"Unknown output format: {output}")
 

@@ -9,19 +9,6 @@ import yaml
 import click
 from simple_di import inject
 from simple_di import Provide
-from rich.table import Table
-from rich.syntax import Syntax
-
-from bentoml import Tag
-from bentoml.models import import_model
-from bentoml_cli.utils import is_valid_bento_tag
-from bentoml_cli.utils import BentoMLCommandGroup
-from bentoml_cli.utils import is_valid_bento_name
-from bentoml._internal.utils import rich_console as console
-from bentoml._internal.utils import calc_dir_size
-from bentoml._internal.utils import human_readable_size
-from bentoml._internal.yatai_client import yatai_client
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from click import Group
@@ -34,8 +21,13 @@ logger = logging.getLogger("bentoml")
 
 
 def parse_delete_targets_argument_callback(
-    ctx: Context, params: Parameter, value: t.Any  # pylint: disable=unused-argument
+    ctx: Context,  # pylint: disable=unused-argument
+    params: Parameter,  # pylint: disable=unused-argument
+    value: t.Any,
 ) -> t.Any:
+    from bentoml_cli.utils import is_valid_bento_tag
+    from bentoml_cli.utils import is_valid_bento_name
+
     if value is None:
         return value
     delete_targets = value.split(",")
@@ -50,11 +42,12 @@ def parse_delete_targets_argument_callback(
     return delete_targets
 
 
-@inject
-def add_model_management_commands(
-    cli: Group,
-    model_store: ModelStore = Provide[BentoMLContainer.model_store],
-) -> None:
+def add_model_management_commands(cli: Group) -> None:
+
+    from bentoml_cli.utils import console
+    from bentoml_cli.utils import BentoMLCommandGroup
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():
         """Model Subcommands Groups"""
@@ -67,7 +60,12 @@ def add_model_management_commands(
         type=click.Choice(["json", "yaml", "path"]),
         default="yaml",
     )
-    def get(model_tag: str, output: str) -> None:  # type: ignore (not accessed)
+    @inject
+    def get(  # type: ignore (not accessed)
+        model_tag: str,
+        output: str,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> None:
         """Print Model details by providing the model_tag
 
         \b
@@ -82,7 +80,7 @@ def add_model_management_commands(
             info = json.dumps(model.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            console.print(Syntax(str(model.info.dump()), "yaml"))
+            console.print(str(model.info.dump()))
 
     @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)
@@ -97,7 +95,13 @@ def add_model_management_commands(
         is_flag=False,
         help="Don't truncate the output",
     )
-    def list_models(model_name: str, output: str, no_trunc: bool) -> None:  # type: ignore (not accessed)
+    @inject
+    def list_models(  # type: ignore (not accessed)
+        model_name: str,
+        output: str,
+        no_trunc: bool,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> None:
         """List Models in local store
 
         \b
@@ -108,6 +112,10 @@ def add_model_management_commands(
         # show all verions of bento with the name FraudDetector
         $ bentoml models list FraudDetector
         """
+
+        from bentoml._internal.utils import rich_console as console
+        from bentoml._internal.utils import calc_dir_size
+        from bentoml._internal.utils import human_readable_size
 
         models = model_store.list(model_name)
         res = [
@@ -128,8 +136,10 @@ def add_model_management_commands(
             console.print_json(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            console.print(Syntax(info, "yaml"))
+            console.print(info)
         else:
+            from rich.table import Table
+
             table = Table(box=None)
             table.add_column("Tag")
             table.add_column("Module")
@@ -158,7 +168,12 @@ def add_model_management_commands(
         is_flag=True,
         help="Skip confirmation when deleting a specific model",
     )
-    def delete(delete_targets: str, yes: bool) -> None:  # type: ignore (not accessed)
+    @inject
+    def delete(  # type: ignore (not accessed)
+        delete_targets: str,
+        yes: bool,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> None:
         """Delete Model in local model store.
 
         \b
@@ -168,6 +183,7 @@ def add_model_management_commands(
             * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml models delete iris_clf:v1,iris_clf:v2`
             * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
         """  # noqa
+        from bentoml import Tag
 
         def delete_target(target: str) -> None:
             tag = Tag.from_str(target)
@@ -193,7 +209,12 @@ def add_model_management_commands(
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)
     @click.argument("out_path", type=click.STRING, default="", required=False)
-    def export(model_tag: str, out_path: str) -> None:  # type: ignore (not accessed)
+    @inject
+    def export(  # type: ignore (not accessed)
+        model_tag: str,
+        out_path: str,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> None:
         """Export a Model to an external archive file
 
         arguments:
@@ -224,6 +245,8 @@ def add_model_management_commands(
         bentoml models import ./my_model.bentomodel
         bentoml models import s3://mybucket/models/my_model.bentomodel
         """
+        from bentoml.models import import_model
+
         bentomodel = import_model(model_path)
         logger.info(f"{bentomodel} imported")
 
@@ -238,6 +261,8 @@ def add_model_management_commands(
     )
     def pull(model_tag: str, force: bool):  # type: ignore (not accessed)
         """Pull Model from a yatai server."""
+        from bentoml._internal.yatai_client import yatai_client
+
         yatai_client.pull_model(model_tag, force=force)
 
     @model_cli.command()
@@ -249,8 +274,15 @@ def add_model_management_commands(
         default=False,
         help="Forced push to yatai even if it exists in yatai",
     )
-    def push(model_tag: str, force: bool):  # type: ignore (not accessed)
+    @inject
+    def push(  # type: ignore (not accessed)
+        model_tag: str,
+        force: bool,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ):
         """Push Model to a yatai server."""
+        from bentoml._internal.yatai_client import yatai_client
+
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")

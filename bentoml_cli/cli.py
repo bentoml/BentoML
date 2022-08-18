@@ -3,7 +3,6 @@ from __future__ import annotations
 import click
 import psutil
 
-from bentoml import __version__ as BENTOML_VERSION
 from bentoml_cli.env import add_env_command
 from bentoml_cli.serve import add_serve_command
 from bentoml_cli.utils import BentoMLCommandGroup
@@ -15,6 +14,7 @@ from bentoml_cli.containerize import add_containerize_command
 
 def create_bentoml_cli() -> click.Group:
 
+    from bentoml import __version__ as BENTOML_VERSION
     from bentoml._internal.context import component_context
 
     component_context.component_name = "cli"

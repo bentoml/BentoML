@@ -18,14 +18,11 @@ And join us in the BentoML slack community: https://l.linklyhq.com/l/ktOh
 from typing import TYPE_CHECKING
 
 from ._internal.configuration import BENTOML_VERSION as __version__
+
 from ._internal.configuration import load_global_config
 
 # Inject dependencies and configurations
 load_global_config()
-
-# Model management APIs
-from . import io
-from . import models
 
 # Bento management APIs
 from .bentos import get
@@ -50,6 +47,8 @@ from ._internal.service.loader import load
 
 # Framework specific modules are lazily loaded upon import
 if TYPE_CHECKING:
+    from . import io
+    from . import models
     from bentoml import h2o
     from bentoml import flax
     from bentoml import onnx
@@ -77,6 +76,9 @@ if TYPE_CHECKING:
     from bentoml import pytorch_lightning
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
+
+    io = _LazyLoader("io", globals(), "bentoml.io")
+    models = _LazyLoader("models", globals(), "bentoml.models")
 
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")

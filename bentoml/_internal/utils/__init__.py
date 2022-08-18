@@ -18,7 +18,6 @@ from datetime import timedelta
 import fs
 import attr
 import fs.copy
-from rich.console import Console
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -26,21 +25,19 @@ else:
     from backports.cached_property import cached_property
 
 from .cattr import bentoml_cattr
-from ..types import LazyType
-from ..types import PathType
-from ..types import MetadataDict
-from ..types import MetadataType
 from .lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     from fs.base import FS
+    from ..types import PathType
+    from ..types import MetadataDict
+    from ..types import MetadataType
 
+    P = t.ParamSpec("P")
 
 C = t.TypeVar("C")
 T = t.TypeVar("T")
 _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
-
-rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
@@ -51,7 +48,6 @@ __all__ = [
     "LazyLoader",
     "validate_or_create_dir",
     "display_path_under_home",
-    "rich_console",
 ]
 
 
@@ -216,7 +212,7 @@ def label_validator(
     validate_labels(labels)
 
 
-def validate_labels(labels: dict[str, str]):
+def validate_labels(labels: dict[str, str]) -> None:
     if not isinstance(labels, dict):
         raise ValueError("labels must be a dict!")
 
@@ -246,6 +242,8 @@ def validate_metadata(metadata: MetadataDict):
 
 
 def _validate_metadata_entry(entry: MetadataType) -> MetadataType:
+    from ..types import LazyType
+
     if isinstance(entry, dict):
         validate_metadata(entry)
     elif isinstance(entry, list):
@@ -311,11 +309,11 @@ class cached_contextmanager:
 
     def __init__(self, cache_key_template: t.Optional[str] = None):
         self._cache_key_template = cache_key_template
-        self._cache: t.Dict[t.Any, t.Any] = {}
+        self._cache: dict[t.Any, t.Any] = {}
 
     def __call__(
-        self, func: "t.Callable[P, t.Generator[VT, None, None]]"
-    ) -> "t.Callable[P, t.ContextManager[VT]]":
+        self, func: t.Callable[P, t.Generator[VT, None, None]]
+    ) -> t.Callable[P, t.ContextManager[VT]]:
 
         func_m = contextlib.contextmanager(func)
 

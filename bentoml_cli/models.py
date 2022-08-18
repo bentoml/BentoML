@@ -113,7 +113,6 @@ def add_model_management_commands(cli: Group) -> None:
         $ bentoml models list FraudDetector
         """
 
-        from bentoml._internal.utils import rich_console as console
         from bentoml._internal.utils import calc_dir_size
         from bentoml._internal.utils import human_readable_size
 

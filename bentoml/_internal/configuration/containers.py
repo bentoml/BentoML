@@ -20,11 +20,6 @@ from simple_di import Provide
 from simple_di import providers
 from deepmerge.merger import Merger
 
-from . import expand_env_var
-from ..utils import validate_or_create_dir
-from ..resource import system_resources
-from ...exceptions import BentoMLConfigException
-
 if TYPE_CHECKING:
     from bentoml._internal.models import ModelStore
 
@@ -166,6 +161,8 @@ class BentoMLConfiguration:
         override_config_file: t.Optional[str] = None,
         validate_schema: bool = True,
     ):
+        from ...exceptions import BentoMLConfigException
+
         # Load default configuration
         default_config_file = os.path.join(
             os.path.dirname(__file__), "default_configuration.yaml"
@@ -203,6 +200,9 @@ class BentoMLConfiguration:
 
                     # key is a runner name
                     if runner_cfg.get("resources") == "system":
+
+                        from ..resource import system_resources
+
                         runner_cfg["resources"] = system_resources()
 
                     self.config["runners"][key] = config_merger.merge(
@@ -218,6 +218,8 @@ class BentoMLConfiguration:
                     ) from e
 
     def override(self, keys: t.List[str], value: t.Any):
+        from bentoml.exceptions import BentoMLConfigException
+
         if keys is None:
             raise BentoMLConfigException("Configuration override key is None.")
         if len(keys) == 0:
@@ -242,9 +244,6 @@ class BentoMLConfiguration:
                 " to the required schema, key=%s, value=%s." % (keys, value)
             ) from e
 
-    def as_dict(self) -> providers.ConfigDictType:
-        return t.cast(providers.ConfigDictType, self.config)
-
 
 @dataclass
 class _BentoMLContainerClass:
@@ -254,6 +253,9 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def bentoml_home() -> str:
+        from . import expand_env_var
+        from ..utils import validate_or_create_dir
+
         home = expand_env_var(
             str(
                 os.environ.get(
@@ -395,14 +397,10 @@ class _BentoMLContainerClass:
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:
             # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.zipkin.json import (
-                ZipkinExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.zipkin.json import ZipkinExporter
 
-            exporter = ZipkinExporter(  # type: ignore (no opentelemetry types)
-                endpoint=zipkin_server_url,
-            )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            exporter = ZipkinExporter(endpoint=zipkin_server_url)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
         elif (
             tracer_type == "jaeger"
@@ -410,15 +408,13 @@ class _BentoMLContainerClass:
             and jaeger_server_port is not None
         ):
             # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.jaeger.thrift import (
-                JaegerExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 
-            exporter = JaegerExporter(  # type: ignore (no opentelemetry types)
+            exporter = JaegerExporter(
                 agent_host_name=jaeger_server_address,
                 agent_port=jaeger_server_port,
             )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
         else:
             return provider
@@ -454,6 +450,7 @@ class _BentoMLContainerClass:
         """
         from ..utils.metrics import DEFAULT_BUCKET
         from ..utils.metrics import exponential_buckets
+        from bentoml.exceptions import BentoMLConfigException
 
         if "duration" in metrics:
             duration: dict[str, float] = metrics["duration"]

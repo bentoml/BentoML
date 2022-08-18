@@ -218,9 +218,16 @@ class BentoMLCommandGroup(click.Group):
                 load_global_config(config)
 
             if traceback:
+                import os
+
                 from rich.traceback import install
 
-                install(console=console, suppress=[click], show_locals=True)
+                install(
+                    console=console,
+                    suppress=[click],
+                    show_locals=True,
+                    width=int(os.getenv("COLUMNS", 200)),
+                )
 
             if quiet:
                 set_quiet_mode(True)

@@ -18,15 +18,6 @@ import psutil
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml import load
-from bentoml.exceptions import UnprocessableEntity
-
-from ._internal.log import SERVER_LOGGING_CONFIG
-from ._internal.utils import reserve_free_port
-from ._internal.resource import CpuResource
-from ._internal.utils.uri import path_to_uri
-from ._internal.utils.circus import create_standalone_arbiter
-from ._internal.utils.analytics import track_serve
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -205,11 +196,18 @@ def serve_development(
     reload: bool = False,
     grpc: bool = False,
     reflection: bool = False,
+    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
+    from circus.sockets import CircusSocket
+
+    from bentoml import load
+
+    from ._internal.log import SERVER_LOGGING_CONFIG
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
+
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
-
-    from circus.sockets import CircusSocket
 
     prometheus_dir = ensure_prometheus_dir()
 
@@ -382,10 +380,19 @@ def serve_production(
     | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
-    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     grpc: bool = False,
     reflection: bool = False,
+    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
+    from bentoml import load
+    from bentoml.exceptions import UnprocessableEntity
+
+    from ._internal.utils import reserve_free_port
+    from ._internal.resource import CpuResource
+    from ._internal.utils.uri import path_to_uri
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
+
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import json
 from urllib.parse import urlparse
 
@@ -38,9 +37,7 @@ import click
     default=None,
     help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
-@click.pass_context
 def main(
-    ctx: click.Context,
     bento_identifier: str,
     bind: str,
     runner_map: str | None,
@@ -64,33 +61,6 @@ def main(
     BentoMLContainer.development_mode.set(False)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-
-    if worker_id is None:
-        # Start a standalone server with a supervisor process
-        from circus.watcher import Watcher
-
-        from bentoml.serve import ensure_prometheus_dir
-        from bentoml_cli.utils import unparse_click_params
-        from bentoml._internal.utils.circus import create_standalone_arbiter
-
-        ensure_prometheus_dir()
-
-        params = ctx.params
-        params.update({"bind": bind, "worker_id": "$(circus.wid)"})
-        watcher = Watcher(
-            name="bento_api_server",
-            cmd=sys.executable,
-            args=["-m", "bentoml_cli.server.grpc_api_server"]
-            + unparse_click_params(params, ctx.command.params, factory=str),
-            copy_env=True,
-            numprocesses=1,
-            stop_children=True,
-            use_sockets=False,
-            working_dir=working_dir,
-        )
-        arbiter = create_standalone_arbiter(watchers=[watcher])
-        arbiter.start()
-        return
 
     component_context.component_name = f"api_server:{worker_id}"
 

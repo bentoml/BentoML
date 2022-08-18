@@ -52,23 +52,12 @@ BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
 DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
-API_INFO_MD = """\
-<tr>
-<td> <code> POST /{api} </code> </td>
-<td> {input} </td>
-<td> {output} </td>
-</tr>
-"""
+API_INFO_MD = "| POST `/{api}` | {input} | {output} |"
 
 INFERENCE_TABLE_MD = """\
-<table>
-<tr>
-<td> InferenceAPI </td> <td> Input </td> <td> Output </td>
-</tr>
-
+| InferenceAPI | Input | Output |
+| ------------ | ----- | ------ |
 {content}
-
-</table>
 """
 
 
@@ -230,12 +219,7 @@ class Bento(StoreItem):
                     copy_file(ctx_fs, path, target_fs, path)
 
         # generate related folders structure
-        build_config.docker.write_to_bento(
-            bento_fs,
-            build_ctx,
-            build_config.conda,
-            build_config.python,
-        )
+        build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
 

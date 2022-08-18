@@ -36,6 +36,7 @@ def pytest_configure(config):  # pylint: disable=unused-argument
 
     # use the local bentoml package in development
     os.environ["BENTOML_BUNDLE_LOCAL_BUILD"] = "True"
+    os.environ["SETUPTOOLS_USE_DISTUTILS"] = "stdlib"
 
 
 @pytest.fixture(scope="session", autouse=True)

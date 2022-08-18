@@ -1,3 +1,4 @@
+import io
 import logging
 from typing import Optional
 from urllib.parse import urljoin
@@ -20,6 +21,7 @@ from .schemas import FinishUploadModelSchema
 from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
 from ...exceptions import YataiRESTApiClientError
+from ..configuration import BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,7 @@ class YataiRESTApiClient:
             {
                 "X-YATAI-API-TOKEN": api_token,
                 "Content-Type": "application/json",
+                "X-Bentoml-Version": BENTOML_VERSION,
             }
         )
 
@@ -159,6 +162,34 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 
+    def upload_bento(
+        self, bento_repository_name: str, version: str, data: io.BytesIO
+    ) -> None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/upload",
+        )
+        resp = self.session.put(
+            url,
+            data=data,
+            headers=dict(
+                self.session.headers, **{"Content-Type": "application/octet-stream"}
+            ),
+        )
+        self._check_resp(resp)
+        return None
+
+    def download_bento(
+        self, bento_repository_name: str, version: str
+    ) -> requests.Response:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/download",
+        )
+        resp = self.session.get(url, stream=True)
+        self._check_resp(resp)
+        return resp
+
     def get_model_repository(
         self, model_repository_name: str
     ) -> Optional[ModelRepositorySchema]:
@@ -245,3 +276,31 @@ class YataiRESTApiClient:
         resp = self.session.patch(url, data=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
+
+    def upload_model(
+        self, model_repository_name: str, version: str, data: io.BytesIO
+    ) -> None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/upload",
+        )
+        resp = self.session.put(
+            url,
+            data=data,
+            headers=dict(
+                self.session.headers, **{"Content-Type": "application/octet-stream"}
+            ),
+        )
+        self._check_resp(resp)
+        return None
+
+    def download_model(
+        self, model_repository_name: str, version: str
+    ) -> requests.Response:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/download",
+        )
+        resp = self.session.get(url, stream=True)
+        self._check_resp(resp)
+        return resp

@@ -10,14 +10,6 @@ import functools
 import contextlib
 from typing import TYPE_CHECKING
 from pathlib import Path
-from datetime import date
-from datetime import time
-from datetime import datetime
-from datetime import timedelta
-
-import fs
-import attr
-import fs.copy
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -28,7 +20,9 @@ from .cattr import bentoml_cattr
 from .lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
+    from attr import Attribute
     from fs.base import FS
+
     from ..types import PathType
     from ..types import MetadataDict
     from ..types import MetadataType
@@ -177,6 +171,9 @@ def copy_file_to_fs_folder(
     folder with dst_filename as file name. When dst_filename is None, keep the original
     file name.
     """
+    import fs
+    import fs.copy
+
     src_path = os.path.realpath(os.path.expanduser(src_path))
     dir_name, file_name = os.path.split(src_path)
     src_fs = fs.open_fs(dir_name)
@@ -206,9 +203,7 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     raise FileNotFoundError(f"file {filepath} not found")
 
 
-def label_validator(
-    _: t.Any, _attr: attr.Attribute[dict[str, str]], labels: dict[str, str]
-):
+def label_validator(_: t.Any, _attr: Attribute[dict[str, str]], labels: dict[str, str]):
     validate_labels(labels)
 
 
@@ -225,7 +220,7 @@ def validate_labels(labels: dict[str, str]) -> None:
 
 
 def metadata_validator(
-    _: t.Any, _attr: attr.Attribute[MetadataDict], metadata: MetadataDict
+    _: t.Any, _attr: Attribute[MetadataDict], metadata: MetadataDict
 ):
     validate_metadata(metadata)
 
@@ -242,6 +237,11 @@ def validate_metadata(metadata: MetadataDict):
 
 
 def _validate_metadata_entry(entry: MetadataType) -> MetadataType:
+    from datetime import date
+    from datetime import time
+    from datetime import datetime
+    from datetime import timedelta
+
     from ..types import LazyType
 
     if isinstance(entry, dict):

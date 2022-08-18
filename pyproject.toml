@@ -2,7 +2,7 @@
 requires = [
   # sync with setup.py until we discard non-pep-517/518
   "wheel",
-  "setuptools>=59.0",
+  "setuptools==60.0.0",
   "setuptools-scm[toml]>=6.2.3",
 ]
 build-backend = "setuptools.build_meta"
@@ -33,81 +33,81 @@ exclude = '''
 
 [tool.pytest.ini_options]
 addopts = "-rfEX -p pytester -p no:warnings"
-python_files = ["test_*.py","*_test.py"]
+python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus"]
 
 [tool.pylint.master]
-ignore=".ipynb_checkpoints,typings,bentoml/_internal/external_typing"
-ignore-paths=".*.pyi"
-unsafe-load-any-extension="no"
-extension-pkg-whitelist="numpy,tensorflow,torch,paddle,keras,pydantic"
-jobs=4
-persistent="yes"
-suggestion-mode="yes"
-max-line-length=88
+ignore = ".ipynb_checkpoints,typings,bentoml/_internal/external_typing"
+ignore-paths = ".*.pyi"
+unsafe-load-any-extension = "no"
+extension-pkg-whitelist = "numpy,tensorflow,torch,paddle,keras,pydantic"
+jobs = 4
+persistent = "yes"
+suggestion-mode = "yes"
+max-line-length = 88
 
 [tool.pylint.messages_control]
-disable="import-error,print-statement,parameter-unpacking,unpacking-in-except,old-raise-syntax,backtick,import-star-module-level,raw-checker-failed,bad-inline-option,locally-disabled,file-ignored,suppressed-message,useless-suppression,deprecated-pragma,apply-builtin,basestring-builtin,buffer-builtin,cmp-builtin,coerce-builtin,execfile-builtin,file-builtin,long-builtin,raw_input-builtin,reduce-builtin,standarderror-builtin,unicode-builtin,xrange-builtin,coerce-method,delslice-method,getslice-method,setslice-method,no-absolute-import,old-division,dict-iter-method,dict-view-method,next-method-called,metaclass-assignment,indexing-exception,raising-string,reload-builtin,oct-method,hex-method,nonzero-method,cmp-method,input-builtin,round-builtin,intern-builtin,unichr-builtin,map-builtin-not-iterating,zip-builtin-not-iterating,range-builtin-not-iterating,filter-builtin-not-iterating,using-cmp-argument,div-method,idiv-method,rdiv-method,exception-message-attribute,invalid-str-codec,sys-max-int,bad-python3-import,deprecated-string-function,deprecated-str-translate-call,deprecated-itertools-function,deprecated-types-field,next-method-defined,dict-items-not-iterating,dict-keys-not-iterating,dict-values-not-iterating,deprecated-operator-function,deprecated-urllib-function,xreadlines-attribute,deprecated-sys-function,exception-escape,comprehension-escape,logging-fstring-interpolation,logging-format-interpolation,logging-not-lazy,C,R,fixme,protected-access,no-member,unsubscriptable-object,raise-missing-from,isinstance-second-argument-not-valid-type"
-enable="c-extension-no-member"
+disable = "import-error,print-statement,parameter-unpacking,unpacking-in-except,old-raise-syntax,backtick,import-star-module-level,raw-checker-failed,bad-inline-option,locally-disabled,file-ignored,suppressed-message,useless-suppression,deprecated-pragma,apply-builtin,basestring-builtin,buffer-builtin,cmp-builtin,coerce-builtin,execfile-builtin,file-builtin,long-builtin,raw_input-builtin,reduce-builtin,standarderror-builtin,unicode-builtin,xrange-builtin,coerce-method,delslice-method,getslice-method,setslice-method,no-absolute-import,old-division,dict-iter-method,dict-view-method,next-method-called,metaclass-assignment,indexing-exception,raising-string,reload-builtin,oct-method,hex-method,nonzero-method,cmp-method,input-builtin,round-builtin,intern-builtin,unichr-builtin,map-builtin-not-iterating,zip-builtin-not-iterating,range-builtin-not-iterating,filter-builtin-not-iterating,using-cmp-argument,div-method,idiv-method,rdiv-method,exception-message-attribute,invalid-str-codec,sys-max-int,bad-python3-import,deprecated-string-function,deprecated-str-translate-call,deprecated-itertools-function,deprecated-types-field,next-method-defined,dict-items-not-iterating,dict-keys-not-iterating,dict-values-not-iterating,deprecated-operator-function,deprecated-urllib-function,xreadlines-attribute,deprecated-sys-function,exception-escape,comprehension-escape,logging-fstring-interpolation,logging-format-interpolation,logging-not-lazy,C,R,fixme,protected-access,no-member,unsubscriptable-object,raise-missing-from,isinstance-second-argument-not-valid-type"
+enable = "c-extension-no-member"
 
 [tool.pylint.reports]
-evaluation="10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
-msg-template="{msg_id}:{symbol} [{line:0>3d}:{column:0>2d}] {obj}: {msg}"
-output-format="colorized"
-reports="no"
-score="yes"
+evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
+msg-template = "{msg_id}:{symbol} [{line:0>3d}:{column:0>2d}] {obj}: {msg}"
+output-format = "colorized"
+reports = "no"
+score = "yes"
 
 [tool.pylint.refactoring]
-max-nested-blocks=5
-never-returning-functions="optparse.Values,sys.exit"
+max-nested-blocks = 5
+never-returning-functions = "optparse.Values,sys.exit"
 
 [tool.pylint.miscellaneous]
-notes="FIXME,XXX,TODO,NOTE"
+notes = "FIXME,XXX,TODO,NOTE"
 
 [tool.pylint.typecheck]
-ignored-classes="Namespace"
-contextmanager-decorators="contextlib.contextmanager"
+ignored-classes = "Namespace"
+contextmanager-decorators = "contextlib.contextmanager"
 
 [tool.pylint.format]
-indent-after-paren=4
-indent-string='    '
-max-line-length=100
-max-module-lines=1000
-single-line-class-stmt="no"
-single-line-if-stmt="no"
+indent-after-paren = 4
+indent-string = '    '
+max-line-length = 100
+max-module-lines = 1000
+single-line-class-stmt = "no"
+single-line-if-stmt = "no"
 
 [tool.pylint.imports]
-allow-wildcard-with-all="no"
-analyse-fallback-blocks="no"
+allow-wildcard-with-all = "no"
+analyse-fallback-blocks = "no"
 
 [tool.pylint.classes]
-defining-attr-methods="__init__,__new__,setUp"
-exclude-protected="_asdict,_fields,_replace,_source,_make"
-valid-classmethod-first-arg="cls"
-valid-metaclass-classmethod-first-arg="mcs"
+defining-attr-methods = "__init__,__new__,setUp"
+exclude-protected = "_asdict,_fields,_replace,_source,_make"
+valid-classmethod-first-arg = "cls"
+valid-metaclass-classmethod-first-arg = "mcs"
 
 [tool.pylint.design]
 # Maximum number of arguments for function / method
-max-args=5
+max-args = 5
 # Maximum number of attributes for a class (see R0902).
-max-attributes=7
+max-attributes = 7
 # Maximum number of boolean expressions in a if statement
-max-bool-expr=5
+max-bool-expr = 5
 # Maximum number of branch for function / method body
-max-branches=12
+max-branches = 12
 # Maximum number of locals for function / method body
-max-locals=15
+max-locals = 15
 # Maximum number of parents for a class (see R0901).
-max-parents=7
+max-parents = 7
 # Maximum number of public methods for a class (see R0904).
-max-public-methods=20
+max-public-methods = 20
 # Maximum number of return / yield for function / method body
-max-returns=6
+max-returns = 6
 # Maximum number of statements in function / method body
-max-statements=50
+max-statements = 50
 # Minimum number of public methods for a class (see R0903).
-min-public-methods=2
+min-public-methods = 2
 
 [tool.isort]
 profile = "black"
@@ -120,7 +120,7 @@ skip_glob = ["typings/*", "docs/*"]
 [tool.pyright]
 pythonVersion = "3.10"
 include = ["bentoml"]
-exclude = ['bentoml/_version.py','bentoml/__main__.py']
+exclude = ['bentoml/_version.py', 'bentoml/__main__.py']
 analysis.useLibraryCodeForTypes = true
 strictListInference = true
 strictDictionaryInference = true

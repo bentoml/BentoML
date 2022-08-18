@@ -5,25 +5,18 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-from starlette.requests import Request
-from multipart.multipart import parse_options_header
-from starlette.responses import Response
-from starlette.datastructures import UploadFile
-
 from .base import IODescriptor
 from ..types import FileLike
-from ..utils.http import set_cookies
-from ...exceptions import BentoMLException
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
-from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from starlette.requests import Request
+
     from ..context import InferenceApiContext as Context
+    from ..service.openapi.specification import Schema
+    from ..service.openapi.specification import Response as OpenAPIResponse
+    from ..service.openapi.specification import RequestBody
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
@@ -117,18 +110,27 @@ class File(IODescriptor[FileType]):
         return FileLike[bytes]
 
     def openapi_schema(self) -> Schema:
+        from ..service.openapi.specification import Schema
+
         return Schema(type="string", format="binary")
 
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
     def openapi_request_body(self) -> RequestBody:
+        from ..service.openapi.specification import MediaType
+        from ..service.openapi.specification import RequestBody
+
         return RequestBody(
             content={self._mime_type: MediaType(schema=self.openapi_schema())},
             required=True,
         )
 
     def openapi_responses(self) -> OpenAPIResponse:
+        from ..service.openapi import SUCCESS_DESCRIPTION
+        from ..service.openapi.specification import Response as OpenAPIResponse
+        from ..service.openapi.specification import MediaType
+
         return OpenAPIResponse(
             description=SUCCESS_DESCRIPTION,
             content={self._mime_type: MediaType(schema=self.openapi_schema())},
@@ -139,12 +141,16 @@ class File(IODescriptor[FileType]):
         obj: FileType,
         ctx: Context | None = None,
     ):
+        from starlette.responses import Response
+
         if isinstance(obj, bytes):
             body = obj
         else:
             body = obj.read()
 
         if ctx is not None:
+            from ..utils.http import set_cookies
+
             res = Response(
                 body,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
@@ -158,12 +164,16 @@ class File(IODescriptor[FileType]):
 
 class BytesIOFile(File):
     async def from_http_request(self, request: Request) -> t.IO[bytes]:
+        from multipart.multipart import parse_options_header
+        from starlette.datastructures import UploadFile
+
+        from ...exceptions import BentoMLException
+
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type.decode("utf-8") == "multipart/form-data":
             form = await request.form()
-            found_mimes: t.List[str] = []
-            val: t.Union[str, UploadFile]
-            for val in form.values():  # type: ignore
+            found_mimes: list[str] = []
+            for val in form.values():
                 if isinstance(val, UploadFile):
                     found_mimes.append(val.content_type)  # type: ignore (bad starlette types)
                     if val.content_type == self._mime_type:  # type: ignore (bad starlette types)

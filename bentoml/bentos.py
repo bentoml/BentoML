@@ -10,21 +10,11 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING
 
-from simple_di import inject
-from simple_di import Provide
-
-from bentoml.exceptions import InvalidArgument
-
-from ._internal.tag import Tag
-from ._internal.bento import Bento
-from ._internal.utils import resolve_user_filepath
-from ._internal.bento.build_config import BentoBuildConfig
-from ._internal.configuration.containers import BentoMLContainer
-
 if TYPE_CHECKING:
-    from ._internal.bento import BentoStore
+    from ._internal.tag import Tag
     from ._internal.types import PathType
-    from ._internal.models import ModelStore
+    from ._internal.bento.bento import Bento
+    from ._internal.bento.bento import BentoStore
 
 logger = logging.getLogger(__name__)
 
@@ -38,33 +28,35 @@ BENTOML_FIGLET = """
 """
 
 
-@inject
 def list(  # pylint: disable=redefined-builtin
-    tag: t.Optional[t.Union[Tag, str]] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> "t.List[Bento]":
+    tag: Tag | str | None = None,
+    _bento_store: BentoStore | None = None,
+) -> t.List[Bento]:
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _bento_store:
+        _bento_store = BentoMLContainer.bento_store.get()
+
     return _bento_store.list(tag)
 
 
-@inject
-def get(
-    tag: t.Union[Tag, str],
-    *,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> Bento:
+def get(tag: t.Union[Tag, str], _bento_store: BentoStore | None = None) -> Bento:
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _bento_store:
+        _bento_store = BentoMLContainer.bento_store.get()
+
     return _bento_store.get(tag)
 
 
-@inject
-def delete(
-    tag: t.Union[Tag, str],
-    *,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-):
+def delete(tag: t.Union[Tag, str], _bento_store: BentoStore | None = None) -> None:
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _bento_store:
+        _bento_store = BentoMLContainer.bento_store.get()
     _bento_store.delete(tag)
 
 
-@inject
 def import_bento(
     path: str,
     input_format: t.Optional[str] = None,
@@ -74,7 +66,7 @@ def import_bento(
     passwd: t.Optional[str] = None,
     params: t.Optional[t.Dict[str, str]] = None,
     subpath: t.Optional[str] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore | None = None,
 ) -> Bento:
     """
     Import a bento.
@@ -126,6 +118,12 @@ def import_bento(
     Returns:
         Bento: the imported bento
     """
+    from ._internal.bento.bento import Bento
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _bento_store:
+        _bento_store = BentoMLContainer.bento_store.get()
+
     return Bento.import_from(
         path,
         input_format,
@@ -137,7 +135,6 @@ def import_bento(
     ).save(_bento_store)
 
 
-@inject
 def export_bento(
     tag: t.Union[Tag, str],
     path: str,
@@ -148,7 +145,7 @@ def export_bento(
     passwd: t.Optional[str] = None,
     params: t.Optional[t.Dict[str, str]] = None,
     subpath: t.Optional[str] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore | None = None,
 ) -> str:
     """
     Export a bento.
@@ -218,25 +215,14 @@ def export_bento(
     )
 
 
-@inject
-def push(
-    tag: t.Union[Tag, str],
-    *,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-):
+def push(tag: Tag | str):
     raise NotImplementedError
 
 
-@inject
-def pull(
-    tag: t.Union[Tag, str],
-    *,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-):
+def pull(tag: Tag | str):
     raise NotImplementedError
 
 
-@inject
 def build(
     service: str,
     *,
@@ -249,9 +235,8 @@ def build(
     conda: t.Optional[t.Dict[str, t.Any]] = None,
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "Bento":
+    _bento_store: BentoStore | None = None,
+) -> Bento:
     """
     User-facing API for building a Bento. The available build options are identical to the keys of a
     valid 'bentofile.yaml' file.
@@ -315,7 +300,15 @@ def build(
                ),
            )
 
-    """  # noqa: LN001
+    """
+
+    from ._internal.bento.bento import Bento
+    from ._internal.bento.build_config import BentoBuildConfig
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _bento_store:
+        _bento_store = BentoMLContainer.bento_store.get()
+
     build_config = BentoBuildConfig(
         service=service,
         description=description,
@@ -337,15 +330,13 @@ def build(
     return bento
 
 
-@inject
 def build_bentofile(
     bentofile: str = "bentofile.yaml",
     *,
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "Bento":
+    _bento_store: BentoStore | None = None,
+) -> Bento:
     """
     Build a Bento base on options specified in a bentofile.yaml file.
 
@@ -359,6 +350,15 @@ def build_bentofile(
         _bento_store: save Bento created to this BentoStore
         _model_store: pull Models required from this ModelStore
     """
+    from .exceptions import InvalidArgument
+    from ._internal.utils import resolve_user_filepath
+    from ._internal.bento.bento import Bento
+    from ._internal.bento.build_config import BentoBuildConfig
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _bento_store:
+        _bento_store = BentoMLContainer.bento_store.get()
+
     try:
         bentofile = resolve_user_filepath(bentofile, build_ctx)
     except FileNotFoundError:
@@ -377,7 +377,6 @@ def build_bentofile(
     return bento
 
 
-@inject
 def containerize(
     tag: Tag | str,
     docker_image_tag: str | t.List[str] | None = None,
@@ -409,10 +408,15 @@ def containerize(
     ssh: str | None = None,
     target: str | None = None,
     ulimit: str | None = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore | None = None,
 ) -> bool:
 
     from bentoml._internal.utils import buildx
+
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _bento_store:
+        _bento_store = BentoMLContainer.bento_store.get()
 
     env = {"DOCKER_BUILDKIT": "1", "DOCKER_SCAN_SUGGEST": "false"}
 

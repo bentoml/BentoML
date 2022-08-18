@@ -9,10 +9,10 @@ import numpy as np
 
 import bentoml
 from bentoml import Tag
+from bentoml.models import ModelContext
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
-from bentoml._internal.models.model import ModelContext
 
 from ..utils.pkg import get_pkg_version
 

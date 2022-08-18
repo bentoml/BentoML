@@ -9,15 +9,15 @@ import attr
 from bentoml.exceptions import BentoMLException
 
 from ..tag import Tag
-from ..models import Model
-from ..runner import Runner
 from ..bento.bento import get_default_svc_readme
+from ..models.model import Model
 from .inference_api import InferenceAPI
+from ..runner.runner import Runner
 from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
-    from ..bento import Bento
+    from ..bento.bento import Bento
     from .openapi.specification import OpenAPISpecification
 
     WSGI_APP = t.Callable[

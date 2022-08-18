@@ -18,7 +18,6 @@ And join us in the BentoML slack community: https://l.linklyhq.com/l/ktOh
 from typing import TYPE_CHECKING
 
 from ._internal.configuration import BENTOML_VERSION as __version__
-
 from ._internal.configuration import load_global_config
 
 # Inject dependencies and configurations
@@ -35,20 +34,18 @@ from .bentos import import_bento
 
 # BentoML built-in types
 from ._internal.tag import Tag
-from ._internal.bento import Bento
-from ._internal.models import Model
-from ._internal.runner import Runner
-from ._internal.runner import Runnable
 from ._internal.context import InferenceApiContext as Context
-from ._internal.service import Service
 from ._internal.utils.http import Cookie
+from ._internal.bento.bento import Bento
+from ._internal.models.model import Model
 from ._internal.yatai_client import YataiClient
+from ._internal.runner.runner import Runner
 from ._internal.service.loader import load
+from ._internal.runner.runnable import Runnable
+from ._internal.service.service import Service
 
 # Framework specific modules are lazily loaded upon import
 if TYPE_CHECKING:
-    from . import io
-    from . import models
     from bentoml import h2o
     from bentoml import flax
     from bentoml import onnx
@@ -74,6 +71,9 @@ if TYPE_CHECKING:
     from bentoml import tensorflow_v1
     from bentoml import picklable_model
     from bentoml import pytorch_lightning
+
+    from . import io
+    from . import models
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 

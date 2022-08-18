@@ -13,7 +13,7 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
-    from ..service import Service
+    from ..service.service import Service
     from ..server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)

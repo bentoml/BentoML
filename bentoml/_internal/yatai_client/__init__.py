@@ -33,14 +33,14 @@ if TYPE_CHECKING:
     from typing_extensions import Literal
 
 from ..tag import Tag
-from ..bento import Bento
-from ..bento import BentoStore
 from ..utils import calc_dir_size
-from ..models import Model
-from ..models import copy_model
-from ..models import ModelStore
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
+from ..bento.bento import Bento
+from ..bento.bento import BentoStore
+from ..models.model import Model
+from ..models.model import copy_model
+from ..models.model import ModelStore
 from ..configuration.containers import BentoMLContainer
 from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
 from ..yatai_rest_api_client.schemas import BentoApiSchema

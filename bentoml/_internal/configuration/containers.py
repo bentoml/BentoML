@@ -21,9 +21,8 @@ from simple_di import providers
 from deepmerge.merger import Merger
 
 if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
-
     from .. import external_typing as ext
+    from ..models.model import ModelStore
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 
@@ -161,13 +160,14 @@ class BentoMLConfiguration:
         override_config_file: t.Optional[str] = None,
         validate_schema: bool = True,
     ):
+        from pathlib import Path
+
         from ...exceptions import BentoMLConfigException
 
         # Load default configuration
-        default_config_file = os.path.join(
-            os.path.dirname(__file__), "default_configuration.yaml"
-        )
-        with open(default_config_file, "rb") as f:
+        with Path(__file__).parent.joinpath("default_configuration.yaml").open(
+            "rb"
+        ) as f:
             self.config: t.Dict[str, t.Any] = yaml.safe_load(f)
 
         if validate_schema:
@@ -282,14 +282,14 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def bento_store(base_dir: str = Provide[bento_store_dir]):
-        from ..bento import BentoStore
+        from ..bento.bento import BentoStore
 
         return BentoStore(base_dir)
 
     @providers.SingletonFactory
     @staticmethod
     def model_store(base_dir: str = Provide[model_store_dir]) -> "ModelStore":
-        from ..models import ModelStore
+        from ..models.model import ModelStore
 
         return ModelStore(base_dir)
 
@@ -448,9 +448,10 @@ class _BentoMLContainerClass:
         the Prometheus default is returned; otherwise, a set of exponential buckets
         generated based on the configuration is returned.
         """
+        from bentoml.exceptions import BentoMLConfigException
+
         from ..utils.metrics import DEFAULT_BUCKET
         from ..utils.metrics import exponential_buckets
-        from bentoml.exceptions import BentoMLConfigException
 
         if "duration" in metrics:
             duration: dict[str, float] = metrics["duration"]

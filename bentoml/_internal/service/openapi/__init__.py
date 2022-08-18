@@ -26,7 +26,7 @@ from .specification import Components
 from .specification import OpenAPISpecification
 
 if TYPE_CHECKING:
-    from .. import Service
+    from ..service import Service
     from ..inference_api import InferenceAPI
 
 SUCCESS_DESCRIPTION = "Successful Response"

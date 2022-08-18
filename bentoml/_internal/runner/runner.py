@@ -6,26 +6,21 @@ from typing import TYPE_CHECKING
 
 import attr
 
-from ..tag import validate_tag_str
-from ..utils import first_not_none
-from .runnable import Runnable
-from .strategy import Strategy
-from .strategy import DefaultStrategy
-from ...exceptions import StateException
-from ..models.model import Model
-from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
-from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from .runnable import Runnable
     from .runnable import RunnableMethodConfig
+    from .strategy import Strategy
+    from ..models.model import Model
+    from .runner_handle import RunnerHandle
 
     # only use ParamSpec in type checking, as it's only in 3.10
     P = t.ParamSpec("P")
 else:
     P = t.TypeVar("P")
 
-T = t.TypeVar("T", bound=Runnable)
+T = t.TypeVar("T", bound="Runnable")
 R = t.TypeVar("R")
 
 
@@ -77,7 +72,7 @@ class Runner:
         *,
         runnable_init_params: t.Dict[str, t.Any] | None = None,
         name: str | None = None,
-        scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
+        scheduling_strategy: t.Type[Strategy] | None = None,
         models: t.List[Model] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
@@ -94,6 +89,12 @@ class Runner:
             max_latency_ms: max latency config for micro batching
             method_configs: per method configs
         """
+        from .strategy import DefaultStrategy
+        from ..models.model import Model
+        from ..configuration.containers import BentoMLContainer
+
+        if not scheduling_strategy:
+            scheduling_strategy = DefaultStrategy
 
         if name is None:
             lname = runnable_class.__name__.lower()
@@ -109,6 +110,8 @@ class Runner:
                 )
 
         try:
+            from ..tag import validate_tag_str
+
             validate_tag_str(lname)
         except ValueError as e:
             # TODO: link to tag validation documentation
@@ -152,6 +155,8 @@ class Runner:
                 method_max_latency_ms = method_configs[method_name].get(
                     "max_latency_ms"
                 )
+
+            from ..utils import first_not_none
 
             runner_method_map[method_name] = RunnerMethod(
                 runner=self,
@@ -209,6 +214,8 @@ class Runner:
             object.__setattr__(self, runner_method.name, runner_method)
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
+        from ...exceptions import StateException
+
         if not isinstance(self._runner_handle, DummyRunnerHandle):
             raise StateException("Runner already initialized")
 

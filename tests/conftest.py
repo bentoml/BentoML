@@ -11,8 +11,8 @@ import pytest
 
 import bentoml
 from bentoml._internal.utils import bentoml_cattr
-from bentoml._internal.models import ModelStore
-from bentoml._internal.models import ModelContext
+from bentoml._internal.models.model import ModelStore
+from bentoml._internal.models.model import ModelContext
 from bentoml._internal.bento.build_config import BentoBuildConfig
 
 if TYPE_CHECKING:

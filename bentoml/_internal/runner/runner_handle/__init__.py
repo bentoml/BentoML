@@ -6,8 +6,6 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from ....exceptions import StateException
-
 if TYPE_CHECKING:
     from ..runner import Runner
     from ..runner import RunnerMethod
@@ -49,18 +47,22 @@ class DummyRunnerHandle(RunnerHandle):
     ) -> None:
         pass
 
-    def run_method(
+    def run_method(  # pylint: disable=unused-argument
         self,
         __bentoml_method: RunnerMethod[t.Any, t.Any, t.Any],
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
+        from ....exceptions import StateException
+
         raise StateException("Runner is not initialized")
 
-    async def async_run_method(
+    async def async_run_method(  # pylint: disable=unused-argument
         self,
         __bentoml_method: RunnerMethod[t.Any, t.Any, t.Any],
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
+        from ....exceptions import StateException
+
         raise StateException("Runner is not initialized")

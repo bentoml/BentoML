@@ -11,9 +11,9 @@ import bentoml
 from bentoml import Tag
 
 from ..types import LazyType
-from ..models import Model
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
+from ..models.model import Model
 from ..models.model import ModelContext
 from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer

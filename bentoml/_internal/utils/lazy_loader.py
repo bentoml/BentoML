@@ -4,8 +4,6 @@ import typing as t
 import logging
 import importlib
 
-from ...exceptions import MissingDependencyException
-
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +38,8 @@ class LazyLoader(types.ModuleType):
     def _load(self) -> types.ModuleType:
         """Load the module and insert it into the parent's globals."""
         # Import the target module and insert it into the parent's namespace
+        from bentoml.exceptions import MissingDependencyException
+
         try:
             module = importlib.import_module(self.__name__)
             self._parent_module_globals[self._local_name] = module

@@ -4,51 +4,47 @@ import typing as t
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
-from simple_di import inject
-from simple_di import Provide
-
-from ._internal.tag import Tag
-from ._internal.utils import calc_dir_size
-from ._internal.models import Model
-from ._internal.models import ModelContext
-from ._internal.models import ModelOptions
-from ._internal.utils.analytics import track
-from ._internal.utils.analytics import ModelSaveEvent
-from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models.model import Model
+from ._internal.models.model import ModelContext
+from ._internal.models.model import ModelOptions
 
 if TYPE_CHECKING:
-    from ._internal.models import ModelStore
+    from ._internal.tag import Tag
+    from ._internal.models.model import ModelStore
     from ._internal.models.model import ModelSignaturesType
 
 
-@inject
 def list(  # pylint: disable=redefined-builtin
-    tag: t.Optional[t.Union[Tag, str]] = None,
-    *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.List["Model"]:
+    tag: Tag | str | None = None,
+    _model_store: ModelStore | None = None,
+) -> t.List[Model]:
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _model_store:
+        _model_store = BentoMLContainer.model_store.get()
     return _model_store.list(tag)
 
 
-@inject
-def get(
-    tag: t.Union[Tag, str],
-    *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "Model":
+def get(tag: Tag | str, _model_store: ModelStore | None = None) -> Model:
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _model_store:
+        _model_store = BentoMLContainer.model_store.get()
     return _model_store.get(tag)
 
 
-@inject
 def delete(
-    tag: t.Union[Tag, str],
-    *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+    tag: Tag | str,
+    _model_store: ModelStore | None = None,
+) -> None:
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _model_store:
+        _model_store = BentoMLContainer.model_store.get()
+
     _model_store.delete(tag)
 
 
-@inject
 def import_model(
     path: str,
     input_format: t.Optional[str] = None,
@@ -58,7 +54,7 @@ def import_model(
     passwd: t.Optional[str] = None,
     params: t.Optional[t.Dict[str, str]] = None,
     subpath: t.Optional[str] = None,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    _model_store: ModelStore | None = None,
 ) -> Model:
     """
     Import a bento model exported with :code:`bentoml.models.export_model`. To import a model saved
@@ -112,6 +108,11 @@ def import_model(
     Returns:
         Model: the imported model
     """
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _model_store:
+        _model_store = BentoMLContainer.model_store.get()
+
     return Model.import_from(
         path,
         input_format,
@@ -123,7 +124,6 @@ def import_model(
     )._save(_model_store)
 
 
-@inject
 def export_model(
     tag: t.Union[Tag, str],
     path: str,
@@ -134,7 +134,7 @@ def export_model(
     passwd: t.Optional[str] = None,
     params: t.Optional[t.Dict[str, str]] = None,
     subpath: t.Optional[str] = None,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    _model_store: ModelStore | None = None,
 ) -> str:
     """
     Export a BentoML model.
@@ -203,23 +203,14 @@ def export_model(
     )
 
 
-def push(
-    tag: t.Union[Tag, str],
-    *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+def push(tag: Tag | str):
     raise NotImplementedError
 
 
-def pull(
-    tag: t.Union[Tag, str],
-    *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Model:
+def pull(tag: Tag | str) -> Model:
     raise NotImplementedError
 
 
-@inject
 @contextmanager
 def create(
     name: str,
@@ -232,8 +223,14 @@ def create(
     custom_objects: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
     context: ModelContext,
-    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    _model_store: ModelStore | None = None,
 ) -> t.Generator[Model, None, None]:
+    from ._internal.models.model import ModelOptions
+    from ._internal.configuration.containers import BentoMLContainer
+
+    if not _model_store:
+        _model_store = BentoMLContainer.model_store.get()
+
     options = ModelOptions() if options is None else options
     api_version = "v1" if api_version is None else api_version
     res = Model.create(
@@ -250,6 +247,10 @@ def create(
     try:
         yield res
     finally:
+        from ._internal.utils import calc_dir_size
+        from ._internal.utils.analytics import track
+        from ._internal.utils.analytics import ModelSaveEvent
+
         res.flush()
         res.save(_model_store)
 

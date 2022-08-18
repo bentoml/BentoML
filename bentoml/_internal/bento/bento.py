@@ -7,13 +7,8 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 
-import fs
 import attr
 import yaml
-import fs.osfs
-import fs.errors
-import fs.mirror
-from fs.copy import copy_file
 from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
@@ -23,26 +18,21 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import PathType
 from ..utils import bentoml_cattr
-from ..utils import copy_file_to_fs_folder
-from ..models import ModelStore
-from ..runner import Runner
-from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
 from .build_config import CondaOptions
-from .build_config import BentoPathSpec
 from .build_config import DockerOptions
 from .build_config import PythonOptions
-from .build_config import BentoBuildConfig
-from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from fs.base import FS
 
-    from ..models import Model
-    from ..service import Service
+    from ..types import PathType
+    from .build_config import BentoBuildConfig
+    from ..models.model import Model
+    from ..models.model import ModelStore
+    from ..runner.runner import Runner
+    from ..service.service import Service
     from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
@@ -131,6 +121,10 @@ class Bento(StoreItem):
 
     @__fs.validator  # type:ignore # attrs validators not supported by pyright
     def check_fs(self, _attr: t.Any, new_fs: FS):
+        import fs.errors
+
+        from ..models.model import ModelStore
+
         try:
             new_fs.makedir("models", recreate=True)
         except fs.errors.ResourceReadOnly:
@@ -166,6 +160,12 @@ class Bento(StoreItem):
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
     ) -> Bento:
+        import fs
+
+        from bentoml.exceptions import InvalidArgument
+
+        from .build_config import BentoPathSpec
+        from ..models.model import ModelStore
         from ..service.loader import import_service
 
         build_ctx = (
@@ -230,6 +230,8 @@ class Bento(StoreItem):
                         specs.from_path(build_ctx),
                     ),
                 ):
+                    from fs.copy import copy_file
+
                     target_fs.makedirs(dir_path, recreate=True)
                     copy_file(ctx_fs, path, target_fs, path)
 
@@ -237,15 +239,18 @@ class Bento(StoreItem):
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
 
-        # Create `readme.md` file
+        # Create 'README.md' file
         if build_config.description is None:
             with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
                 f.write(get_default_svc_readme(svc, svc_version=tag.version))
         else:
             if build_config.description.startswith("file:"):
-                file_name = build_config.description[5:].strip()
+                from ..utils import copy_file_to_fs_folder
+
                 copy_file_to_fs_folder(
-                    file_name, bento_fs, dst_filename=BENTO_README_FILENAME
+                    build_config.description[5:].strip(),
+                    bento_fs,
+                    dst_filename=BENTO_README_FILENAME,
                 )
             else:
                 with bento_fs.open(BENTO_README_FILENAME, "w") as f:
@@ -279,7 +284,11 @@ class Bento(StoreItem):
         return res
 
     @classmethod
-    def from_fs(cls, item_fs: FS) -> Bento:
+    def from_fs(cls, item_fs: FS) -> "Bento":
+        import fs.errors
+
+        from bentoml.exceptions import BentoMLException
+
         try:
             with item_fs.open(BENTO_YAML_FILENAME, "r", encoding="utf-8") as bento_yaml:
                 info = BentoInfo.from_yaml_file(bento_yaml)
@@ -323,11 +332,17 @@ class Bento(StoreItem):
     @inject
     def save(
         self,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    ) -> "Bento":
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> Bento:
+        from bentoml.exceptions import BentoMLException
+
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid.")
+
+        import fs
+        import fs.osfs
+        import fs.mirror
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
@@ -345,7 +360,7 @@ class Bento(StoreItem):
 
 
 class BentoStore(Store[Bento]):
-    def __init__(self, base_path: t.Union[PathType, "FS"]):
+    def __init__(self, base_path: PathType | FS):
         super().__init__(base_path, Bento)
 
 
@@ -396,6 +411,12 @@ class BentoModelInfo:
         )
 
 
+def lazy_bentoml_version() -> str:
+    from ..configuration import BENTOML_VERSION
+
+    return BENTOML_VERSION
+
+
 @attr.frozen(repr=False)
 class BentoInfo:
 
@@ -411,7 +432,7 @@ class BentoInfo:
     name: str = attr.field(init=False)
     version: str = attr.field(init=False)
     # using factory explicitly instead of default because omit_if_default is enabled for BentoInfo
-    bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
+    bentoml_version: str = attr.field(factory=lazy_bentoml_version)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
     labels: t.Dict[str, t.Any] = attr.field(factory=dict)
@@ -429,14 +450,13 @@ class BentoInfo:
 
         self.validate()
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
-        return bentoml_cattr.unstructure(self)
-
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]) -> BentoInfo:
+        from bentoml.exceptions import BentoMLException
+
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -500,7 +520,7 @@ bentoml_cattr.register_unstructure_hook(
 
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
-    return dumper.represent_dict(info.to_dict())
+    return dumper.represent_dict(bentoml_cattr.unstructure(info))
 
 
 yaml.add_representer(BentoInfo, _BentoInfo_dumper)  # type: ignore (incomplete yaml types)

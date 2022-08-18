@@ -13,8 +13,8 @@ import pytest
 
 import bentoml
 from bentoml.exceptions import NotFound
-from bentoml._internal.models import ModelStore
-from bentoml._internal.models import ModelContext
+from bentoml._internal.models.model import ModelStore
+from bentoml._internal.models.model import ModelContext
 
 if TYPE_CHECKING:
     from pathlib import Path

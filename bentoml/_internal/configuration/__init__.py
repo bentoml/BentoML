@@ -108,9 +108,9 @@ def get_quiet_mode() -> bool:
 def load_global_config(bentoml_config_file: t.Optional[str] = None):
     """Load global configuration of BentoML"""
 
+    from ..utils import bentoml_cattr
     from .containers import BentoMLContainer
     from .containers import BentoMLConfiguration
-    from ..utils import bentoml_cattr
 
     config_from_env_var = os.environ.get(CONFIG_ENV_VAR)
     if not bentoml_config_file and config_from_env_var:

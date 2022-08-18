@@ -6,13 +6,13 @@ import contextlib
 from typing import TYPE_CHECKING
 
 import bentoml
+from bentoml.models import ModelContext
 
 from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from ..models.model import ModelContext
 
 # register PyTorchTensorContainer as import side effect.
 from .common.pytorch import PyTorchTensorContainer  # type: ignore # noqa

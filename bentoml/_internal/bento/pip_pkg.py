@@ -16,7 +16,7 @@ except ImportError:
 from packaging.requirements import Requirement
 
 if TYPE_CHECKING:
-    from ..service import Service
+    from ..service.service import Service
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1

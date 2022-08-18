@@ -1,14 +1,14 @@
+from __future__ import annotations
+
 import re
 import uuid
 import base64
 import typing as t
 import logging
 
-import fs
 import attr
 
-from .utils import bentoml_cattr
-from ..exceptions import BentoMLException
+from .utils.cattr import bentoml_cattr
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +74,10 @@ class Tag:
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)}, version={repr(self.version)})"
 
-    def __eq__(self, other: "Tag") -> bool:
+    def __eq__(self, other: Tag) -> bool:
         return self.name == other.name and self.version == other.version
 
-    def __lt__(self, other: "Tag") -> bool:
+    def __lt__(self, other: Tag) -> bool:
         if self.name == other.name:
             if other.version is None:
                 return False
@@ -90,13 +90,16 @@ class Tag:
         return hash((self.name, self.version))
 
     @classmethod
-    def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
+    def from_taglike(cls, taglike: Tag | str) -> Tag:
         if isinstance(taglike, Tag):
             return taglike
         return cls.from_str(taglike)
 
     @classmethod
-    def from_str(cls, tag_str: str) -> "Tag":
+    def from_str(cls, tag_str: str) -> Tag:
+
+        from ..exceptions import BentoMLException
+
         if ":" not in tag_str:
             return cls(tag_str, None)
         try:
@@ -110,7 +113,7 @@ class Tag:
         except ValueError:
             raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
 
-    def make_new_version(self) -> "Tag":
+    def make_new_version(self) -> Tag:
         if self.version is not None:
             raise ValueError(
                 "tried to run 'make_new_version' on a Tag that already has a version"
@@ -125,9 +128,13 @@ class Tag:
     def path(self) -> str:
         if self.version is None:
             return self.name
+        import fs
+
         return fs.path.combine(self.name, self.version)
 
     def latest_path(self) -> str:
+        import fs
+
         return fs.path.combine(self.name, "latest")
 
 

@@ -11,45 +11,36 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 
-import fs
 import attr
 import yaml
-import fs.errors
-import fs.mirror
-import cloudpickle  # type: ignore (no cloudpickle types)
-from fs.base import FS
-from cattr.gen import override  # type: ignore (incomplete cattr types)
-from cattr.gen import make_dict_structure_fn  # type: ignore (incomplete cattr types)
-from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
+import cloudpickle
+from cattr.gen import override
+from cattr.gen import make_dict_structure_fn
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ..types import AnyType
+    from fs.base import FS
+
+    from bentoml.types import ModelSignatureDict
+
     from ..types import PathType
-    from ..runner import Runner
-    from ..runner import Runnable
-
-    class ModelSignatureDict(t.TypedDict, total=False):
-        batchable: bool
-        batch_dim: tuple[int, int] | int | None
-        input_spec: tuple[AnyType] | AnyType | None
-        output_spec: AnyType | None
-
+    from ..types import MetadataDict
+    from ..runner.runner import Runner
+    from ..runner.runnable import Runnable
 else:
-    ModelSignaturesDict = dict
+    # Use for runtime type
+    ModelSignatureDict = dict
+    MetadataDict = dict
 
 
 T = t.TypeVar("T")
@@ -91,6 +82,8 @@ class Model(StoreItem):
         *,
         _internal: bool = False,
     ):
+        from bentoml.exceptions import BentoMLException
+
         if not _internal:
             raise BentoMLException(
                 "Model cannot be instantiated directly directly; use bentoml.<framework>.save or bentoml.models.get instead"
@@ -172,6 +165,8 @@ class Model(StoreItem):
         Returns:
             object: Model instance created in temporary filesystem
         """
+        import fs
+
         tag = Tag.from_str(name)
         if tag.version is None:
             tag = tag.make_new_version()
@@ -208,9 +203,14 @@ class Model(StoreItem):
         return self
 
     def _save(self, model_store: ModelStore) -> Model:
+        from bentoml.exceptions import BentoMLException
+
         if not self.validate():
             logger.warning(f"Failed to create Model for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Model because it was invalid")
+
+        import fs
+        import fs.mirror
 
         with model_store.register(self.tag) as model_path:
             out_fs = fs.open_fs(model_path, create=True, writeable=True)
@@ -222,6 +222,10 @@ class Model(StoreItem):
 
     @classmethod
     def from_fs(cls: t.Type[Model], item_fs: FS) -> Model:
+        import fs.errors
+
+        from bentoml.exceptions import BentoMLException
+
         try:
             with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
@@ -291,7 +295,7 @@ class Model(StoreItem):
         Returns:
 
         """
-        from ..runner import Runner
+        from ..runner.runner import Runner
 
         return Runner(
             self.to_runnable(),
@@ -319,8 +323,14 @@ class Model(StoreItem):
 
 
 class ModelStore(Store[Model]):
-    def __init__(self, base_path: "t.Union[PathType, FS]"):
+    def __init__(self, base_path: PathType | FS):
         super().__init__(base_path, Model)
+
+
+def lazy_bentoml_version() -> str:
+    from ..configuration import BENTOML_VERSION
+
+    return BENTOML_VERSION
 
 
 @attr.frozen
@@ -329,7 +339,7 @@ class ModelContext:
     framework_versions: t.Dict[str, str]
 
     # using factory explicitly instead of default because omit_if_default is enabled in ModelInfo
-    bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
+    bentoml_version: str = attr.field(factory=lazy_bentoml_version)
     python_version: str = attr.field(factory=lambda: PYTHON_VERSION)
 
     @staticmethod
@@ -544,6 +554,8 @@ class ModelInfo:
                     self, "_cached_module", importlib.import_module(self.module)
                 )
             except (ValueError, ModuleNotFoundError) as e:
+                from bentoml.exceptions import BentoMLException
+
                 raise BentoMLException(
                     f"Module '{self.module}' defined in {MODEL_YAML_FILENAME} is not found."
                 ) from e
@@ -565,9 +577,6 @@ class ModelInfo:
         assert self._cached_options is not None
         return self._cached_options
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
-        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
-
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:
         ...
@@ -577,10 +586,14 @@ class ModelInfo:
         ...
 
     def dump(self, stream: io.StringIO | None = None) -> io.BytesIO | None:
-        return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore (bad yaml types)
+        return yaml.safe_dump(  # type: ignore (no yaml types)
+            bentoml_cattr.unstructure(self), stream=stream, sort_keys=False
+        )
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]) -> ModelInfo:
+        from bentoml.exceptions import BentoMLException
+
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:  # pragma: no cover - simple error handling
@@ -627,9 +640,9 @@ bentoml_cattr.register_structure_hook_func(
     ),
 )
 bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),  # type: ignore (lambda)
+    lambda cls: issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(  # type: ignore (incomplete cattr types)
+    make_dict_unstructure_fn(
         ModelInfo,
         bentoml_cattr,
         tag=override(omit=True),
@@ -649,6 +662,8 @@ def copy_model(
     """copy a model from src model store to target modelstore, and do nothing if the
     model tag already exist in target model store
     """
+    from bentoml.exceptions import NotFound
+
     try:
         target_model_store.get(model_tag)  # if model tag already found in target
         return
@@ -660,7 +675,7 @@ def copy_model(
 
 
 def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:
-    return dumper.represent_dict(info.to_dict())
+    return dumper.represent_dict(bentoml_cattr.unstructure(info))
 
 
 yaml.add_representer(ModelInfo, _ModelInfo_dumper)  # type: ignore (incomplete yaml types)

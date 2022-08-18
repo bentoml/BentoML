@@ -7,11 +7,9 @@ from typing import TYPE_CHECKING
 
 import attr
 
-from ..types import LazyType
-from ...exceptions import BentoMLException
-
 if TYPE_CHECKING:
     from ..types import AnyType
+    from ..types import LazyType
 
     # only use ParamSpec in type checking, as it's only in 3.10
     P = t.ParamSpec("P")
@@ -35,6 +33,8 @@ class Runnable:
     ] | None = None
 
     def __setattr__(self, attr_name: str, value: t.Any):
+        from ...exceptions import BentoMLException
+
         if attr_name in ("SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"):
             # TODO: add link to custom runner documentation
             raise BentoMLException(
@@ -44,6 +44,8 @@ class Runnable:
         super().__setattr__(attr_name, value)
 
     def __getattribute__(self, item: str) -> t.Any:
+        from ...exceptions import BentoMLException
+
         if item in ["add_method", "method"]:
             # TODO: add link to custom runner documentation
             raise BentoMLException(

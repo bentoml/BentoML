@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 
 import pytest
@@ -32,9 +31,9 @@ def test_default_gpu_strategy(monkeypatch: MonkeyPatch):
         DefaultStrategy.get_worker_count(GPURunnable, {"nvidia.com/gpu": [2, 7]}) == 2
     )
 
-    DefaultStrategy.setup_worker(GPURunnable, {"nvidia.com/gpu": 2}, 1)
-    assert os.environ.get("CUDA_VISIBLE_DEVICES") == "0"
-    DefaultStrategy.setup_worker(GPURunnable, {"nvidia.com/gpu": 2}, 2)
-    assert os.environ.get("CUDA_VISIBLE_DEVICES") == "1"
-    DefaultStrategy.setup_worker(GPURunnable, {"nvidia.com/gpu": [2, 7]}, 2)
-    assert os.environ.get("CUDA_VISIBLE_DEVICES") == "7"
+    envs = DefaultStrategy.get_worker_env(GPURunnable, {"nvidia.com/gpu": 2}, 0)
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "0"
+    envs = DefaultStrategy.get_worker_env(GPURunnable, {"nvidia.com/gpu": 2}, 1)
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "1"
+    envs = DefaultStrategy.get_worker_env(GPURunnable, {"nvidia.com/gpu": [2, 7]}, 1)
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "7"

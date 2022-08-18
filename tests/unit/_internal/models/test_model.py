@@ -79,13 +79,10 @@ creation_time: '{creation_time}'
 
 
 @attr.define
-class TestModelOptions(InternalModelOptions):
+class ModelOptions(InternalModelOptions):
     option_a: int
     option_b: str
     option_c: list[float]
-
-
-ModelOptions = TestModelOptions
 
 
 def test_model_info(tmpdir: "Path"):
@@ -95,7 +92,7 @@ def test_model_info(tmpdir: "Path"):
         module="module",
         api_version="v1",
         labels={},
-        options=TestModelOptions(option_a=42, option_b="foo", option_c=[0.1, 0.2]),
+        options=ModelOptions(option_a=42, option_b="foo", option_c=[0.1, 0.2]),
         metadata={},
         context=TEST_MODEL_CONTEXT,
         signatures={"predict": {"batchable": True}},
@@ -109,7 +106,7 @@ def test_model_info(tmpdir: "Path"):
     tag = Tag("test", "v1")
     module = __name__
     labels = {"label": "stringvalue"}
-    options = TestModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2])
+    options = ModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2])
     metadata = {"a": 0.1, "b": 1, "c": np.array([2, 3, 4], dtype=np.uint32)}
     # TODO: add test cases for input_spec and output_spec
     signatures = {
@@ -204,7 +201,7 @@ def fixture_bento_model():
         api_version="v1",
         signatures={},
         context=TEST_MODEL_CONTEXT,
-        options=TestModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2]),
+        options=ModelOptions(option_a=1, option_b="foo", option_c=[0.1, 0.2]),
         custom_objects={
             "add": AdditionClass(add_num_1),
         },

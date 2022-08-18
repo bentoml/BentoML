@@ -52,7 +52,6 @@ def check_model(model: bentoml.Model, resource_cfg: dict[str, t.Any]):
         pass
     elif get_resource(resource_cfg, "cpu"):
         cpus = round(get_resource(resource_cfg, "cpu"))
-        # runner.setup_worker(1)
         assert model._providers == ["CPUExecutionProvider"]
         assert model._sess_options.inter_op_num_threads == cpus
         assert model._sess_options.intra_op_num_threads == cpus

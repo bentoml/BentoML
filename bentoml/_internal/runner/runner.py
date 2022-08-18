@@ -247,9 +247,13 @@ class Runner:
             self.resource_config,
         )
 
-    def setup_worker(self, worker_id: int) -> None:
-        self.scheduling_strategy.setup_worker(
-            self.runnable_class,
-            self.resource_config,
-            worker_id,
-        )
+    @property
+    def scheduled_worker_env_map(self) -> dict[int, dict[str, t.Any]]:
+        return {
+            worker_id: self.scheduling_strategy.get_worker_env(
+                self.runnable_class,
+                self.resource_config,
+                worker_id,
+            )
+            for worker_id in range(self.scheduled_worker_count)
+        }

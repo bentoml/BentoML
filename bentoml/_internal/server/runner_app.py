@@ -62,13 +62,6 @@ class RunnerAppFactory(BaseAppFactory):
     def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
         on_startup.insert(0, functools.partial(self.runner.init_local, quiet=True))
-        on_startup.insert(
-            0,
-            functools.partial(
-                self.runner.setup_worker,
-                worker_id=self.worker_index,
-            ),
-        )
         return on_startup
 
     @property

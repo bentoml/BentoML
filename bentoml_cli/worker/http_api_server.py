@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import json
 import socket
 import typing as t
@@ -11,10 +10,10 @@ import click
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
 @click.option(
-    "--bind",
-    type=click.STRING,
+    "--fd",
+    type=click.INT,
     required=True,
-    help="Bind address sent to circus. This address accepts the following values: 'tcp://127.0.0.1:3000','unix:///tmp/bento_api.sock', 'fd://12'",
+    help="File descriptor of the socket to listen on",
 )
 @click.option(
     "--runner-map",
@@ -88,11 +87,11 @@ import click
 def main(
     ctx: click.Context,
     bento_identifier: str,
-    bind: str,
+    fd: int,
     runner_map: str | None,
     backlog: int,
     working_dir: str | None,
-    worker_id: int | None,
+    worker_id: int,
     prometheus_dir: str | None,
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
@@ -103,13 +102,8 @@ def main(
     ssl_ciphers: str | None,
 ):
     """
-    Start BentoML API server.
-    \b
-    This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
+    Start a HTTP api server worker.
     """
-
-    from urllib.parse import urlparse
-
     import psutil
 
     import bentoml
@@ -122,36 +116,6 @@ def main(
     BentoMLContainer.development_mode.set(False)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-
-    if worker_id is None:
-        # Start a standalone server with a supervisor process
-        from circus.watcher import Watcher
-
-        from bentoml.serve import ensure_prometheus_dir
-        from bentoml_cli.utils import unparse_click_params
-        from bentoml._internal.utils.circus import create_standalone_arbiter
-        from bentoml._internal.utils.circus import create_circus_socket_from_uri
-
-        ensure_prometheus_dir()
-
-        circus_socket = create_circus_socket_from_uri(bind, name="_bento_api_server")
-        params = ctx.params
-        params["bind"] = "fd://$(circus.sockets._bento_api_server)"
-        params["worker_id"] = "$(circus.wid)"
-        watcher = Watcher(
-            name="bento_api_server",
-            cmd=sys.executable,
-            args=["-m", "bentoml_cli.server.http_api_server"]
-            + unparse_click_params(params, ctx.command.params, factory=str),
-            copy_env=True,
-            numprocesses=1,
-            stop_children=True,
-            use_sockets=True,
-            working_dir=working_dir,
-        )
-        arbiter = create_standalone_arbiter(watchers=[watcher], sockets=[circus_socket])
-        arbiter.start()
-        return
 
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
@@ -168,7 +132,6 @@ def main(
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version
 
-    parsed = urlparse(bind)
     uvicorn_options: dict[str, t.Any] = {
         "backlog": backlog,
         "log_config": None,
@@ -202,12 +165,9 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    assert parsed.scheme == "fd"
-
     import uvicorn
 
     # skip the uvicorn internal supervisor
-    fd = int(parsed.netloc)
     sock = socket.socket(fileno=fd)
     config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
     uvicorn.Server(config).run(sockets=[sock])

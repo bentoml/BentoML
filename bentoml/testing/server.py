@@ -304,7 +304,7 @@ def run_bento_server_distributed(
             cmd = [
                 sys.executable,
                 "-m",
-                "bentoml_cli.server.runner",
+                "bentoml_cli.worker.runner",
                 str(bento_tag),
                 "--bind",
                 bind,
@@ -331,7 +331,7 @@ def run_bento_server_distributed(
         cmd = [
             sys.executable,
             "-m",
-            "bentoml_cli.server.http_api_server",
+            "bentoml_cli.worker.http_api_server",
             str(bento_tag),
             "--bind",
             bind,

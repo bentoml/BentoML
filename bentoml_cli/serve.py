@@ -18,6 +18,30 @@ def add_serve_command(cli: click.Group) -> None:
     @cli.command()
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
+        "--component",
+        type=click.STRING,
+        default=None,
+        envvar="BENTOML_SERVE_COMPONENT",
+        help="[Experimental] Component (`api-server` or `runner`) to serve, if not specified, will serve all components",
+        hidden=True,
+    )
+    @click.option(
+        "--runner-name",
+        type=click.STRING,
+        default=None,
+        envvar="BENTOML_SERVE_RUNNER_NAME",
+        help="[Experimental] required if `component` is `runner`, specify the runner name to serve",
+        hidden=True,
+    )
+    @click.option(
+        "--remote-runner",
+        type=click.STRING,
+        multiple=True,
+        envvar="BENTOML_SERVE_RUNNER_MAP",
+        help="[Experimental] required if `component` is `api-server' JSON string of runners map",
+        hidden=True,
+    )
+    @click.option(
         "--production",
         type=click.BOOL,
         help="Run the BentoServer in production mode",
@@ -28,7 +52,7 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoMLContainer.service_port.get(),
+        default=BentoMLContainer.service_port.get,
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -36,7 +60,7 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--host",
         type=click.STRING,
-        default=None,
+        default=BentoMLContainer.service_host.get,
         help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
         envvar="BENTOML_HOST",
     )
@@ -50,7 +74,7 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=BentoMLContainer.api_server_config.backlog.get(),
+        default=BentoMLContainer.api_server_config.backlog.get,
         help="The maximum number of pending connections.",
         show_default=True,
     )
@@ -113,9 +137,12 @@ def add_serve_command(cli: click.Group) -> None:
     )
     def serve(  # type: ignore (unused warning)
         bento: str,
+        component: str | None,
+        runner_name: str | None,
+        remote_runner: list[str] | None,
         production: bool,
         port: int,
-        host: str | None,
+        host: str,
         api_workers: int | None,
         backlog: int,
         reload: bool,
@@ -159,26 +186,111 @@ def add_serve_command(cli: click.Group) -> None:
             - when specified, respect :obj:`include` and :obj:`exclude` under :obj:`bentofile.yaml` as well as the :obj:`.bentoignore` file in `--working-dir`, for code and file changes
             - all model store changes will also trigger a restart (new model saved or existing model removed)
         """
+        print(port)
         configure_server_logging()
 
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
-        if production:
+        if component is None:
+            # If no component is provided, serve the entire Bento.
+            if production:
+                if reload:
+                    logger.warning(
+                        "'--reload' is not supported with '--production'; ignoring"
+                    )
+
+                from bentoml.serve import serve_production
+
+                serve_production(
+                    bento,
+                    working_dir=working_dir,
+                    port=port,
+                    host=host,
+                    backlog=backlog,
+                    api_workers=api_workers,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_certfile=ssl_certfile,
+                    ssl_keyfile_password=ssl_keyfile_password,
+                    ssl_version=ssl_version,
+                    ssl_cert_reqs=ssl_cert_reqs,
+                    ssl_ca_certs=ssl_ca_certs,
+                    ssl_ciphers=ssl_ciphers,
+                )
+            else:
+                from bentoml.serve import serve_development
+
+                serve_development(
+                    bento,
+                    working_dir=working_dir,
+                    port=port,
+                    host=DEFAULT_DEV_SERVER_HOST if host is None else host,
+                    reload=reload,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_certfile=ssl_certfile,
+                    ssl_keyfile_password=ssl_keyfile_password,
+                    ssl_version=ssl_version,
+                    ssl_cert_reqs=ssl_cert_reqs,
+                    ssl_ca_certs=ssl_ca_certs,
+                    ssl_ciphers=ssl_ciphers,
+                )
+            return
+
+        if component.lower() == "runner":
+            if runner_name is None:
+                raise ValueError("--runner-name is required with '--component runner'")
             if reload:
-                logger.warning(
-                    "'--reload' is not supported with '--production'; ignoring"
+                raise ValueError("--reload is not supported with --runner-name")
+            if api_workers is not None:
+                raise ValueError("--api-workers is not supported with --runner-name")
+            if (
+                ssl_certfile
+                or ssl_keyfile
+                or ssl_keyfile_password
+                or ssl_version
+                or ssl_cert_reqs
+                or ssl_ca_certs
+                or ssl_ciphers
+            ):
+                raise ValueError(
+                    "--ssl-certfile, --ssl-keyfile, --ssl-keyfile-password, "
+                    "--ssl-version, --ssl-cert-reqs, --ssl-ca-certs, --ssl-ciphers "
+                    "are not supported with '--component runner'"
                 )
 
-            from bentoml.serve import serve_production
+            from bentoml.serve import serve_runner
 
-            serve_production(
+            serve_runner(
                 bento,
+                runner_name=runner_name,
                 working_dir=working_dir,
                 port=port,
-                host=BentoMLContainer.service_host.get() if host is None else host,
+                host=host,
                 backlog=backlog,
-                api_workers=api_workers,
+            )
+            return
+
+        elif component.lower() == "api-server":
+            if reload:
+                raise ValueError(
+                    "--reload is not supported with '--component api-server'"
+                )
+            if runner_name is not None:
+                raise ValueError(
+                    "--runner-name is not needed with '--component api-server'"
+                )
+
+            runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
+
+            from bentoml.serve import serve_bare_api_server
+
+            serve_bare_api_server(
+                bento,
+                runner_map=runner_map,
+                working_dir=working_dir,
+                port=port,
+                host=host,
+                backlog=backlog,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
                 ssl_keyfile_password=ssl_keyfile_password,
@@ -187,20 +299,9 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
             )
-        else:
-            from bentoml.serve import serve_development
+            return
 
-            serve_development(
-                bento,
-                working_dir=working_dir,
-                port=port,
-                host=DEFAULT_DEV_SERVER_HOST if host is None else host,
-                reload=reload,
-                ssl_keyfile=ssl_keyfile,
-                ssl_certfile=ssl_certfile,
-                ssl_keyfile_password=ssl_keyfile_password,
-                ssl_version=ssl_version,
-                ssl_cert_reqs=ssl_cert_reqs,
-                ssl_ca_certs=ssl_ca_certs,
-                ssl_ciphers=ssl_ciphers,
+        else:
+            raise ValueError(
+                f"Invalid --component value: {component}; must be 'runner' or 'api-server'"
             )

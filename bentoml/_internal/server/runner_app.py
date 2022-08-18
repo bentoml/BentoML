@@ -8,14 +8,14 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
-from bentoml._internal.context import trace_context
-from bentoml._internal.runner.utils import Params
-from bentoml._internal.runner.utils import PAYLOAD_META_HEADER
-from bentoml._internal.runner.utils import payload_paramss_to_batch_params
-from bentoml._internal.server.base_app import BaseAppFactory
-from bentoml._internal.runner.container import AutoContainer
-from bentoml._internal.marshal.dispatcher import CorkDispatcher
-from bentoml._internal.configuration.containers import BentoMLContainer
+from ..context import trace_context
+from ..runner.utils import Params
+from ..runner.utils import PAYLOAD_META_HEADER
+from ..runner.utils import payload_paramss_to_batch_params
+from ..server.base_app import BaseAppFactory
+from ..runner.container import AutoContainer
+from ..marshal.dispatcher import CorkDispatcher
+from ..configuration.containers import BentoMLContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)

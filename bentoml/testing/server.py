@@ -4,12 +4,12 @@ from __future__ import annotations
 import os
 import re
 import sys
-import json
 import time
 import socket
 import typing as t
 import urllib
 import logging
+import itertools
 import contextlib
 import subprocess
 import urllib.error
@@ -84,7 +84,6 @@ def _wait_until_api_server_ready(
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
     opener = urllib.request.build_opener(proxy_handler)
-
     logger.info("Waiting for host %s to be ready..", host_url)
     while time.time() - start_time < timeout:
         try:
@@ -102,7 +101,6 @@ def _wait_until_api_server_ready(
             logger.info(f"[{e}]retrying to connect to the host {host_url}...")
             logger.error(e)
             time.sleep(check_interval)
-
     logger.info(
         f"Timed out waiting {timeout} seconds for Server {host_url} to be ready, "
     )
@@ -217,7 +215,6 @@ def run_bento_server(
     my_env = os.environ.copy()
     if config_file is not None:
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
-
     with reserve_free_port() as port:
         cmd = [sys.executable, "-m", "bentoml", "serve"]
         if not dev_server:
@@ -226,9 +223,7 @@ def run_bento_server(
             cmd += ["--port", f"{port}"]
         cmd += [bento]
         cmd += ["--working-dir", workdir]
-
     logger.info(f"Running command: `{cmd}`")
-
     p = subprocess.Popen(
         cmd,
         stderr=subprocess.STDOUT,
@@ -299,21 +294,24 @@ def run_bento_server_distributed(
 
     for runner in bentofile["runners"]:
         with reserve_free_port() as port:
-            bind = f"tcp://127.0.0.1:{port}"
-            runner_map[runner["name"]] = bind
+            runner_map[runner["name"]] = f"tcp://127.0.0.1:{port}"
             cmd = [
                 sys.executable,
                 "-m",
-                "bentoml_cli.worker.runner",
+                "bentoml",
+                "serve",
                 str(bento_tag),
-                "--bind",
-                bind,
-                "--working-dir",
-                path,
+                "--component",
+                "runner",
                 "--runner-name",
                 runner["name"],
+                "--host",
+                "127.0.0.1",
+                "--port",
+                f"{port}",
+                "--working-dir",
+                path,
             ]
-
             logger.info(f"Running command: `{cmd}`")
 
         processes.append(
@@ -326,17 +324,25 @@ def run_bento_server_distributed(
         )
 
     with reserve_free_port() as server_port:
-        bind = f"tcp://127.0.0.1:{server_port}"
-        my_env["BENTOML_RUNNER_MAP"] = json.dumps(runner_map)
+        args_pairs = [
+            ("--remote-runner", f"{runner['name']}={runner_map[runner['name']]}")
+            for runner in bentofile["runners"]
+        ]
         cmd = [
             sys.executable,
             "-m",
-            "bentoml_cli.worker.http_api_server",
+            "bentoml",
+            "serve",
             str(bento_tag),
-            "--bind",
-            bind,
+            "--component",
+            "api-server",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            f"{server_port}",
             "--working-dir",
             path,
+            *itertools.chain.from_iterable(args_pairs),
         ]
         logger.info(f"Running command: `{cmd}`")
 

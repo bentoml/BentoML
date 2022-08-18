@@ -117,7 +117,7 @@ class CorkDispatcher:
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
         fallback: t.Optional[t.Callable[[], t.Any]] = None,
-        metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
+        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ):
         """
         params:

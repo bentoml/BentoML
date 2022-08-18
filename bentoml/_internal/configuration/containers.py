@@ -455,19 +455,17 @@ class _BentoMLContainerClass:
         from ..utils.metrics import DEFAULT_BUCKET
         from ..utils.metrics import exponential_buckets
 
-        if "duration" not in metrics:
-            return DEFAULT_BUCKET
-        else:
+        if "duration" in metrics:
             duration: dict[str, float] = metrics["duration"]
             if duration.keys() >= {"min", "max", "factor"}:
                 return exponential_buckets(
                     duration["min"], duration["factor"], duration["max"]
                 )
-            else:
-                raise BentoMLConfigException(
+            raise BentoMLConfigException(
                     "Keys 'min', 'max', and 'factor' are required for "
                     f"'duration' configuration, '{duration}'."
                 )
+        return DEFAULT_BUCKET
 
 
 BentoMLContainer = _BentoMLContainerClass()

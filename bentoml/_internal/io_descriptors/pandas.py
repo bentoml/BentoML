@@ -29,18 +29,11 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.types import BentoServicerContext
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 
 else:
-    grpc = LazyLoader(
-        "grpc",
-        globals(),
-        "grpc",
-        exc_msg="'grpc' is required. Install with 'pip install grpcio'.",
-    )
     pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
     pd = LazyLoader(
         "pd",
@@ -494,9 +487,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         return inst
 
-    async def from_grpc_request(
-        self, request: pb.Request, context: BentoServicerContext
-    ) -> ext.PdDataFrame:
+    async def from_proto(self, request: pb.Request) -> ext.PdDataFrame:
         """
         Process incoming protobuf request and convert it to ``pandas.DataFrame``
 
@@ -508,14 +499,50 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             a ``pandas.DataFrame`` object. This can then be used
              inside users defined logics.
         """
-        from ..utils.grpc import get_field
-        from ..utils.grpc import raise_grpc_exception
-        from ..utils.grpc import validate_content_type
+        contents = {}
+        if request.HasField("dataframe"):
+            if self._orient != "columns":
+                raise BadInput(
+                    'Currently using `dataframe` field only supports columns orient. Try using `orient = "columns"` in service definition or `raw_bytes_contents` field instead.'
+                )
 
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
+            column_names = request.dataframe.column_names
+            column_values = request.dataframe.columns
 
-        field = get_field(request, self)
+            # try to use provided `self._columns` if `self._apply_column_names` is true
+            if self._apply_column_names:
+                if self._columns is None:
+                    logger.warning(
+                        "`columns` is None or undefined, while `apply_column_names`=True"
+                    )
+                else:
+                    column_names = self._columns
+
+            if len(column_names) != len(column_values):
+                raise UnprocessableEntity(
+                    "The length `column_names` provided doesn't match the length of `column` series contents."
+                )
+
+            # contents(column orient) { column_name : {index : columns.series._value}}
+            for index, content in enumerate(column_values):
+                fieldpb = [
+                    f.name
+                    for f, _ in content.ListFields()
+                    if f.name.endswith("_values")
+                ]
+                if len(fieldpb) != 1:
+                    raise BadInput(
+                        f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead."
+                    )
+                series_contents = list(getattr(content, fieldpb[0]))
+                contents[column_names[index]] = {
+                    series_index: series_contents[series_index]
+                    for series_index in range(len(series_contents))
+                }
+
+        elif request.HasField("raw_bytes_contents"):
+            # TODO: handle raw_bytes_contents for dataframe
+            pass
 
         # try to use provided `self._dtype` if `self._enforce_dtype` is true
         dtype = None
@@ -526,47 +553,11 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 )
             dtype = self._dtype
 
-        columns = field.column_names
-        # try to use provided `self._columns` if `self._apply_column_names` is true
-        if self._apply_column_names:
-            if self._columns is None:
-                logger.warning(
-                    "`columns` is None or undefined, while `apply_column_names`=True"
-                )
-            elif len(self._columns) != len(field.columns):
-                raise BadInput(
-                    "length of `columns` does not match the columns of incoming data"
-                )
-            else:
-                columns = self._columns
-
-        # verify that the number of series arrays is equal to the number of column names provided
-        if len(columns) != len(field.columns):
-            raise_grpc_exception(
-                "number of `column_names` provided doesn't match the number of `column` series contents",
-                context=context,
-                exception_cls=BadInput,
-            )
-
-        # contents { column_name : column_array_contents }
-        contents = {}
-        for index, content in enumerate(field.columns):
-            fieldpb = [
-                f.name for f, _ in content.ListFields() if f.name.endswith("_values")
-            ]
-            if len(fieldpb) != 1:
-                raise_grpc_exception(
-                    f"Array contents can only be one of given values key. Use one of {fieldpb} instead.",
-                    context=context,
-                    exception_cls=BadInput,
-                )
-            contents[columns[index]] = list(getattr(content, fieldpb[0]))
-
         res = pd.DataFrame(contents, dtype=dtype)
         if self._enforce_shape:
             if self._shape is None:
                 logger.warning(
-                    "`shape` is None or undefined, while `enforce_shape`=True"
+                    "`shape` is None or undefined, while `enforce_shape=True`"
                 )
             else:
                 assert all(
@@ -577,9 +568,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         return res
 
-    async def to_grpc_response(
-        self, obj: ext.PdDataFrame, context: BentoServicerContext
-    ) -> pb.Response:
+    async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -592,7 +581,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         """
         import numpy as np
 
-        from ..utils.grpc.mapping import pddtype_to_fieldpb_map
+        from bentoml.grpc.utils.mapping import pddtype_to_fieldpb_map
 
         if not LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
             raise InvalidArgument(
@@ -608,14 +597,10 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             pb_field = pddtype_to_fieldpb_map()[np.dtype(obj[col].dtype.char)]
             series_list.append(pb.Series(**{f"{pb_field}": obj[col]}))
 
-        return pb.Response(
-            dataframe=pb.DataFrame(column_names=obj.columns, columns=series_list)
-        )
+        return pb.DataFrame(column_names=obj.columns, columns=series_list)
 
-        # validate gRPC content type if content type is specified
-        validate_content_type(context, self)
 
-class PandasSeries(IODescriptor["ext.PdSeries"], proto_field="series"):
+class PandasSeries(IODescriptor["ext.PdSeries"]):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type

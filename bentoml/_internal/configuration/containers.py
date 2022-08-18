@@ -462,9 +462,9 @@ class _BentoMLContainerClass:
                     duration["min"], duration["factor"], duration["max"]
                 )
             raise BentoMLConfigException(
-                    "Keys 'min', 'max', and 'factor' are required for "
-                    f"'duration' configuration, '{duration}'."
-                )
+                "Keys 'min', 'max', and 'factor' are required for "
+                f"'duration' configuration, '{duration}'."
+            )
         return DEFAULT_BUCKET
 
 

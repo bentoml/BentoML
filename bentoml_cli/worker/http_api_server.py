@@ -83,9 +83,7 @@ import click
     default=None,
     help="Ciphers to use (see stdlib 'ssl' module)",
 )
-@click.pass_context
 def main(
-    ctx: click.Context,
     bento_identifier: str,
     fd: int,
     runner_map: str | None,

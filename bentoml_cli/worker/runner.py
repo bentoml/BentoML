@@ -39,9 +39,7 @@ import click
     default=None,
     help="The environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.",
 )
-@click.pass_context
 def main(
-    ctx: click.Context,
     bento_identifier: str,
     runner_name: str,
     fd: int,

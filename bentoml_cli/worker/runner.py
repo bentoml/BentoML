@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+import os
+import sys
+import json
 import typing as t
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from asgiref.typing import ASGI3Application
 
 import click
 
@@ -31,20 +30,49 @@ import click
     "--worker-id",
     required=True,
     type=click.INT,
-    default=None,
     help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
+@click.option(
+    "--worker-env-map",
+    required=False,
+    type=click.STRING,
+    default=None,
+    help="The environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.",
+)
+@click.pass_context
 def main(
+    ctx: click.Context,
     bento_identifier: str,
     runner_name: str,
     fd: int,
     working_dir: t.Optional[str],
     no_access_log: bool,
     worker_id: int,
+    worker_env_map: str | None,
 ) -> None:
     """
-    Start a runner worker.
+    Start a runner server.
+
+    Args:
+        bento_identifier: the Bento identifier
+        name: the name of the runner
+        fd: the file descriptor of the runner server's socket
+        working_dir: (Optional) the working directory
+        worker_id: (Optional) if set, the runner will be started as a worker with the given ID. Important: begin from 1.
+        worker_env_map: (Optional) the environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.
     """
+
+    # setting up the environment for the worker process
+    assert (
+        "bentoml" not in sys.modules
+    ), "bentoml should not be imported before setting up the environment, otherwise some of the environment may not take effect"
+    if worker_env_map is not None:
+        env_map: dict[str, dict[str, t.Any]] = json.loads(worker_env_map)
+        worker_key = str(worker_id - 1)  # the worker ID is 1-based
+        assert (
+            worker_key in env_map
+        ), f"worker_id {repr(worker_key)} not found in worker_env_map: {worker_env_map}"
+        os.environ.update(env_map[worker_key])
 
     import socket
 
@@ -83,7 +111,7 @@ def main(
     else:
         raise ValueError(f"Runner {runner_name} not found")
 
-    app = t.cast("ASGI3Application", RunnerAppFactory(runner, worker_index=worker_id)())
+    app = RunnerAppFactory(runner, worker_index=worker_id)()
 
     uvicorn_options: dict[str, int | None | str] = {
         "log_config": None,
@@ -96,6 +124,7 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
+    # when fd is provided, we will skip the uvicorn internal supervisor, thus there is only one process
     sock = socket.socket(fileno=fd)
     config = uvicorn.Config(app, **uvicorn_options)
     uvicorn.Server(config).run(sockets=[sock])

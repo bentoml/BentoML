@@ -52,6 +52,37 @@ BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
 DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
+API_INFO_MD = """\
+<tr>
+<td> <code> POST /{api} </code> </td>
+<td> {input} </td>
+<td> {output} </td>
+</tr>
+"""
+
+INFERENCE_TABLE_MD = """\
+<table>
+<tr>
+<td> InferenceAPI </td> <td> Input </td> <td> Output </td>
+</tr>
+
+{content}
+
+</table>
+"""
+
+
+def create_inference_api_table(apis: dict[str, InferenceAPI]) -> str:
+    contents = [
+        API_INFO_MD.format(
+            api=api.name,
+            input=api.input.__class__.__name__,
+            output=api.output.__class__.__name__,
+        )
+        for api in apis.values()
+    ]
+    return INFERENCE_TABLE_MD.format(content="\n".join(contents))
+
 
 def get_default_bento_readme(svc: Service, *, add_headers: bool = True) -> str:
     doc = ""
@@ -62,11 +93,7 @@ def get_default_bento_readme(svc: Service, *, add_headers: bool = True) -> str:
 
     if svc.apis:
         doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
-
-        for api in svc.apis.values():
-            doc += f"### /{api.name}\n\n"
-            doc += f"* Input: {api.input.__class__.__name__}\n"
-            doc += f"* Output: {api.output.__class__.__name__}\n\n"
+        doc += f"{create_inference_api_table(svc.apis)}\n\n"
 
     doc += """
 ## Customization
@@ -202,7 +229,13 @@ class Bento(StoreItem):
                     target_fs.makedirs(dir_path, recreate=True)
                     copy_file(ctx_fs, path, target_fs, path)
 
-        build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
+        # generate related folders structure
+        build_config.docker.write_to_bento(
+            bento_fs,
+            build_ctx,
+            build_config.conda,
+            build_config.python,
+        )
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
 

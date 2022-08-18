@@ -25,13 +25,13 @@ DEFAULT_BUCKET = (
 MAX_BUCKET_COUNT = 100
 
 
-def metric_name(*args: t.Any) -> str:
+def metric_name(*args: str) -> str:
     """
     Concatenates the given parts into a legal Prometheus metric name. For example,
     a valid tag name may includes invalid characters, so we need to escape them
     ref: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
     """
-    return "_".join([str(arg).replace("-", ":").replace(".", "::") for arg in args])  # type: ignore
+    return "_".join([str(arg).replace("-", ":").replace(".", "::") for arg in args])
 
 
 def exponential_buckets(start: float, factor: float, end: float) -> tuple[float, ...]:

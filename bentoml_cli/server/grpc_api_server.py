@@ -37,6 +37,19 @@ import click
     default=None,
     help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
+@click.option(
+    "--enable-reflection",
+    type=click.BOOL,
+    help="Enable reflection.",
+    default=False,
+)
+@click.option(
+    "--max-concurrent-streams",
+    type=click.INT,
+    default=None,
+    help="Maximum number of concurrent incoming streams to allow on a HTTP/2 connection.",
+    show_default=True,
+)
 def main(
     bento_identifier: str,
     bind: str,
@@ -44,6 +57,8 @@ def main(
     working_dir: str | None,
     worker_id: int | None,
     prometheus_dir: str | None,
+    enable_reflection: bool,
+    max_concurrent_streams: int,
 ):
     """
     Start BentoML API server.
@@ -62,7 +77,7 @@ def main(
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
-    component_context.component_name = f"api_server:{worker_id}"
+    component_context.component_name = f"grpc_api_server:{worker_id}"
 
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
@@ -79,7 +94,16 @@ def main(
     parsed = urlparse(bind)
     assert parsed.scheme == "tcp"
 
-    svc.grpc_server.run(bind_addr=parsed.netloc)
+    from bentoml._internal.server.grpc.config import Config
+    from bentoml._internal.server.grpc.server import Server
+
+    grpc_options = {
+        "enable_reflection": enable_reflection,
+        "max_concurrent_streams": max_concurrent_streams,
+        "bind_address": parsed.netloc,
+    }
+
+    Server(Config(svc.grpc_servicer, **grpc_options)).run()
 
 
 if __name__ == "__main__":

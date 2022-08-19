@@ -12,11 +12,26 @@ import click
     type=click.Path(exists=True),
     help="Required by prometheus to pass the metrics in multi-process mode",
 )
+@click.option(
+    "--enable-reflection",
+    type=click.BOOL,
+    help="Enable reflection.",
+    default=False,
+)
+@click.option(
+    "--max-concurrent-streams",
+    type=click.INT,
+    default=None,
+    help="Maximum number of concurrent incoming streams to allow on a HTTP/2 connection.",
+    show_default=True,
+)
 def main(
     bento_identifier: str,
     bind: str,
     working_dir: str | None,
     prometheus_dir: str | None,
+    enable_reflection: bool,
+    max_concurrent_streams: int,
 ):
     from urllib.parse import urlparse
 
@@ -52,7 +67,16 @@ def main(
     parsed = urlparse(bind)
 
     if parsed.scheme == "tcp":
-        svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
+        from bentoml._internal.server.grpc.config import Config
+        from bentoml._internal.server.grpc.server import Server
+
+        grpc_options = {
+            "enable_reflection": enable_reflection,
+            "max_concurrent_streams": max_concurrent_streams,
+            "bind_address": f"[::]:{parsed.port}",
+        }
+
+        Server(Config(svc.grpc_servicer, **grpc_options)).run()
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")
 

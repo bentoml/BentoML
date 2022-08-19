@@ -195,8 +195,9 @@ def serve_development(
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     reload: bool = False,
     grpc: bool = False,
-    reflection: bool = False,
-    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    max_concurrent_streams: int
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
     from circus.sockets import CircusSocket
 
@@ -231,6 +232,10 @@ def serve_development(
                         working_dir,
                         "--prometheus-dir",
                         prometheus_dir,
+                        "--max-concurrent-streams",
+                        max_concurrent_streams,
+                        "--enable-reflection",
+                        reflection,
                     ],
                     use_sockets=False,
                     working_dir=working_dir,
@@ -241,8 +246,8 @@ def serve_development(
             )
 
         if BentoMLContainer.api_server_config.metrics.enabled.get():
-            metrics_host = BentoMLContainer.grpc.metrics_host.get()
-            metrics_port = BentoMLContainer.grpc.metrics_port.get()
+            metrics_host = BentoMLContainer.grpc.metrics.host.get()
+            metrics_port = BentoMLContainer.grpc.metrics.port.get()
 
             circus_sockets.append(
                 CircusSocket(
@@ -381,8 +386,9 @@ def serve_production(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     grpc: bool = False,
-    reflection: bool = False,
-    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    max_concurrent_streams: int
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
     from bentoml import load
     from bentoml.exceptions import UnprocessableEntity
@@ -443,7 +449,7 @@ def serve_production(
                         "--working-dir",
                         working_dir,
                         "--worker-id",
-                        "$(CIRCUS.WID)",
+                        "$(circus.wid)",
                     ],
                     working_dir=working_dir,
                     numprocesses=runner.scheduled_worker_count,
@@ -512,9 +518,13 @@ def serve_production(
                         "--working-dir",
                         working_dir,
                         "--worker-id",
-                        "$(CIRCUS.WID)",
+                        "$(circus.wid)",
                         "--prometheus-dir",
                         prometheus_dir,
+                        "--max-concurrent-streams",
+                        max_concurrent_streams,
+                        "--enable-reflection",
+                        reflection,
                     ],
                     use_sockets=False,
                     working_dir=working_dir,
@@ -525,8 +535,8 @@ def serve_production(
         log_grpcui_message(port)
 
         if BentoMLContainer.api_server_config.metrics.enabled.get():
-            metrics_host = BentoMLContainer.grpc.metrics_host.get()
-            metrics_port = BentoMLContainer.grpc.metrics_port.get()
+            metrics_host = BentoMLContainer.grpc.metrics.host.get()
+            metrics_port = BentoMLContainer.grpc.metrics.port.get()
 
             circus_socket_map[PROMETHEUS_SERVER_NAME] = CircusSocket(
                 name=PROMETHEUS_SERVER_NAME,

@@ -26,6 +26,8 @@ from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
+    from simple_di.providers import _ConfigurationItem  # type: ignore
+
     from bentoml._internal.models import ModelStore
 
     from .. import external_typing as ext
@@ -121,9 +123,12 @@ SCHEMA = Schema(
                 "access_control_expose_headers": Or([str], str, None),
             },
             "grpc": {
+                "metrics": {
+                    "port": And(int, _larger_than_zero),
+                    "host": And(str, _is_ip_address),
+                },
+                Optional("reflection"): {"enabled": bool},
                 "max_concurrent_streams": Or(int, None),
-                "metrics_port": And(int, _larger_than_zero),
-                "metrics_host": And(str, _is_ip_address),
                 "max_message_length": Or(int, None),
                 "maximum_concurrent_rpcs": Or(int, None),
             },
@@ -297,7 +302,26 @@ class _BentoMLContainerClass:
 
     api_server_config = config.api_server
     runners_config = config.runners
-    grpc = config.api_server.grpc
+
+    if TYPE_CHECKING:
+
+        class _GrpcConfiguration(_ConfigurationItem):
+            max_concurrent_streams: providers.Static[int | None]
+            max_message_length: providers.Static[int | None]
+            maximum_concurrent_rpcs: providers.Static[int | None]
+
+            class _MetricsConfiguration(_ConfigurationItem):
+                port: providers.Static[int]
+                host: providers.Static[str]
+
+            metrics: _MetricsConfiguration
+
+            class _ReflectionConfiguration(_ConfigurationItem):
+                enabled: providers.Static[bool]
+
+            reflection: _ReflectionConfiguration
+
+    grpc: _GrpcConfiguration = t.cast("_GrpcConfiguration", config.api_server.grpc)
 
     development_mode = providers.Static(True)
 
@@ -395,14 +419,10 @@ class _BentoMLContainerClass:
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:
             # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.zipkin.json import (
-                ZipkinExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.zipkin.json import ZipkinExporter
 
-            exporter = ZipkinExporter(  # type: ignore (no opentelemetry types)
-                endpoint=zipkin_server_url,
-            )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            exporter = ZipkinExporter(endpoint=zipkin_server_url)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
         elif (
             tracer_type == "jaeger"
@@ -410,15 +430,12 @@ class _BentoMLContainerClass:
             and jaeger_server_port is not None
         ):
             # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.jaeger.thrift import (
-                JaegerExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 
-            exporter = JaegerExporter(  # type: ignore (no opentelemetry types)
-                agent_host_name=jaeger_server_address,
-                agent_port=jaeger_server_port,
+            exporter = JaegerExporter(
+                agent_host_name=jaeger_server_address, agent_port=jaeger_server_port
             )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             return provider
         else:
             return provider
@@ -436,6 +453,9 @@ class _BentoMLContainerClass:
         if isinstance(excluded_urls, list):
             return ExcludeList(excluded_urls)
         else:
+            if TYPE_CHECKING:
+                assert excluded_urls
+
             return parse_excluded_urls(excluded_urls)
 
     # Mapping from runner name to RunnerApp file descriptor

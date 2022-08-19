@@ -6,51 +6,54 @@ api_server:
   timeout: 60
   max_request_size: 20971520
   metrics:
-    enabled: True
+    enabled: true
     namespace: BENTOML
   logging:
     access:
-      enabled: True
-      request_content_length: True
-      request_content_type: True
-      response_content_length: True
-      response_content_type: True
+      enabled: true
+      request_content_length: true
+      request_content_type: true
+      response_content_length: true
+      response_content_type: true
   cors:
-    enabled: False
-    access_control_allow_origin: Null
-    access_control_allow_credentials: Null
-    access_control_allow_methods: Null
-    access_control_allow_headers: Null
-    access_control_max_age: Null
-    access_control_expose_headers: Null
+    enabled: false
+    access_control_allow_origin: ~
+    access_control_allow_credentials: ~
+    access_control_allow_methods: ~
+    access_control_allow_headers: ~
+    access_control_max_age: ~
+    access_control_expose_headers: ~
   grpc:
     # https://github.com/grpc/grpc/blob/ebfb028a29ef5f0f4be6f33c131c740ae0a32c84/src/core/ext/transport/chttp2/transport/http2_settings.cc#L51
     max_concurrent_streams: ~
-    max_message_length: -1
     maximum_concurrent_rpcs: ~
-    metrics_port: 9090
-    metrics_host: 0.0.0.0
+    max_message_length: -1
+    reflection:
+      enabled: false
+    metrics:
+      port: 9090
+      host: 0.0.0.0
 
 runners:
   batching:
-    enabled: True
+    enabled: true
     max_batch_size: 100
     max_latency_ms: 10000
   resources: ~
   logging:
     access:
-      enabled: True
-      request_content_length: True
-      request_content_type: True
-      response_content_length: True
-      response_content_type: True
+      enabled: true
+      request_content_length: true
+      request_content_type: true
+      response_content_length: true
+      response_content_type: true
 
 tracing:
   type: zipkin
   sample_rate: 0.0
-  excluded_urls: Null
+  excluded_urls: ~
   zipkin:
-    url: Null
+    url: ~
   jaeger:
-    address: Null
-    port: Null
+    address: ~
+    port: ~

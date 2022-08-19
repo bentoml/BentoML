@@ -16,6 +16,7 @@ from ..types import LazyType
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
+from ...exceptions import UnprocessableEntity
 from ...exceptions import MissingDependencyException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
@@ -27,10 +28,13 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     import pandas as pd
 
+    from bentoml.grpc.v1 import service_pb2 as pb
+
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 
 else:
+    pb = LazyLoader("pb", globals(), "bentoml.grpc.v1.service_pb2")
     pd = LazyLoader(
         "pd",
         globals(),
@@ -483,11 +487,114 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
 
         return inst
 
-    async def from_proto(self, request) -> t.Any:
-        pass
+    async def from_proto(self, request: pb.Request) -> ext.PdDataFrame:
+        """
+        Process incoming protobuf request and convert it to ``pandas.DataFrame``
 
-    async def to_proto(self, obj) -> t.Any:
-        pass
+        Args:
+            request: Incoming RPC request message.
+            context: grpc.ServicerContext
+
+        Returns:
+            a ``pandas.DataFrame`` object. This can then be used
+             inside users defined logics.
+        """
+        contents = {}
+        if request.HasField("dataframe"):
+            if self._orient != "columns":
+                raise BadInput(
+                    'Currently using `dataframe` field only supports columns orient. Try using `orient = "columns"` in service definition or `raw_bytes_contents` field instead.'
+                )
+
+            column_names = request.dataframe.column_names
+            column_values = request.dataframe.columns
+
+            # try to use provided `self._columns` if `self._apply_column_names` is true
+            if self._apply_column_names:
+                if self._columns is None:
+                    logger.warning(
+                        "`columns` is None or undefined, while `apply_column_names`=True"
+                    )
+                else:
+                    column_names = self._columns
+
+            if len(column_names) != len(column_values):
+                raise UnprocessableEntity(
+                    "The length `column_names` provided doesn't match the length of `column` series contents."
+                )
+
+            # contents(column orient) { column_name : {index : columns.series._value}}
+            for index, content in enumerate(column_values):
+                fieldpb = [
+                    f.name
+                    for f, _ in content.ListFields()
+                    if f.name.endswith("_values")
+                ]
+                if len(fieldpb) != 1:
+                    raise BadInput(
+                        f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead."
+                    )
+                series_contents = list(getattr(content, fieldpb[0]))
+                contents[column_names[index]] = {idx: content for idx, content in enumerate(series_content)}
+
+        elif request.HasField("raw_bytes_contents"):
+            # TODO: handle raw_bytes_contents for dataframe
+            pass
+
+        # try to use provided `self._dtype` if `self._enforce_dtype` is true
+        dtype = None
+        if self._enforce_dtype:
+            if self._dtype is None:
+                raise UnprocessableEntity(
+                    "`dtype` is None or undefined, while `enforce_dtype`=True"
+                )
+            dtype = self._dtype
+
+        res = pd.DataFrame(contents, dtype=dtype)
+        if self._enforce_shape:
+            if self._shape is None:
+                logger.warning(
+                    "`shape` is None or undefined, while `enforce_shape=True`"
+                )
+            else:
+                assert all(
+                    left == right
+                    for left, right in zip(self._shape, res.shape)  # type: ignore (shape type)
+                    if left != -1 and right != -1
+                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
+
+        return res
+
+    async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
+        """
+        Process given objects and convert it to grpc protobuf response.
+
+        Args:
+            obj: ``pandas.DataFrame`` that will be serialized to protobuf
+            context: grpc.aio.ServicerContext from grpc.aio.Server
+        Returns:
+            ``service_pb2.Response``:
+                Protobuf representation of given ``pandas.DataFrame``
+        """
+        import numpy as np
+
+        from bentoml.grpc.utils.mapping import pddtype_to_fieldpb_map
+
+        if not LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
+            raise InvalidArgument(
+                f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
+            )
+
+        series_list = []
+        for col in obj.columns:
+            if np.dtype(obj[col].dtype.char) not in pddtype_to_fieldpb_map():
+                raise UnprocessableEntity(
+                    f'datatype in column "{col}" is not supported for grpc service'
+                )
+            pb_field = pddtype_to_fieldpb_map()[np.dtype(obj[col].dtype.char)]
+            series_list.append(pb.Series(**{f"{pb_field}": obj[col]}))
+
+        return pb.DataFrame(column_names=obj.columns, columns=series_list)
 
 
 class PandasSeries(IODescriptor["ext.PdSeries"]):

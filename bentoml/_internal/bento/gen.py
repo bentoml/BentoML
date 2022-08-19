@@ -8,14 +8,14 @@ from typing import TYPE_CHECKING
 
 import attr
 from jinja2 import Environment
-from simple_di import inject
-from simple_di import Provide
+from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
 from jinja2.loaders import FileSystemLoader
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-
+from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .docker import DistroSpec
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -52,26 +52,33 @@ J2_FUNCTION: dict[str, GenericFunc[t.Any]] = {
     "expands_bento_path": expands_bento_path,
 }
 
+to_preserved_field: t.Callable[[str], str] = lambda s: f"__{s}__"
+to_bento_field: t.Callable[[str], str] = lambda s: f"bento__{s}"
+to_options_field: t.Callable[[str], str] = lambda s: f"__options__{s}"
+
 
 @attr.frozen(on_setattr=None, eq=False, repr=False)
 class ReservedEnv:
     base_image: str
-    supported_architectures: list[str]
+    supported_architectures: t.List[str]
     enable_grpc: bool
     python_version: str = attr.field(
         default=f"{version_info.major}.{version_info.minor}"
     )
+    prometheus_port: int = attr.field(default=BentoMLContainer.grpc.metrics.port.get())
 
-    @inject
-    def todict(
-        self,
-        prometheus_port: int = Provide[BentoMLContainer.grpc.metrics_port],
-        service_port: int = Provide[BentoMLContainer.service_port],
-    ):
-        return {
-            **{f"__{k}__": v for k, v in attr.asdict(self).items()},
-            "__prometheus_port__": prometheus_port,
-        }
+
+bentoml_cattr.register_unstructure_hook_func(
+    lambda cls: issubclass(cls, ReservedEnv),
+    make_dict_unstructure_fn(
+        ReservedEnv,
+        bentoml_cattr,
+        **{
+            a.name: override(rename=to_preserved_field(a.name))
+            for a in attr.fields(ReservedEnv)
+        },
+    ),
+)
 
 
 @attr.frozen(on_setattr=None, eq=False, repr=False)
@@ -81,8 +88,18 @@ class CustomizableEnv:
     home: str = attr.field(default=BENTO_HOME)
     path: str = attr.field(default=BENTO_PATH)
 
-    def todict(self) -> dict[str, str]:
-        return {f"bento__{k}": v for k, v in attr.asdict(self).items()}
+
+bentoml_cattr.register_unstructure_hook_func(
+    lambda cls: issubclass(cls, CustomizableEnv),
+    make_dict_unstructure_fn(
+        CustomizableEnv,
+        bentoml_cattr,
+        **{
+            a.name: override(rename=to_bento_field(a.name))
+            for a in attr.fields(CustomizableEnv)
+        },
+    ),
+)
 
 
 def get_templates_variables(
@@ -98,6 +115,11 @@ def get_templates_variables(
         distro = options.distro
         cuda_version = options.cuda_version
         python_version = options.python_version
+
+        if TYPE_CHECKING:
+            assert distro  # distro will be set via 'with_defaults()'
+            assert python_version  # python will also be set via 'with_defaults()'
+
         spec = DistroSpec.from_distro(
             distro, cuda=cuda_version is not None, conda=use_conda
         )
@@ -120,17 +142,22 @@ def get_templates_variables(
         )
 
     # environment returns are
-    # __base_image__, __supported_architectures__, __enable_grpc__, __python_version_full__
+    # __base_image__, __supported_architectures__, __enable_grpc__
     # bento__uid_gid, bento__user, bento__home, bento__path
     # __options__distros, __options__base_image, __options_env, __options_system_packages, __options_setup_script
     return {
-        **{f"__options__{k}": v for k, v in attr.asdict(options).items()},
-        **CustomizableEnv().todict(),
-        **ReservedEnv(
-            base_image=base_image,
-            supported_architectures=supported_architecture,
-            enable_grpc=enable_grpc,
-        ).todict(),
+        **{
+            to_options_field(k): v
+            for k, v in bentoml_cattr.unstructure(options).items()
+        },
+        **bentoml_cattr.unstructure(CustomizableEnv()),
+        **bentoml_cattr.unstructure(
+            ReservedEnv(
+                base_image=base_image,
+                enable_grpc=enable_grpc,
+                supported_architectures=supported_architecture,
+            )
+        ),
     }
 
 
@@ -200,6 +227,9 @@ def generate_dockerfile(
     if options.base_image is not None:
         base = "base.j2"
     else:
+        if TYPE_CHECKING:
+            assert distro  # distro will be set via 'with_defaults()'
+
         spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
         base = f"{spec.release_type}_{distro}.j2"
 

@@ -1,4 +1,4 @@
-from .server import GRPCServer
-from .servicer import create_bento_servicer
+from .config import Config
+from .server import Server
 
-__all__ = ["GRPCServer", "create_bento_servicer"]
+__all__ = ["Server", "Config"]

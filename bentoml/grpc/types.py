@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from typing import Annotated
     from typing import Awaitable
     from typing import NamedTuple
+    from functools import partial
 
     import grpc
     from grpc import aio
@@ -80,6 +81,10 @@ if TYPE_CHECKING:
 
     ProtoField = Literal[
         "dataframe", "file", "json", "ndarray", "series", "text", "raw_bytes_contents"
+    ]
+
+    Interceptors = list[
+        Callable[[], aio.ServerInterceptor] | partial[aio.ServerInterceptor]
     ]
 
     __all__ = [

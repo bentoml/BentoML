@@ -11,6 +11,8 @@ build:
       - git fetch --unshallow
     pre_install:
       - git update-index --assume-unchanged docs/source/conf.py
+    post_checkout:
+      - git fetch --unshallow
 
 sphinx:
   configuration: docs/source/conf.py

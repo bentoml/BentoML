@@ -18,15 +18,6 @@ import psutil
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml import load
-from bentoml.exceptions import UnprocessableEntity
-
-from ._internal.log import SERVER_LOGGING_CONFIG
-from ._internal.utils import reserve_free_port
-from ._internal.resource import CpuResource
-from ._internal.utils.uri import path_to_uri
-from ._internal.utils.circus import create_standalone_arbiter
-from ._internal.utils.analytics import track_serve
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -131,6 +122,7 @@ def create_watcher(
 
 
 def log_grpcui_message(port: int) -> None:
+
     docker_run = partial(
         "docker run -it --rm {network_args} fullstorydev/grpcui -plaintext {platform_deps}:{port}".format,
         port=port,
@@ -162,8 +154,8 @@ def ssl_args(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
-) -> list[str | int]:
-    args: list[str | int] = []
+) -> list[str]:
+    args: list[str] = []
 
     # Add optional SSL args if they exist
     if ssl_certfile:
@@ -177,9 +169,9 @@ def ssl_args(
 
     # match with default uvicorn values.
     if ssl_version:
-        args.extend(["--ssl-version", int(ssl_version)])
+        args.extend(["--ssl-version", str(ssl_version)])
     if ssl_cert_reqs:
-        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
+        args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
     if ssl_ciphers:
         args.extend(["--ssl-ciphers", ssl_ciphers])
     return args
@@ -203,13 +195,21 @@ def serve_development(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     reload: bool = False,
-    grpc: bool = False,
-    reflection: bool = False,
+    grpc: bool = Provide[BentoMLContainer.grpc.enabled],
+    reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    max_concurrent_streams: int
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
+    from circus.sockets import CircusSocket
+
+    from bentoml import load
+
+    from ._internal.log import SERVER_LOGGING_CONFIG
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
+
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
-
-    from circus.sockets import CircusSocket
 
     prometheus_dir = ensure_prometheus_dir()
 
@@ -218,22 +218,40 @@ def serve_development(
     circus_sockets: list[CircusSocket] = []
 
     if grpc:
+        if not reflection:
+            logger.info(
+                "'reflection' is disabled by default. Tools such as gRPCUI or grpcurl relies on server reflection. To use those, pass '--enable-reflection' to CLI."
+            )
+        else:
+            log_grpcui_message(port)
+
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
+
+            args = [
+                "-m",
+                SCRIPT_GRPC_DEV_API_SERVER,
+                bento_identifier,
+                "--bind",
+                f"tcp://0.0.0.0:{api_port}",
+                "--working-dir",
+                working_dir,
+            ]
+
+            if reflection:
+                args.append("--enable-reflection")
+            if max_concurrent_streams:
+                args.extend(
+                    [
+                        "--max-concurrent-streams",
+                        str(max_concurrent_streams),
+                    ]
+                )
+
             watchers.append(
                 create_watcher(
                     name="grpc_dev_api_server",
-                    args=[
-                        "-m",
-                        SCRIPT_GRPC_DEV_API_SERVER,
-                        bento_identifier,
-                        "--bind",
-                        f"tcp://{host}:{api_port}",
-                        "--working-dir",
-                        working_dir,
-                        "--prometheus-dir",
-                        prometheus_dir,
-                    ],
+                    args=args,
                     use_sockets=False,
                     working_dir=working_dir,
                     # we don't want to close stdin for child process in case user use debugger.
@@ -243,8 +261,8 @@ def serve_development(
             )
 
         if BentoMLContainer.api_server_config.metrics.enabled.get():
-            metrics_host = BentoMLContainer.grpc.metrics_host.get()
-            metrics_port = BentoMLContainer.grpc.metrics_port.get()
+            metrics_host = BentoMLContainer.grpc.metrics.host.get()
+            metrics_port = BentoMLContainer.grpc.metrics.port.get()
 
             circus_sockets.append(
                 CircusSocket(
@@ -273,8 +291,6 @@ def serve_development(
                     singleton=True,
                 )
             )
-
-            log_grpcui_message(port)
 
             logger.info(
                 PROMETHEUS_MESSAGE.format(
@@ -382,10 +398,20 @@ def serve_production(
     | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
-    max_concurrent_streams: int = Provide[BentoMLContainer.grpc.max_concurrent_streams],
-    grpc: bool = False,
-    reflection: bool = False,
+    grpc: bool = Provide[BentoMLContainer.grpc.enabled],
+    reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    max_concurrent_streams: int
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
+    from bentoml import load
+    from bentoml.exceptions import UnprocessableEntity
+
+    from ._internal.utils import reserve_free_port
+    from ._internal.resource import CpuResource
+    from ._internal.utils.uri import path_to_uri
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
+
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
@@ -492,38 +518,52 @@ def serve_production(
     logger.debug(f"Runner map: {runner_bind_map}")
 
     if grpc:
+        if not reflection:
+            logger.info(
+                "'reflection' is disabled by default. Tools such as gRPCUI or grpcurl relies on server reflection. To use those, pass '--enable-reflection' to CLI."
+            )
+        else:
+            log_grpcui_message(port)
+
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
+            args = [
+                "-m",
+                SCRIPT_GRPC_API_SERVER,
+                bento_identifier,
+                "--bind",
+                f"tcp://{host}:{api_port}",
+                "--runner-map",
+                json.dumps(runner_bind_map),
+                "--working-dir",
+                working_dir,
+                "--worker-id",
+                "$(CIRCUS.WID)",
+            ]
+            if reflection:
+                args.append("--enable-reflection")
+
+            if max_concurrent_streams:
+                args.extend(
+                    [
+                        "--max-concurrent-streams",
+                        str(max_concurrent_streams),
+                    ]
+                )
 
             watchers.append(
                 create_watcher(
                     name="grpc_api_server",
-                    args=[
-                        "-m",
-                        SCRIPT_GRPC_API_SERVER,
-                        bento_identifier,
-                        "--bind",
-                        f"tcp://{host}:{api_port}",
-                        "--runner-map",
-                        json.dumps(runner_bind_map),
-                        "--working-dir",
-                        working_dir,
-                        "--worker-id",
-                        "$(CIRCUS.WID)",
-                        "--prometheus-dir",
-                        prometheus_dir,
-                    ],
+                    args=args,
                     use_sockets=False,
                     working_dir=working_dir,
                     numprocesses=api_workers or math.ceil(CpuResource.from_system()),
                 )
             )
 
-        log_grpcui_message(port)
-
         if BentoMLContainer.api_server_config.metrics.enabled.get():
-            metrics_host = BentoMLContainer.grpc.metrics_host.get()
-            metrics_port = BentoMLContainer.grpc.metrics_port.get()
+            metrics_host = BentoMLContainer.grpc.metrics.host.get()
+            metrics_port = BentoMLContainer.grpc.metrics.port.get()
 
             circus_socket_map[PROMETHEUS_SERVER_NAME] = CircusSocket(
                 name=PROMETHEUS_SERVER_NAME,

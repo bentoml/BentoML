@@ -56,13 +56,6 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
-        "--max-concurrent-streams",
-        type=click.INT,
-        default=BentoMLContainer.grpc.max_concurrent_streams.get(),
-        help="Maximum number of concurrent incoming streams to allow on a HTTP/2 connection.",
-        show_default=True,
-    )
-    @click.option(
         "--reload",
         type=click.BOOL,
         is_flag=True,
@@ -124,13 +117,20 @@ def add_serve_command(cli: click.Group) -> None:
         type=click.BOOL,
         is_flag=True,
         help="Start a BentoML gRPC server.",
-        default=False,
+        default=BentoMLContainer.grpc.enabled.get(),
     )
     @click.option(
         "--enable-reflection",
+        is_flag=True,
+        default=BentoMLContainer.grpc.reflection.enabled.get(),
         type=click.BOOL,
         help="Enable reflection (Currently, only have effect in conjunction with '--grpc').",
-        default=False,
+    )
+    @click.option(
+        "--max-concurrent-streams",
+        default=BentoMLContainer.grpc.max_concurrent_streams.get(),
+        type=click.INT,
+        help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
     )
     def serve(  # type: ignore (unused warning)
         bento: str,
@@ -139,7 +139,6 @@ def add_serve_command(cli: click.Group) -> None:
         host: str | None,
         api_workers: int | None,
         backlog: int,
-        max_concurrent_streams: int,
         reload: bool,
         working_dir: str,
         ssl_certfile: str | None,
@@ -151,6 +150,7 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_ciphers: str | None,
         grpc: bool,
         enable_reflection: bool,
+        max_concurrent_streams: int | None,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
@@ -202,7 +202,6 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=BentoMLContainer.service_host.get() if host is None else host,
                 backlog=backlog,
-                max_concurrent_streams=max_concurrent_streams,
                 api_workers=api_workers,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
@@ -213,6 +212,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
                 reflection=enable_reflection,
+                max_concurrent_streams=max_concurrent_streams,
             )
         else:
             from bentoml.serve import serve_development
@@ -232,4 +232,5 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
                 reflection=enable_reflection,
+                max_concurrent_streams=max_concurrent_streams,
             )

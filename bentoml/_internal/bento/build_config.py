@@ -64,7 +64,9 @@ def _convert_python_version(py_version: str | None) -> str | None:
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            f"BentoML will install the latest 'python{target_python_version}' instead of the specified 'python{py_version}'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
+            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
+            target_python_version,
+            py_version,
         )
     return target_python_version
 
@@ -163,20 +165,27 @@ class DockerOptions:
         if self.base_image is not None:
             if self.distro is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'distro={self.distro}' option is ignored.",
+                    "docker base_image %s is used, 'distro=%s' option is ignored.",
+                    self.base_image,
+                    self.distro,
                 )
             if self.python_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'python={self.python_version}' option is ignored.",
+                    "docker base_image %s is used, 'python=%s' option is ignored.",
+                    self.base_image,
+                    self.python_version,
                 )
             if self.cuda_version is not None:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, 'cuda_version={self.cuda_version}' option is ignored.",
+                    "docker base_image %s is used, 'cuda_version=%s' option is ignored.",
+                    self.base_image,
+                    self.cuda_version,
                 )
             if self.system_packages:
                 logger.warning(
-                    f"docker base_image {self.base_image} is used, "
-                    f"'system_packages={self.system_packages}' option is ignored.",
+                    "docker base_image %s is used, 'system_packages=%s' option is ignored.",
+                    self.base_image,
+                    self.system_packages,
                 )
 
         if self.distro is not None and self.cuda_version is not None:
@@ -449,11 +458,14 @@ class PythonOptions:
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
             logger.warning(
-                f'Build option python: `requirements_txt="{self.requirements_txt}"` found, will ignore the option: `packages="{self.packages}"`.'
+                "Build option python: 'requirements_txt={self.requirements_txt}' found, will ignore the option: 'packages=%s'.",
+                self.requirements_txt,
+                self.packages,
             )
         if self.no_index and (self.index_url or self.extra_index_url):
             logger.warning(
-                f'Build option python: `no_index="{self.no_index}"` found, will ignore `index_url` and `extra_index_url` option when installing PyPI packages.'
+                "Build option python: 'no_index=%s' found, will ignore 'index_url' and 'extra_index_url' option when installing PyPI packages.",
+                self.no_index,
             )
 
     def is_empty(self) -> bool:

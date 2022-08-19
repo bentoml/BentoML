@@ -13,6 +13,11 @@ env:
   LINES: 120
   COLUMNS: 120
 
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
+defaults:
+  run:
+    shell: bash --noprofile --norc -exo pipefail {0}
+
 jobs:
   diff:
     runs-on: ubuntu-latest
@@ -47,9 +52,6 @@ jobs:
 
   codestyle_check:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
     needs:
       - diff
 
@@ -97,10 +99,6 @@ jobs:
         run: make ci-pyright
 
   documentation_spelling_check:
-    defaults:
-      run:
-        shell: bash
-
     runs-on: ubuntu-latest
     needs:
       - diff
@@ -139,7 +137,6 @@ jobs:
 
       - name: Run spellcheck script
         run: make spellcheck-docs
-        shell: bash
 
   unit_tests:
     needs:
@@ -150,9 +147,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-    defaults:
-      run:
-        shell: bash
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
@@ -181,9 +175,14 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
+      - name: Generate gRPC stubs
+        run: |
+          pip install "grpcio-tools<1.43" mypy-protobuf
+          python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1/service.proto bentoml/grpc/v1/service_test.proto
+
       - name: Install dependencies
         run: |
-          pip install .
+          pip install ".[grpc]"
           pip install -r requirements/tests-requirements.txt
 
       - name: Run unit tests
@@ -193,7 +192,6 @@ jobs:
       - name: Run unit tests (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: make tests-unit
-        shell: bash
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -214,9 +212,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-    defaults:
-      run:
-        shell: bash
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_e2e_tests (${{ matrix.os }})
@@ -256,6 +251,11 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+      - name: Generate gRPC stubs
+        run: |
+          pip install "grpcio-tools<1.43" mypy-protobuf
+          python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1/service.proto bentoml/grpc/v1/service_test.proto
 
       - name: Install dependencies
         run: |

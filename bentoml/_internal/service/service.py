@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 import logging
 from typing import TYPE_CHECKING
+from functools import partial
 
 import attr
 
@@ -17,14 +18,13 @@ from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
     import grpc
-    from google.protobuf.descriptor import ServiceDescriptor
 
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
 
     from .. import external_typing as ext
     from ..bento import Bento
-    from ..server.grpc import GRPCServer
+    from ..server.grpc.servicer import Servicer
     from .openapi.specification import OpenAPISpecification
 
 logger = logging.getLogger(__name__)
@@ -101,10 +101,10 @@ class Service:
     ] = attr.field(init=False, factory=list)
 
     # gRPC related
-    mount_servicers: list[
-        tuple[ServicerClass, AddServicerFn, list[ServiceDescriptor]]
-    ] = attr.field(init=False, factory=list)
-    interceptors: list[t.Type[grpc.aio.ServerInterceptor]] = attr.field(
+    mount_servicers: list[tuple[ServicerClass, AddServicerFn, list[str]]] = attr.field(
+        init=False, factory=list
+    )
+    interceptors: list[partial[grpc.aio.ServerInterceptor]] = attr.field(
         init=False, factory=list
     )
     grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
@@ -225,7 +225,7 @@ class Service:
         pass
 
     @property
-    def grpc_server(self) -> GRPCServer:
+    def grpc_servicer(self) -> Servicer:
         from ..server.grpc_app import GRPCAppFactory
 
         return GRPCAppFactory(self)()
@@ -258,14 +258,34 @@ class Service:
         self,
         servicer_cls: ServicerClass,
         add_servicer_fn: AddServicerFn,
-        service_descriptor: list[ServiceDescriptor],
+        service_names: list[str],
     ) -> None:
-        self.mount_servicers.append((servicer_cls, add_servicer_fn, service_descriptor))
+        self.mount_servicers.append((servicer_cls, add_servicer_fn, service_names))
 
     def add_grpc_interceptor(
-        self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor]
+        self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor], **options: t.Any
     ) -> None:
-        self.interceptors.append(interceptor_cls)
+        from bentoml.exceptions import BadInput
+
+        if not issubclass(interceptor_cls, grpc.aio.ServerInterceptor):
+            if isinstance(interceptor_cls, partial):
+                if options:
+                    logger.debug(
+                        "'%s' is a partial class, hence '%s' will be ignored.",
+                        interceptor_cls,
+                        options,
+                    )
+                if not issubclass(interceptor_cls.func, grpc.aio.ServerInterceptor):
+                    raise BadInput(
+                        "'partial' class is not a subclass of 'grpc.aio.ServerInterceptor'."
+                    )
+                self.interceptors.append(interceptor_cls)
+            else:
+                raise BadInput(
+                    f"{interceptor_cls} is not a subclass of 'grpc.aio.ServerInterceptor'."
+                )
+
+        self.interceptors.append(partial(interceptor_cls, options))
 
     def add_grpc_handlers(self, handlers: list[grpc.GenericRpcHandler]) -> None:
         self.grpc_handlers.extend(handlers)

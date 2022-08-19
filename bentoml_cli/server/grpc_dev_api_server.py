@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import click
 
 
@@ -8,15 +10,24 @@ import click
 @click.option("--bind", type=click.STRING, required=True)
 @click.option("--working-dir", required=False, type=click.Path(), default=None)
 @click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
+    "--enable-reflection",
+    type=click.BOOL,
+    is_flag=True,
+    help="Enable reflection.",
+    default=False,
+)
+@click.option(
+    "--max-concurrent-streams",
+    type=int,
+    help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
+    default=None,
 )
 def main(
     bento_identifier: str,
     bind: str,
     working_dir: str | None,
-    prometheus_dir: str | None,
+    enable_reflection: bool,
+    max_concurrent_streams: int | None,
 ):
     from urllib.parse import urlparse
 
@@ -25,14 +36,10 @@ def main(
     from bentoml import load
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.context import component_context
-    from bentoml._internal.configuration.containers import BentoMLContainer
 
     component_context.component_name = "grpc_dev_api_server"
 
     configure_server_logging()
-
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
@@ -52,7 +59,18 @@ def main(
     parsed = urlparse(bind)
 
     if parsed.scheme == "tcp":
-        svc.grpc_server.run(bind_addr=f"[::]:{parsed.port}")
+        from bentoml._internal.server import grpc
+
+        grpc_options: dict[str, t.Any] = {"enable_reflection": enable_reflection}
+        if max_concurrent_streams:
+            grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
+
+        config = grpc.Config(
+            svc.grpc_servicer,
+            bind_address=f"[::]:{parsed.port}",
+            **grpc_options,
+        )
+        grpc.Server(config).run()
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")
 

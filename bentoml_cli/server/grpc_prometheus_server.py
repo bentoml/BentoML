@@ -22,9 +22,9 @@ logger = logging.getLogger("bentoml")
 )
 def main(bind: str, backlog: int, prometheus_dir: str | None):
     """
-    Start BentoML API server.
+    Start a standalone Prometheus server to use with gRPC.
     \b
-    This is an internal API, users should not use this directly. Instead use `bentoml serve <path> [--options]`
+    This is an internal API, users should not use this directly. Instead use :code:`bentoml serve --grpc`. Prometheus then can be accessed at localhost:9090
     """
 
     import socket
@@ -77,8 +77,9 @@ def main(bind: str, backlog: int, prometheus_dir: str | None):
             return
 
     # create a ASGI app that wraps around the default HTTP prometheus server.
-    middlewares = [Middleware(GenerateLatestMiddleware)]
-    prom_app = Starlette(debug=get_debug_mode(), middleware=middlewares)
+    prom_app = Starlette(
+        debug=get_debug_mode(), middleware=[Middleware(GenerateLatestMiddleware)]
+    )
     prom_app.mount("/", WSGIMiddleware(metrics_client.make_wsgi_app()))
 
     parsed = urlparse(bind)
@@ -99,8 +100,7 @@ def main(bind: str, backlog: int, prometheus_dir: str | None):
 
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-        config = uvicorn.Config(prom_app, **uvicorn_options)
-        uvicorn.Server(config).run(sockets=[sock])
+        uvicorn.Server(uvicorn.Config(prom_app, **uvicorn_options)).run(sockets=[sock])
     else:
         raise ValueError(f"Unsupported bind scheme: {parsed.scheme}")
 

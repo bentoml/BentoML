@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import sys
 import json
+import typing as t
 from urllib.parse import urlparse
 
 import click
@@ -27,26 +27,33 @@ import click
     help="Working directory for the API server",
 )
 @click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
-)
-@click.option(
     "--worker-id",
     required=False,
     type=click.INT,
     default=None,
     help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
-@click.pass_context
+@click.option(
+    "--enable-reflection",
+    type=click.BOOL,
+    is_flag=True,
+    help="Enable reflection.",
+    default=False,
+)
+@click.option(
+    "--max-concurrent-streams",
+    type=click.INT,
+    help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
+    default=None,
+)
 def main(
-    ctx: click.Context,
     bento_identifier: str,
     bind: str,
     runner_map: str | None,
     working_dir: str | None,
     worker_id: int | None,
-    prometheus_dir: str | None,
+    enable_reflection: bool,
+    max_concurrent_streams: int | None,
 ):
     """
     Start BentoML API server.
@@ -62,40 +69,12 @@ def main(
     configure_server_logging()
 
     BentoMLContainer.development_mode.set(False)
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
-    if worker_id is None:
-        # Start a standalone server with a supervisor process
-        from circus.watcher import Watcher
-
-        from bentoml.serve import ensure_prometheus_dir
-        from bentoml_cli.utils import unparse_click_params
-        from bentoml._internal.utils.circus import create_standalone_arbiter
-
-        ensure_prometheus_dir()
-
-        params = ctx.params
-        params.update({"bind": bind, "worker_id": "$(circus.wid)"})
-        watcher = Watcher(
-            name="bento_api_server",
-            cmd=sys.executable,
-            args=["-m", "bentoml_cli.server.grpc_api_server"]
-            + unparse_click_params(params, ctx.command.params, factory=str),
-            copy_env=True,
-            numprocesses=1,
-            stop_children=True,
-            use_sockets=False,
-            working_dir=working_dir,
-        )
-        arbiter = create_standalone_arbiter(watchers=[watcher])
-        arbiter.start()
-        return
-
-    component_context.component_name = f"api_server:{worker_id}"
+    component_context.component_name = f"grpc_api_server:{worker_id}"
 
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
+
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
@@ -109,7 +88,15 @@ def main(
     parsed = urlparse(bind)
     assert parsed.scheme == "tcp"
 
-    svc.grpc_server.run(bind_addr=parsed.netloc)
+    from bentoml._internal.server import grpc
+
+    grpc_options: dict[str, t.Any] = {"enable_reflection": enable_reflection}
+    if max_concurrent_streams:
+        grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
+
+    config = grpc.Config(svc.grpc_servicer, bind_address=parsed.netloc, **grpc_options)
+
+    grpc.Server(config).run()
 
 
 if __name__ == "__main__":

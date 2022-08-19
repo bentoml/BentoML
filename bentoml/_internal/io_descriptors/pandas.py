@@ -535,7 +535,9 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                         f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead."
                     )
                 series_contents = list(getattr(content, fieldpb[0]))
-                contents[column_names[index]] = {idx: content for idx, content in enumerate(series_content)}
+                contents[column_names[index]] = {
+                    idx: content for idx, content in enumerate(series_contents)
+                }
 
         elif request.HasField("raw_bytes_contents"):
             # TODO: handle raw_bytes_contents for dataframe

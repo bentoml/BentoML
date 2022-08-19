@@ -35,6 +35,7 @@ import click
 @click.option(
     "--enable-reflection",
     type=click.BOOL,
+    is_flag=True,
     help="Enable reflection.",
     default=False,
 )
@@ -83,9 +84,9 @@ def main(
 
     grpc_options = {"enable_reflection": enable_reflection}
 
-    grpc.Server(
-        grpc.Config(svc.grpc_servicer, bind_address=parsed.netloc, **grpc_options)
-    ).run()
+    config = grpc.Config(svc.grpc_servicer, bind_address=parsed.netloc, **grpc_options)
+
+    grpc.Server(config).run()
 
 
 if __name__ == "__main__":

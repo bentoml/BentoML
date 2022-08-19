@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import typing as t
 from typing import TYPE_CHECKING
 
 from simple_di import inject
@@ -9,13 +10,17 @@ from simple_di import Provide
 from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    import grpc
     from grpc import aio
+
+    from .servicer import Servicer
 
 
 class Config:
     @inject
     def __init__(
         self,
+        servicer: Servicer,
         bind_address: str,
         enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
         max_message_length: int
@@ -27,6 +32,7 @@ class Config:
         migration_thread_pool_workers: int = 1,
         graceful_shutdown_timeout: float = 5.0,
     ) -> None:
+        self.servicer = servicer
 
         # Note that the max_workers are used inside ThreadPoolExecutor.
         # This ThreadPoolExecutor are used by aio.Server() to execute non-AsyncIO RPC handlers.
@@ -38,10 +44,16 @@ class Config:
         # Set to None will indicate no limit.
         self.maximum_concurrent_rpcs = maximum_concurrent_rpcs
 
+        self.max_message_length = max_message_length
+
+        self.max_concurrent_streams = max_concurrent_streams
+
         self.bind_address = bind_address
         self.enable_reflection = enable_reflection
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
 
+    @property
+    def options(self) -> aio.ChannelArgumentType:
         options: aio.ChannelArgumentType = []
 
         if sys.platform != "win32":
@@ -51,17 +63,24 @@ class Config:
             # production settings.
             options.append(("grpc.so_reuseport", 1))
 
-        if max_concurrent_streams:
-            options.append(("grpc.max_concurrent_streams", max_concurrent_streams))
+        if self.max_concurrent_streams:
+            options.append(("grpc.max_concurrent_streams", self.max_concurrent_streams))
 
-        if max_message_length:
+        if self.max_message_length:
             options.extend(
                 (
-                    ("grpc.max_message_length", max_message_length),
-                    ("grpc.max_receive_message_length", max_message_length),
-                    ("grpc.max_send_message_length", max_message_length),
-                    ("grpc.max_send_message_length", max_message_length),
+                    ("grpc.max_message_length", self.max_message_length),
+                    ("grpc.max_receive_message_length", self.max_message_length),
+                    ("grpc.max_send_message_length", self.max_message_length),
+                    ("grpc.max_send_message_length", self.max_message_length),
                 )
             )
 
-        self.options = tuple(options)
+        return tuple(options)
+
+    @property
+    def handlers(self) -> t.Sequence[grpc.GenericRpcHandler] | None:
+        # Note that currently BentoML doesn't provide any specific
+        # handlers for gRPC. If users have any specific handlers,
+        # BentoML will pass it through to grpc.aio.Server
+        return self.servicer.bento_service.grpc_handlers

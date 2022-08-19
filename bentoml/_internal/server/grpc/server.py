@@ -15,26 +15,25 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
 
-    from grpc_health.v1 import health_pb2
-    from grpc_health.v1 import health_pb2_grpc
+    from grpc_health.v1 import health_pb2 as pb_health
+    from grpc_health.v1 import health_pb2_grpc as health_services
 
     from bentoml.grpc.v1 import service_pb2_grpc as services
 
     from .config import Config
-    from .servicer import Servicer
 else:
     from bentoml.grpc.utils import import_generated_stubs
 
     pb, services = import_generated_stubs()
     health_exception_msg = "'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'."
-    health_pb2 = LazyLoader(
-        "health_pb2",
+    pb_health = LazyLoader(
+        "pb_health",
         globals(),
         "grpc_health.v1.health_pb2",
         exc_msg=health_exception_msg,
     )
-    health_pb2_grpc = LazyLoader(
-        "health_pb2_grpc",
+    health_services = LazyLoader(
+        "health_services",
         globals(),
         "grpc_health.v1.health_pb2_grpc",
         exc_msg=health_exception_msg,
@@ -44,9 +43,9 @@ else:
 class Server:
     """An Uvicorn-like implementation for async gRPC server."""
 
-    def __init__(self, config: Config, servicer: Servicer):
+    def __init__(self, config: Config):
         self.config = config
-        self.servicer = servicer
+        self.servicer = config.servicer
 
         # define a cleanup future list
         self.cleanup_tasks: list[t.Coroutine[t.Any, t.Any, None]] = []
@@ -58,13 +57,16 @@ class Server:
     def run(self) -> None:
         from concurrent.futures import ThreadPoolExecutor
 
+        if not bool(self.servicer):
+            self.servicer.load()
+
         self.server = aio.server(
             migration_thread_pool=ThreadPoolExecutor(
                 max_workers=self.config.migration_thread_pool_workers
             ),
             options=self.config.options,
             maximum_concurrent_rpcs=self.config.maximum_concurrent_rpcs,
-            handlers=self.servicer.handlers,
+            handlers=self.config.handlers,
             interceptors=self.servicer.interceptors_stack,
         )
 
@@ -99,7 +101,7 @@ class Server:
         services.add_BentoServiceServicer_to_server(
             self.servicer.bento_servicer, self.server
         )
-        health_pb2_grpc.add_HealthServicer_to_server(
+        health_services.add_HealthServicer_to_server(
             self.servicer.health_servicer, self.server
         )
 
@@ -128,7 +130,7 @@ class Server:
         # mark all services as healthy
         for service in service_names:
             await self.servicer.health_servicer.set(
-                service, health_pb2.HealthCheckResponse.SERVING  # type: ignore (no types available)
+                service, pb_health.HealthCheckResponse.SERVING  # type: ignore (no types available)
             )
 
         await self.server.start()

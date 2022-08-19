@@ -121,10 +121,7 @@ def create_watcher(
     )
 
 
-def log_grpcui_message(port: int, reflection: bool) -> None:
-    if not reflection:
-        logger.info("To use gRPC UI, pass --enable-reflection to 'serve'.")
-        return
+def log_grpcui_message(port: int) -> None:
 
     docker_run = partial(
         "docker run -it --rm {network_args} fullstorydev/grpcui -plaintext {platform_deps}:{port}".format,
@@ -219,22 +216,32 @@ def serve_development(
     circus_sockets: list[CircusSocket] = []
 
     if grpc:
+        if not reflection:
+            logger.info(
+                "'reflection' is disabled by default. Tools such as gRPCUI or grpcurl relies on server reflection. To use those, pass '--enable-reflection' to CLI."
+            )
+        else:
+            log_grpcui_message(port)
+
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
+
+            args = [
+                "-m",
+                SCRIPT_GRPC_DEV_API_SERVER,
+                bento_identifier,
+                "--bind",
+                f"tcp://{host}:{api_port}",
+                "--working-dir",
+                working_dir,
+            ]
+            if reflection:
+                args.append("--enable-reflection")
+
             watchers.append(
                 create_watcher(
                     name="grpc_dev_api_server",
-                    args=[
-                        "-m",
-                        SCRIPT_GRPC_DEV_API_SERVER,
-                        bento_identifier,
-                        "--bind",
-                        f"tcp://{host}:{api_port}",
-                        "--working-dir",
-                        working_dir,
-                        "--enable-reflection",
-                        reflection,
-                    ],
+                    args=args,
                     use_sockets=False,
                     working_dir=working_dir,
                     # we don't want to close stdin for child process in case user use debugger.
@@ -274,8 +281,6 @@ def serve_development(
                     singleton=True,
                 )
             )
-
-            log_grpcui_message(port, reflection=reflection)
 
             logger.info(
                 PROMETHEUS_MESSAGE.format(
@@ -497,34 +502,40 @@ def serve_production(
     logger.debug(f"Runner map: {runner_bind_map}")
 
     if grpc:
+        if not reflection:
+            logger.info(
+                "'reflection' is disabled by default. Tools such as gRPCUI or grpcurl relies on server reflection. To use those, pass '--enable-reflection' to CLI."
+            )
+        else:
+            log_grpcui_message(port)
+
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
+            args = [
+                "-m",
+                SCRIPT_GRPC_API_SERVER,
+                bento_identifier,
+                "--bind",
+                f"tcp://{host}:{api_port}",
+                "--runner-map",
+                json.dumps(runner_bind_map),
+                "--working-dir",
+                working_dir,
+                "--worker-id",
+                "$(CIRCUS.WID)",
+            ]
+            if reflection:
+                args.append("--enable-reflection")
 
             watchers.append(
                 create_watcher(
                     name="grpc_api_server",
-                    args=[
-                        "-m",
-                        SCRIPT_GRPC_API_SERVER,
-                        bento_identifier,
-                        "--bind",
-                        f"tcp://{host}:{api_port}",
-                        "--runner-map",
-                        json.dumps(runner_bind_map),
-                        "--working-dir",
-                        working_dir,
-                        "--worker-id",
-                        "$(CIRCUS.WID)",
-                        "--enable-reflection",
-                        reflection,
-                    ],
+                    args=args,
                     use_sockets=False,
                     working_dir=working_dir,
                     numprocesses=api_workers or math.ceil(CpuResource.from_system()),
                 )
             )
-
-        log_grpcui_message(port, reflection=reflection)
 
         if BentoMLContainer.api_server_config.metrics.enabled.get():
             metrics_host = BentoMLContainer.grpc.metrics.host.get()

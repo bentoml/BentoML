@@ -75,7 +75,11 @@ class GRPCAppFactory:
 
     @property
     def interceptors(self) -> Interceptors:
-        interceptors: Interceptors = []
+        # Note that order of interceptors is important here.
+
+        from .grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
+
+        interceptors: Interceptors = [AsyncOpenTelemetryServerInterceptor]
 
         if self.enable_metrics:
             from .grpc.interceptors.prometheus import PrometheusServerInterceptor

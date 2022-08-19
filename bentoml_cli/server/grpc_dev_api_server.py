@@ -10,6 +10,7 @@ import click
 @click.option(
     "--enable-reflection",
     type=click.BOOL,
+    is_flag=True,
     help="Enable reflection.",
     default=False,
 )
@@ -53,9 +54,12 @@ def main(
 
         grpc_options = {"enable_reflection": enable_reflection}
 
-        config = grpc.Config(bind_address=f"[::]:{parsed.port}", **grpc_options)
-        print(config.options)
-        grpc.Server(config, svc.grpc_servicer).run()
+        config = grpc.Config(
+            svc.grpc_servicer,
+            bind_address=f"[::]:{parsed.port}",
+            **grpc_options,
+        )
+        grpc.Server(config).run()
     else:
         raise ValueError(f"Unsupported bind scheme: {bind}")
 

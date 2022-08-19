@@ -68,14 +68,13 @@ class Servicer:
         self.on_startup = [] if not on_startup else list(on_startup)
         self.on_shutdown = [] if not on_shutdown else list(on_shutdown)
         self.mount_servicers = [] if not mount_servicers else list(mount_servicers)
+        self.interceptors = [] if not interceptors else list(interceptors)
+        self.loaded = False
 
-        self.interceptors_stack = self.build_interceptors_stack(interceptors)
-        # Note that currently BentoML doesn't provide any specific
-        # handlers for gRPC. If users have any specific handlers,
-        # BentoML will pass it through to grpc.aio.Server
-        self.handlers: t.Sequence[
-            grpc.GenericRpcHandler
-        ] | None = self.bento_service.grpc_handlers
+    def load(self):
+        assert not self.loaded
+
+        self.interceptors_stack = self.build_interceptors_stack()
 
         self.bento_servicer = create_bento_servicer(self.bento_service)
 
@@ -86,35 +85,37 @@ class Servicer:
         self.service_names = tuple(
             service.full_name for service in pb.DESCRIPTOR.services_by_name.values()
         ) + (health.SERVICE_NAME,)
+        self.loaded = True
 
-    def build_interceptors_stack(
-        self, interceptors: Interceptors | None
-    ) -> list[aio.ServerInterceptor]:
-        # Note that order of interceptors is important here.
+    def build_interceptors_stack(self) -> list[aio.ServerInterceptor]:
         from .interceptors import GenericHeadersServerInterceptor
-        from .interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
 
-        stack: list[aio.ServerInterceptor] = [
-            GenericHeadersServerInterceptor(),
-            AsyncOpenTelemetryServerInterceptor(),
-        ]
-        if interceptors:
-            stack.extend([interceptor() for interceptor in interceptors])
-        return stack
+        return list(
+            map(lambda x: x(), [GenericHeadersServerInterceptor, *self.interceptors])
+        )
 
     async def startup(self):
         for handler in self.on_startup:
-            if asyncio.iscoroutinefunction(handler):
+            if is_async_iterable(handler):
                 await handler()
             else:
                 handler()
 
     async def shutdown(self):
         for handler in self.on_shutdown:
-            if asyncio.iscoroutinefunction(handler):
+            if is_async_iterable(handler):
                 await handler()
             else:
                 handler()
+
+    def __bool__(self):
+        return self.loaded
+
+
+def is_async_iterable(obj: t.Any) -> bool:
+    return asyncio.iscoroutinefunction(obj) or (
+        callable(obj) and asyncio.iscoroutinefunction(obj.__call__)
+    )
 
 
 def create_bento_servicer(service: Service) -> services.BentoServiceServicer:

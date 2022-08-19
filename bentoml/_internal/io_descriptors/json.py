@@ -248,9 +248,6 @@ class JSON(IODescriptor[JSONType]):
     async def to_http_response(
         self, obj: JSONType | pydantic.BaseModel, ctx: Context | None = None
     ):
-        if isinstance(obj, pydantic.BaseModel):
-            obj = obj.dict()
-
         json_str = (
             json.dumps(
                 obj,

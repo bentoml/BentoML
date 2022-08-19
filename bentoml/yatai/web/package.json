@@ -11,7 +11,7 @@
     "watch:server": "nodemon",
     "watch:client": "cd client && yarn start",
     "build": "rm -rf dist && concurrently \"npm run build:client\" \"npm run build:server\"",
-    "build:server": "webpack && cd dist && npm init --yes && yarn add express@\"~4.17.1\" protobufjs@\"~6.8.8\" && rm -rf node_modules/.bin",
+    "build:server": "webpack && cd dist && npm init --yes && yarn add express@\"~4.17.1\" protobufjs && rm -rf node_modules/.bin",
     "build:client": "cd client && yarn build && mkdir -p ../dist/client && cp -r build/* ../dist/client",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -28,7 +28,7 @@
     "lodash": "^4.17.21",
     "morgan": "^1.10.0",
     "normalize.css": "^8.0.1",
-    "protobufjs": "^6.9.0",
+    "protobufjs": "^7.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.4",
     "winston": "^3.2.1"

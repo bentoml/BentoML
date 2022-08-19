@@ -39,19 +39,29 @@ DEFAULT_INDEX_HTML = """\
   <head>
     <meta charset="UTF-8">
     <title>BentoML Prediction Service</title>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WNPGWRM');</script>
+    <!-- End Google Tag Manager -->
     <link rel="stylesheet" type="text/css" href="./static_content/swagger-ui.css" />
     <link rel="stylesheet" type="text/css" href="./static_content/index.css" />
     <link rel="icon" type="image/png" href="./static_content/favicon-32x32.png" sizes="32x32" />
     <link rel="icon" type="image/png" href="./static_content/favicon-96x96.png" sizes="96x96" />
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WNPGWRM"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div id="swagger-ui"></div>
     <script src="./static_content/swagger-ui-bundle.js" charset="UTF-8"> </script>
     <script src="./static_content/swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
     <script src="./static_content/swagger-initializer.js" charset="UTF-8"> </script>
   </body>
 </html>
-
 """
 
 
@@ -108,7 +118,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         # TODO: add readme description.
         return Response(
-            content=DEFAULT_INDEX_HTML.format(readme=self.bento_service.doc),
+            content=DEFAULT_INDEX_HTML,
             status_code=200,
             media_type="text/html",
         )

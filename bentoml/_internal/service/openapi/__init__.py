@@ -14,10 +14,8 @@ from bentoml.exceptions import InternalServerError
 from .utils import REF_PREFIX
 from .utils import exception_schema
 from .utils import exception_components_schema
-from ...bento.bento import get_default_bento_readme
 from .specification import Tag
 from .specification import Info
-from .specification import Apache2
 from .specification import Contact
 from .specification import PathItem
 from .specification import Response
@@ -42,8 +40,13 @@ INFRA_DECRIPTION = {
 
 __all__ = ["generate_spec"]
 
-INFRA_TAG = Tag(name="infra", description="Infrastructure endpoints.")
-APP_TAG = Tag(name="app", description="Inference endpoints.")
+INFRA_TAG = Tag(
+    name="Infrastructure",
+    description="Common infrastructure endpoints for observability.",
+)
+APP_TAG = Tag(
+    name="Service APIs", description="BentoML Service API endpoints for inference."
+)
 
 merger = Merger(
     # merge dicts
@@ -96,17 +99,14 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
     return OpenAPISpecification(
         openapi=openapi_version,
-        tags=[INFRA_TAG, APP_TAG],
+        tags=[APP_TAG, INFRA_TAG],
         components=generate_service_components(svc),
         info=Info(
             title=svc.name,
-            summary="A BentoService built for inference.",
-            description=svc.bento.doc
-            if svc.bento
-            else get_default_bento_readme(svc, add_headers=False),
-            version=svc.tag.version if svc.tag and svc.tag.version else "0.0.0",
+            summary="A ML Service created with BentoML",
+            description=svc.doc,
+            version=svc.tag.version if svc.tag and svc.tag.version else "None",
             contact=Contact(name="BentoML Team", email="contact@bentoml.ai"),
-            license=Apache2,
         ),
         paths={
             # setup infra endpoints

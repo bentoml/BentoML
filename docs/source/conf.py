@@ -1,14 +1,16 @@
 from datetime import datetime
 
-# Adding BentoML source directory for accessing BentoML version
-import bentoml
+try:
+    from importlib.metadata import version
+except ImportError:
+    from importlib_metadata import version
 
 # -- Project information -----------------------------------------------------
 
 project = "BentoML"
 copyright = f"2022-{datetime.now().year}, bentoml.com"
 author = "bentoml.com"
-version = bentoml.__version__
+version = version("bentoml")
 
 # -- General configuration ---------------------------------------------------
 

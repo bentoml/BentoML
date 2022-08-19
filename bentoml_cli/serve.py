@@ -29,7 +29,7 @@ def add_serve_command(cli: click.Group) -> None:
         "-p",
         "--port",
         type=click.INT,
-        default=None,
+        default=BentoMLContainer.service_port.get,
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -51,7 +51,7 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=None,
+        default=BentoMLContainer.api_server_config.backlog.get,
         help="The maximum number of pending connections.",
         show_default=True,
     )
@@ -122,15 +122,9 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--enable-reflection",
         type=click.BOOL,
+        is_flag=True,
         help="Enable reflection (Currently, only have effect in conjunction with '--grpc').",
         default=False,
-    )
-    @click.option(
-        "--max-concurrent-streams",
-        type=click.INT,
-        default=BentoMLContainer.grpc.max_concurrent_streams.get,
-        help="Maximum number of concurrent incoming streams to allow on a HTTP/2 connection.",
-        show_default=True,
     )
     def serve(  # type: ignore (unused warning)
         bento: str,
@@ -150,7 +144,6 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_ciphers: str | None,
         grpc: bool,
         enable_reflection: bool,
-        max_concurrent_streams: int,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
@@ -212,7 +205,6 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
                 reflection=enable_reflection,
-                max_concurrent_streams=max_concurrent_streams,
             )
         else:
             from bentoml.serve import serve_development
@@ -232,5 +224,4 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
                 reflection=enable_reflection,
-                max_concurrent_streams=max_concurrent_streams,
             )

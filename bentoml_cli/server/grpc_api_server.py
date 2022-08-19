@@ -26,11 +26,6 @@ import click
     help="Working directory for the API server",
 )
 @click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
-)
-@click.option(
     "--worker-id",
     required=False,
     type=click.INT,
@@ -43,22 +38,13 @@ import click
     help="Enable reflection.",
     default=False,
 )
-@click.option(
-    "--max-concurrent-streams",
-    type=click.INT,
-    default=None,
-    help="Maximum number of concurrent incoming streams to allow on a HTTP/2 connection.",
-    show_default=True,
-)
 def main(
     bento_identifier: str,
     bind: str,
     runner_map: str | None,
     working_dir: str | None,
     worker_id: int | None,
-    prometheus_dir: str | None,
     enable_reflection: bool,
-    max_concurrent_streams: int,
 ):
     """
     Start BentoML API server.
@@ -74,13 +60,12 @@ def main(
     configure_server_logging()
 
     BentoMLContainer.development_mode.set(False)
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
     component_context.component_name = f"grpc_api_server:{worker_id}"
 
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
+
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
@@ -94,16 +79,13 @@ def main(
     parsed = urlparse(bind)
     assert parsed.scheme == "tcp"
 
-    from bentoml._internal.server.grpc.config import Config
-    from bentoml._internal.server.grpc.server import Server
+    from bentoml._internal.server import grpc
 
-    grpc_options = {
-        "enable_reflection": enable_reflection,
-        "max_concurrent_streams": max_concurrent_streams,
-        "bind_address": parsed.netloc,
-    }
+    grpc_options = {"enable_reflection": enable_reflection}
 
-    Server(Config(svc.grpc_servicer, **grpc_options)).run()
+    grpc.Server(
+        grpc.Config(svc.grpc_servicer, bind_address=parsed.netloc, **grpc_options)
+    ).run()
 
 
 if __name__ == "__main__":

@@ -379,7 +379,7 @@ def build_bentofile(
 
 def containerize(
     tag: Tag | str,
-    docker_image_tag: str | tuple[str] | None = None,
+    docker_image_tag: str | t.List[str] | None = None,
     *,
     add_host: dict[str, str] | None = None,
     allow: t.List[str] | None = None,
@@ -472,14 +472,16 @@ def containerize(
             )
         return 1
     else:
-        tags = f"\"{','.join(docker_image_tag)}\""
-        logger.info(f'Successfully built docker image for "{bento.tag}" as {tags}')
-
-        if len(docker_image_tag) > 1 or isinstance(docker_image_tag, tuple):
+        if not isinstance(docker_image_tag, str) and len(docker_image_tag) > 1:
+            tags = f"\"{','.join(docker_image_tag)}\""
+            logger.info(f'Successfully built docker image for "{bento.tag}" as {tags}')
             logger.info(
                 f'To run one of your newly built Bento container, use one of the tags. For example: "docker run -it --rm -p 3000:3000 {docker_image_tag[0]}"'
             )
         else:
+            logger.info(
+                f'Successfully built docker image for "{bento.tag}" as {docker_image_tag}'
+            )
             logger.info(
                 f'To run your newly built Bento container, use: "docker run -it --rm -p 3000:3000 {docker_image_tag}"'
             )

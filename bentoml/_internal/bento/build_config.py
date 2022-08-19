@@ -8,30 +8,14 @@ import logging
 import subprocess
 from sys import version_info
 from shlex import quote
+from typing import overload
 from typing import TYPE_CHECKING
 
-import fs
 import attr
 import yaml
-import psutil
-import fs.copy
-from dotenv import dotenv_values  # type: ignore
 from pathspec import PathSpec
 
-from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
-from ..utils import resolve_user_filepath
-from ..utils import copy_file_to_fs_folder
-from .docker import DistroSpec
-from .docker import get_supported_spec
-from .docker import SUPPORTED_CUDA_VERSIONS
-from .docker import DOCKER_SUPPORTED_DISTROS
-from .docker import ALLOWED_CUDA_VERSION_ARGS
-from .docker import SUPPORTED_PYTHON_VERSIONS
-from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
-from ..configuration import CLEAN_BENTOML_VERSION
-from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
 if TYPE_CHECKING:
     from attr import Attribute
@@ -48,6 +32,8 @@ CONDA_ENV_YAML_FILE_NAME = "environment.yml"
 
 
 def _convert_python_version(py_version: str | None) -> str | None:
+    from bentoml.exceptions import InvalidArgument
+
     if py_version is None:
         return None
 
@@ -71,11 +57,14 @@ def _convert_python_version(py_version: str | None) -> str | None:
     return target_python_version
 
 
-def _convert_cuda_version(
-    cuda_version: t.Optional[t.Union[str, int]]
-) -> t.Optional[str]:
+def _convert_cuda_version(cuda_version: str | int) -> str | None:
+    from bentoml.exceptions import BentoMLException
+
+    from .docker import SUPPORTED_CUDA_VERSIONS
+    from .docker import ALLOWED_CUDA_VERSION_ARGS
+
     if cuda_version is None or cuda_version == "" or cuda_version == "None":
-        return None
+        return
 
     if isinstance(cuda_version, int):
         cuda_version = str(cuda_version)
@@ -98,6 +87,10 @@ def _convert_env(
 ) -> dict[str, str] | dict[str, str | None] | None:
     if env is None:
         return None
+
+    from dotenv import dotenv_values  # type: ignore
+
+    from bentoml.exceptions import BentoMLException
 
     if isinstance(env, str):
         logger.debug("Reading dot env file '%s' specified in config", env)
@@ -124,6 +117,44 @@ def _convert_env(
     )
 
 
+@overload
+def lazy_args_validator(
+    args: t.Literal["DOCKER_SUPPORTED_DISTROS"],
+) -> t.Callable[[t.Any, Attribute[str | None], str | None], t.Any]:
+    ...
+
+
+@overload
+def lazy_args_validator(
+    args: t.Literal["SUPPORTED_PYTHON_VERSIONS"],
+) -> t.Callable[[t.Any, Attribute[str | None], str | None], t.Any]:
+    ...
+
+
+@overload
+def lazy_args_validator(
+    args: t.Literal["ALLOWED_CUDA_VERSION_ARGS"],
+) -> t.Callable[[t.Any, Attribute[str | None], str | None], t.Any]:
+    ...
+
+
+def lazy_args_validator(
+    args: str,
+) -> t.Callable[[t.Any, Attribute[str | None], str | None], t.Any]:
+    from importlib import import_module
+
+    from bentoml.exceptions import BentoMLException
+
+    check_attr: t.Sequence[str] = getattr(
+        import_module("bentoml._internal.bento.docker"), args
+    )
+    if not check_attr:
+        raise BentoMLException(
+            f"{args} does not exists in 'bentoml._internal.bento.docker'"
+        )
+    return attr.validators.optional(attr.validators.in_(check_attr))
+
+
 @attr.frozen
 class DockerOptions:
 
@@ -133,24 +164,17 @@ class DockerOptions:
     __omit_if_default__ = False
 
     distro: t.Optional[str] = attr.field(
-        default=None,
-        validator=attr.validators.optional(
-            attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
-        ),
+        default=None, validator=lazy_args_validator("DOCKER_SUPPORTED_DISTROS")
     )
     python_version: t.Optional[str] = attr.field(
         converter=_convert_python_version,
         default=None,
-        validator=attr.validators.optional(
-            attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
-        ),
+        validator=lazy_args_validator("SUPPORTED_PYTHON_VERSIONS"),
     )
     cuda_version: t.Optional[str] = attr.field(
         default=None,
         converter=_convert_cuda_version,
-        validator=attr.validators.optional(
-            attr.validators.in_(ALLOWED_CUDA_VERSION_ARGS)
-        ),
+        validator=lazy_args_validator("ALLOWED_CUDA_VERSION_ARGS"),
     )
     env: t.Optional[t.Union[str, t.List[str], t.Dict[str, str]]] = attr.field(
         default=None,
@@ -162,6 +186,8 @@ class DockerOptions:
     dockerfile_template: t.Optional[str] = None
 
     def __attrs_post_init__(self):
+        from bentoml.exceptions import BentoMLException
+
         if self.base_image is not None:
             if self.distro is not None:
                 logger.warning(
@@ -182,6 +208,8 @@ class DockerOptions:
                 )
 
         if self.distro is not None and self.cuda_version is not None:
+            from .docker import get_supported_spec
+
             supports_cuda = get_supported_spec("cuda")
             if self.distro not in supports_cuda:
                 raise BentoMLException(
@@ -204,6 +232,15 @@ class DockerOptions:
     def write_to_bento(
         self, bento_fs: FS, build_ctx: str, conda_options: CondaOptions
     ) -> None:
+        import fs
+        import psutil
+
+        from bentoml.exceptions import InvalidArgument
+
+        from .gen import generate_dockerfile
+        from ..utils import resolve_user_filepath
+        from ..utils import copy_file_to_fs_folder
+
         use_conda = not conda_options.is_empty()
 
         docker_folder = fs.path.combine("env", "docker")
@@ -248,6 +285,8 @@ else:
 def conda_dependencies_validator(
     _: t.Any, __: Attribute[DependencyType], value: DependencyType
 ) -> None:
+    from bentoml.exceptions import InvalidArgument
+
     if not isinstance(value, list):
         raise InvalidArgument(
             f"Expected 'conda.dependencies' to be a list of dependencies, got a '{type(value)}' instead."
@@ -317,6 +356,13 @@ class CondaOptions:
     def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
         if self.is_empty():
             return
+
+        import fs
+
+        from bentoml.exceptions import BentoMLException
+
+        from ..utils import resolve_user_filepath
+        from ..utils import copy_file_to_fs_folder
 
         conda_folder = fs.path.join("env", "conda")
         bento_fs.makedirs(conda_folder, recreate=True)
@@ -439,6 +485,13 @@ class PythonOptions:
         return not self.requirements_txt and not self.packages
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+        import fs
+
+        from ..utils import resolve_user_filepath
+        from ..utils import copy_file_to_fs_folder
+        from ..configuration import CLEAN_BENTOML_VERSION
+        from .build_dev_bentoml_whl import build_bentoml_editable_wheel
+
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
@@ -656,6 +709,11 @@ class BentoBuildConfig:
     )
 
     def __attrs_post_init__(self) -> None:
+        from bentoml.exceptions import BentoMLException
+
+        from .docker import DistroSpec
+        from .docker import get_supported_spec
+
         use_conda = not self.conda.is_empty()
         use_cuda = self.docker.cuda_version is not None
 
@@ -722,6 +780,8 @@ class BentoBuildConfig:
         try:
             return bentoml_cattr.structure(yaml_content, cls)
         except TypeError as e:
+            from bentoml.exceptions import InvalidArgument
+
             if "missing 1 required positional argument: 'service'" in str(e):
                 raise InvalidArgument(
                     'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
@@ -754,6 +814,8 @@ class BentoPathSpec:
         *,
         recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
     ) -> bool:
+        import fs
+
         # Determine whether a path is included or not.
         # recurse_exclude_spec is a list of (path, spec) pairs.
         to_include = (
@@ -773,6 +835,8 @@ class BentoPathSpec:
         """
         yield (parent, exclude_spec) from .bentoignore file of a given path
         """
+        import fs
+
         fs_ = fs.open_fs(path)
         for file in fs_.walk.files(filter=[".bentoignore"]):
             dir_path = "".join(fs.path.parts(file)[:-1])

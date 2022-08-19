@@ -161,7 +161,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @kwargs_transformers(transformer=containerize_transformer)
     def containerize_bento(  # type: ignore
         bento_tag: str,
-        docker_image_tag: tuple[str],
+        docker_image_tag: list[str],
         add_host: t.Iterable[str],
         allow: t.Iterable[str],
         build_arg: t.List[str],

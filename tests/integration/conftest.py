@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml._internal.models import ModelStore
+from bentoml._internal.models.model import ModelStore
 
 if TYPE_CHECKING:
     from _pytest.nodes import Item

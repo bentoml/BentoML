@@ -248,6 +248,16 @@ class JSON(IODescriptor[JSONType]):
     async def to_http_response(
         self, obj: JSONType | pydantic.BaseModel, ctx: Context | None = None
     ):
+        try:
+            import pydantic
+
+            # This is to prevent cases where custom JSON encoder is used.
+            if isinstance(obj, pydantic.BaseModel):
+                obj = obj.dict()
+        except ImportError:
+            # We just need to pass if pydantic is not installed.
+            pass
+
         json_str = (
             json.dumps(
                 obj,

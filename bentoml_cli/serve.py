@@ -126,6 +126,12 @@ def add_serve_command(cli: click.Group) -> None:
         help="Enable reflection (Currently, only have effect in conjunction with '--grpc').",
         default=False,
     )
+    @click.option(
+        "--max-concurrent-streams",
+        type=click.INT,
+        help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
+        default=None,
+    )
     def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,
@@ -144,6 +150,7 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_ciphers: str | None,
         grpc: bool,
         enable_reflection: bool,
+        max_concurrent_streams: int | None,
     ) -> None:
         """Start a :code:`BentoServer` from a given ``BENTO`` 🍱
 
@@ -205,6 +212,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
                 reflection=enable_reflection,
+                max_concurrent_streams=max_concurrent_streams,
             )
         else:
             from bentoml.serve import serve_development
@@ -224,4 +232,5 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 grpc=grpc,
                 reflection=enable_reflection,
+                max_concurrent_streams=max_concurrent_streams,
             )

@@ -3,7 +3,6 @@ Specific types for BentoService gRPC server.
 """
 from __future__ import annotations
 
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

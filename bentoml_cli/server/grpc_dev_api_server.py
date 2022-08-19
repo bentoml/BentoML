@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import click
 
 
@@ -14,11 +16,18 @@ import click
     help="Enable reflection.",
     default=False,
 )
+@click.option(
+    "--max-concurrent-streams",
+    type=click.INT,
+    help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
+    default=None,
+)
 def main(
     bento_identifier: str,
     bind: str,
     working_dir: str | None,
     enable_reflection: bool,
+    max_concurrent_streams: int | None,
 ):
     from urllib.parse import urlparse
 
@@ -52,7 +61,10 @@ def main(
     if parsed.scheme == "tcp":
         from bentoml._internal.server import grpc
 
-        grpc_options = {"enable_reflection": enable_reflection}
+        grpc_options: dict[str, t.Any] = {"enable_reflection": enable_reflection}
+        if max_concurrent_streams:
+            grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
+        print(grpc_options)
 
         config = grpc.Config(
             svc.grpc_servicer,

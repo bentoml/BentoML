@@ -72,7 +72,6 @@ class Config:
                     ("grpc.max_message_length", self.max_message_length),
                     ("grpc.max_receive_message_length", self.max_message_length),
                     ("grpc.max_send_message_length", self.max_message_length),
-                    ("grpc.max_send_message_length", self.max_message_length),
                 )
             )
 

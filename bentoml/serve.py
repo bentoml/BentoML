@@ -197,6 +197,8 @@ def serve_development(
     reload: bool = False,
     grpc: bool = False,
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    max_concurrent_streams: int
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
     from circus.sockets import CircusSocket
 
@@ -226,17 +228,26 @@ def serve_development(
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
 
-            args = [
+            args: list[str | int] = [
                 "-m",
                 SCRIPT_GRPC_DEV_API_SERVER,
                 bento_identifier,
                 "--bind",
-                f"tcp://{host}:{api_port}",
+                f"tcp://0.0.0.0:{api_port}",
                 "--working-dir",
                 working_dir,
             ]
+
             if reflection:
                 args.append("--enable-reflection")
+            if max_concurrent_streams:
+                args.extend(
+                    [
+                        "--max-concurrent-streams",
+                        max_concurrent_streams,
+                    ]
+                )
+            print(args)
 
             watchers.append(
                 create_watcher(
@@ -390,6 +401,8 @@ def serve_production(
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     grpc: bool = False,
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    max_concurrent_streams: int
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> None:
     from bentoml import load
     from bentoml.exceptions import UnprocessableEntity
@@ -511,7 +524,7 @@ def serve_production(
 
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
-            args = [
+            args: list[str | int] = [
                 "-m",
                 SCRIPT_GRPC_API_SERVER,
                 bento_identifier,
@@ -526,6 +539,14 @@ def serve_production(
             ]
             if reflection:
                 args.append("--enable-reflection")
+
+            if max_concurrent_streams:
+                args.extend(
+                    [
+                        "--max-concurrent-streams",
+                        max_concurrent_streams,
+                    ]
+                )
 
             watchers.append(
                 create_watcher(

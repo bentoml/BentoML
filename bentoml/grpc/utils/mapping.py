@@ -133,3 +133,14 @@ def npdtype_to_dtypepb_map() -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType
 def npdtype_to_fieldpb_map() -> dict[ext.NpDTypeLike, str]:
     # np.dtype -> str
     return {v: k for k, v in fieldpb_to_npdtype_map().items()}
+
+
+@lru_cache(maxsize=1)
+def pddtype_to_fieldpb_map() -> dict[ext.NpDTypeLike, str]:
+    return {
+        np.dtype("bool"): "bool_values",
+        np.dtype("float64"): "float_values",
+        np.dtype("float32"): "float_values",
+        np.dtype("int32"): "int32_values",
+        np.dtype("int64"): "int64_values",
+    }

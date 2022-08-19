@@ -203,14 +203,14 @@ class Model(StoreItem):
         return self
 
     def _save(self, model_store: ModelStore) -> Model:
+        import fs
+        import fs.mirror
+
         from bentoml.exceptions import BentoMLException
 
         if not self.validate():
             logger.warning(f"Failed to create Model for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Model because it was invalid")
-
-        import fs
-        import fs.mirror
 
         with model_store.register(self.tag) as model_path:
             out_fs = fs.open_fs(model_path, create=True, writeable=True)

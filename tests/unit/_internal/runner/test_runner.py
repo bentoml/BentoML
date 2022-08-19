@@ -1,18 +1,24 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import pytest
 
-import bentoml
-from bentoml._internal.runner import Runner
+from bentoml import Runner
+from bentoml import Runnable
+
+if TYPE_CHECKING:
+    from _pytest.logging import LogCaptureFixture
 
 
-class DummyRunnable(bentoml.Runnable):
-    @bentoml.Runnable.method
+class DummyRunnable(Runnable):
+    @Runnable.method
     def dummy_runnable_method(self):
         pass
 
 
-def test_runner(caplog):
+def test_runner(caplog: LogCaptureFixture):
     dummy_runner = Runner(DummyRunnable)
 
     assert dummy_runner.name == "dummyrunnable"

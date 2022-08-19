@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from click import Context
     from click import Parameter
 
-    from bentoml._internal.bento import BentoStore
+    from bentoml._internal.bento.bento import BentoStore
 
 logger = logging.getLogger("bentoml")
 

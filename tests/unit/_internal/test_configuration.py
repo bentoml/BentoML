@@ -1,16 +1,18 @@
+from __future__ import annotations
+
+import typing as t
 from tempfile import NamedTemporaryFile
 
 from bentoml._internal.configuration.containers import BentoMLConfiguration
 
 
-def get_bentomlconfiguration_from_str(config_str: str):
+def create_configuration_from_string(config_str: str) -> dict[str, t.Any]:
     tmpfile = NamedTemporaryFile(mode="w+", delete=False)
     tmpfile.write(config_str)
     tmpfile.flush()
     tmpfile.close()
 
-    bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
-    return bentoml_cfg
+    return BentoMLConfiguration(override_config_file=tmpfile.name).asdict()
 
 
 def test_bentoml_configuration_runner_override():
@@ -40,7 +42,7 @@ runners:
                 enabled: True
 """
 
-    bentoml_cfg = get_bentomlconfiguration_from_str(OVERRIDE_RUNNERS)
+    bentoml_cfg = create_configuration_from_string(OVERRIDE_RUNNERS)
     runner_cfg = bentoml_cfg["runners"]
 
     # test_runner_1
@@ -79,7 +81,7 @@ runners:
     resources:
         nvidia.com/gpu: [1, 2, 4]
 """
-    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX)
+    bentoml_cfg = create_configuration_from_string(GPU_INDEX)
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": [1, 2, 4]}
 
     GPU_INDEX_WITH_STRING = """\
@@ -87,6 +89,6 @@ runners:
     resources:
         nvidia.com/gpu: "[1, 2, 4]"
 """
-    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX_WITH_STRING)
+    bentoml_cfg = create_configuration_from_string(GPU_INDEX_WITH_STRING)
     # this behaviour can be confusing
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": "[1, 2, 4]"}

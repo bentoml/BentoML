@@ -244,6 +244,11 @@ class BentoMLConfiguration:
                 " to the required schema, key=%s, value=%s." % (keys, value)
             ) from e
 
+    def asdict(self) -> dict[str, t.Any]:
+        from ..utils import bentoml_cattr
+
+        return bentoml_cattr.unstructure(self.config)
+
 
 @dataclass
 class _BentoMLContainerClass:

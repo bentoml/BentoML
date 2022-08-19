@@ -379,7 +379,7 @@ def build_bentofile(
 
 def containerize(
     tag: Tag | str,
-    docker_image_tag: str | t.List[str] | None = None,
+    docker_image_tag: str | tuple[str] | None = None,
     *,
     add_host: dict[str, str] | None = None,
     allow: t.List[str] | None = None,
@@ -409,7 +409,7 @@ def containerize(
     target: str | None = None,
     ulimit: str | None = None,
     _bento_store: BentoStore | None = None,
-) -> bool:
+) -> int:
 
     from bentoml._internal.utils import buildx
 
@@ -470,13 +470,20 @@ def containerize(
             logger.debug(
                 f"""If you run into the following error: "failed to solve: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed". This means Docker doesn't have context of your build platform {platform}. By default BentoML will set target build platform to the current machine platform via `uname -m`. Try again by specifying to build x86_64 (amd64) platform: bentoml containerize {str(bento.tag)} --platform linux/amd64"""
             )
-        return False
+        return 1
     else:
-        logger.info(f'Successfully built docker image "{docker_image_tag}"')
-        logger.info(
-            f'To run your newly built Bento container, use: "docker run -it --rm -p 3000:3000 {docker_image_tag}"'
-        )
-        return True
+        tags = f"\"{','.join(docker_image_tag)}\""
+        logger.info(f'Successfully built docker image for "{bento.tag}" as {tags}')
+
+        if len(docker_image_tag) > 1 or isinstance(docker_image_tag, tuple):
+            logger.info(
+                f'To run one of your newly built Bento container, use one of the tags. For example: "docker run -it --rm -p 3000:3000 {docker_image_tag[0]}"'
+            )
+        else:
+            logger.info(
+                f'To run your newly built Bento container, use: "docker run -it --rm -p 3000:3000 {docker_image_tag}"'
+            )
+        return 0
 
 
 __all__ = [

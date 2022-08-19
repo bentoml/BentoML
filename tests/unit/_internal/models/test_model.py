@@ -10,15 +10,16 @@ import fs
 import attr
 import numpy as np
 import pytest
+import fs.tarfs
 import fs.errors
 
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
-from bentoml._internal.models import ModelContext
-from bentoml._internal.models import ModelOptions as InternalModelOptions
 from bentoml._internal.models.model import Model
 from bentoml._internal.models.model import ModelInfo
 from bentoml._internal.models.model import ModelStore
+from bentoml._internal.models.model import ModelContext
+from bentoml._internal.models.model import ModelOptions as InternalModelOptions
 from bentoml._internal.configuration import BENTOML_VERSION
 
 if TYPE_CHECKING:
@@ -210,7 +211,7 @@ def fixture_bento_model():
     return model
 
 
-def test_model_equal(bento_model):
+def test_model_equal(bento_model: Model):
     # note: models are currently considered to be equal if their tag is equal;
     #       this is a test of that behavior
     eq_to_b = Model.create(
@@ -222,7 +223,7 @@ def test_model_equal(bento_model):
     assert eq_to_b.__hash__() == bento_model.__hash__()
 
 
-def test_model_export_import(bento_model, tmpdir: "Path"):
+def test_model_export_import(bento_model: Model, tmpdir: Path):
     # note: these tests rely on created models having a system path
     sys_written_path = bento_model.path_of("sys_written/file")
     assert sys_written_path == os.path.join(bento_model.path, "sys_written", "file")
@@ -266,6 +267,8 @@ def test_model_export_import(bento_model, tmpdir: "Path"):
 
     model_store = ModelStore(tmpdir)
     from_fs_model.save(model_store)
+
+    assert from_fs_model.tag.version
 
     save_path = os.path.join(
         tmpdir,

@@ -117,20 +117,20 @@ def add_serve_command(cli: click.Group) -> None:
         type=click.BOOL,
         is_flag=True,
         help="Start a BentoML gRPC server.",
-        default=False,
+        default=BentoMLContainer.grpc.enabled.get(),
     )
     @click.option(
         "--enable-reflection",
-        type=click.BOOL,
         is_flag=True,
+        default=BentoMLContainer.grpc.reflection.enabled.get(),
+        type=click.BOOL,
         help="Enable reflection (Currently, only have effect in conjunction with '--grpc').",
-        default=False,
     )
     @click.option(
         "--max-concurrent-streams",
+        default=BentoMLContainer.grpc.max_concurrent_streams.get(),
         type=click.INT,
         help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
-        default=None,
     )
     def serve(  # type: ignore (unused warning)
         bento: str,

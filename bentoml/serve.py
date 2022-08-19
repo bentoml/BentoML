@@ -195,7 +195,7 @@ def serve_development(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
     reload: bool = False,
-    grpc: bool = False,
+    grpc: bool = Provide[BentoMLContainer.grpc.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
@@ -398,7 +398,7 @@ def serve_production(
     | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
-    grpc: bool = False,
+    grpc: bool = Provide[BentoMLContainer.grpc.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],

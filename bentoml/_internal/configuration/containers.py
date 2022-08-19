@@ -123,6 +123,7 @@ SCHEMA = Schema(
                 "access_control_expose_headers": Or([str], str, None),
             },
             "grpc": {
+                "enabled": bool,
                 "metrics": {
                     "port": And(int, _larger_than_zero),
                     "host": And(str, _is_ip_address),
@@ -306,6 +307,7 @@ class _BentoMLContainerClass:
     if TYPE_CHECKING:
 
         class _GrpcConfiguration(_ConfigurationItem):
+            enabled: providers.Static[bool]
             max_concurrent_streams: providers.Static[int | None]
             max_message_length: providers.Static[int | None]
             maximum_concurrent_rpcs: providers.Static[int | None]

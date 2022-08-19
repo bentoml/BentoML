@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 import typing as t
 import asyncio
@@ -5,11 +7,20 @@ import logging
 import functools
 import traceback
 import collections
+from typing import TYPE_CHECKING
 
 import numpy as np
+from simple_di import inject
+from simple_di import Provide
 
 from ..utils import cached_property
 from ..utils.alg import TokenBucket
+from ..utils.metrics import metric_name
+from ..utils.metrics import exponential_buckets
+from ..configuration.containers import BentoMLContainer
+
+if TYPE_CHECKING:
+    from ..server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
 
@@ -96,12 +107,17 @@ class CorkDispatcher:
     The wrapped function should be an async function.
     """
 
+    @inject
     def __init__(
         self,
+        runner_name: str,
+        worker_index: int,
+        method_name: str,
         max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
         fallback: t.Optional[t.Callable[[], t.Any]] = None,
+        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ):
         """
         params:
@@ -122,6 +138,15 @@ class CorkDispatcher:
         self._controller = None
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
+
+        self.adaptive_batch_size_hist = metrics_client.Histogram(
+            name=metric_name(
+                runner_name, worker_index, method_name, "adaptive_batch_size"
+            ),
+            documentation=runner_name + " Runner adaptive batch size",
+            labelnames=[],  # TODO: add service version
+            buckets=exponential_buckets(1, 2, max_batch_size),
+        )
 
     def shutdown(self):
         if self._controller is not None:
@@ -219,7 +244,9 @@ class CorkDispatcher:
     async def outbound_call(self, inputs_info):
         _time_start = time.time()
         _done = False
-        logger.debug("Dynamic batching cork released, batch size: %d", len(inputs_info))
+        batch_size = len(inputs_info)
+        logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
+        self.adaptive_batch_size_hist.observe(batch_size)
         try:
             outputs = await self.callback(tuple(d for _, d, _ in inputs_info))
             assert len(outputs) == len(inputs_info)

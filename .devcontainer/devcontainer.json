@@ -1,0 +1,69 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.245.0/containers/docker-from-docker
+{
+  "name": "BentoML",
+  "dockerFile": "Dockerfile",
+  "containerEnv": {
+    "BENTOML_DEBUG": "True",
+    "BENTOML_BUNDLE_LOCAL_BUILD": "True",
+    "SETUPTOOLS_USE_DISTUTILS": "stdlib"
+  },
+  "runArgs": ["--init"],
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
+  ],
+  "overrideCommand": false,
+  // Use this environment variable if you need to bind mount your local source code into a new container.
+  "remoteEnv": {
+    "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+  },
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "ms-vsliveshare.vsliveshare",
+        "ms-python.black-formatter",
+        "ms-python.pylint",
+        "samuelcolvin.jinjahtml",
+        "GitHub.copilot",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "files.watcherExclude": {
+          "**/.ipynb_checkpoint/**": true,
+          "**/build/**": true
+        },
+        "files.exclude": {
+          "**/__pycache__": true
+        },
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.linting.flake8Enabled": false,
+        "python.analysis.useLibraryCodeForTypes": true,
+        "python.analysis.stubPath": "./typings",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "editor.minimap.enabled": true,
+        "editor.formatOnSave": true,
+        "editor.wordWrapColumn": 88,
+      }
+    }
+  },
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [3000, 8080, 9000, 9090],
+  // Link some default configs to codespace container.
+  "postCreateCommand": "bash ./.devcontainer/lifecycle/post-create",
+  // install BentoML and tools
+  "postStartCommand": "bash ./.devcontainer/lifecycle/post-start",
+  // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+  "remoteUser": "vscode"
+}

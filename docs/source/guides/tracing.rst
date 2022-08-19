@@ -2,7 +2,7 @@
 Tracing
 =======
 
-BentoML API server supports tracing with both `Zipkin <https://zipkin.io/>`_,
+BentoML API server supports tracing with `Zipkin <https://zipkin.io/>`_,
 `Jaeger <https://www.jaegertracing.io/>`_ and `OTLP <https://opentelemetry.io/>`_.
 To config tracing server, user can provide a config YAML file specifying the tracer type and tracing server information:
 

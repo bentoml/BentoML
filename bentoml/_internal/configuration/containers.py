@@ -53,10 +53,18 @@ _check_otlp_protocol: t.Callable[[str], bool] = lambda s: s in (
     "grpc",
     "http",
 )
-_larger_than: t.Callable[[int], t.Callable[[int], bool]] = (
+_check_sample_rate: t.Callable[[float], None] = (
+    lambda sample_rate: logger.warning(
+        "Tracing enabled, but sample_rate is unset or zero. No traces will be collected. "
+        "Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+    )
+    if sample_rate == 0.0
+    else None
+)
+_larger_than: t.Callable[[int | float], t.Callable[[int | float], bool]] = (
     lambda target: lambda val: val > target
 )
-_larger_than_zero: t.Callable[[int], bool] = _larger_than(0)
+_larger_than_zero: t.Callable[[int | float], bool] = _larger_than(0)
 
 
 def _is_ip_address(addr: str) -> bool:
@@ -108,7 +116,15 @@ SCHEMA = Schema(
                 Optional("ca_certs"): Or(str, None),
                 Optional("ciphers"): Or(str, None),
             },
-            "metrics": {"enabled": bool, "namespace": str},
+            "metrics": {
+                "enabled": bool,
+                "namespace": str,
+                Optional("duration"): {
+                    Optional("min"): And(float, _larger_than_zero),
+                    Optional("max"): And(float, _larger_than_zero),
+                    Optional("factor"): And(float, _larger_than(1.0)),
+                },
+            },
             "logging": {
                 # TODO add logging level configuration
                 "access": {
@@ -388,9 +404,6 @@ class _BentoMLContainerClass:
 
         if sample_rate is None:
             sample_rate = 0.0
-            logger.warning(
-                "sample_rate hasn't been set in the config and by default no traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
-            )
 
         provider = TracerProvider(
             sampler=ParentBasedTraceIdRatio(sample_rate),
@@ -412,6 +425,7 @@ class _BentoMLContainerClass:
                 endpoint=zipkin_server_url,
             )
             provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            _check_sample_rate(sample_rate)
             return provider
         elif (
             tracer_type == "jaeger"
@@ -428,6 +442,7 @@ class _BentoMLContainerClass:
                 agent_port=jaeger_server_port,
             )
             provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            _check_sample_rate(sample_rate)
             return provider
         elif (
             tracer_type == "otlp"
@@ -449,8 +464,8 @@ class _BentoMLContainerClass:
             exporter = OTLPSpanExporter(  # type: ignore (no opentelemetry types)
                 endpoint=otlp_server_url,
             )
-
             provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            _check_sample_rate(sample_rate)
             return provider
         else:
             return provider
@@ -473,6 +488,31 @@ class _BentoMLContainerClass:
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]]({})
     plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
+
+    @providers.SingletonFactory
+    @staticmethod
+    def duration_buckets(
+        metrics: dict[str, t.Any] = Provide[config.api_server.metrics],
+    ) -> tuple[float, ...]:
+        """
+        Returns a tuple of duration buckets in seconds. If not explicitly configured,
+        the Prometheus default is returned; otherwise, a set of exponential buckets
+        generated based on the configuration is returned.
+        """
+        from ..utils.metrics import DEFAULT_BUCKET
+        from ..utils.metrics import exponential_buckets
+
+        if "duration" in metrics:
+            duration: dict[str, float] = metrics["duration"]
+            if duration.keys() >= {"min", "max", "factor"}:
+                return exponential_buckets(
+                    duration["min"], duration["factor"], duration["max"]
+                )
+            raise BentoMLConfigException(
+                "Keys 'min', 'max', and 'factor' are required for "
+                f"'duration' configuration, '{duration}'."
+            )
+        return DEFAULT_BUCKET
 
 
 BentoMLContainer = _BentoMLContainerClass()

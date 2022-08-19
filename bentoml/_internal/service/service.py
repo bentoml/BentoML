@@ -267,10 +267,24 @@ class Service:
     ) -> None:
         from bentoml.exceptions import BadInput
 
-        if not isinstance(interceptor_cls, grpc.aio.ServerInterceptor):
-            raise BadInput(
-                f"{interceptor_cls} is not of type 'grpc.aio.ServerInterceptor'."
-            )
+        if not issubclass(interceptor_cls, grpc.aio.ServerInterceptor):
+            if isinstance(interceptor_cls, partial):
+                if options:
+                    logger.debug(
+                        "'%s' is a partial class, hence '%s' will be ignored.",
+                        interceptor_cls,
+                        options,
+                    )
+                if not issubclass(interceptor_cls.func, grpc.aio.ServerInterceptor):
+                    raise BadInput(
+                        "'partial' class is not a subclass of 'grpc.aio.ServerInterceptor'."
+                    )
+                self.interceptors.append(interceptor_cls)
+            else:
+                raise BadInput(
+                    f"{interceptor_cls} is not a subclass of 'grpc.aio.ServerInterceptor'."
+                )
+
         self.interceptors.append(partial(interceptor_cls, options))
 
     def add_grpc_handlers(self, handlers: list[grpc.GenericRpcHandler]) -> None:

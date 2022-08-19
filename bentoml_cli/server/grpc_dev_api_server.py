@@ -18,7 +18,7 @@ import click
 )
 @click.option(
     "--max-concurrent-streams",
-    type=click.INT,
+    type=int,
     help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
     default=None,
 )
@@ -64,7 +64,6 @@ def main(
         grpc_options: dict[str, t.Any] = {"enable_reflection": enable_reflection}
         if max_concurrent_streams:
             grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
-        print(grpc_options)
 
         config = grpc.Config(
             svc.grpc_servicer,

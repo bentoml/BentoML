@@ -60,7 +60,7 @@ to_options_field: t.Callable[[str], str] = lambda s: f"__options__{s}"
 @attr.frozen(on_setattr=None, eq=False, repr=False)
 class ReservedEnv:
     base_image: str
-    supported_architectures: list[str]
+    supported_architectures: t.List[str]
     enable_grpc: bool
     python_version: str = attr.field(
         default=f"{version_info.major}.{version_info.minor}"

@@ -154,8 +154,8 @@ def ssl_args(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
-) -> list[str | int]:
-    args: list[str | int] = []
+) -> list[str]:
+    args: list[str] = []
 
     # Add optional SSL args if they exist
     if ssl_certfile:
@@ -169,9 +169,9 @@ def ssl_args(
 
     # match with default uvicorn values.
     if ssl_version:
-        args.extend(["--ssl-version", int(ssl_version)])
+        args.extend(["--ssl-version", str(ssl_version)])
     if ssl_cert_reqs:
-        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
+        args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
     if ssl_ciphers:
         args.extend(["--ssl-ciphers", ssl_ciphers])
     return args
@@ -228,7 +228,7 @@ def serve_development(
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
 
-            args: list[str | int] = [
+            args = [
                 "-m",
                 SCRIPT_GRPC_DEV_API_SERVER,
                 bento_identifier,
@@ -244,10 +244,9 @@ def serve_development(
                 args.extend(
                     [
                         "--max-concurrent-streams",
-                        max_concurrent_streams,
+                        str(max_concurrent_streams),
                     ]
                 )
-            print(args)
 
             watchers.append(
                 create_watcher(
@@ -524,7 +523,7 @@ def serve_production(
 
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(enable_so_reuseport(host, port))
-            args: list[str | int] = [
+            args = [
                 "-m",
                 SCRIPT_GRPC_API_SERVER,
                 bento_identifier,
@@ -544,7 +543,7 @@ def serve_production(
                 args.extend(
                     [
                         "--max-concurrent-streams",
-                        max_concurrent_streams,
+                        str(max_concurrent_streams),
                     ]
                 )
 

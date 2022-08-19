@@ -92,7 +92,7 @@ def main(
 
     grpc_options: dict[str, t.Any] = {"enable_reflection": enable_reflection}
     if max_concurrent_streams:
-        grpc_options["max_concurrent_streams"] = max_concurrent_streams
+        grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
 
     config = grpc.Config(svc.grpc_servicer, bind_address=parsed.netloc, **grpc_options)
 

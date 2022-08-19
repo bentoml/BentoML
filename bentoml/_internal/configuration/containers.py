@@ -105,10 +105,8 @@ SCHEMA = Schema(
         "api_server": {
             "port": And(int, _larger_than_zero),
             "host": And(str, _is_ip_address),
-            "backlog": And(int, _larger_than(64)),
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
-            "max_request_size": And(int, _larger_than_zero),
             Optional("ssl"): {
                 Optional("certfile"): Or(str, None),
                 Optional("keyfile"): Or(str, None),
@@ -137,14 +135,18 @@ SCHEMA = Schema(
                     "response_content_type": Or(bool, None),
                 },
             },
-            "cors": {
-                "enabled": bool,
-                "access_control_allow_origin": Or(str, None),
-                "access_control_allow_credentials": Or(bool, None),
-                "access_control_allow_headers": Or([str], str, None),
-                "access_control_allow_methods": Or([str], str, None),
-                "access_control_max_age": Or(int, None),
-                "access_control_expose_headers": Or([str], str, None),
+            "http": {
+                "backlog": And(int, _larger_than(64)),
+                "max_request_size": And(int, _larger_than_zero),
+                "cors": {
+                    "enabled": bool,
+                    "access_control_allow_origin": Or(str, None),
+                    "access_control_allow_credentials": Or(bool, None),
+                    "access_control_allow_headers": Or([str], str, None),
+                    "access_control_allow_methods": Or([str], str, None),
+                    "access_control_max_age": Or(int, None),
+                    "access_control_expose_headers": Or([str], str, None),
+                },
             },
             "grpc": {
                 "enabled": bool,
@@ -223,7 +225,30 @@ class BentoMLConfiguration:
                     f"Config file {override_config_file} not found"
                 )
             with open(override_config_file, "rb") as f:
-                override_config = yaml.safe_load(f)
+                override_config: dict[str, t.Any] = yaml.safe_load(f)
+
+            # compatibility layer with old configuration pre gRPC features
+            # api_server.[max_request_size|backlog|cors] -> api_server.http.$^
+            if "api_server" in override_config:
+                user_api_config = override_config["api_server"]
+                if "http" not in user_api_config:
+                    user_api_config["http"] = {}
+                if "max_request_size" in user_api_config:
+                    user_mrs = user_api_config.pop("max_request_size")
+                    user_api_config["http"]["max_request_size"] = user_mrs
+                if "backlog" in user_api_config:
+                    user_backlog = user_api_config.pop("backlog")
+                    user_api_config["http"]["backlog"] = user_backlog
+                if "cors" in user_api_config:
+                    user_cors = user_api_config.pop("cors")
+                    user_api_config["http"]["cors"] = user_cors
+                config_merger.merge(override_config["api_server"], user_api_config)
+
+                assert all(
+                    key not in override_config["api_server"]
+                    for key in ["cors", "backlog", "max_request_size"]
+                )
+
             config_merger.merge(self.config, override_config)
 
             global_runner_cfg = {
@@ -351,7 +376,7 @@ class _BentoMLContainerClass:
 
             reflection: _ReflectionConfiguration
 
-    grpc: _GrpcConfiguration = t.cast("_GrpcConfiguration", config.api_server.grpc)
+    grpc: _GrpcConfiguration = t.cast("_GrpcConfiguration", api_server_config.grpc)
 
     development_mode = providers.Static(True)
 
@@ -366,21 +391,21 @@ class _BentoMLContainerClass:
     @staticmethod
     def access_control_options(
         allow_origins: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_origin
+            api_server_config.http.cors.access_control_allow_origin
         ],
         allow_credentials: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_credentials
+            api_server_config.http.cors.access_control_allow_credentials
         ],
         expose_headers: t.List[str] = Provide[
-            config.api_server.cors.access_control_expose_headers
+            api_server_config.http.cors.access_control_expose_headers
         ],
         allow_methods: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_methods
+            api_server_config.http.cors.access_control_allow_methods
         ],
         allow_headers: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_headers
+            api_server_config.http.cors.access_control_allow_headers
         ],
-        max_age: int = Provide[config.api_server.cors.access_control_max_age],
+        max_age: int = Provide[api_server_config.http.cors.access_control_max_age],
     ) -> t.Dict[str, t.Union[t.List[str], int]]:
         kwargs = dict(
             allow_origins=allow_origins,
@@ -396,10 +421,10 @@ class _BentoMLContainerClass:
 
     api_server_workers = providers.Factory[int](
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-        config.api_server.workers,
+        api_server_config.workers,
     )
-    service_port = config.api_server.port
-    service_host = config.api_server.host
+    service_port = api_server_config.port
+    service_host = api_server_config.host
 
     prometheus_multiproc_dir = providers.Factory[str](
         os.path.join,
@@ -411,7 +436,7 @@ class _BentoMLContainerClass:
     @staticmethod
     def metrics_client(
         multiproc_dir: str = Provide[prometheus_multiproc_dir],
-        namespace: str = Provide[config.api_server.metrics.namespace],
+        namespace: str = Provide[api_server_config.metrics.namespace],
     ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
@@ -524,7 +549,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        metrics: dict[str, t.Any] = Provide[config.api_server.metrics],
+        metrics: dict[str, t.Any] = Provide[api_server_config.metrics],
     ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,

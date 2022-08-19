@@ -8,7 +8,7 @@ cd "$GIT_ROOT" || exit 1
 main() {
 	# Use inline heredoc for even faster build
 	# Keeping image as cache should be fine since we only want to generate the stubs.
-	if [[ $(docker images --filter=reference="$STUBS_GENERATOR" -q) == "" ]]; then
+	if [[ $(docker images --filter=reference="$STUBS_GENERATOR" -q) == "" ]] || test "$(git diff --name-only --diff-filter=d -- "$0")"; then
 		docker buildx build --platform=linux/amd64 -t "$STUBS_GENERATOR" --load -f- . <<EOF
 # syntax=docker/dockerfile:1.4-labs
 

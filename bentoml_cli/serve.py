@@ -51,7 +51,7 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=BentoMLContainer.api_server_config.backlog.get(),
+        default=BentoMLContainer.api_server_config.http.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
     )

@@ -1,10 +1,8 @@
 api_server:
   port: 3000
   host: 0.0.0.0
-  backlog: 2048
   workers: 1
   timeout: 60
-  max_request_size: 20971520
   metrics:
     enabled: true
     namespace: BENTOML
@@ -15,14 +13,17 @@ api_server:
       request_content_type: true
       response_content_length: true
       response_content_type: true
-  cors:
-    enabled: false
-    access_control_allow_origin: ~
-    access_control_allow_credentials: ~
-    access_control_allow_methods: ~
-    access_control_allow_headers: ~
-    access_control_max_age: ~
-    access_control_expose_headers: ~
+  http:
+    max_request_size: 20971520
+    backlog: 2048
+    cors:
+      enabled: false
+      access_control_allow_origin: ~
+      access_control_allow_credentials: ~
+      access_control_allow_methods: ~
+      access_control_allow_headers: ~
+      access_control_max_age: ~
+      access_control_expose_headers: ~
   grpc:
     enabled: false
     # https://github.com/grpc/grpc/blob/ebfb028a29ef5f0f4be6f33c131c740ae0a32c84/src/core/ext/transport/chttp2/transport/http2_settings.cc#L51

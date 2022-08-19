@@ -99,7 +99,7 @@ class HTTPAppFactory(BaseAppFactory):
         self,
         bento_service: Service,
         enable_access_control: bool = Provide[
-            BentoMLContainer.api_server_config.cors.enabled
+            BentoMLContainer.api_server_config.http.cors.enabled
         ],
         access_control_options: dict[str, list[str] | int] = Provide[
             BentoMLContainer.access_control_options

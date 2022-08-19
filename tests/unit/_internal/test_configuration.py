@@ -1,19 +1,49 @@
-from tempfile import NamedTemporaryFile
+from __future__ import annotations
+
+import typing as t
+from typing import TYPE_CHECKING
+
+import pytest
 
 from bentoml._internal.configuration.containers import BentoMLConfiguration
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def get_bentomlconfiguration_from_str(config_str: str):
-    tmpfile = NamedTemporaryFile(mode="w+", delete=False)
-    tmpfile.write(config_str)
-    tmpfile.flush()
-    tmpfile.close()
-
-    bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
-    return bentoml_cfg
+    from simple_di.providers import ConfigDictType
 
 
-def test_bentoml_configuration_runner_override():
+@pytest.fixture(scope="function", name="config_cls")
+def get_bentomlconfiguration_from_str(
+    tmp_path: Path,
+) -> t.Callable[[str], ConfigDictType]:
+    def inner(config: str) -> ConfigDictType:
+        path = tmp_path / "configuration.yaml"
+        path.write_text(config)
+        return BentoMLConfiguration(override_config_file=path.__fspath__()).as_dict()
+
+    return inner
+
+
+@pytest.mark.usefixtures("config_cls")
+def test_backward_configuration(config_cls: t.Callable[[str], ConfigDictType]):
+    OLD_CONFIG = """\
+api_server:
+    backlog: 4096
+    max_request_size: 8624612341
+"""
+    bentoml_cfg = config_cls(OLD_CONFIG)
+    assert "backlog" not in bentoml_cfg["api_server"]
+    assert "max_request_size" not in bentoml_cfg["api_server"]
+    assert "cors" not in bentoml_cfg["api_server"]
+    assert bentoml_cfg["api_server"]["http"]["backlog"] == 4096
+    assert bentoml_cfg["api_server"]["http"]["max_request_size"] == 8624612341
+
+
+@pytest.mark.usefixtures("config_cls")
+def test_bentoml_configuration_runner_override(
+    config_cls: t.Callable[[str], ConfigDictType]
+):
     OVERRIDE_RUNNERS = """\
 runners:
     batching:
@@ -40,7 +70,7 @@ runners:
                 enabled: True
 """
 
-    bentoml_cfg = get_bentomlconfiguration_from_str(OVERRIDE_RUNNERS)
+    bentoml_cfg = config_cls(OVERRIDE_RUNNERS)
     runner_cfg = bentoml_cfg["runners"]
 
     # test_runner_1
@@ -73,13 +103,14 @@ runners:
     assert test_runner_batching["resources"]["cpu"] == 4  # should use global
 
 
-def test_runner_gpu_configuration():
+@pytest.mark.usefixtures("config_cls")
+def test_runner_gpu_configuration(config_cls: t.Callable[[str], ConfigDictType]):
     GPU_INDEX = """\
 runners:
     resources:
         nvidia.com/gpu: [1, 2, 4]
 """
-    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX)
+    bentoml_cfg = config_cls(GPU_INDEX)
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": [1, 2, 4]}
 
     GPU_INDEX_WITH_STRING = """\
@@ -87,6 +118,6 @@ runners:
     resources:
         nvidia.com/gpu: "[1, 2, 4]"
 """
-    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX_WITH_STRING)
+    bentoml_cfg = config_cls(GPU_INDEX_WITH_STRING)
     # this behaviour can be confusing
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": "[1, 2, 4]"}

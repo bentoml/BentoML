@@ -52,33 +52,64 @@ BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
 DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
+API_INFO_MD = "| POST [`/{api}`](#{link}) | {input} | {output} |"
 
-def get_default_bento_readme(svc: Service, *, add_headers: bool = True) -> str:
-    doc = ""
+INFERENCE_TABLE_MD = """\
+| InferenceAPI | Input | Output |
+| ------------ | ----- | ------ |
+{content}
+"""
 
-    if add_headers:
-        doc = f'# BentoML Service "{svc.name}"\n\n'
-        doc += "This is a Machine Learning Service created with BentoML. \n\n"
+
+def create_inference_api_table(svc: Service) -> str:
+    from ..service.openapi import APP_TAG
+
+    contents = [
+        API_INFO_MD.format(
+            api=api.name,
+            link=f"operations-{APP_TAG.name.replace(' ','_')}-{svc.name}__{api.name}",  # follows operationId from OpenAPI
+            input=api.input.__class__.__name__,
+            output=api.output.__class__.__name__,
+        )
+        for api in svc.apis.values()
+    ]
+    return INFERENCE_TABLE_MD.format(content="\n".join(contents))
+
+
+def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
+    if svc.bento:
+        bentoml_version = svc.bento.info.bentoml_version
+    else:
+        bentoml_version = BENTOML_VERSION
+
+    if not svc_version:
+        if svc.tag and svc.tag.version:
+            svc_version = svc.tag.version
+        else:
+            svc_version = "None"
+
+    doc = f"""\
+# {svc.name}:{svc_version}
+
+[![pypi_status](https://img.shields.io/badge/BentoML-{bentoml_version}-informational)](https://pypi.org/project/BentoML)
+[![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
+[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://l.bentoml.com/join-slack-swagger)
+[![BentoML GitHub Repo](https://img.shields.io/github/stars/bentoml/bentoml?style=social)](https://github.com/bentoml/BentoML)
+[![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?label=Follow%20BentoML&style=social)](https://twitter.com/bentomlai)
+
+This is a Machine Learning Service created with BentoML."""
 
     if svc.apis:
-        doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
-
-        for api in svc.apis.values():
-            doc += f"### /{api.name}\n\n"
-            doc += f"* Input: {api.input.__class__.__name__}\n"
-            doc += f"* Output: {api.output.__class__.__name__}\n\n"
+        doc += f"\n{create_inference_api_table(svc)}\n\n"
 
     doc += """
-## Customization
 
-This is the default generated `bentoml.Service` doc. You may customize it in your Bento
-build file, e.g.:
+## Help
 
-```yaml
-...
-description: "file: ./readme.md"
-...
-```
+* [📖 Documentation](https://docs.bentoml.org/en/latest/): Learn how to use BentoML.
+* [💬 Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
+* [🐛 GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
+* Tip: you can also [customize this README](https://docs.bentoml.org/en/latest/concepts/bento.html#description).
 """
     # TODO: add links to documentation that may help with API client development
     return doc
@@ -209,7 +240,7 @@ class Bento(StoreItem):
         # Create `readme.md` file
         if build_config.description is None:
             with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
-                f.write(get_default_bento_readme(svc))
+                f.write(get_default_svc_readme(svc, svc_version=tag.version))
         else:
             if build_config.description.startswith("file:"):
                 file_name = build_config.description[5:].strip()

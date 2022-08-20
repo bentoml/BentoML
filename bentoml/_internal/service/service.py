@@ -11,7 +11,7 @@ from bentoml.exceptions import BentoMLException
 from ..tag import Tag
 from ..models import Model
 from ..runner import Runner
-from ..bento.bento import get_default_bento_readme
+from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
 
@@ -190,7 +190,7 @@ class Service:
         if self.bento is not None:
             return self.bento.doc
 
-        return get_default_bento_readme(self)
+        return get_default_svc_readme(self)
 
     @property
     def openapi_spec(self) -> OpenAPISpecification:

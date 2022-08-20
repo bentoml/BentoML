@@ -37,24 +37,6 @@ class Contact:
 
 
 @attr.frozen
-class License:
-    __omit_if_default__ = True
-    __forbid_extra_keys__ = True
-
-    name: str
-    identifier: t.Optional[str] = attr.field(
-        default=attr.Factory(lambda self: self.name.replace(" ", "-"), takes_self=True),
-    )
-    url: t.Optional[str] = None
-
-
-Apache2 = License(
-    name="Apache 2.0",
-    url="https://www.apache.org/licenses/LICENSE-2.0.html",
-)
-
-
-@attr.frozen
 class ExternalDocumentation:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
@@ -222,7 +204,6 @@ class Info:
     summary: t.Optional[str] = None
     description: t.Optional[str] = None
     contact: t.Optional[Contact] = None
-    license: t.Optional[License] = None
 
     # Not yet supported: termsOfService
 

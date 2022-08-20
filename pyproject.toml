@@ -32,7 +32,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = "-rfEX -p pytester -p no:warnings"
+addopts = "-rfEX -p pytester -p no:warnings --capture=tee-sys"
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus"]

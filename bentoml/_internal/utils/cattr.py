@@ -94,6 +94,9 @@ def register_global_unstructure_hooks() -> None:
     )
     bentoml_cattr.register_unstructure_hook(datetime, lambda dt: dt.isoformat())
     bentoml_cattr.register_unstructure_hook(Tag, str)
+    bentoml_cattr.register_unstructure_hook(
+        ModelSignature, model_signature_unstructure_hook
+    )
     bentoml_cattr.register_unstructure_hook_func(
         lambda cls: issubclass(cls, ModelInfo),
         # Ignore tag, tag is saved via the name and version field
@@ -120,8 +123,4 @@ def register_global_unstructure_hooks() -> None:
             _cattrs_omit_if_default=getattr(cls, "__omit_if_default__", True),
             **{k: override(rename=v) for k, v in cls.__rename_fields__.items()},
         ),
-    )
-
-    bentoml_cattr.register_unstructure_hook(
-        ModelSignature, model_signature_unstructure_hook
     )

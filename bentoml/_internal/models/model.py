@@ -14,16 +14,12 @@ from datetime import timezone
 import attr
 import yaml
 import cloudpickle
-from cattr.gen import override
-from cattr.gen import make_dict_structure_fn
-from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..configuration.containers import BentoMLContainer
@@ -344,11 +340,15 @@ class ModelContext:
 
     @staticmethod
     def from_dict(data: dict[str, str | dict[str, str]] | ModelContext) -> ModelContext:
+        from ..utils import bentoml_cattr
+
         if isinstance(data, ModelContext):
             return data
         return bentoml_cattr.structure(data, ModelContext)
 
     def to_dict(self: ModelContext) -> dict[str, str | dict[str, str]]:
+        from ..utils import bentoml_cattr
+
         return bentoml_cattr.unstructure(self)
 
 
@@ -415,6 +415,8 @@ class ModelSignature:
 
     @classmethod
     def from_dict(cls, data: ModelSignatureDict) -> ModelSignature:
+        from ..utils import bentoml_cattr
+
         if "batch_dim" in data and isinstance(data["batch_dim"], int):
             formated_data = dict(data, batch_dim=(data["batch_dim"], data["batch_dim"]))
         else:
@@ -449,11 +451,6 @@ def model_signature_unstructure_hook(
     if model_signature.output_spec is not None:
         encoded["output_spec"] = model_signature.output_spec
     return encoded
-
-
-bentoml_cattr.register_unstructure_hook(
-    ModelSignature, model_signature_unstructure_hook
-)
 
 
 @attr.define(repr=False, eq=False, frozen=True)
@@ -586,6 +583,8 @@ class ModelInfo:
         ...
 
     def dump(self, stream: io.StringIO | None = None) -> io.BytesIO | None:
+        from ..utils import bentoml_cattr
+
         return yaml.safe_dump(  # type: ignore (no yaml types)
             bentoml_cattr.unstructure(self), stream=stream, sort_keys=False
         )
@@ -593,6 +592,8 @@ class ModelInfo:
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]) -> ModelInfo:
         from bentoml.exceptions import BentoMLException
+
+        from ..utils import bentoml_cattr
 
         try:
             yaml_content = yaml.safe_load(stream)
@@ -629,30 +630,6 @@ class ModelInfo:
         ...
 
 
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),
-    make_dict_structure_fn(
-        ModelInfo,
-        bentoml_cattr,
-        name=override(omit=True),
-        version=override(omit=True),
-        _options=override(rename="options"),
-    ),
-)
-bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),
-    # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(
-        ModelInfo,
-        bentoml_cattr,
-        tag=override(omit=True),
-        _options=override(rename="options"),
-        _cached_module=override(omit=True),
-        _cached_options=override(omit=True),
-    ),
-)
-
-
 def copy_model(
     model_tag: t.Union[Tag, str],
     *,
@@ -675,6 +652,8 @@ def copy_model(
 
 
 def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:
+    from ..utils import bentoml_cattr
+
     return dumper.represent_dict(bentoml_cattr.unstructure(info))
 
 

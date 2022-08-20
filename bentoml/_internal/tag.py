@@ -8,8 +8,6 @@ import logging
 
 import attr
 
-from .utils.cattr import bentoml_cattr
-
 logger = logging.getLogger(__name__)
 
 tag_fmt = "[a-z0-9]([-._a-z0-9]*[a-z0-9])?"
@@ -136,7 +134,3 @@ class Tag:
         import fs
 
         return fs.path.combine(self.name, "latest")
-
-
-bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]
-bentoml_cattr.register_unstructure_hook(Tag, str)

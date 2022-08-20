@@ -1,4 +1,4 @@
-# pylint: skip-file
+# pylint: disable=E402
 """
 BentoML
 =======
@@ -115,6 +115,13 @@ else:
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
     del _LazyLoader
+
+# register cattr hooks
+from ._internal.utils.cattr import register_global_structure_hook
+from ._internal.utils.cattr import register_global_unstructure_hooks
+
+register_global_structure_hook()
+register_global_unstructure_hooks()
 
 __all__ = [
     "__version__",

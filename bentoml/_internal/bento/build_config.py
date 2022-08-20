@@ -7,15 +7,12 @@ import typing as t
 import logging
 import subprocess
 from sys import version_info
-from shlex import quote
 from typing import overload
 from typing import TYPE_CHECKING
 
 import attr
 import yaml
 from pathspec import PathSpec
-
-from ..utils import bentoml_cattr
 
 if TYPE_CHECKING:
     from attr import Attribute
@@ -532,6 +529,8 @@ class PythonOptions:
             pip_args.extend(self.pip_args.split())
 
         with bento_fs.open(fs.path.combine(py_folder, "install.sh"), "w") as f:
+            from shlex import quote
+
             args = " ".join(map(quote, pip_args)) if pip_args else ""
             install_script_content = (
                 """\
@@ -648,16 +647,13 @@ fi
         return attr.evolve(self, **defaults)
 
 
-def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
+def python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
         if field in d and isinstance(d[field], str):
             d[field] = [d[field]]
 
     return PythonOptions(**d)
-
-
-bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
 if TYPE_CHECKING:
@@ -771,6 +767,8 @@ class BentoBuildConfig:
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:
+        from ..utils import bentoml_cattr
+
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

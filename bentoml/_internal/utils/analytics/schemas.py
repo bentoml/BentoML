@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 import uuid
@@ -6,26 +8,17 @@ from abc import ABC
 from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
-from platform import platform
-from platform import python_version
 from functools import lru_cache
 
 import attr
 import yaml
-import psutil
-import attr.converters
 from simple_di import inject
 from simple_di import Provide
 
-from ...utils import bentoml_cattr
-from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
-from ...yatai_rest_api_client.config import get_config_path
-from ...yatai_rest_api_client.config import get_current_context
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-    GenericFunction = t.Callable[P, t.Any]
 
 # Refers to bentoml/yatai-deployment-operator/common/consts/consts.go
 ENV_YATAI_VERSION = "YATAI_T_VERSION"
@@ -36,11 +29,15 @@ ENV_YATAI_CLUSTER_UID = "YATAI_T_CLUSTER_UID"
 
 @lru_cache(maxsize=1)
 def get_platform() -> str:
+    from platform import platform
+
     return platform(aliased=True)
 
 
 @lru_cache(maxsize=1)
 def get_python_version() -> str:
+    from platform import python_version
+
     return python_version()
 
 
@@ -55,6 +52,8 @@ class ClientInfo:
 def get_client_info(
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
 ) -> t.Optional[ClientInfo]:
+    from ..cattr import bentoml_cattr
+
     CLIENT_INFO_FILE_PATH = os.path.join(bentoml_home, "client_id")
 
     if os.path.exists(CLIENT_INFO_FILE_PATH):
@@ -76,6 +75,9 @@ def get_client_info(
 
 @lru_cache(maxsize=1)
 def get_yatai_user_email() -> t.Optional[str]:
+    from ...yatai_rest_api_client.config import get_config_path
+    from ...yatai_rest_api_client.config import get_current_context
+
     if os.path.exists(get_config_path()):
         return get_current_context().email
 
@@ -101,6 +103,12 @@ def in_notebook() -> bool:
     return True
 
 
+def lazy_bentoml_version() -> str:
+    from ...configuration import BENTOML_VERSION
+
+    return BENTOML_VERSION
+
+
 @attr.define
 class CommonProperties:
     # when the event is triggered
@@ -108,7 +116,7 @@ class CommonProperties:
 
     # environment related
     platform: str = attr.field(factory=get_platform)
-    bentoml_version: str = attr.field(default=BENTOML_VERSION)
+    bentoml_version: str = attr.field(factory=lazy_bentoml_version)
     python_version: str = attr.field(factory=get_python_version)
     is_interactive: bool = attr.field(factory=is_interactive)
     in_notebook: bool = attr.field(factory=in_notebook)
@@ -134,6 +142,8 @@ class CommonProperties:
     )
 
     def __attrs_post_init__(self):
+        import psutil
+
         self.total_memory_in_mb = int(psutil.virtual_memory().total / 1024.0 / 1024.0)
         proc = psutil.Process(os.getpid())
         with proc.oneshot():
@@ -222,4 +232,6 @@ class TrackingPayload:
     event_type: str
 
     def to_dict(self):
+        from ..cattr import bentoml_cattr
+
         return bentoml_cattr.unstructure(self)

@@ -15,9 +15,6 @@ import logging
 
 import attr
 import yaml
-import cattr.errors
-from cattr.gen import override
-from cattr.gen import make_dict_unstructure_fn
 
 from ...utils import bentoml_cattr
 
@@ -280,6 +277,8 @@ class OpenAPISpecification:
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]) -> OpenAPISpecification:
+        import cattr.errors
+
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -292,7 +291,7 @@ class OpenAPISpecification:
             raise
 
 
-def _structure_rename_fields_hook(data: t.Dict[str, t.Any], cl: t.Type[_T]) -> _T:
+def openapi_structure_rename_hook(data: t.Dict[str, t.Any], cl: t.Type[_T]) -> _T:
     # pop is atomic, so we don't need to worry about performance deficit.
     # See https://stackoverflow.com/a/17326099/8643197.
     rev = {
@@ -301,35 +300,12 @@ def _structure_rename_fields_hook(data: t.Dict[str, t.Any], cl: t.Type[_T]) -> _
     return cl(**rev, **data)
 
 
-# handles all OpenAPI class that includes __rename_fields__
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: attr.has(cls) and hasattr(cls, "__rename_fields__"),
-    lambda data, cl: _structure_rename_fields_hook(data, cl),
-)
-bentoml_cattr.register_unstructure_hook_factory(
-    lambda cls: attr.has(cls) and hasattr(cls, "__rename_fields__"),
-    lambda cls: make_dict_unstructure_fn(
-        cls,
-        bentoml_cattr,
-        # for all classes under OpenAPI, we want to omit default values.
-        _cattrs_omit_if_default=getattr(cls, "__omit_if_default__", True),
-        **{k: override(rename=v) for k, v in cls.__rename_fields__.items()},
-    ),
-)
-
-
 # register all class in this structure whom
 # implement a '__preserve_cls_structure__' method
-def _preserve_cls_structure(data: dict[str, t.Any], cl: t.Type[_T]) -> _T:
+def openapi_preserve_cls_structure_hook(data: dict[str, t.Any], cl: t.Type[_T]) -> _T:
     if isinstance(data, cl):
         return data
     return cl(**data)
-
-
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: attr.has(cls) and hasattr(cls, "__preserve_cls_structure__"),
-    lambda data, cls: _preserve_cls_structure(data, cls),
-)
 
 
 def _OpenAPISpecification_dumper(

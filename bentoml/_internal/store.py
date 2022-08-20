@@ -5,17 +5,16 @@ import typing as t
 import datetime
 from abc import ABC
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
-import fs
-import fs.errors
-from fs.base import FS
-
-from .tag import Tag
-from .types import PathType
 from .exportable import Exportable
-from ..exceptions import NotFound
-from ..exceptions import BentoMLException
+
+if TYPE_CHECKING:
+    from fs.base import FS
+
+    from .tag import Tag
+    from .types import PathType
 
 T = t.TypeVar("T")
 
@@ -63,12 +62,18 @@ class Store(ABC, t.Generic[Item]):
 
     @abstractmethod
     def __init__(self, base_path: t.Union[PathType, FS], item_type: t.Type[Item]):
+        import fs
+
         self._item_type = item_type
         if isinstance(base_path, os.PathLike):
             base_path = base_path.__fspath__()
         self._fs = fs.open_fs(base_path)
 
     def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:
+        from bentoml.exceptions import NotFound
+
+        from .tag import Tag
+
         if not tag:
             return [
                 ver
@@ -102,6 +107,8 @@ class Store(ABC, t.Generic[Item]):
         return self._item_type.from_fs(self._fs.opendir(tag.path()))
 
     def _recreate_latest(self, tag: Tag):
+        from bentoml.exceptions import NotFound
+
         try:
             items = self.list(tag.name)
         except NotFound:
@@ -126,6 +133,13 @@ class Store(ABC, t.Generic[Item]):
         store.get("my_bento:v1.0.0")
         store.get(Tag("my_bento", "latest"))
         """
+        import fs.errors
+
+        from bentoml.exceptions import NotFound
+        from bentoml.exceptions import BentoMLException
+
+        from .tag import Tag
+
         _tag = Tag.from_taglike(tag)
         if _tag.version is None or _tag.version == "latest":
             try:
@@ -159,6 +173,10 @@ class Store(ABC, t.Generic[Item]):
 
     @contextmanager
     def register(self, tag: t.Union[str, Tag]):
+        from bentoml.exceptions import BentoMLException
+
+        from .tag import Tag
+
         _tag = Tag.from_taglike(tag)
 
         item_path = _tag.path()
@@ -179,6 +197,10 @@ class Store(ABC, t.Generic[Item]):
                     latest_file.write(_tag.version)
 
     def delete(self, tag: t.Union[str, Tag]) -> None:
+        from bentoml.exceptions import NotFound
+
+        from .tag import Tag
+
         _tag = Tag.from_taglike(tag)
 
         if not self._fs.exists(_tag.path()):

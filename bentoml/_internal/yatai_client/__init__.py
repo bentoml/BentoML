@@ -11,53 +11,20 @@ from functools import wraps
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 
-import fs
-import requests
-from rich.live import Live
 from simple_di import inject
 from simple_di import Provide
-from rich.panel import Panel
-from rich.console import Group
-from rich.console import ConsoleRenderable
-from rich.progress import TaskID
 from rich.progress import Progress
-from rich.progress import BarColumn
-from rich.progress import TextColumn
-from rich.progress import SpinnerColumn
-from rich.progress import DownloadColumn
-from rich.progress import TimeElapsedColumn
-from rich.progress import TimeRemainingColumn
-from rich.progress import TransferSpeedColumn
+
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from typing_extensions import Literal
+    from rich.console import ConsoleRenderable
 
-from ..tag import Tag
-from ..utils import calc_dir_size
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..bento.bento import Bento
-from ..bento.bento import BentoStore
-from ..models.model import Model
-from ..models.model import copy_model
-from ..models.model import ModelStore
-from ..configuration.containers import BentoMLContainer
-from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
-from ..yatai_rest_api_client.schemas import BentoApiSchema
-from ..yatai_rest_api_client.schemas import LabelItemSchema
-from ..yatai_rest_api_client.schemas import BentoRunnerSchema
-from ..yatai_rest_api_client.schemas import BentoUploadStatus
-from ..yatai_rest_api_client.schemas import CreateBentoSchema
-from ..yatai_rest_api_client.schemas import CreateModelSchema
-from ..yatai_rest_api_client.schemas import ModelUploadStatus
-from ..yatai_rest_api_client.schemas import UpdateBentoSchema
-from ..yatai_rest_api_client.schemas import BentoManifestSchema
-from ..yatai_rest_api_client.schemas import ModelManifestSchema
-from ..yatai_rest_api_client.schemas import FinishUploadBentoSchema
-from ..yatai_rest_api_client.schemas import FinishUploadModelSchema
-from ..yatai_rest_api_client.schemas import BentoRunnerResourceSchema
-from ..yatai_rest_api_client.schemas import CreateBentoRepositorySchema
-from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
+    from ..tag import Tag
+    from ..bento.bento import Bento
+    from ..bento.bento import BentoStore
+    from ..models.model import Model
+    from ..models.model import ModelStore
 
 
 class ObjectWrapper(object):
@@ -87,7 +54,7 @@ class _CallbackIOWrapper(ObjectWrapper):
         self,
         callback: t.Callable[[int], None],
         stream: t.BinaryIO,
-        method: Literal["read", "write"] = "read",
+        method: t.Literal["read", "write"] = "read",
     ):
         """
         Wrap a given `file`-like object's `read()` or `write()` to report
@@ -143,6 +110,18 @@ ProgressWrapper: t.Type[ProgressCast] = t.cast(t.Type[ProgressCast], ObjectWrapp
 
 
 class YataiClient:
+
+    from rich.panel import Panel
+    from rich.console import Group
+    from rich.progress import TaskID
+    from rich.progress import BarColumn
+    from rich.progress import TextColumn
+    from rich.progress import SpinnerColumn
+    from rich.progress import DownloadColumn
+    from rich.progress import TimeElapsedColumn
+    from rich.progress import TimeRemainingColumn
+    from rich.progress import TransferSpeedColumn
+
     log_progress = ProgressWrapper(
         Progress(
             TextColumn("{task.description}"),
@@ -185,7 +164,9 @@ class YataiClient:
             self.spinner_progress.stop_task(task_id)
             self.spinner_progress.update(task_id, visible=False)
 
-    def push_bento(self, bento: "Bento", *, force: bool = False):
+    def push_bento(self, bento: Bento, *, force: bool = False):
+        from rich.live import Live
+
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
@@ -194,11 +175,27 @@ class YataiClient:
 
     def _do_push_bento(
         self,
-        bento: "Bento",
+        bento: Bento,
         upload_task_id: TaskID,
         *,
         force: bool = False,
     ):
+        import requests
+
+        from ..utils import calc_dir_size
+        from ...exceptions import BentoMLException
+        from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
+        from ..yatai_rest_api_client.schemas import BentoApiSchema
+        from ..yatai_rest_api_client.schemas import LabelItemSchema
+        from ..yatai_rest_api_client.schemas import BentoRunnerSchema
+        from ..yatai_rest_api_client.schemas import BentoUploadStatus
+        from ..yatai_rest_api_client.schemas import CreateBentoSchema
+        from ..yatai_rest_api_client.schemas import UpdateBentoSchema
+        from ..yatai_rest_api_client.schemas import BentoManifestSchema
+        from ..yatai_rest_api_client.schemas import FinishUploadBentoSchema
+        from ..yatai_rest_api_client.schemas import BentoRunnerResourceSchema
+        from ..yatai_rest_api_client.schemas import CreateBentoRepositorySchema
+
         yatai_rest_client = get_current_yatai_rest_api_client()
         name = bento.tag.name
         version = bento.tag.version
@@ -210,7 +207,7 @@ class YataiClient:
         models = (model_store.get(name) for name in model_tags)
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
-            def push_model(model: "Model"):
+            def push_model(model: Model):
                 model_upload_task_id = self.transmission_progress.add_task(
                     f'Pushing model "{model.tag}"', start=False, visible=False
                 )
@@ -392,8 +389,10 @@ class YataiClient:
         tag: t.Union[str, Tag],
         *,
         force: bool = False,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    ) -> "Bento":
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> Bento:
+        from rich.live import Live
+
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
                 f'Pulling bento "{tag}"', start=False, visible=False
@@ -412,8 +411,20 @@ class YataiClient:
         download_task_id: TaskID,
         *,
         force: bool = False,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    ) -> "Bento":
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> Bento:
+        import fs
+        import requests
+
+        from bentoml.exceptions import NotFound
+        from bentoml.exceptions import BentoMLException
+
+        from ..tag import Tag
+        from ..bento.bento import Bento
+        from ..models.model import copy_model
+        from ..models.model import ModelStore
+        from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
+
         try:
             bento = bento_store.get(tag)
             if not force:
@@ -520,7 +531,9 @@ class YataiClient:
                     )
                     return bento
 
-    def push_model(self, model: "Model", *, force: bool = False):
+    def push_model(self, model: Model, *, force: bool = False):
+        from rich.live import Live
+
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing model "{model.tag}"', start=False, visible=False
@@ -528,13 +541,26 @@ class YataiClient:
             self._do_push_model(model, upload_task_id, force=force)
 
     def _do_push_model(
-        self, model: "Model", upload_task_id: TaskID, *, force: bool = False
+        self, model: Model, upload_task_id: TaskID, *, force: bool = False
     ):
+        import requests
+
+        from bentoml.exceptions import BentoMLException
+
+        from ..utils import calc_dir_size
+        from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
+        from ..yatai_rest_api_client.schemas import LabelItemSchema
+        from ..yatai_rest_api_client.schemas import CreateModelSchema
+        from ..yatai_rest_api_client.schemas import ModelUploadStatus
+        from ..yatai_rest_api_client.schemas import ModelManifestSchema
+        from ..yatai_rest_api_client.schemas import FinishUploadModelSchema
+        from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
+
         yatai_rest_client = get_current_yatai_rest_api_client()
         name = model.tag.name
         version = model.tag.version
         if version is None:
-            raise BentoMLException(f'Model "{model.tag}" version cannot be None')
+            raise BentoMLException(f'Model "{model.tag}" version cannot be one')
         info = model.info
         with self.spin(text=f'Fetching model repository "{name}"'):
             model_repository = yatai_rest_client.get_model_repository(
@@ -559,7 +585,7 @@ class YataiClient:
             )
             return
         if not remote_model:
-            labels: t.List[LabelItemSchema] = [
+            labels: list[LabelItemSchema] = [
                 LabelItemSchema(key=key, value=value)
                 for key, value in info.labels.items()
             ]
@@ -675,8 +701,10 @@ class YataiClient:
         tag: t.Union[str, Tag],
         *,
         force: bool = False,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ) -> "Model":
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> Model:
+        from rich.live import Live
+
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
                 f'Pulling model "{tag}"', start=False, visible=False
@@ -692,8 +720,18 @@ class YataiClient:
         download_task_id: TaskID,
         *,
         force: bool = False,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ) -> "Model":
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> Model:
+        import fs
+        import requests
+
+        from bentoml.exceptions import NotFound
+        from bentoml.exceptions import BentoMLException
+
+        from ..tag import Tag
+        from ..models.model import Model
+        from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
+
         try:
             model = model_store.get(tag)
             if not force:

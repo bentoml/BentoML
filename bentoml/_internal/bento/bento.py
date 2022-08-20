@@ -9,16 +9,12 @@ from datetime import timezone
 
 import attr
 import yaml
-from cattr.gen import override
-from cattr.gen import make_dict_structure_fn
-from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..utils import bentoml_cattr
 from .build_config import CondaOptions
 from .build_config import DockerOptions
 from .build_config import PythonOptions
@@ -34,6 +30,8 @@ if TYPE_CHECKING:
     from ..runner.runner import Runner
     from ..service.service import Service
     from ..service.inference_api import InferenceAPI
+
+    OptionsCls = t.Type[DockerOptions] | t.Type[CondaOptions] | t.Type[PythonOptions]
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +65,8 @@ def create_inference_api_table(svc: Service) -> str:
 
 
 def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
+    from ..configuration import BENTOML_VERSION
+
     if svc.bento:
         bentoml_version = svc.bento.info.bentoml_version
     else:
@@ -457,6 +457,8 @@ class BentoInfo:
     def from_yaml_file(cls, stream: t.IO[t.Any]) -> BentoInfo:
         from bentoml.exceptions import BentoMLException
 
+        from ..utils import bentoml_cattr
+
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -503,23 +505,9 @@ class BentoInfo:
         ...
 
 
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, BentoInfo),
-    make_dict_structure_fn(
-        BentoInfo,
-        bentoml_cattr,
-        name=override(omit=True),
-        version=override(omit=True),
-    ),
-)
-bentoml_cattr.register_unstructure_hook(
-    BentoInfo,
-    # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),
-)
-
-
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
+    from ..utils import bentoml_cattr
+
     return dumper.represent_dict(bentoml_cattr.unstructure(info))
 
 

@@ -52,6 +52,29 @@ BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
 DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
 
+API_INFO_MD = "| POST [`/{api}`](#{link}) | {input} | {output} |"
+
+INFERENCE_TABLE_MD = """\
+| InferenceAPI | Input | Output |
+| ------------ | ----- | ------ |
+{content}
+"""
+
+
+def create_inference_api_table(svc: Service) -> str:
+    from ..service.openapi import APP_TAG
+
+    contents = [
+        API_INFO_MD.format(
+            api=api.name,
+            link=f"operations-{APP_TAG.name.replace(' ','_')}-{svc.name}__{api.name}",  # follows operationId from OpenAPI
+            input=api.input.__class__.__name__,
+            output=api.output.__class__.__name__,
+        )
+        for api in svc.apis.values()
+    ]
+    return INFERENCE_TABLE_MD.format(content="\n".join(contents))
+
 
 def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
     if svc.bento:
@@ -77,21 +100,15 @@ def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
 This is a Machine Learning Service created with BentoML."""
 
     if svc.apis:
-        doc += "\n## Service APIs:\n\n"
-
-        for api in svc.apis.values():
-            doc += f"""
-### `POST` /{api.name}
-* Input: {api.input.__class__.__name__}
-* Output: {api.output.__class__.__name__}
-"""
+        doc += f"\n{create_inference_api_table(svc)}\n\n"
 
     doc += """
+
 ## Help
 
-* [Documentation](https://docs.bentoml.org/en/latest/): Learn how to use BentoML.
-* [Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
-* [GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
+* [📖 Documentation](https://docs.bentoml.org/en/latest/): Learn how to use BentoML.
+* [💬 Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
+* [🐛 GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
 * Tip: you can also [customize this README](https://docs.bentoml.org/en/latest/concepts/bento.html#description).
 """
     # TODO: add links to documentation that may help with API client development

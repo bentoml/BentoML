@@ -483,7 +483,7 @@ class PythonOptions:
             install_script_content = (
                 """\
 #!/usr/bin/env bash
-set -ex
+set -exuo pipefail
 
 # Parent directory https://stackoverflow.com/a/246128/8643197
 BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
@@ -525,9 +525,9 @@ if python -c "import bentoml" &> /dev/null; then
         echo "WARNING: using BentoML version ${existing_bentoml_version}"
     fi
 else
-    pip install bentoml==$BENTOML_VERSION
+pip install bentoml=="$BENTOML_VERSION"
 fi
-                    """
+"""
             )
             f.write(install_script_content)
 

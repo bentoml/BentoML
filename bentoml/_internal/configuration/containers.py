@@ -405,6 +405,8 @@ class _BentoMLContainerClass:
         from opentelemetry.sdk.resources import SERVICE_NAMESPACE
         from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.sdk.environment_variables import OTEL_SERVICE_NAME
+        from opentelemetry.sdk.environment_variables import OTEL_RESOURCE_ATTRIBUTES
 
         from ..utils.telemetry import ParentBasedTraceIdRatio
 
@@ -412,14 +414,18 @@ class _BentoMLContainerClass:
             sample_rate = 0.0
 
         resource = {}
-        if component_context.component_name:
-            resource[SERVICE_NAME] = component_context.component_name
-        if component_context.component_index:
-            resource[SERVICE_INSTANCE_ID] = component_context.component_index
-        if component_context.bento_name:
-            resource[SERVICE_NAMESPACE] = component_context.bento_name
-        if component_context.bento_version:
-            resource[SERVICE_VERSION] = component_context.bento_version
+
+        # User can optionally configure the resource with the following environment variables. Only
+        # configure resource if user has not explicitly configured it.
+        if OTEL_SERVICE_NAME not in os.environ and OTEL_RESOURCE_ATTRIBUTES not in os.environ:
+            if component_context.component_name:
+                resource[SERVICE_NAME] = component_context.component_name
+            if component_context.component_index:
+                resource[SERVICE_INSTANCE_ID] = component_context.component_index
+            if component_context.bento_name:
+                resource[SERVICE_NAMESPACE] = component_context.bento_name
+            if component_context.bento_version:
+                resource[SERVICE_VERSION] = component_context.bento_version
 
         provider = TracerProvider(
             sampler=ParentBasedTraceIdRatio(sample_rate),

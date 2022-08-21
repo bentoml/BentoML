@@ -417,7 +417,10 @@ class _BentoMLContainerClass:
 
         # User can optionally configure the resource with the following environment variables. Only
         # configure resource if user has not explicitly configured it.
-        if OTEL_SERVICE_NAME not in os.environ and OTEL_RESOURCE_ATTRIBUTES not in os.environ:
+        if (
+            OTEL_SERVICE_NAME not in os.environ
+            and OTEL_RESOURCE_ATTRIBUTES not in os.environ
+        ):
             if component_context.component_name:
                 resource[SERVICE_NAME] = component_context.component_name
             if component_context.component_index:

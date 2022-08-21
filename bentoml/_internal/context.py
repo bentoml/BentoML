@@ -195,27 +195,6 @@ class _ComponentContext:
     component_name: str | None = None
     component_index: int | None = None
 
-    # _component_name: str | None = None
-    # _service_name: str | None = None
-    # bento_name: str
-    # bento_version: str | None
-
-    # @component_name.setter
-    # def component_name(self, component_name: str) -> None:
-    #     assert self._component_name is None, "component_name should not be set twice"
-    #     self._component_name = component_name
-
-    # @property
-    # def service_name(self) -> str:
-    #     return (
-    #         self._service_name if self._service_name is not None else "unknown_service"
-    #     )
-
-    # @service_name.setter
-    # def service_name(self, service_name: str) -> None:
-    #     assert self._service_name is None, "service_name should not be set twice"
-    #     self._service_name = service_name
-
     @property
     def yatai_bento_deployment_name(self) -> str:
         return os.environ.get("YATAI_BENTO_DEPLOYMENT_NAME", "")

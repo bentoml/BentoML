@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 import logging
 import logging.config
-from functools import cache
+from functools import lru_cache
 
 from .context import trace_context
 from .context import component_context
@@ -95,7 +95,7 @@ def configure_logging():
     logging.config.dictConfig(CLI_LOGGING_CONFIG)
 
 
-@cache
+@lru_cache(maxsize=1)
 def _component_name():
     result: str = (
         component_context.component_type

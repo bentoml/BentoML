@@ -114,6 +114,7 @@ onnx
 onnxruntime
 openapi
 openzipkin
+otlp
 outcoming
 param
 picklable_model

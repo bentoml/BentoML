@@ -39,7 +39,7 @@ runners:
       response_content_type: True
 
 tracing:
-  type: otlp
+  type: zipkin
   sample_rate: Null
   excluded_urls: Null
   zipkin:

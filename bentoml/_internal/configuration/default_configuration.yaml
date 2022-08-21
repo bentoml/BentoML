@@ -40,7 +40,7 @@ runners:
 
 tracing:
   type: otlp
-  sample_rate: 1.0
+  sample_rate: Null
   excluded_urls: Null
   zipkin:
     url: Null
@@ -48,5 +48,5 @@ tracing:
     address: Null
     port: Null
   otlp:
-    protocol: http
-    url: http://localhost:4318/v1/traces
+    protocol: Null
+    url: Null

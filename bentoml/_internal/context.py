@@ -188,8 +188,8 @@ class _ServiceTraceContext:
 
 
 class _ComponentContext:
-    bento_name: str
-    bento_version: str | None
+    bento_name: str | None = None
+    bento_version: str | None = None
     component_type: str | None = None
     component_name: str | None = None
     component_index: int | None = None

@@ -6,6 +6,7 @@ import contextvars
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from functools import cached_property
 
 import attr
 import starlette.datastructures
@@ -188,18 +189,32 @@ class _ServiceTraceContext:
 
 
 class _ComponentContext:
-    _component_name: str | None = None
     bento_name: str
     bento_version: str | None
+    component_type: str | None = None
+    component_name: str | None = None
+    component_index: int | None = None
 
-    @property
-    def component_name(self) -> str:
-        return self._component_name if self._component_name is not None else ""
+    # _component_name: str | None = None
+    # _service_name: str | None = None
+    # bento_name: str
+    # bento_version: str | None
 
-    @component_name.setter
-    def component_name(self, component_name: str) -> None:
-        assert self._component_name is None, "component_name should not be set twice"
-        self._component_name = component_name
+    # @component_name.setter
+    # def component_name(self, component_name: str) -> None:
+    #     assert self._component_name is None, "component_name should not be set twice"
+    #     self._component_name = component_name
+
+    # @property
+    # def service_name(self) -> str:
+    #     return (
+    #         self._service_name if self._service_name is not None else "unknown_service"
+    #     )
+
+    # @service_name.setter
+    # def service_name(self, service_name: str) -> None:
+    #     assert self._service_name is None, "service_name should not be set twice"
+    #     self._service_name = service_name
 
     @property
     def yatai_bento_deployment_name(self) -> str:

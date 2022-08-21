@@ -17,7 +17,7 @@ def create_bentoml_cli() -> click.Group:
 
     from bentoml._internal.context import component_context
 
-    component_context.component_name = "cli"
+    component_context.component_type = "cli"
 
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 

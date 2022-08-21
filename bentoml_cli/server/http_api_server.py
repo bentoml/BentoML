@@ -153,13 +153,14 @@ def main(
         arbiter.start()
         return
 
-    component_context.component_name = f"api_server:{worker_id}"
-
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
+    component_context.component_type = "api_server"
+    component_context.component_name = svc.name
+    component_context.component_index = worker_id
     if svc.tag is None:
         component_context.bento_name = f"*{svc.__class__.__name__}"
         component_context.bento_version = "not available"

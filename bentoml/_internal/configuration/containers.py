@@ -22,6 +22,7 @@ from deepmerge.merger import Merger
 
 from . import expand_env_var
 from ..utils import validate_or_create_dir
+from ..context import component_context
 from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
 
@@ -398,6 +399,11 @@ class _BentoMLContainerClass:
         otlp_server_url: t.Optional[str] = Provide[config.tracing.otlp.url],
     ):
         from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import SERVICE_VERSION
+        from opentelemetry.sdk.resources import SERVICE_NAMESPACE
+        from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
         from ..utils.telemetry import ParentBasedTraceIdRatio
@@ -405,14 +411,19 @@ class _BentoMLContainerClass:
         if sample_rate is None:
             sample_rate = 0.0
 
+        resource = {}
+        if component_context.component_name:
+            resource[SERVICE_NAME] = component_context.component_name
+        if component_context.component_index:
+            resource[SERVICE_INSTANCE_ID] = component_context.component_index
+        if component_context.bento_name:
+            resource[SERVICE_NAMESPACE] = component_context.bento_name
+        if component_context.bento_version:
+            resource[SERVICE_VERSION] = component_context.bento_version
+
         provider = TracerProvider(
             sampler=ParentBasedTraceIdRatio(sample_rate),
-            # resource: Resource = Resource.create({}),
-            # shutdown_on_exit: bool = True,
-            # active_span_processor: Union[
-            # SynchronousMultiSpanProcessor, ConcurrentMultiSpanProcessor
-            # ] = None,
-            # id_generator: IdGenerator = None,
+            resource=Resource.create(resource),
         )
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:

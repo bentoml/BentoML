@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 import logging
 import logging.config
+from functools import cache
 
 from .context import trace_context
 from .context import component_context
@@ -94,10 +95,24 @@ def configure_logging():
     logging.config.dictConfig(CLI_LOGGING_CONFIG)
 
 
+@cache
+def _component_name():
+    result: str = (
+        component_context.component_type
+        if component_context.component_type is not None
+        else ""
+    )
+    if component_context.component_name:
+        result = f"{result}:{component_context.component_name}"
+    if component_context.component_index:
+        result = f"{result}[{component_context.component_index}]"
+    return result
+
+
 def trace_record_factory(*args: t.Any, **kwargs: t.Any):
     record = default_factory(*args, **kwargs)
     record.levelname_bracketed = f"[{record.levelname}]"  # type: ignore (adding fields to record)
-    record.component = f"[{component_context.component_name}]"  # type: ignore (adding fields to record)
+    record.component = f"[{_component_name()}]"  # type: ignore (adding fields to record)
     if trace_context.trace_id == 0:
         record.trace_msg = ""  # type: ignore (adding fields to record)
     else:

@@ -6,7 +6,6 @@ import contextvars
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
-from functools import cached_property
 
 import attr
 import starlette.datastructures

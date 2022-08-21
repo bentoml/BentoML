@@ -105,7 +105,7 @@ def _component_name():
     if component_context.component_name:
         result = f"{result}:{component_context.component_name}"
     if component_context.component_index:
-        result = f"{result}[{component_context.component_index}]"
+        result = f"{result}:{component_context.component_index}"
     return result
 
 

@@ -248,11 +248,6 @@ class JSON(IODescriptor[JSONType]):
     async def to_http_response(
         self, obj: JSONType | pydantic.BaseModel, ctx: Context | None = None
     ):
-        if self._pydantic_model:
-            try:
-                obj = self._pydantic_model.validate(obj)
-            except pydantic.ValidationError as e:
-                raise BadInput(f"Invalid JSON input received: {e}") from e
 
         # This is to prevent cases where custom JSON encoder is used.
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):

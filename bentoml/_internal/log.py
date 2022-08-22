@@ -97,11 +97,9 @@ def configure_logging():
 
 @lru_cache(maxsize=1)
 def _component_name():
-    result: str = (
-        component_context.component_type
-        if component_context.component_type is not None
-        else ""
-    )
+    result = ""
+    if component_context.component_type:
+        result = component_context.component_type
     if component_context.component_name:
         result = f"{result}:{component_context.component_name}"
     if component_context.component_index:

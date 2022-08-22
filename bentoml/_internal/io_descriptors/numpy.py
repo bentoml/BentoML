@@ -146,7 +146,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         enforce_dtype: bool = False,
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
-        bytesorder: t.Literal["C", "F", "A", None] = None,
     ):
         if dtype and not isinstance(dtype, np.dtype):
             # Convert from primitive type or type string, e.g.: np.dtype(float) or np.dtype("float64")
@@ -161,16 +160,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         self._enforce_shape = enforce_shape
 
         self._sample_input = None
-
-        if bytesorder and bytesorder not in ["C", "F", "A"]:
-            raise BadInput(
-                f"'bytesorder' must be one of ['C', 'F', 'A'], got {bytesorder} instead."
-            )
-        if not bytesorder:
-            # https://numpy.org/doc/stable/user/basics.byteswapping.html#introduction-to-byte-ordering-and-ndarrays
-            bytesorder = "C"  # default from numpy (C-order)
-
-        self._bytesorder: t.Literal["C", "F", "A"] = bytesorder
 
         if self._enforce_dtype and not self._dtype:
             raise UnprocessableEntity(
@@ -361,15 +350,15 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                 "'NumpyNdarray.from_sample()' expects a 'numpy.array', not 'numpy.generic'."
             )
 
-        klass = cls(
+        inst = cls(
             dtype=sample_input.dtype,
             shape=sample_input.shape,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
-        klass.sample_input = sample_input
+        inst.sample_input = sample_input
 
-        return klass
+        return inst
 
     async def from_proto(self, request: pb.Request) -> ext.NpNDArray:
         """
@@ -412,45 +401,25 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
 
             dtype: ext.NpDTypeLike = fieldpb_to_npdtype_map()[fieldpb[0]]
 
-            if request.ndarray.shape and dtype in [np.float32, np.double, np.bool_]:
-                buffer = request.ndarray.SerializeToString()
-                num_entries = np.prod(request.ndarray.shape)
-
-                array = np.frombuffer(
-                    memoryview(buffer[-(dtype.itemsize * num_entries) :]),
-                    dtype=dtype,
-                    count=num_entries,
-                    offset=0,
-                ).reshape(request.ndarray.shape)
-            else:
-                values_array = getattr(request.ndarray, fieldpb[0])
-                try:
-                    array = np.array(values_array, dtype=dtype)
-                except ValueError:
-                    array = np.array(values_array)
-
+            values_array = getattr(request.ndarray, fieldpb[0])
+            try:
+                array = np.array(values_array, dtype=dtype)
+            except ValueError:
+                array = np.array(values_array)
         elif request.HasField("raw_bytes_contents"):
-            buffer = request.raw_bytes_contents
             if not self._dtype:
                 raise UnprocessableEntity(
                     "'raw_bytes_contents' requires specifying 'dtype'."
                 )
 
             dtype: ext.NpDTypeLike = self._dtype
-            if self._shape and dtype in [np.float32, np.double, np.bool_]:
-                num_entries = np.prod(self._shape)
-                array = np.frombuffer(
-                    memoryview(buffer[-(dtype.itemsize * num_entries) :]),
-                    dtype=self._dtype,
-                    count=num_entries,
-                    offset=0,
-                ).reshape(self._shape)
-            else:
-                array = np.frombuffer(request.raw_bytes_contents, dtype=self._dtype)
+            array = np.frombuffer(request.raw_bytes_contents, dtype=self._dtype)
         else:
             raise UnprocessableEntity(
                 "Neither 'array' or 'raw_bytes_contents' is found in the request message.",
             )
+        if request.ndarray.shape:
+            array = np.reshape(array, request.ndarray.shape)
 
         return self.validate_array(array)
 
@@ -479,7 +448,7 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return pb.NDArray(
                 dtype=dtypepb,
                 shape=tuple(obj.shape),
-                **{fieldpb: obj.ravel(order=self._bytesorder).tolist()},
+                **{fieldpb: obj.ravel().tolist()},
             )
         except KeyError:
             raise BadInput(

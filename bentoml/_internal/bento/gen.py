@@ -61,7 +61,6 @@ to_options_field: t.Callable[[str], str] = lambda s: f"__options__{s}"
 class ReservedEnv:
     base_image: str
     supported_architectures: t.List[str]
-    enable_grpc: bool
     python_version: str = attr.field(
         default=f"{version_info.major}.{version_info.minor}"
     )
@@ -103,9 +102,7 @@ bentoml_cattr.register_unstructure_hook_func(
 
 
 def get_templates_variables(
-    options: DockerOptions,
-    use_conda: bool,
-    enable_grpc: bool,
+    options: DockerOptions, use_conda: bool
 ) -> dict[str, t.Any]:
     """
     Returns a dictionary of variables to be used in BentoML base templates.
@@ -142,7 +139,7 @@ def get_templates_variables(
         )
 
     # environment returns are
-    # __base_image__, __supported_architectures__, __enable_grpc__
+    # __base_image__, __supported_architectures__
     # bento__uid_gid, bento__user, bento__home, bento__path
     # __options__distros, __options__base_image, __options_env, __options_system_packages, __options_setup_script
     return {
@@ -154,7 +151,6 @@ def get_templates_variables(
         **bentoml_cattr.unstructure(
             ReservedEnv(
                 base_image=base_image,
-                enable_grpc=enable_grpc,
                 supported_architectures=supported_architecture,
             )
         ),
@@ -166,7 +162,6 @@ def generate_dockerfile(
     build_ctx: str,
     *,
     use_conda: bool,
-    enable_grpc: bool,
 ) -> str:
     """
     Generate a Dockerfile that containerize a Bento.
@@ -250,6 +245,4 @@ def generate_dockerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
-    return template.render(
-        **get_templates_variables(options, use_conda=use_conda, enable_grpc=enable_grpc)
-    )
+    return template.render(**get_templates_variables(options, use_conda=use_conda))

@@ -11,7 +11,6 @@ source "$GIT_ROOT/scripts/ci/helpers.sh"
 ./scripts/tools/formatter.sh || exit 1
 
 INFO "Running yamllint on github workflow..."
-
-find "$GIT_ROOT" -type f -iname "*.yml" -exec yamllint -c "$GIT_ROOT/.yamllint.yml" {} \;
+find "$GIT_ROOT" -type f -name '*.yml' -exec yamllint -c "$GIT_ROOT/.yamllint.yml" {} \;
 
 exit 0

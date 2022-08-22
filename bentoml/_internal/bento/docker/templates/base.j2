@@ -65,10 +65,9 @@ RUN {{ __setup_script__ }}
 {% block SETUP_BENTO_ENTRYPOINT %}
 # Default port for BentoServer
 EXPOSE 3000
-{% if __enable_grpc__ is true %}
+
 # expose Prometheus port
 EXPOSE {{ __prometheus_port__ }}
-{% endif %}
 
 RUN chmod +x {{ bento__entrypoint }}
 
@@ -76,5 +75,5 @@ USER bentoml
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-CMD [ "bentoml", "serve", "{{ bento__path }}", "--production"{% if __enable_grpc__ is true %}, "--grpc"{% endif %} ]
+CMD [ "bentoml", "serve", "{{ bento__path }}", "--production" ]
 {% endblock %}

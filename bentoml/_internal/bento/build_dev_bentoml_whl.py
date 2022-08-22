@@ -3,6 +3,12 @@ from __future__ import annotations
 import os
 import logging
 
+from ..utils.pkg import source_locations
+from ...exceptions import BentoMLException
+from ...exceptions import UnprocessableEntity
+from ...exceptions import MissingDependencyException
+from ..configuration import is_pypi_installed_bentoml
+
 logger = logging.getLogger(__name__)
 
 BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
@@ -18,23 +24,16 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
     if str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() != "true":
         return
 
-    from ..configuration import is_pypi_installed_bentoml
-
     if is_pypi_installed_bentoml():
         # skip this entirely if BentoML is installed from PyPI
         return
 
-    from bentoml.exceptions import BentoMLException
-    from bentoml.exceptions import UnprocessableEntity
-    from bentoml.exceptions import MissingDependencyException
-
     try:
-        from build import ProjectBuilder
         from build.env import IsolatedEnvBuilder
+
+        from build import ProjectBuilder
     except ModuleNotFoundError as e:
         raise MissingDependencyException(_exc_message) from e
-
-    from ..utils.pkg import source_locations
 
     # Find bentoml module path
     module_location = source_locations("bentoml")
@@ -47,7 +46,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         _ = import_module("bentoml.grpc.v1.service_pb2")
     except ModuleNotFoundError:
         raise UnprocessableEntity(
-            f"Generated stubs are not found. Make sure to run '{module_location}/scripts/generate-grpc-stubs' beforehand to generate gRPC stubs."
+            f"Generated stubs are not found. Make sure to run '{module_location}/scripts/generate_grpc_stubs.sh' beforehand to generate gRPC stubs."
         )
 
     pyproject = os.path.abspath(os.path.join(module_location, "..", "pyproject.toml"))

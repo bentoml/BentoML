@@ -209,17 +209,9 @@ class DockerOptions:
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self,
-        bento_fs: FS,
-        build_ctx: str,
-        conda_options: CondaOptions,
-        python_options: PythonOptions,
+        self, bento_fs: FS, build_ctx: str, conda_options: CondaOptions
     ) -> None:
         use_conda = not conda_options.is_empty()
-        enable_grpc = (
-            python_options.extras_require is not None
-            and "grpc" in python_options.extras_require
-        )
 
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
@@ -227,12 +219,7 @@ class DockerOptions:
 
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(
-                generate_dockerfile(
-                    self,
-                    build_ctx=build_ctx,
-                    use_conda=use_conda,
-                    enable_grpc=enable_grpc,
-                )
+                generate_dockerfile(self, build_ctx=build_ctx, use_conda=use_conda)
             )
 
         copy_file_to_fs_folder(
@@ -553,9 +540,9 @@ fi
 
 # Install the BentoML from PyPI if it's not already installed
 if python -c "import bentoml" &> /dev/null; then
-    CURRENT_BENTOML_VERSION=$(python -c "import bentoml; print(bentoml.__version__)")
-    if [ "$CURRENT_BENTOML_VERSION" != "$BENTOML_VERSION" ]; then
-        echo "WARNING: using BentoML version ${CURRENT_BENTOML_VERSION}"
+    existing_bentoml_version=$(python -c "import bentoml; print(bentoml.__version__)")
+    if [ "$existing_bentoml_version" != "$BENTOML_VERSION" ]; then
+        echo "WARNING: using BentoML version ${existing_bentoml_version}"
     fi
 else
     pip install bentoml=="$BENTOML_VERSION"

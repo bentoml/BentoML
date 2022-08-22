@@ -18,7 +18,7 @@ def import_generated_stubs(
 
     GIT_ROOT = Path(__file__).parent.parent.parent.parent
 
-    exception_message = f"Generated stubs are missing. To generate stubs, run '.{GIT_ROOT}/scripts/generate-grpc-stubs'"
+    exception_message = f"Generated stubs are missing. To generate stubs, run '.{GIT_ROOT}/scripts/generate_grpc_stubs.sh'"
 
     service_pb2 = LazyLoader(
         "service_pb2",

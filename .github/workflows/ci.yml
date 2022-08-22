@@ -177,7 +177,7 @@ jobs:
 
       - name: Generate gRPC stubs
         run: |
-          pip install "grpcio-tools<1.43" mypy-protobuf
+          pip install "grpcio-tools>=1.41" mypy-protobuf
           python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1/service.proto bentoml/grpc/v1/service_test.proto
 
       - name: Install dependencies
@@ -254,7 +254,7 @@ jobs:
 
       - name: Generate gRPC stubs
         run: |
-          pip install "grpcio-tools<1.43" mypy-protobuf
+          pip install "grpcio-tools>=1.41" mypy-protobuf
           python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1/service.proto bentoml/grpc/v1/service_test.proto
 
       - name: Install dependencies

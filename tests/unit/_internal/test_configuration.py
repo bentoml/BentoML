@@ -103,12 +103,7 @@ runners:
 
 
 def test_runner_timeouts():
-    tmpfile = NamedTemporaryFile(mode="w+", delete=False)
-    tmpfile.write(RUNNER_TIMEOUTS)
-    tmpfile.flush()
-    tmpfile.close()
-
-    bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
+    bentoml_cfg = get_bentomlconfiguration_from_str(RUNNER_TIMEOUTS)
     runner_cfg = bentoml_cfg["runners"]
     assert runner_cfg["timeout"] == 50
     assert runner_cfg["test_runner_1"]["timeout"] == 100

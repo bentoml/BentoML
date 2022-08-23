@@ -108,11 +108,9 @@ def main(
     import psutil
 
     from bentoml import load
+    from bentoml._internal.log import configure_server_logging
     from bentoml._internal.context import component_context
     from bentoml._internal.utils.uri import uri_to_path
-
-    component_context.component_name = f"runner:{runner_name}:{worker_id}"
-    from bentoml._internal.log import configure_server_logging
 
     configure_server_logging()
     import uvicorn  # type: ignore
@@ -128,6 +126,9 @@ def main(
     service = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
+    component_context.component_type = "runner"
+    component_context.component_name = runner_name
+    component_context.component_index = worker_id
     if service.tag is None:
         component_context.bento_name = f"*{service.__class__}"
         component_context.bento_version = "not available"

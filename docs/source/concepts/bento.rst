@@ -694,6 +694,24 @@ Here's a basic Docker options configuration:
    However, if you are using a standalone version of Docker, you can install
    BuildKit by following the instructions `here <https://github.com/docker/buildx#installing>`_.
 
+.. note::
+
+   If you are building your Bento container using Alpine image, make sure to add the
+   following to ``system_packages``:
+
+   .. code:: yaml
+
+      docker:
+          distro: alpine
+          system_packages:
+              - gcc
+              - gfortran
+              - build-base
+              - wget
+              - freetype-dev
+              - libpng-dev
+              - openblas-dev
+
 OS Distros
 """"""""""
 

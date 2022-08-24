@@ -173,9 +173,9 @@ class BentoSchema(ResourceSchema):
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
-    presigned_urls_deprecated: Optional[bool]
     manifest: BentoManifestSchema
 
+    presigned_urls_deprecated: Optional[bool] = attr.field(default=None)
     upload_started_at: Optional[datetime] = attr.field(default=None)
     upload_finished_at: Optional[datetime] = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)
@@ -248,9 +248,9 @@ class ModelSchema(ResourceSchema):
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
-    presigned_urls_deprecated: Optional[bool]
     manifest: ModelManifestSchema
 
+    presigned_urls_deprecated: Optional[bool] = attr.field(default=None)
     upload_started_at: Optional[datetime] = attr.field(default=None)
     upload_finished_at: Optional[datetime] = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)

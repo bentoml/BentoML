@@ -52,7 +52,7 @@ def add_inference_api(
 
     from ..io_descriptors import Multipart
 
-    if isinstance(output, Multipart) or True:
+    if isinstance(output, Multipart):
         logger.warning(
             f"Found Multipart as the output of API '{api.name}'. Multipart responses are rarely used in the real world, and few clients/browsers support it. Make sure you know what you are doing."
         )

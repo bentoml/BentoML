@@ -139,7 +139,10 @@ def start_runner_server(
                 )
                 break
         else:
-            raise ValueError(f"Runner {runner_name} not found in {bento_identifier}")
+            raise ValueError(
+                f"Runner {runner_name} not found in the service: `{bento_identifier}`, "
+                f"available runners: {[r.name for r in svc.runners]}"
+            )
 
     arbiter = create_standalone_arbiter(
         watchers=watchers,

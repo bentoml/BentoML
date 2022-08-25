@@ -20,7 +20,7 @@ def add_start_command(cli: click.Group) -> None:
         type=click.STRING,
         multiple=True,
         envvar="BENTOML_SERVE_RUNNER_MAP",
-        help="[Experimental] required if `component` is `api-server' JSON string of runners map",
+        help="JSON string of runners map",
     )
     @click.option(
         "--port",
@@ -36,13 +36,6 @@ def add_start_command(cli: click.Group) -> None:
         default=BentoMLContainer.service_host.get,
         help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
         envvar="BENTOML_HOST",
-    )
-    @click.option(
-        "--api-workers",
-        type=click.INT,
-        default=None,
-        help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
-        envvar="BENTOML_API_WORKERS",
     )
     @click.option(
         "--backlog",
@@ -143,9 +136,9 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--runner-name",
         type=click.STRING,
-        default=None,
+        required=True,
         envvar="BENTOML_SERVE_RUNNER_NAME",
-        help="[Experimental] required if `component` is `runner`, specify the runner name to serve",
+        help="specify the runner name to serve",
     )
     @click.option(
         "--port",
@@ -178,7 +171,7 @@ def add_start_command(cli: click.Group) -> None:
     )
     def start_runner_server(  # type: ignore (unused warning)
         bento: str,
-        runner_name: str | None,
+        runner_name: str,
         port: int,
         host: str,
         backlog: int,
@@ -187,8 +180,6 @@ def add_start_command(cli: click.Group) -> None:
         configure_server_logging()
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
-        if runner_name is None:
-            raise ValueError("--runner-name is required with '--component runner'")
 
         from bentoml.start import start_runner_server
 

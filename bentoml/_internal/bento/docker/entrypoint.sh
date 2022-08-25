@@ -10,9 +10,17 @@ _is_sourced() {
 }
 
 _main() {
-	# if first arg looks like a flag
+	# if no arg or first arg looks like a flag
 	if [ -z "$@" ] || [ "${1:0:1}" = '-' ]; then
-		set -- bentoml serve --production "$@" "$BENTO_PATH"
+		if [[ -v BENTOML_SERVE_COMPONENT ]]; then
+			if [ "${BENTOML_SERVE_COMPONENT}" = 'rest_server' ]; then
+				set -- bentoml start-rest-server "$@" "$BENTO_PATH"
+			elif [ "${BENTOML_SERVE_COMPONENT}" = 'runner' ]; then
+				set -- bentoml start-runner-server "$@" "$BENTO_PATH"
+			fi
+		else
+			set -- bentoml serve --production "$@" "$BENTO_PATH"
+		fi
 	fi
 
 	# Overide the BENTOML_PORT if PORT env var is present. Used for Heroku **and Yatai**

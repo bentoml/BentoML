@@ -90,3 +90,21 @@ runners:
     bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX_WITH_STRING)
     # this behaviour can be confusing
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": "[1, 2, 4]"}
+
+
+RUNNER_TIMEOUTS = """\
+runners:
+    timeout: 50
+    test_runner_1:
+        timeout: 100
+    test_runner_2:
+        resources: system
+"""
+
+
+def test_runner_timeouts():
+    bentoml_cfg = get_bentomlconfiguration_from_str(RUNNER_TIMEOUTS)
+    runner_cfg = bentoml_cfg["runners"]
+    assert runner_cfg["timeout"] == 50
+    assert runner_cfg["test_runner_1"]["timeout"] == 100
+    assert runner_cfg["test_runner_2"]["timeout"] == 50

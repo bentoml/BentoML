@@ -188,18 +188,11 @@ class _ServiceTraceContext:
 
 
 class _ComponentContext:
-    _component_name: str | None = None
-    bento_name: str
-    bento_version: str | None
-
-    @property
-    def component_name(self) -> str:
-        return self._component_name if self._component_name is not None else ""
-
-    @component_name.setter
-    def component_name(self, component_name: str) -> None:
-        assert self._component_name is None, "component_name should not be set twice"
-        self._component_name = component_name
+    bento_name: str | None = None
+    bento_version: str | None = None
+    component_type: str | None = None
+    component_name: str | None = None
+    component_index: int | None = None
 
     @property
     def yatai_bento_deployment_name(self) -> str:

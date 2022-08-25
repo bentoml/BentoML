@@ -23,10 +23,6 @@ from ._internal.configuration import load_global_config
 # Inject dependencies and configurations
 load_global_config()
 
-# Model management APIs
-from . import io
-from . import models
-
 # Bento management APIs
 from .bentos import get
 from .bentos import list  # pylint: disable=W0622
@@ -75,6 +71,10 @@ if TYPE_CHECKING:
     from bentoml import tensorflow_v1
     from bentoml import picklable_model
     from bentoml import pytorch_lightning
+
+    # Model management APIs
+    from . import io
+    from . import models
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 
@@ -111,6 +111,9 @@ else:
         "bentoml.transformers", globals(), "bentoml.transformers"
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
+
+    io = _LazyLoader("io", globals(), "bentoml.io")
+    models = _LazyLoader("models", globals(), "bentoml.models")
 
     del _LazyLoader
 

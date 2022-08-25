@@ -22,7 +22,7 @@ Architecture
 
 The batching mechanism is located on the model runner. Each model runner receives inference requests and batches those requests based on optimal latency.
 
-.. image:: ../_static/img/batching-diagram.png
+.. image:: ../_static/img/batching-architecture.png
 
 The load balancer will distribute the requests to each of the running API services. The API services will in turn distribute the inference requests to the model runners. The distribution of requests to the model runners uses a random algorithm which provides for slightly more efficient batch sizes as opposed to round robin. Additional dispatch algorithms are planned for the future.
 

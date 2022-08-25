@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
-import functools
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -28,20 +27,18 @@ UNAME_M_TO_PLATFORM_MAPPING = {
 }
 
 
-@functools.lru_cache(maxsize=1)
 def health() -> None:
     """
     Check whether buildx is available in given system.
     """
     cmds = DOCKER_BUILDX_CMD + ["--help"]
     try:
-        output = subprocess.check_output(cmds, stderr=subprocess.STDOUT)
-        assert "--builder string" in output.decode("utf-8")
+        output = subprocess.check_output(cmds)
+        print(output)
+        assert "buildx" in output.decode("utf-8")
     except (subprocess.CalledProcessError, AssertionError):
         raise BentoMLException(
-            "BentoML requires Docker Buildx to be installed to support multi-arch builds. "
-            "Buildx comes with Docker Desktop, but one can also install it manually by following "
-            "instructions via https://docs.docker.com/buildx/working-with-buildx/#install."
+            "BentoML requires BuildKit (via Docker Buildx) to be installed to support multi-arch builds. Buildx comes with Docker Desktop, but one can also install it manually by following instructions via https://docs.docker.com/buildx/working-with-buildx/#install."
         )
 
 

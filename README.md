@@ -19,7 +19,7 @@ things MLOps.
 
 🍱 Easily go from training to model serving in production
 - Supports multiple ML frameworks natively: Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more!
-- Defines custom serving pipeline with pre-processing, post-processing and ensemble models
+- Supports easy definition of full custom serving pipelines with pre-processing, post-processing and ensemble models
 - Enables multi-model inference graph with model runners architecture
 - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
 - Integrates with any training pipeline or ML experimentation platform

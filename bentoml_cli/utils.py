@@ -96,10 +96,6 @@ class BentoMLCommandGroup(click.Group):
             *args: P.args,
             **kwargs: P.kwargs,
         ) -> t.Any:
-            if config:
-                print("inject config:", config)
-                load_global_config(config)
-
             if quiet:
                 set_quiet_mode(True)
                 if verbose:

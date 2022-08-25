@@ -326,11 +326,99 @@ Runner Definition
 Runner Configuration
 --------------------
 
-.. TODO::
+Runner behaviors and resource allocation can be specified via BentoML :ref:`runtime configuration <guides/configuration:Configuring BentoML>`.
+Runners can be both configured individually or aggregately under the ``runners`` configuration key. To configure a specific runner, specify its name
+under the ``runners`` configuration key. Otherwise, the configuration will be applied to all runners. For example, the next example demonstrates
+how to configure timeout for an individual runner (``iris_clf``) and all runners.
 
-    Document Runner resource specification, how it works, and how to override it with
-    runtime configuration
 
+.. tab-set::
+
+    .. tab-item:: All Runners
+        :sync: all_runners
+
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                timeout: 60
+    
+    .. tab-item:: Individual Runner
+        :sync: individual_runner
+        
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                iris_cfg:
+                    timeout: 60
+
+
+Batching
+^^^^^^^^
+
+If a model or custom runner supports batching, the :ref:`adaptive batching <guides/configuration:Configuring BentoML>` mechanism is enabled by default.
+To explicitly disable or control adaptive batching behaviors at runtime, configuration can be specified under the ``batching`` key.
+
+.. tab-set::
+
+    .. tab-item:: All Runners
+        :sync: all_runners
+
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                batching:
+                    enabled: true
+                    max_batch_size: 100
+                    max_latency_ms: 500
+    
+    .. tab-item:: Individual Runner
+        :sync: individual_runner
+        
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                iris_clf:
+                    batching:
+                        enabled: true
+                        max_batch_size: 100
+                        max_latency_ms: 500
+
+Resource Allocation
+^^^^^^^^^^^^^^^^^^^
+
+If a model or custom runner supports batching, the :ref:`adaptive batching <guides/configuration:Configuring BentoML>` mechanism is enabled by default.
+To explicitly disable or control adaptive batching behaviors at runtime, configuration can be specified under the ``batching`` key.
+
+.. tab-set::
+
+    .. tab-item:: All Runners
+        :sync: all_runners
+
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                batching:
+                    enabled: true
+                    max_batch_size: 100
+                    max_latency_ms: 500
+    
+    .. tab-item:: Individual Runner
+        :sync: individual_runner
+        
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                iris_clf:
+                    batching:
+                        enabled: true
+                        max_batch_size: 100
+                        max_latency_ms: 500
 
 
 Distributed Runner with Yatai

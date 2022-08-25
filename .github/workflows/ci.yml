@@ -61,7 +61,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.10.6"
           architecture: x64
 
       - name: Get pip cache dir

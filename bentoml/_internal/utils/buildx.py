@@ -34,7 +34,6 @@ def health() -> None:
     cmds = DOCKER_BUILDX_CMD + ["--help"]
     try:
         output = subprocess.check_output(cmds)
-        print(output)
         assert "buildx" in output.decode("utf-8")
     except (subprocess.CalledProcessError, AssertionError):
         raise BentoMLException(

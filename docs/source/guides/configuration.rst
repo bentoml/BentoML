@@ -12,8 +12,8 @@ and applied to the entire team.
     `bentoml config` CLI command is no longer compatible with the configuration releases in 0.13.0 and above. 
     Please see legacy configuration property mapping table below to upgrade configuration to the new format.
 
-BentoML configuration is defined by a YAML file placed in a directory specified by the `BENTOML_CONFIG` 
-environment variable. The example below starts the bento server with configuration defined in `~/bentoml_configuration.yaml`
+BentoML configuration is defined by a YAML file placed in a directory specified by the :code:`BENTOML_CONFIG` 
+environment variable. The example below starts the bento server with configuration defined in :code:`~/bentoml_configuration.yaml`
 
 .. code-block:: shell
 

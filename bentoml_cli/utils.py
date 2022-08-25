@@ -15,10 +15,8 @@ from click.exceptions import UsageError
 
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.log import configure_logging
-from bentoml._internal.configuration import CONFIG_ENV_VAR
 from bentoml._internal.configuration import set_debug_mode
 from bentoml._internal.configuration import set_quiet_mode
-from bentoml._internal.configuration import load_global_config
 from bentoml._internal.utils.analytics import track
 from bentoml._internal.utils.analytics import CliEvent
 from bentoml._internal.utils.analytics import cli_events_map
@@ -55,10 +53,10 @@ class BentoMLCommandGroup(click.Group):
     command for each group defined.
     """
 
-    NUMBER_OF_COMMON_PARAMS = 4
+    NUMBER_OF_COMMON_PARAMS = 3
 
     @staticmethod
-    def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool, str | None]:
+    def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool]:
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
 
         @click.option(
@@ -82,23 +80,13 @@ class BentoMLCommandGroup(click.Group):
             envvar=BENTOML_DO_NOT_TRACK,
             help="Do not send usage info",
         )
-        @click.option(
-            "--config",
-            type=click.Path(exists=True),
-            envvar=CONFIG_ENV_VAR,
-            help="BentoML configuration YAML file to apply",
-        )
         @functools.wraps(func)
         def wrapper(
             quiet: bool,
             verbose: bool,
-            config: str | None,
             *args: P.args,
             **kwargs: P.kwargs,
         ) -> t.Any:
-            if config:
-                load_global_config(config)
-
             if quiet:
                 set_quiet_mode(True)
                 if verbose:
@@ -114,7 +102,7 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_track_usage(
-        func: F[P] | WrappedCLI[bool, bool, str | None],
+        func: F[P] | WrappedCLI[bool, bool],
         cmd_group: click.Group,
         **kwargs: t.Any,
     ) -> WrappedCLI[bool]:

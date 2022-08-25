@@ -13,6 +13,7 @@ _main() {
 	# if no arg or first arg looks like a flag
 	if [ -z "$@" ] || [ "${1:0:1}" = '-' ]; then
 		if [[ -v BENTOML_SERVE_COMPONENT ]]; then
+			echo "\$BENTOML_SERVE_COMPONENT is set! Calling 'bentoml start-*' instead"
 			if [ "${BENTOML_SERVE_COMPONENT}" = 'rest_server' ]; then
 				set -- bentoml start-rest-server "$@" "$BENTO_PATH"
 			elif [ "${BENTOML_SERVE_COMPONENT}" = 'runner' ]; then

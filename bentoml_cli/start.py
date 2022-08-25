@@ -115,6 +115,7 @@ def add_start_command(cli: click.Group) -> None:
         from bentoml.start import start_rest_server
 
         runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
+        logger.info(" Using remote runners: %s", runner_map)
         start_rest_server(
             bento,
             runner_map=runner_map,

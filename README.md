@@ -37,7 +37,7 @@ things MLOps.
 🐍 Python-first, scales with powerful optimizations
 - Parallelizes compute-intense model inference workloads to scale separately from the serving logic
 - Adaptive batching dynamically groups inference requests for optimal performance
-- Orchestrates distributed inference graph with multiple models via Yatai on Kubernetes
+- Orchestrates distributed inference graph with multiple models via [Yatai on Kubernetes](https://github.com/bentoml/Yatai)
 - Allows for easy configuration of CUDA dependencies for running inference with GPU
 
 ## Getting Started ##

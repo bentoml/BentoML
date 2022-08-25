@@ -18,10 +18,11 @@ things MLOps.
 ## Why BentoML? ##
 
 🍱 Easily go from training to model serving in production
-- Support multiple ML frameworks natively: Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more!
-- Define custom serving pipeline with pre-processing, post-processing and ensemble models
+- Supports multiple ML frameworks natively: Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more!
+- Easy definition of custom serving pipelines with pre-processing, post-processing and ensemble models
+- Enables multi-model inference graph with model runners architecture
 - Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
-- Integrate with any training pipeline or ML experimentation platform
+- Integrates with any training pipeline or ML experimentation platform
 
 ✨ Model Serving the way you need it 
 - **Online serving** via REST API or gRPC
@@ -29,15 +30,15 @@ things MLOps.
 - **Stream serving** with Kafka, Beam, and Flink
 
 🚢 Deployment workflow made for production
-- 🐳 Automatically generate docker images for production deployment
+- 🐳 Automatically generates docker images for production deployment
 - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
 - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
 
 🐍 Python-first, scales with powerful optimizations
-- Parallelize compute-intense model inference workloads to scale separately from the serving logic
+- Parallelizes compute-intense model inference workloads to scale separately from the serving logic
 - Adaptive batching dynamically groups inference requests for optimal performance
-- Orchestrate distributed inference graph with multiple models via Yatai on Kubernetes
-- Easily configure CUDA dependencies for running inference with GPU
+- Orchestrates distributed inference graph with multiple models via [Yatai on Kubernetes](https://github.com/bentoml/Yatai)
+- Allows for easy configuration of CUDA dependencies for running inference with GPU
 
 ## Getting Started ##
 

@@ -326,36 +326,13 @@ Runner Definition
 Runner Configuration
 --------------------
 
-Runner behaviors and resource allocation can be specified via BentoML :ref:`runtime configuration <guides/configuration:Configuring BentoML>`.
-Runners can be both configured individually or aggregately under the ``runners`` configuration key. To configure a specific runner, specify its name
-under the ``runners`` configuration key. Otherwise, the configuration will be applied to all runners. For example, the next example demonstrates
-how to configure timeout for an individual runner (``iris_clf``) and all runners.
+Runner behaviors and resource allocation can be specified via BentoML :ref:`configuration <guides/configuration:Configuring BentoML>`.
+Runners can be both configured individually or in aggregate under the ``runners`` configuration key. To configure a specific runner, specify its name
+under the ``runners`` configuration key. Otherwise, the configuration will be applied to all runners. The examples below demonstrate both
+the configuration for all runners in aggregate and for an individual runner (``iris_clf``).
 
-
-.. tab-set::
-
-    .. tab-item:: All Runners
-        :sync: all_runners
-
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
-
-            runners:
-                timeout: 60
-    
-    .. tab-item:: Individual Runner
-        :sync: individual_runner
-        
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
-
-            runners:
-                iris_cfg:
-                    timeout: 60
-
-
-Batching
-^^^^^^^^
+Adaptive Batching
+^^^^^^^^^^^^^^^^^
 
 If a model or custom runner supports batching, the :ref:`adaptive batching <guides/configuration:Configuring BentoML>` mechanism is enabled by default.
 To explicitly disable or control adaptive batching behaviors at runtime, configuration can be specified under the ``batching`` key.
@@ -390,8 +367,8 @@ To explicitly disable or control adaptive batching behaviors at runtime, configu
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
 
-If a model or custom runner supports batching, the :ref:`adaptive batching <guides/configuration:Configuring BentoML>` mechanism is enabled by default.
-To explicitly disable or control adaptive batching behaviors at runtime, configuration can be specified under the ``batching`` key.
+By default, a runner will attempt to utilize all available resources in the container. Runner's resource allocation can also be customized
+through configuration, with a `float` value for ``cpu`` and an `int` value for ``nvidia.com/gpu``. Fractional GPU is currently not supported.
 
 .. tab-set::
 
@@ -402,10 +379,9 @@ To explicitly disable or control adaptive batching behaviors at runtime, configu
 	    :caption: ⚙️ `configuration.yml`
 
             runners:
-                batching:
-                    enabled: true
-                    max_batch_size: 100
-                    max_latency_ms: 500
+                resources:
+                    cpu: 0.5
+                    nvidia.com/gpu: 1
     
     .. tab-item:: Individual Runner
         :sync: individual_runner
@@ -415,10 +391,66 @@ To explicitly disable or control adaptive batching behaviors at runtime, configu
 
             runners:
                 iris_clf:
-                    batching:
-                        enabled: true
-                        max_batch_size: 100
-                        max_latency_ms: 500
+                    resources:
+                        cpu: 0.5
+                        nvidia.com/gpu: 1
+
+Alternatively, a runner can be mapped to a specific set of GPUs. To specify GPU mapping, instead of defining an `integer` value, a list of device IDs
+can be specified for the ``nvidia.com/gpu`` key. For example, the following configuration maps the configured runners to GPU device 2 and 4.
+
+.. tab-set::
+
+    .. tab-item:: All Runners
+        :sync: all_runners
+
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                resources:
+                    nvidia.com/gpu: [2, 4]
+    
+    .. tab-item:: Individual Runner
+        :sync: individual_runner
+        
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                iris_clf:
+                    resources:
+                        nvidia.com/gpu: [2, 4]
+
+Timeout
+^^^^^^^
+
+Runner timeout defines the amount of time in seconds to wait before calls a runner is timed out on the API server.
+
+.. tab-set::
+
+    .. tab-item:: All Runners
+        :sync: all_runners
+
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                timeout: 60
+    
+    .. tab-item:: Individual Runner
+        :sync: individual_runner
+        
+        .. code-block:: yaml
+	    :caption: ⚙️ `configuration.yml`
+
+            runners:
+                iris_clf:
+                    timeout: 60
+
+Access Logging
+^^^^^^^^^^^^^^
+
+See :ref:`guides/logging:Logging Configuration` for access log customization.
 
 
 Distributed Runner with Yatai

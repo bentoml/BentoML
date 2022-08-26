@@ -200,7 +200,10 @@ class Image(IODescriptor[ImageType]):
                 f"{self.__class__.__name__} should get `multipart/form-data`, "
                 f"`{self._mime_type}` or `image/*`, got {content_type} instead"
             )
-        return PIL.Image.open(io.BytesIO(bytes_))
+        try:
+            return PIL.Image.open(io.BytesIO(bytes_))
+        except PIL.UnidentifiedImageError:
+            raise BadInput("Failed reading image file uploaded") from None
 
     async def to_http_response(
         self, obj: ImageType, ctx: Context | None = None

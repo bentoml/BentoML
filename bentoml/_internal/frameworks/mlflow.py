@@ -4,6 +4,7 @@ import os
 import shutil
 import typing as t
 import logging
+import tempfile
 from typing import TYPE_CHECKING
 
 import bentoml
@@ -185,8 +186,6 @@ def import_model(
         metadata=metadata,
         context=context,
     ) as bento_model:
-        import tempfile
-
         from mlflow.models import Model as MLflowModel
         from mlflow.pyfunc import FLAVOR_NAME as PYFUNC_FLAVOR_NAME
         from mlflow.models.model import MLMODEL_FILE_NAME
@@ -211,13 +210,9 @@ def import_model(
                 artifact_uri=model_uri, output_path=download_dir
             )
         finally:
-            if TYPE_CHECKING:
-                # We need to trick type checker here, since local_path
-                # will always be set
-                local_path = ""
             mlflow_model_path = bento_model.path_of(MLFLOW_MODEL_FOLDER)
             # Rename model folder from original artifact name to fixed "mlflow_model"
-            shutil.move(local_path, mlflow_model_path)
+            shutil.move(local_path, mlflow_model_path)  # type: ignore (local_path is bound)
             # Remove the tempdir
             shutil.rmtree(download_dir)
 

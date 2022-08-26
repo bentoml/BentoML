@@ -83,6 +83,7 @@ def main(
     from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
 
+    component_context.component_type = "dev_api_server"
     configure_server_logging()
 
     if prometheus_dir is not None:
@@ -91,7 +92,6 @@ def main(
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
-    component_context.component_type = "dev_api_server"
     component_context.component_name = svc.name
     if svc.tag is None:
         component_context.bento_name = f"*{svc.__class__.__name__}"

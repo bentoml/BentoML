@@ -10,15 +10,20 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.formparsers import MultiPartMessage
 from starlette.datastructures import Headers
+from starlette.datastructures import FormData
+from starlette.datastructures import UploadFile
 from starlette.datastructures import MutableHeaders
 
 from .http import set_cookies
+from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from ..context import InferenceApiContext as Context
 
-_ItemsBody = t.List[t.Tuple[str, t.List[t.Tuple[bytes, bytes]], bytes]]
+_ItemsBody = t.List[
+    t.Tuple[str, t.List[t.Tuple[bytes, bytes]], t.Union[bytes, UploadFile]]
+]
 
 
 def user_safe_decode(src: bytes, codec: str) -> str:
@@ -98,6 +103,9 @@ class MultiPartParser:
         header_field = b""
         header_value = b""
         field_name = ""
+        content_disposition = None
+        content_type = b""
+        multipart_file = None
 
         data = b""
 
@@ -111,6 +119,8 @@ class MultiPartParser:
             self.messages.clear()
             for message_type, message_bytes in messages:
                 if message_type == MultiPartMessage.PART_BEGIN:
+                    content_disposition = None
+                    content_type = b""
                     field_name = ""
                     data = b""
                     headers = list()
@@ -121,9 +131,9 @@ class MultiPartParser:
                 elif message_type == MultiPartMessage.HEADER_END:  # type: ignore
                     field = header_field.lower()
                     if field == b"content-disposition":
-                        _, options = multipart.parse_options_header(header_value)
-                        options = t.cast(t.Dict[bytes, bytes], options)
-                        field_name = user_safe_decode(options[b"name"], charset)
+                        content_disposition = header_value
+                    elif field == b"content-type":
+                        content_type = header_value
                     elif field == b"bentoml-payload-field":
                         field_name = user_safe_decode(header_value, charset)
                     else:
@@ -131,13 +141,38 @@ class MultiPartParser:
                     header_field = b""
                     header_value = b""
                 elif message_type == MultiPartMessage.HEADERS_FINISHED:  # type: ignore
-                    assert (
-                        field_name
-                    ), "`Content-Disposition` is not available in headers"
+                    if content_disposition is None:
+                        raise BadInput(
+                            'The Content-Disposition header field "name" must be provided.'
+                        )
+                    _, options = multipart.parse_options_header(content_disposition)
+                    options = t.cast(t.Dict[bytes, bytes], options)
+                    try:
+                        field_name = user_safe_decode(options[b"name"], charset)
+                    except KeyError:
+                        raise BadInput(
+                            'The Content-Disposition header field "name" must be provided.'
+                        )
+                    if b"filename" in options:
+                        filename = user_safe_decode(options[b"filename"], charset)
+                        multipart_file = UploadFile(
+                            filename=filename,
+                            content_type=content_type.decode("latin-1"),
+                            headers=Headers(raw=headers),  # type: ignore (incomplete starlette types)
+                        )
+                    else:
+                        multipart_file = None
                 elif message_type == MultiPartMessage.PART_DATA:  # type: ignore
-                    data += message_bytes
+                    if multipart_file is None:
+                        data += message_bytes
+                    else:
+                        await multipart_file.write(message_bytes)
                 elif message_type == MultiPartMessage.PART_END:  # type: ignore
-                    items.append((field_name, headers, data))
+                    if multipart_file is None:
+                        items.append((field_name, headers, data))
+                    else:
+                        await multipart_file.seek(0)
+                        items.append((field_name, headers, multipart_file))
 
         parser.finalize()
         return items
@@ -162,7 +197,9 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
         ori_headers.update(dict(headers))
         scope["headers"] = list(ori_headers.items())
         req = Request(scope)
-        req._body = data
+        req._form = FormData([(field_name, data)])  # type: ignore (using internal starlette APIs)
+        if isinstance(data, bytes):
+            req._body = data
         reqs[field_name] = req
     return reqs
 

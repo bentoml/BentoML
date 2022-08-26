@@ -23,6 +23,7 @@ def save_test_model(
     metadata: t.Dict[str, t.Any],
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+    external_modules: t.Optional[t.List[t.Any]] = None,
 ) -> "Tag":
     model_to_save = MyCoolModel()
     bento_model = bentoml.picklable_model.save_model(
@@ -35,6 +36,7 @@ def save_test_model(
         metadata=metadata,
         labels=labels,
         custom_objects=custom_objects,
+        external_modules=external_modules,
     )
     return bento_model
 

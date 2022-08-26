@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import attr
@@ -171,6 +172,7 @@ def save_model(
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """Save a onnx model instance to the BentoML model store.
@@ -195,6 +197,9 @@ def save_model(
 
             Custom objects are currently serialized with cloudpickle, but this implementation is
             subject to change.
+        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
+            user-defined additional python modules to be saved alongside the model or custom objects,
+            e.g. a tokenizer module, preprocessor module, model configuration module
         metadata (``dict[str, Any]``, optional):
             Metadata to be associated with the model. An example is ``{"bias": 4}``.
 
@@ -308,6 +313,7 @@ def save_model(
         labels=labels,
         options=options,
         custom_objects=custom_objects,
+        external_modules=external_modules,
         metadata=metadata,
         context=context,
     ) as bento_model:

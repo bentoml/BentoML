@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
@@ -84,6 +85,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -99,6 +101,9 @@ def save_model(
         custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
             user-defined additional python objects to be saved alongside the model,
             e.g. a tokenizer instance, preprocessor function, model configuration json
+        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
+            user-defined additional python modules to be saved alongside the model or custom objects,
+            e.g. a tokenizer module, preprocessor module, model configuration module
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
         model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
@@ -170,6 +175,7 @@ def save_model(
         signatures=signatures,
         labels=labels,
         custom_objects=custom_objects,
+        external_modules=external_modules,
         metadata=metadata,
         _framework_name="pytorch_lightning",
         _module_name=MODULE_NAME,

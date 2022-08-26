@@ -1,4 +1,4 @@
-from pickle_model import PickleModel
+import pickle_model
 
 import bentoml.picklable_model
 
@@ -6,7 +6,7 @@ import bentoml.picklable_model
 def train():
     bentoml.picklable_model.save_model(
         "py_model.case-1.e2e",
-        PickleModel(),
+        pickle_model.PickleModel(),
         signatures={
             "predict_file": {"batchable": True},
             "echo_json": {"batchable": True},
@@ -16,6 +16,7 @@ def train():
             "predict_multi_ndarray": {"batchable": True},
             "predict_dataframe": {"batchable": True},
         },
+        external_modules=[pickle_model],
     )
 
 

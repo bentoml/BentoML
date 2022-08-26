@@ -5,6 +5,7 @@ import typing as t
 import logging
 import itertools
 import contextlib
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import attr
@@ -128,6 +129,7 @@ def save_model(
     | None = None,
     labels: t.Dict[str, str] | None = None,
     custom_objects: t.Dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
 
@@ -152,6 +154,9 @@ def save_model(
         custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
             user-defined additional python objects to be saved alongside the model,
             e.g. a tokenizer instance, preprocessor function, model configuration json
+        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
+            user-defined additional python modules to be saved alongside the model or custom objects,
+            e.g. a tokenizer module, preprocessor module, model configuration module
         metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
             Custom metadata for given model.
 
@@ -221,6 +226,7 @@ def save_model(
         context=context,
         labels=labels,
         custom_objects=custom_objects,
+        external_modules=external_modules,
         metadata=metadata,
         signatures=signatures,  # type: ignore
     ) as bento_model:

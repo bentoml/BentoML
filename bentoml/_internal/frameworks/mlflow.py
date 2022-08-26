@@ -16,6 +16,8 @@ from bentoml.exceptions import BentoMLException
 from ..utils import LazyLoader
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
@@ -105,6 +107,7 @@ def import_model(
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     # ...
 ) -> bentoml.Model:
@@ -178,6 +181,7 @@ def import_model(
         labels=labels,
         options=None,
         custom_objects=custom_objects,
+        external_modules=external_modules,
         metadata=metadata,
         context=context,
     ) as bento_model:

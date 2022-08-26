@@ -299,7 +299,7 @@ def run_bento_server_distributed(
                 sys.executable,
                 "-m",
                 "bentoml",
-                "start-runner",
+                "start-runner-server",
                 str(bento_tag),
                 "--runner-name",
                 runner["name"],

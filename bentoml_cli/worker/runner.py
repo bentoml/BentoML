@@ -10,8 +10,13 @@ import click
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
-@click.option("--runner-name", type=click.STRING, required=True)
-@click.option("--bind", type=click.STRING, required=True)
+@click.option(
+    "--runner-name",
+    type=click.STRING,
+    required=True,
+    envvar="RUNNER_NAME",
+)
+@click.option("--fd", type=click.INT, required=True)
 @click.option("--working-dir", required=False, default=None, help="Working directory")
 @click.option(
     "--no-access-log",
@@ -23,9 +28,8 @@ import click
 )
 @click.option(
     "--worker-id",
-    required=False,
+    required=True,
     type=click.INT,
-    default=None,
     help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
 @click.option(
@@ -35,15 +39,13 @@ import click
     default=None,
     help="The environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.",
 )
-@click.pass_context
 def main(
-    ctx: click.Context,
     bento_identifier: str,
     runner_name: str,
-    bind: str,
+    fd: int,
     working_dir: t.Optional[str],
     no_access_log: bool,
-    worker_id: int | None,
+    worker_id: int,
     worker_env_map: str | None,
 ) -> None:
     """
@@ -52,43 +54,11 @@ def main(
     Args:
         bento_identifier: the Bento identifier
         name: the name of the runner
-        bind: the bind address URI. Can be:
-            - tcp://host:port
-            - unix://path/to/unix.sock
-            - file:///path/to/unix.sock
-            - fd://12
+        fd: the file descriptor of the runner server's socket
         working_dir: (Optional) the working directory
         worker_id: (Optional) if set, the runner will be started as a worker with the given ID. Important: begin from 1.
         worker_env_map: (Optional) the environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.
     """
-    if worker_id is None:
-
-        # Start a standalone server with a supervisor process
-        from circus.watcher import Watcher
-
-        from bentoml_cli.utils import unparse_click_params
-        from bentoml._internal.utils.circus import create_standalone_arbiter
-        from bentoml._internal.utils.circus import create_circus_socket_from_uri
-
-        circus_socket = create_circus_socket_from_uri(bind, name=runner_name)
-        params = ctx.params
-        params["bind"] = f"fd://$(circus.sockets.{runner_name})"
-        params["worker_id"] = "$(circus.wid)"
-        params["no_access_log"] = no_access_log
-        watcher = Watcher(
-            name=f"runner_{runner_name}",
-            cmd=sys.executable,
-            args=["-m", "bentoml_cli.server.runner"]
-            + unparse_click_params(params, ctx.command.params, factory=str),
-            copy_env=True,
-            numprocesses=1,
-            stop_children=True,
-            use_sockets=True,
-            working_dir=working_dir,
-        )
-        arbiter = create_standalone_arbiter(watchers=[watcher], sockets=[circus_socket])
-        arbiter.start()
-        return
 
     # setting up the environment for the worker process
     assert (
@@ -103,14 +73,14 @@ def main(
         os.environ.update(env_map[worker_key])
 
     import socket
-    from urllib.parse import urlparse
 
     import psutil
 
     from bentoml import load
-    from bentoml._internal.log import configure_server_logging
     from bentoml._internal.context import component_context
-    from bentoml._internal.utils.uri import uri_to_path
+
+    component_context.component_name = f"runner:{runner_name}:{worker_id}"
+    from bentoml._internal.log import configure_server_logging
 
     configure_server_logging()
     import uvicorn  # type: ignore
@@ -126,9 +96,6 @@ def main(
     service = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
-    component_context.component_type = "runner"
-    component_context.component_name = runner_name
-    component_context.component_index = worker_id
     if service.tag is None:
         component_context.bento_name = f"*{service.__class__}"
         component_context.bento_version = "not available"
@@ -144,7 +111,6 @@ def main(
 
     app = RunnerAppFactory(runner, worker_index=worker_id)()
 
-    parsed = urlparse(bind)
     uvicorn_options: dict[str, int | None | str] = {
         "log_config": None,
         "workers": 1,
@@ -156,29 +122,10 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    if parsed.scheme in ("file", "unix"):
-        uvicorn.run(
-            app,  # type: ignore
-            uds=uri_to_path(bind),
-            **uvicorn_options,
-        )
-    elif parsed.scheme == "tcp":
-        assert parsed.hostname is not None
-        assert parsed.port is not None
-        uvicorn.run(
-            app,  # type: ignore
-            host=parsed.hostname,
-            port=parsed.port,
-            **uvicorn_options,
-        )
-    elif parsed.scheme == "fd":
-        # when fd is provided, we will skip the uvicorn internal supervisor, thus there is only one process
-        fd = int(parsed.netloc)
-        sock = socket.socket(fileno=fd)
-        config = uvicorn.Config(app, **uvicorn_options)
-        uvicorn.Server(config).run(sockets=[sock])
-    else:
-        raise ValueError(f"Unsupported bind scheme: {bind}")
+    # when fd is provided, we will skip the uvicorn internal supervisor, thus there is only one process
+    sock = socket.socket(fileno=fd)
+    config = uvicorn.Config(app, **uvicorn_options)
+    uvicorn.Server(config).run(sockets=[sock])
 
 
 if __name__ == "__main__":

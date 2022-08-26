@@ -27,9 +27,9 @@ from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-SCRIPT_RUNNER = "bentoml_cli.server.runner"
-SCRIPT_API_SERVER = "bentoml_cli.server.http_api_server"
-SCRIPT_DEV_API_SERVER = "bentoml_cli.server.http_dev_api_server"
+SCRIPT_RUNNER = "bentoml_cli.worker.runner"
+SCRIPT_API_SERVER = "bentoml_cli.worker.http_api_server"
+SCRIPT_DEV_API_SERVER = "bentoml_cli.worker.http_dev_api_server"
 
 
 @inject
@@ -118,8 +118,8 @@ def serve_development(
         "-m",
         SCRIPT_DEV_API_SERVER,
         bento_identifier,
-        "--bind",
-        "fd://$(circus.sockets._bento_api_server)",
+        "--fd",
+        "$(circus.sockets._bento_api_server)",
         "--working-dir",
         working_dir,
         "--prometheus-dir",
@@ -254,8 +254,8 @@ def serve_production(
                         bento_identifier,
                         "--runner-name",
                         runner.name,
-                        "--bind",
-                        f"fd://$(circus.sockets.{runner.name})",
+                        "--fd",
+                        f"$(circus.sockets.{runner.name})",
                         "--working-dir",
                         working_dir,
                         "--worker-id",
@@ -296,8 +296,8 @@ def serve_production(
                             bento_identifier,
                             "--runner-name",
                             runner.name,
-                            "--bind",
-                            f"fd://$(circus.sockets.{runner.name})",
+                            "--fd",
+                            f"$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
                             "--no-access-log",
@@ -332,8 +332,8 @@ def serve_production(
         "-m",
         SCRIPT_API_SERVER,
         bento_identifier,
-        "--bind",
-        "fd://$(circus.sockets._bento_api_server)",
+        "--fd",
+        "$(circus.sockets._bento_api_server)",
         "--runner-map",
         json.dumps(runner_bind_map),
         "--working-dir",

@@ -7,7 +7,7 @@ import click
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
-@click.option("--bind", type=click.STRING, required=True)
+@click.option("--fd", type=click.INT, required=True)
 @click.option("--working-dir", required=False, type=click.Path(), default=None)
 @click.option("--backlog", type=click.INT, default=2048)
 @click.option(
@@ -59,7 +59,7 @@ import click
 )
 def main(
     bento_identifier: str,
-    bind: str,
+    fd: int,
     working_dir: str | None,
     backlog: int,
     prometheus_dir: str | None,
@@ -71,8 +71,9 @@ def main(
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
 ):
-
-    from urllib.parse import urlparse
+    """
+    Start a development server for the BentoML service.
+    """
 
     import psutil
     import uvicorn
@@ -99,50 +100,44 @@ def main(
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version
 
-    parsed = urlparse(bind)
+    sock = socket.socket(fileno=fd)
 
-    if parsed.scheme == "fd":
-        fd = int(parsed.netloc)
-        sock = socket.socket(fileno=fd)
+    uvicorn_options = {
+        "backlog": backlog,
+        "log_config": None,
+        "workers": 1,
+        "lifespan": "on",
+    }
 
-        uvicorn_options = {
-            "backlog": backlog,
-            "log_config": None,
-            "workers": 1,
-            "lifespan": "on",
-        }
+    if ssl_certfile:
+        import ssl
 
-        if ssl_certfile:
-            import ssl
+        uvicorn_options["ssl_certfile"] = ssl_certfile
+        if ssl_keyfile:
+            uvicorn_options["ssl_keyfile"] = ssl_keyfile
+        if ssl_keyfile_password:
+            uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
+        if ssl_ca_certs:
+            uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
 
-            uvicorn_options["ssl_certfile"] = ssl_certfile
-            if ssl_keyfile:
-                uvicorn_options["ssl_keyfile"] = ssl_keyfile
-            if ssl_keyfile_password:
-                uvicorn_options["ssl_keyfile_password"] = ssl_keyfile_password
-            if ssl_ca_certs:
-                uvicorn_options["ssl_ca_certs"] = ssl_ca_certs
+        if not ssl_version:
+            ssl_version = ssl.PROTOCOL_TLS_SERVER
+            uvicorn_options["ssl_version"] = ssl_version
+        if not ssl_cert_reqs:
+            ssl_cert_reqs = ssl.CERT_NONE
+            uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
+        if not ssl_ciphers:
+            ssl_ciphers = "TLSv1"
+            uvicorn_options["ssl_ciphers"] = ssl_ciphers
 
-            if not ssl_version:
-                ssl_version = ssl.PROTOCOL_TLS_SERVER
-                uvicorn_options["ssl_version"] = ssl_version
-            if not ssl_cert_reqs:
-                ssl_cert_reqs = ssl.CERT_NONE
-                uvicorn_options["ssl_cert_reqs"] = ssl_cert_reqs
-            if not ssl_ciphers:
-                ssl_ciphers = "TLSv1"
-                uvicorn_options["ssl_ciphers"] = ssl_ciphers
+    if psutil.WINDOWS:
+        uvicorn_options["loop"] = "asyncio"
+        import asyncio
 
-        if psutil.WINDOWS:
-            uvicorn_options["loop"] = "asyncio"
-            import asyncio
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
-
-        config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
-        uvicorn.Server(config).run(sockets=[sock])
-    else:
-        raise ValueError(f"Unsupported bind scheme: {bind}")
+    config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
+    uvicorn.Server(config).run(sockets=[sock])
 
 
 if __name__ == "__main__":

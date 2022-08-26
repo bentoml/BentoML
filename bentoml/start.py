@@ -164,7 +164,7 @@ def start_runner_server(
 
 
 @inject
-def start_rest_server(
+def start_http_server(
     bento_identifier: str,
     runner_map: t.Dict[str, str],
     working_dir: str,

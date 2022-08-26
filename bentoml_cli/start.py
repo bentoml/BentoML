@@ -93,7 +93,7 @@ def add_start_command(cli: click.Group) -> None:
         default=None,
         help="Ciphers to use (see stdlib 'ssl' module)",
     )
-    def start_rest_server(  # type: ignore (unused warning)
+    def start_http_server(  # type: ignore (unused warning)
         bento: str,
         remote_runner: list[str] | None,
         port: int,
@@ -112,11 +112,11 @@ def add_start_command(cli: click.Group) -> None:
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
-        from bentoml.start import start_rest_server
+        from bentoml.start import start_http_server
 
         runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
         logger.info(" Using remote runners: %s", runner_map)
-        start_rest_server(
+        start_http_server(
             bento,
             runner_map=runner_map,
             working_dir=working_dir,

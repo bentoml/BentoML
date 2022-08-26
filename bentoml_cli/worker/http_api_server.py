@@ -109,6 +109,8 @@ def main(
     from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
 
+    component_context.component_type = "api_server"
+    component_context.component_index = worker_id
     configure_server_logging()
 
     BentoMLContainer.development_mode.set(False)
@@ -120,9 +122,7 @@ def main(
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
-    component_context.component_type = "api_server"
     component_context.component_name = svc.name
-    component_context.component_index = worker_id
     if svc.tag is None:
         component_context.bento_name = f"*{svc.__class__.__name__}"
         component_context.bento_version = "not available"

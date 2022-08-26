@@ -220,6 +220,11 @@ def add_containerize_command(cli: click.Group) -> None:
 
         We also pass all given args for `docker buildx` through `bentoml containerize` with ease.
         """
+        from bentoml._internal.utils import buildx
+
+        # run health check whether buildx is install locally
+        buildx.health()
+
         add_hosts = {}
         if add_host:
             for host in add_host:

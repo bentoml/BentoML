@@ -416,9 +416,6 @@ def containerize(
 
     env = {"DOCKER_BUILDKIT": "1", "DOCKER_SCAN_SUGGEST": "false"}
 
-    # run health check whether buildx is install locally
-    buildx.health()
-
     bento = _bento_store.get(tag)
     if not docker_image_tag:
         docker_image_tag = str(bento.tag)

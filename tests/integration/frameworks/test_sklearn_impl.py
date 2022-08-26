@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING

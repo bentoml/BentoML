@@ -169,9 +169,6 @@ main() {
   need_cmd tr
   (need_cmd yq && echo "Using yq via $(which yq)...";) || install_yq
 
-  pip install -U "setuptools<60"
-
-
   for args in "$@"; do
     if [[ "$args" != "-"* ]]; then
       argv="$args"

@@ -6,6 +6,7 @@ import psutil
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml_cli.env import add_env_command
 from bentoml_cli.serve import add_serve_command
+from bentoml_cli.start import add_start_command
 from bentoml_cli.utils import BentoMLCommandGroup
 from bentoml_cli.yatai import add_login_command
 from bentoml_cli.bentos import add_bento_management_commands
@@ -17,7 +18,7 @@ def create_bentoml_cli() -> click.Group:
 
     from bentoml._internal.context import component_context
 
-    component_context.component_name = "cli"
+    component_context.component_type = "cli"
 
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
@@ -39,6 +40,7 @@ def create_bentoml_cli() -> click.Group:
     add_login_command(bentoml_cli)
     add_bento_management_commands(bentoml_cli)
     add_model_management_commands(bentoml_cli)
+    add_start_command(bentoml_cli)
     add_serve_command(bentoml_cli)
     add_containerize_command(bentoml_cli)
 

@@ -22,6 +22,7 @@ from deepmerge.merger import Merger
 
 from . import expand_env_var
 from ..utils import validate_or_create_dir
+from ..context import component_context
 from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
 
@@ -96,6 +97,7 @@ RUNNER_CFG_SCHEMA = {
             Optional("response_content_type"): Or(bool, None),
         },
     },
+    Optional("timeout"): And(int, _larger_than_zero),
 }
 
 SCHEMA = Schema(
@@ -215,10 +217,10 @@ class BentoMLConfiguration:
 
             global_runner_cfg = {
                 k: self.config["runners"][k]
-                for k in ("batching", "resources", "logging")
+                for k in ("batching", "resources", "logging", "timeout")
             }
             for key in self.config["runners"]:
-                if key not in ["batching", "resources", "logging"]:
+                if key not in ["batching", "resources", "logging", "timeout"]:
                     runner_cfg = self.config["runners"][key]
 
                     # key is a runner name
@@ -398,21 +400,40 @@ class _BentoMLContainerClass:
         otlp_server_url: t.Optional[str] = Provide[config.tracing.otlp.url],
     ):
         from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import SERVICE_VERSION
+        from opentelemetry.sdk.resources import SERVICE_NAMESPACE
+        from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.sdk.environment_variables import OTEL_SERVICE_NAME
+        from opentelemetry.sdk.environment_variables import OTEL_RESOURCE_ATTRIBUTES
 
         from ..utils.telemetry import ParentBasedTraceIdRatio
 
         if sample_rate is None:
             sample_rate = 0.0
 
+        resource = {}
+
+        # User can optionally configure the resource with the following environment variables. Only
+        # configure resource if user has not explicitly configured it.
+        if (
+            OTEL_SERVICE_NAME not in os.environ
+            and OTEL_RESOURCE_ATTRIBUTES not in os.environ
+        ):
+            if component_context.component_name:
+                resource[SERVICE_NAME] = component_context.component_name
+            if component_context.component_index:
+                resource[SERVICE_INSTANCE_ID] = component_context.component_index
+            if component_context.bento_name:
+                resource[SERVICE_NAMESPACE] = component_context.bento_name
+            if component_context.bento_version:
+                resource[SERVICE_VERSION] = component_context.bento_version
+
         provider = TracerProvider(
             sampler=ParentBasedTraceIdRatio(sample_rate),
-            # resource: Resource = Resource.create({}),
-            # shutdown_on_exit: bool = True,
-            # active_span_processor: Union[
-            # SynchronousMultiSpanProcessor, ConcurrentMultiSpanProcessor
-            # ] = None,
-            # id_generator: IdGenerator = None,
+            resource=Resource.create(resource),
         )
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:

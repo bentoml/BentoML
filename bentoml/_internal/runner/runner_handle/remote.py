@@ -41,6 +41,15 @@ class RemoteRunnerClient(RunnerHandle):
     def _remote_runner_server_map(self) -> dict[str, str]:
         return BentoMLContainer.remote_runner_mapping.get()
 
+    @property
+    def runner_timeout(self) -> int:
+        "return the configured timeout for this runner."
+        runner_cfg = BentoMLContainer.runners_config.get()
+        if self._runner.name in runner_cfg:
+            return runner_cfg[self._runner.name]["timeout"]
+        else:
+            return runner_cfg["timeout"]
+
     def _close_conn(self) -> None:
         if self._conn:
             self._conn.close()
@@ -81,7 +90,6 @@ class RemoteRunnerClient(RunnerHandle):
     @property
     def _client(
         self,
-        timeout_sec: float | None = None,
     ) -> ClientSession:
         import aiohttp
 
@@ -100,11 +108,7 @@ class RemoteRunnerClient(RunnerHandle):
                 return str(url.with_query(None))
 
             jar = aiohttp.DummyCookieJar()
-            if timeout_sec is not None:
-                timeout = aiohttp.ClientTimeout(total=timeout_sec)
-            else:
-                DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=5 * 60)
-                timeout = DEFAULT_TIMEOUT
+            timeout = aiohttp.ClientTimeout(total=self.runner_timeout)
             self._client_cache = aiohttp.ClientSession(
                 trace_configs=[
                     create_trace_config(

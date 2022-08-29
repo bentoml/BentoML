@@ -57,8 +57,8 @@ class InferenceAPI:
         if isinstance(input_type, dict):
             # note: in python 3.6 kwarg order was not guaranteed to be preserved,
             #       though it is in practice.
-            for key in input_type:
-                if key not in sig.parameters:
+            for key in sig.parameters:
+                if key not in input_type:
                     if (
                         key in ["context", "ctx"]
                         or sig.parameters[key].annotation == Context

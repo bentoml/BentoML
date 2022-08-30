@@ -196,11 +196,11 @@ def add_containerize_command(cli: click.Group) -> None:
         BENTO is the target BentoService to be containerized, referenced by its name
         and version in format of name:version. For example: "iris_classifier:v1.2.0"
 
-        `bentoml containerize` command also supports the use of the `latest` tag
+        'bentoml containerize' command also supports the use of the 'latest' tag
         which will automatically use the last built version of your Bento.
 
         You can provide a tag for the image built by Bento using the
-        `--tag` flag. Additionally, you can provide a `--push` flag,
+        `--docker-image-tag` flag. Additionally, you can provide a `--push` flag,
         which will push the built image to the Docker repository specified by the
         image tag.
 

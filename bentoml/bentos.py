@@ -465,9 +465,15 @@ def containerize(
             )
         return False
     else:
-        logger.info(f'Successfully built docker image "{docker_image_tag}"')
+        custom_tags = False if not isinstance(docker_image_tag, str) else True
         logger.info(
-            f'To run your newly built Bento container, use: "docker run -it --rm -p 3000:3000 {docker_image_tag}"'
+            'Successfully built docker image for "%s" with tags "%s"',
+            str(bento.tag),
+            docker_image_tag if not custom_tags else ",".join(docker_image_tag),
+        )
+        logger.info(
+            'To run your newly built Bento container, use: "docker run -it --rm -p 3000:3000 %s"',
+            docker_image_tag[0] if custom_tags else docker_image_tag,
         )
         return True
 

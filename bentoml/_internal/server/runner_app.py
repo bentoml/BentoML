@@ -213,16 +213,27 @@ class RunnerAppFactory(BaseAppFactory):
             params = pickle.loads(await request.body())
 
             params = params.map(AutoContainer.from_payload)
-            ret = await runner_method.async_run(*params.args, **params.kwargs)
 
-            payload = AutoContainer.to_payload(ret, 0)
-            return Response(
-                payload.data,
-                headers={
-                    PAYLOAD_META_HEADER: json.dumps(payload.meta),
-                    "Content-Type": f"application/vnd.bentoml.{payload.container}",
-                    "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
-                },
-            )
+            try:
+                ret = await runner_method.async_run(*params.args, **params.kwargs)
+            except BaseException as exc:
+                logger.error(f"Exception on runner '{runner_method.runner.name}' method '{runner_method.name}'", exc_info=exc)
+                return Response(
+                    status_code=500,
+                    headers={
+                        "Content-Type": "text/plain",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                    },
+                )
+            else:
+                payload = AutoContainer.to_payload(ret, 0)
+                return Response(
+                    payload.data,
+                    headers={
+                        PAYLOAD_META_HEADER: json.dumps(payload.meta),
+                        "Content-Type": f"application/vnd.bentoml.{payload.container}",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                    },
+                )
 
         return _run

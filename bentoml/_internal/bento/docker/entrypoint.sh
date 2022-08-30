@@ -10,16 +10,15 @@ _is_sourced() {
 }
 
 _main() {
-	if [ "${#}" -gt 0 ] && [ "${1}" = 'python' ] && [ "${2}" = '-m' ] && ([ "${3}" = 'bentoml._internal.server.cli.runner' ] || [ "${3}" = "bentoml._internal.server.cli.api_server"]); then
+	# for backwards compatibility with the yatai<1.0.0, adapting the old "yatai" command to the new "start" command
+	if [ "${#}" -gt 0 ] && [ "${1}" = 'python' ] && [ "${2}" = '-m' ] && ([ "${3}" = 'bentoml._internal.server.cli.runner' ] || [ "${3}" = "bentoml._internal.server.cli.api_server" ]); then
 		if [ "${3}" = 'bentoml._internal.server.cli.runner' ]; then
 			set -- bentoml start-runner-server "${@:4}"
-		else
-			set -- bentoml start-api-server "${@:4}"
+		elif [ "${3}" = 'bentoml._internal.server.cli.api_server' ]; then
+			set -- bentoml start-http-server "${@:4}"
 		fi
-	fi
-
 	# if no arg or first arg looks like a flag
-	if [ -z "$@" ] || [ "${1:0:1}" = '-' ]; then
+	elif [ -z "$@" ] || [ "${1:0:1}" = '-' ]; then
 		if [[ -v BENTOML_SERVE_COMPONENT ]]; then
 			echo "\$BENTOML_SERVE_COMPONENT is set! Calling 'bentoml start-*' instead"
 			if [ "${BENTOML_SERVE_COMPONENT}" = 'http_server' ]; then

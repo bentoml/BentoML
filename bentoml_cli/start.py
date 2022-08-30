@@ -174,6 +174,13 @@ def add_start_command(cli: click.Group) -> None:
         help="specify the runner name to serve",
     )
     @click.option(
+        "--bind",
+        type=click.STRING,
+        help="[Deprecated] use --host and --port instead."
+        "Bind address for the server. For backword compatibility for yatai < 1.0.0",
+        required=False,
+    )
+    @click.option(
         "--port",
         type=click.INT,
         default=BentoMLContainer.service_port.get(),
@@ -205,6 +212,7 @@ def add_start_command(cli: click.Group) -> None:
     def start_runner_server(  # type: ignore (unused warning)
         bento: str,
         runner_name: str,
+        bind: str | None,
         port: int,
         host: str,
         backlog: int,
@@ -215,6 +223,12 @@ def add_start_command(cli: click.Group) -> None:
             sys.path.insert(0, working_dir)
 
         from bentoml.start import start_runner_server
+
+        if bind is not None:
+            parsed = urlparse(bind)
+            assert parsed.scheme == "tcp"
+            host = parsed.hostname or host
+            port = parsed.port or port
 
         start_runner_server(
             bento,

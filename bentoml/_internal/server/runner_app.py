@@ -217,7 +217,10 @@ class RunnerAppFactory(BaseAppFactory):
             try:
                 ret = await runner_method.async_run(*params.args, **params.kwargs)
             except BaseException as exc:
-                logger.error(f"Exception on runner '{runner_method.runner.name}' method '{runner_method.name}'", exc_info=exc)
+                logger.error(
+                    f"Exception on runner '{runner_method.runner.name}' method '{runner_method.name}'",
+                    exc_info=exc,
+                )
                 return Response(
                     status_code=500,
                     headers={

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sys
+import json
 import logging
+from urllib.parse import urlparse
 
 import click
 
@@ -19,8 +21,22 @@ def add_start_command(cli: click.Group) -> None:
         "--remote-runner",
         type=click.STRING,
         multiple=True,
+        envvar="BENTOML_SERVE_REMOTE_RUNNER",
+        help="list of runners map",
+    )
+    @click.option(
+        "--runner-map",
+        type=click.STRING,
         envvar="BENTOML_SERVE_RUNNER_MAP",
-        help="JSON string of runners map",
+        help="[Deprecated] use --remote-runner instead. "
+        "JSON string of runners map. For backword compatibility for yatai < 1.0.0",
+    )
+    @click.option(
+        "--bind",
+        type=click.STRING,
+        help="[Deprecated] use --host and --port instead."
+        "Bind address for the server. For backword compatibility for yatai < 1.0.0",
+        required=False,
     )
     @click.option(
         "--port",
@@ -96,6 +112,8 @@ def add_start_command(cli: click.Group) -> None:
     def start_http_server(  # type: ignore (unused warning)
         bento: str,
         remote_runner: list[str] | None,
+        runner_map: str | None,
+        bind: str | None,
         port: int,
         host: str,
         backlog: int,
@@ -114,11 +132,25 @@ def add_start_command(cli: click.Group) -> None:
 
         from bentoml.start import start_http_server
 
-        runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
+        if remote_runner:
+            runner_map_dict = dict(
+                [s.split("=", maxsplit=2) for s in remote_runner or []]
+            )
+        elif runner_map:
+            runner_map_dict = json.loads(runner_map)
+        else:
+            runner_map_dict = {}
+
+        if bind is not None:
+            parsed = urlparse(bind)
+            assert parsed.scheme == "tcp"
+            host = parsed.hostname or host
+            port = parsed.port or port
+
         logger.info(" Using remote runners: %s", runner_map)
         start_http_server(
             bento,
-            runner_map=runner_map,
+            runner_map=runner_map_dict,
             working_dir=working_dir,
             port=port,
             host=host,

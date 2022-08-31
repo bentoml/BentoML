@@ -380,7 +380,7 @@ def build_bentofile(
 @inject
 def containerize(
     tag: Tag | str,
-    docker_image_tag: str | t.List[str] | None = None,
+    docker_image_tag: t.List[str] | None = None,
     *,
     add_host: dict[str, str] | None = None,
     allow: t.List[str] | None = None,
@@ -418,7 +418,7 @@ def containerize(
 
     bento = _bento_store.get(tag)
     if not docker_image_tag:
-        docker_image_tag = str(bento.tag)
+        docker_image_tag = [str(bento.tag)]
 
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")
 
@@ -465,15 +465,14 @@ def containerize(
             )
         return False
     else:
-        custom_tags = isinstance(docker_image_tag, str)
         logger.info(
             'Successfully built docker image for "%s" with tags "%s"',
             str(bento.tag),
-            docker_image_tag if not custom_tags else ",".join(docker_image_tag),
+            ",".join(docker_image_tag),
         )
         logger.info(
-            'To run your newly built Bento container, use: "docker run -it --rm -p 3000:3000 %s"',
-            docker_image_tag[0] if custom_tags else docker_image_tag,
+            'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". i.e: "docker run -it --rm -p 3000:3000 %s"',
+            docker_image_tag[0],
         )
         return True
 

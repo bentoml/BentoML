@@ -465,7 +465,7 @@ def containerize(
             )
         return False
     else:
-        custom_tags = False if not isinstance(docker_image_tag, str) else True
+        custom_tags = isinstance(docker_image_tag, str)
         logger.info(
             'Successfully built docker image for "%s" with tags "%s"',
             str(bento.tag),

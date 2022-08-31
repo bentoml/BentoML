@@ -21,7 +21,8 @@ For common PyTorch models with single input:
 
 .. code-block:: python
     :caption: `train.py`
-
+    
+    import bentoml
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
@@ -74,7 +75,7 @@ For common PyTorch models with single input:
     import torch.optim as optim
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     for epoch in range(2):  # a small epoch just for demostration purpose
         for i, data in enumerate(trainloader, 0):
@@ -85,7 +86,7 @@ For common PyTorch models with single input:
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs = net(inputs)
+            outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()

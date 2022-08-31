@@ -21,7 +21,8 @@ For common PyTorch models with single input:
 
 .. code-block:: python
     :caption: `train.py`
-
+    
+    import bentoml
     import torch
     import torch.nn as nn
     import torch.nn.functional as F

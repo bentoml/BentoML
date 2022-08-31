@@ -74,7 +74,7 @@ For common PyTorch models with single input:
     import torch.optim as optim
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     for epoch in range(2):  # a small epoch just for demostration purpose
         for i, data in enumerate(trainloader, 0):

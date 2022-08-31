@@ -85,7 +85,7 @@ For common PyTorch models with single input:
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs = net(inputs)
+            outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()

@@ -1,4 +1,5 @@
 import os
+import time
 import random
 import string
 from sys import version_info as pyver
@@ -48,6 +49,8 @@ def test_models(tmpdir: "Path"):
         _model_store=store,
     ) as testmodel:
         testmodel1tag = testmodel.tag
+
+    time.sleep(1)
 
     with bentoml.models.create(
         "testmodel",

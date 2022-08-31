@@ -196,29 +196,29 @@ def add_containerize_command(cli: click.Group) -> None:
         BENTO is the target BentoService to be containerized, referenced by its name
         and version in format of name:version. For example: "iris_classifier:v1.2.0"
 
-        `bentoml containerize` command also supports the use of the `latest` tag
+        'bentoml containerize' command also supports the use of the 'latest' tag
         which will automatically use the last built version of your Bento.
 
         You can provide a tag for the image built by Bento using the
-        `--tag` flag. Additionally, you can provide a `--push` flag,
+        '--docker-image-tag' flag. Additionally, you can provide a '--push' flag,
         which will push the built image to the Docker repository specified by the
         image tag.
 
         You can also prefixing the tag with a hostname for the repository you wish
         to push to.
-        e.g. `bentoml containerize IrisClassifier:latest --push --tag
-        repo-address.com:username/iris` would build a Docker image called
-        `username/iris:latest` and push that to docker repository at repo-address.com.
+        e.g. 'bentoml containerize IrisClassifier:latest --push --tag
+        repo-address.com:username/iris' would build a Docker image called
+        'username/iris:latest' and push that to docker repository at repo-address.com.
 
-        By default, the `containerize` command will use the current credentials
+        By default, the 'containerize' command will use the current credentials
         provided by Docker daemon.
 
-        `bentoml containerize` also uses Docker Buildx as backend, in place for normal `docker build`.
+        'bentoml containerize' also uses Docker Buildx as backend, in place for normal 'docker build'.
         By doing so, BentoML will leverage Docker Buildx features such as multi-node
         builds for cross-platform images, Full BuildKit capabilities with all of the
-        familiar UI from `docker build`.
+        familiar UI from 'docker build'.
 
-        We also pass all given args for `docker buildx` through `bentoml containerize` with ease.
+        We also pass all given args for 'docker buildx' through 'bentoml containerize' with ease.
         """
         from bentoml._internal.utils import buildx
 
@@ -268,7 +268,7 @@ def add_containerize_command(cli: click.Group) -> None:
         if platform and len(platform) > 1:
             if not push:
                 logger.warning(
-                    "Multiple `--platform` arguments were found. Make sure to also use `--push` to push images to a repository or generated images will not be saved. For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
+                    "Multiple '--platform' arguments were found. Make sure to also use '--push' to push images to a repository or generated images will not be saved. For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
                 )
         if push:
             load = False

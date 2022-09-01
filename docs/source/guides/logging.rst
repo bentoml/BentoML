@@ -59,22 +59,22 @@ logs are logged under the ``"bentoml"`` namespace.
 Web Service Request Logging
 """""""""""""""""""""""""""
 
-For web requests, logging can be enabled and disabled using the `logging.access` parameter at the
-top level of the ``bentoml_configuration.yml``.
+For web requests, logging can be enabled and disabled using the `logging.access` parameter in both the `api_server` and `runner`
+sections of the ``bentoml_configuration.yml``.
 
 .. code-block:: yaml
 
     logging:
       access:
-          enabled: False
-          # whether to log the size of the request body
-          request_content_length: True
-          # whether to log the content type of the request
-          request_content_type: True
-          # whether to log the content length of the response
-          response_content_length: True
-          # whether to log the content type of the response
-          response_content_type: True
+        enabled: False
+        # whether to log the size of the request body
+        request_content_length: True
+        # whether to log the content type of the request
+        request_content_type: True
+        # whether to log the content length of the response
+        response_content_length: True
+        # whether to log the content type of the response
+        response_content_type: True
 
 
 Model Runner Request Logging
@@ -88,13 +88,30 @@ your ``bentoml_configuration.yml``:
 .. code-block:: yaml
 
     runners:
-        logging:
-          access:
-              enabled: True
-              ...
+      logging:
+        access:
+          enabled: True
+          ...
 
 The available configuration options are identical to the webserver request logging options above.
 These logs are disabled by default in order to prevent double logging of requests.
+
+
+Logging Formatting
+""""""""""""""""""
+
+You may configure the logging formatting options at the top level of your ``bentoml_configuration.yml``.
+The default configuration is shown below, where the opentelemetry trace_id and span_id are logged in
+hexadecimal format, consistent with opentelemetry logging instrumentation.
+
+.. code-block:: yaml
+
+    logging:
+      formatting:
+        format: "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
+        datefmt: "%Y-%m-%dT%H:%M:%S%z"
+        trace_id_format: 032x
+        span_id_format: 016x
 
 
 Library Logging

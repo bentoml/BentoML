@@ -9,6 +9,7 @@ from .context import trace_context
 from .context import component_context
 from .configuration import get_debug_mode
 from .configuration import get_quiet_mode
+from .configuration.containers import BentoMLContainer
 
 default_factory = logging.getLogRecordFactory()
 
@@ -45,10 +46,11 @@ CLI_LOGGING_CONFIG: dict[str, t.Any] = {
     "root": {"level": logging.WARNING},
 }
 
-TRACED_LOG_FORMAT = (
-    "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
-)
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+LOGGING_FORMATS = BentoMLContainer.logging_formats.get()
+TRACED_LOG_FORMAT = LOGGING_FORMATS["format"]
+DATE_FORMAT = LOGGING_FORMATS["datefmt"]
+TRACE_ID_FORMAT = LOGGING_FORMATS["trace_id_format"]
+SPAN_ID_FORMAT = LOGGING_FORMATS["span_id_format"]
 
 SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
     "version": 1,
@@ -111,10 +113,13 @@ def trace_record_factory(*args: t.Any, **kwargs: t.Any):
     record = default_factory(*args, **kwargs)
     record.levelname_bracketed = f"[{record.levelname}]"  # type: ignore (adding fields to record)
     record.component = f"[{_component_name()}]"  # type: ignore (adding fields to record)
-    if trace_context.trace_id == 0:
+    trace_id = trace_context.trace_id
+    if trace_id in (0, None):
         record.trace_msg = ""  # type: ignore (adding fields to record)
     else:
-        record.trace_msg = f" (trace={trace_context.trace_id},span={trace_context.span_id},sampled={trace_context.sampled})"  # type: ignore (adding fields to record)
+        trace_id = format(trace_id, TRACE_ID_FORMAT)
+        span_id = format(trace_context.span_id, SPAN_ID_FORMAT)
+        record.trace_msg = f" (trace={trace_id},span={span_id},sampled={trace_context.sampled})"  # type: ignore (adding fields to record)
     record.request_id = trace_context.request_id  # type: ignore (adding fields to record)
 
     return record

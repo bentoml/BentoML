@@ -178,6 +178,14 @@ SCHEMA = Schema(
                 },
             },
         },
+        "logging": {
+            "formatting": {
+                "format": str,
+                "datefmt": str,
+                "trace_id_format": str,
+                "span_id_format": str,
+            }
+        },
     }
 )
 
@@ -534,6 +542,13 @@ class _BentoMLContainerClass:
                 f"'duration' configuration, '{duration}'."
             )
         return DEFAULT_BUCKET
+
+    @providers.SingletonFactory
+    @staticmethod
+    def logging_formats(
+        cfg: dict[str, t.Any] = Provide[config.logging.formatting],
+    ) -> dict[str, str]:
+        return cfg
 
 
 BentoMLContainer = _BentoMLContainerClass()

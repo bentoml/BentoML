@@ -92,12 +92,7 @@ def add_bento_management_commands(
         type=click.Choice(["json", "yaml", "table"]),
         default="table",
     )
-    @click.option(
-        "--no-trunc",
-        is_flag=False,
-        help="Don't truncate the output",
-    )
-    def list_bentos(bento_name: str, output: str, no_trunc: bool) -> None:  # type: ignore (not accessed)
+    def list_bentos(bento_name: str, output: str) -> None:  # type: ignore (not accessed)
         """List Bentos in local store
 
         \b

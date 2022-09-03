@@ -108,8 +108,6 @@ hexadecimal format, consistent with opentelemetry logging instrumentation.
 
     logging:
       formatting:
-        format: "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
-        datefmt: "%Y-%m-%dT%H:%M:%S%z"
         trace_id_format: 032x
         span_id_format: 016x
 

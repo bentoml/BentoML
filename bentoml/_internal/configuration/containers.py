@@ -180,8 +180,6 @@ SCHEMA = Schema(
         },
         "logging": {
             "formatting": {
-                "format": str,
-                "datefmt": str,
                 "trace_id_format": str,
                 "span_id_format": str,
             }

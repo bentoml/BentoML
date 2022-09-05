@@ -595,6 +595,19 @@ fi
         return attr.evolve(self, **defaults)
 
 
+@attr.frozen
+class TestOptions:
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
+
+    input: str
+    output: t.Optional[str] = attr.field(default=None)
+
+    def to_dict(self) -> t.Dict[str, t.Any]:
+        return attr.asdict(self)
+
 def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
@@ -608,7 +621,7 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 
 
 if TYPE_CHECKING:
-    OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions]
+    OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions, TestOptions]
 
 
 def dict_options_converter(
@@ -654,6 +667,8 @@ class BentoBuildConfig:
         factory=CondaOptions,
         converter=dict_options_converter(CondaOptions),
     )
+    endpoints_tests: t.Optional[t.Dict[str, t.List[TestOptions]]] = attr.field(default=None)
+
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -709,6 +724,7 @@ class BentoBuildConfig:
             self.docker.with_defaults(),
             self.python.with_defaults(),
             self.conda.with_defaults(),
+            {} if self.endpoints_tests is None else self.endpoints_tests,
         )
 
     @classmethod
@@ -788,3 +804,4 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions
+    endpoints_tests: t.Optional[t.Dict[str, t.List[TestOptions]]]

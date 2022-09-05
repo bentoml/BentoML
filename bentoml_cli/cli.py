@@ -12,7 +12,7 @@ from bentoml_cli.yatai import add_login_command
 from bentoml_cli.bentos import add_bento_management_commands
 from bentoml_cli.models import add_model_management_commands
 from bentoml_cli.containerize import add_containerize_command
-
+from bentoml_cli.test import add_test_command
 
 def create_bentoml_cli() -> click.Group:
 
@@ -43,6 +43,7 @@ def create_bentoml_cli() -> click.Group:
     add_start_command(bentoml_cli)
     add_serve_command(bentoml_cli)
     add_containerize_command(bentoml_cli)
+    add_test_command(bentoml_cli)
 
     if psutil.WINDOWS:
         import sys

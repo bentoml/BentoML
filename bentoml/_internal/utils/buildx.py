@@ -308,3 +308,22 @@ def run_docker_cmd(
         subprocess_env.update(env)
 
     subprocess.check_output(list(map(str, cmds)), env=subprocess_env, cwd=cwd)
+
+
+def run_docker_container(docker_image_tag: str):
+    # TODO: allow getting arguments
+    cmd = ['docker', 'run', '--rm', '-d', '-p', '3000:3000', docker_image_tag]
+    try:
+        container_id = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        container_id = container_id.decode('utf-8').strip()
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+    return container_id
+
+
+def kill_docker_container(docker_id: str):
+    cmd = ['docker', 'kill', docker_id]
+    try:
+        subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))

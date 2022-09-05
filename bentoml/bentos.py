@@ -18,7 +18,7 @@ from bentoml.exceptions import InvalidArgument
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
-from ._internal.bento.build_config import BentoBuildConfig
+from ._internal.bento.build_config import BentoBuildConfig, TestOptions
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -475,6 +475,72 @@ def containerize(
             docker_image_tag[0],
         )
         return True
+
+
+@inject
+def test_bento_bundle(
+        tag: str,
+        _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+):
+    """
+    Test given bento tag by creating docker container and running tests on it.
+    """
+    import time
+    import yaml
+    import json
+    import requests
+    from bentoml._internal.utils import buildx
+
+    bento = _bento_store.get(tag)
+
+    # create docker image
+    containerize(bento.tag, quiet=True)
+
+    # run container
+    docker_id = buildx.run_docker_container(tag)
+    # TODO: check if container is up and running (instead of using sleep)
+    time.sleep(20)
+
+    # read tests
+    endpoint_tests = dict()
+    tests_path = os.path.join(bento.path, "tests", "endpoints_tests.yaml")
+    with open(tests_path, "r") as f:
+        try:
+            d = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            logger.error(e)
+            raise
+    for endpoint, tests in d.items():
+        endpoint_tests[endpoint] = [TestOptions(**t) for t in tests]
+
+    # run tests on endpoints
+    for endpoint, tests in endpoint_tests.items():
+        logger.info(f"\ntesting endpoint : {endpoint}")
+        for i, test in enumerate(tests):
+
+            # send request with input to endpoint
+            try:
+                data = test.input
+                data = str(data)
+                res = requests.post(f"http://localhost:3000/{endpoint}", data=data)
+                res.raise_for_status()
+            except Exception as e:
+                logger.info(f"  - Failed test {i+1} : {e}")
+                continue
+
+            # check if the output is correct
+            # TODO: do casting (to pandas/numpy etc...), then compare. try to cast to the type defined in the service endpoint decorator
+            successful_test = res.json() == json.loads(test.output) if test.output else True
+
+            if successful_test:
+                logger.info(f"  - Passed test {i+1}")
+            else:
+                logger.info(f"  - Failed test {i+1} : {res.json()} != {json.loads(test.output)}")
+
+    # stop container
+    buildx.kill_docker_container(docker_id)
+
+    # TODO: remove docker image
 
 
 __all__ = [

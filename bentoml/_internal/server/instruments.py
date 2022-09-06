@@ -35,29 +35,59 @@ class MetricsMiddleware:
     @inject
     def _setup(
         self,
+        namespace: str = Provide[BentoMLContainer.api_server_config.metrics.namespace],
         metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
         duration_buckets: tuple[float, ...] = Provide[
             BentoMLContainer.duration_buckets
         ],
     ):
         self.metrics_client = metrics_client
-        service_name = self.bento_service.name
 
-        self.metrics_request_duration = metrics_client.Histogram(
-            name=metric_name(service_name, "request_duration_seconds"),
-            documentation="API HTTP request duration in seconds",
+        self.legacy_metrics_request_duration = metrics_client.Histogram(
+            namespace=namespace,
+            name=metric_name(self.bento_service.name, "request_duration_seconds"),
+            documentation="Legacy API HTTP request duration in seconds",
             labelnames=["endpoint", "service_version", "http_response_code"],
             buckets=duration_buckets,
         )
-        self.metrics_request_total = metrics_client.Counter(
-            name=metric_name(service_name, "request_total"),
-            documentation="Total number of HTTP requests",
+        self.legacy_metrics_request_total = metrics_client.Counter(
+            namespace=namespace,
+            name=metric_name(self.bento_service.name, "request_total"),
+            documentation="Legacy total number of HTTP requests",
             labelnames=["endpoint", "service_version", "http_response_code"],
         )
-        self.metrics_request_in_progress = metrics_client.Gauge(
-            name=metric_name(service_name, "request_in_progress"),
-            documentation="Total number of HTTP requests in progress now",
+        self.legacy_metrics_request_in_progress = metrics_client.Gauge(
+            namespace=namespace,
+            name=metric_name(self.bento_service.name, "request_in_progress"),
+            documentation="Legacy total number of HTTP requests in progress now",
             labelnames=["endpoint", "service_version"],
+            multiprocess_mode="livesum",
+        )
+        self.metrics_request_duration = metrics_client.Histogram(
+            name="bentoml_request_duration_seconds",
+            documentation="API HTTP request duration in seconds",
+            labelnames=[
+                "endpoint",
+                "service_name",
+                "service_version",
+                "http_response_code",
+            ],
+            buckets=duration_buckets,
+        )
+        self.metrics_request_total = metrics_client.Counter(
+            name="bentoml_request_total",
+            documentation="Total number of HTTP requests",
+            labelnames=[
+                "endpoint",
+                "service_name",
+                "service_version",
+                "http_response_code",
+            ],
+        )
+        self.metrics_request_in_progress = metrics_client.Gauge(
+            name="bentoml_request_in_progress",
+            documentation="Total number of HTTP requests in progress now",
+            labelnames=["endpoint", "service_name", "service_version"],
             multiprocess_mode="livesum",
         )
         self._is_setup = True
@@ -96,8 +126,14 @@ class MetricsMiddleware:
                 status_code = message["status"]
 
                 # instrument request total count
+                self.legacy_metrics_request_total.labels(
+                    endpoint=endpoint,
+                    service_version=service_version,
+                    http_response_code=status_code,
+                ).inc()
                 self.metrics_request_total.labels(
                     endpoint=endpoint,
+                    service_name=self.bento_service.name,
                     service_version=service_version,
                     http_response_code=status_code,
                 ).inc()
@@ -105,16 +141,26 @@ class MetricsMiddleware:
                 # instrument request duration
                 assert START_TIME_VAR.get() != 0
                 total_time = max(default_timer() - START_TIME_VAR.get(), 0)
+                self.legacy_metrics_request_duration.labels(  # type: ignore
+                    endpoint=endpoint,
+                    service_version=service_version,
+                    http_response_code=status_code,
+                ).observe(total_time)
                 self.metrics_request_duration.labels(  # type: ignore
                     endpoint=endpoint,
+                    service_name=self.bento_service.name,
                     service_version=service_version,
                     http_response_code=status_code,
                 ).observe(total_time)
             START_TIME_VAR.set(0)
             await send(message)
 
-        with self.metrics_request_in_progress.labels(
+        with self.legacy_metrics_request_in_progress.labels(
             endpoint=endpoint, service_version=service_version
+        ).track_inprogress(), self.metrics_request_in_progress.labels(
+            endpoint=endpoint,
+            service_name=self.bento_service.name,
+            service_version=service_version,
         ).track_inprogress():
             await self.app(scope, receive, wrapped_send)
             return

@@ -107,7 +107,6 @@ class CorkDispatcher:
     The wrapped function should be an async function.
     """
 
-    @inject
     def __init__(
         self,
         runner_name: str,
@@ -117,7 +116,6 @@ class CorkDispatcher:
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
         fallback: t.Optional[t.Callable[[], t.Any]] = None,
-        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ):
         """
         params:
@@ -141,14 +139,20 @@ class CorkDispatcher:
         self._controller = None
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
+        self._is_setup = False
 
+    @inject
+    def _setup(
+        self,
+        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
+    ) -> None:
         self.legacy_adaptive_batch_size_hist = metrics_client.Histogram(
             name=metric_name(
-                runner_name, worker_index, method_name, "adaptive_batch_size"
+                self.runner_name, self.worker_index, self.method_name, "adaptive_batch_size"
             ),
             documentation="Legacy runner adaptive batch size",
             labelnames=[],  # TODO: add service version
-            buckets=exponential_buckets(1, 2, max_batch_size),
+            buckets=exponential_buckets(1, 2, self.max_batch_size),
         )
         self.adaptive_batch_size_hist = metrics_client.Histogram(
             name=metric_name("bentoml_adaptive_batch_size"),
@@ -158,8 +162,9 @@ class CorkDispatcher:
                 "worker_index",
                 "method_name",
             ],  # TODO: add service version
-            buckets=exponential_buckets(1, 2, max_batch_size),
+            buckets=exponential_buckets(1, 2, self.max_batch_size),
         )
+        self._is_setup = True
 
     def shutdown(self):
         if self._controller is not None:
@@ -186,6 +191,9 @@ class CorkDispatcher:
         ],
     ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
         self.callback = callback
+
+        if not self._is_setup:
+            self._setup()
 
         @functools.wraps(callback)
         async def _func(data):

@@ -385,14 +385,10 @@ class _BentoMLContainerClass:
     @staticmethod
     def metrics_client(
         multiproc_dir: str = Provide[prometheus_multiproc_dir],
-        namespace: str = Provide[config.api_server.metrics.namespace],
     ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
-        return PrometheusClient(
-            multiproc_dir=multiproc_dir,
-            namespace=namespace,
-        )
+        return PrometheusClient(multiproc_dir=multiproc_dir)
 
     @providers.SingletonFactory
     @staticmethod

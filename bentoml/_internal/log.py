@@ -9,7 +9,6 @@ from .context import trace_context
 from .context import component_context
 from .configuration import get_debug_mode
 from .configuration import get_quiet_mode
-from .configuration.containers import BentoMLContainer
 
 default_factory = logging.getLogRecordFactory()
 
@@ -51,9 +50,6 @@ TRACED_LOG_FORMAT = (
 )
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
-LOGGING_FORMATS = BentoMLContainer.logging_formats.get()
-TRACE_ID_FORMAT = LOGGING_FORMATS["trace_id_format"]
-SPAN_ID_FORMAT = LOGGING_FORMATS["span_id_format"]
 
 SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
     "version": 1,
@@ -120,8 +116,14 @@ def trace_record_factory(*args: t.Any, **kwargs: t.Any):
     if trace_id in (0, None):
         record.trace_msg = ""  # type: ignore (adding fields to record)
     else:
-        trace_id = format(trace_id, TRACE_ID_FORMAT)
-        span_id = format(trace_context.span_id, SPAN_ID_FORMAT)
+        from .configuration.containers import BentoMLContainer
+
+        logging_formats = BentoMLContainer.logging_formats.get()
+        trace_id_format = logging_formats["trace_id_format"]
+        span_id_format = logging_formats["span_id_format"]
+
+        trace_id = format(trace_id, trace_id_format)
+        span_id = format(trace_context.span_id, span_id_format)
         record.trace_msg = f" (trace={trace_id},span={span_id},sampled={trace_context.sampled})"  # type: ignore (adding fields to record)
     record.request_id = trace_context.request_id  # type: ignore (adding fields to record)
 

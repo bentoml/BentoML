@@ -12,7 +12,6 @@ class PrometheusClient:
     def __init__(
         self,
         *,
-        namespace: str = "",
         multiproc: bool = True,
         multiproc_dir: t.Optional[str] = None,
     ):
@@ -28,7 +27,6 @@ class PrometheusClient:
             assert multiproc_dir is not None, "multiproc_dir must be provided"
 
         self.multiproc = multiproc
-        self.namespace = namespace
         self.multiproc_dir: t.Optional[str] = multiproc_dir
         self._registry = None
         self._imported = False
@@ -105,7 +103,6 @@ class PrometheusClient:
     def Histogram(self):
         return partial(
             self.prometheus_client.Histogram,
-            namespace=self.namespace,
             registry=self.registry,
         )
 
@@ -113,7 +110,6 @@ class PrometheusClient:
     def Counter(self):
         return partial(
             self.prometheus_client.Counter,
-            namespace=self.namespace,
             registry=self.registry,
         )
 
@@ -121,7 +117,6 @@ class PrometheusClient:
     def Summary(self):
         return partial(
             self.prometheus_client.Summary,
-            namespace=self.namespace,
             registry=self.registry,
         )
 
@@ -129,6 +124,5 @@ class PrometheusClient:
     def Gauge(self):
         return partial(
             self.prometheus_client.Gauge,
-            namespace=self.namespace,
             registry=self.registry,
         )

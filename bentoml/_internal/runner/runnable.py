@@ -149,6 +149,6 @@ class RunnableMethod(t.Generic[T, P, R]):
 @attr.define
 class RunnableMethodConfig:
     batchable: bool
-    batch_dim: tuple[int, int | tuple[int, ...]]
+    batch_dim: tuple[int, int]
     input_spec: AnyType | tuple[AnyType, ...] | None = None
     output_spec: AnyType | None = None

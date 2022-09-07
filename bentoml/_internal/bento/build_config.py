@@ -106,7 +106,7 @@ def _convert_env(
     if isinstance(env, list):
         env_dict: dict[str, str | None] = {}
         for envvar in env:
-            match = re.match(r"^(\w+)=(\w+)$", envvar)
+            match = re.match(r"^(\w+)=([\w-]+)$", envvar)
             if not match:
                 raise BentoMLException(
                     "All value in `env` list must follow format ENV=VALUE"

@@ -186,16 +186,9 @@ class RunnerAppFactory(BaseAppFactory):
             # multiple output branch
             if isinstance(batch_ret, tuple):
                 output_num = len(batch_ret)
-                if isinstance(output_batch_dim, int):
-                    output_batch_dim = (output_batch_dim,) * output_num
-                else:
-                    assert (
-                        len(output_batch_dim) == output_num
-                    ), "output_batch_dim length should be equal to the number of outputs"
-
                 payloadss = [
                     AutoContainer.batch_to_payloads(
-                        batch_ret[idx], indices, batch_dim=output_batch_dim[idx]
+                        batch_ret[idx], indices, batch_dim=output_batch_dim
                     )
                     for idx in range(output_num)
                 ]
@@ -213,9 +206,6 @@ class RunnerAppFactory(BaseAppFactory):
                 ]
 
             # single output branch
-            assert isinstance(
-                output_batch_dim, int
-            ), "output_batch_dim's should be int for single output"
             payloads = AutoContainer.batch_to_payloads(
                 batch_ret,
                 indices,

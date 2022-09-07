@@ -543,7 +543,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def logging_formats(
+    def logging_formatting(
         cfg: dict[str, t.Any] = Provide[config.logging.formatting],
     ) -> dict[str, str]:
         return cfg

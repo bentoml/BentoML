@@ -37,6 +37,9 @@ runners:
       request_content_type: True
       response_content_length: True
       response_content_type: True
+  metrics:
+    enabled: True
+    namespace: bentoml_runner
   timeout: 300
 
 tracing:

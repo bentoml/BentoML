@@ -150,6 +150,10 @@ SCHEMA = Schema(
         "runners": {
             **RUNNER_CFG_SCHEMA,
             Optional(str): RUNNER_CFG_SCHEMA,  # type: ignore (incomplete schema typing)
+            "metrics": {
+                "enabled": bool,
+                "namespace": str,
+            },
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),

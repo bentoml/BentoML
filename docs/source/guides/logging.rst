@@ -64,17 +64,18 @@ sections of the ``bentoml_configuration.yml``.
 
 .. code-block:: yaml
 
-    logging:
-      access:
-        enabled: False
-        # whether to log the size of the request body
-        request_content_length: True
-        # whether to log the content type of the request
-        request_content_type: True
-        # whether to log the content length of the response
-        response_content_length: True
-        # whether to log the content type of the response
-        response_content_type: True
+    api_server:
+      logging:
+        access:
+          enabled: False
+          # whether to log the size of the request body
+          request_content_length: True
+          # whether to log the content type of the request
+          request_content_type: True
+          # whether to log the content length of the response
+          response_content_length: True
+          # whether to log the content type of the response
+          response_content_type: True
 
 
 Model Runner Request Logging

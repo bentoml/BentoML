@@ -13,29 +13,28 @@ from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
-    from ..service import Service
     from ..server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
 START_TIME_VAR: "contextvars.ContextVar[float]" = contextvars.ContextVar(
     "START_TIME_VAR"
 )
+from ..context import component_context
 
 
 class MetricsMiddleware:
     def __init__(
         self,
         app: "ext.ASGIApp",
-        bento_service: "Service",
+        namespace: str,
     ):
         self.app = app
-        self.bento_service = bento_service
+        self.namespace = namespace
         self._is_setup = False
 
     @inject
     def _setup(
         self,
-        namespace: str = Provide[BentoMLContainer.api_server_config.metrics.namespace],
         metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
         duration_buckets: tuple[float, ...] = Provide[
             BentoMLContainer.duration_buckets
@@ -43,28 +42,37 @@ class MetricsMiddleware:
     ):
         self.metrics_client = metrics_client
 
+        DEFAULT_NAMESPACE = "bentoml_api_server"
+        if self.namespace == DEFAULT_NAMESPACE:
+            legacy_namespace = "BENTOML"
+        else:
+            legacy_namespace = self.namespace
+
+        # legacy metrics names for bentoml<1.0.6
         self.legacy_metrics_request_duration = metrics_client.Histogram(
-            namespace=namespace,
-            name=metric_name(self.bento_service.name, "request_duration_seconds"),
+            namespace=legacy_namespace,
+            name=metric_name(component_context.bento_name, "request_duration_seconds"),
             documentation="Legacy API HTTP request duration in seconds",
             labelnames=["endpoint", "service_version", "http_response_code"],
             buckets=duration_buckets,
         )
         self.legacy_metrics_request_total = metrics_client.Counter(
-            namespace=namespace,
-            name=metric_name(self.bento_service.name, "request_total"),
+            namespace=legacy_namespace,
+            name=metric_name(component_context.bento_name, "request_total"),
             documentation="Legacy total number of HTTP requests",
             labelnames=["endpoint", "service_version", "http_response_code"],
         )
         self.legacy_metrics_request_in_progress = metrics_client.Gauge(
-            namespace=namespace,
-            name=metric_name(self.bento_service.name, "request_in_progress"),
+            namespace=legacy_namespace,
+            name=metric_name(component_context.bento_name, "request_in_progress"),
             documentation="Legacy total number of HTTP requests in progress now",
             labelnames=["endpoint", "service_version"],
             multiprocess_mode="livesum",
         )
+
         self.metrics_request_duration = metrics_client.Histogram(
-            name="bentoml_request_duration_seconds",
+            namespace=self.namespace,
+            name="request_duration_seconds",
             documentation="API HTTP request duration in seconds",
             labelnames=[
                 "endpoint",
@@ -75,7 +83,8 @@ class MetricsMiddleware:
             buckets=duration_buckets,
         )
         self.metrics_request_total = metrics_client.Counter(
-            name="bentoml_request_total",
+            namespace=self.namespace,
+            name="request_total",
             documentation="Total number of HTTP requests",
             labelnames=[
                 "endpoint",
@@ -85,7 +94,8 @@ class MetricsMiddleware:
             ],
         )
         self.metrics_request_in_progress = metrics_client.Gauge(
-            name="bentoml_request_in_progress",
+            namespace=self.namespace,
+            name="request_in_progress",
             documentation="Total number of HTTP requests in progress now",
             labelnames=["endpoint", "service_name", "service_version"],
             multiprocess_mode="livesum",
@@ -115,9 +125,6 @@ class MetricsMiddleware:
             await response(scope, receive, send)
             return
 
-        service_version = (
-            self.bento_service.tag.version if self.bento_service.tag is not None else ""
-        )
         endpoint = scope["path"]
         START_TIME_VAR.set(default_timer())
 
@@ -128,13 +135,13 @@ class MetricsMiddleware:
                 # instrument request total count
                 self.legacy_metrics_request_total.labels(
                     endpoint=endpoint,
-                    service_version=service_version,
+                    service_version=component_context.bento_version,
                     http_response_code=status_code,
                 ).inc()
                 self.metrics_request_total.labels(
                     endpoint=endpoint,
-                    service_name=self.bento_service.name,
-                    service_version=service_version,
+                    service_name=component_context.bento_name,
+                    service_version=component_context.bento_version,
                     http_response_code=status_code,
                 ).inc()
 
@@ -143,24 +150,24 @@ class MetricsMiddleware:
                 total_time = max(default_timer() - START_TIME_VAR.get(), 0)
                 self.legacy_metrics_request_duration.labels(  # type: ignore
                     endpoint=endpoint,
-                    service_version=service_version,
+                    service_version=component_context.bento_version,
                     http_response_code=status_code,
                 ).observe(total_time)
                 self.metrics_request_duration.labels(  # type: ignore
                     endpoint=endpoint,
-                    service_name=self.bento_service.name,
-                    service_version=service_version,
+                    service_name=component_context.bento_name,
+                    service_version=component_context.bento_version,
                     http_response_code=status_code,
                 ).observe(total_time)
             START_TIME_VAR.set(0)
             await send(message)
 
         with self.legacy_metrics_request_in_progress.labels(
-            endpoint=endpoint, service_version=service_version
+            endpoint=endpoint, service_version=component_context.bento_version
         ).track_inprogress(), self.metrics_request_in_progress.labels(
             endpoint=endpoint,
-            service_name=self.bento_service.name,
-            service_version=service_version,
+            service_name=component_context.bento_name,
+            service_version=component_context.bento_version,
         ).track_inprogress():
             await self.app(scope, receive, wrapped_send)
             return

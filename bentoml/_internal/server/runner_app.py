@@ -9,9 +9,12 @@ from typing import TYPE_CHECKING
 from functools import partial
 
 from ..context import trace_context
+from ..context import component_context
 from ..runner.utils import Params
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import payload_paramss_to_batch_params
+from ..utils.metrics import metric_name
+from ..utils.metrics import exponential_buckets
 from ..server.base_app import BaseAppFactory
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
@@ -49,9 +52,6 @@ class RunnerAppFactory(BaseAppFactory):
             if not method.config.batchable:
                 continue
             self.dispatchers[method.name] = CorkDispatcher(
-                runner_name=runner.name,
-                worker_index=worker_index,
-                method_name=method.name,
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=method.max_batch_size,
                 fallback=TooManyRequests,
@@ -61,10 +61,48 @@ class RunnerAppFactory(BaseAppFactory):
     def name(self) -> str:
         return self.runner.name
 
+    def _init_metrics_wrappers(self):
+        metrics_client = BentoMLContainer.metrics_client.get()
+
+        self.legacy_adaptive_batch_size_hist_map = {
+            method.name: metrics_client.Histogram(
+                name=metric_name(
+                    self.runner.name,
+                    self.worker_index,
+                    method.name,
+                    "adaptive_batch_size",
+                ),
+                documentation="Legacy runner adaptive batch size",
+                labelnames=[],
+                buckets=exponential_buckets(1, 2, method.max_batch_size),
+            )
+            for method in self.runner.runner_methods
+        }
+
+        max_max_batch_size = max(
+            method.max_batch_size for method in self.runner.runner_methods
+        )
+
+        self.adaptive_batch_size_hist = metrics_client.Histogram(
+            namespace="bentoml_runner",
+            name="adaptive_batch_size",
+            documentation="Runner adaptive batch size",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+            buckets=exponential_buckets(1, 2, max_max_batch_size),
+        )
+
     @property
     def on_startup(self) -> t.List[t.Callable[[], None]]:
         on_startup = super().on_startup
         on_startup.insert(0, functools.partial(self.runner.init_local, quiet=True))
+        on_startup.insert(0, self._init_metrics_wrappers)
+
         return on_startup
 
     @property
@@ -159,11 +197,23 @@ class RunnerAppFactory(BaseAppFactory):
     def _async_cork_run(
         self,
         runner_method: RunnerMethod[t.Any, t.Any, t.Any],
-    ) -> t.Callable[[t.Iterable[Request]], t.Coroutine[None, None, list[Response]]]:
+    ) -> t.Callable[[t.Collection[Request]], t.Coroutine[None, None, list[Response]]]:
         from starlette.responses import Response
 
-        async def _run(requests: t.Iterable[Request]) -> list[Response]:
+        async def _run(requests: t.Collection[Request]) -> list[Response]:
             assert self._is_ready
+
+            self.legacy_adaptive_batch_size_hist_map[runner_method.name].observe(
+                len(requests)
+            )
+            self.adaptive_batch_size_hist.labels(
+                runner_name=self.runner.name,
+                worker_index=self.worker_index,
+                method_name=runner_method.name,
+                service_version=component_context.bento_version,
+                service_name=component_context.bento_name,
+            ).observe(len(requests))
+
             if not requests:
                 return []
             params_list: list[Params[t.Any]] = []

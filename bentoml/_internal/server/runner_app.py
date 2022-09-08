@@ -8,6 +8,9 @@ import functools
 from typing import TYPE_CHECKING
 from functools import partial
 
+from simple_di import inject
+from simple_di import Provide
+
 from ..context import trace_context
 from ..context import component_context
 from ..runner.utils import Params
@@ -35,13 +38,16 @@ if TYPE_CHECKING:
 
 
 class RunnerAppFactory(BaseAppFactory):
+    @inject
     def __init__(
         self,
         runner: Runner,
         worker_index: int = 0,
+        enable_metrics: bool = Provide[BentoMLContainer.runners_config.metrics.enabled],
     ) -> None:
         self.runner = runner
         self.worker_index = worker_index
+        self.enable_metrics = enable_metrics
 
         from starlette.responses import Response
 
@@ -175,6 +181,13 @@ class RunnerAppFactory(BaseAppFactory):
                 tracer_provider=BentoMLContainer.tracer_provider.get(),
             )
         )
+
+        if self.enable_metrics:
+            from .instruments import RunnerTrafficMetricsMiddleware
+
+            middlewares.append(Middleware(RunnerTrafficMetricsMiddleware))
+
+        return middlewares
 
         access_log_config = BentoMLContainer.runners_config.logging.access
         if access_log_config.enabled.get():

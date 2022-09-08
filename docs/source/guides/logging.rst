@@ -59,13 +59,14 @@ logs are logged under the ``"bentoml"`` namespace.
 Web Service Request Logging
 """""""""""""""""""""""""""
 
-For web requests, logging can be enabled and disabled using the `logging.access` parameter at the
+For web requests, logging can be enabled and disabled using the `api_server.logging.access` parameter at the
 top level of the ``bentoml_configuration.yml``.
 
 .. code-block:: yaml
 
-    logging:
-      access:
+    api_server:
+      logging:
+        access:
           enabled: False
           # whether to log the size of the request body
           request_content_length: True

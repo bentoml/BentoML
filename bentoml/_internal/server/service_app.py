@@ -222,7 +222,7 @@ class ServiceAppFactory(BaseAppFactory):
             middlewares.append(
                 Middleware(
                     MetricsMiddleware,
-                    bento_service=self.bento_service,
+                    namespace=BentoMLContainer.api_server_config.metrics.namespace.get(),
                 )
             )
 

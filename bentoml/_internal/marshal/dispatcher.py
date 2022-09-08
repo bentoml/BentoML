@@ -7,20 +7,14 @@ import logging
 import functools
 import traceback
 import collections
-from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import inject
-from simple_di import Provide
 
 from ..utils import cached_property
 from ..utils.alg import TokenBucket
-from ..utils.metrics import metric_name
-from ..utils.metrics import exponential_buckets
-from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
-    from ..server.metrics.prometheus import PrometheusClient
+# from ..utils.metrics import metric_name
+# from ..utils.metrics import exponential_buckets
 
 logger = logging.getLogger(__name__)
 
@@ -107,17 +101,12 @@ class CorkDispatcher:
     The wrapped function should be an async function.
     """
 
-    @inject
     def __init__(
         self,
-        runner_name: str,
-        worker_index: int,
-        method_name: str,
         max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
         fallback: t.Optional[t.Callable[[], t.Any]] = None,
-        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ):
         """
         params:
@@ -134,32 +123,29 @@ class CorkDispatcher:
         self.optimizer = Optimizer()
         self.max_batch_size = int(max_batch_size)
         self.tick_interval = 0.001
-        self.runner_name = runner_name
-        self.worker_index = worker_index
-        self.method_name = method_name
 
         self._controller = None
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
-        self.legacy_adaptive_batch_size_hist = metrics_client.Histogram(
-            name=metric_name(
-                runner_name, worker_index, method_name, "adaptive_batch_size"
-            ),
-            documentation="Legacy runner adaptive batch size",
-            labelnames=[],  # TODO: add service version
-            buckets=exponential_buckets(1, 2, max_batch_size),
-        )
-        self.adaptive_batch_size_hist = metrics_client.Histogram(
-            name=metric_name("bentoml_adaptive_batch_size"),
-            documentation="Runner adaptive batch size",
-            labelnames=[
-                "runner_name",
-                "worker_index",
-                "method_name",
-            ],  # TODO: add service version
-            buckets=exponential_buckets(1, 2, max_batch_size),
-        )
+        # self.legacy_adaptive_batch_size_hist = metrics_client.Histogram(
+        # name=metric_name(
+        # runner_name, worker_index, method_name, "adaptive_batch_size"
+        # ),
+        # documentation="Legacy runner adaptive batch size",
+        # labelnames=[],  # TODO: add service version
+        # buckets=exponential_buckets(1, 2, max_batch_size),
+        # )
+        # self.adaptive_batch_size_hist = metrics_client.Histogram(
+        # name=metric_name("bentoml_adaptive_batch_size"),
+        # documentation="Runner adaptive batch size",
+        # labelnames=[
+        # "runner_name",
+        # "worker_index",
+        # "method_name",
+        # ],  # TODO: add service version
+        # buckets=exponential_buckets(1, 2, max_batch_size),
+        # )
 
     def shutdown(self):
         if self._controller is not None:
@@ -182,7 +168,7 @@ class CorkDispatcher:
     def __call__(
         self,
         callback: t.Callable[
-            [t.Iterable[T_IN]], t.Coroutine[None, None, t.Iterable[T_OUT]]
+            [t.Collection[T_IN]], t.Coroutine[None, None, t.Iterable[T_OUT]]
         ],
     ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
         self.callback = callback
@@ -259,12 +245,12 @@ class CorkDispatcher:
         _done = False
         batch_size = len(inputs_info)
         logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
-        self.legacy_adaptive_batch_size_hist.observe(batch_size)
-        self.adaptive_batch_size_hist.labels(
-            runner_name=self.runner_name,
-            worker_index=self.worker_index,
-            method_name=self.method_name,
-        ).observe(batch_size)
+        # self.legacy_adaptive_batch_size_hist.observe(batch_size)
+        # self.adaptive_batch_size_hist.labels(
+        # runner_name=self.runner_name,
+        # worker_index=self.worker_index,
+        # method_name=self.method_name,
+        # ).observe(batch_size)
         try:
             outputs = await self.callback(tuple(d for _, d, _ in inputs_info))
             assert len(outputs) == len(inputs_info)

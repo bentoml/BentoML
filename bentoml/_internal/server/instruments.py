@@ -22,11 +22,11 @@ START_TIME_VAR: "contextvars.ContextVar[float]" = contextvars.ContextVar(
 from ..context import component_context
 
 
-class MetricsMiddleware:
+class HTTPTrafficMetricsMiddleware:
     def __init__(
         self,
         app: "ext.ASGIApp",
-        namespace: str,
+        namespace: str = "bentoml_api_server",
     ):
         self.app = app
         self.namespace = namespace
@@ -168,6 +168,122 @@ class MetricsMiddleware:
             endpoint=endpoint,
             service_name=component_context.bento_name,
             service_version=component_context.bento_version,
+        ).track_inprogress():
+            await self.app(scope, receive, wrapped_send)
+            return
+
+
+class RunnerTrafficMetricsMiddleware:
+    def __init__(
+        self,
+        app: "ext.ASGIApp",
+        namespace: str = "bentoml_runner",
+    ):
+        self.app = app
+        self.namespace = namespace
+        self._is_setup = False
+
+    @inject
+    def _setup(
+        self,
+        metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
+        duration_buckets: tuple[float, ...] = Provide[
+            BentoMLContainer.duration_buckets
+        ],
+    ):
+        self.metrics_client = metrics_client
+
+        self.metrics_request_duration = metrics_client.Histogram(
+            namespace=self.namespace,
+            name="request_duration_seconds",
+            documentation="runner RPC duration in seconds",
+            labelnames=[
+                "endpoint",
+                "service_name",
+                "service_version",
+                "http_response_code",
+                "runner_name",
+            ],
+            buckets=duration_buckets,
+        )
+        self.metrics_request_total = metrics_client.Counter(
+            namespace=self.namespace,
+            name="request_total",
+            documentation="Total number of runner RPC",
+            labelnames=[
+                "endpoint",
+                "service_name",
+                "service_version",
+                "http_response_code",
+                "runner_name",
+            ],
+        )
+        self.metrics_request_in_progress = metrics_client.Gauge(
+            namespace=self.namespace,
+            name="request_in_progress",
+            documentation="Total number of runner RPC in progress now",
+            labelnames=["endpoint", "service_name", "service_version", "runner_name"],
+            multiprocess_mode="livesum",
+        )
+        self._is_setup = True
+
+    async def __call__(
+        self,
+        scope: "ext.ASGIScope",
+        receive: "ext.ASGIReceive",
+        send: "ext.ASGISend",
+    ) -> None:
+        if not self._is_setup:
+            self._setup()
+        if not scope["type"].startswith("http"):
+            await self.app(scope, receive, send)
+            return
+
+        if scope["path"] == "/metrics":
+            from starlette.responses import Response
+
+            response = Response(
+                self.metrics_client.generate_latest(),
+                status_code=200,
+                media_type=self.metrics_client.CONTENT_TYPE_LATEST,
+            )
+            await response(scope, receive, send)
+            return
+
+        endpoint = scope["path"]
+        START_TIME_VAR.set(default_timer())
+
+        async def wrapped_send(message: "ext.ASGIMessage") -> None:
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+
+                # instrument request total count
+                self.metrics_request_total.labels(
+                    endpoint=endpoint,
+                    service_name=component_context.bento_name,
+                    service_version=component_context.bento_version,
+                    http_response_code=status_code,
+                    runner_name=component_context.component_name,
+                ).inc()
+
+                # instrument request duration
+                assert START_TIME_VAR.get() != 0
+                total_time = max(default_timer() - START_TIME_VAR.get(), 0)
+                self.metrics_request_duration.labels(  # type: ignore
+                    endpoint=endpoint,
+                    service_name=component_context.bento_name,
+                    service_version=component_context.bento_version,
+                    http_response_code=status_code,
+                    runner_name=component_context.component_name,
+                ).observe(total_time)
+            START_TIME_VAR.set(0)
+            await send(message)
+
+        with self.metrics_request_in_progress.labels(
+            endpoint=endpoint,
+            service_name=component_context.bento_name,
+            service_version=component_context.bento_version,
+            runner_name=component_context.component_name,
         ).track_inprogress():
             await self.app(scope, receive, wrapped_send)
             return

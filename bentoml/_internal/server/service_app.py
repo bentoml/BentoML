@@ -217,14 +217,9 @@ class ServiceAppFactory(BaseAppFactory):
 
         # metrics middleware
         if self.enable_metrics:
-            from .instruments import MetricsMiddleware
+            from .instruments import HTTPTrafficMetricsMiddleware
 
-            middlewares.append(
-                Middleware(
-                    MetricsMiddleware,
-                    namespace=BentoMLContainer.api_server_config.metrics.namespace.get(),
-                )
-            )
+            middlewares.append(Middleware(HTTPTrafficMetricsMiddleware))
 
         # otel middleware
         import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore

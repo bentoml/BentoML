@@ -18,6 +18,7 @@ from bentoml import load
 
 from ._internal.utils import reserve_free_port
 from ._internal.resource import CpuResource
+from ._internal.utils.analytics import track_serve
 from ._internal.utils.circus import create_standalone_arbiter
 from ._internal.configuration.containers import BentoMLContainer
 
@@ -26,6 +27,9 @@ logger = logging.getLogger(__name__)
 SCRIPT_RUNNER = "bentoml_cli.worker.runner"
 SCRIPT_API_SERVER = "bentoml_cli.worker.http_api_server"
 SCRIPT_DEV_API_SERVER = "bentoml_cli.worker.http_dev_api_server"
+
+API_SERVER = "api_server"
+RUNNER = "runner"
 
 
 @inject
@@ -114,7 +118,7 @@ def start_runner_server(
 
                 watchers.append(
                     Watcher(
-                        name=f"runner_{runner.name}",
+                        name=f"{RUNNER}_{runner.name}",
                         cmd=sys.executable,
                         args=[
                             "-m",
@@ -149,18 +153,19 @@ def start_runner_server(
         sockets=list(circus_socket_map.values()),
     )
 
-    try:
-        arbiter.start(
-            cb=lambda _: logger.info(  # type: ignore
-                'Starting RunnerServer from "%s"\n running on http://%s:%s (Press CTRL+C to quit)',
-                bento_identifier,
-                host,
-                port,
-            ),
-        )
-    finally:
-        if uds_path is not None:
-            shutil.rmtree(uds_path)
+    with track_serve(svc, production=False, component=RUNNER):
+        try:
+            arbiter.start(
+                cb=lambda _: logger.info(  # type: ignore
+                    'Starting RunnerServer from "%s"\n running on http://%s:%s (Press CTRL+C to quit)',
+                    bento_identifier,
+                    host,
+                    port,
+                ),
+            )
+        finally:
+            if uds_path is not None:
+                shutil.rmtree(uds_path)
 
 
 @inject
@@ -248,7 +253,7 @@ def start_http_server(
 
     watchers.append(
         Watcher(
-            name="api_server",
+            name=API_SERVER,
             cmd=sys.executable,
             args=args,
             copy_env=True,
@@ -264,13 +269,14 @@ def start_http_server(
         sockets=list(circus_socket_map.values()),
     )
 
-    try:
-        arbiter.start(
-            cb=lambda _: logger.info(  # type: ignore
-                f'Starting bare Bento API server from "{bento_identifier}" '
-                f"running on http://{host}:{port} (Press CTRL+C to quit)"
-            ),
-        )
-    finally:
-        if uds_path is not None:
-            shutil.rmtree(uds_path)
+    with track_serve(svc, production=False, component=API_SERVER):
+        try:
+            arbiter.start(
+                cb=lambda _: logger.info(  # type: ignore
+                    f'Starting bare Bento API server from "{bento_identifier}" '
+                    f"running on http://{host}:{port} (Press CTRL+C to quit)"
+                ),
+            )
+        finally:
+            if uds_path is not None:
+                shutil.rmtree(uds_path)

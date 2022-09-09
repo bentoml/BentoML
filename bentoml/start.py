@@ -18,8 +18,8 @@ from bentoml import load
 
 from ._internal.utils import reserve_free_port
 from ._internal.resource import CpuResource
-from ._internal.utils.analytics import track_serve
 from ._internal.utils.circus import create_standalone_arbiter
+from ._internal.utils.analytics import track_serve
 from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ def start_runner_server(
         sockets=list(circus_socket_map.values()),
     )
 
-    with track_serve(svc, production=False, component=RUNNER):
+    with track_serve(svc, production=True, component=RUNNER):
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
@@ -269,7 +269,7 @@ def start_http_server(
         sockets=list(circus_socket_map.values()),
     )
 
-    with track_serve(svc, production=False, component=API_SERVER):
+    with track_serve(svc, production=True, component=API_SERVER):
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore

@@ -187,9 +187,6 @@ class RunnerTrafficMetricsMiddleware:
     def _setup(
         self,
         metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
-        duration_buckets: tuple[float, ...] = Provide[
-            BentoMLContainer.duration_buckets
-        ],
     ):
         self.metrics_client = metrics_client
 
@@ -204,7 +201,6 @@ class RunnerTrafficMetricsMiddleware:
                 "http_response_code",
                 "runner_name",
             ],
-            buckets=duration_buckets,
         )
         self.metrics_request_total = metrics_client.Counter(
             namespace=self.namespace,

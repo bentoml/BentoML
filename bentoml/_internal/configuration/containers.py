@@ -78,6 +78,8 @@ def _is_ip_address(addr: str) -> bool:
         return False
 
 
+RUNNER_CFG_KEYS = ["batching", "resources", "logging", "metrics", "timeout"]
+
 RUNNER_CFG_SCHEMA = {
     Optional("batching"): {
         Optional("enabled"): bool,
@@ -96,6 +98,10 @@ RUNNER_CFG_SCHEMA = {
             Optional("response_content_length"): Or(bool, None),
             Optional("response_content_type"): Or(bool, None),
         },
+    },
+    Optional("metrics"): {
+        "enabled": bool,
+        "namespace": str,
     },
     Optional("timeout"): And(int, _larger_than_zero),
 }
@@ -150,10 +156,6 @@ SCHEMA = Schema(
         "runners": {
             **RUNNER_CFG_SCHEMA,
             Optional(str): RUNNER_CFG_SCHEMA,  # type: ignore (incomplete schema typing)
-            "metrics": {
-                "enabled": bool,
-                "namespace": str,
-            },
         },
         "tracing": {
             "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
@@ -219,12 +221,9 @@ class BentoMLConfiguration:
                 override_config = yaml.safe_load(f)
             config_merger.merge(self.config, override_config)
 
-            global_runner_cfg = {
-                k: self.config["runners"][k]
-                for k in ("batching", "resources", "logging", "timeout")
-            }
+            global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
             for key in self.config["runners"]:
-                if key not in ["batching", "resources", "logging", "timeout"]:
+                if key not in RUNNER_CFG_KEYS:
                     runner_cfg = self.config["runners"][key]
 
                     # key is a runner name
@@ -515,7 +514,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        metrics: dict[str, t.Any] = Provide[config.api_server.metrics],
+        metrics: dict[str, t.Any] = Provide[config.api_server.metrics]
     ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,

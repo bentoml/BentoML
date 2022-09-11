@@ -21,8 +21,16 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     from types import UnionType
 
+    from google.protobuf.internal.containers import MessageMap
+
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
+else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 
 class Multipart(IODescriptor[t.Any]):
@@ -153,13 +161,14 @@ class Multipart(IODescriptor[t.Any]):
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
+    _proto_field = "multipart"
+
     def __init__(self, **inputs: IODescriptor[t.Any]):
-        for descriptor in inputs.values():
-            if isinstance(descriptor, Multipart):  # pragma: no cover
-                raise InvalidArgument(
-                    "Multipart IO can not contain nested Multipart IO descriptor"
-                )
-        self._inputs: dict[str, t.Any] = inputs
+        if any(isinstance(descriptor, Multipart) for descriptor in inputs.values()):
+            raise InvalidArgument(
+                "Multipart IO can not contain nested Multipart IO descriptor"
+            ) from None
+        self._inputs = inputs
         self._mime_type = "multipart/form-data"
 
     def input_type(
@@ -171,7 +180,7 @@ class Multipart(IODescriptor[t.Any]):
             if isinstance(inp_type, dict):
                 raise TypeError(
                     "A multipart descriptor cannot take a multi-valued I/O descriptor as input"
-                )
+                ) from None
             res[k] = inp_type
 
         return res
@@ -202,22 +211,61 @@ class Multipart(IODescriptor[t.Any]):
         if ctype != b"multipart/form-data":
             raise BentoMLException(
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
-            )
+            ) from None
 
-        res: dict[str, t.Any] = dict()
         reqs = await populate_multipart_requests(request)
 
-        for k, i in self._inputs.items():
-            req = reqs[k]
-            v = await i.from_http_request(req)
-            res[k] = v
-        return res
+        return {
+            key: await io_.from_http_request(reqs[key])
+            for key, io_ in self._inputs.items()
+        }
 
     async def to_http_response(
         self, obj: dict[str, t.Any], ctx: Context | None = None
     ) -> Response:
-        res_mapping: dict[str, Response] = {}
-        for k, io_ in self._inputs.items():
-            data = obj[k]
-            res_mapping[k] = await io_.to_http_response(data, ctx)
+        res_mapping: dict[str, Response] = {
+            key: await io_.to_http_response(obj[key], ctx)
+            for key, io_ in self._inputs.items()
+        }
         return await concat_to_multipart_response(res_mapping, ctx)
+
+    async def from_proto(
+        self,
+        field: MessageMap[str, pb.Part],
+        *,
+        _use_internal_bytes_contents: bool = False,
+    ) -> dict[str, t.Any]:
+        if _use_internal_bytes_contents:
+            raise InvalidArgument(
+                f"cannot use '_internal_bytes_contents' with {self.__class__.__name__}"
+            ) from None
+        if len(set(field) - set(self._inputs)) != 0:
+            raise InvalidArgument(
+                f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as input fields. Invalid fields are: {set(field) - set(self._inputs)}",
+            ) from None
+        return {
+            key: await self._inputs[key].from_proto(
+                input_pb, _use_internal_bytes_contents=_use_internal_bytes_contents
+            )
+            for key, input_pb in field.items()
+        }
+
+    async def to_proto(self, obj: dict[str, t.Any]) -> MessageMap[str, pb.Part]:
+        if len(set(obj) - set(self._inputs)) != 0:
+            raise InvalidArgument(
+                f"'{self.__class__.__name__}' only accepts '{set(self._inputs)}' as output fields. Invalid fields are: {set(obj) - set(self._inputs)}",
+            ) from None
+
+        return t.cast(
+            "MessageMap[str, pb.Part]",
+            {
+                key: pb.Part(
+                    **{
+                        self._inputs[key]
+                        .accepted_proto_fields: await self._inputs[key]
+                        .to_proto(obj[key])
+                    }
+                )
+                for key in obj
+            },
+        )

@@ -11,14 +11,23 @@ from bentoml.exceptions import BentoMLException
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-
-if TYPE_CHECKING:
-    from ..context import InferenceApiContext as Context
-
+from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
+
+if TYPE_CHECKING:
+    from google.protobuf import wrappers_pb2
+
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+
+    from ..context import InferenceApiContext as Context
+else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
+    wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 
 MIME_TYPE = "text/plain"
 
@@ -86,11 +95,13 @@ class Text(IODescriptor[str]):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
+    _proto_field: str = "text"
+
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         if args or kwargs:
             raise BentoMLException(
-                "'Text' is not designed to take any args or kwargs during initialization."
-            )
+                f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
+            ) from None
 
         self._mime_type = MIME_TYPE
 
@@ -131,3 +142,21 @@ class Text(IODescriptor[str]):
             return res
         else:
             return Response(obj, media_type=MIME_TYPE)
+
+    async def from_proto(
+        self,
+        field: wrappers_pb2.StringValue | pb.Part | bytes,
+        *,
+        _use_internal_bytes_contents: bool = False,
+    ) -> str:
+        if not _use_internal_bytes_contents:
+            if isinstance(field, pb.Part):
+                field = field.text
+            assert isinstance(field, wrappers_pb2.StringValue)
+            return field.value
+        else:
+            assert isinstance(field, bytes)
+            return field.decode("utf-8")
+
+    async def to_proto(self, obj: str) -> wrappers_pb2.StringValue:
+        return wrappers_pb2.StringValue(value=obj)

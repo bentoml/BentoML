@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 
 import aiohttp
 import multidict
-
-logger = logging.getLogger("bentoml.tests")
-
 
 if TYPE_CHECKING:
     from starlette.types import Send
@@ -38,16 +34,13 @@ async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
 async def async_request(
     method: str,
     url: str,
-    headers: t.Union[None, t.Tuple[t.Tuple[str, str], ...], "LooseHeaders"] = None,
+    headers: None | tuple[tuple[str, str], ...] | LooseHeaders = None,
     data: t.Any = None,
-    timeout: t.Optional[int] = None,
-    assert_status: t.Union[int, t.Callable[[int], bool], None] = None,
-    assert_data: t.Union[bytes, t.Callable[[bytes], bool], None] = None,
-    assert_headers: t.Optional[t.Callable[[t.Any], bool]] = None,
-) -> t.Tuple[int, "Headers", bytes]:
-    """
-    raw async request client
-    """
+    timeout: int | None = None,
+    assert_status: int | t.Callable[[int], bool] | None = None,
+    assert_data: bytes | t.Callable[[bytes], bool] | None = None,
+    assert_headers: t.Callable[[t.Any], bool] | None = None,
+) -> tuple[int, Headers, bytes]:
     import aiohttp
     from starlette.datastructures import Headers
 
@@ -58,38 +51,33 @@ async def async_request(
             ) as r:
                 r_body = await r.read()
         except Exception:
-            raise RuntimeError(
-                "Unable to reach host."
-            ) from None  # suppress exception trace
+            raise RuntimeError("Unable to reach host.") from None
     if assert_status is not None:
         if callable(assert_status):
             assert assert_status(r.status), f"{r.status} {repr(r_body)}"
         else:
             assert r.status == assert_status, f"{r.status} {repr(r_body)}"
-
     if assert_data is not None:
         if callable(assert_data):
             assert assert_data(r_body), r_body
         else:
             assert r_body == assert_data, r_body
-
     if assert_headers is not None:
         assert assert_headers(r.headers), repr(r.headers)
-
     headers = t.cast(t.Mapping[str, str], r.headers)
     return r.status, Headers(headers), r_body
 
 
 def check_headers(headers: multidict.CIMultiDict[str]) -> bool:
     return (
-        headers.get("Yatai-Bento-Deployment-Name") == "sdfasdf"
+        headers.get("Yatai-Bento-Deployment-Name") == "test-deployment"
         and headers.get("Yatai-Bento-Deployment-Namespace") == "yatai"
     )
 
 
 async def http_proxy_app(scope: Scope, receive: Receive, send: Send):
     """
-    A simplest HTTP proxy app. To simulate the behavior of yatai
+    A simplest HTTP proxy app. To simulate the behavior of Yatai
     """
     if scope["type"] == "lifespan":
         return
@@ -102,13 +90,13 @@ async def http_proxy_app(scope: Scope, receive: Receive, send: Send):
 
             assert check_headers(headers)
 
-            bodys: list[bytes] = []
+            bodies: list[bytes] = []
             while True:
                 request_message = await receive()
                 assert request_message["type"] == "http.request"
                 request_body = request_message.get("body")
                 assert isinstance(request_body, bytes)
-                bodys.append(request_body)
+                bodies.append(request_body)
                 if not request_message["more_body"]:
                     break
 
@@ -116,7 +104,7 @@ async def http_proxy_app(scope: Scope, receive: Receive, send: Send):
                 method=scope["method"],
                 url=scope["path"],
                 headers=headers,
-                data=b"".join(bodys),
+                data=b"".join(bodies),
             ) as response:
                 await send(
                     {
@@ -135,4 +123,4 @@ async def http_proxy_app(scope: Scope, receive: Receive, send: Send):
                 )
         return
 
-    raise NotImplementedError(f"Scope {scope} is not understood")
+    raise NotImplementedError(f"Scope {scope} is not understood.") from None

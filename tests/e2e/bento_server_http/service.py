@@ -1,29 +1,38 @@
+from __future__ import annotations
+
 import typing as t
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import pydantic
 from PIL.Image import Image as PILImage
 from PIL.Image import fromarray
+from starlette.requests import Request
 
 import bentoml
-import bentoml.picklable_model
 from bentoml.io import File
 from bentoml.io import JSON
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
 from bentoml.io import PandasDataFrame
-from bentoml._internal.types import FileLike
-from bentoml._internal.types import JSONSerializable
 
-py_model = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner()
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+    from starlette.types import Send
+    from starlette.types import Scope
+    from starlette.types import ASGIApp
+    from starlette.types import Receive
+
+    from bentoml._internal.types import FileLike
+    from bentoml._internal.types import JSONSerializable
 
 
-svc = bentoml.Service(
-    name="general_workflow_service.case-1.e2e",
-    runners=[py_model],
-)
+py_model = bentoml.picklable_model.get("py_model.case-1.http.e2e").to_runner()
+
+
+svc = bentoml.Service(name="general_http_service.case-1.e2e", runners=[py_model])
 
 
 @svc.api(input=JSON(), output=JSON())
@@ -38,13 +47,13 @@ def echo_json_sync(json_obj: JSONSerializable) -> JSONSerializable:
     return batch_ret[0]
 
 
-class _Schema(pydantic.BaseModel):
+class ValidateSchema(pydantic.BaseModel):
     name: str
     endpoints: t.List[str]
 
 
 @svc.api(
-    input=JSON(pydantic_model=_Schema),
+    input=JSON(pydantic_model=ValidateSchema),
     output=JSON(),
 )
 async def echo_json_enforce_structure(json_obj: JSONSerializable) -> JSONSerializable:
@@ -61,9 +70,7 @@ async def echo_obj(obj: JSONSerializable) -> JSONSerializable:
     input=NumpyNdarray(shape=(2, 2), enforce_shape=True),
     output=NumpyNdarray(shape=(2, 2)),
 )
-async def predict_ndarray_enforce_shape(
-    inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
-) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+async def predict_ndarray_enforce_shape(inp: NDArray[t.Any]) -> NDArray[t.Any]:
     assert inp.shape == (2, 2)
     return await py_model.predict_ndarray.async_run(inp)
 
@@ -72,9 +79,7 @@ async def predict_ndarray_enforce_shape(
     input=NumpyNdarray(dtype="uint8", enforce_dtype=True),
     output=NumpyNdarray(dtype="str"),
 )
-async def predict_ndarray_enforce_dtype(
-    inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
-) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+async def predict_ndarray_enforce_dtype(inp: NDArray[t.Any]) -> NDArray[t.Any]:
     assert inp.dtype == np.dtype("uint8")
     return await py_model.predict_ndarray.async_run(inp)
 
@@ -83,7 +88,7 @@ async def predict_ndarray_enforce_dtype(
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasDataFrame(),
 )
-async def predict_dataframe(df: "pd.DataFrame") -> "pd.DataFrame":
+async def predict_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     assert df["col1"].dtype == "int64"
     output = await py_model.predict_dataframe.async_run(df)
     dfo = pd.DataFrame()
@@ -99,18 +104,16 @@ async def predict_file(f: FileLike[bytes]) -> bytes:
 
 
 @svc.api(input=Image(), output=Image(mime_type="image/bmp"))
-async def echo_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+async def echo_image(f: PILImage) -> NDArray[t.Any]:
     assert isinstance(f, PILImage)
-    return np.array(f)  # type: ignore[arg-type]
+    return np.array(f)
 
 
 @svc.api(
     input=Multipart(original=Image(), compared=Image()),
     output=Multipart(img1=Image(), img2=Image()),
 )
-async def predict_multi_images(
-    original: t.Dict[str, Image], compared: t.Dict[str, Image]
-):
+async def predict_multi_images(original: dict[str, Image], compared: dict[str, Image]):
     output_array = await py_model.predict_multi_ndarray.async_run(
         np.array(original), np.array(compared)
     )
@@ -119,13 +122,6 @@ async def predict_multi_images(
 
 
 # customise the service
-from starlette.types import Send
-from starlette.types import Scope
-from starlette.types import ASGIApp
-from starlette.types import Receive
-from starlette.requests import Request
-
-
 class AllowPingMiddleware:
     def __init__(
         self,
@@ -143,7 +139,7 @@ class AllowPingMiddleware:
         return
 
 
-svc.add_asgi_middleware(AllowPingMiddleware)  # type: ignore[arg-type]
+svc.add_asgi_middleware(AllowPingMiddleware)  # type: ignore (hint not yet supported for hooks)
 
 
 from fastapi import FastAPI

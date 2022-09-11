@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 import os
@@ -120,7 +121,12 @@ python:
   extra_index_url: null
   pip_args: null
   wheels: null
-  extras_require: null
+  components:
+    tracing: false
+    grpc: false
+    zipkin: false
+    jaeger: false
+    otlp: false
 conda:
   environment_yml: null
   channels: null
@@ -146,10 +152,7 @@ def build_test_bento(model_store: ModelStore) -> Bento:
     bento_cfg = BentoBuildConfig(
         "simplebento.py:svc",
         include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
-        exclude=[
-            "*.storage",
-            "/somefile",
-        ],
+        exclude=["*.storage", "/somefile", "/subdir2"],
         conda={
             "environment_yml": "./environment.yaml",
         },
@@ -335,6 +338,7 @@ def test_bento(dummy_model_store: ModelStore):
             "src",
             "env",
         }
+        print(bento_fs.listdir("src"))
         assert set(bento_fs.listdir("src")) == {
             "simplebento.py",
             "subdir",

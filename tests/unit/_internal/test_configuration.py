@@ -1,19 +1,89 @@
-from tempfile import NamedTemporaryFile
+from __future__ import annotations
+
+import typing as t
+import logging
+from typing import TYPE_CHECKING
+
+import pytest
 
 from bentoml._internal.configuration.containers import BentoMLConfiguration
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def get_bentomlconfiguration_from_str(config_str: str):
-    tmpfile = NamedTemporaryFile(mode="w+", delete=False)
-    tmpfile.write(config_str)
-    tmpfile.flush()
-    tmpfile.close()
-
-    bentoml_cfg = BentoMLConfiguration(override_config_file=tmpfile.name).as_dict()
-    return bentoml_cfg
+    from _pytest.logging import LogCaptureFixture
+    from simple_di.providers import ConfigDictType
 
 
-def test_bentoml_configuration_runner_override():
+@pytest.fixture(scope="function", name="config_cls")
+def fixture_config_cls(tmp_path: Path) -> t.Callable[[str], ConfigDictType]:
+    def inner(config: str) -> ConfigDictType:
+        path = tmp_path / "configuration.yaml"
+        path.write_text(config)
+        return BentoMLConfiguration(override_config_file=path.__fspath__()).as_dict()
+
+    return inner
+
+
+@pytest.mark.usefixtures("config_cls")
+def test_backward_configuration(config_cls: t.Callable[[str], ConfigDictType]):
+    OLD_CONFIG = """\
+api_server:
+    max_request_size: 8624612341
+"""
+    bentoml_cfg = config_cls(OLD_CONFIG)
+    assert "max_request_size" not in bentoml_cfg["api_server"]
+    assert "cors" not in bentoml_cfg["api_server"]
+    assert bentoml_cfg["api_server"]["http"]["max_request_size"] == 8624612341
+
+
+@pytest.mark.usefixtures("config_cls")
+def test_backward_warning(
+    config_cls: t.Callable[[str], ConfigDictType], caplog: LogCaptureFixture
+):
+
+    OLD_HOST = """\
+api_server:
+    host: 0.0.0.0
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_HOST)
+    assert "field 'api_server.host' is deprecated" in caplog.text
+    caplog.clear()
+
+    OLD_PORT = """\
+api_server:
+    port: 4096
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_PORT)
+    assert "field 'api_server.port' is deprecated" in caplog.text
+    caplog.clear()
+
+    OLD_MAX_REQUEST_SIZE = """\
+api_server:
+    max_request_size: 8624612341
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_MAX_REQUEST_SIZE)
+    assert "field 'api_server.max_request_size' is deprecated" in caplog.text
+    caplog.clear()
+
+    OLD_CORS = """\
+api_server:
+    cors:
+        enabled: false
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_CORS)
+    assert "field 'api_server.cors' is deprecated" in caplog.text
+    caplog.clear()
+
+
+@pytest.mark.usefixtures("config_cls")
+def test_bentoml_configuration_runner_override(
+    config_cls: t.Callable[[str], ConfigDictType]
+):
     OVERRIDE_RUNNERS = """\
 runners:
     batching:
@@ -40,7 +110,7 @@ runners:
                 enabled: True
 """
 
-    bentoml_cfg = get_bentomlconfiguration_from_str(OVERRIDE_RUNNERS)
+    bentoml_cfg = config_cls(OVERRIDE_RUNNERS)
     runner_cfg = bentoml_cfg["runners"]
 
     # test_runner_1
@@ -73,13 +143,14 @@ runners:
     assert test_runner_batching["resources"]["cpu"] == 4  # should use global
 
 
-def test_runner_gpu_configuration():
+@pytest.mark.usefixtures("config_cls")
+def test_runner_gpu_configuration(config_cls: t.Callable[[str], ConfigDictType]):
     GPU_INDEX = """\
 runners:
     resources:
         nvidia.com/gpu: [1, 2, 4]
 """
-    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX)
+    bentoml_cfg = config_cls(GPU_INDEX)
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": [1, 2, 4]}
 
     GPU_INDEX_WITH_STRING = """\
@@ -87,12 +158,14 @@ runners:
     resources:
         nvidia.com/gpu: "[1, 2, 4]"
 """
-    bentoml_cfg = get_bentomlconfiguration_from_str(GPU_INDEX_WITH_STRING)
+    bentoml_cfg = config_cls(GPU_INDEX_WITH_STRING)
     # this behaviour can be confusing
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": "[1, 2, 4]"}
 
 
-RUNNER_TIMEOUTS = """\
+@pytest.mark.usefixtures("config_cls")
+def test_runner_timeouts(config_cls: t.Callable[[str], ConfigDictType]):
+    RUNNER_TIMEOUTS = """\
 runners:
     timeout: 50
     test_runner_1:
@@ -100,10 +173,7 @@ runners:
     test_runner_2:
         resources: system
 """
-
-
-def test_runner_timeouts():
-    bentoml_cfg = get_bentomlconfiguration_from_str(RUNNER_TIMEOUTS)
+    bentoml_cfg = config_cls(RUNNER_TIMEOUTS)
     runner_cfg = bentoml_cfg["runners"]
     assert runner_cfg["timeout"] == 50
     assert runner_cfg["test_runner_1"]["timeout"] == 100

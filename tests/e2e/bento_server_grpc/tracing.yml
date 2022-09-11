@@ -1,0 +1,6 @@
+tracing:
+  type: jaeger
+  sample_rate: 1.0
+  jaeger:
+    address: localhost
+    port: 6831

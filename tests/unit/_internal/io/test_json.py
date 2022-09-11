@@ -15,12 +15,23 @@ import pytest
 import pydantic
 
 from bentoml.io import JSON
+from bentoml.exceptions import BadInput
+from bentoml.exceptions import UnprocessableEntity
+from bentoml._internal.utils.pkg import pkg_version_info
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
+    from google.protobuf import struct_pb2
 
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml._internal.service.openapi.specification import Schema
+else:
+    from bentoml.grpc.utils import import_generated_stubs
+    from bentoml._internal.utils import LazyLoader
+
+    pb, _ = import_generated_stubs()
+    struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
 
 
 @dataclass
@@ -68,6 +79,24 @@ dumps = partial(
     indent=None,
     separators=(",", ":"),
 )
+
+
+@pytest.mark.skipif(
+    pkg_version_info("pydantic")[0] < 2 and pkg_version_info("bentoml")[:2] <= (1, 1),
+    reason="Pydantic 2.x is not yet supported until official releases of Pydantic.",
+)
+def test_not_yet_supported_pydantic():
+    with pytest.raises(UnprocessableEntity) as exc_info:
+        JSON(pydantic_model=Nested)
+    assert "pydantic 2.x is not yet supported" in str(exc_info.value)
+
+
+def test_invalid_init():
+    with pytest.raises(AssertionError) as exc_info:
+        JSON(pydantic_model=ExampleAttrsClass)
+    assert "'pydantic_model' must be a subclass of 'pydantic.BaseModel'." == str(
+        exc_info.value
+    )
 
 
 def test_json_encoder_dataclass_like():
@@ -172,3 +201,117 @@ def test_json_openapi_request_responses():
     assert responses.content
 
     assert "application/json" in responses.content
+
+
+@pytest.mark.asyncio
+async def test_from_proto(use_internal_bytes_contents: bool):
+    if use_internal_bytes_contents:
+        res = await JSON().from_proto(
+            b'{"request_id": "123", "iris_features": {"sepal_len":2.34,"sepal_width":1.58, "petal_len":6.52, "petal_width":3.23}}',
+            _use_internal_bytes_contents=use_internal_bytes_contents,
+        )
+        assert res == {
+            "request_id": "123",
+            "iris_features": {
+                "sepal_len": 2.34,
+                "sepal_width": 1.58,
+                "petal_len": 6.52,
+                "petal_width": 3.23,
+            },
+        }
+        res = await JSON(pydantic_model=BaseSchema).from_proto(
+            b'{"name":"test","endpoints":["predict","health"]}',
+            _use_internal_bytes_contents=use_internal_bytes_contents,
+        )
+        assert isinstance(res, pydantic.BaseModel) and res == BaseSchema(
+            name="test", endpoints=["predict", "health"]
+        )
+    else:
+        res = await JSON(pydantic_model=Nested).from_proto(
+            struct_pb2.Value(
+                struct_value=struct_pb2.Struct(
+                    fields={
+                        "toplevel": struct_pb2.Value(string_value="test"),
+                        "nested": struct_pb2.Value(
+                            struct_value=struct_pb2.Struct(
+                                fields={
+                                    "name": struct_pb2.Value(string_value="test"),
+                                    "endpoints": struct_pb2.Value(
+                                        list_value=struct_pb2.ListValue(
+                                            values=[
+                                                struct_pb2.Value(
+                                                    string_value="predict"
+                                                ),
+                                                struct_pb2.Value(string_value="health"),
+                                            ]
+                                        )
+                                    ),
+                                }
+                            ),
+                        ),
+                    }
+                )
+            ),
+            _use_internal_bytes_contents=use_internal_bytes_contents,
+        )
+        assert isinstance(res, pydantic.BaseModel) and res == Nested(
+            toplevel="test",
+            nested=BaseSchema(name="test", endpoints=["predict", "health"]),
+        )
+        res = await JSON().from_proto(
+            pb.Part(json=struct_pb2.Value(string_value='{"request_id": "123"}')),
+            _use_internal_bytes_contents=use_internal_bytes_contents,
+        )
+        assert res == '{"request_id": "123"}'
+
+
+@pytest.mark.asyncio
+async def test_exception_from_proto(use_internal_bytes_contents: bool):
+    with pytest.raises(AssertionError):
+        await JSON().from_proto(
+            pb.NDArray(string_values="asdf"),
+            _use_internal_bytes_contents=use_internal_bytes_contents,
+        )
+        await JSON().from_proto(
+            "", _use_internal_bytes_contents=use_internal_bytes_contents
+        )
+    if not use_internal_bytes_contents:
+        with pytest.raises(BadInput, match="Invalid JSON input received*"):
+            await JSON(pydantic_model=Nested).from_proto(
+                struct_pb2.Value(string_value="asdf"),
+                _use_internal_bytes_contents=use_internal_bytes_contents,
+            )
+    else:
+        with pytest.raises(BadInput, match="Invalid JSON input received*"):
+            await JSON(pydantic_model=Nested).from_proto(
+                b"", _use_internal_bytes_contents=use_internal_bytes_contents
+            )
+            await JSON().from_proto(
+                b"\n?xfa", _use_internal_bytes_contents=use_internal_bytes_contents
+            )
+
+
+@pytest.mark.asyncio
+async def test_exception_to_proto():
+    with pytest.raises(TypeError):
+        await JSON().to_proto(b"asdf")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "o",
+    [
+        {"asdf": 1},
+        ["asdf", "1"],
+        "asdf",
+        1.0,
+        1,
+        True,
+        BaseSchema(name="test", endpoints=["predict", "health"]),
+        np.random.rand(6, 6),
+        None,
+    ],
+)
+async def test_to_proto(o: t.Any) -> None:
+    res = await JSON().to_proto(o)
+    assert res and isinstance(res, struct_pb2.Value)

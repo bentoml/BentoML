@@ -1,5 +1,8 @@
 # pylint: disable=redefined-outer-name
-# type: ignore[no-untyped-def]
+
+from __future__ import annotations
+
+from pathlib import Path
 
 import pytest
 
@@ -45,7 +48,11 @@ async def test_cors(host: str, server_config_file: str) -> None:
             "Access-Control-Request-Headers": "Content-Type",
         },
     )
-    if server_config_file == "server_config_cors_enabled.yml":
+
+    # all test configs lives under ../configs, but we are only interested in name.
+    fname = Path(server_config_file).name
+
+    if fname == "cors_enabled.yml":
         assert status == 200
     else:
         assert status != 200
@@ -56,7 +63,7 @@ async def test_cors(host: str, server_config_file: str) -> None:
         headers={"Content-Type": "application/json", "Origin": ORIGIN},
         data='"hi"',
     )
-    if server_config_file == "server_config_cors_enabled.yml":
+    if fname == "cors_enabled.yml":
         assert status == 200
         assert body == b'"hi"'
         assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
@@ -69,10 +76,10 @@ async def test_cors(host: str, server_config_file: str) -> None:
 
 
 def test_service_init_checks():
-    py_model1 = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner(
+    py_model1 = bentoml.picklable_model.get("py_model.case-1.http.e2e").to_runner(
         name="invalid"
     )
-    py_model2 = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner(
+    py_model2 = bentoml.picklable_model.get("py_model.case-1.http.e2e").to_runner(
         name="invalid"
     )
     with pytest.raises(ValueError) as excinfo:
@@ -85,13 +92,13 @@ def test_service_init_checks():
 
 
 def test_dunder_string():
-    runner = bentoml.picklable_model.get("py_model.case-1.e2e").to_runner()
+    runner = bentoml.picklable_model.get("py_model.case-1.http.e2e").to_runner()
 
     svc = bentoml.Service(name="dunder_string", runners=[runner])
 
     assert (
         str(svc)
-        == 'bentoml.Service(name="dunder_string", runners=[py_model.case-1.e2e])'
+        == 'bentoml.Service(name="dunder_string", runners=[py_model.case-1.http.e2e])'
     )
 
 

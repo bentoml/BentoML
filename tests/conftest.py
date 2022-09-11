@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 import os
@@ -79,7 +80,7 @@ def noop_service(dummy_model_store: ModelStore) -> bentoml.Service:
     return svc
 
 
-@pytest.fixture(scope="function", autouse=True, name="propagate_logs")
+@pytest.fixture(scope="function", name="propagate_logs")
 def fixture_propagate_logs() -> t.Generator[None, None, None]:
     logger = logging.getLogger("bentoml")
     # bentoml sets propagate to False by default, so we need to set it to True

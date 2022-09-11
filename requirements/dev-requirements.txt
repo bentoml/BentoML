@@ -1,5 +1,4 @@
 # Dev dependencies
 -r tests-requirements.txt
-setup-cfg-fmt
 twine
 wheel

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4-labs
 
-FROM python:3-bullseye
+FROM --platform=linux/amd64 python:3-bullseye
 
 # [Option] Install zsh
 ARG INSTALL_ZSH="true"
@@ -12,10 +12,8 @@ ARG ENABLE_NONROOT_DOCKER="true"
 ARG USE_MOBY="true"
 # [Option] Select CLI version
 ARG CLI_VERSION="latest"
-
 # Enable new "BUILDKIT" mode for Docker CLI
 ENV DOCKER_BUILDKIT=1
-
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your
@@ -23,16 +21,28 @@ ENV DEBIAN_FRONTEND=noninteractive
 ARG USERNAME=automatic
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-COPY library-scripts/*.sh /tmp/library-scripts/
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
-    apt-get update \
-    && apt-get install -y build-essential software-properties-common vim \
+COPY .devcontainer/library-scripts/*.sh /tmp/library-scripts/
+
+RUN --mount=type=cache,target=/var/lib/apt \
+    --mount=type=cache,target=/var/cache/apt \
+    apt-get update -y \
+    # Remove imagemagick due to https://security-tracker.debian.org/tracker/CVE-2019-10131
+    && apt-get purge -y imagemagick imagemagick-6-common
+
+# install common packages
+RUN --mount=type=cache,target=/var/lib/apt \
+    --mount=type=cache,target=/var/cache/apt \
+    apt-get install -y build-essential software-properties-common vim \
     && /bin/bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
     # Use Docker script from script library to set things up
     && /bin/bash /tmp/library-scripts/docker-debian.sh "${ENABLE_NONROOT_DOCKER}" "/var/run/docker-host.sock" "/var/run/docker.sock" "${USERNAME}" "${USE_MOBY}" "${CLI_VERSION}" \
     # Clean up
-    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
+    && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
+
+COPY requirements/*.txt /tmp/pip-tmp/
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-warn-script-location -r /tmp/pip-tmp/dev-requirements.txt -r /tmp/pip-tmp/docs-requirements.txt \
+    && rm -rf /tmp/pip-tmp
 
 # Setting the ENTRYPOINT to docker-init.sh will configure non-root access to 
 # the Docker socket if "overrideCommand": false is set in devcontainer.json. 

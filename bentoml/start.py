@@ -7,68 +7,19 @@ import math
 import shutil
 import typing as t
 import logging
-import tempfile
 import contextlib
-from pathlib import Path
 
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml import load
-
-from ._internal.utils import reserve_free_port
-from ._internal.resource import CpuResource
-from ._internal.utils.circus import create_standalone_arbiter
 from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 SCRIPT_RUNNER = "bentoml_cli.worker.runner"
 SCRIPT_API_SERVER = "bentoml_cli.worker.http_api_server"
-SCRIPT_DEV_API_SERVER = "bentoml_cli.worker.http_dev_api_server"
-
-
-@inject
-def ensure_prometheus_dir(
-    directory: str = Provide[BentoMLContainer.prometheus_multiproc_dir],
-    clean: bool = True,
-    use_alternative: bool = True,
-) -> str:
-    try:
-        path = Path(directory)
-        if path.exists():
-            if not path.is_dir() or any(path.iterdir()):
-                if clean:
-                    shutil.rmtree(str(path))
-                    path.mkdir()
-                    return str(path.absolute())
-                else:
-                    raise RuntimeError(
-                        "Prometheus multiproc directory {} is not empty".format(path)
-                    )
-            else:
-                return str(path.absolute())
-        else:
-            path.mkdir(parents=True)
-            return str(path.absolute())
-    except shutil.Error as e:
-        if not use_alternative:
-            raise RuntimeError(
-                f"Failed to clean the prometheus multiproc directory {directory}: {e}"
-            )
-    except OSError as e:
-        if not use_alternative:
-            raise RuntimeError(
-                f"Failed to create the prometheus multiproc directory {directory}: {e}"
-            )
-    assert use_alternative
-    alternative = tempfile.mkdtemp()
-    logger.warning(
-        f"Failed to ensure the prometheus multiproc directory {directory}, "
-        f"using alternative: {alternative}",
-    )
-    BentoMLContainer.prometheus_multiproc_dir.set(alternative)
-    return alternative
+SCRIPT_GRPC_API_SERVER = "bentoml_cli.worker.grpc_api_server"
+SCRIPT_GRPC_PROMETHEUS_SERVER = "bentoml_cli.worker.grpc_prometheus_server"
 
 
 MAX_AF_UNIX_PATH_LENGTH = 103
@@ -86,11 +37,18 @@ def start_runner_server(
     """
     Experimental API for serving a BentoML runner.
     """
+    from bentoml import load
+
+    from .serve import ensure_prometheus_dir
+    from ._internal.utils.circus import create_standalone_arbiter
+
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
+
+    from ._internal.utils import reserve_free_port
 
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
@@ -152,7 +110,7 @@ def start_runner_server(
     try:
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                'Starting RunnerServer from "%s"\n running on http://%s:%s (Press CTRL+C to quit)',
+                'Starting RunnerServer from "%s" running on http://%s:%s (Press CTRL+C to quit)',
                 bento_identifier,
                 host,
                 port,
@@ -182,18 +140,28 @@ def start_http_server(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
 ) -> None:
+    from bentoml import load
+
+    from .serve import create_watcher
+    from .serve import API_SERVER_NAME
+    from .serve import construct_ssl_args
+    from .serve import PROMETHEUS_MESSAGE
+    from .serve import ensure_prometheus_dir
+    from ._internal.resource import CpuResource
+
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     runner_requirements = {runner.name for runner in svc.runners}
     if not runner_requirements.issubset(set(runner_map)):
         raise ValueError(
-            f"{bento_identifier} requires runners {runner_requirements}, but only "
-            f"{set(runner_map)} are provided"
+            f"{bento_identifier} requires runners {runner_requirements}, but only {set(runner_map)} are provided."
         )
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
+
+    from ._internal.utils.circus import create_standalone_arbiter
 
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
@@ -203,60 +171,51 @@ def start_http_server(
 
     logger.debug("Runner map: %s", runner_map)
 
-    circus_socket_map["_bento_api_server"] = CircusSocket(
-        name="_bento_api_server",
+    circus_socket_map[API_SERVER_NAME] = CircusSocket(
+        name=API_SERVER_NAME,
         host=host,
         port=port,
         backlog=backlog,
     )
 
-    args: list[str | int] = [
-        "-m",
-        SCRIPT_API_SERVER,
-        bento_identifier,
-        "--fd",
-        "$(circus.sockets._bento_api_server)",
-        "--runner-map",
-        json.dumps(runner_map),
-        "--working-dir",
-        working_dir,
-        "--backlog",
-        f"{backlog}",
-        "--worker-id",
-        "$(CIRCUS.WID)",
-        "--prometheus-dir",
-        prometheus_dir,
-    ]
-
-    # Add optional SSL args if they exist
-    if ssl_certfile:
-        args.extend(["--ssl-certfile", str(ssl_certfile)])
-    if ssl_keyfile:
-        args.extend(["--ssl-keyfile", str(ssl_keyfile)])
-    if ssl_keyfile_password:
-        args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
-    if ssl_ca_certs:
-        args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
-
-    # match with default uvicorn values.
-    if ssl_version:
-        args.extend(["--ssl-version", int(ssl_version)])
-    if ssl_cert_reqs:
-        args.extend(["--ssl-cert-reqs", int(ssl_cert_reqs)])
-    if ssl_ciphers:
-        args.extend(["--ssl-ciphers", ssl_ciphers])
-
     watchers.append(
-        Watcher(
+        create_watcher(
             name="api_server",
-            cmd=sys.executable,
-            args=args,
-            copy_env=True,
-            numprocesses=api_workers or math.ceil(CpuResource.from_system()),
-            stop_children=True,
-            use_sockets=True,
+            args=[
+                "-m",
+                SCRIPT_API_SERVER,
+                bento_identifier,
+                "--fd",
+                f"$(circus.sockets.{API_SERVER_NAME})",
+                "--runner-map",
+                json.dumps(runner_map),
+                "--working-dir",
+                working_dir,
+                "--backlog",
+                f"{backlog}",
+                "--worker-id",
+                "$(CIRCUS.WID)",
+                "--prometheus-dir",
+                prometheus_dir,
+                *construct_ssl_args(
+                    ssl_certfile=ssl_certfile,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_keyfile_password=ssl_keyfile_password,
+                    ssl_version=ssl_version,
+                    ssl_cert_reqs=ssl_cert_reqs,
+                    ssl_ca_certs=ssl_ca_certs,
+                    ssl_ciphers=ssl_ciphers,
+                ),
+            ],
             working_dir=working_dir,
+            numprocesses=api_workers or math.ceil(CpuResource.from_system()),
         )
+    )
+    logger.info(
+        PROMETHEUS_MESSAGE,
+        "HTTP",
+        bento_identifier,
+        f"http://{host}:{port}/metrics",
     )
 
     arbiter = create_standalone_arbiter(
@@ -267,8 +226,161 @@ def start_http_server(
     try:
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                f'Starting bare Bento API server from "{bento_identifier}" '
-                f"running on http://{host}:{port} (Press CTRL+C to quit)"
+                'Starting bare %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
+                "HTTP",
+                bento_identifier,
+                host,
+                port,
+            ),
+        )
+    finally:
+        if uds_path is not None:
+            shutil.rmtree(uds_path)
+
+
+@inject
+def start_grpc_server(
+    bento_identifier: str,
+    runner_map: dict[str, str],
+    working_dir: str,
+    port: int = Provide[BentoMLContainer.grpc.port],
+    host: str = Provide[BentoMLContainer.grpc.host],
+    backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+    api_workers: int | None = None,
+    reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    max_concurrent_streams: int
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+) -> None:
+    from bentoml import load
+
+    from .serve import create_watcher
+    from .serve import API_SERVER_NAME
+    from .serve import PROMETHEUS_MESSAGE
+    from .serve import ensure_prometheus_dir
+    from .serve import PROMETHEUS_SERVER_NAME
+    from ._internal.utils import reserve_free_port
+    from ._internal.resource import CpuResource
+
+    working_dir = os.path.realpath(os.path.expanduser(working_dir))
+    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+
+    runner_requirements = {runner.name for runner in svc.runners}
+    if not runner_requirements.issubset(set(runner_map)):
+        raise ValueError(
+            f"{bento_identifier} requires runners {runner_requirements}, but only {set(runner_map)} are provided."
+        )
+
+    from circus.sockets import CircusSocket  # type: ignore
+    from circus.watcher import Watcher  # type: ignore
+
+    from ._internal.utils.circus import create_standalone_arbiter
+
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
+    uds_path = None
+
+    prometheus_dir = ensure_prometheus_dir()
+
+    logger.debug("Runner map: %s", runner_map)
+
+    circus_socket_map[API_SERVER_NAME] = CircusSocket(
+        name=API_SERVER_NAME,
+        host=host,
+        port=port,
+        backlog=backlog,
+    )
+
+    with contextlib.ExitStack() as port_stack:
+        api_port = port_stack.enter_context(
+            reserve_free_port(host, port=port, enable_so_reuseport=True)
+        )
+
+        args = [
+            "-m",
+            SCRIPT_GRPC_API_SERVER,
+            bento_identifier,
+            "--host",
+            host,
+            "--port",
+            str(api_port),
+            "--runner-map",
+            json.dumps(runner_map),
+            "--working-dir",
+            working_dir,
+            "--backlog",
+            f"{backlog}",
+            "--worker-id",
+            "$(CIRCUS.WID)",
+        ]
+        if reflection:
+            args.append("--enable-reflection")
+
+        if max_concurrent_streams:
+            args.extend(
+                [
+                    "--max-concurrent-streams",
+                    str(max_concurrent_streams),
+                ]
+            )
+
+        watchers.append(
+            create_watcher(
+                name="grpc_api_server",
+                args=args,
+                use_sockets=False,
+                working_dir=working_dir,
+                numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+            )
+        )
+
+    if BentoMLContainer.api_server_config.metrics.enabled.get():
+        metrics_host = BentoMLContainer.grpc.metrics.host.get()
+        metrics_port = BentoMLContainer.grpc.metrics.port.get()
+
+        circus_socket_map[PROMETHEUS_SERVER_NAME] = CircusSocket(
+            name=PROMETHEUS_SERVER_NAME,
+            host=metrics_host,
+            port=metrics_port,
+            backlog=backlog,
+        )
+
+        watchers.append(
+            create_watcher(
+                name="prom_server",
+                args=[
+                    "-m",
+                    SCRIPT_GRPC_PROMETHEUS_SERVER,
+                    "--fd",
+                    f"$(circus.sockets.{PROMETHEUS_SERVER_NAME})",
+                    "--prometheus-dir",
+                    prometheus_dir,
+                    "--backlog",
+                    f"{backlog}",
+                ],
+                working_dir=working_dir,
+                numprocesses=1,
+                singleton=True,
+            )
+        )
+
+        logger.info(
+            PROMETHEUS_MESSAGE,
+            "gRPC",
+            bento_identifier,
+            f"http://{metrics_host}:{metrics_port}",
+        )
+    arbiter = create_standalone_arbiter(
+        watchers=watchers, sockets=list(circus_socket_map.values())
+    )
+
+    try:
+        arbiter.start(
+            cb=lambda _: logger.info(  # type: ignore
+                'Starting bare %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
+                "gRPC",
+                bento_identifier,
+                host,
+                port,
             ),
         )
     finally:

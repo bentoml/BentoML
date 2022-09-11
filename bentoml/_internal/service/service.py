@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 import logging
 from typing import TYPE_CHECKING
+from functools import partial
 
 import attr
 
@@ -16,13 +17,15 @@ from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
+    import grpc
+
+    from bentoml.grpc.types import AddServicerFn
+    from bentoml.grpc.types import ServicerClass
+
     from .. import external_typing as ext
     from ..bento import Bento
+    from ..server.grpc.servicer import Servicer
     from .openapi.specification import OpenAPISpecification
-
-    WSGI_APP = t.Callable[
-        [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
-    ]
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +85,7 @@ class Service:
     runners: t.List[Runner]
     models: t.List[Model]
 
+    # starlette related
     mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
@@ -89,6 +93,16 @@ class Service:
         t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
     ] = attr.field(init=False, factory=list)
 
+    # gRPC related
+    mount_servicers: list[tuple[ServicerClass, AddServicerFn, list[str]]] = attr.field(
+        init=False, factory=list
+    )
+    interceptors: list[partial[grpc.aio.ServerInterceptor]] = attr.field(
+        init=False, factory=list
+    )
+    grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
+
+    # list of APIs from @svc.api
     apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
@@ -197,11 +211,23 @@ class Service:
     def on_asgi_app_shutdown(self) -> None:
         pass
 
+    def on_grpc_server_startup(self) -> None:
+        pass
+
+    def on_grpc_server_shutdown(self) -> None:
+        pass
+
+    @property
+    def grpc_servicer(self) -> Servicer:
+        from ..server.grpc_app import GRPCAppFactory
+
+        return GRPCAppFactory(self)()
+
     @property
     def asgi_app(self) -> "ext.ASGIApp":
-        from ..server.service_app import ServiceAppFactory
+        from ..server.http_app import HTTPAppFactory
 
-        return ServiceAppFactory(self)()
+        return HTTPAppFactory(self)()
 
     def mount_asgi_app(
         self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
@@ -209,7 +235,7 @@ class Service:
         self.mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(
-        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
+        self, app: ext.WSGIApp, path: str = "/", name: t.Optional[str] = None
     ) -> None:
         # TODO: Migrate to a2wsgi
         from starlette.middleware.wsgi import WSGIMiddleware
@@ -217,9 +243,47 @@ class Service:
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_asgi_middleware(
-        self, middleware_cls: t.Type["ext.AsgiMiddleware"], **options: t.Any
+        self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any
     ) -> None:
         self.middlewares.append((middleware_cls, options))
+
+    def mount_grpc_servicer(
+        self,
+        servicer_cls: ServicerClass,
+        add_servicer_fn: AddServicerFn,
+        service_names: list[str],
+    ) -> None:
+        self.mount_servicers.append((servicer_cls, add_servicer_fn, service_names))
+
+    def add_grpc_interceptor(
+        self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor], **options: t.Any
+    ) -> None:
+        import grpc
+
+        from bentoml.exceptions import BadInput
+
+        if not issubclass(interceptor_cls, grpc.aio.ServerInterceptor):
+            if isinstance(interceptor_cls, partial):
+                if options:
+                    logger.debug(
+                        "'%s' is a partial class, hence '%s' will be ignored.",
+                        interceptor_cls,
+                        options,
+                    )
+                if not issubclass(interceptor_cls.func, grpc.aio.ServerInterceptor):
+                    raise BadInput(
+                        "'partial' class is not a subclass of 'grpc.aio.ServerInterceptor'."
+                    )
+                self.interceptors.append(interceptor_cls)
+            else:
+                raise BadInput(
+                    f"{interceptor_cls} is not a subclass of 'grpc.aio.ServerInterceptor'."
+                )
+
+        self.interceptors.append(partial(interceptor_cls, **options))
+
+    def add_grpc_handlers(self, handlers: list[grpc.GenericRpcHandler]) -> None:
+        self.grpc_handlers.extend(handlers)
 
 
 def on_load_bento(svc: Service, bento: Bento):

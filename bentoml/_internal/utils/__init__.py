@@ -6,6 +6,8 @@ import uuid
 import random
 import socket
 import typing as t
+import inspect
+import logging
 import functools
 import contextlib
 from typing import overload
@@ -56,40 +58,28 @@ __all__ = [
     "validate_or_create_dir",
     "display_path_under_home",
     "rich_console",
+    "experimental",
 ]
 
-
-@overload
-def kwargs_transformers(
-    func: GenericFunction[t.Concatenate[str, bool, t.Iterable[str], P]],
-    *,
-    transformer: GenericFunction[t.Any],
-) -> GenericFunction[t.Concatenate[str, t.Iterable[str], bool, P]]:
-    ...
+_EXPERIMENTAL_APIS: set[str] = set()
 
 
-@overload
-def kwargs_transformers(
-    func: None = None, *, transformer: GenericFunction[t.Any]
-) -> GenericFunction[t.Any]:
-    ...
+def _warn_experimental(f: t.Any):
+    api_name = f.__name__ if inspect.isfunction(f) else repr(f)
+    if api_name not in _EXPERIMENTAL_APIS:
+        _EXPERIMENTAL_APIS.add(api_name)
+        msg = "'%s' is an EXPERIMENTAL API and is currently not yet stable. Proceed with caution!"
+        logger = logging.getLogger(f.__module__)
+        logger.warning(msg, api_name)
 
 
-def kwargs_transformers(
-    _func: t.Callable[..., t.Any] | None = None,
-    *,
-    transformer: GenericFunction[t.Any],
-) -> GenericFunction[t.Any]:
-    def decorator(func: GenericFunction[t.Any]) -> t.Callable[P, t.Any]:
-        @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-            return func(*args, **{k: transformer(v) for k, v in kwargs.items()})
+def experimental(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
+    @functools.wraps(f)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+        _warn_experimental(f)
+        return f(*args, **kwargs)
 
-        return wrapper
-
-    if _func is None:
-        return decorator
-    return decorator(_func)
+    return wrapper
 
 
 @t.overload
@@ -179,13 +169,27 @@ class catch_exceptions(t.Generic[_T_co], object):
 @contextlib.contextmanager
 def reserve_free_port(
     host: str = "localhost",
+    port: int | None = None,
     prefix: t.Optional[str] = None,
     max_retry: int = 50,
+    enable_so_reuseport: bool = False,
 ) -> t.Iterator[int]:
     """
     detect free port and reserve until exit the context
     """
+    import psutil
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if enable_so_reuseport:
+        if psutil.WINDOWS:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        elif psutil.MACOS or psutil.FREEBSD:
+            sock.setsockopt(socket.SOL_SOCKET, 0x10000, 1)  # SO_REUSEPORT_LB
+        else:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+
+            if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 0:
+                raise RuntimeError("Failed to set SO_REUSEPORT.")
     if prefix is not None:
         prefix_num = int(prefix) * 10 ** (5 - len(prefix))
         suffix_range = min(65535 - prefix_num, 10 ** (5 - len(prefix)))
@@ -199,13 +203,17 @@ def reserve_free_port(
                 continue
         else:
             raise RuntimeError(
-                f"cannot find free port with prefix {prefix} after {max_retry} retries"
+                f"Cannot find free port with prefix {prefix} after {max_retry} retries"
             )
     else:
-        sock.bind((host, 0))
-    port = sock.getsockname()[1]
-    yield port
-    sock.close()
+        if port:
+            sock.bind((host, port))
+        else:
+            sock.bind((host, 0))
+    try:
+        yield sock.getsockname()[1]
+    finally:
+        sock.close()
 
 
 def copy_file_to_fs_folder(
@@ -359,8 +367,6 @@ class cached_contextmanager:
         @contextlib.contextmanager
         @functools.wraps(func)
         def _func(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
-            import inspect
-
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             bound_args.apply_defaults()
             if self._cache_key_template:

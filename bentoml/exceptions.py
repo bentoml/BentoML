@@ -73,6 +73,14 @@ class NotFound(BentoMLException):
     error_code = HTTPStatus.NOT_FOUND
 
 
+class UnprocessableEntity(BentoMLException):
+    """
+    Raise when API server receiving unprocessable entity request
+    """
+
+    error_code = HTTPStatus.UNPROCESSABLE_ENTITY
+
+
 class TooManyRequests(BentoMLException):
     """
     Raise when incoming requests exceeds the capacity of a server

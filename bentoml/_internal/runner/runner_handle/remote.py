@@ -18,7 +18,8 @@ from ...runner.utils import Params
 from ...runner.utils import PAYLOAD_META_HEADER
 from ...configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
+    import yarl
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
@@ -84,7 +85,7 @@ class RemoteRunnerClient(RunnerHandle):
                 )
                 self._addr = f"http://{parsed.netloc}"
             else:
-                raise ValueError(f"Unsupported bind scheme: {parsed.scheme}")
+                raise ValueError(f"Unsupported bind scheme: {parsed.scheme}") from None
         return self._conn
 
     @property
@@ -99,10 +100,7 @@ class RemoteRunnerClient(RunnerHandle):
             or self._client_cache.closed
             or self._loop.is_closed()
         ):
-            import yarl
-            from opentelemetry.instrumentation.aiohttp_client import (
-                create_trace_config,  # type: ignore (missing type stubs)
-            )
+            from opentelemetry.instrumentation.aiohttp_client import create_trace_config
 
             def strip_query_params(url: yarl.URL) -> str:
                 return str(url.with_query(None))
@@ -145,7 +143,7 @@ class RemoteRunnerClient(RunnerHandle):
             if not payload_params.map(lambda i: i.batch_size).all_equal():
                 raise ValueError(
                     "All batchable arguments must have the same batch size."
-                )
+                ) from None
 
         path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
         async with self._client.post(
@@ -164,30 +162,26 @@ class RemoteRunnerClient(RunnerHandle):
         if resp.status != 200:
             raise RemoteException(
                 f"An exception occurred in remote runner {self._runner.name}: [{resp.status}] {body.decode()}"
-            )
+            ) from None
 
         try:
             meta_header = resp.headers[PAYLOAD_META_HEADER]
         except KeyError:
             raise RemoteException(
-                f"Bento payload decode error: {PAYLOAD_META_HEADER} header not set. "
-                "An exception might have occurred in the remote server."
-                f"[{resp.status}] {body.decode()}"
+                f"Bento payload decode error: {PAYLOAD_META_HEADER} header not set. An exception might have occurred in the remote server. [{resp.status}] {body.decode()}"
             ) from None
 
         try:
             content_type = resp.headers["Content-Type"]
         except KeyError:
             raise RemoteException(
-                f"Bento payload decode error: Content-Type header not set. "
-                "An exception might have occurred in the remote server."
-                f"[{resp.status}] {body.decode()}"
+                f"Bento payload decode error: Content-Type header not set. An exception might have occurred in the remote server. [{resp.status}] {body.decode()}"
             ) from None
 
         if not content_type.lower().startswith("application/vnd.bentoml."):
             raise RemoteException(
                 f"Bento payload decode error: invalid Content-Type '{content_type}'."
-            )
+            ) from None
 
         container = content_type.strip("application/vnd.bentoml.")
 
@@ -196,7 +190,7 @@ class RemoteRunnerClient(RunnerHandle):
                 data=body, meta=json.loads(meta_header), container=container
             )
         except JSONDecodeError:
-            raise ValueError(f"Bento payload decode error: {meta_header}")
+            raise ValueError(f"Bento payload decode error: {meta_header}") from None
 
         return AutoContainer.from_payload(payload)
 
@@ -208,11 +202,14 @@ class RemoteRunnerClient(RunnerHandle):
     ) -> R:
         import anyio
 
-        return anyio.from_thread.run(  # type: ignore (pyright cannot infer the return type)
-            self.async_run_method,
-            __bentoml_method,
-            *args,
-            **kwargs,
+        return t.cast(
+            "R",
+            anyio.from_thread.run(
+                self.async_run_method,
+                __bentoml_method,
+                *args,
+                **kwargs,
+            ),
         )
 
     def __del__(self) -> None:

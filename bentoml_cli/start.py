@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 def add_start_command(cli: click.Group) -> None:
 
-    from bentoml._internal.log import configure_server_logging
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     @cli.command(hidden=True)
@@ -41,7 +40,7 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoMLContainer.service_port.get(),
+        default=BentoMLContainer.http.port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -49,7 +48,7 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--host",
         type=click.STRING,
-        default=BentoMLContainer.service_host.get(),
+        default=BentoMLContainer.http.host.get(),
         help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
         envvar="BENTOML_HOST",
     )
@@ -59,6 +58,13 @@ def add_start_command(cli: click.Group) -> None:
         default=BentoMLContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
+    )
+    @click.option(
+        "--api-workers",
+        type=click.INT,
+        default=None,
+        help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
+        envvar="BENTOML_API_WORKERS",
     )
     @click.option(
         "--working-dir",
@@ -118,6 +124,7 @@ def add_start_command(cli: click.Group) -> None:
         host: str,
         backlog: int,
         working_dir: str,
+        api_workers: int | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,
         ssl_keyfile_password: str | None,
@@ -126,7 +133,9 @@ def add_start_command(cli: click.Group) -> None:
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
     ) -> None:
-        configure_server_logging()
+        """
+        [EXPERIMENTAL] Start a HTTP API server standalone. This will be used inside Yatai.
+        """
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
@@ -155,6 +164,7 @@ def add_start_command(cli: click.Group) -> None:
             port=port,
             host=host,
             backlog=backlog,
+            api_workers=api_workers,
             ssl_keyfile=ssl_keyfile,
             ssl_certfile=ssl_certfile,
             ssl_keyfile_password=ssl_keyfile_password,
@@ -183,7 +193,7 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoMLContainer.service_port.get(),
+        default=BentoMLContainer.http.port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
         show_default=True,
@@ -191,7 +201,7 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--host",
         type=click.STRING,
-        default=BentoMLContainer.service_host.get(),
+        default=BentoMLContainer.http.host.get(),
         help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
         envvar="BENTOML_HOST",
     )
@@ -218,7 +228,9 @@ def add_start_command(cli: click.Group) -> None:
         backlog: int,
         working_dir: str,
     ) -> None:
-        configure_server_logging()
+        """
+        [EXPERIMENTAL] Start Runner server standalone. This will be used inside Yatai.
+        """
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
@@ -237,4 +249,95 @@ def add_start_command(cli: click.Group) -> None:
             port=port,
             host=host,
             backlog=backlog,
+        )
+
+    @cli.command(hidden=True)
+    @click.argument("bento", type=click.STRING, default=".")
+    @click.option(
+        "--remote-runner",
+        type=click.STRING,
+        multiple=True,
+        envvar="BENTOML_SERVE_RUNNER_MAP",
+        help="JSON string of runners map",
+    )
+    @click.option(
+        "--port",
+        type=click.INT,
+        default=BentoMLContainer.grpc.port.get(),
+        help="The port to listen on for the gRPC server",
+        envvar="BENTOML_PORT",
+        show_default=True,
+    )
+    @click.option(
+        "--host",
+        type=click.STRING,
+        default=BentoMLContainer.grpc.host.get(),
+        help="The host to bind for the gRPC server (defaults: 0.0.0.0)",
+        envvar="BENTOML_HOST",
+    )
+    @click.option(
+        "--backlog",
+        type=click.INT,
+        default=BentoMLContainer.api_server_config.backlog.get(),
+        help="The maximum number of pending connections.",
+        show_default=True,
+    )
+    @click.option(
+        "--working-dir",
+        type=click.Path(),
+        help="When loading from source code, specify the directory to find the Service instance",
+        default=".",
+        show_default=True,
+    )
+    @click.option(
+        "--api-workers",
+        type=click.INT,
+        default=None,
+        help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
+        envvar="BENTOML_API_WORKERS",
+    )
+    @click.option(
+        "--enable-reflection",
+        is_flag=True,
+        default=BentoMLContainer.grpc.reflection.enabled.get(),
+        type=click.BOOL,
+        help="Enable reflection.",
+    )
+    @click.option(
+        "--max-concurrent-streams",
+        default=BentoMLContainer.grpc.max_concurrent_streams.get(),
+        type=click.INT,
+        help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
+    )
+    def start_grpc_server(  # type: ignore (unused warning)
+        bento: str,
+        remote_runner: list[str] | None,
+        port: int,
+        host: str,
+        backlog: int,
+        api_workers: int | None,
+        working_dir: str,
+        enable_reflection: bool,
+        max_concurrent_streams: int | None,
+    ) -> None:
+        """
+        [EXPERIMENTAL] Start a gRPC API server standalone. This will be used inside Yatai.
+        """
+        if sys.path[0] != working_dir:
+            sys.path.insert(0, working_dir)
+
+        from bentoml.start import start_grpc_server
+
+        runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
+        logger.info(" Using remote runners: %s", runner_map)
+        start_grpc_server(
+            bento,
+            runner_map=runner_map,
+            working_dir=working_dir,
+            port=port,
+            host=host,
+            backlog=backlog,
+            api_workers=api_workers,
+            reflection=enable_reflection,
+            max_concurrent_streams=max_concurrent_streams,
         )

@@ -17,6 +17,7 @@ import psutil
 from simple_di import inject
 from simple_di import Provide
 
+from ._internal.utils import experimental
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -119,7 +120,9 @@ def log_grpcui_message(port: int) -> None:
 
     if os.path.exists("/.dockerenv"):
         logger.info(
-            f"If your local machine either MacOS or Windows, then use '{mac_win_instruction}', otherwise use '{linux_instruction}'."
+            "Detected running as a Bento container. In order to use gRPC UI, do as follows: If your local machine are either MacOS or Windows , then use '%s'. Otherwise use '%s'.",
+            mac_win_instruction,
+            linux_instruction,
         )
     elif psutil.WINDOWS or psutil.MACOS:
         logger.info(message, mac_win_instruction)
@@ -466,6 +469,7 @@ def serve_http_production(
                 shutil.rmtree(uds_path)
 
 
+@experimental
 @inject
 def serve_grpc_development(
     bento_identifier: str,
@@ -628,6 +632,7 @@ def serve_grpc_development(
         )
 
 
+@experimental
 @inject
 def serve_grpc_production(
     bento_identifier: str,

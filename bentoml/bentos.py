@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 """
 User facing python APIs for managing local bentos and build new bentos
 """
@@ -5,10 +6,14 @@ User facing python APIs for managing local bentos and build new bentos
 from __future__ import annotations
 
 import os
+import sys
 import typing as t
 import logging
+import tempfile
+import contextlib
 import subprocess
 from typing import TYPE_CHECKING
+from functools import partial
 
 from simple_di import inject
 from simple_di import Provide
@@ -19,12 +24,21 @@ from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
+from ._internal.bento.build_config import ADDITIONAL_COMPONENTS
 from ._internal.configuration.containers import BentoMLContainer
+
+if sys.version_info >= (3, 8):
+    from shutil import copytree
+else:
+    from backports.shutil_copytree import copytree
 
 if TYPE_CHECKING:
     from ._internal.bento import BentoStore
     from ._internal.types import PathType
-    from ._internal.models import ModelStore
+
+    Components = t.Annotated[
+        str, t.Literal["tracing", "grpc", "zipkin", "jaeger", "otlp"]
+    ]
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +264,6 @@ def build(
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "Bento":
     """
     User-facing API for building a Bento. The available build options are identical to the keys of a
@@ -276,7 +289,6 @@ def build(
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
         _bento_store: save Bento created to this BentoStore
-        _model_store: pull Models required from this ModelStore
 
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
@@ -344,7 +356,6 @@ def build_bentofile(
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "Bento":
     """
     Build a Bento base on options specified in a bentofile.yaml file.
@@ -357,7 +368,6 @@ def build_bentofile(
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
         _bento_store: save Bento created to this BentoStore
-        _model_store: pull Models required from this ModelStore
     """
     try:
         bentofile = resolve_user_filepath(bentofile, build_ctx)
@@ -377,11 +387,52 @@ def build_bentofile(
     return bento
 
 
+@contextlib.contextmanager
+def construct_dockerfile(
+    bento: Bento,
+    *,
+    components: t.Sequence[Components] | None = None,
+    docker_final_stage: str | None = None,
+) -> t.Generator[tuple[str, str], None, None]:
+    dockerfile_path = os.path.join("env", "docker", "Dockerfile")
+    final_instruction = ""
+    if components:
+        final_instruction += f"""\
+RUN --mount=type=cache,target=/root/.cache/pip pip install bentoml[{','.join(components)}]
+"""
+    if docker_final_stage:
+        final_instruction += f"""\
+{docker_final_stage}
+"""
+    with open(bento.path_of(dockerfile_path), "r") as f:
+        FINAL_DOCKERFILE = f"""\
+{f.read()}
+FROM base-{bento.info.docker.distro}
+# Additional instructions for final image.
+{final_instruction}
+"""
+    if final_instruction != "":
+        with tempfile.TemporaryDirectory("bento-tmp") as tmpdir:
+            copytree(bento.path, tmpdir, dirs_exist_ok=True)
+            with open(os.path.join(tmpdir, dockerfile_path), "w") as dockerfile:
+                dockerfile.write(FINAL_DOCKERFILE)
+            yield tmpdir, dockerfile.name
+    else:
+        yield bento.path, dockerfile_path
+
+
 @inject
 def containerize(
     tag: Tag | str,
     docker_image_tag: t.List[str] | None = None,
     *,
+    # containerize options
+    enable_tracing: bool = False,
+    enable_grpc: bool = False,
+    enable_zipkin: bool = False,
+    enable_jaeger: bool = False,
+    enable_otlp: bool = False,
+    # docker options
     add_host: dict[str, str] | None = None,
     allow: t.List[str] | None = None,
     build_args: dict[str, str] | None = None,
@@ -412,6 +463,8 @@ def containerize(
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> bool:
 
+    import psutil
+
     from bentoml._internal.utils import buildx
 
     env = {"DOCKER_BUILDKIT": "1", "DOCKER_SCAN_SUGGEST": "false"}
@@ -420,61 +473,66 @@ def containerize(
     if not docker_image_tag:
         docker_image_tag = [str(bento.tag)]
 
-    dockerfile_path = os.path.join("env", "docker", "Dockerfile")
-
     logger.info(f"Building docker image for {bento}...")
-    try:
-        buildx.build(
-            subprocess_env=env,
-            cwd=bento.path,
-            file=dockerfile_path,
-            tags=docker_image_tag,
-            add_host=add_host,
-            allow=allow,
-            build_args=build_args,
-            build_context=build_context,
-            builder=builder,
-            cache_from=cache_from,
-            cache_to=cache_to,
-            cgroup_parent=cgroup_parent,
-            iidfile=iidfile,
-            labels=labels,
-            load=load,
-            metadata_file=metadata_file,
-            network=network,
-            no_cache=no_cache,
-            no_cache_filter=no_cache_filter,
-            output=output,
-            platform=platform,
-            progress=progress,
-            pull=pull,
-            push=push,
-            quiet=quiet,
-            secrets=secrets,
-            shm_size=shm_size,
-            rm=rm,
-            ssh=ssh,
-            target=target,
-            ulimit=ulimit,
+    if platform and not psutil.LINUX and platform != "linux/amd64":
+        logger.warning(
+            'Current platform is set to "%s". By default BentoML will set target build platform to the current machine platform via "uname -m". To avoid issue, we recommend you to build the container with x86_64 (amd64): "bentoml containerize %s --platform linux/amd64"',
+            platform,
+            str(bento.tag),
         )
+    run_buildx = partial(
+        buildx.build,
+        subprocess_env=env,
+        tags=docker_image_tag,
+        add_host=add_host,
+        allow=allow,
+        build_args=build_args,
+        build_context=build_context,
+        builder=builder,
+        cache_from=cache_from,
+        cache_to=cache_to,
+        cgroup_parent=cgroup_parent,
+        iidfile=iidfile,
+        labels=labels,
+        load=load,
+        metadata_file=metadata_file,
+        network=network,
+        no_cache=no_cache,
+        no_cache_filter=no_cache_filter,
+        output=output,
+        platform=platform,
+        progress=progress,
+        pull=pull,
+        push=push,
+        quiet=quiet,
+        secrets=secrets,
+        shm_size=shm_size,
+        rm=rm,
+        ssh=ssh,
+        target=target,
+        ulimit=ulimit,
+    )
+    clean_context = contextlib.ExitStack()
+    # Since enable_<components> will be available in locals(),
+    # accessing them won't raise KeyError.
+    local = locals().copy()
+    required = clean_context.enter_context(
+        construct_dockerfile(
+            bento,
+            components=tuple(
+                filter(lambda x: local[f"enable_{x}"], ADDITIONAL_COMPONENTS)
+            ),
+        )
+    )
+    try:
+        build_path, dockerfile_path = required
+        run_buildx(cwd=build_path, file=dockerfile_path)
+        return True
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed building docker image: {e}")
-        if platform != "linux/amd64":
-            logger.debug(
-                f"""If you run into the following error: "failed to solve: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed". This means Docker doesn't have context of your build platform {platform}. By default BentoML will set target build platform to the current machine platform via `uname -m`. Try again by specifying to build x86_64 (amd64) platform: bentoml containerize {str(bento.tag)} --platform linux/amd64"""
-            )
         return False
-    else:
-        logger.info(
-            'Successfully built docker image for "%s" with tags "%s"',
-            str(bento.tag),
-            ",".join(docker_image_tag),
-        )
-        logger.info(
-            'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". i.e: "docker run -it --rm -p 3000:3000 %s"',
-            docker_image_tag[0],
-        )
-        return True
+    finally:
+        clean_context.close()
 
 
 __all__ = [

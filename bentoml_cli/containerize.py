@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import sys
 import typing as t
 import logging
+from typing import TYPE_CHECKING
 
-import click
-
-from bentoml.bentos import containerize as containerize_bento
-from bentoml._internal.utils import kwargs_transformers
-from bentoml._internal.utils.docker import validate_tag
-
-logger = logging.getLogger("bentoml")
+if TYPE_CHECKING:
+    F = t.Callable[..., t.Any]
+    from click import Group
 
 
 def containerize_transformer(
@@ -23,7 +19,33 @@ def containerize_transformer(
     return value
 
 
-def add_containerize_command(cli: click.Group) -> None:
+def enable_options(*options: str):
+    import click
+
+    def decorator(f: F) -> F:
+        for option in reversed(options):
+            param_decls = (f"--enable-{option}",)
+            attrs = {
+                "is_flag": True,
+                "default": False,
+                "show_default": True,
+                "help": f"Enable {option} support for given bento.",
+            }
+            click.option(*param_decls, **attrs)(f)
+        return f
+
+    return decorator
+
+
+def add_containerize_command(cli: Group) -> None:
+    import click
+
+    from bentoml.bentos import containerize as containerize_bento
+    from bentoml_cli.utils import kwargs_transformers
+    from bentoml._internal.utils.docker import validate_tag
+    from bentoml._internal.bento.build_config import ADDITIONAL_COMPONENTS
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
@@ -160,6 +182,7 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
     )
+    @enable_options(*ADDITIONAL_COMPONENTS)
     @kwargs_transformers(transformer=containerize_transformer)
     def containerize(  # type: ignore
         bento_tag: str,
@@ -189,6 +212,7 @@ def add_containerize_command(cli: click.Group) -> None:
         ssh: str,
         target: str,
         ulimit: str,
+        **kwargs: t.Any,
     ) -> None:
         """Containerizes given Bento into a ready-to-use Docker image.
 
@@ -222,6 +246,12 @@ def add_containerize_command(cli: click.Group) -> None:
         """
         from bentoml._internal.utils import buildx
 
+        logger = logging.getLogger("bentoml")
+
+        # We dynamically create those options based on additional components,
+        # so we need to make sure they are available under kwargs.
+        assert set(map(lambda x: f"enable_{x}", ADDITIONAL_COMPONENTS)) == set(kwargs)
+
         # run health check whether buildx is install locally
         buildx.health()
 
@@ -253,7 +283,7 @@ def add_containerize_command(cli: click.Group) -> None:
                 key, value = label_str.split("=")
                 labels[key] = value
 
-        output_ = None
+        output_: dict[str, t.Any] | None = None
         if output:
             output_ = {}
             for arg in output:
@@ -273,34 +303,56 @@ def add_containerize_command(cli: click.Group) -> None:
         if push:
             load = False
 
-        exit_code = not containerize_bento(
-            bento_tag,
-            docker_image_tag=docker_image_tag,
-            add_host=add_hosts,
-            allow=allow_,
-            build_args=build_args,
-            build_context=build_context_,
-            builder=builder,
-            cache_from=cache_from,
-            cache_to=cache_to,
-            cgroup_parent=cgroup_parent,
-            iidfile=iidfile,
-            labels=labels,
-            load=load,
-            metadata_file=metadata_file,
-            network=network,
-            no_cache=no_cache,
-            no_cache_filter=no_cache_filter,
-            output=output_,  # type: ignore
-            platform=platform,
-            progress=progress,
-            pull=pull,
-            push=push,
-            quiet=logger.getEffectiveLevel() == logging.ERROR,
-            secrets=secret,
-            shm_size=shm_size,
-            ssh=ssh,
-            target=target,
-            ulimit=ulimit,
-        )
-        sys.exit(exit_code)
+        try:
+            raise SystemExit(
+                not containerize_bento(
+                    bento_tag,
+                    docker_image_tag=docker_image_tag,
+                    # containerize options
+                    enable_tracing=kwargs["enable_tracing"],
+                    enable_grpc=kwargs["enable_grpc"],
+                    enable_zipkin=kwargs["enable_zipkin"],
+                    enable_jaeger=kwargs["enable_jaeger"],
+                    enable_otlp=kwargs["enable_otlp"],
+                    # docker options
+                    add_host=add_hosts,
+                    allow=allow_,
+                    build_args=build_args,
+                    build_context=build_context_,
+                    builder=builder,
+                    cache_from=cache_from,
+                    cache_to=cache_to,
+                    cgroup_parent=cgroup_parent,
+                    iidfile=iidfile,
+                    labels=labels,
+                    load=load,
+                    metadata_file=metadata_file,
+                    network=network,
+                    no_cache=no_cache,
+                    no_cache_filter=no_cache_filter,
+                    output=output_,
+                    platform=platform,
+                    progress=progress,
+                    pull=pull,
+                    push=push,
+                    quiet=logger.getEffectiveLevel() == logging.ERROR,
+                    secrets=secret,
+                    shm_size=shm_size,
+                    ssh=ssh,
+                    target=target,
+                    ulimit=ulimit,
+                )
+            )
+        finally:
+            grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
+            logger.info(
+                'Successfully built docker image for "%s" with tags "%s"',
+                str(bento_tag),
+                ",".join(docker_image_tag),
+            )
+            logger.info(
+                'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". i.e: "docker run -it --rm -p 3000:3000 %s". To use gRPC, pass "-e BENTOML_USE_GRPC=true -p %s:%s" to "docker run".',
+                docker_image_tag[0],
+                grpc_metrics_port,
+                grpc_metrics_port,
+            )

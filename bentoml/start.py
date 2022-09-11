@@ -4,7 +4,6 @@ import os
 import sys
 import json
 import math
-import shutil
 import typing as t
 import logging
 import contextlib
@@ -49,10 +48,10 @@ def start_runner_server(
     from circus.watcher import Watcher  # type: ignore
 
     from ._internal.utils import reserve_free_port
+    from ._internal.utils.analytics import track_serve
 
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
-    uds_path = None
 
     ensure_prometheus_dir()
 
@@ -106,8 +105,7 @@ def start_runner_server(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
     )
-
-    try:
+    with track_serve(svc, production=True):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 'Starting RunnerServer from "%s" running on http://%s:%s (Press CTRL+C to quit)',
@@ -116,9 +114,6 @@ def start_runner_server(
                 port,
             ),
         )
-    finally:
-        if uds_path is not None:
-            shutil.rmtree(uds_path)
 
 
 @inject
@@ -162,10 +157,10 @@ def start_http_server(
     from circus.watcher import Watcher  # type: ignore
 
     from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
 
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
-    uds_path = None
 
     prometheus_dir = ensure_prometheus_dir()
 
@@ -222,8 +217,7 @@ def start_http_server(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
     )
-
-    try:
+    with track_serve(svc, production=True):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 'Starting bare %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
@@ -233,9 +227,6 @@ def start_http_server(
                 port,
             ),
         )
-    finally:
-        if uds_path is not None:
-            shutil.rmtree(uds_path)
 
 
 @inject
@@ -254,7 +245,6 @@ def start_grpc_server(
     from bentoml import load
 
     from .serve import create_watcher
-    from .serve import API_SERVER_NAME
     from .serve import PROMETHEUS_MESSAGE
     from .serve import ensure_prometheus_dir
     from .serve import PROMETHEUS_SERVER_NAME
@@ -274,25 +264,15 @@ def start_grpc_server(
     from circus.watcher import Watcher  # type: ignore
 
     from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
 
     watchers: list[Watcher] = []
     circus_socket_map: dict[str, CircusSocket] = {}
-    uds_path = None
-
     prometheus_dir = ensure_prometheus_dir()
-
     logger.debug("Runner map: %s", runner_map)
-
-    circus_socket_map[API_SERVER_NAME] = CircusSocket(
-        name=API_SERVER_NAME,
-        host=host,
-        port=port,
-        backlog=backlog,
-    )
-
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
-            reserve_free_port(host, port=port, enable_so_reuseport=True)
+            reserve_free_port(host=host, port=port, enable_so_reuseport=True)
         )
 
         args = [
@@ -307,8 +287,6 @@ def start_grpc_server(
             json.dumps(runner_map),
             "--working-dir",
             working_dir,
-            "--backlog",
-            f"{backlog}",
             "--worker-id",
             "$(CIRCUS.WID)",
         ]
@@ -372,8 +350,7 @@ def start_grpc_server(
     arbiter = create_standalone_arbiter(
         watchers=watchers, sockets=list(circus_socket_map.values())
     )
-
-    try:
+    with track_serve(svc, production=True):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 'Starting bare %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
@@ -383,6 +360,3 @@ def start_grpc_server(
                 port,
             ),
         )
-    finally:
-        if uds_path is not None:
-            shutil.rmtree(uds_path)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import asyncio
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -21,11 +22,17 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     from types import UnionType
 
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
+else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 
-class Multipart(IODescriptor[t.Any]):
+class Multipart(IODescriptor[t.Dict[str, t.Any]]):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -153,14 +160,18 @@ class Multipart(IODescriptor[t.Any]):
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
+    _proto_fields = ("multipart",)
+    _mime_type = "multipart/form-data"
+
     def __init__(self, **inputs: IODescriptor[t.Any]):
-        for descriptor in inputs.values():
-            if isinstance(descriptor, Multipart):  # pragma: no cover
-                raise InvalidArgument(
-                    "Multipart IO can not contain nested Multipart IO descriptor"
-                )
-        self._inputs: dict[str, t.Any] = inputs
-        self._mime_type = "multipart/form-data"
+        if any(isinstance(descriptor, Multipart) for descriptor in inputs.values()):
+            raise InvalidArgument(
+                "Multipart IO can not contain nested Multipart IO descriptor"
+            ) from None
+        self._inputs = inputs
+
+    def __repr__(self) -> str:
+        return f"Multipart({','.join([f'{k}={v}' for k,v in zip(self._inputs, map(repr, self._inputs.values()))])})"
 
     def input_type(
         self,
@@ -171,7 +182,7 @@ class Multipart(IODescriptor[t.Any]):
             if isinstance(inp_type, dict):
                 raise TypeError(
                     "A multipart descriptor cannot take a multi-valued I/O descriptor as input"
-                )
+                ) from None
             res[k] = inp_type
 
         return res
@@ -202,22 +213,68 @@ class Multipart(IODescriptor[t.Any]):
         if ctype != b"multipart/form-data":
             raise BentoMLException(
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
-            )
+            ) from None
 
-        res: dict[str, t.Any] = dict()
-        reqs = await populate_multipart_requests(request)
-
-        for k, i in self._inputs.items():
-            req = reqs[k]
-            v = await i.from_http_request(req)
-            res[k] = v
-        return res
+        to_populate = zip(
+            self._inputs.values(), (await populate_multipart_requests(request)).values()
+        )
+        reqs = await asyncio.gather(
+            *tuple(io_.from_http_request(req) for io_, req in to_populate)
+        )
+        return dict(zip(self._inputs, reqs))
 
     async def to_http_response(
         self, obj: dict[str, t.Any], ctx: Context | None = None
     ) -> Response:
-        res_mapping: dict[str, Response] = {}
-        for k, io_ in self._inputs.items():
-            data = obj[k]
-            res_mapping[k] = await io_.to_http_response(data, ctx)
-        return await concat_to_multipart_response(res_mapping, ctx)
+        resps = await asyncio.gather(
+            *tuple(
+                io_.to_http_response(obj[key], ctx) for key, io_ in self._inputs.items()
+            )
+        )
+        return await concat_to_multipart_response(dict(zip(self._inputs, resps)), ctx)
+
+    def validate_input_mapping(self, field: t.MutableMapping[str, t.Any]) -> None:
+        if len(set(field) - set(self._inputs)) != 0:
+            raise InvalidArgument(
+                f"'{repr(self)}' accepts the following keys: {set(self._inputs)}. Given {field.__class__.__qualname__} has invalid fields: {set(field) - set(self._inputs)}",
+            ) from None
+
+    async def from_proto(self, field: pb.Multipart) -> dict[str, t.Any]:
+        if isinstance(field, bytes):
+            raise InvalidArgument(
+                f"cannot use 'serialized_bytes' with {self.__class__.__name__}"
+            ) from None
+        message = field.fields
+        self.validate_input_mapping(message)
+        reqs = await asyncio.gather(
+            *tuple(
+                io_.from_proto(getattr(input_pb, io_._proto_fields[0]))
+                for io_, input_pb in self.io_fields_mapping(message).items()
+            )
+        )
+        return dict(zip(message, reqs))
+
+    def io_fields_mapping(
+        self, message: t.MutableMapping[str, pb.Part]
+    ) -> dict[IODescriptor[t.Any], pb.Part]:
+        return {io_: part for io_, part in zip(self._inputs.values(), message.values())}
+
+    async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
+        self.validate_input_mapping(obj)
+        resps = await asyncio.gather(
+            *tuple(
+                io_.to_proto(data)
+                for io_, data in zip(self._inputs.values(), obj.values())
+            )
+        )
+        return pb.Multipart(
+            fields={
+                key: pb.Part(
+                    **{
+                        io_._proto_fields[0]: resp
+                        for io_, resp in zip(self._inputs.values(), resps)
+                    }
+                )
+                for key in obj
+            }
+        )

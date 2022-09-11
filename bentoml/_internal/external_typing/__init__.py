@@ -8,6 +8,8 @@ if TYPE_CHECKING:
 
     from pandas import Series as PdSeries
     from pandas import DataFrame as PdDataFrame
+    from pandas._typing import Dtype as PdDType
+    from pandas._typing import DtypeArg as PdDTypeArg
     from pyarrow.plasma import ObjectID
     from pyarrow.plasma import PlasmaClient
 
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
     # numpy is always required by bentoml
     from numpy import generic as NpGeneric
     from numpy.typing import NDArray as _NDArray
-    from numpy.typing import DTypeLike as NpDTypeLike  # type: ignore (incomplete numpy types)
+    from numpy.typing import DTypeLike as NpDTypeLike
 
     NpNDArray = _NDArray[t.Any]
 
@@ -36,6 +38,8 @@ if TYPE_CHECKING:
     __all__ = [
         "PdSeries",
         "PdDataFrame",
+        "PdDType",
+        "PdDTypeArg",
         "DataFrameOrient",
         "SeriesOrient",
         "ObjectID",

@@ -15,7 +15,6 @@ from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
-from ...exceptions import InternalServerError
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
@@ -25,7 +24,10 @@ from ..service.openapi.specification import RequestBody
 if TYPE_CHECKING:
     from types import UnionType
 
+    import PIL
     import PIL.Image
+
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
@@ -34,17 +36,21 @@ if TYPE_CHECKING:
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
     ]
 else:
+    from bentoml.grpc.utils import import_generated_stubs
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = f"'Pillow' is required to use {__name__}. Install with: 'pip install -U Pillow'."
+    _exc = "'Pillow' is required to use the Image IO descriptor. Install it with: 'pip install -U Pillow'."
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
+
+    pb, _ = import_generated_stubs()
+
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
 #  that enable a new way to type hint an ndarray.
-ImageType: t.TypeAlias = t.Union["PIL.Image.Image", "ext.NpNDArray"]
+ImageType = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 
 DEFAULT_PIL_MODE = "RGB"
 
@@ -135,32 +141,26 @@ class Image(IODescriptor[ImageType]):
         :obj:`Image`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray` representing an image.
     """
 
-    MIME_EXT_MAPPING: t.Dict[str, str] = {}
+    MIME_EXT_MAPPING: dict[str, str] = {}
+
+    _proto_fields = ("file",)
 
     def __init__(
         self,
         pilmode: _Mode | None = DEFAULT_PIL_MODE,
         mime_type: str = "image/jpeg",
     ):
-        try:
-            import PIL.Image
-        except ImportError:
-            raise InternalServerError(
-                "`Pillow` is required to use {__name__}\n Instructions: `pip install -U Pillow`"
-            )
         PIL.Image.init()
         self.MIME_EXT_MAPPING.update({v: k for k, v in PIL.Image.MIME.items()})
 
         if mime_type.lower() not in self.MIME_EXT_MAPPING:  # pragma: no cover
             raise InvalidArgument(
-                f"Invalid Image mime_type '{mime_type}', "
-                f"Supported mime types are {', '.join(PIL.Image.MIME.values())} "
-            )
+                f"Invalid Image mime_type '{mime_type}'. Supported mime types are {', '.join(PIL.Image.MIME.values())}."
+            ) from None
         if pilmode is not None and pilmode not in PIL.Image.MODES:  # pragma: no cover
             raise InvalidArgument(
-                f"Invalid Image pilmode '{pilmode}', "
-                f"Supported PIL modes are {', '.join(PIL.Image.MODES)} "
-            )
+                f"Invalid Image pilmode '{pilmode}'. Supported PIL modes are {', '.join(PIL.Image.MODES)}."
+            ) from None
 
         self._mime_type = mime_type.lower()
         self._pilmode: _Mode | None = pilmode
@@ -197,13 +197,12 @@ class Image(IODescriptor[ImageType]):
             bytes_ = await request.body()
         else:
             raise BadInput(
-                f"{self.__class__.__name__} should get `multipart/form-data`, "
-                f"`{self._mime_type}` or `image/*`, got {content_type} instead"
+                f"{self.__class__.__name__} should get 'multipart/form-data', '{self._mime_type}' or 'image/*', got '{content_type}' instead."
             )
         try:
             return PIL.Image.open(io.BytesIO(bytes_))
-        except PIL.UnidentifiedImageError:
-            raise BadInput("Failed reading image file uploaded") from None
+        except PIL.UnidentifiedImageError as e:
+            raise BadInput(f"Failed reading image file uploaded: {e}") from None
 
     async def to_http_response(
         self, obj: ImageType, ctx: Context | None = None
@@ -213,10 +212,9 @@ class Image(IODescriptor[ImageType]):
         elif LazyType[PIL.Image.Image]("PIL.Image.Image").isinstance(obj):
             image = obj
         else:
-            raise InternalServerError(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
-                " only supports `np.ndarray` and `PIL.Image`"
-            )
+            raise BadInput(
+                f"Unsupported Image type received: '{type(obj)}', the Image IO descriptor only supports 'np.ndarray' and 'PIL.Image'."
+            ) from None
         filename = f"output.{self._format.lower()}"
 
         ret = io.BytesIO()
@@ -248,3 +246,52 @@ class Image(IODescriptor[ImageType]):
                 media_type=self._mime_type,
                 headers={"content-disposition": content_disposition},
             )
+
+    async def from_proto(self, field: pb.File | bytes) -> ImageType:
+        from bentoml.grpc.utils import filetype_pb_to_mimetype_map
+
+        mapping = filetype_pb_to_mimetype_map()
+        # check if the request message has the correct field
+        if isinstance(field, bytes):
+            content = field
+        else:
+            assert isinstance(field, pb.File)
+            if field.kind:
+                try:
+                    mime_type = mapping[field.kind]
+                    if mime_type != self._mime_type:
+                        raise BadInput(
+                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                        )
+                except KeyError:
+                    raise BadInput(
+                        f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names,_ in pb.File.FileType.items()]}",
+                    ) from None
+            content = field.content
+            if not content:
+                raise BadInput("Content is empty!") from None
+
+        return PIL.Image.open(io.BytesIO(content))
+
+    async def to_proto(self, obj: ImageType) -> pb.File:
+        from bentoml.grpc.utils import mimetype_to_filetype_pb_map
+
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
+            image = PIL.Image.fromarray(obj, mode=self._pilmode)
+        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
+            image = obj
+        else:
+            raise BadInput(
+                f"Unsupported Image type received: '{type(obj)}', the Image IO descriptor only supports 'np.ndarray' and 'PIL.Image'.",
+            ) from None
+        ret = io.BytesIO()
+        image.save(ret, format=self._format)
+
+        try:
+            kind = mimetype_to_filetype_pb_map()[self._mime_type]
+        except KeyError:
+            raise BadInput(
+                f"{self._mime_type} doesn't have a corresponding File 'kind'",
+            ) from None
+
+        return pb.File(kind=kind, content=ret.getvalue())

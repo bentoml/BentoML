@@ -10,12 +10,14 @@ import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
+from bentoml.exceptions import BadInput
+
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import bentoml_cattr
+from ..utils.pkg import pkg_version_info
 from ..utils.http import set_cookies
-from ...exceptions import BadInput
 from ..service.openapi import REF_PREFIX
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
@@ -28,26 +30,28 @@ if TYPE_CHECKING:
 
     import pydantic
     import pydantic.schema as schema
+    from google.protobuf import struct_pb2
 
     from .. import external_typing as ext
     from ..context import InferenceApiContext as Context
 
-    _Serializable = ext.NpNDArray | ext.PdDataFrame | t.Type[pydantic.BaseModel] | type
 else:
     _exc_msg = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install pydantic'."
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=_exc_msg)
     schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=_exc_msg)
+    # lazy load our proto generated.
+    struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
+    # lazy load numpy for processing ndarray.
+    np = LazyLoader("np", globals(), "numpy")
 
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
-
-MIME_TYPE_JSON = "application/json"
 
 logger = logging.getLogger(__name__)
 
 
 class DefaultJsonEncoder(json.JSONEncoder):
-    def default(self, o: _Serializable) -> t.Any:
+    def default(self, o: type) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(o):
@@ -63,9 +67,8 @@ class DefaultJsonEncoder(json.JSONEncoder):
             if "__root__" in obj_dict:
                 obj_dict = obj_dict.get("__root__")
             return obj_dict
-        if attr.has(o):  # type: ignore (trivial case)
+        if attr.has(o):
             return bentoml_cattr.unstructure(o)
-
         return super().default(o)
 
 
@@ -168,7 +171,9 @@ class JSON(IODescriptor[JSONType]):
         :obj:`JSON`: IO Descriptor that represents JSON format.
     """
 
-    _mime_type: str = MIME_TYPE_JSON
+    _proto_fields = ("json",)
+    # default mime type is application/json
+    _mime_type = "application/json"
 
     def __init__(
         self,
@@ -177,7 +182,11 @@ class JSON(IODescriptor[JSONType]):
         validate_json: bool | None = None,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
-        if pydantic_model:
+        if pydantic_model is not None:
+            if pkg_version_info("pydantic")[0] >= 2:
+                raise BadInput(
+                    "pydantic 2.x is not yet supported. Add upper bound to 'pydantic': 'pip install \"pydantic<2\"'"
+                ) from None
             assert issubclass(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
@@ -236,12 +245,12 @@ class JSON(IODescriptor[JSONType]):
         except json.JSONDecodeError as e:
             raise BadInput(f"Invalid JSON input received: {e}") from None
 
-        if self._pydantic_model is not None:
+        if self._pydantic_model:
             try:
                 pydantic_model = self._pydantic_model.parse_obj(json_obj)
                 return pydantic_model
             except pydantic.ValidationError as e:
-                raise BadInput(f"Invalid JSON input received: {e}") from e
+                raise BadInput(f"Invalid JSON input received: {e}") from None
         else:
             return json_obj
 
@@ -269,11 +278,57 @@ class JSON(IODescriptor[JSONType]):
         if ctx is not None:
             res = Response(
                 json_str,
-                media_type=MIME_TYPE_JSON,
+                media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json_str, media_type=MIME_TYPE_JSON)
+            return Response(json_str, media_type=self._mime_type)
+
+    async def from_proto(self, field: struct_pb2.Value | bytes) -> JSONType:
+        from google.protobuf.json_format import MessageToDict
+
+        if isinstance(field, bytes):
+            content = field
+            if self._pydantic_model:
+                try:
+                    return self._pydantic_model.parse_raw(content)
+                except pydantic.ValidationError as e:
+                    raise BadInput(f"Invalid JSON input received: {e}") from None
+            try:
+                parsed = json.loads(content)
+            except json.JSONDecodeError as e:
+                raise BadInput(f"Invalid JSON input received: {e}") from None
+        else:
+            assert isinstance(field, struct_pb2.Value)
+            parsed = MessageToDict(field, preserving_proto_field_name=True)
+
+            if self._pydantic_model:
+                try:
+                    return self._pydantic_model.parse_obj(parsed)
+                except pydantic.ValidationError as e:
+                    raise BadInput(f"Invalid JSON input received: {e}") from None
+        return parsed
+
+    async def to_proto(self, obj: JSONType) -> struct_pb2.Value:
+        if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
+            obj = obj.dict()
+        msg = struct_pb2.Value()
+        # To handle None cases.
+        if obj is not None:
+            from google.protobuf.json_format import ParseDict
+
+            if isinstance(obj, (dict, str, list, float, int, bool)):
+                # ParseDict handles google.protobuf.Struct type
+                # directly if given object has a supported type
+                ParseDict(obj, msg)
+            else:
+                # If given object doesn't have a supported type, we will
+                # use given JSON encoder to convert it to dictionary
+                # and then parse it to google.protobuf.Struct.
+                # Note that if a custom JSON encoder is used, it mustn't
+                # take any arguments.
+                ParseDict(self._json_encoder().default(obj), msg)
+        return msg

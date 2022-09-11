@@ -8,9 +8,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from types import UnionType
 
-    from typing_extensions import Self
     from starlette.requests import Request
     from starlette.responses import Response
+
+    from bentoml.grpc.types import ProtoField
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
@@ -39,20 +40,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     HTTP_METHODS = ["POST"]
 
-    _init_str: str = ""
-
     _mime_type: str
-
-    def __new__(cls: t.Type[Self], *args: t.Any, **kwargs: t.Any) -> Self:
-        self = super().__new__(cls)
-        # default mime type is application/json
-        self._mime_type = "application/json"
-        self._init_str = cls.__qualname__
-
-        return self
+    _rpc_content_type: str = "application/grpc"
+    _proto_fields: tuple[ProtoField]
 
     def __repr__(self) -> str:
-        return self._init_str
+        return self.__class__.__qualname__
 
     @abstractmethod
     def input_type(self) -> InputType:
@@ -82,4 +75,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
     async def to_http_response(
         self, obj: IOType, ctx: Context | None = None
     ) -> Response:
+        ...
+
+    @abstractmethod
+    async def from_proto(self, field: t.Any) -> IOType:
+        ...
+
+    @abstractmethod
+    async def to_proto(self, obj: IOType) -> t.Any:
         ...

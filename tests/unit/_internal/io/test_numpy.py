@@ -32,7 +32,7 @@ def test_invalid_dtype():
     generic = ExampleGeneric("asdf")
     with pytest.raises(BentoMLException) as e:
         _ = NumpyNdarray.from_sample(generic)  # type: ignore (test exception)
-    assert "expects a numpy.array" in str(e.value)
+    assert "expects a 'numpy.array'" in str(e.value)
 
 
 @pytest.mark.parametrize("dtype, expected", [("float", "number"), (">U8", "integer")])
@@ -82,9 +82,7 @@ def test_numpy_openapi_responses():
 
 
 def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
-    partial_check = partial(
-        from_example._verify_ndarray, exception_cls=BentoMLException  # type: ignore (test internal check)
-    )
+    partial_check = partial(from_example.validate_array, exception_cls=BentoMLException)
 
     with pytest.raises(BentoMLException) as ex:
         partial_check(np.array(["asdf"]))
@@ -94,10 +92,10 @@ def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
         partial_check(np.array([[1]]))
     assert f'Expecting ndarray of shape "{from_example._shape}"' in str(e.value)  # type: ignore (testing message)
 
-    # test cases whwere reshape is failed
+    # test cases where reshape is failed
     example = NumpyNdarray.from_sample(np.ones((2, 2, 3)))
     example._enforce_shape = False  # type: ignore (test internal check)
     example._enforce_dtype = False  # type: ignore (test internal check)
     with caplog.at_level(logging.DEBUG):
-        example._verify_ndarray(np.array("asdf"))
+        example.validate_array(np.array("asdf"))
     assert "Failed to reshape" in caplog.text

@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 import os
@@ -34,7 +35,7 @@ def pytest_generate_tests(metafunc: Metafunc) -> None:
     os.environ["BENTOML_DO_NOT_TRACK"] = "True"
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def noop_service(dummy_model_store: ModelStore) -> bentoml.Service:
     import cloudpickle
 
@@ -76,10 +77,14 @@ def noop_service(dummy_model_store: ModelStore) -> bentoml.Service:
     def noop_sync(data: str) -> str:  # type: ignore
         return data
 
+    @svc.api(input=Text(), output=Text())
+    def invalid(data: str) -> str:  # type: ignore
+        raise RuntimeError("invalid implementation.")
+
     return svc
 
 
-@pytest.fixture(scope="function", autouse=True, name="propagate_logs")
+@pytest.fixture(scope="function", name="propagate_logs")
 def fixture_propagate_logs() -> t.Generator[None, None, None]:
     logger = logging.getLogger("bentoml")
     # bentoml sets propagate to False by default, so we need to set it to True

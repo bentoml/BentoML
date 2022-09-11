@@ -1,0 +1,3 @@
+# tracing:
+#   type: in_memory # used for testing
+#   sample_rate: 1.0

@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 import os
@@ -145,10 +146,7 @@ def build_test_bento(model_store: ModelStore) -> Bento:
     bento_cfg = BentoBuildConfig(
         "simplebento.py:svc",
         include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
-        exclude=[
-            "*.storage",
-            "/somefile",
-        ],
+        exclude=["*.storage", "/somefile", "/subdir2"],
         conda={
             "environment_yml": "./environment.yaml",
         },
@@ -334,6 +332,7 @@ def test_bento(dummy_model_store: ModelStore):
             "src",
             "env",
         }
+        print(bento_fs.listdir("src"))
         assert set(bento_fs.listdir("src")) == {
             "simplebento.py",
             "subdir",

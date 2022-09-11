@@ -249,15 +249,10 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
         reqs = await asyncio.gather(
             *tuple(
                 io_.from_proto(getattr(input_pb, io_._proto_fields[0]))
-                for io_, input_pb in self.io_fields_mapping(message).items()
+                for io_, input_pb in zip(self._inputs.values(), message.values())
             )
         )
         return dict(zip(message, reqs))
-
-    def io_fields_mapping(
-        self, message: t.MutableMapping[str, pb.Part]
-    ) -> dict[IODescriptor[t.Any], pb.Part]:
-        return {io_: part for io_, part in zip(self._inputs.values(), message.values())}
 
     async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
         self.validate_input_mapping(obj)
@@ -268,13 +263,13 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
             )
         )
         return pb.Multipart(
-            fields={
-                key: pb.Part(
-                    **{
-                        io_._proto_fields[0]: resp
+            fields=dict(
+                zip(
+                    obj,
+                    [
+                        pb.Part(**{io_._proto_fields[0]: resp})
                         for io_, resp in zip(self._inputs.values(), resps)
-                    }
+                    ],
                 )
-                for key in obj
-            }
+            )
         )

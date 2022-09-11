@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     RequestDeserializerFn = t.Callable[[Request | None], object] | None
     ResponseSerializerFn = t.Callable[[bytes], Response | None] | None
 
-    HandlerMethod = t.Callable[[Request, BentoServicerContext], P]
     AsyncHandlerMethod = t.Callable[[Request, BentoServicerContext], t.Awaitable[P]]
 
     class RpcMethodHandler(
@@ -34,10 +33,10 @@ if TYPE_CHECKING:
             response_streaming=bool,
             request_deserializer=RequestDeserializerFn,
             response_serializer=ResponseSerializerFn,
-            unary_unary=t.Optional[HandlerMethod[Response]],
-            unary_stream=t.Optional[HandlerMethod[Response]],
-            stream_unary=t.Optional[HandlerMethod[Response]],
-            stream_stream=t.Optional[HandlerMethod[Response]],
+            unary_unary=t.Optional[AsyncHandlerMethod[Response]],
+            unary_stream=t.Optional[AsyncHandlerMethod[Response]],
+            stream_unary=t.Optional[AsyncHandlerMethod[Response]],
+            stream_stream=t.Optional[AsyncHandlerMethod[Response]],
         ),
         grpc.RpcMethodHandler,
     ):
@@ -47,10 +46,10 @@ if TYPE_CHECKING:
         response_streaming: bool
         request_deserializer: RequestDeserializerFn
         response_serializer: ResponseSerializerFn
-        unary_unary: t.Optional[HandlerMethod[Response]]
-        unary_stream: t.Optional[HandlerMethod[Response]]
-        stream_unary: t.Optional[HandlerMethod[Response]]
-        stream_stream: t.Optional[HandlerMethod[Response]]
+        unary_unary: t.Optional[AsyncHandlerMethod[Response]]
+        unary_stream: t.Optional[AsyncHandlerMethod[Response]]
+        stream_unary: t.Optional[AsyncHandlerMethod[Response]]
+        stream_stream: t.Optional[AsyncHandlerMethod[Response]]
 
     class HandlerCallDetails(
         t.NamedTuple(

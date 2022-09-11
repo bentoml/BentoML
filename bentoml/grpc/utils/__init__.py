@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
     from bentoml.exceptions import BentoMLException
     from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import BentoServicerContext
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     # We need this here so that __all__ is detected due to lazy import
@@ -179,7 +181,13 @@ def parse_method_name(method_name: str) -> tuple[MethodName, bool]:
 
 
 def wrap_rpc_handler(
-    wrapper: t.Callable[..., t.Any],
+    wrapper: t.Callable[
+        [AsyncHandlerMethod[pb.Response]],
+        t.Callable[
+            [pb.Request, BentoServicerContext],
+            t.Coroutine[t.Any, t.Any, pb.Response | t.Awaitable[pb.Response]],
+        ],
+    ],
     handler: RpcMethodHandler | None,
 ) -> RpcMethodHandler | None:
     if not handler:

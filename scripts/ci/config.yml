@@ -27,21 +27,27 @@ unit:
   is_dir: true
   type_tests: "unit"
 
-general_features:
+http_server:
   <<: *tmpl
-  root_test_dir: "tests/e2e/bento_server_general_features"
+  root_test_dir: "tests/e2e/bento_server_http"
   is_dir: true
   type_tests: "e2e"
   dependencies:
-    - "Pillow"
+    - Pillow
+    - pydantic
+    - fastapi
 
-general_features_sync:
+grpc_server:
   <<: *tmpl
-  root_test_dir: "tests/e2e/bento_server_general_features_sync"
+  root_test_dir: "tests/e2e/bento_server_grpc"
   is_dir: true
   type_tests: "e2e"
   dependencies:
-    - "Pillow"
+    - Pillow
+    - pydantic
+    - "grpcio-tools>=1.41" # grpcio is included with grpcio-tools
+    - grpcio-health-checking
+    - grpcio-reflection
 
 catboost:
   <<: *ntmpl
@@ -77,7 +83,6 @@ fastai:
     - "torchvision==0.10.0+cpu"
     - pandas
     - scikit-learn
-
 
 fasttext:
   <<: *tmpl
@@ -197,7 +202,7 @@ statsmodels:
   <<: *tmpl
   dependencies:
     - "statsmodels==0.12.2"
-    - "scipy==1.7.3"  # statsmodels 0.12.2 is using internal APIs of scipy
+    - "scipy==1.7.3" # statsmodels 0.12.2 is using internal APIs of scipy
     - "joblib"
 
 tf1:
@@ -205,7 +210,6 @@ tf1:
   override_name_or_path: test_tensorflow_v1_impl.py
   dependencies:
     - "tensorflow==1.15"
-
 
 transformers:
   <<: *ntmpl
@@ -240,7 +244,7 @@ torchscript:
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.11.0+cpu"
     - "torchvision==0.12.0+cpu"
-    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
+    - "protobuf<4.21.0" # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
     - "psutil"
 
 pytorch_lightning:
@@ -250,5 +254,5 @@ pytorch_lightning:
     - "torch==1.11.0+cpu"
     - "torchvision==0.12.0+cpu"
     - "pytorch_lightning==1.6.3"
-    - "protobuf<4.21.0"  # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
+    - "protobuf<4.21.0" # https://github.com/PyTorchLightning/pytorch-lightning/issues/13159
     - "psutil"
